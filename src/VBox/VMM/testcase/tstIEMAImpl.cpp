@@ -3463,11 +3463,14 @@ static const FPU_UNARY_R80_T g_aFpuUnaryR80[] =
 {
     ENTRY(fabs_r80),
     ENTRY(fchs_r80),
-    ENTRY(f2xm1_r80),
+    ENTRY_AMD(  f2xm1_r80, 0), // C1 differs for -1m0x3fb263cc2c331e15^-2654
+    ENTRY_INTEL(f2xm1_r80, 0),
     ENTRY(fsqrt_r80),
     ENTRY(frndint_r80),
-    ENTRY(fsin_r80),
-    ENTRY(fcos_r80),
+    ENTRY_AMD(  fsin_r80, 0),  // value & C1 differences for pseudo denormals and others (e.g. -1m0x2b1e5683cbca5725^-3485)
+    ENTRY_INTEL(fsin_r80, 0),
+    ENTRY_AMD(  fcos_r80, 0),  // value & C1 differences
+    ENTRY_INTEL(fcos_r80, 0),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -3692,9 +3695,11 @@ TYPEDEF_SUBTEST_TYPE(FPU_UNARY_TWO_R80_T, FPU_UNARY_TWO_R80_TEST_T, PFNIEMAIMPLF
 
 static const FPU_UNARY_TWO_R80_T g_aFpuUnaryTwoR80[] =
 {
-    ENTRY(fptan_r80_r80),
+    ENTRY_AMD(  fptan_r80_r80, 0),   // rounding differences
+    ENTRY_INTEL(fptan_r80_r80, 0),
     ENTRY(fxtract_r80_r80),
-    ENTRY(fsincos_r80_r80),
+    ENTRY_AMD(  fsincos_r80_r80, 0), // C1 differences & value differences (e.g. -1m0x235cf2f580244a27^-1696)
+    ENTRY_INTEL(fsincos_r80_r80, 0),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -4073,8 +4078,8 @@ int main(int argc, char **argv)
         {
             const char *pszDataFile    = fCommonData ? "tstIEMAImplDataFpuOther.cpp" : pszBitBucket;
             PRTSTREAM   pStrmData      = GenerateOpenWithHdr(pszDataFile, szCpuDesc, NULL);
-            const char *pszDataCpuFile = pszBitBucket /*!fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
-                                       ? "tstIEMAImplDataFpuOther-Amd.cpp" : "tstIEMAImplDataFpuOther-Intel.cpp"*/;
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplDataFpuOther-Amd.cpp" : "tstIEMAImplDataFpuOther-Intel.cpp";
             PRTSTREAM   pStrmDataCpu   = GenerateOpenWithHdr(pszDataCpuFile, szCpuDesc, pszCpuType);
             if (!pStrmData || !pStrmDataCpu)
                 return RTEXITCODE_FAILURE;

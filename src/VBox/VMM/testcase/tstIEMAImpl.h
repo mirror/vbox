@@ -691,18 +691,23 @@ TSTIEM_DECLARE_TEST_ARRAY(FpuBinary1,       FPU_BINARY_EFL_R80_TEST_T,  fucomi_r
 
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fabs_r80                 );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fchs_r80                 );
-TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       f2xm1_r80                );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_R80_TEST_T,       f2xm1_r80_amd            );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_R80_TEST_T,       f2xm1_r80_intel          );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fsqrt_r80                );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       frndint_r80              );
-TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fsin_r80                 );
-TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fcos_r80                 );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_R80_TEST_T,       fsin_r80_amd             );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_R80_TEST_T,       fsin_r80_intel           );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_R80_TEST_T,       fcos_r80_amd             );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_R80_TEST_T,       fcos_r80_intel           );
 
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       ftst_r80                 );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fxam_r80                 );
 
-TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fptan_r80_r80            );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_TWO_R80_TEST_T,   fptan_r80_r80_amd        );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_TWO_R80_TEST_T,   fptan_r80_r80_intel      );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fxtract_r80_r80          );
-TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80          );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_amd      );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_intel    );
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 

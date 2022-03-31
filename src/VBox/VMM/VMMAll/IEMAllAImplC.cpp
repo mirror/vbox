@@ -4475,33 +4475,80 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80_amd,(PCX86FXSTATE pFpuState, 
 
 
 #if defined(IEM_WITHOUT_ASSEMBLY)
-
 IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
     AssertReleaseFailed();
 }
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fptan_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fptan_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+}
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pFpuRes, pr80Val);
     AssertReleaseFailed();
 }
+#endif /* IEM_WITHOUT_ASSEMBLY */
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsin_r80(pFpuState, pFpuRes, pr80Val);
+}
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsin_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
     AssertReleaseFailed();
 }
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+}
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pFpuRes, pr80Val);
     AssertReleaseFailed();
 }
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fcos_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fcos_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 
 /*********************************************************************************************************************************
@@ -4621,6 +4668,19 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80,(PCX86FXSTATE pFpuState, PIEMFPURESUL
     AssertReleaseFailed();
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_f2xm1_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_f2xm1_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fabs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
