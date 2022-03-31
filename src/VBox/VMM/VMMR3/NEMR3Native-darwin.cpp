@@ -3848,16 +3848,6 @@ bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 }
 
 
-/**
- * Forced flag notification call from VMEmt.h.
- *
- * This is only called when pVCpu is in the VMCPUSTATE_STARTED_EXEC_NEM state.
- *
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure of the CPU
- *                          to be notified.
- * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_XXX.
- */
 void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
     LogFlowFunc(("pVM=%p pVCpu=%p fFlags=%#x\n", pVM, pVCpu, fFlags));
@@ -4147,12 +4137,6 @@ static int nemHCJustUnmapPage(PVMCC pVM, RTGCPHYS GCPhysDst, uint8_t *pu2State)
 }
 
 
-/**
- * Called when the A20 state changes.
- *
- * @param   pVCpu           The CPU the A20 state changed on.
- * @param   fEnabled        Whether it was enabled (true) or disabled.
- */
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
 {
     Log(("NEMR3NotifySetA20: fEnabled=%RTbool\n", fEnabled));

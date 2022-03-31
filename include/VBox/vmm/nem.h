@@ -158,6 +158,16 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
 #define NEM_NOTIFY_PHYS_ROM_F_SHADOW        RT_BIT(2)
 /** @} */
 
+/**
+ * Called when the A20 state changes.
+ *
+ * Windows: Hyper-V doesn't seem to offer a simple way of implementing the A20
+ * line features of PCs.  So, we do a very minimal emulation of the HMA to make
+ * DOS happy.
+ *
+ * @param   pVCpu           The CPU the A20 state changed on.
+ * @param   fEnabled        Whether it was enabled (true) or disabled.
+ */
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
 VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChanged(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
