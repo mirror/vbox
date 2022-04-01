@@ -1651,7 +1651,7 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SU
     /*
      * First to the log.
      */
-    supR3HardenedLog("Error %Rrc (%#x) in %s! (enmWhat=%d)\n", rc, rc, pszWhere, enmWhat);
+    supR3HardenedLog("Error %d in %s! (enmWhat=%d)\n", rc, pszWhere, enmWhat);
     va_list vaCopy;
     va_copy(vaCopy, va);
     supR3HardenedLogV(pszMsgFmt, vaCopy);
@@ -1674,7 +1674,7 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SU
      * Then to the console.
      */
     suplibHardenedPrintPrefix();
-    suplibHardenedPrintF("Error %Rrc (%#x) in %s!\n", rc, rc, pszWhere);
+    suplibHardenedPrintF("Error %d in %s!\n", rc, pszWhere);
 
     suplibHardenedPrintPrefix();
     va_copy(vaCopy, va);
@@ -2692,3 +2692,4 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_CALLED_TRUSTED_MAIN;
     return pfnTrustedMain(argc, argv, envp);
 }
+
