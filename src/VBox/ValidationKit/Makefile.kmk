@@ -318,7 +318,7 @@ TMP_UNITTESTS_WHITELIST := \
 	tstUtf8
 
 TMP_UNITTESTS_WHITELIST.linux += \
-	tstRTProcWait
+	tstRTProcWait \
 	tstRTProcIsRunningByName
 
 TMP_UNITTESTS_WHITELIST.win += \
