@@ -300,7 +300,7 @@ endif
 #
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
-# Only include testcases being on the whitelist. Wilcard (*) implicit.
+# Only include testcases being on the whitelist.
 TMP_UNITTESTS_WHITELIST := \
 	tstFile \
 	tstFileLock \
@@ -317,12 +317,11 @@ TMP_UNITTESTS_WHITELIST := \
 	tstTime-4 \
 	tstTimer \
 	tstThread-1 \
-	tstUtf
+	tstUtf8
 
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
 # Needs careful checking for each and every testcase being run.
-# Try to get and include what we have by using wildcards.
 #
 ## @todo Also include R0 and hardening stuff?
 #
@@ -330,13 +329,15 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
-  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
+  ifdef VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch)
+   TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
+   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
-    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
-  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
+    	$$(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE))
+   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
-    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/$(file_dep)$(TMP_SUFF_LIB)))
+    	$$(TMP_UNITTESTS_PATH_BIN)/$(file_dep)$(TMP_SUFF_LIB))
+ endif
 endef
 
 TMP_SUFF_EXE=.exe
