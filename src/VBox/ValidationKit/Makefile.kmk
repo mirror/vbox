@@ -310,7 +310,6 @@ TMP_UNITTESTS_WHITELIST := \
 	tstRTProcCreateEx \
 	tstRTProcCreatePrf \
 	tstRTProcQueryUsername \
-	tstRTProcWait \
 	tstTime-2 \
 	tstTime-3 \
 	tstTime-4 \
@@ -319,7 +318,11 @@ TMP_UNITTESTS_WHITELIST := \
 	tstUtf8
 
 TMP_UNITTESTS_WHITELIST.linux += \
+	tstRTProcWait
 	tstRTProcIsRunningByName
+
+TMP_UNITTESTS_WHITELIST.win += \
+	tstRTProcWait
 
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
