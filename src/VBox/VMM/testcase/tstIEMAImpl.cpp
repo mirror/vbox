@@ -3073,7 +3073,7 @@ static void FpuBinaryR80Test(void)
                                  iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result),
                                  iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].OutVal),
                                  FswDiff(Res.FSW, paTests[iTest].fFswOut),
-                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "",
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "",
                                  FormatFcw(paTests[iTest].fFcw) );
             }
             pfn = g_aFpuBinaryR80[iFn].pfnNative;
@@ -3210,7 +3210,7 @@ static void FpuBinary ## a_UpBits ## Test(void) \
                                  iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result), \
                                  iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].OutVal), \
                                  FswDiff(Res.FSW, paTests[iTest].fFswOut), \
-                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "", \
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "", \
                                  FormatFcw(paTests[iTest].fFcw) ); \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
@@ -3568,7 +3568,7 @@ static void FpuUnaryR80Test(void)
                                  iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result),
                                  iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].OutVal),
                                  FswDiff(Res.FSW, paTests[iTest].fFswOut),
-                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "",
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "",
                                  FormatFcw(paTests[iTest].fFcw) );
             }
             pfn = g_aFpuUnaryR80[iFn].pfnNative;
@@ -3585,7 +3585,7 @@ TYPEDEF_SUBTEST_TYPE(FPU_UNARY_FSW_R80_T, FPU_UNARY_R80_TEST_T, PFNIEMAIMPLFPUR8
 static const FPU_UNARY_FSW_R80_T g_aFpuUnaryFswR80[] =
 {
     ENTRY(ftst_r80),
-    ENTRY(fxam_r80),
+    ENTRY_EX(fxam_r80, 1),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -3601,6 +3601,7 @@ static void FpuUnaryFswR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
     uint32_t cMinNormals = cTests / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryFswR80); iFn++)
     {
+        bool const                  fIsFxam = g_aFpuUnaryFswR80[iFn].uExtra == 1;
         PFNIEMAIMPLFPUR80UNARYFSW const pfn = g_aFpuUnaryFswR80[iFn].pfnNative ? g_aFpuUnaryFswR80[iFn].pfnNative : g_aFpuUnaryFswR80[iFn].pfn;
         PRTSTREAM                    pOutFn = pOut;
         if (g_aFpuUnaryFswR80[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE)
@@ -3609,6 +3610,7 @@ static void FpuUnaryFswR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
                 continue;
             pOutFn = pOutCpu;
         }
+        State.FTW = 0;
 
         GenerateArrayStart(pOutFn, g_aFpuUnaryFswR80[iFn].pszName, "FPU_UNARY_R80_TEST_T");
         uint32_t cNormalInputs = 0;
@@ -3625,24 +3627,36 @@ static void FpuUnaryFswR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
 
             uint16_t const fFcw = RandFcw();
             State.FSW = RandFsw();
-
-            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+            if (!fIsFxam)
             {
-                for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
+                for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
                 {
-                    for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+                    for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
                     {
-                        State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
-                                  | (iRounding  << X86_FCW_RC_SHIFT)
-                                  | (iPrecision << X86_FCW_PC_SHIFT)
-                                  | iMask;
-                        uint16_t fFswOut = 0;
-                        pfn(&State, &fFswOut, &InVal);
-                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s }, /* #%u/%u/%u/%c */\n",
-                                     State.FCW, State.FSW, fFswOut, GenFormatR80(&InVal),
-                                     iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
+                        for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+                        {
+                            State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
+                                      | (iRounding  << X86_FCW_RC_SHIFT)
+                                      | (iPrecision << X86_FCW_PC_SHIFT)
+                                      | iMask;
+                            uint16_t fFswOut = 0;
+                            pfn(&State, &fFswOut, &InVal);
+                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s }, /* #%u/%u/%u/%c */\n",
+                                         State.FCW, State.FSW, fFswOut, GenFormatR80(&InVal),
+                                         iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
+                        }
                     }
                 }
+            }
+            else
+            {
+                uint16_t       fFswOut = 0;
+                uint16_t const fEmpty  = RTRandU32Ex(0, 3) == 3 ? 0x80 : 0; /* Using MBZ bit 7 in FCW to indicate empty tag value. */
+                State.FTW = fEmpty ? 1 << X86_FSW_TOP_GET(State.FSW) : 0;
+                State.FCW = fFcw;
+                pfn(&State, &fFswOut, &InVal);
+                RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s }, /* #%u%s */\n",
+                             fFcw | fEmpty, State.FSW, fFswOut, GenFormatR80(&InVal), iTest, fEmpty ? "/empty" : "");
             }
         }
         GenerateArrayEnd(pOutFn, g_aFpuUnaryFswR80[iFn].pszName);
@@ -3670,18 +3684,20 @@ static void FpuUnaryFswR80Test(void)
             {
                 RTFLOAT80U const InVal   = paTests[iTest].InVal;
                 uint16_t         fFswOut = 0;
-                State.FCW = paTests[iTest].fFcw;
                 State.FSW = paTests[iTest].fFswIn;
+                State.FCW = paTests[iTest].fFcw & ~(uint16_t)0x80; /* see generator code */
+                State.FTW = paTests[iTest].fFcw & 0x80 ? 1 << X86_FSW_TOP_GET(paTests[iTest].fFswIn) : 0;
                 pfn(&State, &fFswOut, &InVal);
                 if (fFswOut != paTests[iTest].fFswOut)
                     RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in=%s\n"
                                           "%s               -> fsw=%#06x\n"
-                                          "%s             expected %#06x  %s (%s)\n",
+                                          "%s             expected %#06x  %s (%s%s)\n",
                                  iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn,
                                  FormatR80(&paTests[iTest].InVal),
                                  iVar ? "  " : "", fFswOut,
                                  iVar ? "  " : "", paTests[iTest].fFswOut,
-                                 FswDiff(fFswOut, paTests[iTest].fFswOut), FormatFcw(paTests[iTest].fFcw) );
+                                 FswDiff(fFswOut, paTests[iTest].fFswOut), FormatFcw(paTests[iTest].fFcw),
+                                 paTests[iTest].fFcw & 0x80 ? " empty" : "");
             }
             pfn = g_aFpuUnaryFswR80[iFn].pfnNative;
         }
@@ -3799,8 +3815,8 @@ static void FpuUnaryTwoR80Test(void)
                                  iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result1), FormatR80(&Res.r80Result2),
                                  iVar ? "  " : "", paTests[iTest].fFswOut,
                                  FormatR80(&paTests[iTest].OutVal1), FormatR80(&paTests[iTest].OutVal2),
-                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result1, &paTests[iTest].OutVal1) ? " - val1" : "",
-                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result2, &paTests[iTest].OutVal2) ? " - val2" : "",
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result1, &paTests[iTest].OutVal1) ? " - val1" : "",
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result2, &paTests[iTest].OutVal2) ? " - val2" : "",
                                  FswDiff(Res.FSW, paTests[iTest].fFswOut), FormatFcw(paTests[iTest].fFcw) );
             }
             pfn = g_aFpuUnaryTwoR80[iFn].pfnNative;
