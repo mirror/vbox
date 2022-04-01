@@ -301,28 +301,31 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 # Only include testcases being on the whitelist.
+#TMP_UNITTESTS_WHITELIST := \
+#	tstFile \
+#	tstFileLock \
+#	tstRTLocalIpc \
+#	tstRTPathQueryInfo \
+#	tstRTPipe \
+#	tstRTProcCreateEx \
+#	tstRTProcCreatePrf \
+#	tstRTProcQueryUsername \
+#	tstTime-2 \
+#	tstTime-3 \
+#	tstTime-4 \
+#	tstTimer \
+#	tstThread-1 \
+#	tstUtf8
+#
+#TMP_UNITTESTS_WHITELIST.linux += \
+#	tstRTProcWait \
+#	tstRTProcIsRunningByName
+#
+#TMP_UNITTESTS_WHITELIST.win += \
+#	tstRTProcWait
+
 TMP_UNITTESTS_WHITELIST := \
-	tstFile \
-	tstFileLock \
-	tstRTLocalIpc \
-	tstRTPathQueryInfo \
-	tstRTPipe \
-	tstRTProcCreateEx \
-	tstRTProcCreatePrf \
-	tstRTProcQueryUsername \
-	tstTime-2 \
-	tstTime-3 \
-	tstTime-4 \
-	tstTimer \
-	tstThread-1 \
-	tstUtf8
-
-TMP_UNITTESTS_WHITELIST.linux += \
-	tstRTProcWait \
-	tstRTProcIsRunningByName
-
-TMP_UNITTESTS_WHITELIST.win += \
-	tstRTProcWait
+	tstFile
 
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
@@ -334,7 +337,7 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT)/$(INST_BIN)
+  TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
