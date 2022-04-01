@@ -450,7 +450,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdateInner(RTHTTP hHttp, Utf8Str const &strUr
             rc = m_updateVersion.assignEx(pchWord0, cchWord0);
             if (SUCCEEDED(rc))
             {
-                rc = m_updateVersion.assignEx(pchWord1, cchWord1);
+                rc = m_updateURL.assignEx(pchWord1, cchWord1);
                 if (SUCCEEDED(rc))
                     m_updateNeeded = TRUE;
             }

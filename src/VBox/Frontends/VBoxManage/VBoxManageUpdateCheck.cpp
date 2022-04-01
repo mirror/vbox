@@ -280,7 +280,8 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     UpdateCheckType_T updateCheckType = UpdateCheckType_VirtualBox;
     ComPtr<IProgress> ptrProgress;
 
-    RTPrintf(UpdateCheck::tr("Checking for a new VirtualBox version...\n"));
+    if (!fMachineReadable)
+        RTPrintf(UpdateCheck::tr("Checking for a new VirtualBox version...\n"));
 
     // we don't call CHECK_ERROR2I_RET(pHostUpdate, VBoxUpdate(updateCheckType, ...); here so we can check for a specific
     // return value indicating update checks are disabled.
@@ -303,7 +304,7 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
         return RTEXITCODE_FAILURE;
     }
 
-    /* HRESULT hrc = */ showProgress(ptrProgress);
+    /* HRESULT hrc = */ showProgress(ptrProgress, fMachineReadable ? SHOW_PROGRESS_NONE : SHOW_PROGRESS);
     CHECK_PROGRESS_ERROR_RET(ptrProgress, (UpdateCheck::tr("Check for update failed.")), RTEXITCODE_FAILURE);
 
     BOOL fUpdateNeeded = FALSE;
@@ -319,7 +320,7 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
         Bstr bstrUpdateURL;
         CHECK_ERROR2I_RET(pHostUpdate, COMGETTER(UpdateURL)(bstrUpdateURL.asOutParam()), RTEXITCODE_FAILURE);
 
-        if (fMachineReadable)
+        if (!fMachineReadable)
             RTPrintf(UpdateCheck::tr(
                         "A new version of VirtualBox has been released! Version %ls is available at virtualbox.org.\n"
                         "You can download this version here: %ls\n"),
