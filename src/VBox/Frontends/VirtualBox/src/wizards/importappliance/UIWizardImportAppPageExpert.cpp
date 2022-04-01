@@ -491,15 +491,10 @@ bool UIWizardImportAppPageExpert::validatePage()
 
 void UIWizardImportAppPageExpert::sltAsyncInit()
 {
-    /* If we have file name passed,
-     * check if specified file contains valid appliance: */
+    /* If we have file name passed for local OVA file: */
     if (   !m_fImportFromOCIByDefault
-        && !m_strFileName.isEmpty()
-        && !wizard()->setFile(m_strFileName))
-    {
-        wizard()->reject();
-        return;
-    }
+        && !m_strFileName.isEmpty())
+        m_pFileSelector->setPath(m_strFileName);
 
     /* Refresh page widgets: */
     sltHandleSourceComboChange();
