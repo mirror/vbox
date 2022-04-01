@@ -19,7 +19,6 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
-#include <QRegularExpressionValidator>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -261,13 +260,6 @@ void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 CGuestOSType UINameAndSystemEditor::type() const
 {
     return uiCommon().vmGuestOSType(typeId(), familyId());
-}
-
-void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
-{
-    if (!m_pEditorName)
-        return;
-    m_pEditorName->setValidator(new QRegularExpressionValidator(QRegularExpression(strValidator), this));
 }
 
 void UINameAndSystemEditor::markNameEditor(bool fError)

@@ -123,9 +123,6 @@ public:
     /** Returns the VM OS type. */
     CGuestOSType type() const;
 
-    /** Defines the name-field @a strValidator. */
-    void setNameFieldValidator(const QString &strValidator);
-
     /** Passes the @p fError to QILineEdit::mark(bool) effectively marking it for error. */
     void markNameEditor(bool fError);
     /** Passes the @p fError and @a strErrorMessage to UIFilePathSelector::mark(bool)

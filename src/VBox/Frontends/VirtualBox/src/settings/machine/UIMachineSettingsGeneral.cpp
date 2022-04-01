@@ -31,6 +31,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIFilePathSelector.h"
+#include "UIMachineDescriptionEditor.h"
 #include "UIMachineSettingsGeneral.h"
 #include "UIModalWindowManager.h"
 #include "UINameAndSystemEditor.h"
@@ -147,13 +148,11 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     , m_pLabelEncryptionPasswordConfirm(0)
     , m_pEditorEncryptionPasswordConfirm(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIMachineSettingsGeneral::~UIMachineSettingsGeneral()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -285,7 +284,7 @@ void UIMachineSettingsGeneral::getFromCache()
 
     /* Load old 'Description' data from cache: */
     AssertPtrReturnVoid(m_pEditorDescription);
-    m_pEditorDescription->setPlainText(oldGeneralData.m_strDescription);
+    m_pEditorDescription->setValue(oldGeneralData.m_strDescription);
 
     /* Load old 'Encryption' data from cache: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
@@ -322,8 +321,8 @@ void UIMachineSettingsGeneral::putToCache()
 
     /* Gather new 'Description' data: */
     AssertPtrReturnVoid(m_pEditorDescription);
-    newGeneralData.m_strDescription = m_pEditorDescription->toPlainText().isEmpty() ?
-                                      QString() : m_pEditorDescription->toPlainText();
+    newGeneralData.m_strDescription = m_pEditorDescription->value().isEmpty() ?
+                                      QString() : m_pEditorDescription->value();
 
     /* Gather new 'Encryption' data: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
@@ -493,8 +492,6 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pComboDragAndDrop->setToolTip(tr("Selects which data will be copied between the guest and the host OS by drag'n'drop. "
                                        "This feature requires Guest Additions to be installed in the guest OS."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAdvanced), tr("A&dvanced"));
-    m_pEditorDescription->setToolTip(tr("Holds the description of the virtual machine. The description field is useful for "
-                                        "commenting on configuration details of the installed guest OS."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
     m_pCheckBoxEncryption->setToolTip(tr("When checked, disks attached to this virtual machine will be encrypted."));
     m_pCheckBoxEncryption->setText(tr("En&able Disk Encryption"));
@@ -613,12 +610,8 @@ void UIMachineSettingsGeneral::prepareTabBasic()
             /* Prepare name and system editor: */
             m_pEditorNameAndSystem = new UINameAndSystemEditor(m_pTabBasic);
             if (m_pEditorNameAndSystem)
-            {
-                m_pEditorNameAndSystem->setNameFieldValidator(".+");
                 pLayoutBasic->addWidget(m_pEditorNameAndSystem);
-            }
 
-            /* Add vertical strech: */
             pLayoutBasic->addStretch();
         }
 
@@ -703,15 +696,10 @@ void UIMachineSettingsGeneral::prepareTabDescription()
         if (pLayoutDescription)
         {
             /* Prepare description editor: */
-            m_pEditorDescription = new QTextEdit(m_pTabDescription);
+            m_pEditorDescription = new UIMachineDescriptionEditor(m_pTabDescription);
             if (m_pEditorDescription)
             {
                 m_pEditorDescription->setObjectName(QStringLiteral("m_pEditorDescription"));
-                m_pEditorDescription->setAcceptRichText(false);
-#ifdef VBOX_WS_MAC
-                m_pEditorDescription->setMinimumHeight(150);
-#endif
-
                 pLayoutDescription->addWidget(m_pEditorDescription);
             }
         }
