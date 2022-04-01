@@ -334,15 +334,13 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  ifdef VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch)
-   TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT)/$(INST_BIN)
-   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
+  TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT)/$(INST_BIN)
+  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
-    	$$(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE))
-   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
+    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
+  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
-    	$$(TMP_UNITTESTS_PATH_BIN)/$(file_dep)$(TMP_SUFF_LIB))
- endif
+    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/$(file_dep)$(TMP_SUFF_LIB)))
 endef
 
 TMP_SUFF_EXE=.exe
