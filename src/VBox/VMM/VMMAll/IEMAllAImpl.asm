@@ -2073,7 +2073,7 @@ ENDPROC iemAImpl_alt_mem_fence
 ; Initialize the FPU for the actual instruction being emulated, this means
 ; loading parts of the guest's control word and status word.
 ;
-; @uses     24 bytes of stack.
+; @uses     24 bytes of stack. T0, T1
 ; @param    1       Expression giving the address of the FXSTATE of the guest.
 ;
 %macro FPU_LD_FXSTATE_FCW_AND_SAFE_FSW 1
@@ -2091,6 +2091,45 @@ ENDPROC iemAImpl_alt_mem_fence
         and     T0, X86_FSW_TOP_MASK
         or      T0, T1
         mov     [xSP + X86FSTENV32P.FSW], T0_16
+
+        fldenv  [xSP]
+%endmacro
+
+
+;;
+; Initialize the FPU for the actual instruction being emulated, this means
+; loading parts of the guest's control word, status word, and update the
+; tag word for the top register if it's empty.
+;
+; ASSUMES actual TOP=7
+;
+; @uses     24 bytes of stack.  T0, T1
+; @param    1       Expression giving the address of the FXSTATE of the guest.
+;
+%macro FPU_LD_FXSTATE_FCW_AND_SAFE_FSW_AND_FTW_0 1
+        fnstenv [xSP]
+
+        ; FCW - for exception, precision and rounding control.
+        movzx   T0_32, word [%1 + X86FXSTATE.FCW]
+        and     T0_32, X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK
+        mov     [xSP + X86FSTENV32P.FCW], T0_16
+
+        ; FSW - for undefined C0, C1, C2, and C3.
+        movzx   T1_32, word [%1 + X86FXSTATE.FSW]
+        and     T1_32, X86_FSW_C_MASK
+        movzx   T0_32, word [xSP + X86FSTENV32P.FSW]
+        and     T0_32, X86_FSW_TOP_MASK
+        or      T0_32, T1_32
+        mov     [xSP + X86FSTENV32P.FSW], T0_16
+
+        ; FTW - Only for ST0 (in/out).
+        movzx   T1_32, word [%1 + X86FXSTATE.FSW]
+        shr     T1_32, X86_FSW_TOP_SHIFT
+        and     T1_32, X86_FSW_TOP_SMASK
+        bt      [%1 + X86FXSTATE.FTW], T1_16     ; Empty if FTW bit is clear.  Fixed register order.
+        jc      %%st0_not_empty
+        or      word [xSP + X86FSTENV32P.FTW], 0c000h ; TOP=7, so set TAG(7)=3
+%%st0_not_empty:
 
         fldenv  [xSP]
 %endmacro
@@ -3046,19 +3085,24 @@ IEMIMPL_FPU_R80 fcos
 ; returning FSW.
 ;
 ; @param    1       The instruction
+; @param    2       Non-zero to also restore FTW.
 ;
 ; @param    A0      FPU context (fxsave).
 ; @param    A1      Pointer to a uint16_t for the resulting FSW.
 ; @param    A2      Pointer to the 80-bit value.
 ;
-%macro IEMIMPL_FPU_R80_FSW 1
+%macro IEMIMPL_FPU_R80_FSW 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
         fninit
         fld     tword [A2]
+%if %2 != 0
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW_AND_FTW_0 A0
+%else
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+%endif
         %1
 
         fnstsw  word  [A1]
@@ -3069,8 +3113,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80, 12
 ENDPROC iemAImpl_ %+ %1 %+ _r80
 %endmacro
 
-IEMIMPL_FPU_R80_FSW ftst
-IEMIMPL_FPU_R80_FSW fxam
+IEMIMPL_FPU_R80_FSW ftst, 0
+IEMIMPL_FPU_R80_FSW fxam, 1 ; No #IS or any other FP exceptions.
 
 
 

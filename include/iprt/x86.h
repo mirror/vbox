@@ -3273,6 +3273,8 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_FSW_TOP_SMASK   UINT16_C(0x0007)
 /** Get the TOP value. */
 #define X86_FSW_TOP_GET(a_uFsw) (((a_uFsw) >> X86_FSW_TOP_SHIFT) & X86_FSW_TOP_SMASK)
+/** Get the TOP value offsetted by a_iSt (0-7). */
+#define X86_FSW_TOP_GET_ST(a_uFsw, a_iSt) ((((a_uFsw) >> X86_FSW_TOP_SHIFT) + (a_iSt)) & X86_FSW_TOP_SMASK)
 /** Condition code 3. */
 #define X86_FSW_C3          RT_BIT_32(14)
 /** Mask of exceptions flags, including the summary bit. */

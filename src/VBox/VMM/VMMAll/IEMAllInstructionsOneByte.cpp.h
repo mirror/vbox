@@ -7786,13 +7786,10 @@ FNIEMOP_DEF(iemOp_fabs)
 }
 
 
-/**
- * Common worker for FPU instructions working on ST0 and only returns FSW.
- *
- * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
- */
-FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0, PFNIEMAIMPLFPUR80UNARYFSW, pfnAImpl)
+/** Opcode 0xd9 0xe4. */
+FNIEMOP_DEF(iemOp_ftst)
 {
+    IEMOP_MNEMONIC(ftst_st0, "ftst st0");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_BEGIN(2, 1);
@@ -7804,7 +7801,7 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0, PFNIEMAIMPLFPUR80UNARYFSW, pfnAImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
-        IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pu16Fsw, pr80Value);
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_ftst_r80, pu16Fsw, pr80Value);
         IEM_MC_UPDATE_FSW(u16Fsw);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
@@ -7816,19 +7813,27 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0, PFNIEMAIMPLFPUR80UNARYFSW, pfnAImpl)
 }
 
 
-/** Opcode 0xd9 0xe4. */
-FNIEMOP_DEF(iemOp_ftst)
-{
-    IEMOP_MNEMONIC(ftst_st0, "ftst st0");
-    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0, iemAImpl_ftst_r80);
-}
-
-
 /** Opcode 0xd9 0xe5. */
 FNIEMOP_DEF(iemOp_fxam)
 {
     IEMOP_MNEMONIC(fxam_st0, "fxam st0");
-    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0, iemAImpl_fxam_r80);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 1);
+    IEM_MC_LOCAL(uint16_t,              u16Fsw);
+    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          1);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
+    IEM_MC_REF_FPUREG(pr80Value, 0);
+    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fxam_r80, pu16Fsw, pr80Value);
+    IEM_MC_UPDATE_FSW(u16Fsw);
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
