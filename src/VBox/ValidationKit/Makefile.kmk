@@ -309,7 +309,6 @@ TMP_UNITTESTS_WHITELIST := \
 	tstRTPipe \
 	tstRTProcCreateEx \
 	tstRTProcCreatePrf \
-	tstRTProcIsRunningByName \
 	tstRTProcQueryUsername \
 	tstRTProcWait \
 	tstTime-2 \
@@ -318,6 +317,9 @@ TMP_UNITTESTS_WHITELIST := \
 	tstTimer \
 	tstThread-1 \
 	tstUtf8
+
+TMP_UNITTESTS_WHITELIST.linux += \
+	tstRTProcIsRunningByName
 
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
@@ -330,7 +332,7 @@ TMP_UNITTESTS_DEPS_LIB := \
 
 define def_vbox_validationkit_unittests
   ifdef VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch)
-   TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
+   TMP_UNITTESTS_PATH_BIN                 = $(VBOX_PATH_VALIDATIONKIT)/../bin
    VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE))
