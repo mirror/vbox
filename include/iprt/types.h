@@ -1187,8 +1187,12 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
     (   (a_pr80)->s.uExponent == 0x7fff \
      && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) | RT_BIT_64(62))) == (RT_BIT_64(63) | RT_BIT_64(62)) \
      && ((a_pr80)->s.uMantissa & (RT_BIT_64(62) - 1)) != 0)
+/** Signalling-, Quiet- or Pseudo-NaN. */
 # define RTFLOAT80U_IS_NAN(a_pr80) \
     ((a_pr80)->s.uExponent == 0x7fff && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) - 1)) != 0)
+/** Signalling- or Quiet-Nan, but not Pseudo-NaN. */
+# define RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && ((a_pr80)->s.uMantissa > RT_BIT_64(63)))
 # define RTFLOAT80U_IS_INDEFINITE(a_pr80) \
     ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == (RT_BIT_64(63) | RT_BIT_64(62)))
 # define RTFLOAT80U_IS_UNNORMAL(a_pr80) \
