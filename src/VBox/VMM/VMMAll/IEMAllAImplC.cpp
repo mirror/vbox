@@ -4557,15 +4557,54 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPU
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_ftst_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val);
-    AssertReleaseFailed();
+    uint16_t fFsw = (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_ZERO(pr80Val))
+        fFsw |= X86_FSW_C3;
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val) || RTFLOAT80U_IS_INF(pr80Val))
+        fFsw |= pr80Val->s.fSign ? X86_FSW_C0 : 0;
+    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    {
+        fFsw |= pr80Val->s.fSign ? X86_FSW_C0 | X86_FSW_DE : X86_FSW_DE;
+        if (!(pFpuState->FCW & X86_FCW_DM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+    else
+    {
+        fFsw |= X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3 | X86_FSW_IE;
+        if (!(pFpuState->FCW & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    *pu16Fsw = fFsw;
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fxam_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val);
-    AssertReleaseFailed();
+    RT_NOREF(pFpuState);
+    uint16_t fFsw = (7 << X86_FSW_TOP_SHIFT);
+
+    /* C1 = sign bit (always, even if empty Intel says). */
+    if (pr80Val->s.fSign)
+        fFsw |= X86_FSW_C1;
+
+    /* Classify the value in C0, C2, C3. */
+    if (!(pFpuState->FTW & RT_BIT_32(X86_FSW_TOP_GET(pFpuState->FSW))))
+        fFsw |= X86_FSW_C0 | X86_FSW_C3; /* empty */
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val))
+        fFsw |= X86_FSW_C2;
+    else if (RTFLOAT80U_IS_ZERO(pr80Val))
+        fFsw |= X86_FSW_C3;
+    else if (RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN(pr80Val))
+        fFsw |= X86_FSW_C0;
+    else if (RTFLOAT80U_IS_INF(pr80Val))
+        fFsw |= X86_FSW_C0 | X86_FSW_C2;
+    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+        fFsw |= X86_FSW_C2 | X86_FSW_C3;
+    /* whatever else: 0 */
+
+    *pu16Fsw = fFsw;
 }
 
 
@@ -4684,15 +4723,17 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80_intel,(PCX86FXSTATE pFpuState, PIEMFP
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fabs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    pFpuRes->FSW = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+    pFpuRes->r80Result         = *pr80Val;
+    pFpuRes->r80Result.s.fSign = 0;
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fchs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    pFpuRes->FSW = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+    pFpuRes->r80Result         = *pr80Val;
+    pFpuRes->r80Result.s.fSign = !pr80Val->s.fSign;
 }
 
 
