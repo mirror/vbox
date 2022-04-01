@@ -330,6 +330,7 @@ TMP_UNITTESTS_WHITELIST := \
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
 # Needs careful checking for each and every testcase being run.
+# Try to get and include what we have by using wildcards.
 #
 ## @todo Also include R0 and hardening stuff?
 #
@@ -337,7 +338,11 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
+  ifeq ($(os),darwin)
+   TMP_UNITTESTS_PATH_BIN = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/dist/VirtualBox.app/Contents/MacOS/
+  else
+   TMP_UNITTESTS_PATH_BIN = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin/
+  endif
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
