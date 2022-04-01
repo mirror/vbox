@@ -64,6 +64,8 @@ namespace UISettingsDefs
                                                                            KMachineState enmMachineState);
 }
 
+Q_DECLARE_METATYPE(UISettingsDefs::RecordingMode);
+
 
 /** Template organizing settings object cache: */
 template <class CacheData> class UISettingsCache

@@ -28,19 +28,13 @@
 #include "CGuestOSType.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class QComboBox;
-class QLabel;
-class QSpinBox;
-class QIAdvancedSlider;
 class QITabWidget;
-class UIFilePathSelector;
-class UIFilmContainer;
 class UIGraphicsControllerEditor;
 #ifdef VBOX_WITH_3D_ACCELERATION
 class UIMachineDisplayScreenFeaturesEditor;
 #endif
 class UIMonitorCountEditor;
+class UIRecordingSettingsEditor;
 class UIScaleFactorEditor;
 class UIVideoMemoryEditor;
 class UIVRDESettingsEditor;
@@ -114,24 +108,6 @@ private slots:
     void sltHandle3DAccelerationFeatureStateChange();
 #endif
 
-    /** Handles recording toggle. */
-    void sltHandleRecordingCheckboxToggle();
-    /** Handles recording frame size change. */
-    void sltHandleRecordingVideoFrameSizeComboboxChange();
-    /** Handles recording frame width change. */
-    void sltHandleRecordingVideoFrameWidthEditorChange();
-    /** Handles recording frame height change. */
-    void sltHandleRecordingVideoFrameHeightEditorChange();
-    /** Handles recording frame rate slider change. */
-    void sltHandleRecordingVideoFrameRateSliderChange();
-    /** Handles recording frame rate editor change. */
-    void sltHandleRecordingVideoFrameRateEditorChange();
-    /** Handles recording quality slider change. */
-    void sltHandleRecordingVideoQualitySliderChange();
-    /** Handles recording bit-rate editor change. */
-    void sltHandleRecordingVideoBitRateEditorChange();
-    void sltHandleRecordingComboBoxChange();
-
 private:
 
     /** Prepares all. */
@@ -152,18 +128,8 @@ private:
     /** Returns whether the VRAM requirements are important. */
     bool shouldWeWarnAboutLowVRAM();
 
-    /** Searches for corresponding frame size preset. */
-    void lookForCorrespondingFrameSizePreset();
     /** Updates guest-screen count. */
     void updateGuestScreenCount();
-    /** Updates recording file size hint. */
-    void updateRecordingFileSizeHint();
-    /** Searches for the @a data field in corresponding @a pComboBox. */
-    static void lookForCorrespondingPreset(QComboBox *pComboBox, const QVariant &data);
-    /** Calculates recording video bit-rate for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iQuality. */
-    static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
-    /** Calculates recording video quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
-    static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
     /** Saves existing data from cache. */
     bool saveData();
     /** Saves existing 'Screen' data from cache. */
@@ -172,8 +138,6 @@ private:
     bool saveRemoteDisplayData();
     /** Saves existing 'Recording' data from cache. */
     bool saveRecordingData();
-    /** Decide which of the recording related widgets are to be disabled/enabled. */
-    void enableDisableRecordingWidgets();
 
     /** Holds the guest OS type ID. */
     CGuestOSType  m_comGuestOSType;
@@ -213,71 +177,9 @@ private:
         UIVRDESettingsEditor *m_pEditorVRDESettings;
 
         /** Holds the 'Recording' tab instance. */
-        QWidget            *m_pTabRecording;
-        /** Holds the recording check-box instance. */
-        QCheckBox          *m_pCheckboxRecording;
-        /** Holds the recording settings widget instance. */
-        QWidget            *m_pWidgetRecordingSettings;
-        /** Holds the recording mode label instance. */
-        QLabel             *m_pLabelRecordingMode;
-        /** Holds the recording mode combo instance. */
-        QComboBox          *m_pComboRecordingMode;
-        /** Holds the recording file path label instance. */
-        QLabel             *m_pLabelRecordingFilePath;
-        /** Holds the recording file path editor instance. */
-        UIFilePathSelector *m_pEditorRecordingFilePath;
-        /** Holds the recording frame size label instance. */
-        QLabel             *m_pLabelRecordingFrameSize;
-        /** Holds the recording frame size combo instance. */
-        QComboBox          *m_pComboRecordingFrameSize;
-        /** Holds the recording frame width spinbox instance. */
-        QSpinBox           *m_pSpinboxRecordingFrameWidth;
-        /** Holds the recording frame height spinbox instance. */
-        QSpinBox           *m_pSpinboxRecordingFrameHeight;
-        /** Holds the recording frame rate label instance. */
-        QLabel             *m_pLabelRecordingFrameRate;
-        /** Holds the recording frame rate settings widget instance. */
-        QWidget            *m_pWidgetRecordingFrameRateSettings;
-        /** Holds the recording frame rate slider instance. */
-        QIAdvancedSlider   *m_pSliderRecordingFrameRate;
-        /** Holds the recording frame rate spinbox instance. */
-        QSpinBox           *m_pSpinboxRecordingFrameRate;
-        /** Holds the recording frame rate min label instance. */
-        QLabel             *m_pLabelRecordingFrameRateMin;
-        /** Holds the recording frame rate max label instance. */
-        QLabel             *m_pLabelRecordingFrameRateMax;
-        /** Holds the recording video quality label instance. */
-        QLabel             *m_pLabelRecordingVideoQuality;
-        /** Holds the recording video quality settings widget instance. */
-        QWidget            *m_pWidgetRecordingVideoQualitySettings;
-        /** Holds the recording video quality slider instance. */
-        QIAdvancedSlider   *m_pSliderRecordingVideoQuality;
-        /** Holds the recording video quality spinbox instance. */
-        QSpinBox           *m_pSpinboxRecordingVideoQuality;
-        /** Holds the recording video quality min label instance. */
-        QLabel             *m_pLabelRecordingVideoQualityMin;
-        /** Holds the recording video quality med label instance. */
-        QLabel             *m_pLabelRecordingVideoQualityMed;
-        /** Holds the recording video quality max label instance. */
-        QLabel             *m_pLabelRecordingVideoQualityMax;
-        /** Holds the recording audio quality label instance. */
-        QLabel             *m_pLabelRecordingAudioQuality;
-        /** Holds the recording audio quality settings widget instance. */
-        QWidget            *m_pWidgetRecordingAudioQualitySettings;
-        /** Holds the recording audio quality slider instance. */
-        QIAdvancedSlider   *m_pSliderRecordingAudioQuality;
-        /** Holds the recording audio quality min label instance. */
-        QLabel             *m_pLabelRecordingAudioQualityMin;
-        /** Holds the recording audio quality med label instance. */
-        QLabel             *m_pLabelRecordingAudioQualityMed;
-        /** Holds the recording audio quality max label instance. */
-        QLabel             *m_pLabelRecordingAudioQualityMax;
-        /** Holds the recording size hint label instance. */
-        QLabel             *m_pLabelRecordingSizeHint;
-        /** Holds the recording screens label instance. */
-        QLabel             *m_pLabelRecordingScreens;
-        /** Holds the recording screens scroller instance. */
-        UIFilmContainer    *m_pScrollerRecordingScreens;
+        QWidget                   *m_pTabRecording;
+        /** Holds the Recording settings editor instance. */
+        UIRecordingSettingsEditor *m_pEditorRecordingSettings;
    /** @} */
 };
 

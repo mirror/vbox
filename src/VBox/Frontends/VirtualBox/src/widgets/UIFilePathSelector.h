@@ -110,6 +110,8 @@ public:
 
     /** Returns the path. */
     QString path() const { return m_strPath; }
+    /** Returns the path which we pass to QFileDialog as initial path. */
+    QString initialPath() const { return m_strInitialPath; }
 
     /** Returns true if the selected path points to an existing/readable file. */
     bool isValid() const;
