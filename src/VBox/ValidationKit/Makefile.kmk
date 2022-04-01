@@ -335,7 +335,7 @@ TMP_UNITTESTS_DEPS_LIB := \
 
 define def_vbox_validationkit_unittests
   ifdef VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch)
-   TMP_UNITTESTS_PATH_BIN                 = $(VBOX_PATH_VALIDATIONKIT)/../bin
+   TMP_UNITTESTS_PATH_BIN                 = $(PATH_OUT)/$(INST_BIN)
    VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE))
