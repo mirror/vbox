@@ -501,6 +501,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
  	SUP_HARDENED_WITH_DLMOPEN
  SUPR3HardenedStatic_DEFS.solaris += \
  	SUP_HARDENED_WITH_DLMOPEN
+ SUPR3HardenedStatic_DEFS.asan    += SUP_HARDENED_WITHOUT_DLOPEN_PATCHING
 
  SUPR3HardenedStatic_INCS += $(VBOX_PATH_RUNTIME_SRC)/include
 

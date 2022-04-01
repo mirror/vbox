@@ -60,6 +60,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+#ifndef SUP_HARDENED_WITHOUT_DLOPEN_PATCHING
 /**
  * Callback (SUPHARDENEDPOSIXHOOK::pfnResolv) for triggering lazy GOT resolver.
  *
@@ -106,10 +107,13 @@ typedef void *FNDLMOPEN(Lmid_t idLm, const char *pszFilename, int fFlags);
 typedef FNDLMOPEN *PFNDLMOPEN;
 #endif
 
+#endif /* SUP_HARDENED_WITHOUT_DLOPEN_PATCHING */
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#ifndef SUP_HARDENED_WITHOUT_DLOPEN_PATCHING
 static FNSUPHARDENEDSYMRESOLVE supR3HardenedPosixMonitorDlopenResolve;
 #ifdef SUP_HARDENED_WITH_DLMOPEN
 static FNSUPHARDENEDSYMRESOLVE supR3HardenedPosixMonitorDlmopenResolve;
@@ -120,11 +124,14 @@ DECLASM(void) supR3HardenedPosixMonitor_Dlopen(const char *pszFilename, int fFla
 #ifdef SUP_HARDENED_WITH_DLMOPEN
 DECLASM(void) supR3HardenedPosixMonitor_Dlmopen(Lmid_t idLm, const char *pszFilename, int fFlags);
 #endif
+#endif /* SUP_HARDENED_WITHOUT_DLOPEN_PATCHING */
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#ifndef SUP_HARDENED_WITHOUT_DLOPEN_PATCHING
+
 RT_C_DECLS_BEGIN
 /** Resume patch for dlopen(), jumped to form assembly stub. */
 DECL_HIDDEN_DATA(PFNDLOPEN)     g_pfnDlopenReal  = NULL;
@@ -619,6 +626,8 @@ static DECLCALLBACK(void) supR3HardenedPosixMonitorDlmopenResolve(void)
 }
 #endif
 
+#endif /* SUP_HARDENED_WITHOUT_DLOPEN_PATCHING */
+
 
 /**
  * Hardening initialization for POSIX compatible hosts.
@@ -629,6 +638,7 @@ static DECLCALLBACK(void) supR3HardenedPosixMonitorDlmopenResolve(void)
  */
 DECLHIDDEN(void) supR3HardenedPosixInit(void)
 {
+#ifndef SUP_HARDENED_WITHOUT_DLOPEN_PATCHING
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHooks); i++)
     {
         PCSUPHARDENEDPOSIXHOOK pHook = &g_aHooks[i];
@@ -637,6 +647,7 @@ DECLHIDDEN(void) supR3HardenedPosixInit(void)
             supR3HardenedFatalMsg("supR3HardenedPosixInit", kSupInitOp_Integrity, rc,
                                   "Failed to hook the %s interface", pHook->pszSymbol);
     }
+#endif
 }
 
 
