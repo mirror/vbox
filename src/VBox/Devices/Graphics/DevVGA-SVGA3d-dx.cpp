@@ -39,7 +39,17 @@
 #include "DevVGA-SVGA-internal.h"
 
 
-static int dxReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, SVGACOTableDXQueryEntry *pEntry);
+/*
+ * Helpers.
+ */
+
+static int dxMobWrite(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid, uint32_t off, void const *pvData, uint32_t cbData)
+{
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, mobid);
+    ASSERT_GUEST_RETURN(pMob, VERR_INVALID_STATE);
+
+    return vmsvgaR3MobWrite(pSvgaR3State, pMob, off, pvData, cbData);
+}
 
 
 /*
@@ -1023,7 +1033,7 @@ int vmsvga3dDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBi
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXBindQuery, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -1040,7 +1050,6 @@ int vmsvga3dDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBi
     SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
     pEntry->mobid = vmsvgaR3MobId(pMob);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXBindQuery(pThisCC, pDXContext, queryId);
     return rc;
 }
 
@@ -1094,8 +1103,55 @@ int vmsvga3dDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXB
     {
         rc = pSvgaR3State->pFuncsDX->pfnDXBeginQuery(pThisCC, pDXContext, queryId);
         if (RT_SUCCESS(rc))
+        {
             pEntry->state = SVGADX_QDSTATE_ACTIVE;
+
+            /* Update the guest status of the query. */
+            uint32_t const u32 = SVGA3D_QUERYSTATE_PENDING;
+            dxMobWrite(pSvgaR3State, pEntry->mobid, pEntry->offset, &u32, sizeof(u32));
+        }
+        else
+        {
+            uint32_t const u32 = SVGA3D_QUERYSTATE_FAILED;
+            dxMobWrite(pSvgaR3State, pEntry->mobid, pEntry->offset, &u32, sizeof(u32));
+        }
     }
+    return rc;
+}
+
+
+static int dxEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, SVGACOTableDXQueryEntry *pEntry)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    int rc;
+    Assert(pEntry->state == SVGADX_QDSTATE_ACTIVE);
+    if (pEntry->state == SVGADX_QDSTATE_ACTIVE)
+    {
+        pEntry->state = SVGADX_QDSTATE_PENDING;
+
+        uint32_t u32QueryState;
+        SVGADXQueryResultUnion queryResult;
+        uint32_t cbQuery = 0; /* Actual size of query data returned by backend. */
+        rc = pSvgaR3State->pFuncsDX->pfnDXEndQuery(pThisCC, pDXContext, queryId, &queryResult, &cbQuery);
+        if (RT_SUCCESS(rc))
+        {
+            /* Write the result after SVGA3dQueryState. */
+            dxMobWrite(pSvgaR3State, pEntry->mobid, pEntry->offset + sizeof(uint32_t), &queryResult, cbQuery);
+
+            u32QueryState = SVGA3D_QUERYSTATE_SUCCEEDED;
+        }
+        else
+            u32QueryState = SVGA3D_QUERYSTATE_FAILED;
+
+        dxMobWrite(pSvgaR3State, pEntry->mobid, pEntry->offset, &u32QueryState, sizeof(u32QueryState));
+
+        if (RT_SUCCESS(rc))
+            pEntry->state = SVGADX_QDSTATE_FINISHED;
+    }
+    else
+        rc = VERR_INVALID_STATE;
+
     return rc;
 }
 
@@ -1119,14 +1175,7 @@ int vmsvga3dDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEnd
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
-    Assert(pEntry->state == SVGADX_QDSTATE_ACTIVE);
-    if (pEntry->state == SVGADX_QDSTATE_ACTIVE)
-    {
-        rc = pSvgaR3State->pFuncsDX->pfnDXEndQuery(pThisCC, pDXContext, queryId);
-        if (RT_SUCCESS(rc))
-            pEntry->state = SVGADX_QDSTATE_PENDING;
-    }
-
+    rc = dxEndQuery(pThisCC, pDXContext, queryId, pEntry);
     return rc;
 }
 
@@ -1135,7 +1184,7 @@ int vmsvga3dDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXReadbackQuery, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -1149,10 +1198,8 @@ int vmsvga3dDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
     ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
-    Assert(pEntry->state == SVGADX_QDSTATE_PENDING);
+    /* The device does not cache queries. So this is a NOP. */
 
-    rc = dxReadbackQuery(pThisCC, pDXContext, queryId, pEntry);
     return rc;
 }
 
@@ -2355,7 +2402,7 @@ int vmsvga3dDXBindAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXBindQuery, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -2369,41 +2416,9 @@ int vmsvga3dDXBindAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     {
         SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[i];
         if (pEntry->type != SVGA3D_QUERYTYPE_INVALID)
-        {
             pEntry->mobid = pCmd->mobid;
-            pSvgaR3State->pFuncsDX->pfnDXBindQuery(pThisCC, pDXContext, i);
-        }
     }
 
-    return rc;
-}
-
-
-static int dxReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, SVGACOTableDXQueryEntry *pEntry)
-{
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-
-    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pEntry->mobid);
-    ASSERT_GUEST_RETURN(pMob, VERR_INVALID_STATE); /* No MOB bound. */
-
-    uint32_t const cbMob = vmsvgaR3MobSize(pMob);
-    ASSERT_GUEST_RETURN(cbMob > pEntry->offset, VERR_INVALID_PARAMETER);
-    uint32_t const cbAvail = cbMob - pEntry->offset;
-
-    /* Create a memory pointer, which is accessible by host. */
-    int rc = vmsvgaR3MobBackingStoreCreate(pSvgaR3State, pMob, cbMob);
-    AssertRCReturn(rc, rc);
-
-    void *pvQuery = vmsvgaR3MobBackingStorePtr(pMob, pEntry->offset);
-    /** @todo Write the query data only. */
-    uint32_t cbQuery = 0; /* Actual size of query data returned by backend. */
-    rc = pSvgaR3State->pFuncsDX->pfnDXReadbackQuery(pThisCC, pDXContext, queryId, pvQuery, cbAvail, &cbQuery);
-    if (RT_SUCCESS(rc))
-        rc = vmsvgaR3MobBackingStoreWriteToGuest(pSvgaR3State, pMob);
-
-    vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob);
-
-    pEntry->state = SVGADX_QDSTATE_FINISHED;
     return rc;
 }
 
@@ -2412,7 +2427,7 @@ int vmsvga3dDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXReadbackQuery, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -2422,14 +2437,10 @@ int vmsvga3dDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
     rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    for (uint32_t i = 0; i < pDXContext->cot.cQuery; ++i)
-    {
-        SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[i];
-        if (pEntry->state == SVGADX_QDSTATE_PENDING)
-        {
-            dxReadbackQuery(pThisCC, pDXContext, i, pEntry);
-        }
-    }
+    /* "Read back cached states from the device if they exist."
+     * The device does not cache queries. So this is a NOP.
+     */
+    RT_NOREF(pDXContext);
 
     return rc;
 }

@@ -53,6 +53,6 @@ int DXShaderParse(void const *pvCode, uint32_t cbCode, DXShaderInfo *pInfo);
 void DXShaderFree(DXShaderInfo *pInfo);
 int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType);
 int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbDXBC);
-char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister);
+char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister, SVGA3dDXSignatureSemanticName *pSemanticName);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_dx_shader_h */

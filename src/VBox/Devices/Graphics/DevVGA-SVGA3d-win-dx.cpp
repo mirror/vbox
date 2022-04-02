@@ -1704,8 +1704,12 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
                 {
                     D3D11_SO_DECLARATION_ENTRY *p = &pDXStreamOutput->aDeclarationEntry[i];
                     SVGA3dStreamOutputDeclarationEntry const *decl = &pEntry->decl[i];
-                    p->SemanticName = DXShaderGetOutputSemanticName(&pDXShader->shaderInfo, decl->registerIndex);
-                    p->SemanticIndex = decl->registerIndex;
+                    SVGA3dDXSignatureSemanticName enmSemanticName;
+                    p->SemanticName = DXShaderGetOutputSemanticName(&pDXShader->shaderInfo, decl->registerIndex, &enmSemanticName);
+                    if (enmSemanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED)
+                        p->SemanticIndex = decl->registerIndex;
+                    else
+                        p->SemanticIndex = 0;
                 }
 
                 hr = pDevice->pDevice->CreateGeometryShaderWithStreamOutput(pDXShader->pvDXBC, pDXShader->cbDXBC,
@@ -6042,30 +6046,55 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetRasterizerState(PVGASTATECC pThisCC, P
     return VINF_SUCCESS;
 }
 
-static D3D11_QUERY dxQueryType(SVGA3dQueryType type)
+
+typedef struct VGPU10QUERYINFO
 {
-    switch (type)
+    SVGA3dQueryType svgaQueryType;
+    uint32_t        cbDataVMSVGA;
+    D3D11_QUERY     dxQueryType;
+    uint32_t        cbDataD3D11;
+} VGPU10QUERYINFO;
+
+static VGPU10QUERYINFO const *dxQueryInfo(SVGA3dQueryType type)
+{
+    static VGPU10QUERYINFO const aQueryInfo[SVGA3D_QUERYTYPE_MAX] =
     {
-        case SVGA3D_QUERYTYPE_OCCLUSION:               return D3D11_QUERY_OCCLUSION;
-        case SVGA3D_QUERYTYPE_TIMESTAMP:               return D3D11_QUERY_TIMESTAMP;
-        case SVGA3D_QUERYTYPE_TIMESTAMPDISJOINT:       return D3D11_QUERY_TIMESTAMP_DISJOINT;
-        case SVGA3D_QUERYTYPE_PIPELINESTATS:           return D3D11_QUERY_PIPELINE_STATISTICS;
-        case SVGA3D_QUERYTYPE_OCCLUSIONPREDICATE:      return D3D11_QUERY_OCCLUSION_PREDICATE;
-        case SVGA3D_QUERYTYPE_STREAMOUTPUTSTATS:       return D3D11_QUERY_SO_STATISTICS;
-        case SVGA3D_QUERYTYPE_STREAMOVERFLOWPREDICATE: return D3D11_QUERY_SO_OVERFLOW_PREDICATE;
-        case SVGA3D_QUERYTYPE_OCCLUSION64:             return D3D11_QUERY_OCCLUSION;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM0:         return D3D11_QUERY_SO_STATISTICS_STREAM0;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM1:         return D3D11_QUERY_SO_STATISTICS_STREAM1;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM2:         return D3D11_QUERY_SO_STATISTICS_STREAM2;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM3:         return D3D11_QUERY_SO_STATISTICS_STREAM3;
-        case SVGA3D_QUERYTYPE_SOP_STREAM0:             return D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0;
-        case SVGA3D_QUERYTYPE_SOP_STREAM1:             return D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM1;
-        case SVGA3D_QUERYTYPE_SOP_STREAM2:             return D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2;
-        case SVGA3D_QUERYTYPE_SOP_STREAM3:             return D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3;
-        default:
-            break;
-    }
-    return D3D11_QUERY_EVENT;
+        { SVGA3D_QUERYTYPE_OCCLUSION,                sizeof(SVGADXOcclusionQueryResult),
+          D3D11_QUERY_OCCLUSION,                     sizeof(UINT64) },
+        { SVGA3D_QUERYTYPE_TIMESTAMP,                sizeof(SVGADXTimestampQueryResult),
+          D3D11_QUERY_TIMESTAMP,                     sizeof(UINT64) },
+        { SVGA3D_QUERYTYPE_TIMESTAMPDISJOINT,        sizeof(SVGADXTimestampDisjointQueryResult),
+          D3D11_QUERY_TIMESTAMP_DISJOINT,            sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT) },
+        { SVGA3D_QUERYTYPE_PIPELINESTATS,            sizeof(SVGADXPipelineStatisticsQueryResult),
+          D3D11_QUERY_PIPELINE_STATISTICS,           sizeof(D3D11_QUERY_DATA_PIPELINE_STATISTICS) },
+        { SVGA3D_QUERYTYPE_OCCLUSIONPREDICATE,       sizeof(SVGADXOcclusionPredicateQueryResult),
+          D3D11_QUERY_OCCLUSION_PREDICATE,           sizeof(BOOL) },
+        { SVGA3D_QUERYTYPE_STREAMOUTPUTSTATS,        sizeof(SVGADXStreamOutStatisticsQueryResult),
+          D3D11_QUERY_SO_STATISTICS,                 sizeof(D3D11_QUERY_DATA_SO_STATISTICS) },
+        { SVGA3D_QUERYTYPE_STREAMOVERFLOWPREDICATE,  sizeof(SVGADXStreamOutPredicateQueryResult),
+          D3D11_QUERY_SO_OVERFLOW_PREDICATE,         sizeof(BOOL) },
+        { SVGA3D_QUERYTYPE_OCCLUSION64,              sizeof(SVGADXOcclusion64QueryResult),
+          D3D11_QUERY_OCCLUSION,                     sizeof(UINT64) },
+        { SVGA3D_QUERYTYPE_SOSTATS_STREAM0,          sizeof(SVGADXStreamOutStatisticsQueryResult),
+          D3D11_QUERY_SO_STATISTICS_STREAM0,         sizeof(D3D11_QUERY_DATA_SO_STATISTICS) },
+        { SVGA3D_QUERYTYPE_SOSTATS_STREAM1,          sizeof(SVGADXStreamOutStatisticsQueryResult),
+          D3D11_QUERY_SO_STATISTICS_STREAM1,         sizeof(D3D11_QUERY_DATA_SO_STATISTICS) },
+        { SVGA3D_QUERYTYPE_SOSTATS_STREAM2,          sizeof(SVGADXStreamOutStatisticsQueryResult),
+          D3D11_QUERY_SO_STATISTICS_STREAM2,         sizeof(D3D11_QUERY_DATA_SO_STATISTICS) },
+        { SVGA3D_QUERYTYPE_SOSTATS_STREAM3,          sizeof(SVGADXStreamOutStatisticsQueryResult),
+          D3D11_QUERY_SO_STATISTICS_STREAM3,         sizeof(D3D11_QUERY_DATA_SO_STATISTICS) },
+        { SVGA3D_QUERYTYPE_SOP_STREAM0,              sizeof(SVGADXStreamOutPredicateQueryResult),
+          D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0, sizeof(BOOL) },
+        { SVGA3D_QUERYTYPE_SOP_STREAM1,              sizeof(SVGADXStreamOutPredicateQueryResult),
+          D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM1, sizeof(BOOL) },
+        { SVGA3D_QUERYTYPE_SOP_STREAM2,              sizeof(SVGADXStreamOutPredicateQueryResult),
+          D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2, sizeof(BOOL) },
+        { SVGA3D_QUERYTYPE_SOP_STREAM3,              sizeof(SVGADXStreamOutPredicateQueryResult),
+          D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3, sizeof(BOOL) },
+    };
+
+    ASSERT_GUEST_RETURN(type < RT_ELEMENTS(aQueryInfo), NULL);
+    return &aQueryInfo[type];
 }
 
 static int dxDefineQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, SVGACOTableDXQueryEntry const *pEntry)
@@ -6074,9 +6103,12 @@ static int dxDefineQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVG
     AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
     DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
+    VGPU10QUERYINFO const *pQueryInfo = dxQueryInfo((SVGA3dQueryType)pEntry->type);
+    if (!pQueryInfo)
+        return VERR_INVALID_PARAMETER;
 
     D3D11_QUERY_DESC desc;
-    desc.Query     = dxQueryType((SVGA3dQueryType)pEntry->type);
+    desc.Query     = pQueryInfo->dxQueryType;
     desc.MiscFlags = 0;
     if (pEntry->flags & SVGA3D_DXQUERY_FLAG_PREDICATEHINT)
         desc.MiscFlags |= (UINT)D3D11_QUERY_MISC_PREDICATEHINT;
@@ -6116,15 +6148,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyQuery(PVGASTATECC pThisCC, PVMSVGA
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXBindQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    RT_NOREF(pBackend, pDXContext, queryId);
-
-    return VINF_SUCCESS;
-}
-
-
+/** @todo queryId makes pDXQuery redundant */
 static int dxBeginQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, DXQUERY *pDXQuery)
 {
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
@@ -6134,6 +6158,7 @@ static int dxBeginQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA
     SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
     if (pEntry->type == SVGA3D_QUERYTYPE_TIMESTAMP)
         return VINF_SUCCESS;
+
     pDXDevice->pImmediateContext->Begin(pDXQuery->pQuery);
     return VINF_SUCCESS;
 }
@@ -6150,77 +6175,109 @@ static DECLCALLBACK(int) vmsvga3dBackDXBeginQuery(PVGASTATECC pThisCC, PVMSVGA3D
 }
 
 
-static int dxEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, DXQUERY *pDXQuery)
+static int dxGetQueryResult(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId,
+                            SVGADXQueryResultUnion *pQueryResult, uint32_t *pcbOut)
 {
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-    pDXDevice->pImmediateContext->End(pDXQuery->pQuery);
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    RT_NOREF(pBackend);
+    typedef union _DXQUERYRESULT
+    {
+        UINT64                               occlusion;
+        UINT64                               timestamp;
+        D3D11_QUERY_DATA_TIMESTAMP_DISJOINT  timestampDisjoint;
+        D3D11_QUERY_DATA_PIPELINE_STATISTICS pipelineStatistics;
+        BOOL                                 occlusionPredicate;
+        D3D11_QUERY_DATA_SO_STATISTICS       soStatistics;
+        BOOL                                 soOverflowPredicate;
+    } DXQUERYRESULT;
 
     DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
-    int rc = dxEndQuery(pThisCC, pDXContext, pDXQuery);
-    return rc;
-}
-
-
-static int dxReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, DXQUERY *pDXQuery,
-                           void *pvData, uint32_t cbData, uint32_t *pcbOut)
-{
-    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
-
     SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    VGPU10QUERYINFO const *pQueryInfo = dxQueryInfo((SVGA3dQueryType)pEntry->type);
+    if (!pQueryInfo)
+        return VERR_INVALID_PARAMETER;
 
-    uint32_t cbRequired;
+    DXQUERYRESULT dxQueryResult;
+    while (pDXDevice->pImmediateContext->GetData(pDXQuery->pQuery, &dxQueryResult, pQueryInfo->cbDataD3D11, 0) != S_OK)
+    {
+        RTThreadYield();
+    }
+
+    /* Copy back the result. */
     switch (pEntry->type)
     {
-        case SVGA3D_QUERYTYPE_OCCLUSION:               cbRequired = sizeof(UINT64); break;
-        case SVGA3D_QUERYTYPE_TIMESTAMP:               cbRequired = sizeof(UINT64); break;
-        case SVGA3D_QUERYTYPE_TIMESTAMPDISJOINT:       cbRequired = sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT); break;
-        case SVGA3D_QUERYTYPE_PIPELINESTATS:           cbRequired = sizeof(D3D11_QUERY_DATA_PIPELINE_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_OCCLUSIONPREDICATE:      cbRequired = sizeof(BOOL); break;
-        case SVGA3D_QUERYTYPE_STREAMOUTPUTSTATS:       cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_STREAMOVERFLOWPREDICATE: cbRequired = sizeof(BOOL); break;
-        case SVGA3D_QUERYTYPE_OCCLUSION64:             cbRequired = sizeof(UINT64); break;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM0:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM1:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM2:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_SOSTATS_STREAM3:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
-        case SVGA3D_QUERYTYPE_SOP_STREAM0:             cbRequired = sizeof(BOOL); break;
-        case SVGA3D_QUERYTYPE_SOP_STREAM1:             cbRequired = sizeof(BOOL); break;
-        case SVGA3D_QUERYTYPE_SOP_STREAM2:             cbRequired = sizeof(BOOL); break;
-        case SVGA3D_QUERYTYPE_SOP_STREAM3:             cbRequired = sizeof(BOOL); break;
-        default:
-            AssertFailedReturn(VERR_INVALID_STATE);
+        case SVGA3D_QUERYTYPE_OCCLUSION:
+            pQueryResult->occ.samplesRendered = (uint32_t)dxQueryResult.occlusion;
+            break;
+        case SVGA3D_QUERYTYPE_TIMESTAMP:
+            pQueryResult->ts.timestamp = dxQueryResult.timestamp;
+            break;
+        case SVGA3D_QUERYTYPE_TIMESTAMPDISJOINT:
+            pQueryResult->tsDisjoint.realFrequency = dxQueryResult.timestampDisjoint.Frequency;
+            pQueryResult->tsDisjoint.disjoint = dxQueryResult.timestampDisjoint.Disjoint;
+            break;
+        case SVGA3D_QUERYTYPE_PIPELINESTATS:
+            pQueryResult->pipelineStats.inputAssemblyVertices     = dxQueryResult.pipelineStatistics.IAVertices;
+            pQueryResult->pipelineStats.inputAssemblyPrimitives   = dxQueryResult.pipelineStatistics.IAPrimitives;
+            pQueryResult->pipelineStats.vertexShaderInvocations   = dxQueryResult.pipelineStatistics.VSInvocations;
+            pQueryResult->pipelineStats.geometryShaderInvocations = dxQueryResult.pipelineStatistics.GSInvocations;
+            pQueryResult->pipelineStats.geometryShaderPrimitives  = dxQueryResult.pipelineStatistics.GSPrimitives;
+            pQueryResult->pipelineStats.clipperInvocations        = dxQueryResult.pipelineStatistics.CInvocations;
+            pQueryResult->pipelineStats.clipperPrimitives         = dxQueryResult.pipelineStatistics.CPrimitives;
+            pQueryResult->pipelineStats.pixelShaderInvocations    = dxQueryResult.pipelineStatistics.PSInvocations;
+            pQueryResult->pipelineStats.hullShaderInvocations     = dxQueryResult.pipelineStatistics.HSInvocations;
+            pQueryResult->pipelineStats.domainShaderInvocations   = dxQueryResult.pipelineStatistics.DSInvocations;
+            pQueryResult->pipelineStats.computeShaderInvocations  = dxQueryResult.pipelineStatistics.CSInvocations;
+            break;
+        case SVGA3D_QUERYTYPE_OCCLUSIONPREDICATE:
+            pQueryResult->occPred.anySamplesRendered = dxQueryResult.occlusionPredicate;
+            break;
+        case SVGA3D_QUERYTYPE_STREAMOUTPUTSTATS:
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM0:
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM1:
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM2:
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM3:
+            pQueryResult->soStats.numPrimitivesWritten  = dxQueryResult.soStatistics.NumPrimitivesWritten;
+            pQueryResult->soStats.numPrimitivesRequired = dxQueryResult.soStatistics.PrimitivesStorageNeeded;
+            break;
+        case SVGA3D_QUERYTYPE_STREAMOVERFLOWPREDICATE:
+        case SVGA3D_QUERYTYPE_SOP_STREAM0:
+        case SVGA3D_QUERYTYPE_SOP_STREAM1:
+        case SVGA3D_QUERYTYPE_SOP_STREAM2:
+        case SVGA3D_QUERYTYPE_SOP_STREAM3:
+            pQueryResult->soPred.overflowed = dxQueryResult.soOverflowPredicate;
+            break;
+        case SVGA3D_QUERYTYPE_OCCLUSION64:
+            pQueryResult->occ64.samplesRendered = dxQueryResult.occlusion;
+            break;
     }
 
-    ASSERT_GUEST_RETURN(cbData > cbRequired, VERR_INVALID_PARAMETER);
-
-    while (pDXDevice->pImmediateContext->GetData(pDXQuery->pQuery, pvData, cbRequired, 0) != S_OK)
-    {
-    }
-
-    *pcbOut = cbRequired;
+    *pcbOut = pQueryInfo->cbDataVMSVGA;
     return VINF_SUCCESS;
 }
 
+static int dxEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId,
+                      SVGADXQueryResultUnion *pQueryResult, uint32_t *pcbOut)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-static DECLCALLBACK(int) vmsvga3dBackDXReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
-                                                     SVGA3dQueryId queryId, void *pvData, uint32_t cbData, uint32_t *pcbOut)
+    DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
+    pDXDevice->pImmediateContext->End(pDXQuery->pQuery);
+
+    /** @todo Consider issuing QueryEnd and getting data later in FIFO thread loop. */
+    return dxGetQueryResult(pThisCC, pDXContext, queryId, pQueryResult, pcbOut);
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackDXEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                                SVGA3dQueryId queryId, SVGADXQueryResultUnion *pQueryResult, uint32_t *pcbOut)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     RT_NOREF(pBackend);
 
-    DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
-    int rc = dxReadbackQuery(pThisCC, pDXContext, queryId, pDXQuery, pvData, cbData, pcbOut);
+    int rc = dxEndQuery(pThisCC, pDXContext, queryId, pQueryResult, pcbOut);
     return rc;
 }
 
@@ -7950,10 +8007,8 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXSetRasterizerState        = vmsvga3dBackDXSetRasterizerState;
                 p->pfnDXDefineQuery               = vmsvga3dBackDXDefineQuery;
                 p->pfnDXDestroyQuery              = vmsvga3dBackDXDestroyQuery;
-                p->pfnDXBindQuery                 = vmsvga3dBackDXBindQuery;
                 p->pfnDXBeginQuery                = vmsvga3dBackDXBeginQuery;
                 p->pfnDXEndQuery                  = vmsvga3dBackDXEndQuery;
-                p->pfnDXReadbackQuery             = vmsvga3dBackDXReadbackQuery;
                 p->pfnDXSetPredication            = vmsvga3dBackDXSetPredication;
                 p->pfnDXSetSOTargets              = vmsvga3dBackDXSetSOTargets;
                 p->pfnDXSetViewports              = vmsvga3dBackDXSetViewports;

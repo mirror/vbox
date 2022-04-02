@@ -902,6 +902,20 @@ PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId RT_UNTRUSTED_GU
 }
 
 
+int vmsvgaR3MobWrite(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob,
+                     uint32_t off, void const *pvData, uint32_t cbData)
+{
+    return vmsvgaR3GboWrite(pSvgaR3State, &pMob->Gbo, off, pvData, cbData);
+}
+
+
+int vmsvgaR3MobRead(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob,
+                    uint32_t off, void *pvData, uint32_t cbData)
+{
+    return vmsvgaR3GboWrite(pSvgaR3State, &pMob->Gbo, off, pvData, cbData);
+}
+
+
 /** Create a host ring-3 pointer to the MOB data.
  * Current approach is to allocate a host memory buffer and copy the guest MOB data if necessary.
  * @param pSvgaR3State R3 device state.

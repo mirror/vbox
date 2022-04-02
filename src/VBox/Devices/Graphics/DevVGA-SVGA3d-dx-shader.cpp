@@ -2348,7 +2348,8 @@ int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbD
 
 
 static char const *dxbcGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister, uint32_t u32BlobType,
-                                             uint32_t cSignature, SVGA3dDXSignatureEntry const *paSignature)
+                                             uint32_t cSignature, SVGA3dDXSignatureEntry const *paSignature,
+                                             SVGA3dDXSignatureSemanticName *pSemanticName)
 {
     for (uint32_t i = 0; i < cSignature; ++i)
     {
@@ -2357,15 +2358,16 @@ static char const *dxbcGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t
         {
             AssertReturn(p->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX, NULL);
             VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, p->semanticName, u32BlobType);
+            *pSemanticName = p->semanticName;
             return pSemanticInfo->pszName;
         }
     }
     return NULL;
 }
 
-char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister)
+char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister, SVGA3dDXSignatureSemanticName *pSemanticName)
 {
-    return dxbcGetOutputSemanticName(pInfo, idxRegister, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0]);
+    return dxbcGetOutputSemanticName(pInfo, idxRegister, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0], pSemanticName);
 }
 
 int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType)
