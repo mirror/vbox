@@ -150,7 +150,9 @@ $(evalcall def_vbox_validationkit_process_js_sources,FORCE)
 include $(FILE_KBUILD_SUB_FOOTER)
 
 
-
+VBOX_VALIDATIONKIT_ISO_RSP = $(PATH_TARGET)/VBoxValidationKitISO.rsp
+OTHERS                    += $(VBOX_VALIDATIONKIT_ISO_RSP)
+OTHERS_CLEAN              += $(VBOX_VALIDATIONKIT_ISO_RSP)
 
 #
 # Construct the file spec for creating the Validation Kit guest iso.
@@ -301,31 +303,28 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 # Only include testcases being on the whitelist.
-#TMP_UNITTESTS_WHITELIST := \
-#	tstFile \
-#	tstFileLock \
-#	tstRTLocalIpc \
-#	tstRTPathQueryInfo \
-#	tstRTPipe \
-#	tstRTProcCreateEx \
-#	tstRTProcCreatePrf \
-#	tstRTProcQueryUsername \
-#	tstTime-2 \
-#	tstTime-3 \
-#	tstTime-4 \
-#	tstTimer \
-#	tstThread-1 \
-#	tstUtf8
-#
-#TMP_UNITTESTS_WHITELIST.linux += \
-#	tstRTProcWait \
-#	tstRTProcIsRunningByName
-#
-#TMP_UNITTESTS_WHITELIST.win += \
-#	tstRTProcWait
-
 TMP_UNITTESTS_WHITELIST := \
-	tstFile
+	tstFile \
+	tstFileLock \
+	tstRTLocalIpc \
+	tstRTPathQueryInfo \
+	tstRTPipe \
+	tstRTProcCreateEx \
+	tstRTProcCreatePrf \
+	tstRTProcQueryUsername \
+	tstTime-2 \
+	tstTime-3 \
+	tstTime-4 \
+	tstTimer \
+	tstThread-1 \
+	tstUtf8
+
+TMP_UNITTESTS_WHITELIST.linux += \
+	tstRTProcWait \
+	tstRTProcIsRunningByName
+
+TMP_UNITTESTS_WHITELIST.win += \
+	tstRTProcWait
 
 #
 # Included needed dependencies like VBoxRT (VBoxVMM?).
@@ -369,23 +368,14 @@ $(foreach os, darwin,$(foreach arch, amd64, \
 endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 #
-# Build the Validation Kit guest ISO.
+# Build the Validation Kit guest ISO recipe consumed by RTIsoMaker.
 #
-$(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
-		$(filter-out %=deleteme=, $(subst =,=deleteme= , $(VBOX_VALIDATIONKIT_FILESPEC))) \
-		$(VBOX_SVN_REV_KMK) \
-		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk \
-		| $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
-	$(call MSG_TOOL,RTIsoMaker,,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
-ifneq ($(KBUILD_TARGET),os2)
-	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
-endif
-ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
-	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS)
-endif
-	$(VBOX_RTISOMAKER) \
-		--output $@ \
+# We need this recipe file because passing all those arguments to RTIsoMaker will blow up
+# the maximum command line length on some OSes.
+#
+$(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
+	$(call MSG_L1,Creating Validation Kit guest ISO recipe $@)
+	$(APPEND) -nt $@ \
 		--iso-level 3 \
 		--rock-ridge \
 		--joliet \
@@ -403,10 +393,31 @@ endif
 			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
 				        	   $(subst =, $(SP), $(spec)), \
 						   $(subst $(PATH_OUT_BASE), testcase,$(spec))))) \
-		--volume-id "VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)" \
+		--volume-id \"VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)\" \
 		--name-setup joliet \
-		--volume-id "VBoxValK $(VBOX_SVN_REV)"
+		--volume-id \"VBoxValK $(VBOX_SVN_REV)\"
+
+#
+# Build the Validation Kit guest ISO.
+#
+$(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
+		$(filter-out %=deleteme=, $(subst =,=deleteme= , $(VBOX_VALIDATIONKIT_FILESPEC))) \
+		$(VBOX_SVN_REV_KMK) \
+		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk \
+		$(VBOX_VALIDATIONKIT_ISO_RSP) \
+		| $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
+	$(call MSG_TOOL,RTIsoMaker,,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+ifneq ($(KBUILD_TARGET),os2)
+	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
+endif
+	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS)
+	$(VBOX_RTISOMAKER) \
+		@$(VBOX_VALIDATIONKIT_ISO_RSP) \
+		--output $@
+
+
 
 # Alias for creating the iso.
-.PHONY: validationkit-iso
+.PHONY: $(QUIET)$(RM) -f $(VBOX_VALIDATIONKIT_ISO_RSP) validationkit-iso
 validationkit-iso: $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso
