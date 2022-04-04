@@ -4709,162 +4709,166 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 #
 # SDKs for external libraries.
 #
-SDK_VBOX_LIBXML2           = .
-SDK_VBOX_LIBXML2_INCS     ?= $(PATH_ROOT)/src/libs/libxml2-2.9.4/include
-SDK_VBOX_LIBXML2_DEFS     ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
-SDK_VBOX_LIBXML2_DEFS.win ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
-# Note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
-#       libxml against VBoxRT
-
-SDK_VBOX_LIBPNG       = .
-SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.6.36
-SDK_VBOX_LIBPNG_LIBS ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
-
-SDK_VBOX_ZLIB         = .
-if1of ($(KBUILD_TARGET), os2 solaris win)
- SDK_VBOX_ZLIB_INCS  ?= $(PATH_ROOT)/src/libs/zlib-1.2.11
- SDK_VBOX_ZLIB_LIBS  ?= $(PATH_STAGE_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
-else
- SDK_VBOX_ZLIB_INCS  ?=
- SDK_VBOX_ZLIB_LIBS  ?= z
- SDK_VBOX_ZLIB_DEFS.linux ?= _LARGEFILE64_SOURCE
+ifdef VBOX_WITH_DXVK
+ SDK_VBOX_DXVK                 := Direct3D 9/10/11 to Vulkan - for dll linking.
+ SDK_VBOX_DXVK_DEFAULT_INCS    := \
+ 	$(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/directx \
+ 	$(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/windows
+ SDK_VBOX_DXVK_INCS            ?= $(SDK_VBOX_DXVK_DEFAULT_INCS)
+ # Loaded dynamically
+ SDK_VBOX_DXVK_LIBS            ?=
 endif
 
-SDK_VBOX_ZLIB-x86    = .
-SDK_VBOX_ZLIB-x86_EXTENDS = VBOX_ZLIB
-if1of ($(KBUILD_TARGET), os2 solaris win)
- SDK_VBOX_ZLIB_LIBS-x86  ?= $(PATH_STAGE_LIB)/VBox-zlib-x86$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_LIBFUSE
+ SDK_VBOX_FUSE                 := libfuse (file system in userspace) for dll linking.
+ SDK_VBOX_FUSE_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libfuse-2.9.8/include
+ SDK_VBOX_FUSE_INCS            ?= $(SDK_VBOX_FUSE_DEFAULT_INCS)
+ SDK_VBOX_FUSE_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libfuse$(VBOX_SUFF_LIB)
 endif
 
-SDK_VBOX_ZLIB_STATIC  = .
-SDK_VBOX_ZLIB_STATIC_EXTENDS ?= VBOX_ZLIB
-if1of ($(KBUILD_TARGET), os2 win) # Not required on solaris.
- SDK_VBOX_ZLIB_STATIC_LIBS ?= $(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_LIBCURL
+ SDK_VBOX_LIBCURL              := libcurl for dll linking.
+ SDK_VBOX_LIBCURL_INCS         ?= $(PATH_ROOT)/src/libs/curl-7.64.0/include
+ SDK_VBOX_LIBCURL_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
+ SDK_VBOX_LIBCURL_DEFS         ?= BUILDING_LIBCURL
+
+ SDK_VBOX_LIBCURL-x86           = libcurl/x86 for dll linking.
+ SDK_VBOX_LIBCURL-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.64.0/include
+ SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
+ SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
 endif
 
-SDK_VBOX_LZF		= .
-SDK_VBOX_LZF_INCS  ?= $(PATH_ROOT)/src/libs/liblzf-3.4
-SDK_VBOX_LZF_LIBS  ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
+SDK_VBOX_LIBPNG                := protable network graphics (png) library for dll linking.
+SDK_VBOX_LIBPNG_INCS           ?= $(PATH_ROOT)/src/libs/libpng-1.6.36
+SDK_VBOX_LIBPNG_LIBS           ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
-SDK_VBOX_LZF-x86	= .
-SDK_VBOX_LZF-x86_EXTENDS = VBOX_LZF
-SDK_VBOX_LZF_LIBS-x86 ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+# lzf
+SDK_VBOX_LZF                   := lzf compressor/decompressor for dll linking.
+SDK_VBOX_LZF_INCS              ?= $(PATH_ROOT)/src/libs/liblzf-3.4
+SDK_VBOX_LZF_LIBS              ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 
-SDK_VBOX_LZF_STATIC  = .
-SDK_VBOX_LZF_STATIC_EXTENDS ?= VBOX_LZF
+SDK_VBOX_LZF-x86               := lzf/x86 compressor/decompressor for dll linking.
+SDK_VBOX_LZF-x86_EXTENDS       := VBOX_LZF
+SDK_VBOX_LZF_LIBS-x86          ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+
+SDK_VBOX_LZF_STATIC            := lzf compressor/decompressor for static linking.
+SDK_VBOX_LZF_STATIC_EXTENDS    := VBOX_LZF
 if1of ($(KBUILD_TARGET), os2 win)
- SDK_VBOX_LZF_STATIC_LIBS ?= $(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB)
+ SDK_VBOX_LZF_STATIC_LIBS      := $(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB)
 endif
 
-SDK_VBOX_OPENSSL      = Only for VBoxRT and/or statically linked programs.
+# openssl
+SDK_VBOX_OPENSSL                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
 if defined(VBOX_WITH_OPENSSL3)
- SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-3.0.1-headers/include
+ SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-3.0.1-headers/include
 else
- SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
+ SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
 endif
-SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
+SDK_VBOX_OPENSSL_INCS                   ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+SDK_VBOX_OPENSSL_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
 if  !defined(VBOX_ONLY_SDK) \
  && (!defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER)) \
  && (!defined(VBOX_ONLY_EXTPACKS) || defined(VBOX_NEED_EXTPACK_OPENSSL) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)) \
  && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" || defined(VBOX_NEED_EXTPACK_OPENSSL))
- SDK_VBOX_OPENSSL_DEPS ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+ SDK_VBOX_OPENSSL_DEPS                  ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
 endif
-SDK_VBOX_OPENSSL_LIBS ?= \
+SDK_VBOX_OPENSSL_LIBS                   ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
-SDK_VBOX_OPENSSL-x86      = Only for VBoxRT and/or statically linked programs.
+SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
 if defined(VBOX_WITH_OPENSSL3)
  SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-3.0.1-headers/include
 else
  SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
 endif
-SDK_VBOX_OPENSSL-x86_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-SDK_VBOX_OPENSSL-x86_ORDERDEPS ?= $(crypto-headers_1_TARGET)
+SDK_VBOX_OPENSSL-x86_INCS               ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+SDK_VBOX_OPENSSL-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
 if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" || defined(VBOX_NEED_EXTPACK_OPENSSL))
- SDK_VBOX_OPENSSL-x86_DEPS ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+ SDK_VBOX_OPENSSL-x86_DEPS              ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
 endif
-SDK_VBOX_OPENSSL-x86_LIBS ?= \
+SDK_VBOX_OPENSSL-x86_LIBS               ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB)
 
-SDK_VBOX_OPENSSL2      = What you should be using.
-SDK_VBOX_OPENSSL2_EXTENDS = VBOX_OPENSSL
+SDK_VBOX_OPENSSL2              := This is what you should be using!  It links against VBoxRT.
+SDK_VBOX_OPENSSL2_EXTENDS      := VBOX_OPENSSL
 if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
- SDK_VBOX_OPENSSL2_LIBS = $(NO_SUCH_VARIABLE)
-endif
-
-ifdef VBOX_WITH_LIBCURL
-SDK_VBOX_LIBCURL       = .
-SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.64.0/include
-SDK_VBOX_LIBCURL_LIBS ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
-SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
-
-SDK_VBOX_LIBCURL-x86           = .
-SDK_VBOX_LIBCURL-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.64.0/include
-SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
-SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
-endif
-
-ifdef VBOX_WITH_LIBVPX
- SDK_VBOX_VPX       = .
- SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx-1.6.1
- SDK_VBOX_VPX_INCS ?= $(SDK_VBOX_VPX_DEFAULT_INCS)
- SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
+ SDK_VBOX_OPENSSL2_LIBS         = $(NO_SUCH_VARIABLE)
 endif
 
 ifdef VBOX_WITH_LIBOPUS
- SDK_VBOX_OPUS       = .
- SDK_VBOX_OPUS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libopus-1.2.1/include
- SDK_VBOX_OPUS_INCS ?= $(SDK_VBOX_OPUS_DEFAULT_INCS)
- SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
-endif
-
-ifdef VBOX_WITH_LIBFUSE
- SDK_VBOX_FUSE               = .
- SDK_VBOX_FUSE_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libfuse-2.9.8/include
- SDK_VBOX_FUSE_INCS         ?= $(SDK_VBOX_FUSE_DEFAULT_INCS)
- SDK_VBOX_FUSE_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libfuse$(VBOX_SUFF_LIB)
-endif
-
-ifdef VBOX_WITH_LIBTPMS
- SDK_VBOX_TPMS               = .
- SDK_VBOX_TPMS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
- SDK_VBOX_TPMS_INCS         ?= $(SDK_VBOX_TPMS_DEFAULT_INCS)
- SDK_VBOX_TPMS_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
-endif
-
-ifdef VBOX_WITH_DXVK
- SDK_VBOX_DXVK               = .
- SDK_VBOX_DXVK_DEFAULT_INCS := \
-  $(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/directx \
-  $(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/windows
- SDK_VBOX_DXVK_INCS         ?= $(SDK_VBOX_DXVK_DEFAULT_INCS)
- # Loaded dynamically
- SDK_VBOX_DXVK_LIBS         ?=
+ SDK_VBOX_OPUS                 := libopus for dll linking.
+ SDK_VBOX_OPUS_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libopus-1.2.1/include
+ SDK_VBOX_OPUS_INCS            ?= $(SDK_VBOX_OPUS_DEFAULT_INCS)
+ SDK_VBOX_OPUS_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_LIBSSH
- SDK_VBOX_SSH               = libssh SDK for link into a DLL/SO/DYLIB
- SDK_VBOX_SSH_DEFS         ?= LIBSSH_STATIC=1
- SDK_VBOX_SSH_INCS         ?= $(PATH_ROOT)/src/libs/libssh-0.9.5/include
- SDK_VBOX_SSH_LIBS         ?= \
+ SDK_VBOX_SSH                  := libssh for dll linking.
+ SDK_VBOX_SSH_DEFS             ?= LIBSSH_STATIC=1
+ SDK_VBOX_SSH_INCS             ?= $(PATH_ROOT)/src/libs/libssh-0.9.5/include
+ SDK_VBOX_SSH_LIBS             ?= \
  	$(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_LIBTPMS
+ SDK_VBOX_TPMS                 := libtpms for dll linking.
+ SDK_VBOX_TPMS_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
+ SDK_VBOX_TPMS_INCS            ?= $(SDK_VBOX_TPMS_DEFAULT_INCS)
+ SDK_VBOX_TPMS_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_LIBVPX
+ SDK_VBOX_VPX                  := libvpx for dll linking.
+ SDK_VBOX_VPX_DEFAULT_INCS     := $(PATH_ROOT)/src/libs/libvpx-1.6.1
+ SDK_VBOX_VPX_INCS             ?= $(SDK_VBOX_VPX_DEFAULT_INCS)
+ SDK_VBOX_VPX_LIBS             ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
+endif
+
+# libxml2
+SDK_VBOX_LIBXML2               := libxml2 for dll linking.
+SDK_VBOX_LIBXML2_INCS          ?= $(PATH_ROOT)/src/libs/libxml2-2.9.4/include
+SDK_VBOX_LIBXML2_DEFS          ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
+SDK_VBOX_LIBXML2_DEFS.win      ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
+# Note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
+#       libxml against VBoxRT
+
+# zlib
+SDK_VBOX_ZLIB                  := zlib for dll linking.
+if1of ($(KBUILD_TARGET), os2 solaris win)
+ SDK_VBOX_ZLIB_INCS            ?= $(PATH_ROOT)/src/libs/zlib-1.2.11
+ SDK_VBOX_ZLIB_LIBS            ?= $(PATH_STAGE_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
+else
+ SDK_VBOX_ZLIB_INCS            ?=
+ SDK_VBOX_ZLIB_LIBS            ?= z
+ SDK_VBOX_ZLIB_DEFS.linux      ?= _LARGEFILE64_SOURCE
+endif
+
+SDK_VBOX_ZLIB-x86              := zlib/x86
+SDK_VBOX_ZLIB-x86_EXTENDS       = VBOX_ZLIB
+if1of ($(KBUILD_TARGET), os2 solaris win)
+ SDK_VBOX_ZLIB_LIBS-x86        ?= $(PATH_STAGE_LIB)/VBox-zlib-x86$(VBOX_SUFF_LIB)
+endif
+
+SDK_VBOX_ZLIB_STATIC           := zlib for static linking
+SDK_VBOX_ZLIB_STATIC_EXTENDS   := VBOX_ZLIB
+if1of ($(KBUILD_TARGET), os2 win) # Not required on solaris.
+ SDK_VBOX_ZLIB_STATIC_LIBS   	?= $(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
 endif
 
 #
 # Special SDK for the problematic NTDLL.LIB.
 #
-SDK_VBOX_NTDLL = Mini NTDLL import library, required IPRT.
-SDK_VBOX_NTDLL_LIBS.x86   ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
-SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
+SDK_VBOX_NTDLL                 := Mini NTDLL import library, required IPRT.
+SDK_VBOX_NTDLL_LIBS.x86        ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
+SDK_VBOX_NTDLL_LIBS.amd64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 
 #
 # SDK for including newdev.lib.
 # It conceptually moved from the WDK to the PSDK with W10, as it's now in the um subdir.
 #
-SDK_VBOX_WIN_NEWDEV = Abstracts where to find newdev.lib.
+SDK_VBOX_WIN_NEWDEV            := Abstracts where to find newdev.lib.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
  SDK_VBOX_WIN_NEWDEV_LIBS.x86   = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/newdev.lib
  SDK_VBOX_WIN_NEWDEV_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.amd64)/newdev.lib
@@ -4877,14 +4881,14 @@ endif
 # SDK for including int64.lib for x86 targets.
 # It conceptually moved from the WDK to the PSDK with W10, as it's now in the um subdir.
 #
-SDK_VBOX_WIN_INT64 = Abstracts where to find int64.lib for x86 builds.
+SDK_VBOX_WIN_INT64             := Abstracts where to find int64.lib for x86 builds.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
- SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/int64.lib
+ SDK_VBOX_WIN_INT64_LIBS.x86  	 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/int64.lib
  ifeq ($(KBUILD_TARGET),win)
   include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
  endif
 else
- SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
+ SDK_VBOX_WIN_INT64_LIBS.x86    = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
  ifeq ($(KBUILD_TARGET),win)
   include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
  endif
