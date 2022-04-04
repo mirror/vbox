@@ -337,7 +337,7 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN =  $(abspath $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../bin)
+  TMP_UNITTESTS_PATH_BIN = $$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../../bin
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
