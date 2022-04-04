@@ -1392,32 +1392,10 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                     {
                         *aParavirtProvider = ParavirtProvider_HyperV;
                     }
-                    else if (   mUserData->s.strOsType == "Linux26"      // Linux22 and Linux24 omitted as they're too old
-                             || mUserData->s.strOsType == "Linux26_64"   // for having any KVM paravirtualization support.
-                             || mUserData->s.strOsType == "Linux"
-                             || mUserData->s.strOsType == "Linux_64"
-                             || mUserData->s.strOsType == "ArchLinux"
-                             || mUserData->s.strOsType == "ArchLinux_64"
-                             || mUserData->s.strOsType == "Debian"
-                             || mUserData->s.strOsType == "Debian_64"
-                             || mUserData->s.strOsType == "Fedora"
-                             || mUserData->s.strOsType == "Fedora_64"
-                             || mUserData->s.strOsType == "Gentoo"
-                             || mUserData->s.strOsType == "Gentoo_64"
-                             || mUserData->s.strOsType == "Mandriva"
-                             || mUserData->s.strOsType == "Mandriva_64"
-                             || mUserData->s.strOsType == "OpenSUSE"
-                             || mUserData->s.strOsType == "OpenSUSE_64"
-                             || mUserData->s.strOsType == "Oracle"
-                             || mUserData->s.strOsType == "Oracle_64"
-                             || mUserData->s.strOsType == "RedHat"
-                             || mUserData->s.strOsType == "RedHat_64"
-                             || mUserData->s.strOsType == "Turbolinux"
-                             || mUserData->s.strOsType == "Turbolinux_64"
-                             || mUserData->s.strOsType == "Ubuntu"
-                             || mUserData->s.strOsType == "Ubuntu_64"
-                             || mUserData->s.strOsType == "Xandros"
-                             || mUserData->s.strOsType == "Xandros_64")
+                    else if (guestTypeFamilyId == "Linux" &&
+                             mUserData->s.strOsType != "Linux22" &&      // Linux22 and Linux24{_64} excluded as they're too old
+                             mUserData->s.strOsType != "Linux24" &&      // to have any KVM paravirtualization support.
+                             mUserData->s.strOsType != "Linux24_64")
                     {
                         *aParavirtProvider = ParavirtProvider_KVM;
                     }

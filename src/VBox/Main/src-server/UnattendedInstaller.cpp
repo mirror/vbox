@@ -67,11 +67,11 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
         pUinstaller = new UnattendedOs2Installer(pParent, strDetectedOSHints);
     else
     {
-        if (enmDetectedOSType == VBOXOSTYPE_Debian || enmDetectedOSType == VBOXOSTYPE_Debian_x64)
+        if (enmDetectedOSType >= VBOXOSTYPE_Debian && enmDetectedOSType <= VBOXOSTYPE_Debian_latest_x64)
             pUinstaller = new UnattendedDebianInstaller(pParent);
-        else if (enmDetectedOSType >= VBOXOSTYPE_Ubuntu && enmDetectedOSType <= VBOXOSTYPE_Ubuntu_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_Ubuntu && enmDetectedOSType <= VBOXOSTYPE_Ubuntu_latest_x64)
             pUinstaller = new UnattendedUbuntuInstaller(pParent);
-        else if (enmDetectedOSType >= VBOXOSTYPE_RedHat && enmDetectedOSType <= VBOXOSTYPE_RedHat_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_RedHat && enmDetectedOSType <= VBOXOSTYPE_RedHat_latest_x64)
         {
             if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
                 pUinstaller = new UnattendedRhel8Installer(pParent);
@@ -90,7 +90,7 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
         }
         else if (enmDetectedOSType >= VBOXOSTYPE_FedoraCore && enmDetectedOSType <= VBOXOSTYPE_FedoraCore_x64)
             pUinstaller = new UnattendedFedoraInstaller(pParent);
-        else if (enmDetectedOSType >= VBOXOSTYPE_Oracle && enmDetectedOSType <= VBOXOSTYPE_Oracle_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_Oracle && enmDetectedOSType <= VBOXOSTYPE_Oracle_latest_x64)
         {
             if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
                 pUinstaller = new UnattendedOracleLinux8Installer(pParent);
