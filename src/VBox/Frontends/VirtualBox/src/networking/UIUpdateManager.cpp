@@ -50,9 +50,10 @@ public:
     virtual void exec() RT_OVERRIDE;
 
 private:
-
+#if 0
     /** Holds whether this customer has forced privelegies. */
     bool  m_fForcedCall;
+#endif
 };
 
 
@@ -86,8 +87,11 @@ private slots:
 *********************************************************************************************************************************/
 
 UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForcedCall)
+#if 0
     : m_fForcedCall(fForcedCall)
+#endif
 {
+    Q_UNUSED(fForcedCall);
 }
 
 void UIUpdateStepVirtualBox::exec()
