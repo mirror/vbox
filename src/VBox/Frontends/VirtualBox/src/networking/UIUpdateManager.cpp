@@ -92,6 +92,7 @@ UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForcedCall)
 
 void UIUpdateStepVirtualBox::exec()
 {
+#if 0
     /* Return if already checking: */
     if (UINotificationNewVersionCheckerVirtualBox::exists())
     {
@@ -110,8 +111,16 @@ void UIUpdateStepVirtualBox::exec()
             this, &UIUpdateStepVirtualBox::sigStepFinished);
     connect(pNotification, &UINotificationNewVersionCheckerVirtualBox::sigProgressFinished,
             this, &UIUpdateStepVirtualBox::sigStepFinished);
+
     /* Append and start notification: */
     gpNotificationCenter->append(pNotification);
+#else
+    UINotificationProgressNewVersionChecker *pNotification =
+        new UINotificationProgressNewVersionChecker();
+    connect(pNotification, &UINotificationProgressNewVersionChecker::sigProgressFinished,
+            this, &UIUpdateStepVirtualBox::sigStepFinished);
+    gpNotificationCenter->append(pNotification);
+#endif
 }
 
 

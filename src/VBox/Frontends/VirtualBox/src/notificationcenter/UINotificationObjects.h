@@ -41,6 +41,7 @@
 #include "CFormValue.h"
 #include "CGuest.h"
 #include "CHost.h"
+#include "CHostUpdate.h"
 #include "CHostNetworkInterface.h"
 #include "CMachine.h"
 #include "CMedium.h"
@@ -2682,6 +2683,35 @@ private:
     /** Holds the url. */
     QString  m_strUrl;
 };
+
+/** UINotificationProgress extension for checking a new VirtualBox version. */
+class SHARED_LIBRARY_STUFF UINotificationProgressNewVersionChecker : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    UINotificationProgressNewVersionChecker();
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    void sltHandleProgressFinished();
+
+private:
+
+    CHostUpdate m_comUpdateChecker;
+};
+
+
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
