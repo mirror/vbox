@@ -2378,6 +2378,12 @@ uint16_t biosfn_restore_video_state(uint16_t CX, uint16_t ES, uint16_t BX)
         outb(VGAREG_SEQU_ADDRESS, 0);
         outb(VGAREG_SEQU_DATA, read_byte(ES, BX)); BX++;
 
+        // select crtc base address
+        v = inb(VGAREG_READ_MISC_OUTPUT) & ~0x01;
+        if (crtc_addr == 0x3d4)
+            v |= 0x01;
+        outb(VGAREG_WRITE_MISC_OUTPUT, v);
+
         // Disable CRTC write protection
         outw(crtc_addr,0x0011);
         // Set CRTC regs
@@ -2388,12 +2394,6 @@ uint16_t biosfn_restore_video_state(uint16_t CX, uint16_t ES, uint16_t BX)
             }
             BX++;
         }
-        // select crtc base address
-        v = inb(VGAREG_READ_MISC_OUTPUT) & ~0x01;
-        if (crtc_addr == 0x3d4)
-            v |= 0x01;
-        outb(VGAREG_WRITE_MISC_OUTPUT, v);
-
         // enable write protection if needed
         outb(crtc_addr, 0x11);
         outb(crtc_addr+1, read_byte(ES, BX - 0x18 + 0x11));
