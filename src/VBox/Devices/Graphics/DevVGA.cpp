@@ -1785,6 +1785,8 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
             ((pThis->cr[0x07] & 0x40) << 3);
         height = (height + 1) / cheight;
     }
+    /** @todo r=michaln This conditional is questionable; we should be able
+     * to draw whatver the guest asks for. */
     if ((height * width) > CH_ATTR_SIZE) {
         /* better than nothing: exit if transient size is too big */
         return VINF_SUCCESS;
@@ -1967,9 +1969,11 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
         s1 += line_offset;
 
         /* Line compare works in text modes, too. */
-        if ((uint32_t)cy == pThis->line_compare)
-            s1 = 0;
-  }
+        /** @todo r=michaln This is inaccurate; text should be rendered line by line
+         * and line compare checked after every line. */
+        if ((uint32_t)cy == (pThis->line_compare / cheight))
+            s1 = pThisCC->pbVRam;
+    }
     if (cy_start >= 0)
         /* Flush any remaining changes to display. */
         pDrv->pfnUpdateRect(pDrv, cx_min_upd * cw, cy_start * cheight,
