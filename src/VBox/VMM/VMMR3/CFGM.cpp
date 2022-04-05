@@ -3356,35 +3356,31 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
         {
             case CFGMVALUETYPE_INTEGER:
             {
-                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%'lld", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
+                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%'lld",
+                                (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
                 if (   (   pLeaf->cchName >= 4
                         && !RTStrCmp(&pLeaf->szName[pLeaf->cchName - 4], "Size"))
                     || (   pLeaf->cchName >= 2
                         && !RTStrNCmp(pLeaf->szName, "cb", 2)) )
-                {
-                    if (pLeaf->Value.Integer.u64 > _2M)
-                        pHlp->pfnPrintf(pHlp, ", %'lld MB", pLeaf->Value.Integer.u64 / _1M);
-                    else if (pLeaf->Value.Integer.u64 > _2K)
-                        pHlp->pfnPrintf(pHlp, ", %'lld KB", pLeaf->Value.Integer.u64 / _1K);
-                    if (pLeaf->Value.Integer.u64 > _2G)
-                        pHlp->pfnPrintf(pHlp, ", %'lld.%lld GB",
-                                              pLeaf->Value.Integer.u64 / _1G,
-                                              (pLeaf->Value.Integer.u64 % _1G) / _1K * 10 / _1M);
-                }
-                pHlp->pfnPrintf(pHlp, ")\n");
+                    pHlp->pfnPrintf(pHlp, ", %' Rhcb)", pLeaf->Value.Integer.u64);
+                else
+                    pHlp->pfnPrintf(pHlp, ")\n");
                 break;
             }
 
             case CFGMVALUETYPE_STRING:
-                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cb);
+                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cb=%zu)\n",
+                                (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cb);
                 break;
 
             case CFGMVALUETYPE_BYTES:
-                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
+                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%zu)\n",
+                                (int)cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
                 break;
 
             case CFGMVALUETYPE_PASSWORD:
-                pHlp->pfnPrintf(pHlp, "  %-*s <password>= \"***REDACTED***\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.cb);
+                pHlp->pfnPrintf(pHlp, "  %-*s <password>= \"***REDACTED***\" (cb=%zu)\n",
+                                (int)cchMax, pLeaf->szName, pLeaf->Value.String.cb);
                 break;
 
             default:
