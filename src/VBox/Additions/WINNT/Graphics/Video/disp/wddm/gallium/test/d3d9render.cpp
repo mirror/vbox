@@ -167,9 +167,9 @@ HRESULT D3D9RenderTriangle::InitRender(D3D9DeviceProvider *pDP)
     /* Coords are choosen to avoid setting the view and projection matrices. */
     static Vertex aVertices[] =
     {
-        {-0.5f, -0.5f, 0.9f },
-        { 0.0f,  0.5f, 0.9f },
-        { 0.5f, -0.5f, 0.9f },
+        { {-0.5f, -0.5f, 0.9f } },
+        { { 0.0f,  0.5f, 0.9f } },
+        { { 0.5f, -0.5f, 0.9f } },
     };
 
     hr = pDevice->CreateVertexBuffer(sizeof(aVertices), 0, 0, D3DPOOL_DEFAULT, &mpVB, 0);
@@ -388,9 +388,9 @@ HRESULT D3D9RenderTriangleShader::InitRender(D3D9DeviceProvider *pDP)
 
     static Vertex aVertices[] =
     {
-        { -0.5f, -0.5f, 0.5f, D3DCOLOR_XRGB(  0,   0, 255), },
-        {  0.5f, -0.5f, 0.5f, D3DCOLOR_XRGB(  0, 255,   0), },
-        {  0.0f,  0.5f, 0.5f, D3DCOLOR_XRGB(255,   0,   0), },
+        { { -0.5f, -0.5f, 0.5f }, D3DCOLOR_XRGB(  0,   0, 255), },
+        { {  0.5f, -0.5f, 0.5f }, D3DCOLOR_XRGB(  0, 255,   0), },
+        { {  0.0f,  0.5f, 0.5f }, D3DCOLOR_XRGB(255,   0,   0), },
     };
 
     HRESULT hr = S_OK;
@@ -660,9 +660,9 @@ HRESULT D3D9RenderInstance::InitRender(D3D9DeviceProvider *pDP)
 
     static VertexGeometry aVerticesGeometry[] =
     {
-        { -0.5f, -0.5f, 0.5f },
-        {  0.5f, -0.5f, 0.5f },
-        {  0.0f,  0.5f, 0.5f },
+        { { -0.5f, -0.5f, 0.5f } },
+        { {  0.5f, -0.5f, 0.5f } },
+        { {  0.0f,  0.5f, 0.5f } },
     };
 
     static VertexInstance aVerticesInstance[] =
@@ -829,9 +829,9 @@ HRESULT D3D9RenderDepth::InitRender(D3D9DeviceProvider *pDP)
 
     static Vertex aVertices[] =
     {
-        { -1.0f, -1.0f, 0.0f },
-        {  1.0f, -1.0f, 0.0f },
-        {  0.0f,  1.0f, 0.0f },
+        { { -1.0f, -1.0f, 0.0f } },
+        { {  1.0f, -1.0f, 0.0f } },
+        { {  0.0f,  1.0f, 0.0f } },
     };
 
     HRESULT hr = S_OK;
@@ -881,9 +881,9 @@ static void d3d9RenderDepthDrawTriangle(IDirect3DDevice9 *pDevice, D3DCamera *pC
 
     /* Set color of the triangle. */
     float aColor[4];
-    aColor[0] = 1.0f * ((color >> 16) & 0xff) / 255.0f;
-    aColor[1] = 1.0f * ((color >>  8) & 0xff) / 255.0f;
-    aColor[2] = 1.0f * ((color      ) & 0xff) / 255.0f;
+    aColor[0] = 1.0f * (float)((color >> 16) & 0xff) / 255.0f;
+    aColor[1] = 1.0f * (float)((color >>  8) & 0xff) / 255.0f;
+    aColor[2] = 1.0f * (float)((color      ) & 0xff) / 255.0f;
     aColor[3] = 1.0f;
     HTEST(pDevice->SetVertexShaderConstantF(4, &aColor[0], 1));
 
@@ -1025,9 +1025,9 @@ HRESULT D3D9RenderShared::InitRender(D3D9DeviceProvider *pDP)
 
     static Vertex aVertices[] =
     {
-        { -0.5f, -0.5f, 0.5f, D3DCOLOR_XRGB(  0,   0, 255), },
-        {  0.5f, -0.5f, 0.5f, D3DCOLOR_XRGB(  0, 255,   0), },
-        {  0.0f,  0.5f, 0.5f, D3DCOLOR_XRGB(255,   0,   0), },
+        { { -0.5f, -0.5f, 0.5f }, D3DCOLOR_XRGB(  0,   0, 255), },
+        { {  0.5f, -0.5f, 0.5f }, D3DCOLOR_XRGB(  0, 255,   0), },
+        { {  0.0f,  0.5f, 0.5f }, D3DCOLOR_XRGB(255,   0,   0), },
     };
 
     HRESULT hr = S_OK;
@@ -1313,13 +1313,13 @@ HRESULT D3D9RenderTexture::InitRender(D3D9DeviceProvider *pDP)
 
     static Vertex aVertices[] =
     {
-        { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
-        {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
-        { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
+        { { -1.0f, -1.0f, 0.0f }, 0.0f, 1.0f},
+        { {  1.0f, -1.0f, 0.0f }, 1.0f, 1.0f},
+        { { -1.0f,  1.0f, 0.0f }, 0.0f, 0.0f},
 
-        { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
-        {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
-        {  1.0f,  1.0f, 0.0f, 1.0f, 0.0f},
+        { { -1.0f,  1.0f, 0.0f }, 0.0f, 0.0f},
+        { {  1.0f, -1.0f, 0.0f }, 1.0f, 1.0f},
+        { {  1.0f,  1.0f, 0.0f }, 1.0f, 0.0f},
     };
 
     HRESULT hr = S_OK;

@@ -133,7 +133,7 @@ HRESULT D3D11RenderTriangleShader::InitRender(D3D11DeviceProvider *pDP)
     // Approximately 4 instruction slots used
     #endif
 
-    static const BYTE g_vs_color[] =
+    static BYTE const g_vs_color[] =
     {
          68,  88,  66,  67, 109, 138, 105,  83,  86, 190,  83, 125,  72, 102, 194, 136,  46,  69,
          17, 121,   1,   0,   0,   0,  48,   2,   0,   0,   5,   0,   0,   0,  52,   0,   0,   0,
@@ -200,7 +200,7 @@ HRESULT D3D11RenderTriangleShader::InitRender(D3D11DeviceProvider *pDP)
     // Approximately 2 instruction slots used
     #endif
 
-    static const BYTE g_ps_color[] =
+    static BYTE const g_ps_color[] =
     {
          68,  88,  66,  67, 206, 120, 117, 238, 118, 127,  10,  87,  80,  75, 114, 198,  95,   2,
         120, 102,   1,   0,   0,   0, 208,   1,   0,   0,   5,   0,   0,   0,  52,   0,   0,   0,
@@ -266,8 +266,6 @@ HRESULT D3D11RenderTriangleShader::InitRender(D3D11DeviceProvider *pDP)
 HRESULT D3D11RenderTriangleShader::DoRender(D3D11DeviceProvider *pDP)
 {
     ID3D11DeviceContext *pImmediateContext = pDP->ImmediateContext();
-
-    HRESULT hr = S_OK;
 
     FLOAT aColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     pImmediateContext->ClearRenderTargetView(pDP->RenderTargetView(), aColor);

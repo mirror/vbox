@@ -299,7 +299,7 @@ int D3D9Test::Run()
 
     LARGE_INTEGER PerfFreq;
     QueryPerformanceFrequency(&PerfFreq);
-    float const PerfPeriod = 1.0f / PerfFreq.QuadPart; /* Period in seconds. */
+    float const PerfPeriod = 1.0f / (float)PerfFreq.QuadPart; /* Period in seconds. */
 
     LARGE_INTEGER PrevTS;
     QueryPerformanceCounter(&PrevTS);
@@ -347,7 +347,7 @@ int D3D9Test::Run()
             QueryPerformanceCounter(&CurrTS);
 
             /* Time in seconds since the previous render step. */
-            float dt = fFirst ? 0.0f : (CurrTS.QuadPart - PrevTS.QuadPart) * PerfPeriod;
+            float dt = fFirst ? 0.0f : (float)(CurrTS.QuadPart - PrevTS.QuadPart) * PerfPeriod;
             if (mpRender)
             {
                 mpRender->TimeAdvance(dt);
@@ -361,7 +361,7 @@ int D3D9Test::Run()
                 elapsed += dt;
                 if (elapsed > 1.0f)
                 {
-                    float msPerFrame = elapsed * 1000.0f / cFrames;
+                    float msPerFrame = elapsed * 1000.0f / (float)cFrames;
                     char sz[256];
                     _snprintf(sz, sizeof(sz), "D3D9 Test FPS %d Frame Time %fms", cFrames, msPerFrame);
                     SetWindowTextA(mHwnd, sz);

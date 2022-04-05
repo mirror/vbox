@@ -20,7 +20,6 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxGaD3DTest
 VBoxGaD3DTest_TEMPLATE    = VBOXR3STATIC
-VBoxGaD3DTest_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK)
 VBoxGaD3DTest_DEFS        = D3DTEST_STANDALONE
 VBoxGaD3DTest_LIBS        = d3d9.lib
 VBoxGaD3DTest_SOURCES     = \
@@ -37,9 +36,8 @@ VBoxGaD3DTest-x86_BLD_TRG_ARCH = x86
 
 
 PROGRAMS += VBoxD3D11
-VBoxD3D11_TEMPLATE    = VBoxR3StaticNonPedantic
-VBoxD3D11_SDKS        = WINDDK80
-VBoxD3D11_CXXFLAGS   += -wd4458 -wd4838 -wd5029 -wd5039
+VBoxD3D11_TEMPLATE    = VBOXR3STATIC
+VBoxD3D11_CXXFLAGS   += -wd4458 -wd4668 -wd4838 -wd5029 -wd5039
 VBoxD3D11_LIBS        = d3d11.lib
 VBoxD3D11_SOURCES     = \
 	d3d11main.cpp \
