@@ -169,7 +169,7 @@ PROGRAMS.win += \
 PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
-	tstRTBitOperationsPIC3 \
+	tstRTBitOperationsPIC3
 PROGRAMS.solaris += \
 	tstRTCoreDump
 PROGRAMS.darwin += \
