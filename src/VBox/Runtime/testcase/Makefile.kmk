@@ -170,8 +170,6 @@ PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
 	tstRTBitOperationsPIC3 \
-	tstRTInlineAsmPIC \
-	tstRTInlineAsmPIC3
 PROGRAMS.solaris += \
 	tstRTCoreDump
 PROGRAMS.darwin += \
@@ -187,6 +185,9 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  # Stuff which does not build yet with the Validation Kit build box. Skip those for now.
  PROGRAMS += \
  	tstRTInlineAsm
+ PROGRAMS.linux += \
+ 	tstRTInlineAsmPIC \
+ 	tstRTInlineAsmPIC3
 endif
 
 if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
