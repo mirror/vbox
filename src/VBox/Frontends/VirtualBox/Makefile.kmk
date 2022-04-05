@@ -899,6 +899,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIBootOrderEditor.h \
 	src/settings/editors/UIColorThemeEditor.h \
 	src/settings/editors/UIDefaultMachineFolderEditor.h \
+	src/settings/editors/UIDragAndDropEditor.h \
 	src/settings/editors/UIGlobalDisplayFeaturesEditor.h \
 	src/settings/editors/UIGlobalProxyFeaturesEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
@@ -914,7 +915,9 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UINetworkAttachmentEditor.h \
 	src/settings/editors/UIRecordingSettingsEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
+	src/settings/editors/UISharedClipboardEditor.h \
 	src/settings/editors/UIShortcutConfigurationEditor.h \
+	src/settings/editors/UISnapshotFolderEditor.h \
 	src/settings/editors/UIVideoMemoryEditor.h \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
@@ -1460,6 +1463,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIColorThemeEditor.cpp \
 	src/settings/editors/UIDefaultMachineFolderEditor.cpp \
+	src/settings/editors/UIDragAndDropEditor.cpp \
 	src/settings/editors/UIGlobalDisplayFeaturesEditor.cpp \
 	src/settings/editors/UIGlobalProxyFeaturesEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
@@ -1475,7 +1479,9 @@ UICommon_SOURCES = \
 	src/settings/editors/UINetworkAttachmentEditor.cpp \
 	src/settings/editors/UIRecordingSettingsEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \
+	src/settings/editors/UISharedClipboardEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
+	src/settings/editors/UISnapshotFolderEditor.cpp \
 	src/settings/editors/UIVideoMemoryEditor.cpp \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \

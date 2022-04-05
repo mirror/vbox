@@ -29,13 +29,15 @@
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIDragAndDropEditor.h"
 #include "UIErrorString.h"
-#include "UIFilePathSelector.h"
 #include "UIMachineDescriptionEditor.h"
 #include "UIMachineSettingsGeneral.h"
 #include "UIModalWindowManager.h"
 #include "UINameAndSystemEditor.h"
 #include "UIProgressObject.h"
+#include "UISharedClipboardEditor.h"
+#include "UISnapshotFolderEditor.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -130,12 +132,9 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     , m_pTabBasic(0)
     , m_pEditorNameAndSystem(0)
     , m_pTabAdvanced(0)
-    , m_pLabelSnapshotFolder(0)
     , m_pEditorSnapshotFolder(0)
-    , m_pLabelClipboard(0)
-    , m_pComboClipboard(0)
-    , m_pLabelDragAndDrop(0)
-    , m_pComboDragAndDrop(0)
+    , m_pEditorClipboard(0)
+    , m_pEditorDragAndDrop(0)
     , m_pTabDescription(0)
     , m_pEditorDescription(0)
     , m_pTabEncryption(0)
@@ -261,11 +260,6 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Get old general data from cache: */
     const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
 
-    /* We are doing that *now* because these combos have
-     * dynamical content which depends on cashed value: */
-    repopulateComboClipboardMode();
-    repopulateComboDnDMode();
-
     /* Load old 'Basic' data from cache: */
     AssertPtrReturnVoid(m_pEditorNameAndSystem);
     m_pEditorNameAndSystem->setName(oldGeneralData.m_strName);
@@ -273,14 +267,12 @@ void UIMachineSettingsGeneral::getFromCache()
 
     /* Load old 'Advanced' data from cache: */
     AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pComboClipboard);
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
+    AssertPtrReturnVoid(m_pEditorClipboard);
+    AssertPtrReturnVoid(m_pEditorDragAndDrop);
     m_pEditorSnapshotFolder->setPath(oldGeneralData.m_strSnapshotsFolder);
     m_pEditorSnapshotFolder->setInitialPath(oldGeneralData.m_strSnapshotsHomeDir);
-    const int iClipboardModePosition = m_pComboClipboard->findData(oldGeneralData.m_clipboardMode);
-    m_pComboClipboard->setCurrentIndex(iClipboardModePosition == -1 ? 0 : iClipboardModePosition);
-    const int iDnDModePosition = m_pComboDragAndDrop->findData(oldGeneralData.m_dndMode);
-    m_pComboDragAndDrop->setCurrentIndex(iDnDModePosition == -1 ? 0 : iDnDModePosition);
+    m_pEditorClipboard->setValue(oldGeneralData.m_clipboardMode);
+    m_pEditorDragAndDrop->setValue(oldGeneralData.m_dndMode);
 
     /* Load old 'Description' data from cache: */
     AssertPtrReturnVoid(m_pEditorDescription);
@@ -313,11 +305,11 @@ void UIMachineSettingsGeneral::putToCache()
 
     /* Gather new 'Advanced' data: */
     AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pComboClipboard);
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
+    AssertPtrReturnVoid(m_pEditorClipboard);
+    AssertPtrReturnVoid(m_pEditorDragAndDrop);
     newGeneralData.m_strSnapshotsFolder = m_pEditorSnapshotFolder->path();
-    newGeneralData.m_clipboardMode = m_pComboClipboard->currentData().value<KClipboardMode>();
-    newGeneralData.m_dndMode = m_pComboDragAndDrop->currentData().value<KDnDMode>();
+    newGeneralData.m_clipboardMode = m_pEditorClipboard->value();
+    newGeneralData.m_dndMode = m_pEditorDragAndDrop->value();
 
     /* Gather new 'Description' data: */
     AssertPtrReturnVoid(m_pEditorDescription);
@@ -470,27 +462,20 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
 
     /* 'Advanced' tab: */
     AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pComboClipboard);
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
+    AssertPtrReturnVoid(m_pEditorClipboard);
+    AssertPtrReturnVoid(m_pEditorDragAndDrop);
     setTabOrder(m_pEditorNameAndSystem, m_pEditorSnapshotFolder);
-    setTabOrder(m_pEditorSnapshotFolder, m_pComboClipboard);
-    setTabOrder(m_pComboClipboard, m_pComboDragAndDrop);
+    setTabOrder(m_pEditorSnapshotFolder, m_pEditorClipboard);
+    setTabOrder(m_pEditorClipboard, m_pEditorDragAndDrop);
 
     /* 'Description' tab: */
     AssertPtrReturnVoid(m_pEditorDescription);
-    setTabOrder(m_pComboDragAndDrop, m_pEditorDescription);
+    setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
 }
 
 void UIMachineSettingsGeneral::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
-    m_pLabelSnapshotFolder->setText(tr("S&napshot Folder:"));
-    m_pLabelClipboard->setText(tr("&Shared Clipboard:"));
-    m_pComboClipboard->setToolTip(tr("Selects which clipboard data will be copied between the guest and the host OS. "
-                                     "This feature requires Guest Additions to be installed in the guest OS."));
-    m_pLabelDragAndDrop->setText(tr("D&rag'n'Drop:"));
-    m_pComboDragAndDrop->setToolTip(tr("Selects which data will be copied between the guest and the host OS by drag'n'drop. "
-                                       "This feature requires Guest Additions to be installed in the guest OS."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAdvanced), tr("A&dvanced"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
     m_pCheckBoxEncryption->setToolTip(tr("When checked, disks attached to this virtual machine will be encrypted."));
@@ -503,30 +488,18 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pEditorEncryptionPasswordConfirm->setToolTip(tr("Confirms the disk encryption password."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabEncryption), tr("Disk Enc&ryption"));
 
-    /* Translate path selector: */
-    if (m_pEditorSnapshotFolder)
-        m_pEditorSnapshotFolder->setToolTip(tr("Holds the path where snapshots of this virtual machine will be stored. "
-                                               "Be aware that snapshots can take quite a lot of storage space."));
-
-    /* Translate Clipboard mode combo: */
-    AssertPtrReturnVoid(m_pComboClipboard);
-    for (int iIndex = 0; iIndex < m_pComboClipboard->count(); ++iIndex)
-    {
-        const KClipboardMode enmType = m_pComboClipboard->currentData().value<KClipboardMode>();
-        m_pComboClipboard->setItemText(iIndex, gpConverter->toString(enmType));
-    }
-
-    /* Translate Drag'n'drop mode combo: */
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
-    for (int iIndex = 0; iIndex < m_pComboDragAndDrop->count(); ++iIndex)
-    {
-        const KDnDMode enmType = m_pComboDragAndDrop->currentData().value<KDnDMode>();
-        m_pComboDragAndDrop->setItemText(iIndex, gpConverter->toString(enmType));
-    }
-
     /* Translate Cipher type combo: */
     AssertPtrReturnVoid(m_pComboCipher);
     m_pComboCipher->setItemText(0, tr("Leave Unchanged", "cipher type"));
+
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorSnapshotFolder->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorClipboard->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDragAndDrop->minimumLabelHorizontalHint());
+    m_pEditorSnapshotFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorClipboard->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorDragAndDrop->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsGeneral::polishPage()
@@ -538,18 +511,12 @@ void UIMachineSettingsGeneral::polishPage()
     m_pEditorNameAndSystem->setOSTypeStuffEnabled(isMachineOffline());
 
     /* Polish 'Advanced' availability: */
-    AssertPtrReturnVoid(m_pLabelSnapshotFolder);
     AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pLabelClipboard);
-    AssertPtrReturnVoid(m_pComboClipboard);
-    AssertPtrReturnVoid(m_pLabelDragAndDrop);
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
-    m_pLabelSnapshotFolder->setEnabled(isMachineOffline());
+    AssertPtrReturnVoid(m_pEditorClipboard);
+    AssertPtrReturnVoid(m_pEditorDragAndDrop);
     m_pEditorSnapshotFolder->setEnabled(isMachineOffline());
-    m_pLabelClipboard->setEnabled(isMachineInValidMode());
-    m_pComboClipboard->setEnabled(isMachineInValidMode());
-    m_pLabelDragAndDrop->setEnabled(isMachineInValidMode());
-    m_pComboDragAndDrop->setEnabled(isMachineInValidMode());
+    m_pEditorClipboard->setEnabled(isMachineInValidMode());
+    m_pEditorDragAndDrop->setEnabled(isMachineInValidMode());
 
     /* Polish 'Description' availability: */
     AssertPtrReturnVoid(m_pEditorDescription);
@@ -632,53 +599,20 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             pLayoutAdvanced->setColumnStretch(2, 1);
             pLayoutAdvanced->setRowStretch(3, 1);
 
-            /* Prepare snapshot folder label: */
-            m_pLabelSnapshotFolder = new QLabel(m_pTabAdvanced);
-            if (m_pLabelSnapshotFolder)
-            {
-                m_pLabelSnapshotFolder->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelSnapshotFolder, 0, 0);
-            }
             /* Prepare snapshot folder editor: */
-            m_pEditorSnapshotFolder = new UIFilePathSelector(m_pTabAdvanced);
+            m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
-            {
-                if (m_pLabelSnapshotFolder)
-                    m_pLabelSnapshotFolder->setBuddy(m_pEditorSnapshotFolder);
-                pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder, 0, 1, 1, 2);
-            }
+                pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder, 0, 0);
 
-            /* Prepare clipboard label: */
-            m_pLabelClipboard = new QLabel(m_pTabAdvanced);
-            if (m_pLabelClipboard)
-            {
-                m_pLabelClipboard->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelClipboard, 1, 0);
-            }
-            /* Prepare clipboard combo: */
-            m_pComboClipboard = new QComboBox(m_pTabAdvanced);
-            if (m_pComboClipboard)
-            {
-                if (m_pLabelClipboard)
-                    m_pLabelClipboard->setBuddy(m_pComboClipboard);
-                pLayoutAdvanced->addWidget(m_pComboClipboard, 1, 1);
-            }
+            /* Prepare clipboard editor: */
+            m_pEditorClipboard = new UISharedClipboardEditor(m_pTabAdvanced);
+            if (m_pEditorClipboard)
+                pLayoutAdvanced->addWidget(m_pEditorClipboard, 1, 0);
 
-            /* Prepare drag&drop label: */
-            m_pLabelDragAndDrop = new QLabel(m_pTabAdvanced);
-            if (m_pLabelDragAndDrop)
-            {
-                m_pLabelDragAndDrop->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelDragAndDrop, 2, 0);
-            }
-            /* Prepare drag&drop combo: */
-            m_pComboDragAndDrop = new QComboBox(m_pTabAdvanced);
-            if (m_pComboDragAndDrop)
-            {
-                if (m_pLabelDragAndDrop)
-                    m_pLabelDragAndDrop->setBuddy(m_pComboDragAndDrop);
-                pLayoutAdvanced->addWidget(m_pComboDragAndDrop, 2, 1);
-            }
+            /* Prepare drag&drop editor: */
+            m_pEditorDragAndDrop = new UIDragAndDropEditor(m_pTabAdvanced);
+            if (m_pEditorDragAndDrop)
+                pLayoutAdvanced->addWidget(m_pEditorDragAndDrop, 2, 0);
         }
 
         m_pTabWidget->addTab(m_pTabAdvanced, QString());
@@ -835,48 +769,6 @@ void UIMachineSettingsGeneral::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
-}
-
-void UIMachineSettingsGeneral::repopulateComboClipboardMode()
-{
-    AssertPtrReturnVoid(m_pComboClipboard);
-    {
-        /* Clear combo first of all: */
-        m_pComboClipboard->clear();
-
-        /* Load currently supported Clipboard modes: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KClipboardMode> clipboardModes = comProperties.GetSupportedClipboardModes();
-        /* Take into account currently cached value: */
-        const KClipboardMode enmCachedValue = m_pCache->base().m_clipboardMode;
-        if (!clipboardModes.contains(enmCachedValue))
-            clipboardModes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KClipboardMode &enmMode, clipboardModes)
-            m_pComboClipboard->addItem(gpConverter->toString(enmMode), QVariant::fromValue(enmMode));
-    }
-}
-
-void UIMachineSettingsGeneral::repopulateComboDnDMode()
-{
-    AssertPtrReturnVoid(m_pComboDragAndDrop);
-    {
-        /* Clear combo first of all: */
-        m_pComboDragAndDrop->clear();
-
-        /* Load currently supported DnD modes: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KDnDMode> dndModes = comProperties.GetSupportedDnDModes();
-        /* Take into account currently cached value: */
-        const KDnDMode enmCachedValue = m_pCache->base().m_dndMode;
-        if (!dndModes.contains(enmCachedValue))
-            dndModes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KDnDMode &enmMode, dndModes)
-            m_pComboDragAndDrop->addItem(gpConverter->toString(enmMode), QVariant::fromValue(enmMode));
-    }
 }
 
 bool UIMachineSettingsGeneral::saveData()

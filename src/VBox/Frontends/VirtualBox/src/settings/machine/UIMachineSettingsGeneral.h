@@ -30,10 +30,11 @@ class QCheckBox;
 class QComboBox;
 class QLineEdit;
 class QITabWidget;
+class UIDragAndDropEditor;
 class UIMachineDescriptionEditor;
 class UINameAndSystemEditor;
-
-class UIFilePathSelector;
+class UISharedClipboardEditor;
+class UISnapshotFolderEditor;
 struct UIDataSettingsMachineGeneral;
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UISettingsCacheMachineGeneral;
 
@@ -114,11 +115,6 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Repopulates Clipboard mode combo-box. */
-    void repopulateComboClipboardMode();
-    /** Repopulates DnD mode combo-box. */
-    void repopulateComboDnDMode();
-
     /** Saves existing general data from cache. */
     bool saveData();
     /** Saves existing 'Basic' data from cache. */
@@ -160,19 +156,13 @@ private:
         UINameAndSystemEditor *m_pEditorNameAndSystem;
 
         /** Holds the 'Advanced' tab instance. */
-        QWidget            *m_pTabAdvanced;
-        /** Holds the snapshot folder label instance. */
-        QLabel             *m_pLabelSnapshotFolder;
+        QWidget                 *m_pTabAdvanced;
         /** Holds the snapshot folder editor instance. */
-        UIFilePathSelector *m_pEditorSnapshotFolder;
-        /** Holds the shared clipboard label instance. */
-        QLabel             *m_pLabelClipboard;
-        /** Holds the shared clipboard combo instance. */
-        QComboBox          *m_pComboClipboard;
-        /** Holds the drag and drop label instance. */
-        QLabel             *m_pLabelDragAndDrop;
-        /** Holds the drag and drop combo instance. */
-        QComboBox          *m_pComboDragAndDrop;
+        UISnapshotFolderEditor  *m_pEditorSnapshotFolder;
+        /** Holds the shared clipboard editor instance. */
+        UISharedClipboardEditor *m_pEditorClipboard;
+        /** Holds the drag and drop editor instance. */
+        UIDragAndDropEditor     *m_pEditorDragAndDrop;
 
         /** Holds the 'Description' tab instance. */
         QWidget                    *m_pTabDescription;
