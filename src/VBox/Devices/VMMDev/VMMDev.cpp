@@ -274,6 +274,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_NetBSD:                           pszOs = "NetBSD";         break;
         case VBOXOSTYPE_Netware:                          pszOs = "Netware";        break;
         case VBOXOSTYPE_Solaris:                          pszOs = "Solaris";        break;
+        case VBOXOSTYPE_Solaris10U8_or_later:             pszOs = "Solaris 10";     break;
         case VBOXOSTYPE_OpenSolaris:                      pszOs = "OpenSolaris";    break;
         case VBOXOSTYPE_Solaris11_x64 & ~VBOXOSTYPE_x64:  pszOs = "Solaris 11";     break;
         case VBOXOSTYPE_MacOS:                            pszOs = "Mac OS X";       break;

@@ -97,6 +97,9 @@ static struct
     { ovf::CIMOSType_CIMOS_NetWare,                              VBOXOSTYPE_Netware },
     { ovf::CIMOSType_CIMOS_NovellOES,                            VBOXOSTYPE_Netware },
     { ovf::CIMOSType_CIMOS_Solaris,                              VBOXOSTYPE_Solaris },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           VBOXOSTYPE_Solaris_x64 },
+    { ovf::CIMOSType_CIMOS_Solaris,                              VBOXOSTYPE_Solaris10U8_or_later },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           VBOXOSTYPE_Solaris10U8_or_later_x64 },
     { ovf::CIMOSType_CIMOS_SunOS,                                VBOXOSTYPE_Solaris },
     { ovf::CIMOSType_CIMOS_FreeBSD,                              VBOXOSTYPE_FreeBSD },
     { ovf::CIMOSType_CIMOS_NetBSD,                               VBOXOSTYPE_NetBSD },
@@ -140,7 +143,6 @@ static struct
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat6_x64 },
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat7_x64 }, // 64-bit only
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat8_x64 }, // 64-bit only
-    { ovf::CIMOSType_CIMOS_Solaris_64,                           VBOXOSTYPE_Solaris_x64 },
     { ovf::CIMOSType_CIMOS_SUSE,                                 VBOXOSTYPE_OpenSUSE },
     { ovf::CIMOSType_CIMOS_SLES,                                 VBOXOSTYPE_SUSE_LE },
     { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   VBOXOSTYPE_OpenSUSE },

@@ -82,11 +82,17 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression(  "Reac.*",                         QRegularExpression::CaseInsensitiveOption), "Windows2003" },
 
     /* Solaris: */
-    { QRegularExpression("Sol.*11",                                                  QRegularExpression::CaseInsensitiveOption), "Solaris11_64" },
-    { QRegularExpression("((Op.*Sol)|(os20[01][0-9])|(Sol.*10)|(India)|(Neva)).*64", QRegularExpression::CaseInsensitiveOption), "OpenSolaris_64" },
-    { QRegularExpression("((Op.*Sol)|(os20[01][0-9])|(Sol.*10)|(India)|(Neva)).*32", QRegularExpression::CaseInsensitiveOption), "OpenSolaris" },
-    { QRegularExpression("Sol.*64",                                                  QRegularExpression::CaseInsensitiveOption), "Solaris_64" },
-    { QRegularExpression("Sol.*32",                                                  QRegularExpression::CaseInsensitiveOption), "Solaris" },
+    { QRegularExpression("((Op.*Sol)|(os20[01][0-9])|(India)|(Illum)|(Neva)).*64",   QRegularExpression::CaseInsensitiveOption), "OpenSolaris_64" },
+    { QRegularExpression("((Op.*Sol)|(os20[01][0-9])|(India)|(Illum)|(Neva)).*32",   QRegularExpression::CaseInsensitiveOption), "OpenSolaris" },
+    { QRegularExpression("(Sol.*10.*(10/09)|(9/10)|(8/11)|(1/13)).*64",              QRegularExpression::CaseInsensitiveOption), "Solaris10U8_or_later_64" },
+    { QRegularExpression("(Sol.*10.*(10/09)|(9/10)|(8/11)|(1/13)).*32",              QRegularExpression::CaseInsensitiveOption), "Solaris10U8_or_later" },
+    { QRegularExpression("(Sol.*10.*(U[89])|(U1[01])).*64",                          QRegularExpression::CaseInsensitiveOption), "Solaris10U8_or_later_64" },
+    { QRegularExpression("(Sol.*10.*(U[89])|(U1[01])).*32",                          QRegularExpression::CaseInsensitiveOption), "Solaris10U8_or_later" },
+    { QRegularExpression("(Sol.*10.*(1/06)|(6/06)|(11/06)|(8/07)|(5/08)|(10/08)|(5/09)).*64",  QRegularExpression::CaseInsensitiveOption), "Solaris_64" }, // Solaris 10U7 (5/09) or earlier
+    { QRegularExpression("(Sol.*10.*(1/06)|(6/06)|(11/06)|(8/07)|(5/08)|(10/08)|(5/09)).*32",  QRegularExpression::CaseInsensitiveOption), "Solaris" }, // Solaris 10U7 (5/09) or earlier
+    { QRegularExpression("((Sol.*10.*U[1-7])|(Sol.*10)).*64",                        QRegularExpression::CaseInsensitiveOption), "Solaris_64" }, // Solaris 10U7 (5/09) or earlier
+    { QRegularExpression("((Sol.*10.*U[1-7])|(Sol.*10)).*32",                        QRegularExpression::CaseInsensitiveOption), "Solaris" }, // Solaris 10U7 (5/09) or earlier
+    { QRegularExpression("((Sol.*11)|(Sol.*)).*64",                                  QRegularExpression::CaseInsensitiveOption), "Solaris11_64" },
 
     /* OS/2: */
     { QRegularExpression("OS[/|!-]{,1}2.*W.*4.?5", QRegularExpression::CaseInsensitiveOption), "OS2Warp45" },
@@ -217,8 +223,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression("((Ub)|(Mint)).*32",                 QRegularExpression::CaseInsensitiveOption), "Ubuntu" },
     { QRegularExpression("Xa.*64",                            QRegularExpression::CaseInsensitiveOption), "Xandros_64" },
     { QRegularExpression("Xa.*32",                            QRegularExpression::CaseInsensitiveOption), "Xandros" },
-    { QRegularExpression("((Or)|(oel)|(ol)).*64",             QRegularExpression::CaseInsensitiveOption), "Oracle_64" },
-    { QRegularExpression("((Or)|(oel)|(ol)).*32",             QRegularExpression::CaseInsensitiveOption), "Oracle" },
+    { QRegularExpression("((Or)|(oel)|(^ol)).*64",            QRegularExpression::CaseInsensitiveOption), "Oracle_64" },
+    { QRegularExpression("((Or)|(oel)|(^ol)).*32",            QRegularExpression::CaseInsensitiveOption), "Oracle" },
     { QRegularExpression("Knoppix",                           QRegularExpression::CaseInsensitiveOption), "Linux26" },
     { QRegularExpression("Dsl",                               QRegularExpression::CaseInsensitiveOption), "Linux24" },
     { QRegularExpression("((Lin)|(lnx)).*2.?2",               QRegularExpression::CaseInsensitiveOption), "Linux22" },

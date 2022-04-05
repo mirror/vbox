@@ -215,8 +215,10 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_NetBSD           = 0x62000,
     VBOXOSTYPE_NetBSD_x64       = 0x62100,
     VBOXOSTYPE_Netware          = 0x70000,
-    VBOXOSTYPE_Solaris          = 0x80000,
-    VBOXOSTYPE_Solaris_x64      = 0x80100,
+    VBOXOSTYPE_Solaris          = 0x80000,  // Solaris 10U7 (5/09) and earlier
+    VBOXOSTYPE_Solaris_x64      = 0x80100,  // Solaris 10U7 (5/09) and earlier
+    VBOXOSTYPE_Solaris10U8_or_later     = 0x80001,
+    VBOXOSTYPE_Solaris10U8_or_later_x64 = 0x80101,
     VBOXOSTYPE_OpenSolaris      = 0x81000,
     VBOXOSTYPE_OpenSolaris_x64  = 0x81100,
     VBOXOSTYPE_Solaris11_x64    = 0x82100,

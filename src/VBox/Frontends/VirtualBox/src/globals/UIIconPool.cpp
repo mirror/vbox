@@ -490,6 +490,8 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("NetBSD_64",       ":/os_netbsd_64.png");
     m_guestOSTypeIconNames.insert("Solaris",         ":/os_solaris.png");
     m_guestOSTypeIconNames.insert("Solaris_64",      ":/os_solaris_64.png");
+    m_guestOSTypeIconNames.insert("Solaris10U8_or_later",    ":/os_solaris.png");
+    m_guestOSTypeIconNames.insert("Solaris10U8_or_later_64", ":/os_solaris_64.png");
     m_guestOSTypeIconNames.insert("OpenSolaris",     ":/os_oraclesolaris.png");
     m_guestOSTypeIconNames.insert("OpenSolaris_64",  ":/os_oraclesolaris_64.png");
     m_guestOSTypeIconNames.insert("Solaris11_64",    ":/os_oraclesolaris_64.png");
