@@ -809,7 +809,9 @@ VBOX_WITH_VALIDATIONKIT = 1
 # Include unit tests (testcases) on the Validation Kit .ISO
 # so that we can perform testing on older platforms which we don't support
 # on the host anymore.
-VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING = 1
+if1of ($(KBUILD_TARGET), darwin linux win)
+ VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING = 1
+endif
 # Set if we should ship the audio test from the Validation Kit with the host installer.
 VBOX_WITH_HOST_SHIPPING_AUDIO_TEST = 1
 # Set if we should ship the audio test from the Validation Kit with the guest additions.
