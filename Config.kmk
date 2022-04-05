@@ -4806,6 +4806,21 @@ ifdef VBOX_WITH_LIBOPUS
  SDK_VBOX_OPUS_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
+SDK_VBOX_SOFTFLOAT             := SoftFloat 3 for dll linking.
+ SDK_VBOX_SOFTFLOAT_DEFS       := SOFTFLOAT_FAST_INT64
+ SDK_VBOX_SOFTFLOAT_DEFS.amd64 := LITTLEENDIAN
+ SDK_VBOX_SOFTFLOAT_DEFS.arm64 := LITTLEENDIAN
+ SDK_VBOX_SOFTFLOAT_DEFS.x86   := LITTLEENDIAN
+if1of ($(KBUILD_TARGET),win)
+ SDK_VBOX_SOFTFLOAT_DEFS       := THREAD_LOCAL=declspec(thread)
+else
+ SDK_VBOX_SOFTFLOAT_DEFS       := THREAD_LOCAL=__thread
+endif
+SDK_VBOX_SOFTFLOAT_INCS         = \
+	$(PATH_ROOT)/src/libs/softfloat-3e/source/include
+SDK_VBOX_SOFTFLOAT_LIBS         = \
+	$(PATH_STAGE_LIB)/VBox-SoftFloat$(VBOX_SUFF_LIB)
+
 ifdef VBOX_WITH_LIBSSH
  SDK_VBOX_SSH                  := libssh for dll linking.
  SDK_VBOX_SSH_DEFS             ?= LIBSSH_STATIC=1
