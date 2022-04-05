@@ -337,7 +337,7 @@ TMP_UNITTESTS_DEPS_LIB := \
 	VBoxRT
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN = $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../../bin
+  TMP_UNITTESTS_PATH_BIN = $$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../../bin
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
     	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
@@ -371,17 +371,6 @@ endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 #
 $(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
 	$(call MSG_L1,Creating Validation Kit guest ISO recipe $@)
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.linux.x86   : $(VBOX_PATH_VALIDATIONKIT.linux.x86))
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.linux.amd64 : $(VBOX_PATH_VALIDATIONKIT.linux.amd64))
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.darwin.x86  : $(VBOX_PATH_VALIDATIONKIT.darwin.x86))
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.darwin.amd64: $(VBOX_PATH_VALIDATIONKIT.darwin.amd64))
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.win.x86     : $(VBOX_PATH_VALIDATIONKIT.win.x86))
-	$(call MSG_L1, VBOX_PATH_VALIDATIONKIT.win.amd64   : $(VBOX_PATH_VALIDATIONKIT.win.amd64))
-	$(call MSG_L1, Dirs:)
-	$(foreach os, linux win darwin,$(foreach arch, x86 amd64, \
-		$(call MSG_L1, valkit.$(os).$(arch): $(QUIET)$(shell ls $(abspath $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch)))))))
-	$(foreach os, linux win darwin,$(foreach arch, x86 amd64, \
-		$(call MSG_L1, bin.$(os).$(arch): $(QUIET)$(shell ls -alR $(abspath $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../../bin)))))
 	$(APPEND) -nt $@ \
 		--iso-level 3 \
 		--rock-ridge \
