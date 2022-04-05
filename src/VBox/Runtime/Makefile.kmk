@@ -2302,7 +2302,7 @@ endif
 ifdef RTALLOC_REPLACE_MALLOC
  VBoxRT_DEFS                  += RTALLOC_REPLACE_MALLOC
 endif
-ifdef VBOX_WITH_DTRACE_R3
+if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_ONLY_VALIDATIONKIT)
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
   VBoxRT_DEFS                 += IPRT_WITH_DTRACE IPRT_DTRACE_INCLUDE="dtrace/iprt.h"
  else
@@ -2346,7 +2346,7 @@ ifdef VBOX_WITH_LIBCURL
  	common/rest/RTCRestOutputPrettyToString.cpp \
  	common/rest/RTCRestOutputToString.cpp
 endif
-ifdef VBOX_WITH_DTRACE_R3
+if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_ONLY_VALIDATIONKIT)
  VBoxRT_SOURCES               += \
  	iprt.d
 endif
