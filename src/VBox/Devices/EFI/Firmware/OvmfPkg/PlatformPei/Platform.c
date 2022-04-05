@@ -814,8 +814,8 @@ MaxCpuCountInitialization (
     }
   }
 #else
-  GetVmVariable(EFI_INFO_INDEX_CPU_COUNT_CURRENT, &BootCpuCount, sizeof(BootCpuCount));
-  GetVmVariable(EFI_INFO_INDEX_CPU_COUNT_MAX, &mMaxCpuCount, sizeof(mMaxCpuCount));
+  GetVmVariable(EFI_INFO_INDEX_CPU_COUNT_CURRENT, (CHAR8 *)&BootCpuCount, sizeof(BootCpuCount));
+  GetVmVariable(EFI_INFO_INDEX_CPU_COUNT_MAX, (CHAR8 *)&mMaxCpuCount, sizeof(mMaxCpuCount));
 #endif
 
   DEBUG ((DEBUG_INFO, "%a: BootCpuCount=%d mMaxCpuCount=%u\n", __FUNCTION__,
