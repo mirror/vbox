@@ -3369,7 +3369,7 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
                     if (pLeaf->Value.Integer.u64 > _2G)
                         pHlp->pfnPrintf(pHlp, ", %'lld.%lld GB",
                                               pLeaf->Value.Integer.u64 / _1G,
-                                              (pLeaf->Value.Integer.u64 % _1G) / (_1G / 10));
+                                              (pLeaf->Value.Integer.u64 % _1G) / _1K * 10 / _1M);
                 }
                 pHlp->pfnPrintf(pHlp, ")\n");
                 break;
