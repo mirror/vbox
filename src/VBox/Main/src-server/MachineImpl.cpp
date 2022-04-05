@@ -7651,7 +7651,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         pid = (RTPROCESS)uPid;
     }
     else
-#endif /* VBOX_WITH_VBOXSDS && RT_OS_WINDOWS */
+#endif /* VBOX_WITH_SDS && RT_OS_WINDOWS */
     {
         int vrc = MachineLaunchVMCommonWorker(idStr, strMachineName, strFrontend, aEnvironmentChanges, strSupHardeningLogArg,
                                               strAppOverride, 0 /*fFlags*/, NULL /*pvExtraData*/, pid);
