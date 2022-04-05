@@ -309,6 +309,8 @@ static uint32_t efiInfoSize(PDEVEFIR3 pThisCC)
         case EFI_INFO_INDEX_GRAPHICS_MODE:
         case EFI_INFO_INDEX_VERTICAL_RESOLUTION:
         case EFI_INFO_INDEX_HORIZONTAL_RESOLUTION:
+        case EFI_INFO_INDEX_CPU_COUNT_CURRENT:
+        case EFI_INFO_INDEX_CPU_COUNT_MAX:
             return 4;
         case EFI_INFO_INDEX_BOOT_ARGS:
             return (uint32_t)RTStrNLen(pThisCC->szBootArgs, sizeof(pThisCC->szBootArgs)) + 1;
@@ -412,6 +414,8 @@ static uint8_t efiInfoNextByte(PDEVEFIR3 pThisCC)
         case EFI_INFO_INDEX_GRAPHICS_MODE:      return efiInfoNextByteU32(pThisCC, pThisCC->u32GraphicsMode);
         case EFI_INFO_INDEX_HORIZONTAL_RESOLUTION:  return efiInfoNextByteU32(pThisCC, pThisCC->u32HorizontalResolution);
         case EFI_INFO_INDEX_VERTICAL_RESOLUTION:    return efiInfoNextByteU32(pThisCC, pThisCC->u32VerticalResolution);
+        case EFI_INFO_INDEX_CPU_COUNT_CURRENT:      return efiInfoNextByteU32(pThisCC, pThisCC->cCpus); /** @todo CPU hotplugging. */
+        case EFI_INFO_INDEX_CPU_COUNT_MAX:          return efiInfoNextByteU32(pThisCC, pThisCC->cCpus);
 
         /* Keep in sync with value in EfiThunk.asm */
         case EFI_INFO_INDEX_STACK_BASE:         return efiInfoNextByteU32(pThisCC,  VBOX_EFI_TOP_OF_STACK - _128K); /* 2M - 128 K */
