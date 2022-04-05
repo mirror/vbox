@@ -478,7 +478,7 @@ static int rtFuzzCfgAddFuzzCtxInputs(PRTFUZZCFGINT pThis, RTJSONVAL hJsonValCorp
                 if (strcmp(pszAdjName, RTFUZZ_CFG_INDEX_FILE_NAME))
                 {
                     /* Look for a JSON object with the matching filename and process it. */
-                    RTJSONVAL hJsonInp;
+                    RTJSONVAL hJsonInp = NIL_RTJSONVAL;
                     rc = rtFuzzCfgQueryInputCorpusEntryFromArray(hJsonValCorpusArr, pszAdjName, &hJsonInp);
                     if (RT_SUCCESS(rc))
                     {
@@ -640,4 +640,3 @@ RTDECL(int) RTFuzzCfgQueryCustomCfg(RTFUZZCFG hFuzzCfg, PRTVFSFILE phVfsFile)
 
     return VERR_NOT_FOUND;
 }
-
