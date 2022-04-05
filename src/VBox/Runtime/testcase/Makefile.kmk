@@ -184,7 +184,7 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTCRest-1 \
  	tstRTS3
 endif
-ifdef VBOX_WITH_R0_MODULES
+if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
  PROGRAMS += \
  	tstLdr-2 \
  	tstLdr-3 \
@@ -199,14 +199,14 @@ ifdef VBOX_WITH_R0_MODULES
   	tstRTR0ThreadPreemptionDriverHardened \
   	tstRTR0ThreadDriverHardened
   DLLS     += \
-    	tstRTR0MemUserKernelDriver \
+  	tstRTR0MemUserKernelDriver \
   	tstRTR0SemMutexDriver \
   	tstRTR0TimerDriver \
   	tstRTR0ThreadPreemptionDriver \
   	tstRTR0ThreadDriver
  else
   PROGRAMS += \
-    	tstRTR0MemUserKernelDriver \
+  	tstRTR0MemUserKernelDriver \
   	tstRTR0SemMutexDriver \
   	tstRTR0TimerDriver \
   	tstRTR0ThreadPreemptionDriver \
@@ -935,4 +935,3 @@ ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDD
 endif # VBOX_WITH_TESTCASES
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

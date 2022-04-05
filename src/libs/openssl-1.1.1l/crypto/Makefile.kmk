@@ -20,7 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #       collect the sub-library names here.
 #
 VBOX_LIBRARIES_BEFORE_CRYPTO_SUBDIRS := $(LIBRARIES)
-if defined(VBOX_ONLY_VALIDATIONKIT)
+if defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
  include $(VBOX_PATH_CRYPTO)/sha/Makefile.kmk
 else
  include $(sort $(wildcard $(VBOX_PATH_CRYPTO)/*/Makefile.kmk))
@@ -158,4 +158,3 @@ $(VBox-libcrypto_0_OUTDIR)/buildinf.h: $(VBOX_PATH_CRYPTO)/Makefile.kmk | $$(dir
 	$(QUIET)$(APPEND) $@ 'static const char compiler_flags[] ='
 	$(QUIET)$(APPEND) $@ '  "$(VBox-libcrypto_CFLAGS)";'
 	$(QUIET)$(APPEND) $@ '#endif'
-

@@ -55,7 +55,8 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  LIBRARIES.win += RuntimeR0Stub #RuntimeR3NoCrt
  LIBRARIES.win.x86 += RuntimeR3VccTricks
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
- if defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING) && "$(KBUILD_TARGET)" != "os2" ## breaks validationkit, figure out later.
+ if defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
+  DLLS += VBoxRT
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
 else ifdef VBOX_ONLY_DOCS

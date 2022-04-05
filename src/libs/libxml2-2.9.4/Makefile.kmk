@@ -18,7 +18,7 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifndef VBOX_ONLY_VALIDATIONKIT
+if !defined(VBOX_ONLY_VALIDATIONKIT) || defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING) # Needed for VBoxRT for Validation Kit unit tests.
  LIBRARIES += VBox-libxml2
 endif
 VBox-libxml2_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
@@ -103,4 +103,3 @@ VBox-libxml2-static_EXTENDS = VBox-libxml2
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
