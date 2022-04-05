@@ -79,7 +79,6 @@ PROGRAMS += \
 	tstHandleTable \
 	tstRTHeapOffset \
 	tstRTHeapSimple \
-	tstRTInlineAsm \
 	tstIprtList \
 	tstIprtMiniString \
 	tstLdr \
@@ -184,6 +183,12 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTCRest-1 \
  	tstRTS3
 endif
+ifndef VBOX_ONLY_VALIDATIONKIT
+ # Stuff which does not build yet with the Validation Kit build box. Skip those for now.
+ PROGRAMS += \
+ 	tstRTInlineAsm
+endif
+
 if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
  PROGRAMS += \
  	tstLdr-2 \
