@@ -66,6 +66,7 @@ template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
+template<> bool canConvert<UIDiskEncryptionCipherType>() { return true; }
 template<> bool canConvert<GUIFeatureType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
@@ -1953,6 +1954,50 @@ template<> PreviewUpdateIntervalType fromInternalInteger<PreviewUpdateIntervalTy
         AssertMsgFailed(("No value for '%d'", iPreviewUpdateIntervalType));
     /* Return corresponding enum value for passed integer representation: */
     return hash.value(iPreviewUpdateIntervalType);
+}
+
+/* QString <= UIDiskEncryptionCipherType: */
+template<> QString toInternalString(const UIDiskEncryptionCipherType &enmDiskEncryptionCipherType)
+{
+    switch (enmDiskEncryptionCipherType)
+    {
+        case UIDiskEncryptionCipherType_XTS256: return "AES-XTS256-PLAIN64";
+        case UIDiskEncryptionCipherType_XTS128: return "AES-XTS128-PLAIN64";
+        default:                                break;
+    }
+    return QString();
+}
+
+/* UIDiskEncryptionCipherType <= QString: */
+template<> UIDiskEncryptionCipherType fromInternalString<UIDiskEncryptionCipherType>(const QString &strDiskEncryptionCipherType)
+{
+    if (strDiskEncryptionCipherType.compare("AES-XTS256-PLAIN64", Qt::CaseInsensitive) == 0)
+        return UIDiskEncryptionCipherType_XTS256;
+    if (strDiskEncryptionCipherType.compare("AES-XTS128-PLAIN64", Qt::CaseInsensitive) == 0)
+        return UIDiskEncryptionCipherType_XTS128;
+    return UIDiskEncryptionCipherType_Unchanged;
+}
+
+/* QString <= UIDiskEncryptionCipherType: */
+template<> QString toString(const UIDiskEncryptionCipherType &enmDiskEncryptionCipherType)
+{
+    switch (enmDiskEncryptionCipherType)
+    {
+        case UIDiskEncryptionCipherType_XTS256: return "AES-XTS256-PLAIN64";
+        case UIDiskEncryptionCipherType_XTS128: return "AES-XTS128-PLAIN64";
+        default:                                break;
+    }
+    return QApplication::translate("UICommon", "Leave Unchanged", "cipher type");
+}
+
+/* UIDiskEncryptionCipherType <= QString: */
+template<> UIDiskEncryptionCipherType fromString<UIDiskEncryptionCipherType>(const QString &strDiskEncryptionCipherType)
+{
+    if (strDiskEncryptionCipherType.compare("AES-XTS256-PLAIN64", Qt::CaseInsensitive) == 0)
+        return UIDiskEncryptionCipherType_XTS256;
+    if (strDiskEncryptionCipherType.compare("AES-XTS128-PLAIN64", Qt::CaseInsensitive) == 0)
+        return UIDiskEncryptionCipherType_XTS128;
+    return UIDiskEncryptionCipherType_Unchanged;
 }
 
 /* QString <= GUIFeatureType: */

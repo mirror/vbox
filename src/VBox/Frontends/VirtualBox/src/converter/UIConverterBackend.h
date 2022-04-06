@@ -111,6 +111,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<PreviewUpdateIntervalType>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIDiskEncryptionCipherType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GUIFeatureType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GlobalSettingsPageType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MachineSettingsPageType>();
@@ -242,6 +243,10 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const PreviewUpdateInte
 template<> SHARED_LIBRARY_STUFF PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType);
 template<> SHARED_LIBRARY_STUFF int toInternalInteger(const PreviewUpdateIntervalType &previewUpdateIntervalType);
 template<> SHARED_LIBRARY_STUFF PreviewUpdateIntervalType fromInternalInteger<PreviewUpdateIntervalType>(const int &iPreviewUpdateIntervalType);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIDiskEncryptionCipherType &enmDiskEncryptionCipherType);
+template<> SHARED_LIBRARY_STUFF UIDiskEncryptionCipherType fromInternalString<UIDiskEncryptionCipherType>(const QString &strDiskEncryptionCipherType);
+template<> SHARED_LIBRARY_STUFF QString toString(const UIDiskEncryptionCipherType &enmDiskEncryptionCipherType);
+template<> SHARED_LIBRARY_STUFF UIDiskEncryptionCipherType fromString<UIDiskEncryptionCipherType>(const QString &strDiskEncryptionCipherType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const GUIFeatureType &guiFeatureType);
 template<> SHARED_LIBRARY_STUFF GUIFeatureType fromInternalString<GUIFeatureType>(const QString &strGuiFeatureType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const GlobalSettingsPageType &globalSettingsPageType);

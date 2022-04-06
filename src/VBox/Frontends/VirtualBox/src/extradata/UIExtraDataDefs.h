@@ -983,6 +983,17 @@ enum PreviewUpdateIntervalType
 };
 
 
+/** Selector UI: Disk encryption cipher types. */
+enum UIDiskEncryptionCipherType
+{
+    UIDiskEncryptionCipherType_Unchanged,
+    UIDiskEncryptionCipherType_XTS256,
+    UIDiskEncryptionCipherType_XTS128,
+    UIDiskEncryptionCipherType_Max
+};
+Q_DECLARE_METATYPE(UIDiskEncryptionCipherType);
+
+
 /** Runtime UI: Visual-state types. */
 enum UIVisualStateType
 {

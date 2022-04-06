@@ -27,8 +27,10 @@
 /* GUI includes: */
 #include "QITabWidget.h"
 #include "QIWidgetValidator.h"
+#include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIDiskEncryptionSettingsEditor.h"
 #include "UIDragAndDropEditor.h"
 #include "UIErrorString.h"
 #include "UIMachineDescriptionEditor.h"
@@ -63,7 +65,7 @@ struct UIDataSettingsMachineGeneral
         , m_fEncryptionEnabled(false)
         , m_fEncryptionCipherChanged(false)
         , m_fEncryptionPasswordChanged(false)
-        , m_iEncryptionCipherIndex(-1)
+        , m_enmEncryptionCipherType(UIDiskEncryptionCipherType_Max)
         , m_strEncryptionPassword(QString())
     {}
 
@@ -107,19 +109,19 @@ struct UIDataSettingsMachineGeneral
     QString  m_strDescription;
 
     /** Holds whether the encryption is enabled. */
-    bool                   m_fEncryptionEnabled;
+    bool                        m_fEncryptionEnabled;
     /** Holds whether the encryption cipher was changed. */
-    bool                   m_fEncryptionCipherChanged;
+    bool                        m_fEncryptionCipherChanged;
     /** Holds whether the encryption password was changed. */
-    bool                   m_fEncryptionPasswordChanged;
+    bool                        m_fEncryptionPasswordChanged;
     /** Holds the encryption cipher index. */
-    int                    m_iEncryptionCipherIndex;
+    UIDiskEncryptionCipherType  m_enmEncryptionCipherType;
     /** Holds the encryption password. */
-    QString                m_strEncryptionPassword;
+    QString                     m_strEncryptionPassword;
     /** Holds the encrypted medium ids. */
-    EncryptedMediumMap     m_encryptedMedia;
+    EncryptedMediumMap          m_encryptedMedia;
     /** Holds the encryption passwords. */
-    EncryptionPasswordMap  m_encryptionPasswords;
+    EncryptionPasswordMap       m_encryptionPasswords;
 };
 
 
@@ -138,14 +140,7 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     , m_pTabDescription(0)
     , m_pEditorDescription(0)
     , m_pTabEncryption(0)
-    , m_pCheckBoxEncryption(0)
-    , m_pWidgetEncryptionSettings(0)
-    , m_pLabelCipher(0)
-    , m_pComboCipher(0)
-    , m_pLabelEncryptionPassword(0)
-    , m_pEditorEncryptionPassword(0)
-    , m_pLabelEncryptionPasswordConfirm(0)
-    , m_pEditorEncryptionPasswordConfirm(0)
+    , m_pEditorDiskEncryptionSettings(0)
 {
     prepare();
 }
@@ -243,9 +238,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     oldGeneralData.m_fEncryptionCipherChanged = false;
     oldGeneralData.m_fEncryptionPasswordChanged = false;
     if (fEncryptionCipherCommon)
-        oldGeneralData.m_iEncryptionCipherIndex = m_encryptionCiphers.indexOf(strCipher);
-    if (oldGeneralData.m_iEncryptionCipherIndex == -1)
-        oldGeneralData.m_iEncryptionCipherIndex = 0;
+        oldGeneralData.m_enmEncryptionCipherType = gpConverter->fromInternalString<UIDiskEncryptionCipherType>(strCipher);
     oldGeneralData.m_encryptedMedia = encryptedMedia;
 
     /* Cache old general data: */
@@ -279,10 +272,9 @@ void UIMachineSettingsGeneral::getFromCache()
     m_pEditorDescription->setValue(oldGeneralData.m_strDescription);
 
     /* Load old 'Encryption' data from cache: */
-    AssertPtrReturnVoid(m_pCheckBoxEncryption);
-    AssertPtrReturnVoid(m_pComboCipher);
-    m_pCheckBoxEncryption->setChecked(oldGeneralData.m_fEncryptionEnabled);
-    m_pComboCipher->setCurrentIndex(oldGeneralData.m_iEncryptionCipherIndex);
+    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
+    m_pEditorDiskEncryptionSettings->setFeatureEnabled(oldGeneralData.m_fEncryptionEnabled);
+    m_pEditorDiskEncryptionSettings->setCipherType(oldGeneralData.m_enmEncryptionCipherType);
     m_fEncryptionCipherChanged = oldGeneralData.m_fEncryptionCipherChanged;
     m_fEncryptionPasswordChanged = oldGeneralData.m_fEncryptionPasswordChanged;
 
@@ -317,14 +309,12 @@ void UIMachineSettingsGeneral::putToCache()
                                       QString() : m_pEditorDescription->value();
 
     /* Gather new 'Encryption' data: */
-    AssertPtrReturnVoid(m_pCheckBoxEncryption);
-    AssertPtrReturnVoid(m_pComboCipher);
-    AssertPtrReturnVoid(m_pEditorEncryptionPassword);
-    newGeneralData.m_fEncryptionEnabled = m_pCheckBoxEncryption->isChecked();
+    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
+    newGeneralData.m_fEncryptionEnabled = m_pEditorDiskEncryptionSettings->isFeatureEnabled();
     newGeneralData.m_fEncryptionCipherChanged = m_fEncryptionCipherChanged;
     newGeneralData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
-    newGeneralData.m_iEncryptionCipherIndex = m_pComboCipher->currentIndex();
-    newGeneralData.m_strEncryptionPassword = m_pEditorEncryptionPassword->text();
+    newGeneralData.m_enmEncryptionCipherType = m_pEditorDiskEncryptionSettings->cipherType();
+    newGeneralData.m_strEncryptionPassword = m_pEditorDiskEncryptionSettings->password1();
     newGeneralData.m_encryptedMedia = m_pCache->base().m_encryptedMedia;
     /* If encryption status, cipher or password is changed: */
     if (newGeneralData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
@@ -402,8 +392,8 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     message.second.clear();
 
     /* Encryption validation: */
-    AssertPtrReturn(m_pCheckBoxEncryption, false);
-    if (m_pCheckBoxEncryption->isChecked())
+    AssertPtrReturn(m_pEditorDiskEncryptionSettings, false);
+    if (m_pEditorDiskEncryptionSettings->isFeatureEnabled())
     {
         /* Encryption Extension Pack presence test: */
         CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
@@ -417,26 +407,23 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Cipher should be chosen if once changed: */
-        AssertPtrReturn(m_pComboCipher, false);
-        if (!m_pCache->base().m_fEncryptionEnabled ||
-            m_fEncryptionCipherChanged)
+        if (   !m_pCache->base().m_fEncryptionEnabled
+            || m_fEncryptionCipherChanged)
         {
-            if (m_pComboCipher->currentIndex() == 0)
+            if (m_pEditorDiskEncryptionSettings->cipherType() == UIDiskEncryptionCipherType_Unchanged)
                 message.second << tr("Disk encryption cipher type not specified.");
             fPass = false;
         }
 
         /* Password should be entered and confirmed if once changed: */
-        AssertPtrReturn(m_pEditorEncryptionPassword, false);
-        AssertPtrReturn(m_pEditorEncryptionPasswordConfirm, false);
         if (!m_pCache->base().m_fEncryptionEnabled ||
             m_fEncryptionPasswordChanged)
         {
-            if (m_pEditorEncryptionPassword->text().isEmpty())
+            if (m_pEditorDiskEncryptionSettings->password1().isEmpty())
                 message.second << tr("Disk encryption password empty.");
             else
-            if (m_pEditorEncryptionPassword->text() !=
-                m_pEditorEncryptionPasswordConfirm->text())
+            if (m_pEditorDiskEncryptionSettings->password1() !=
+                m_pEditorDiskEncryptionSettings->password2())
                 message.second << tr("Disk encryption passwords do not match.");
             fPass = false;
         }
@@ -478,19 +465,7 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAdvanced), tr("A&dvanced"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
-    m_pCheckBoxEncryption->setToolTip(tr("When checked, disks attached to this virtual machine will be encrypted."));
-    m_pCheckBoxEncryption->setText(tr("En&able Disk Encryption"));
-    m_pLabelCipher->setText(tr("Disk Encryption C&ipher:"));
-    m_pComboCipher->setToolTip(tr("Selects the cipher to be used for encrypting the virtual machine disks."));
-    m_pLabelEncryptionPassword->setText(tr("E&nter New Password:"));
-    m_pEditorEncryptionPassword->setToolTip(tr("Holds the encryption password for disks attached to this virtual machine."));
-    m_pLabelEncryptionPasswordConfirm->setText(tr("C&onfirm New Password:"));
-    m_pEditorEncryptionPasswordConfirm->setToolTip(tr("Confirms the disk encryption password."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabEncryption), tr("Disk Enc&ryption"));
-
-    /* Translate Cipher type combo: */
-    AssertPtrReturnVoid(m_pComboCipher);
-    m_pComboCipher->setItemText(0, tr("Leave Unchanged", "cipher type"));
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
@@ -523,10 +498,21 @@ void UIMachineSettingsGeneral::polishPage()
     m_pEditorDescription->setEnabled(isMachineInValidMode());
 
     /* Polish 'Encryption' availability: */
-    AssertPtrReturnVoid(m_pCheckBoxEncryption);
-    AssertPtrReturnVoid(m_pWidgetEncryptionSettings);
-    m_pCheckBoxEncryption->setEnabled(isMachineOffline());
-    m_pWidgetEncryptionSettings->setEnabled(isMachineOffline() && m_pCheckBoxEncryption->isChecked());
+    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
+    m_pEditorDiskEncryptionSettings->setEnabled(isMachineOffline());
+}
+
+void UIMachineSettingsGeneral::sltHandleEncryptionCipherChanged()
+{
+    m_fEncryptionCipherChanged = true;
+    revalidate();
+}
+
+void UIMachineSettingsGeneral::sltHandleEncryptionPasswordChanged()
+{
+    m_fEncryptionCipherChanged = true;
+    m_fEncryptionPasswordChanged = true;
+    revalidate();
 }
 
 void UIMachineSettingsGeneral::prepare()
@@ -593,26 +579,25 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
     if (m_pTabAdvanced)
     {
         /* Prepare 'Advanced' tab layout: */
-        QGridLayout *pLayoutAdvanced = new QGridLayout(m_pTabAdvanced);
+        QVBoxLayout *pLayoutAdvanced = new QVBoxLayout(m_pTabAdvanced);
         if (pLayoutAdvanced)
         {
-            pLayoutAdvanced->setColumnStretch(2, 1);
-            pLayoutAdvanced->setRowStretch(3, 1);
-
             /* Prepare snapshot folder editor: */
             m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
-                pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder, 0, 0);
+                pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder);
 
             /* Prepare clipboard editor: */
             m_pEditorClipboard = new UISharedClipboardEditor(m_pTabAdvanced);
             if (m_pEditorClipboard)
-                pLayoutAdvanced->addWidget(m_pEditorClipboard, 1, 0);
+                pLayoutAdvanced->addWidget(m_pEditorClipboard);
 
             /* Prepare drag&drop editor: */
             m_pEditorDragAndDrop = new UIDragAndDropEditor(m_pTabAdvanced);
             if (m_pEditorDragAndDrop)
-                pLayoutAdvanced->addWidget(m_pEditorDragAndDrop, 2, 0);
+                pLayoutAdvanced->addWidget(m_pEditorDragAndDrop);
+
+            pLayoutAdvanced->addStretch();
         }
 
         m_pTabWidget->addTab(m_pTabAdvanced, QString());
@@ -649,88 +634,15 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
     if (m_pTabEncryption)
     {
         /* Prepare 'Encryption' tab layout: */
-        QGridLayout *pLayoutEncryption = new QGridLayout(m_pTabEncryption);
+        QVBoxLayout *pLayoutEncryption = new QVBoxLayout(m_pTabEncryption);
         if (pLayoutEncryption)
         {
-            pLayoutEncryption->setRowStretch(2, 1);
+            /* Prepare disk encryption settings editor: */
+            m_pEditorDiskEncryptionSettings = new UIDiskEncryptionSettingsEditor(m_pTabEncryption);
+            if (m_pEditorDiskEncryptionSettings)
+                pLayoutEncryption->addWidget(m_pEditorDiskEncryptionSettings);
 
-            /* Prepare encryption check-box: */
-            m_pCheckBoxEncryption = new QCheckBox(m_pTabEncryption);
-            if (m_pCheckBoxEncryption)
-                pLayoutEncryption->addWidget(m_pCheckBoxEncryption, 0, 0, 1, 2);
-
-            /* Prepare 20-px shifting spacer: */
-            QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-            if (pSpacerItem)
-                pLayoutEncryption->addItem(pSpacerItem, 1, 0);
-
-            /* Prepare encryption settings widget: */
-            m_pWidgetEncryptionSettings = new QWidget(m_pTabEncryption);
-            if (m_pWidgetEncryptionSettings)
-            {
-                /* Prepare encryption settings widget layout: */
-                QGridLayout *m_pLayoutEncryptionSettings = new QGridLayout(m_pWidgetEncryptionSettings);
-                if (m_pLayoutEncryptionSettings)
-                {
-                    m_pLayoutEncryptionSettings->setContentsMargins(0, 0, 0, 0);
-
-                    /* Prepare encryption cipher label: */
-                    m_pLabelCipher = new QLabel(m_pWidgetEncryptionSettings);
-                    if (m_pLabelCipher)
-                    {
-                        m_pLabelCipher->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelCipher, 0, 0);
-                    }
-                    /* Prepare encryption cipher combo: */
-                    m_pComboCipher = new QComboBox(m_pWidgetEncryptionSettings);
-                    if (m_pComboCipher)
-                    {
-                        if (m_pLabelCipher)
-                            m_pLabelCipher->setBuddy(m_pComboCipher);
-                        m_encryptionCiphers << QString()
-                                            << "AES-XTS256-PLAIN64"
-                                            << "AES-XTS128-PLAIN64";
-                        m_pComboCipher->addItems(m_encryptionCiphers);
-                        m_pLayoutEncryptionSettings->addWidget(m_pComboCipher, 0, 1);
-                    }
-
-                    /* Prepare encryption password label: */
-                    m_pLabelEncryptionPassword = new QLabel(m_pWidgetEncryptionSettings);
-                    if (m_pLabelEncryptionPassword)
-                    {
-                        m_pLabelEncryptionPassword->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPassword, 1, 0);
-                    }
-                    /* Prepare encryption password editor: */
-                    m_pEditorEncryptionPassword = new QLineEdit(m_pWidgetEncryptionSettings);
-                    if (m_pEditorEncryptionPassword)
-                    {
-                        if (m_pLabelEncryptionPassword)
-                            m_pLabelEncryptionPassword->setBuddy(m_pEditorEncryptionPassword);
-                        m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
-                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPassword, 1, 1);
-                    }
-
-                    /* Prepare encryption confirm password label: */
-                    m_pLabelEncryptionPasswordConfirm = new QLabel(m_pWidgetEncryptionSettings);
-                    if (m_pLabelEncryptionPasswordConfirm)
-                    {
-                        m_pLabelEncryptionPasswordConfirm->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPasswordConfirm, 2, 0);
-                    }
-                    /* Prepare encryption confirm password editor: */
-                    m_pEditorEncryptionPasswordConfirm = new QLineEdit(m_pWidgetEncryptionSettings);
-                    if (m_pEditorEncryptionPasswordConfirm)
-                    {
-                        if (m_pLabelEncryptionPasswordConfirm)
-                            m_pLabelEncryptionPasswordConfirm->setBuddy(m_pEditorEncryptionPasswordConfirm);
-                        m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
-                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1);
-                    }
-                }
-
-                pLayoutEncryption->addWidget(m_pWidgetEncryptionSettings, 1, 1);
-            }
+            pLayoutEncryption->addStretch();
         }
 
         m_pTabWidget->addTab(m_pTabEncryption, QString());
@@ -746,22 +658,12 @@ void UIMachineSettingsGeneral::prepareConnections()
             this, &UIMachineSettingsGeneral::revalidate);
 
     /* Configure 'Encryption' connections: */
-    connect(m_pCheckBoxEncryption, &QCheckBox::toggled,
-            m_pWidgetEncryptionSettings, &QWidget::setEnabled);
-    connect(m_pCheckBoxEncryption, &QCheckBox::toggled,
+    connect(m_pEditorDiskEncryptionSettings, &UIDiskEncryptionSettingsEditor::sigStatusChanged,
             this, &UIMachineSettingsGeneral::revalidate);
-    connect(m_pComboCipher, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIMachineSettingsGeneral::sltMarkEncryptionCipherChanged);
-    connect(m_pComboCipher, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIMachineSettingsGeneral::revalidate);
-    connect(m_pEditorEncryptionPassword, &QLineEdit::textEdited,
-            this, &UIMachineSettingsGeneral::sltMarkEncryptionPasswordChanged);
-    connect(m_pEditorEncryptionPassword, &QLineEdit::textEdited,
-            this, &UIMachineSettingsGeneral::revalidate);
-    connect(m_pEditorEncryptionPasswordConfirm, &QLineEdit::textEdited,
-            this, &UIMachineSettingsGeneral::sltMarkEncryptionPasswordChanged);
-    connect(m_pEditorEncryptionPasswordConfirm, &QLineEdit::textEdited,
-            this, &UIMachineSettingsGeneral::revalidate);
+    connect(m_pEditorDiskEncryptionSettings, &UIDiskEncryptionSettingsEditor::sigCipherChanged,
+            this, &UIMachineSettingsGeneral::sltHandleEncryptionCipherChanged);
+    connect(m_pEditorDiskEncryptionSettings, &UIDiskEncryptionSettingsEditor::sigPasswordChanged,
+            this, &UIMachineSettingsGeneral::sltHandleEncryptionPasswordChanged);
 }
 
 void UIMachineSettingsGeneral::cleanup()
@@ -990,12 +892,10 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                     if (fSuccess)
                     {
                         /* Cipher attribute changed? */
-                        QString strNewCipher;
-                        if (newGeneralData.m_fEncryptionCipherChanged)
-                        {
-                            strNewCipher = newGeneralData.m_fEncryptionEnabled ?
-                                           m_encryptionCiphers.at(newGeneralData.m_iEncryptionCipherIndex) : QString();
-                        }
+                        const QString strNewCipher
+                            = newGeneralData.m_fEncryptionCipherChanged && newGeneralData.m_fEncryptionEnabled
+                            ? gpConverter->toInternalString(newGeneralData.m_enmEncryptionCipherType)
+                            : QString();
 
                         /* Password attribute changed? */
                         QString strNewPassword;

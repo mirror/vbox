@@ -22,14 +22,11 @@
 #endif
 
 /* GUI includes: */
-#include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class QComboBox;
-class QLineEdit;
 class QITabWidget;
+class UIDiskEncryptionSettingsEditor;
 class UIDragAndDropEditor;
 class UIMachineDescriptionEditor;
 class UINameAndSystemEditor;
@@ -91,10 +88,10 @@ protected:
 
 private slots:
 
-    /** Marks the encryption cipher as changed. */
-    void sltMarkEncryptionCipherChanged() { m_fEncryptionCipherChanged = true; }
-    /** Marks the encryption cipher and password as changed. */
-    void sltMarkEncryptionPasswordChanged() { m_fEncryptionCipherChanged = true; m_fEncryptionPasswordChanged = true; }
+    /** Handles encryption cipher change. */
+    void sltHandleEncryptionCipherChanged();
+    /** Handles encryption password change. */
+    void sltHandleEncryptionPasswordChanged();
 
 private:
 
@@ -138,10 +135,6 @@ private:
       * the old <i>password</i> at all to compare the new one with. */
     bool  m_fEncryptionPasswordChanged;
 
-    /** Holds the hard-coded encryption cipher list.
-      * We are hard-coding it because there is no place we can get it from. */
-    QStringList  m_encryptionCiphers;
-
     /** Holds the page data cache instance. */
     UISettingsCacheMachineGeneral *m_pCache;
 
@@ -170,23 +163,9 @@ private:
         UIMachineDescriptionEditor *m_pEditorDescription;
 
         /** Holds the 'Encryption' tab instance. */
-        QWidget   *m_pTabEncryption;
-        /** Holds the encryption check-box instance. */
-        QCheckBox *m_pCheckBoxEncryption;
-        /** Holds the encryption widget instance. */
-        QWidget   *m_pWidgetEncryptionSettings;
-        /** Holds the cipher label instance. */
-        QLabel    *m_pLabelCipher;
-        /** Holds the cipher combo instance. */
-        QComboBox *m_pComboCipher;
-        /** Holds the enter password label instance. */
-        QLabel    *m_pLabelEncryptionPassword;
-        /** Holds the enter password editor instance. */
-        QLineEdit *m_pEditorEncryptionPassword;
-        /** Holds the confirm password label instance. */
-        QLabel    *m_pLabelEncryptionPasswordConfirm;
-        /** Holds the confirm password editor instance. */
-        QLineEdit *m_pEditorEncryptionPasswordConfirm;
+        QWidget                        *m_pTabEncryption;
+        /** Holds the cipher settings editor instance. */
+        UIDiskEncryptionSettingsEditor *m_pEditorDiskEncryptionSettings;
     /** @} */
 };
 
