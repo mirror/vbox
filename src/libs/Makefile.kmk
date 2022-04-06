@@ -47,7 +47,7 @@ endif
 
 
 # libjpeg for VRDP video redirection and ExtPack's DrvHostWebcam.
-if   (defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK_PUEL)) \
+if  (defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK_PUEL)) \
  && !defined(VBOX_ONLY_ADDITIONS)
  include $(PATH_SUB_CURRENT)/jpeg-9b/Makefile.kmk
 endif
@@ -57,16 +57,6 @@ endif
 if "$(SDK_VBOX_LZF_INCS)" == "$(PATH_ROOT)/src/libs/liblzf-3.4"
  include $(PATH_SUB_CURRENT)/liblzf-3.4/Makefile.kmk
 endif
-
-
-# libpng for screenshots in main.
-if  !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_DOCS) \
- && !defined(VBOX_ONLY_SDK) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.6.36"
- include $(PATH_SUB_CURRENT)/libpng-1.6.36/Makefile.kmk
-endif # !VBOX_ONLY_DOCS
 
 
 # libssh for cloud integration.
@@ -122,19 +112,31 @@ if defined(VBOX_WITH_MAIN) \
  && !defined(VBOX_ONLY_VALIDATIONKIT) \
  && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
- # libopus for supporting audio with the video capture.
- if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
-   && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
-  include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
+ if  !defined(VBOX_ONLY_DOCS) \
+  && !defined(VBOX_ONLY_EXTPACKS) \
+  && !defined(VBOX_WITH_SDK)
+
+  # libopus for supporting audio with the video capture.
+  if   defined(VBOX_WITH_LIBOPUS) \
+    && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
+   include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
+  endif
+
+
+  # libpng for screenshots in main.
+  if  !defined(VBOX_ONLY_DOCS) \
+   && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.6.36"
+   include $(PATH_SUB_CURRENT)/libpng-1.6.36/Makefile.kmk
+  endif
+
+
+  # libvpx is used for video capture.
+  if   defined(VBOX_WITH_LIBVPX) \
+    && ("$(SDK_VBOX_VPX_INCS)" == "$(SDK_VBOX_VPX_DEFAULT_INCS)")
+   include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
+  endif
+
  endif
-
-
- # libvpx is used for video capture.
- if defined(VBOX_WITH_LIBVPX) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
-   && ("$(SDK_VBOX_VPX_INCS)" == "$(SDK_VBOX_VPX_DEFAULT_INCS)")
-  include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
- endif
-
 
  # XPCOM is used as a COM on non-Windows platforms.
  if defined(VBOX_WITH_XPCOM) && !defined(VBOX_ONLY_DOCS)
