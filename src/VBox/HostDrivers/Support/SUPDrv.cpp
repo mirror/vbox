@@ -75,6 +75,19 @@
 # define VBOXDRV_IOCTL_RETURN(pvSession, uIOCtl, pvReqHdr, rcRet, rcReq) do { } while (0)
 #endif
 
+#if defined(RT_OS_LINUX)
+/* In Linux 5.18-rc1, memcpy became a wrapper which does fortify checks
+ * before triggering __underlying_memcpy() call. We do not pass these checks here,
+ * so bypass them for now.  */
+# if RTLNX_VER_MIN(5,18,0)
+#  define SUPDRV_MEMCPY __underlying_memcpy
+# else
+# define SUPDRV_MEMCPY  memcpy
+# endif
+#else
+# define SUPDRV_MEMCPY  memcpy
+#endif
+
 #ifdef __cplusplus
 # if __cplusplus >= 201100 || RT_MSC_PREREQ(RT_MSC_VER_VS2019)
 #  define SUPDRV_CAN_COUNT_FUNCTION_ARGS
@@ -1751,15 +1764,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
 
             /* execute */
             pReq->u.Out.cFunctions = RT_ELEMENTS(g_aFunctions);
-
-            /* In 5.18.0, memcpy became a wrapper which does fortify checks
-             * before triggering __underlying_memcpy() call. We do not pass these checks here,
-             * so bypass them for now.  */
-#if RTLNX_VER_MIN(5,18,0)
-            __underlying_memcpy(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
-#else
-            memcpy(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
-#endif
+            SUPDRV_MEMCPY(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
             pReq->Hdr.rc = VINF_SUCCESS;
             return 0;
         }
