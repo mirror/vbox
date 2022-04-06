@@ -3333,6 +3333,16 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_FCW_RC_UP       UINT16_C(0x0800)
 /** Rounding control: Towards zero. */
 #define X86_FCW_RC_ZERO     UINT16_C(0x0c00)
+/** Infinity control mask - obsolete, 8087 & 287 only. */
+#define X86_FCW_IC_MASK     UINT16_C(0x1000)
+/** Infinity control: Affine - positive infinity is distictly different from
+ *  negative infinity.
+ * @note 8087, 287 only */
+#define X86_FCW_IC_AFFINE   UINT16_C(0x1000)
+/** Infinity control: Projective - positive and negative infinity are the
+ * same (sign ignored).
+ * @note 8087, 287 only */
+#define X86_FCW_IC_PROJECTIVE UINT16_C(0x0000)
 /** Bits which should be zero, apparently. */
 #define X86_FCW_ZERO_MASK   UINT16_C(0xf080)
 /** @} */
