@@ -38,6 +38,9 @@ else
 endif
 VBox-SoftFloat_INCS        := source source/$(VBOX_SOFTFLOAT_SPECIALIZATION)
 
+# -wd4146: primitives.h(74): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+VBox-SoftFloat_CFLAGS.win  := -wd4146
+
 # Primitives:
 VBox-SoftFloat_SOURCES     := \
 	source/s_eq128.c \
