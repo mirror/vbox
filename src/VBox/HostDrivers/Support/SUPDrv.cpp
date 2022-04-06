@@ -79,7 +79,7 @@
 /* In Linux 5.18-rc1, memcpy became a wrapper which does fortify checks
  * before triggering __underlying_memcpy() call. We do not pass these checks here,
  * so bypass them for now.  */
-# if RTLNX_VER_MIN(5,18,0)
+# if RTLNX_VER_MIN(5,18,0) && !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
 #  define SUPDRV_MEMCPY __underlying_memcpy
 # else
 # define SUPDRV_MEMCPY  memcpy
