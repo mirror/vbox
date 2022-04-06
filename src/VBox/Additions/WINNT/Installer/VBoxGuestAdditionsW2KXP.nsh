@@ -255,6 +255,9 @@ Function W2K_CopyFiles
     FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
 
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+    !if $%VBOX_WITH_WDDM_DX% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDX.dll"
+    !endif
     !if $%VBOX_WITH_MESA3D% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
@@ -264,6 +267,9 @@ Function W2K_CopyFiles
 
     !if $%KBUILD_TARGET_ARCH% == "amd64"
       FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+      !if $%VBOX_WITH_WDDM_DX% == "1"
+        FILE "$%PATH_OUT%\bin\additions\VBoxDX-x86.dll"
+      !endif
       !if $%VBOX_WITH_MESA3D% == "1"
         FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
         FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
@@ -474,6 +480,9 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxVideoW8.inf"
   ; Obsolete files end
   Delete /REBOOTOK "$INSTDIR\VBoxDispD3D.dll"
+  !if $%VBOX_WITH_WDDM_DX% == "1"
+    Delete /REBOOTOK "$INSTDIR\VBoxDX.dll"
+  !endif
   !if $%VBOX_WITH_MESA3D% == "1"
     Delete /REBOOTOK "$INSTDIR\VBoxNine.dll"
     Delete /REBOOTOK "$INSTDIR\VBoxSVGA.dll"
@@ -488,6 +497,9 @@ Function ${un}W2K_UninstallInstDir
 
   !if $%KBUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$INSTDIR\VBoxDispD3D-x86.dll"
+    !if $%VBOX_WITH_WDDM_DX% == "1"
+      Delete /REBOOTOK "$INSTDIR\VBoxDX-x86.dll"
+    !endif
     !if $%VBOX_WITH_MESA3D% == "1"
       Delete /REBOOTOK "$INSTDIR\VBoxNine-x86.dll"
       Delete /REBOOTOK "$INSTDIR\VBoxSVGA-x86.dll"
@@ -556,6 +568,13 @@ Function ${un}W2K_Uninstall
   Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
   !if $%KBUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$g_strSysWow64\VBoxDispD3D-x86.dll"
+  !endif
+
+  !if $%VBOX_WITH_WDDM_DX% == "1"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxDX.dll"
+    !if $%KBUILD_TARGET_ARCH% == "amd64"
+      Delete /REBOOTOK "$g_strSysWow64\VBoxDX-x86.dll"
+    !endif
   !endif
 
   !if $%VBOX_WITH_MESA3D% == "1"

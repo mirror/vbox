@@ -92,6 +92,10 @@ ifdef VBOX_SIGN_ADDITIONS
  ifdef VBOX_WITH_WDDM
   VBoxDispD3D_INSTTYPE       = none
   VBoxDispD3D_DEBUG_INSTTYPE = both
+  ifdef VBOX_WITH_WDDM_DX
+   VBoxDX_INSTTYPE           = none
+   VBoxDX_DEBUG_INSTTYPE     = both
+  endif
  endif
 endif
 
@@ -172,6 +176,44 @@ VBoxDispD3D-x86_LIBS = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB)
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
+
+#
+# VGPU10 driver VBoxDX
+#
+ ifdef VBOX_WITH_VMSVGA3D_DX
+DLLS += VBoxDX
+VBoxDX_TEMPLATE = VBoxGuestR3DllMinVista
+VBoxDX_DEFS     = UNICODE _UNICODE VBOX_WITH_VMSVGA3D_DX
+VBoxDX_DEFS    += D3D_UMD_INTERFACE_VERSION=D3D_UMD_INTERFACE_VERSION_WIN8
+VBoxDX_DEFS    += DXGKDDI_INTERFACE_VERSION=DXGKDDI_INTERFACE_VERSION_WIN8
+VBoxDX_INCS     = \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/common/wddm \
+	$(PATH_ROOT)/src/VBox/Additions/3D/win/include \
+	$(PATH_ROOT)/src/VBox/Additions/3D/mesa/mesa-17.3.9/src/gallium/drivers/svga/include \
+	$(VBOX_GRAPHICS_INCS)
+VBoxDX_SOURCES  = \
+	wddm/dx/VBoxDXDDI.cpp \
+	wddm/dx/VBoxDX.rc \
+	wddm/dx/VBoxDX.def
+VBoxDX_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	Psapi.lib \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB)
+
+# 64-bit systems need a 32-bit version of VBoxDX
+DLLS.amd64 += VBoxDX-x86
+VBoxDX-x86_EXTENDS = VBoxDX
+VBoxDX-x86_BLD_TRG_ARCH = x86
+VBoxDX-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86) \
+	Psapi.lib \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB)
+VBoxDX-x86_DEFS = $(VBoxDX_DEFS) VBOX_WDDM_WOW64
+ endif # VBOX_WITH_VMSVGA3D_DX
 
 include $(PATH_SUB_CURRENT)/wddm/shared/Makefile.kmk
 

@@ -83,6 +83,9 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
   FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+  !if $%VBOX_WITH_WDDM_DX% == "1"
+    FILE "$%PATH_OUT%\bin\additions\VBoxDX.dll"
+  !endif
   !if $%VBOX_WITH_MESA3D% == "1"
     FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
     FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
@@ -92,6 +95,9 @@ Function ExtractFiles
 
   !if $%KBUILD_TARGET_ARCH% == "amd64"
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+    !if $%VBOX_WITH_WDDM_DX% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDX-x86.dll"
+    !endif
     !if $%VBOX_WITH_MESA3D% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
