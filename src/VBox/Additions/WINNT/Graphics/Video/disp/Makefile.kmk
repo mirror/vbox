@@ -190,6 +190,7 @@ VBoxDX_INCS     = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/common/wddm \
 	$(PATH_ROOT)/src/VBox/Additions/3D/win/include \
+	$(PATH_ROOT)/src/VBox/Additions/3D/win/VBoxWddmUmHlp \
 	$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include \
 	$(VBOX_GRAPHICS_INCS)
 VBoxDX_SOURCES  = \
@@ -199,8 +200,7 @@ VBoxDX_SOURCES  = \
 VBoxDX_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	Psapi.lib \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB)
 
 # 64-bit systems need a 32-bit version of VBoxDX
 DLLS.amd64 += VBoxDX-x86
@@ -210,8 +210,7 @@ VBoxDX-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	Psapi.lib \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB)
 VBoxDX-x86_DEFS = $(VBoxDX_DEFS) VBOX_WDDM_WOW64
  endif # VBOX_WITH_VMSVGA3D_DX
 
