@@ -39,7 +39,7 @@ using namespace com;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define STR_SIZE(a_sz) a_sz, sizeof(a_sz)
+#define STR_SIZE(a_sz) RT_STR_TUPLE(a_sz)
 
 
 /*********************************************************************************************************************************
@@ -193,23 +193,12 @@ int main()
         return RTEXITCODE_FAILURE;
 #endif
 
-    RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
+    AssertCompile(sizeof("sizecheck")   == 10);
+    AssertCompile(sizeof("off=rab")     == 8);
+    AssertCompile(sizeof("off=rab\0\0") == 10);
 
-    if (sizeof("sizecheck") != 10)
-        RTTestFailed(hTest, "Basic size test #1 failed (%zu <-> 10)", sizeof("sizecheck"));
-    if (sizeof("off=rab") != 8)
-        RTTestFailed(hTest, "Basic size test #2 failed (%zu <-> 7)", sizeof("off=rab"));
-    if (sizeof("off=rab\0\0") != 10)
-        RTTestFailed(hTest, "Basic size test #3 failed (%zu <-> 10)", sizeof("off=rab\0\0"));
-
-    RTTestIPrintf(RTTESTLVL_INFO, "Doing line tests ...\n");
-
-    /* Don't let the assertions trigger here
-     * -- we rely on the return values in the test(s) below. */
-    RTAssertSetQuiet(true);
-
-    unsigned iTest;
-    for (iTest = 0; iTest < RT_ELEMENTS(g_aTestBlocks); iTest++)
+    RTTestSub(hTest, "Lines");
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestBlocks); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
@@ -224,16 +213,17 @@ int main()
             GuestProcessStreamBlock curBlock;
             iResult = stream.ParseBlock(curBlock);
             if (iResult != g_aTestBlocks[iTest].iResult)
-                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n", iResult, g_aTestBlocks[iTest].iResult);
+                RTTestFailed(hTest, "Block #%u: Returned %Rrc, expected %Rrc", iTest, iResult, g_aTestBlocks[iTest].iResult);
             else if (stream.GetOffset() != g_aTestBlocks[iTest].offAfter)
-                RTTestFailed(hTest, "\tOffset %zu wrong, expected %u\n", stream.GetOffset(), g_aTestBlocks[iTest].offAfter);
+                RTTestFailed(hTest, "Block #%uOffset %zu wrong, expected %u\n",
+                             iTest, stream.GetOffset(), g_aTestBlocks[iTest].offAfter);
             else if (iResult == VERR_MORE_DATA)
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %zu)\n", stream.GetOffset());
 
             if (RT_SUCCESS(iResult) || iResult == VERR_MORE_DATA)
                 if (curBlock.GetCount() != g_aTestBlocks[iTest].cMapElements)
-                    RTTestFailed(hTest, "\tMap has %u elements, expected %u\n",
-                                 curBlock.GetCount(), g_aTestBlocks[iTest].cMapElements);
+                    RTTestFailed(hTest, "Block #%u: Map has %u elements, expected %u\n",
+                                 iTest, curBlock.GetCount(), g_aTestBlocks[iTest].cMapElements);
 
             /* There is remaining data left in the buffer (which needs to be merged
              * with a following buffer) -- print it. */
@@ -251,9 +241,8 @@ int main()
         }
     }
 
-    RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
-
-    for (iTest = 0; iTest < RT_ELEMENTS(g_aTestStream); iTest++)
+    RTTestSub(hTest, "Blocks");
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestStream); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
@@ -267,7 +256,7 @@ int main()
             {
                 GuestProcessStreamBlock curBlock;
                 iResult = stream.ParseBlock(curBlock);
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
+                RTTestIPrintf(RTTESTLVL_DEBUG, "Block #%u: Returned with %Rrc", iTest, iResult);
                 if (RT_SUCCESS(iResult))
                 {
                     /* Only count block which have at least one pair. */
@@ -279,12 +268,12 @@ int main()
             } while (RT_SUCCESS(iResult));
 
             if (iResult != g_aTestStream[iTest].iResult)
-                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n", iResult, g_aTestStream[iTest].iResult);
+                RTTestFailed(hTest, "Block #%uReturned %Rrc, expected %Rrc", iTest, iResult, g_aTestStream[iTest].iResult);
             else if (cBlocks != g_aTestStream[iTest].cBlocks)
-                RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n", cBlocks, g_aTestStream[iTest].cBlocks);
+                RTTestFailed(hTest, "Block #%uReturned %u blocks, expected %u", iTest, cBlocks, g_aTestStream[iTest].cBlocks);
         }
         else
-            RTTestFailed(hTest, "\tAdding data failed with %Rrc", iResult);
+            RTTestFailed(hTest, "Block #%u: Adding data failed with %Rrc", iTest, iResult);
     }
 
     RTTestIPrintf(RTTESTLVL_DEBUG, "Shutting down COM...\n");
