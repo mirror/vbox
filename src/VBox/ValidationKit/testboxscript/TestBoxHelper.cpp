@@ -607,7 +607,7 @@ static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
         /* On darwin, we just ask the kernel via sysctl. Rules are a bit different here. */
         int     f64bitCapable = 0;
         size_t  cbParameter   = sizeof(f64bitCapable);
-        int rc = sysctlbyname("hw.cpu64bit_capable", &f64bitCapable, &cbParameter, NULL, NULL);
+        int rc = sysctlbyname("hw.cpu64bit_capable", &f64bitCapable, &cbParameter, NULL, 0);
         if (rc != -1)
             fSupported = f64bitCapable != 0;
         else
