@@ -88,7 +88,6 @@ PROGRAMS += \
 	tstRTList \
 	tstRTLockValidator \
 	tstLog \
-	tstRTMath \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
@@ -182,9 +181,10 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTS3
 endif
 ifndef VBOX_ONLY_VALIDATIONKIT
- # Stuff which does not build yet with the Validation Kit build box. Skip those for now.
+ # Stuff which does not build yet with the Validation Kit unit tests enabled. Skip those for now.
  PROGRAMS += \
- 	tstRTInlineAsm
+ 	tstRTInlineAsm \
+ 	tstRTMath
  PROGRAMS.linux += \
  	tstRTInlineAsmPIC \
  	tstRTInlineAsmPIC3
