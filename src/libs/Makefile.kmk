@@ -97,6 +97,13 @@ if  !defined(VBOX_ONLY_SDK) \
 endif
 
 
+# SoftFloat is used by the VMM for FPU emulation.
+if !defined(VBOX_ONLY_BUILD) \
+ && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
+  include $(PATH_SUB_CURRENT)/softfloat-3e/Makefile.kmk
+endif
+
+
 # zlib is used by the IPRT compression code, libpng and others.
 if  !defined(VBOX_ONLY_SDK) \
  && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.11"
