@@ -3823,7 +3823,9 @@ struct address_space_operations vbsf_reg_aops = {
     .readpage       = vbsf_readpage,
     .writepage      = vbsf_writepage,
     /** @todo Need .writepages if we want msync performance...  */
-#if RTLNX_VER_MIN(2,5,12)
+#if RTLNX_VER_MIN(5,18,0)
+    .dirty_folio = filemap_dirty_folio,
+#elif RTLNX_VER_MIN(2,5,12)
     .set_page_dirty = __set_page_dirty_buffers,
 #endif
 #if RTLNX_VER_MIN(5,14,0)
