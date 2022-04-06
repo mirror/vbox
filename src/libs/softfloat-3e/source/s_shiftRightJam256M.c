@@ -75,7 +75,7 @@ void
 {
     uint64_t wordJam;
     uint_fast32_t wordDist;
-    uint64_t *ptr = NULL; /* vbox: shut up MSC warning */
+    uint64_t *ptr = (uint64_t *)0; /* vbox: shut up MSC warning */
     uint_fast8_t i, innerDist;
 
     wordJam = 0;
