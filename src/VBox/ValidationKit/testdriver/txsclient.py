@@ -1861,7 +1861,7 @@ class Session(TdTaskBase):
 
         The task returns True on success, False on failure (logged).
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "expandString", 
+        return self.startTask(cMsTimeout, fIgnoreErrors, "expandString",
                               self.taskExpandString, (sString,));
 
     def syncExpandString(self, sString, cMsTimeout = 120000, fIgnoreErrors = False):
