@@ -379,7 +379,8 @@ class tdUnitTest1(vbox.TestDriver):
         # copied over to a remote target (via TxS).
         self.sUnitTestsPathDst = None;
 
-        self.sExeSuff   = '.exe' if utils.getHostOs() in [ 'win', 'dos', 'os2' ] else '';
+        # Will be determined before executing the actual unit tests.
+        self.sExeSuff   = '';
 
         self.aiVBoxVer  = (4, 3, 0, 0);
 
@@ -622,6 +623,16 @@ class tdUnitTest1(vbox.TestDriver):
         """
         Main function to execute all unit tests.
         """
+
+        # Determine executable suffix based on selected execution mode.
+        if self.sMode.startswith('remote'): # Run on a test VM (guest).
+            if oTestVm.isWindows():
+                self.sExeSuff = '.exe';
+            else:
+                self.sExeSuff = '';
+        else:
+            self.sExeSuff = '.exe' if utils.getHostOs() in [ 'win', 'dos', 'os2' ] else '';
+
         self._testRunUnitTestsSet(r'^tst*', 'testcase');
         self._testRunUnitTestsSet(r'^tst*', '.');
 
@@ -936,7 +947,7 @@ class tdUnitTest1(vbox.TestDriver):
                 asDirsToRemove.append(sDstDir);
 
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath));
-            self._wrapCopyFile(sFullPath, sDst, 0o755);
+            self._wrapCopyFile(sFullPath + self.sExeSuff, sDst, 0o755);
             asFilesToRemove.append(sDst);
 
             # Copy required dependencies to destination.
@@ -1128,8 +1139,8 @@ class tdUnitTest1(vbox.TestDriver):
             if sTestCaseSubDir != '.':
                 sName = sTestCaseSubDir + '/' + sName;
 
-            reporter.log2('sTestCasePattern=%s, sBaseName=%s, sName=%s, sFileName=%s' \
-                          % (sTestCasePattern, sBaseName, sName, sFilename,));
+            reporter.log2('sTestCasePattern=%s, sBaseName=%s, sName=%s, sSuffix=%s, sFileName=%s' \
+                          % (sTestCasePattern, sBaseName, sName, sSuffix, sFilename,));
 
             # Process white list first, if set.
             if  self.fOnlyWhiteList \
