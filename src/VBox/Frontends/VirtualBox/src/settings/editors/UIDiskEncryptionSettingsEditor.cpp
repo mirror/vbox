@@ -33,12 +33,12 @@ UIDiskEncryptionSettingsEditor::UIDiskEncryptionSettingsEditor(QWidget *pParent 
     , m_enmCipherType(UIDiskEncryptionCipherType_Max)
     , m_pCheckboxFeature(0)
     , m_pWidgetSettings(0)
-    , m_pLabelCipher(0)
-    , m_pComboCipher(0)
-    , m_pLabelEncryptionPassword(0)
-    , m_pEditorEncryptionPassword(0)
-    , m_pLabelEncryptionPasswordConfirm(0)
-    , m_pEditorEncryptionPasswordConfirm(0)
+    , m_pLabelCipherType(0)
+    , m_pComboCipherType(0)
+    , m_pLabelPassword1(0)
+    , m_pEditorPassword1(0)
+    , m_pLabelPassword2(0)
+    , m_pEditorPassword2(0)
 {
     prepare();
 }
@@ -76,17 +76,17 @@ void UIDiskEncryptionSettingsEditor::setCipherType(const UIDiskEncryptionCipherT
 
 UIDiskEncryptionCipherType UIDiskEncryptionSettingsEditor::cipherType() const
 {
-    return m_pComboCipher ? m_pComboCipher->currentData().value<UIDiskEncryptionCipherType>() : m_enmCipherType;
+    return m_pComboCipherType ? m_pComboCipherType->currentData().value<UIDiskEncryptionCipherType>() : m_enmCipherType;
 }
 
 QString UIDiskEncryptionSettingsEditor::password1() const
 {
-    return m_pEditorEncryptionPassword ? m_pEditorEncryptionPassword->text() : m_strPassword1;
+    return m_pEditorPassword1 ? m_pEditorPassword1->text() : m_strPassword1;
 }
 
 QString UIDiskEncryptionSettingsEditor::password2() const
 {
-    return m_pEditorEncryptionPasswordConfirm ? m_pEditorEncryptionPasswordConfirm->text() : m_strPassword2;
+    return m_pEditorPassword2 ? m_pEditorPassword2->text() : m_strPassword2;
 }
 
 void UIDiskEncryptionSettingsEditor::retranslateUi()
@@ -97,29 +97,29 @@ void UIDiskEncryptionSettingsEditor::retranslateUi()
         m_pCheckboxFeature->setToolTip(tr("When checked, disks attached to this virtual machine will be encrypted."));
     }
 
-    if (m_pLabelCipher)
-        m_pLabelCipher->setText(tr("Disk Encryption C&ipher:"));
-    if (m_pComboCipher)
+    if (m_pLabelCipherType)
+        m_pLabelCipherType->setText(tr("Disk Encryption C&ipher:"));
+    if (m_pComboCipherType)
     {
-        for (int iIndex = 0; iIndex < m_pComboCipher->count(); ++iIndex)
+        for (int iIndex = 0; iIndex < m_pComboCipherType->count(); ++iIndex)
         {
-            const UIDiskEncryptionCipherType enmType = m_pComboCipher->itemData(iIndex).value<UIDiskEncryptionCipherType>();
-            m_pComboCipher->setItemText(iIndex, gpConverter->toString(enmType));
+            const UIDiskEncryptionCipherType enmType = m_pComboCipherType->itemData(iIndex).value<UIDiskEncryptionCipherType>();
+            m_pComboCipherType->setItemText(iIndex, gpConverter->toString(enmType));
         }
-        m_pComboCipher->setToolTip(tr("Holds the cipher to be used for encrypting the virtual machine disks."));
+        m_pComboCipherType->setToolTip(tr("Holds the cipher to be used for encrypting the virtual machine disks."));
     }
 
-    if (m_pLabelEncryptionPassword)
-        m_pLabelEncryptionPassword->setText(tr("E&nter New Password:"));
-    if (m_pEditorEncryptionPassword)
-        m_pEditorEncryptionPassword->setToolTip(tr("Holds the encryption password for disks attached to this virtual machine."));
-    if (m_pLabelEncryptionPasswordConfirm)
-        m_pLabelEncryptionPasswordConfirm->setText(tr("C&onfirm New Password:"));
-    if (m_pEditorEncryptionPasswordConfirm)
-        m_pEditorEncryptionPasswordConfirm->setToolTip(tr("Confirms the disk encryption password."));
+    if (m_pLabelPassword1)
+        m_pLabelPassword1->setText(tr("E&nter New Password:"));
+    if (m_pEditorPassword1)
+        m_pEditorPassword1->setToolTip(tr("Holds the encryption password for disks attached to this virtual machine."));
+    if (m_pLabelPassword2)
+        m_pLabelPassword2->setText(tr("C&onfirm New Password:"));
+    if (m_pEditorPassword2)
+        m_pEditorPassword2->setToolTip(tr("Confirms the disk encryption password."));
 
     /* Translate Cipher type combo: */
-    m_pComboCipher->setItemText(0, tr("Leave Unchanged", "cipher type"));
+    m_pComboCipherType->setItemText(0, tr("Leave Unchanged", "cipher type"));
 }
 
 void UIDiskEncryptionSettingsEditor::sltHandleFeatureToggled(bool fEnabled)
@@ -172,55 +172,55 @@ void UIDiskEncryptionSettingsEditor::prepareWidgets()
                 m_pLayoutSettings->setContentsMargins(0, 0, 0, 0);
 
                 /* Prepare encryption cipher label: */
-                m_pLabelCipher = new QLabel(m_pWidgetSettings);
-                if (m_pLabelCipher)
+                m_pLabelCipherType = new QLabel(m_pWidgetSettings);
+                if (m_pLabelCipherType)
                 {
-                    m_pLabelCipher->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutSettings->addWidget(m_pLabelCipher, 0, 0);
+                    m_pLabelCipherType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    m_pLayoutSettings->addWidget(m_pLabelCipherType, 0, 0);
                 }
                 /* Prepare encryption cipher combo: */
-                m_pComboCipher = new QComboBox(m_pWidgetSettings);
-                if (m_pComboCipher)
+                m_pComboCipherType = new QComboBox(m_pWidgetSettings);
+                if (m_pComboCipherType)
                 {
-                    if (m_pLabelCipher)
-                        m_pLabelCipher->setBuddy(m_pComboCipher);
-                    m_pLayoutSettings->addWidget(m_pComboCipher, 0, 1);
+                    if (m_pLabelCipherType)
+                        m_pLabelCipherType->setBuddy(m_pComboCipherType);
+                    m_pLayoutSettings->addWidget(m_pComboCipherType, 0, 1);
                 }
 
                 /* Prepare encryption password label: */
-                m_pLabelEncryptionPassword = new QLabel(m_pWidgetSettings);
-                if (m_pLabelEncryptionPassword)
+                m_pLabelPassword1 = new QLabel(m_pWidgetSettings);
+                if (m_pLabelPassword1)
                 {
-                    m_pLabelEncryptionPassword->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutSettings->addWidget(m_pLabelEncryptionPassword, 1, 0);
+                    m_pLabelPassword1->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    m_pLayoutSettings->addWidget(m_pLabelPassword1, 1, 0);
                 }
                 /* Prepare encryption password editor: */
-                m_pEditorEncryptionPassword = new QLineEdit(m_pWidgetSettings);
-                if (m_pEditorEncryptionPassword)
+                m_pEditorPassword1 = new QLineEdit(m_pWidgetSettings);
+                if (m_pEditorPassword1)
                 {
-                    if (m_pLabelEncryptionPassword)
-                        m_pLabelEncryptionPassword->setBuddy(m_pEditorEncryptionPassword);
-                    m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
+                    if (m_pLabelPassword1)
+                        m_pLabelPassword1->setBuddy(m_pEditorPassword1);
+                    m_pEditorPassword1->setEchoMode(QLineEdit::Password);
 
-                    m_pLayoutSettings->addWidget(m_pEditorEncryptionPassword, 1, 1);
+                    m_pLayoutSettings->addWidget(m_pEditorPassword1, 1, 1);
                 }
 
                 /* Prepare encryption confirm password label: */
-                m_pLabelEncryptionPasswordConfirm = new QLabel(m_pWidgetSettings);
-                if (m_pLabelEncryptionPasswordConfirm)
+                m_pLabelPassword2 = new QLabel(m_pWidgetSettings);
+                if (m_pLabelPassword2)
                 {
-                    m_pLabelEncryptionPasswordConfirm->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutSettings->addWidget(m_pLabelEncryptionPasswordConfirm, 2, 0);
+                    m_pLabelPassword2->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    m_pLayoutSettings->addWidget(m_pLabelPassword2, 2, 0);
                 }
                 /* Prepare encryption confirm password editor: */
-                m_pEditorEncryptionPasswordConfirm = new QLineEdit(m_pWidgetSettings);
-                if (m_pEditorEncryptionPasswordConfirm)
+                m_pEditorPassword2 = new QLineEdit(m_pWidgetSettings);
+                if (m_pEditorPassword2)
                 {
-                    if (m_pLabelEncryptionPasswordConfirm)
-                        m_pLabelEncryptionPasswordConfirm->setBuddy(m_pEditorEncryptionPasswordConfirm);
-                    m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
+                    if (m_pLabelPassword2)
+                        m_pLabelPassword2->setBuddy(m_pEditorPassword2);
+                    m_pEditorPassword2->setEchoMode(QLineEdit::Password);
 
-                    m_pLayoutSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1);
+                    m_pLayoutSettings->addWidget(m_pEditorPassword2, 2, 1);
                 }
             }
 
@@ -238,23 +238,23 @@ void UIDiskEncryptionSettingsEditor::prepareConnections()
     if (m_pCheckboxFeature)
         connect(m_pCheckboxFeature, &QCheckBox::toggled,
                 this, &UIDiskEncryptionSettingsEditor::sltHandleFeatureToggled);
-    if (m_pComboCipher)
-        connect(m_pComboCipher, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    if (m_pComboCipherType)
+        connect(m_pComboCipherType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIDiskEncryptionSettingsEditor::sigCipherChanged);
-    if (m_pEditorEncryptionPassword)
-        connect(m_pEditorEncryptionPassword, &QLineEdit::textEdited,
+    if (m_pEditorPassword1)
+        connect(m_pEditorPassword1, &QLineEdit::textEdited,
                 this, &UIDiskEncryptionSettingsEditor::sigPasswordChanged);
-    if (m_pEditorEncryptionPasswordConfirm)
-        connect(m_pEditorEncryptionPasswordConfirm, &QLineEdit::textEdited,
+    if (m_pEditorPassword2)
+        connect(m_pEditorPassword2, &QLineEdit::textEdited,
                 this, &UIDiskEncryptionSettingsEditor::sigPasswordChanged);
 }
 
 void UIDiskEncryptionSettingsEditor::repopulateCombo()
 {
-    if (m_pComboCipher)
+    if (m_pComboCipherType)
     {
         /* Clear combo first of all: */
-        m_pComboCipher->clear();
+        m_pComboCipherType->clear();
 
         /// @todo get supported auth types (API not implemented), not hardcoded!
         QVector<UIDiskEncryptionCipherType> cipherTypes =
@@ -268,11 +268,11 @@ void UIDiskEncryptionSettingsEditor::repopulateCombo()
 
         /* Populate combo finally: */
         foreach (const UIDiskEncryptionCipherType &enmType, cipherTypes)
-            m_pComboCipher->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
+            m_pComboCipherType->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
 
         /* Look for proper index to choose: */
-        const int iIndex = m_pComboCipher->findData(QVariant::fromValue(m_enmCipherType));
+        const int iIndex = m_pComboCipherType->findData(QVariant::fromValue(m_enmCipherType));
         if (iIndex != -1)
-            m_pComboCipher->setCurrentIndex(iIndex);
+            m_pComboCipherType->setCurrentIndex(iIndex);
     }
 }

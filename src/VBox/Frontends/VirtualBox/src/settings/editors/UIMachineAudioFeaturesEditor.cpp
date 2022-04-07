@@ -22,9 +22,6 @@
 
 /* GUI includes: */
 #include "UIMachineAudioFeaturesEditor.h"
-#ifdef VBOX_WS_X11
-# include "VBoxUtils-x11.h"
-#endif
 
 
 UIMachineAudioFeaturesEditor::UIMachineAudioFeaturesEditor(QWidget *pParent /* = 0 */)

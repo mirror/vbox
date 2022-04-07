@@ -16,17 +16,11 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QComboBox>
-#include <QDir>
-#include <QLabel>
-#include <QLineEdit>
-#include <QTextEdit>
+#include <QFileInfo>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QITabWidget.h"
-#include "QIWidgetValidator.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
