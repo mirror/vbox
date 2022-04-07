@@ -484,6 +484,9 @@ void UIStatusBarEditorWidget::setStatusBarConfiguration(const QList<IndicatorTyp
 
 void UIStatusBarEditorWidget::retranslateUi()
 {
+    /* Translate widget itself: */
+    setToolTip(tr("Allows to modify VM status-bar contents."));
+
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));

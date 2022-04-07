@@ -657,6 +657,9 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuH
 
 void UIMenuBarEditorWidget::retranslateUi()
 {
+    /* Translate widget itself: */
+    setToolTip(tr("Allows to modify VM menu-bar contents."));
+
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));

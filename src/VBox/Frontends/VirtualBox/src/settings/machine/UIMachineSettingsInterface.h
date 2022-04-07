@@ -25,11 +25,10 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class QGridLayout;
 class QLabel;
 class UIActionPool;
 class UIMenuBarEditorWidget;
+class UIMiniToolbarSettingsEditor;
 class UIStatusBarEditorWidget;
 class UIVisualStateEditor;
 struct UIDataSettingsMachineInterface;
@@ -95,29 +94,23 @@ private:
     bool saveVisualStateData();
 
     /** Holds the machine ID copy. */
-    const QUuid    m_uMachineId;
+    const QUuid   m_uMachineId;
     /** Holds the action-pool instance. */
-    UIActionPool  *m_pActionPool;
+    UIActionPool *m_pActionPool;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineInterface *m_pCache;
 
     /** @name Widgets
      * @{ */
-        /** Holds the main layout instance. */
-        QGridLayout             *m_pLayout;
         /** Holds the menu-bar editor instance. */
-        UIMenuBarEditorWidget   *m_pEditorMenuBar;
+        UIMenuBarEditorWidget       *m_pEditorMenuBar;
         /** Holds the visual state editor instance. */
-        UIVisualStateEditor     *m_pEditorVisualState;
-        /** Holds the mini-toolbar label instance. */
-        QLabel                  *m_pLabelMiniToolBar;
-        /** Holds the 'show mini-toolbar' check-box instance. */
-        QCheckBox               *m_pCheckBoxShowMiniToolBar;
-        /** Holds the 'mini-toolbar alignment' check-box instance. */
-        QCheckBox               *m_pCheckBoxMiniToolBarAlignment;
+        UIVisualStateEditor         *m_pEditorVisualState;
+        /** Holds the mini-toolbar settings editor instance. */
+        UIMiniToolbarSettingsEditor *m_pEditorMiniToolabSettings;
         /** Holds the status-bar editor instance. */
-        UIStatusBarEditorWidget *m_pEditorStatusBar;
+        UIStatusBarEditorWidget     *m_pEditorStatusBar;
     /** @} */
 };
 

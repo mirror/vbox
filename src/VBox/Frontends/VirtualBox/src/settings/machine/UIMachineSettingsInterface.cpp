@@ -16,9 +16,7 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QGridLayout>
-#include <QLabel>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIActionPool.h"
@@ -26,6 +24,7 @@
 #include "UIMachineSettingsInterface.h"
 #include "UIStatusBarEditorWindow.h"
 #include "UIMenuBarEditorWindow.h"
+#include "UIMiniToolbarSettingsEditor.h"
 #include "UIVisualStateEditor.h"
 
 /** Machine settings: User Interface page data structure. */
@@ -51,8 +50,8 @@ struct UIDataSettingsMachineInterface
 #endif /* VBOX_WS_MAC */
         , m_restrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Invalid)
 #ifndef VBOX_WS_MAC
-        , m_fShowMiniToolBar(false)
-        , m_fMiniToolBarAtTop(false)
+        , m_fShowMiniToolbar(false)
+        , m_fMiniToolbarAtTop(false)
 #endif /* !VBOX_WS_MAC */
         , m_enmVisualState(UIVisualStateType_Invalid)
     {}
@@ -81,8 +80,8 @@ struct UIDataSettingsMachineInterface
 #endif /* VBOX_WS_MAC */
                && (m_restrictionsOfMenuHelp == other.m_restrictionsOfMenuHelp)
 #ifndef VBOX_WS_MAC
-               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
-               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
+               && (m_fShowMiniToolbar == other.m_fShowMiniToolbar)
+               && (m_fMiniToolbarAtTop == other.m_fMiniToolbarAtTop)
 #endif /* !VBOX_WS_MAC */
                && (m_enmVisualState == other.m_enmVisualState)
                ;
@@ -129,9 +128,9 @@ struct UIDataSettingsMachineInterface
 
 #ifndef VBOX_WS_MAC
     /** Holds whether the mini-toolbar is enabled. */
-    bool  m_fShowMiniToolBar;
+    bool  m_fShowMiniToolbar;
     /** Holds whether the mini-toolbar should be aligned at top of screen. */
-    bool  m_fMiniToolBarAtTop;
+    bool  m_fMiniToolbarAtTop;
 #endif /* !VBOX_WS_MAC */
 
     /** Holds the visual state. */
@@ -143,12 +142,9 @@ UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
     : m_uMachineId(uMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
-    , m_pLayout(0)
     , m_pEditorMenuBar(0)
     , m_pEditorVisualState(0)
-    , m_pLabelMiniToolBar(0)
-    , m_pCheckBoxShowMiniToolBar(0)
-    , m_pCheckBoxMiniToolBarAlignment(0)
+    , m_pEditorMiniToolabSettings(0)
     , m_pEditorStatusBar(0)
 {
     prepare();
@@ -196,8 +192,8 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 #endif
     oldInterfaceData.m_restrictionsOfMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(m_machine.GetId());
 #ifndef VBOX_WS_MAC
-    oldInterfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
-    oldInterfaceData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
+    oldInterfaceData.m_fShowMiniToolbar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
+    oldInterfaceData.m_fMiniToolbarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
 #endif
     oldInterfaceData.m_enmVisualState = gEDataManager->requestedVisualState(m_machine.GetId());
 
@@ -234,8 +230,8 @@ void UIMachineSettingsInterface::getFromCache()
 #endif
     m_pEditorMenuBar->setRestrictionsOfMenuHelp(oldInterfaceData.m_restrictionsOfMenuHelp);
 #ifndef VBOX_WS_MAC
-    m_pCheckBoxShowMiniToolBar->setChecked(oldInterfaceData.m_fShowMiniToolBar);
-    m_pCheckBoxMiniToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
+    m_pEditorMiniToolabSettings->setShowMiniToolbar(oldInterfaceData.m_fShowMiniToolbar);
+    m_pEditorMiniToolabSettings->setMiniToolbarAtTop(oldInterfaceData.m_fMiniToolbarAtTop);
 #endif
     m_pEditorVisualState->setMachineId(m_machine.GetId());
     m_pEditorVisualState->setValue(oldInterfaceData.m_enmVisualState);
@@ -273,8 +269,8 @@ void UIMachineSettingsInterface::putToCache()
 #endif
     newInterfaceData.m_restrictionsOfMenuHelp = m_pEditorMenuBar->restrictionsOfMenuHelp();
 #ifndef VBOX_WS_MAC
-    newInterfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
-    newInterfaceData.m_fMiniToolBarAtTop = m_pCheckBoxMiniToolBarAlignment->isChecked();
+    newInterfaceData.m_fShowMiniToolbar = m_pEditorMiniToolabSettings->showMiniToolbar();
+    newInterfaceData.m_fMiniToolbarAtTop = m_pEditorMiniToolabSettings->miniToolbarAtTop();
 #endif
     newInterfaceData.m_enmVisualState = m_pEditorVisualState->value();
 
@@ -296,21 +292,12 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsInterface::retranslateUi()
 {
-    m_pEditorMenuBar->setToolTip(tr("Allows to modify VM menu-bar contents."));
-    m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
-    m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
-    m_pCheckBoxShowMiniToolBar->setToolTip(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
-    m_pCheckBoxMiniToolBarAlignment->setText(tr("Show at &Top of Screen"));
-    m_pCheckBoxMiniToolBarAlignment->setToolTip(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in "
-                                                   "its default position at the bottom of the screen."));
-    m_pEditorStatusBar->setToolTip(tr("Allows to modify VM status-bar contents."));
-
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVisualState->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMiniToolBar->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMiniToolabSettings->minimumLabelHorizontalHint());
     m_pEditorVisualState->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pLayout->setColumnMinimumWidth(0, iMinimumLayoutHint);
+    m_pEditorMiniToolabSettings->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsInterface::polishPage()
@@ -318,14 +305,10 @@ void UIMachineSettingsInterface::polishPage()
     /* Polish interface page availability: */
     m_pEditorMenuBar->setEnabled(isMachineInValidMode());
 #ifdef VBOX_WS_MAC
-    m_pLabelMiniToolBar->hide();
-    m_pCheckBoxShowMiniToolBar->hide();
-    m_pCheckBoxMiniToolBarAlignment->hide();
-#else /* !VBOX_WS_MAC */
-    m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pCheckBoxMiniToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
-#endif /* !VBOX_WS_MAC */
+    m_pEditorMiniToolabSettings->hide();
+#else
+    m_pEditorMiniToolabSettings->setEnabled(isMachineInValidMode());
+#endif
     m_pEditorStatusBar->setEnabled(isMachineInValidMode());
 }
 
@@ -349,12 +332,9 @@ void UIMachineSettingsInterface::prepare()
 void UIMachineSettingsInterface::prepareWidgets()
 {
     /* Prepare main layout: */
-    m_pLayout = new QGridLayout(this);
-    if (m_pLayout)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
-        m_pLayout->setColumnStretch(1, 1);
-        m_pLayout->setRowStretch(4, 1);
-
         /* Prepare menu-bar editor: */
         m_pEditorMenuBar = new UIMenuBarEditorWidget(this);
         if (m_pEditorMenuBar)
@@ -362,44 +342,33 @@ void UIMachineSettingsInterface::prepareWidgets()
             m_pEditorMenuBar->setActionPool(m_pActionPool);
             m_pEditorMenuBar->setMachineID(m_uMachineId);
 
-            m_pLayout->addWidget(m_pEditorMenuBar, 0, 0, 1, 3);
+            pLayout->addWidget(m_pEditorMenuBar);
         }
 
         /* Prepare visual-state editor: */
         m_pEditorVisualState = new UIVisualStateEditor(this);
         if (m_pEditorVisualState)
-            m_pLayout->addWidget(m_pEditorVisualState, 1, 0, 1, 3);
+            pLayout->addWidget(m_pEditorVisualState);
 
-        /* Prepare mini-toolbar label: */
-        m_pLabelMiniToolBar = new QLabel(this);
-        if (m_pLabelMiniToolBar)
-        {
-            m_pLabelMiniToolBar->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayout->addWidget(m_pLabelMiniToolBar, 2, 0);
-        }
-        /* Prepare 'show mini-toolbar' check-box: */
-        m_pCheckBoxShowMiniToolBar = new QCheckBox(this);
-        if (m_pCheckBoxShowMiniToolBar)
-            m_pLayout->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1);
-        /* Prepare 'mini-toolbar alignment' check-box: */
-        m_pCheckBoxMiniToolBarAlignment = new QCheckBox(this);
-        if (m_pCheckBoxMiniToolBarAlignment)
-            m_pLayout->addWidget(m_pCheckBoxMiniToolBarAlignment, 3, 1);
+        /* Prepare mini-toolbar settings editor: */
+        m_pEditorMiniToolabSettings = new UIMiniToolbarSettingsEditor(this);
+        if (m_pEditorMiniToolabSettings)
+            pLayout->addWidget(m_pEditorMiniToolabSettings);
+
+        pLayout->addStretch();
 
         /* Prepare status-bar editor: */
         m_pEditorStatusBar = new UIStatusBarEditorWidget(this);
         if (m_pEditorStatusBar)
         {
             m_pEditorStatusBar->setMachineID(m_uMachineId);
-            m_pLayout->addWidget(m_pEditorStatusBar, 5, 0, 1, 3);
+            pLayout->addWidget(m_pEditorStatusBar);
         }
     }
 }
 
 void UIMachineSettingsInterface::prepareConnections()
 {
-    connect(m_pCheckBoxShowMiniToolBar, &QCheckBox::toggled,
-            m_pCheckBoxMiniToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
 }
 
 void UIMachineSettingsInterface::cleanup()
@@ -529,11 +498,11 @@ bool UIMachineSettingsInterface::saveMiniToolbarData()
 
 #ifndef VBOX_WS_MAC
         /* Save whether mini-toolbar is enabled: */
-        if (fSuccess && newInterfaceData.m_fShowMiniToolBar != oldInterfaceData.m_fShowMiniToolBar)
-            /* fSuccess = */ gEDataManager->setMiniToolbarEnabled(newInterfaceData.m_fShowMiniToolBar, m_machine.GetId());
+        if (fSuccess && newInterfaceData.m_fShowMiniToolbar != oldInterfaceData.m_fShowMiniToolbar)
+            /* fSuccess = */ gEDataManager->setMiniToolbarEnabled(newInterfaceData.m_fShowMiniToolbar, m_machine.GetId());
         /* Save whether mini-toolbar should be location at top of screen: */
-        if (fSuccess && newInterfaceData.m_fMiniToolBarAtTop != oldInterfaceData.m_fMiniToolBarAtTop)
-            /* fSuccess = */ gEDataManager->setMiniToolbarAlignment(newInterfaceData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
+        if (fSuccess && newInterfaceData.m_fMiniToolbarAtTop != oldInterfaceData.m_fMiniToolbarAtTop)
+            /* fSuccess = */ gEDataManager->setMiniToolbarAlignment(newInterfaceData.m_fMiniToolbarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
 #endif
     }
     /* Return result: */
