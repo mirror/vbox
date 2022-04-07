@@ -66,6 +66,10 @@
 #endif
 #include <iprt/stream.h>
 
+#include <iprt/http.h>
+#include <iprt/socket.h>
+#include <iprt/uri.h>
+
 #include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
@@ -5365,6 +5369,167 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
 
 
 /**
+ * Configure proxy parameters the Network configuration tree.
+ * Parameters may differ depending on the IP address being accessed.
+ *
+ * @returns VBox status code.
+ *
+ * @param   virtualBox          The VirtualBox object.
+ * @param   pCfg                Configuration node for the driver.
+ * @param   pcszPrefix          The prefix for CFGM parameters: "Primary" or "Secondary".
+ * @param   strIpAddr           The public IP address to be accessed via a proxy.
+ *
+ * @thread EMT
+ */
+int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const char *pcszPrefix, const com::Utf8Str &strIpAddr)
+{
+    RTHTTPPROXYINFO ProxyInfo;
+    ComPtr<ISystemProperties> systemProperties;
+    ProxyMode_T enmProxyMode;
+    HRESULT hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    if (FAILED(hrc))
+    {
+        LogRel(("CLOUD-NET: Failed to obtain system properties. hrc=%x\n", hrc));
+        return false;
+    }
+    hrc = systemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
+    if (FAILED(hrc))
+    {
+        LogRel(("CLOUD-NET: Failed to obtain default machine folder. hrc=%x\n", hrc));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    RTHTTP hHttp;
+    int rc = RTHttpCreate(&hHttp);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%Rrc)\n", rc));
+        return rc;
+    }
+
+    char *pszProxyType = NULL;
+
+    if (enmProxyMode == ProxyMode_Manual)
+    {
+        /*
+         * Unfortunately we cannot simply call RTHttpSetProxyByUrl because it never
+         * exposes proxy settings. Calling RTHttpQueryProxyInfoForUrl afterward
+         * won't help either as it uses system-wide proxy settings instead of
+         * parameters we would have set with RTHttpSetProxyByUrl. Hence we parse
+         * proxy URL ourselves here.
+         */
+        Bstr proxyUrl;
+        hrc = systemProperties->COMGETTER(ProxyURL)(proxyUrl.asOutParam());
+        if (FAILED(hrc))
+        {
+            LogRel(("CLOUD-NET: Failed to obtain proxy URL. hrc=%x\n", hrc));
+            return false;
+        }
+        Utf8Str strProxyUrl = proxyUrl;
+        if (!strProxyUrl.contains("://"))
+            strProxyUrl = "http://" + strProxyUrl;
+        const char *pcszProxyUrl = strProxyUrl.c_str();
+        RTURIPARSED Parsed;
+        rc = RTUriParse(pcszProxyUrl, &Parsed);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("CLOUD-NET: Failed to parse proxy URL: %ls (rc=%d)\n", proxyUrl.raw(), rc));
+            return false;
+        }
+
+        pszProxyType = RTUriParsedScheme(pcszProxyUrl, &Parsed);
+        if (!pszProxyType)
+        {
+            LogRel(("CLOUD-NET: Failed to get proxy scheme from proxy URL: %s\n", pcszProxyUrl));
+            return false;
+        }
+        RTStrToUpper(pszProxyType);
+
+        ProxyInfo.pszProxyHost = RTUriParsedAuthorityHost(pcszProxyUrl, &Parsed);
+        if (!ProxyInfo.pszProxyHost)
+        {
+            LogRel(("CLOUD-NET: Failed to get proxy host name from proxy URL: %s\n", pcszProxyUrl));
+            return false;
+        }
+        ProxyInfo.uProxyPort  = RTUriParsedAuthorityPort(pcszProxyUrl, &Parsed);
+        if (ProxyInfo.uProxyPort == UINT32_MAX)
+        {
+            LogRel(("CLOUD-NET: Failed to get proxy port from proxy URL: %s\n", pcszProxyUrl));
+            return false;
+        }
+        ProxyInfo.pszProxyUsername = RTUriParsedAuthorityUsername(pcszProxyUrl, &Parsed);
+        ProxyInfo.pszProxyPassword = RTUriParsedAuthorityPassword(pcszProxyUrl, &Parsed);
+    }
+    else if (enmProxyMode == ProxyMode_System)
+    {
+        hrc = RTHttpUseSystemProxySettings(hHttp);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("%s: RTHttpUseSystemProxySettings() failed: %Rrc", __FUNCTION__, rc));
+            RTHttpDestroy(hHttp);
+            return rc;
+        }
+        rc = RTHttpQueryProxyInfoForUrl(hHttp, ("http://" + strIpAddr).c_str(), &ProxyInfo);
+        RTHttpDestroy(hHttp);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%Rrc)\n", strIpAddr.c_str(), rc));
+            return rc;
+        }
+
+        switch (ProxyInfo.enmProxyType)
+        {
+            case RTHTTPPROXYTYPE_NOPROXY:
+                /* Nothing to do */
+                return VINF_SUCCESS;
+            case RTHTTPPROXYTYPE_HTTP:
+                pszProxyType = RTStrDup("HTTP");
+                break;
+            case RTHTTPPROXYTYPE_HTTPS:
+            case RTHTTPPROXYTYPE_SOCKS4:
+            case RTHTTPPROXYTYPE_SOCKS5:
+                /* break; -- Fall through until support is implemented */
+            case RTHTTPPROXYTYPE_UNKNOWN:
+            case RTHTTPPROXYTYPE_INVALID:
+            case RTHTTPPROXYTYPE_END:
+            case RTHTTPPROXYTYPE_32BIT_HACK:
+                LogRel(("CLOUD-NET: Unsupported proxy type %u\n", ProxyInfo.enmProxyType));
+                RTHttpFreeProxyInfo(&ProxyInfo);
+                return VERR_INVALID_PARAMETER;
+        }
+    }
+    else
+    {
+        Assert(enmProxyMode == ProxyMode_NoProxy);
+        return VINF_SUCCESS;
+    }
+
+    /* Resolve proxy host name to IP address if necessary */
+    RTNETADDR addr;
+    RTSocketParseInetAddress(ProxyInfo.pszProxyHost, ProxyInfo.uProxyPort, &addr);
+    if (addr.enmType != RTNETADDRTYPE_IPV4)
+    {
+        LogRel(("CLOUD-NET: Unsupported address type %u\n", addr.enmType));
+        RTHttpFreeProxyInfo(&ProxyInfo);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    InsertConfigString(pCfg, Utf8StrFmt("%sProxyType", pcszPrefix).c_str(), pszProxyType);
+    InsertConfigInteger(pCfg, Utf8StrFmt("%sProxyPort", pcszPrefix).c_str(), ProxyInfo.uProxyPort);
+    if (ProxyInfo.pszProxyHost)
+        InsertConfigString(pCfg, Utf8StrFmt("%sProxyHost", pcszPrefix).c_str(), Utf8StrFmt("%RTnaipv4", addr.uAddr.IPv4));
+    if (ProxyInfo.pszProxyUsername)
+        InsertConfigString(pCfg, Utf8StrFmt("%sProxyUser", pcszPrefix).c_str(), ProxyInfo.pszProxyUsername);
+    if (ProxyInfo.pszProxyPassword)
+        InsertConfigPassword(pCfg, Utf8StrFmt("%sProxyPassword", pcszPrefix).c_str(), ProxyInfo.pszProxyPassword);
+
+    RTHttpFreeProxyInfo(&ProxyInfo);
+    RTStrFree(pszProxyType);
+    return rc;
+}
+
+
+/**
  * Construct the Network configuration tree
  *
  * @returns VBox status code.
@@ -6459,6 +6624,20 @@ int Console::i_configNetwork(const char *pszDevice,
                     InsertConfigString(pCfg, "PrimaryIP", mGateway.mCloudPublicIp);
                     InsertConfigString(pCfg, "SecondaryIP", mGateway.mCloudSecondaryPublicIp);
                     InsertConfigBytes(pCfg, "TargetMAC", &mGateway.mLocalMacAddress, sizeof(mGateway.mLocalMacAddress));
+                    hrc = i_configProxy(virtualBox, pCfg, "Primary", mGateway.mCloudPublicIp);
+                    if (FAILED(hrc))
+                    {
+                        return pVMM->pfnVMR3SetError(pUVM, hrc, RT_SRC_POS,
+                                                    N_("Failed to configure proxy for accessing cloud gateway instance via primary VNIC.\n"
+                                                        "Check VirtualBox.log for details."));
+                    }
+                    hrc = i_configProxy(virtualBox, pCfg, "Secondary", mGateway.mCloudSecondaryPublicIp);
+                    if (FAILED(hrc))
+                    {
+                        return pVMM->pfnVMR3SetError(pUVM, hrc, RT_SRC_POS,
+                                                    N_("Failed to configure proxy for accessing cloud gateway instance via secondary VNIC.\n"
+                                                        "Check VirtualBox.log for details."));
+                    }
                     networkName = bstr;
                     trunkType = Bstr(TRUNKTYPE_WHATEVER);
                 }

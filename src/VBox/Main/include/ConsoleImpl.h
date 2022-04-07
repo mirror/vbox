@@ -796,6 +796,8 @@ private:
     int i_configNetwork(const char *pszDevice, unsigned uInstance, unsigned uLun, INetworkAdapter *aNetworkAdapter,
                         PCFGMNODE pCfg,  PCFGMNODE pLunL0, PCFGMNODE pInst, bool fAttachDetach, bool fIgnoreConnectFailure,
                         PUVM pUVM, PCVMMR3VTABLE pVMM);
+    int i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const char *pcszPrefix, const com::Utf8Str &strIpAddr);
+
     int i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer);
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState,
                                                       VMSTATE enmOldState, void *pvUser);

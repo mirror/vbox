@@ -86,6 +86,29 @@ typedef struct DRVCLOUDTUNNEL
     RTMAC                   targetMac;
     /** SSH connection timeout in seconds. */
     long                    ulTimeoutInSecounds;
+
+    /** Primary proxy type. */
+    char                    *pszPrimaryProxyType;
+    /** Primary proxy server IP address. */
+    char                    *pszPrimaryProxyHost;
+    /** Primary proxy server port. */
+    uint16_t                u16PrimaryProxyPort;
+    /** Primary proxy user. */
+    char                    *pszPrimaryProxyUser;
+    /** Primary proxy password. */
+    char                    *pszPrimaryProxyPassword;
+
+    /** Secondary proxy type. */
+    char                    *pszSecondaryProxyType;
+    /** Secondary proxy server IP address. */
+    char                    *pszSecondaryProxyHost;
+    /** Secondary proxy server port. */
+    uint16_t                u16SecondaryProxyPort;
+    /** Secondary proxy user. */
+    char                    *pszSecondaryProxyUser;
+    /** Secondary proxy password. */
+    char                    *pszSecondaryProxyPassword;
+
     /** Cloud tunnel instance string. */
     char                    *pszInstance;
     /** Cloud tunnel I/O thread unique name. */
@@ -1024,6 +1047,8 @@ static int drvCloudTunnelCloudInstanceFinalConfig(PDRVCLOUDTUNNEL pThis)
     if (RT_SUCCESS(rc))
         rc = drvCloudTunnelExecuteRemoteCommand(pThis, "sudo ip link set dev %s address %RTmac", pThis->pszCloudPrimaryInterface, pThis->targetMac.au8);
     if (RT_SUCCESS(rc))
+        rc = drvCloudTunnelExecuteRemoteCommand(pThis, "sudo ifconfig %s 0.0.0.0", pThis->pszCloudPrimaryInterface); /* Make sure no IP is configured on primary */
+    if (RT_SUCCESS(rc))
         rc = drvCloudTunnelExecuteRemoteCommand(pThis, "sudo ip link set dev %s master br0", pThis->pszCloudPrimaryInterface);
     if (RT_SUCCESS(rc))
         rc = drvCloudTunnelExecuteRemoteCommand(pThis, "sudo ip link set dev %s up", pThis->pszCloudPrimaryInterface);
@@ -1126,7 +1151,7 @@ static int destroyTunnel(PDRVCLOUDTUNNEL pThis)
 }
 
 
-static int drvCloudTunnelSwitchToSecondary(PDRVCLOUDTUNNEL pThis)
+static int drvCloudTunnelNewSession(PDRVCLOUDTUNNEL pThis, bool fPrimary)
 {
     pThis->pSshSession = ssh_new();
     if (pThis->pSshSession == NULL)
@@ -1138,7 +1163,7 @@ static int drvCloudTunnelSwitchToSecondary(PDRVCLOUDTUNNEL pThis)
     if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_USER, pThis->pszUser) < 0)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to set SSH_OPTIONS_USER"));
-    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_HOST, pThis->pszPrimaryIP) < 0)
+    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_HOST, fPrimary ? pThis->pszPrimaryIP : pThis->pszSecondaryIP) < 0)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to set SSH_OPTIONS_HOST"));
 
@@ -1146,28 +1171,61 @@ static int drvCloudTunnelSwitchToSecondary(PDRVCLOUDTUNNEL pThis)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to set SSH_OPTIONS_TIMEOUT"));
 
+    const char *pcszProxyType = fPrimary ? pThis->pszPrimaryProxyType : pThis->pszSecondaryProxyType;
+    if (pcszProxyType)
+    {
+        char szProxyCmd[1024];
+
+        const char *pcszProxyUser = fPrimary ? pThis->pszPrimaryProxyUser : pThis->pszSecondaryProxyUser;
+        if (pcszProxyUser)
+            RTStrPrintf(szProxyCmd, sizeof(szProxyCmd), "#VBoxProxy%s %s %u %s %s",
+                        fPrimary ? pThis->pszPrimaryProxyType : pThis->pszSecondaryProxyType,
+                        fPrimary ? pThis->pszPrimaryProxyHost : pThis->pszSecondaryProxyHost,
+                        fPrimary ? pThis->u16PrimaryProxyPort : pThis->u16SecondaryProxyPort,
+                        fPrimary ? pThis->pszPrimaryProxyUser : pThis->pszSecondaryProxyUser,
+                        fPrimary ? pThis->pszPrimaryProxyPassword : pThis->pszSecondaryProxyPassword);
+        else
+            RTStrPrintf(szProxyCmd, sizeof(szProxyCmd), "#VBoxProxy%s %s %u",
+                        fPrimary ? pThis->pszPrimaryProxyType : pThis->pszSecondaryProxyType,
+                        fPrimary ? pThis->pszPrimaryProxyHost : pThis->pszSecondaryProxyHost,
+                        fPrimary ? pThis->u16PrimaryProxyPort : pThis->u16SecondaryProxyPort);
+        LogRel(("%s: using proxy command '%s'\n", pThis->pszInstance, szProxyCmd));
+        if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_PROXYCOMMAND, szProxyCmd) < 0)
+            return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+                                    N_("Failed to set SSH_OPTIONS_PROXYCOMMAND"));
+    }
+
     int rc = ssh_connect(pThis->pSshSession);
-    if (rc != SSH_OK)
+    for (int cAttempt = 1; rc != SSH_OK && cAttempt <= 5; cAttempt++)
     {
         ssh_disconnect(pThis->pSshSession);
         /* One more time, just to be sure. */
-        LogRel(("%s: failed to connect to %s, retrying...\n", pThis->pszInstance, pThis->pszPrimaryIP));
+        LogRel(("%s: failed to connect to %s, retrying(#%d)...\n", pThis->pszInstance,
+                fPrimary ? pThis->pszPrimaryIP : pThis->pszSecondaryIP, cAttempt));
+        RTThreadSleep(10000); /* Sleep 10 seconds, then retry */
         rc = ssh_connect(pThis->pSshSession);
     }
     if (rc != SSH_OK)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("CloudTunnel: Failed to connect to primary interface"));
+                                   N_("CloudTunnel: Failed to connect to %s interface"), fPrimary ? "primary" : "secondary");
 
     rc = ssh_userauth_publickey(pThis->pSshSession, NULL, pThis->SshKey);
     if (rc != SSH_AUTH_SUCCESS)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to authenticate with public key"));
 
+    return VINF_SUCCESS;
+}
+
+static int drvCloudTunnelSwitchToSecondary(PDRVCLOUDTUNNEL pThis)
+{
+    int rc = drvCloudTunnelNewSession(pThis, true /* fPrimary */);
     /*
      * Establish temporary console channel and configure the cloud instance
      * to bridge the tunnel channel to instance's primary interface.
      */
-    rc = drvCloudTunnelCloudInstanceInitialConfig(pThis);
+    if (RT_SUCCESS(rc))
+        rc = drvCloudTunnelCloudInstanceInitialConfig(pThis);
 
     ssh_disconnect(pThis->pSshSession);
     ssh_free(pThis->pSshSession);
@@ -1179,42 +1237,9 @@ static int drvCloudTunnelSwitchToSecondary(PDRVCLOUDTUNNEL pThis)
 
 static int establishTunnel(PDRVCLOUDTUNNEL pThis)
 {
-    pThis->pSshSession = ssh_new();
-    if (pThis->pSshSession == NULL)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("CloudTunnel: Failed to allocate new SSH session"));
-    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_LOG_VERBOSITY, &pThis->iSshVerbosity) < 0)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("Failed to set SSH_OPTIONS_LOG_VERBOSITY"));
-    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_USER, pThis->pszUser) < 0)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("Failed to set SSH_OPTIONS_USER"));
-    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_HOST, pThis->pszSecondaryIP) < 0)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("Failed to set SSH_OPTIONS_HOST"));
-
-    if (ssh_options_set(pThis->pSshSession, SSH_OPTIONS_TIMEOUT, &pThis->ulTimeoutInSecounds) < 0)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("Failed to set SSH_OPTIONS_TIMEOUT"));
-
-    int rc = ssh_connect(pThis->pSshSession);
-    if (rc != SSH_OK)
-    {
-        ssh_disconnect(pThis->pSshSession);
-        /* One more time, just to be sure. */
-        Log(("%s: failed to connect to %s, retrying...\n", pThis->pszInstance, pThis->pszSecondaryIP));
-        rc = ssh_connect(pThis->pSshSession);
-    }
-    if (rc != SSH_OK)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("CloudTunnel: Failed to connect to secondary interface"));
-
-    rc = ssh_userauth_publickey(pThis->pSshSession, NULL, pThis->SshKey);
-    if (rc != SSH_AUTH_SUCCESS)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
-                                   N_("Failed to authenticate with public key"));
-
-    rc = drvCloudTunnelCloudInstanceFinalConfig(pThis);
+    int rc = drvCloudTunnelNewSession(pThis, false /* fPrimary */);
+    if (RT_SUCCESS(rc))
+        rc = drvCloudTunnelCloudInstanceFinalConfig(pThis);
     if (RT_SUCCESS(rc))
         rc = drvCloudTunnelOpenTunnelChannel(pThis);
     if (RT_SUCCESS(rc))
@@ -1261,6 +1286,24 @@ DECL_NOTHROW(void) drvCloudTunnelSshLogCallback(int priority, const char *functi
 
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */
 
+DECLINLINE(void) drvCloudTunnelStrFree(char **ppszString)
+{
+    if (*ppszString)
+    {
+        RTStrFree(*ppszString);
+        *ppszString = NULL;
+    }
+}
+
+DECLINLINE(void) drvCloudTunnelHeapFree(PPDMDRVINS pDrvIns, char **ppszString)
+{
+    if (*ppszString)
+    {
+        PDMDrvHlpMMHeapFree(pDrvIns, *ppszString);
+        *ppszString = NULL;
+    }
+}
+
 /**
  * Destruct a driver instance.
  *
@@ -1285,59 +1328,28 @@ static DECLCALLBACK(void) drvCloudTunnelDestruct(PPDMDRVINS pDrvIns)
         pThis->hIoReqQueue = NIL_RTREQQUEUE;
     }
 
-    if (pThis->pszCloudPrimaryInterface)
-    {
-        RTStrFree(pThis->pszCloudPrimaryInterface);
-        pThis->pszCloudPrimaryInterface = NULL;
-    }
+    drvCloudTunnelStrFree(&pThis->pszCloudPrimaryInterface);
 
-    if (pThis->pszSecondaryIP)
-    {
-        RTStrFree(pThis->pszSecondaryIP);
-        pThis->pszSecondaryIP = NULL;
-    }
+    drvCloudTunnelHeapFree(pDrvIns, &pThis->pszPrimaryProxyType);
+    drvCloudTunnelStrFree(&pThis->pszPrimaryProxyHost);
+    drvCloudTunnelHeapFree(pDrvIns, &pThis->pszPrimaryProxyUser);
+    drvCloudTunnelStrFree(&pThis->pszPrimaryProxyPassword);
 
-    if (pThis->pszPrimaryIP)
-    {
-        RTStrFree(pThis->pszPrimaryIP);
-        pThis->pszPrimaryIP = NULL;
-    }
+    drvCloudTunnelHeapFree(pDrvIns, &pThis->pszSecondaryProxyType);
+    drvCloudTunnelStrFree(&pThis->pszSecondaryProxyHost);
+    drvCloudTunnelHeapFree(pDrvIns, &pThis->pszSecondaryProxyUser);
+    drvCloudTunnelStrFree(&pThis->pszSecondaryProxyPassword);
 
-    if (pThis->pszUser)
-    {
-        RTStrFree(pThis->pszUser);
-        pThis->pszUser = NULL;
-    }
+    drvCloudTunnelStrFree(&pThis->pszSecondaryIP);
+    drvCloudTunnelStrFree(&pThis->pszPrimaryIP);
+    drvCloudTunnelStrFree(&pThis->pszUser);
 
-    if (pThis->pszInstanceDev)
-    {
-        RTStrFree(pThis->pszInstanceDev);
-        pThis->pszInstanceDev = NULL;
-    }
+    drvCloudTunnelStrFree(&pThis->pszInstanceDev);
+    drvCloudTunnelStrFree(&pThis->pszInstanceIo);
+    drvCloudTunnelStrFree(&pThis->pszInstance);
 
-    if (pThis->pszInstanceIo)
-    {
-        RTStrFree(pThis->pszInstanceIo);
-        pThis->pszInstanceIo = NULL;
-    }
-
-    if (pThis->pszInstance)
-    {
-        RTStrFree(pThis->pszInstance);
-        pThis->pszInstance = NULL;
-    }
-
-    if (pThis->pszOutputBuffer)
-    {
-        RTStrFree(pThis->pszOutputBuffer);
-        pThis->pszOutputBuffer = NULL;
-    }
-
-    if (pThis->pszCommandBuffer)
-    {
-        RTStrFree(pThis->pszCommandBuffer);
-        pThis->pszCommandBuffer = NULL;
-    }
+    drvCloudTunnelStrFree(&pThis->pszOutputBuffer);
+    drvCloudTunnelStrFree(&pThis->pszCommandBuffer);
 
     ssh_key_free(pThis->SshKey);
 
@@ -1441,8 +1453,20 @@ static DECLCALLBACK(int) drvCloudTunnelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns,  "SshKey"
                                             "|PrimaryIP"
                                             "|SecondaryIP"
-                                            "|TargetMAC",
-                                            "");
+                                            "|TargetMAC"
+
+                                            "|PrimaryProxyType"
+                                            "|PrimaryProxyHost"
+                                            "|PrimaryProxyPort"
+                                            "|PrimaryProxyUser"
+                                            "|PrimaryProxyPassword"
+                                            "|SecondaryProxyType"
+                                            "|SecondaryProxyHost"
+                                            "|SecondaryProxyPort"
+                                            "|SecondaryProxyUser"
+                                            "|SecondaryProxyPassword"
+
+                                            ,"");
 
     /*
      * Check that no-one is attached to us.
@@ -1512,6 +1536,98 @@ static DECLCALLBACK(int) drvCloudTunnelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     if (rc != SSH_OK)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_INVALID_BASE64_ENCODING,
                                 N_("DrvCloudTunnel: Configuration error: Converting \"SshKey\" from base64 failed"));
+
+    /* PrimaryProxyType is optional */
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "PrimaryProxyType", &pThis->pszPrimaryProxyType, NULL);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("DrvCloudTunnel: Configuration error: Querying \"PrimaryProxyType\" as string failed"));
+    if (pThis->pszPrimaryProxyType)
+    {
+        rc = pHlp->pfnCFGMQueryString(pCfg, "PrimaryProxyHost", szVal, sizeof(szVal));
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"PrimaryProxyHost\" as string failed"));
+        rc = RTNetStrToIPv4Addr(szVal, &tmpAddr);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: \"PrimaryProxyHost\" is not valid"));
+        else
+            pThis->pszPrimaryProxyHost = RTStrDup(szVal);
+
+        uint64_t u64Val;
+        rc = pHlp->pfnCFGMQueryInteger(pCfg, "PrimaryProxyPort", &u64Val);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"PrimaryProxyPort\" as integer failed"));
+        if (u64Val > 0xFFFF)
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: \"PrimaryProxyPort\" is not valid"));
+        pThis->u16PrimaryProxyPort = (uint16_t)u64Val;
+
+        /* PrimaryProxyUser is optional */
+        rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "PrimaryProxyUser", &pThis->pszPrimaryProxyUser, NULL);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"PrimaryProxyUser\" as string failed"));
+        /* PrimaryProxyPassword must be present if PrimaryProxyUser is present */
+        if (pThis->pszPrimaryProxyUser)
+        {
+            rc = pHlp->pfnCFGMQueryPassword(pCfg, "PrimaryProxyPassword", szVal, sizeof(szVal));
+            if (RT_FAILURE(rc))
+                return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                        N_("DrvCloudTunnel: Configuration error: Querying \"PrimaryProxyPassword\" as string failed"));
+            pThis->pszPrimaryProxyPassword = RTStrDup(szVal);
+        }
+    }
+
+    /* SecondaryProxyType is optional */
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "SecondaryProxyType", &pThis->pszSecondaryProxyType, NULL);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyType\" as string failed"));
+    if (pThis->pszSecondaryProxyType)
+    {
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyType\" as string failed"));
+
+        rc = pHlp->pfnCFGMQueryString(pCfg, "SecondaryProxyHost", szVal, sizeof(szVal));
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyHost\" as string failed"));
+        rc = RTNetStrToIPv4Addr(szVal, &tmpAddr);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: \"SecondaryProxyHost\" is not valid"));
+        else
+            pThis->pszSecondaryProxyHost = RTStrDup(szVal);
+
+        uint64_t u64Val;
+        rc = pHlp->pfnCFGMQueryInteger(pCfg, "SecondaryProxyPort", &u64Val);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyPort\" as integer failed"));
+        if (u64Val > 0xFFFF)
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: \"SecondaryProxyPort\" is not valid"));
+        pThis->u16SecondaryProxyPort = (uint16_t)u64Val;
+
+        /* SecondaryProxyUser is optional */
+        rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "SecondaryProxyUser", &pThis->pszSecondaryProxyUser, NULL);
+        if (RT_FAILURE(rc))
+            return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                    N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyUser\" as string failed"));
+        /* SecondaryProxyPassword must be present if SecondaryProxyUser is present */
+        if (pThis->pszSecondaryProxyUser)
+        {
+            rc = pHlp->pfnCFGMQueryPassword(pCfg, "SecondaryProxyPassword", szVal, sizeof(szVal));
+            if (RT_FAILURE(rc))
+                return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                        N_("DrvCloudTunnel: Configuration error: Querying \"SecondaryProxyPassword\" as string failed"));
+            pThis->pszSecondaryProxyPassword = RTStrDup(szVal);
+        }
+    }
 
     pThis->pszCommandBuffer = (char *)RTMemAlloc(DRVCLOUDTUNNEL_COMMAND_BUFFER_SIZE);
     if (pThis->pszCommandBuffer == NULL)
