@@ -3736,6 +3736,10 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUnpackFile, \
                               (sRemoteFile, sRemoteDir, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
+    def txsExpandString(self, oSession, oTxsSession, sString, cMsTimeout = 30000, fIgnoreErrors = False):
+        return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncExpandString, \
+                              (sString, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
+
     # pylint: enable=missing-docstring
 
     def txsCdWait(self,

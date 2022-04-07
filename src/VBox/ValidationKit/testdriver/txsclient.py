@@ -1329,6 +1329,23 @@ class Session(TdTaskBase):
             rc = self.recvAckLogged('UNPKFILE');
         return rc;
 
+    def taskExpandString(self, sString):
+        rc = self.sendMsg('EXP STR ', (sString));
+        if rc is True:
+            rc = False;
+            cbMsg, sOpcode, abPayload = self.recvReply();
+            if cbMsg is not None:
+                sOpcode = sOpcode.strip();
+                if sOpcode == "STRING":
+                    sStringExp = getSZ(abPayload, 0);
+                    if sStringExp is not None:
+                        rc = sStringExp;
+                else: # Also handles SHORTSTR reply (not enough space to store result).
+                    reporter.maybeErr(self.fErr, 'taskExpandString got a bad reply: %s' % (sOpcode,));
+            else:
+                reporter.maybeErr(self.fErr, 'taskExpandString got 3xNone from recvReply.');
+        return rc;
+
     # pylint: enable=missing-docstring
 
 
@@ -1835,6 +1852,21 @@ class Session(TdTaskBase):
     def syncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 120000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncUnpackFile, sRemoteFile, sRemoteDir, cMsTimeout, fIgnoreErrors);
+
+    def asyncExpandString(self, sString, cMsTimeout = 120000, fIgnoreErrors = False):
+        """
+        Initiates an expand string task.
+
+        Returns expanded string on success, False on failure (logged).
+
+        The task returns True on success, False on failure (logged).
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "expandString", self.taskExpandString,
+                              (sString));
+
+    def syncExpandString(self, sString, cMsTimeout = 120000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncExpandString, sString, cMsTimeout, fIgnoreErrors);
 
 
 class TransportTcp(TransportBase):
