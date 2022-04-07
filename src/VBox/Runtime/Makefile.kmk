@@ -906,6 +906,7 @@ RuntimeR3_SOURCES.amd64 += \
 	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm \
+	common/math/RTUInt128MulByU64Ex.asm \
        common/string/RTStrEnd.asm
 
 # Some versions of GCC might require this.
@@ -3090,6 +3091,7 @@ RuntimeR0Drv_SOURCES.amd64 = \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm \
+	common/math/RTUInt128MulByU64Ex.asm \
 	common/string/RTStrEnd.asm
 RuntimeR0Drv_SOURCES.x86   = \
 	common/asm/ASMCpuIdExSlow.asm \

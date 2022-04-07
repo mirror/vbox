@@ -176,7 +176,7 @@ RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Valu
     {
         *pszTmp++ = '1';
         *pszTmp++ = 'm';
-        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT64U_FRACTION_BITS / 4, 0,
+        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + (RTFLOAT64U_FRACTION_BITS + 3) / 4, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
 
         *pszTmp++ = '^';
@@ -190,7 +190,7 @@ RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Valu
     {
         *pszTmp++ = '0';
         *pszTmp++ = 'm';
-        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT64U_FRACTION_BITS / 4, 0,
+        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + (RTFLOAT64U_FRACTION_BITS + 3) / 4, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
         if (fFlags & RTSTR_F_SPECIAL)
             pszTmp = (char *)memcpy(pszTmp, "[SubN]", 6) + 6;
@@ -223,7 +223,7 @@ RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Valu
  * Common worker for RTStrFormatR80 and RTStrFormatR80u2.
  */
 static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign, bool const fInteger,
-                                    uint64_t const uFraction, uint16_t const uExponent, uint32_t fFlags)
+                                    uint64_t const uFraction, uint16_t uExponent, uint32_t fFlags)
 {
     char szTmp[160];
 
@@ -249,6 +249,8 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                  ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"))
                  : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"));
         fDenormal = true;
+        if (fInteger)
+            uExponent = 1;
     }
     else if (uExponent == RTFLOAT80U_EXP_MAX)
     {
@@ -295,7 +297,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
      */
     *pszTmp++ = fInteger ? '1' : '0';
     *pszTmp++ = 'm';
-    pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT80U_FRACTION_BITS / 4, 0,
+    pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + (RTFLOAT80U_FRACTION_BITS + 3) / 4, 0,
                                 RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
 
     *pszTmp++ = '^';
