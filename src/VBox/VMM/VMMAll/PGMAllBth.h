@@ -112,7 +112,6 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    Assert(HMIsNestedPagingActive(pVM));
     Assert(!pVM->pgm.s.fNestedPaging);
 
     PGM_LOCK_VOID(pVM);
