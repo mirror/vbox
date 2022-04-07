@@ -2691,7 +2691,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressNewVersionChecker : public UINo
 
 public:
 
-    UINotificationProgressNewVersionChecker();
+    UINotificationProgressNewVersionChecker(bool fForcedCall);
 
 protected:
 
@@ -2709,6 +2709,8 @@ private slots:
 private:
 
     CHostUpdate m_comUpdateChecker;
+    /** Holds whether this customer has forced privelegies. */
+    bool        m_fForcedCall;
 };
 
 

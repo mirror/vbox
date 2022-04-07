@@ -4310,7 +4310,8 @@ UINewVersionChecker *UINotificationNewVersionCheckerVirtualBox::createChecker()
 *   Class UINotificationProgressNewVersionChecker implementation.                                                                *
 *********************************************************************************************************************************/
 
-UINotificationProgressNewVersionChecker::UINotificationProgressNewVersionChecker()
+UINotificationProgressNewVersionChecker::UINotificationProgressNewVersionChecker(bool fForcedCall)
+    : m_fForcedCall(fForcedCall)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressNewVersionChecker::sltHandleProgressFinished);
@@ -4362,7 +4363,10 @@ void UINotificationProgressNewVersionChecker::sltHandleProgressFinished()
         UINotificationMessage::showUpdateSuccess(strVersion, strURL);
     }
     else
-        UINotificationMessage::showUpdateNotFound();
+    {
+        if (m_fForcedCall)
+            UINotificationMessage::showUpdateNotFound();
+    }
 }
 
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
