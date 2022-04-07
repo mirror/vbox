@@ -1330,7 +1330,7 @@ class Session(TdTaskBase):
         return rc;
 
     def taskExpandString(self, sString):
-        rc = self.sendMsg('EXP STR ', (sString));
+        rc = self.sendMsg('EXP STR ', (sString,));
         if rc is True:
             rc = False;
             cbMsg, sOpcode, abPayload = self.recvReply();
