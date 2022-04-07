@@ -44,6 +44,10 @@
 // defines
 ////////////////////////////////////////////////////////////////////////////////
 
+/** Version of the NVRAM saved state unit. */
+#define NVRAM_STORE_SAVED_STATE_VERSION 1
+
+
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -94,6 +98,9 @@ struct NvramStore::Data
     Console * const         pParent;
     /** Number of references held to this NVRAM store from the various devices/drivers. */
     volatile uint32_t       cRefs;
+    /** Flag whether the NVRAM data was saved during a save state operation
+     * preventing it from getting written to the backing file. */
+    bool                    fSsmSaved;
 #else
     /** The Machine object owning this NVRAM store. */
     Machine * const                    pParent;
@@ -999,6 +1006,130 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreDelete(PPDMIVFSCONNECTOR pInterface, c
 }
 
 
+/*static*/
+DECLCALLBACK(int) NvramStore::i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVMAINNVRAMSTORE pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINNVRAMSTORE);
+    PCPDMDRVHLPR3      pHlp  = pDrvIns->pHlpR3;
+
+    AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
+
+    size_t cEntries = pThis->pNvramStore->m->bd->mapNvram.size();
+    AssertReturn(cEntries < 32, VERR_OUT_OF_RANGE); /* Some sanity checking. */
+    pHlp->pfnSSMPutU32(pSSM, (uint32_t)cEntries);
+
+    void *pvData = NULL;
+    size_t cbDataMax = 0;
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin();
+
+    while (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    {
+        RTVFSFILE hVfsFile = it->second;
+        uint64_t cbFile;
+
+        int rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
+        AssertRCReturn(rc, rc);
+        AssertReturn(cbFile < _1M, VERR_OUT_OF_RANGE);
+
+        if (cbDataMax < cbFile)
+        {
+            pvData = RTMemRealloc(pvData, cbFile);
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            cbDataMax = cbFile;
+        }
+
+        rc = RTVfsFileReadAt(hVfsFile, 0 /*off*/, pvData, cbFile, NULL /*pcbRead*/);
+        AssertRCReturn(rc, rc);
+
+        pHlp->pfnSSMPutStrZ(pSSM, it->first.c_str());
+        pHlp->pfnSSMPutU64(pSSM, cbFile);
+        pHlp->pfnSSMPutMem(pSSM, pvData, cbFile);
+        it++;
+    }
+
+    if (pvData)
+        RTMemFree(pvData);
+
+    pThis->pNvramStore->m->fSsmSaved = true;
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+}
+
+
+/*static*/
+DECLCALLBACK(int) NvramStore::i_SsmLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVMAINNVRAMSTORE pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINNVRAMSTORE);
+    PCPDMDRVHLPR3      pHlp  = pDrvIns->pHlpR3;
+
+    AssertMsgReturn(uVersion >= NVRAM_STORE_SAVED_STATE_VERSION, ("%d\n", uVersion),
+                    VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
+
+        /* Clear any content first. */
+        NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin();
+        while (it != pThis->pNvramStore->m->bd->mapNvram.end())
+        {
+            RTVfsFileRelease(it->second);
+            it++;
+        }
+
+        pThis->pNvramStore->m->bd->mapNvram.clear();
+
+        uint32_t cEntries = 0;
+        int rc = pHlp->pfnSSMGetU32(pSSM, &cEntries);
+        AssertRCReturn(rc, rc);
+        AssertReturn(cEntries < 32, VERR_OUT_OF_RANGE);
+
+        void *pvData = NULL;
+        size_t cbDataMax = 0;
+        while (cEntries--)
+        {
+            char szId[_1K]; /* Lazy developer */
+            uint64_t cbFile = 0;
+
+            rc = pHlp->pfnSSMGetStrZ(pSSM, &szId[0], sizeof(szId));
+            AssertRCReturn(rc, rc);
+
+            rc = pHlp->pfnSSMGetU64(pSSM, &cbFile);
+            AssertRCReturn(rc, rc);
+            AssertReturn(cbFile < _1M, VERR_OUT_OF_RANGE);
+
+            if (cbDataMax < cbFile)
+            {
+                pvData = RTMemRealloc(pvData, cbFile);
+                AssertPtrReturn(pvData, VERR_NO_MEMORY);
+                cbDataMax = cbFile;
+            }
+
+            rc = pHlp->pfnSSMGetMem(pSSM, pvData, cbFile);
+            AssertRCReturn(rc, rc);
+
+            RTVFSFILE hVfsFile;
+            rc = RTVfsFileFromBuffer(RTFILE_O_READWRITE, pvData, cbFile, &hVfsFile);
+            AssertRCReturn(rc, rc);
+
+            pThis->pNvramStore->m->bd->mapNvram[Utf8Str(szId)] = hVfsFile;
+        }
+
+        if (pvData)
+            RTMemFree(pvData);
+
+        /* The marker. */
+        uint32_t u32;
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -1028,7 +1159,8 @@ DECLCALLBACK(void) NvramStore::i_drvDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pNvramStore)
     {
         uint32_t cRefs = ASMAtomicDecU32(&pThis->pNvramStore->m->cRefs);
-        if (!cRefs)
+        if (   !cRefs
+            && !pThis->pNvramStore->m->fSsmSaved)
         {
             int rc = pThis->pNvramStore->i_saveStore();
             AssertRC(rc); /** @todo Disk full error? */
@@ -1076,6 +1208,19 @@ DECLCALLBACK(int) NvramStore::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     {
         AssertMsgFailed(("Configuration error: No/bad NVRAM store object!\n"));
         return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Only the first instance will register the SSM handlers and will do the work on behalf
+     * of all other NVRAM store driver instances when it comes to SSM.
+     */
+    if (pDrvIns->iInstance == 0)
+    {
+        int rc = PDMDrvHlpSSMRegister(pDrvIns, NVRAM_STORE_SAVED_STATE_VERSION, 0 /*cbGuess*/,
+                                      NvramStore::i_SsmSaveExec, NvramStore::i_SsmLoadExec);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to register the saved state unit for the NVRAM store"));
     }
 
     uint32_t cRefs = ASMAtomicIncU32(&pThis->pNvramStore->m->cRefs);

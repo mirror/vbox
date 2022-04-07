@@ -94,6 +94,9 @@ private:
     int i_saveStoreAsTar(const char *pszPath);
 
 #ifdef VBOX_COM_INPROC
+    static DECLCALLBACK(int)    i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);
+    static DECLCALLBACK(int)    i_SsmLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+
     static DECLCALLBACK(int)    i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
                                                       uint64_t *pcb);
     static DECLCALLBACK(int)    i_nvramStoreReadAll(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
