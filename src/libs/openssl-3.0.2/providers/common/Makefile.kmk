@@ -32,8 +32,7 @@ providers_common_SOURCES = \
 	provider_seeding.c \
 	provider_util.c \
 	securitycheck.c \
-	securitycheck_default.c \
-	securitycheck_fips.c
+	securitycheck_default.c
 $(evalcall VBOX_OPENSSL_X86,providers_common)
 
 include $(FILE_KBUILD_SUB_FOOTER)
