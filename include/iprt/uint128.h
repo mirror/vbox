@@ -32,9 +32,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/asm.h>
-#ifdef RT_ARCH_AMD64
-# include <iprt/asm-math.h>
-#endif
+#include <iprt/asm-math.h>
 
 RT_C_DECLS_BEGIN
 
