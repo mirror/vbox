@@ -120,23 +120,22 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
 #endif
 
 
-#if ARCH_BITS == 64
 DECLINLINE(uint64_t) ASMMult2xU64Ret2xU64(uint64_t u64F1, uint64_t u64F2, uint64_t *pu64ProdHi)
 {
-# if defined(RT_ARCH_AMD64) && (RT_INLINE_ASM_GNU_STYLE || RT_INLINE_ASM_USES_INTRIN)
-#  if RT_INLINE_ASM_GNU_STYLE
+#if defined(RT_ARCH_AMD64) && (RT_INLINE_ASM_GNU_STYLE || RT_INLINE_ASM_USES_INTRIN)
+# if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Low, u64High;
     __asm__ __volatile__("mulq %%rdx"
                          : "=a" (u64Low), "=d" (u64High)
                          : "0" (u64F1), "1" (u64F2));
     *pu64ProdHi = u64High;
     return u64Low;
-#  elif RT_INLINE_ASM_USES_INTRIN
+# elif RT_INLINE_ASM_USES_INTRIN
     return _umul128(u64F1, u64F2, pu64ProdHi);
-#  else
-#   error "hmm"
-#  endif
-# else  /* generic: */
+# else
+#  error "hmm"
+# endif
+#else  /* generic: */
     /*
      *   F1 * F2 = Prod
      *   --   --
@@ -175,9 +174,8 @@ DECLINLINE(uint64_t) ASMMult2xU64Ret2xU64(uint64_t u64F1, uint64_t u64F2, uint64
     Prod.s.Hi += ASMMult2xU32RetU64(F1.s.Hi, F2.s.Hi);
     *pu64ProdHi  = Prod.s.Hi;
     return Prod.s.Lo;
-# endif
-}
 #endif
+}
 
 
 
