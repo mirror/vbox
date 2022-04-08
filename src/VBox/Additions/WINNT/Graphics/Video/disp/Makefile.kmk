@@ -195,6 +195,8 @@ VBoxDX_INCS     = \
 	$(VBOX_GRAPHICS_INCS)
 VBoxDX_SOURCES  = \
 	wddm/dx/VBoxDXDDI.cpp \
+	wddm/dx/VBoxDX.cpp \
+	wddm/dx/VBoxDXCmd.cpp \
 	wddm/dx/VBoxDX.rc \
 	wddm/dx/VBoxDX.def
 VBoxDX_LIBS     = \
