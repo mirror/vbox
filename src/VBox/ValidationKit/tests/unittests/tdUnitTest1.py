@@ -1003,7 +1003,7 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # Set up arguments and environment.
         #
-        asArgs = [sFullPath,]
+        asArgs = [sFullPath + self.sExeSuff,]
         if sName in self.kdArguments:
             asArgs.extend(self.kdArguments[sName]);
 
