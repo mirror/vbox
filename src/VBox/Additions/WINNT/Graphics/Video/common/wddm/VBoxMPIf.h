@@ -267,8 +267,8 @@ typedef enum
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS,
     /* Gallium driver context. */
     VBOXWDDM_CONTEXT_TYPE_GA_3D,
-    /* context to handle SVGA_3D_CMD_DX_* commands */
-    VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX,
+    /* Direct3D UMD context for VMSVGA device. */
+    VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D,
 } VBOXWDDM_CONTEXT_TYPE;
 
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
