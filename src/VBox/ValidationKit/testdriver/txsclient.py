@@ -1091,7 +1091,7 @@ class Session(TdTaskBase):
         _ = fFallbackOkay; # Not used yet.
         # Note: If fMode is set to 0, it's up to the target OS' implementation with
         #       what a file mode the destination file gets created (i.e. via umask).
-        rc = self.sendMsg('CPFILE', (fMode, sSrcFile, sDstFile,));
+        rc = self.sendMsg('CPFILE', (int(fMode), sSrcFile, sDstFile,));
         if rc is True:
             rc = self.recvAckLogged('CPFILE');
         return rc;
