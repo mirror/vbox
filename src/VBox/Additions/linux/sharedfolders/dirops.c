@@ -1400,7 +1400,9 @@ struct inode_operations vbsf_dir_iops = {
 #if RTLNX_VER_MIN(4,9,0)
     .rename         = vbsf_inode_rename,
 #else
+# if RTLNX_VER_MAX(3,17,0)
     .rename         = vbsf_inode_rename_no_flags,
+# endif
 # if RTLNX_VER_MIN(3,15,0)
     .rename2        = vbsf_inode_rename,
 # endif
