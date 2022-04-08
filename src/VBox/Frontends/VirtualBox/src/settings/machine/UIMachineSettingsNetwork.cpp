@@ -642,7 +642,7 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
 
                 /* Prepare attachment type editor: */
-                m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings, true);
+                m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
                 if (m_pEditorAttachmentType)
                     pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType);
 

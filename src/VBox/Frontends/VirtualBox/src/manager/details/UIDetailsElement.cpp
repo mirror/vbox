@@ -1144,7 +1144,7 @@ void UIDetailsElement::popupNetworkAttachmentTypeEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UINetworkAttachmentEditor *pEditor = new UINetworkAttachmentEditor(pPopup, true /* with label */);
+        UINetworkAttachmentEditor *pEditor = new UINetworkAttachmentEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValueNames(KNetworkAttachmentType_Bridged, UINetworkAttachmentEditor::bridgedAdapters());

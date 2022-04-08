@@ -42,9 +42,8 @@
 /* static */
 QString UINetworkAttachmentEditor::s_strEmptyItemId = QString("#empty#");
 
-UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */, bool fWithLabels /* = false */)
+UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabels(fWithLabels)
     , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
     , m_enmType(KNetworkAttachmentType_Max)
     , m_pLabelType(0)
@@ -57,17 +56,11 @@ UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */,
 
 void UINetworkAttachmentEditor::setValueType(KNetworkAttachmentType enmType)
 {
-    /* Make sure combo is there: */
-    if (!m_pComboType)
-        return;
-    /* Make sure type is changed: */
-    if (m_enmType == enmType)
-        return;
-
-    /* Remember requested type: */
-    m_enmType = enmType;
-    /* Repopulate finally, supported values might change: */
-    populateTypeCombo();
+    if (m_enmType != enmType)
+    {
+        m_enmType = enmType;
+        populateTypeCombo();
+    }
 }
 
 KNetworkAttachmentType UINetworkAttachmentEditor::valueType() const
@@ -90,16 +83,16 @@ void UINetworkAttachmentEditor::setValueName(KNetworkAttachmentType enmType, con
     /* Save current name for passed type: */
     m_name[enmType] = strName;
 
-    /* Make sure combo is there: */
-    if (!m_pComboName)
-        return;
-
     /* If value type is the same, update the combo as well: */
     if (valueType() == enmType)
     {
-        const int iIndex = m_pComboName->findText(strName);
-        if (iIndex != -1)
-            m_pComboName->setCurrentIndex(iIndex);
+        /* Make sure combo is there: */
+        if (m_pComboName)
+        {
+            const int iIndex = m_pComboName->findText(strName);
+            if (iIndex != -1)
+                m_pComboName->setCurrentIndex(iIndex);
+        }
     }
 }
 
@@ -193,16 +186,10 @@ void UINetworkAttachmentEditor::retranslateUi()
         for (int i = 0; i < m_pComboType->count(); ++i)
         {
             const KNetworkAttachmentType enmType = m_pComboType->itemData(i).value<KNetworkAttachmentType>();
-            const QString strName = gpConverter->toString(enmType);
-            m_pComboType->setItemData(i, strName, Qt::ToolTipRole);
-            m_pComboType->setItemText(i, strName);
+            m_pComboType->setItemText(i, gpConverter->toString(enmType));
         }
-        m_pComboType->setToolTip(tr("Selects how this virtual adapter is attached to the real network of the Host OS."));
+        m_pComboType->setToolTip(tr("Holds how this virtual adapter is attached to the real network of the Host OS."));
     }
-
-    /* Translate name combo: */
-    if (m_pComboName)
-        m_pComboName->setToolTip(tr("Selects the network or adapter name associated with this virtual adapter."));
 
     /* Translate name combo: */
     retranslateNameDescription();
@@ -272,17 +259,13 @@ void UINetworkAttachmentEditor::prepare()
     {
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        int iColumn = 0;
-
         /* Create type label: */
-        if (m_fWithLabels)
-        {
-            m_pLabelType = new QLabel(this);
-            m_pLabelType->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
-        }
+        m_pLabelType = new QLabel(this);
         if (m_pLabelType)
-            pMainLayout->addWidget(m_pLabelType, 0, iColumn++);
-
+        {
+            m_pLabelType->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+            pMainLayout->addWidget(m_pLabelType, 0, 0);
+        }
         /* Create type combo layout: */
         QHBoxLayout *pComboLayout = new QHBoxLayout;
         if (pComboLayout)
@@ -302,20 +285,14 @@ void UINetworkAttachmentEditor::prepare()
             pComboLayout->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, iColumn++);
+            pMainLayout->addLayout(pComboLayout, 0, 1);
         }
-
-        iColumn = 0;
 
         /* Create name label: */
-        if (m_fWithLabels)
-        {
-            m_pLabelName = new QLabel(this);
-            m_pLabelName->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
-        }
+        m_pLabelName = new QLabel(this);
+        m_pLabelName->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
         if (m_pLabelName)
-            pMainLayout->addWidget(m_pLabelName, 1, iColumn++);
-
+            pMainLayout->addWidget(m_pLabelName, 1, 0);
         /* Create name combo: */
         m_pComboName = new QComboBox(this);
         if (m_pComboName)
@@ -327,7 +304,7 @@ void UINetworkAttachmentEditor::prepare()
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
             connect(m_pComboName, &QComboBox::editTextChanged,
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
-            pMainLayout->addWidget(m_pComboName, 1, iColumn++);
+            pMainLayout->addWidget(m_pComboName, 1, 1);
         }
     }
 
@@ -353,7 +330,7 @@ void UINetworkAttachmentEditor::populateTypeCombo()
     /* Load currently supported network attachment types (system-properties getter): */
     CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     QVector<KNetworkAttachmentType> supportedTypes = comProperties.GetSupportedNetworkAttachmentTypes();
-    /* Take currently requested type into account if it's sane: */
+    /* Take currently requested type into account if it's different from initial one: */
     if (!supportedTypes.contains(m_enmType) && m_enmType != KNetworkAttachmentType_Max)
         supportedTypes.prepend(m_enmType);
 
@@ -366,7 +343,6 @@ void UINetworkAttachmentEditor::populateTypeCombo()
             continue;
         m_pComboType->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
         m_pComboType->setItemData(iAttachmentTypeIndex, QVariant::fromValue(enmType));
-        m_pComboType->setItemData(iAttachmentTypeIndex, m_pComboType->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
     }
 
@@ -449,48 +425,48 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
     switch (valueType())
     {
         case KNetworkAttachmentType_Bridged:
-            m_pComboName->setWhatsThis(tr("Selects the network adapter on the host system that traffic "
-                                          "to and from this network card will go through."));
+            m_pComboName->setToolTip(tr("Holds the network adapter on the host system that traffic "
+                                        "to and from this network card will go through."));
             break;
         case KNetworkAttachmentType_Internal:
-            m_pComboName->setWhatsThis(tr("Holds the name of the internal network that this network card "
-                                          "will be connected to. You can create a new internal network by "
-                                          "choosing a name which is not used by any other network cards "
-                                          "in this virtual machine or others."));
+            m_pComboName->setToolTip(tr("Holds the name of the internal network that this network card "
+                                        "will be connected to. You can create a new internal network by "
+                                        "choosing a name which is not used by any other network cards "
+                                        "in this virtual machine or others."));
             break;
         case KNetworkAttachmentType_HostOnly:
-            m_pComboName->setWhatsThis(tr("Selects the virtual network adapter on the host system that traffic "
-                                          "to and from this network card will go through. "
-                                          "You can create and remove adapters using the global network "
-                                          "settings in the virtual machine manager window."));
+            m_pComboName->setToolTip(tr("Holds the virtual network adapter on the host system that traffic "
+                                        "to and from this network card will go through. "
+                                        "You can create and remove adapters using the global network "
+                                        "settings in the virtual machine manager window."));
             break;
         case KNetworkAttachmentType_Generic:
-            m_pComboName->setWhatsThis(tr("Selects the driver to be used with this network card."));
+            m_pComboName->setToolTip(tr("Holds the driver to be used with this network card."));
             break;
         case KNetworkAttachmentType_NATNetwork:
-            m_pComboName->setWhatsThis(tr("Holds the name of the NAT network that this network card "
-                                          "will be connected to. You can create and remove networks "
-                                          "using the Network Manager tool in the virtual machine "
-                                          "manager window."));
+            m_pComboName->setToolTip(tr("Holds the name of the NAT network that this network card "
+                                        "will be connected to. You can create and remove networks "
+                                        "using the Network Manager tool in the virtual machine "
+                                        "manager window."));
             break;
 #ifdef VBOX_WITH_CLOUD_NET
         case KNetworkAttachmentType_Cloud:
-            m_pComboName->setWhatsThis(tr("(experimental) Holds the name of the cloud network that this network card "
-                                          "will be connected to. You can add and remove networks "
-                                          "using the Cloud Profile Manager tool in the virtual machine "
-                                          "manager window."));
+            m_pComboName->setToolTip(tr("(experimental) Holds the name of the cloud network that this network card "
+                                        "will be connected to. You can add and remove networks "
+                                        "using the Cloud Profile Manager tool in the virtual machine "
+                                        "manager window."));
             break;
 #endif /* VBOX_WITH_CLOUD_NET */
 #ifdef VBOX_WITH_VMNET
         case KNetworkAttachmentType_HostOnlyNetwork:
-            m_pComboName->setWhatsThis(tr("Holds the name of the host-only network that this network card "
-                                          "will be connected to. You can add and remove networks "
-                                          "using the Network Manager tool in the virtual machine "
-                                          "manager window."));
+            m_pComboName->setToolTip(tr("Holds the name of the host-only network that this network card "
+                                        "will be connected to. You can add and remove networks "
+                                        "using the Network Manager tool in the virtual machine "
+                                        "manager window."));
             break;
 #endif /* VBOX_WITH_VMNET */
         default:
-            m_pComboName->setWhatsThis(QString());
+            m_pComboName->setToolTip(QString());
             break;
     }
 }
