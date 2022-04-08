@@ -157,6 +157,8 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
         *pValue = (uintptr_t)RTPrintf;
     else if (!strcmp(pszSymbol, "SUPR0Printf")          || !strcmp(pszSymbol, "_SUPR0Printf"))
         *pValue = (uintptr_t)RTPrintf;
+    else if (!strcmp(pszSymbol, "SUPR0PrintfV")         || !strcmp(pszSymbol, "_SUPR0PrintfV"))
+        *pValue = (uintptr_t)RTPrintfV;
     else if (!strcmp(pszSymbol, "SomeImportFunction")   || !strcmp(pszSymbol, "_SomeImportFunction"))
         *pValue = (uintptr_t)0;
     else if (!strcmp(pszSymbol, "g_pSUPGlobalInfoPage") || !strcmp(pszSymbol, "_g_pSUPGlobalInfoPage"))
