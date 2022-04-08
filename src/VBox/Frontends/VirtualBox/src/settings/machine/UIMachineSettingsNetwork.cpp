@@ -17,25 +17,15 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
-#include <QRegExp>
-#include <QRegularExpressionValidator>
-#include <QPushButton>
-#include <QTextEdit>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIArrowButtonSwitch.h"
-#include "QILineEdit.h"
 #include "QITabWidget.h"
-#include "QIToolButton.h"
-#include "QIWidgetValidator.h"
 #include "UICommon.h"
-#include "UIConverter.h"
 #include "UIErrorString.h"
-#include "UIExtraDataManager.h"
-#include "UIIconPool.h"
+#include "UIMachineNetworkFeaturesEditor.h"
 #include "UIMachineSettingsNetwork.h"
 #include "UINetworkAttachmentEditor.h"
 #include "UITranslator.h"
@@ -43,12 +33,6 @@
 /* COM includes: */
 #include "CNATEngine.h"
 #include "CNetworkAdapter.h"
-
-/* Other VBox includes: */
-#ifdef VBOX_WITH_VDE
-# include <iprt/ldr.h>
-# include <VBox/VDEPlug.h>
-#endif
 
 
 QString wipedOutString(const QString &strInputString)
@@ -199,7 +183,7 @@ signals:
     /* Signal to notify listeners about tab content changed: */
     void sigTabUpdated();
 
-    /** Notifies about the advanced button has @a fExpanded. */
+    /** Notifies about the advanced button state change to @a fExpanded. */
     void sigNotifyAdvancedButtonStateChange(bool fExpanded);
 
 protected:
@@ -213,9 +197,6 @@ private slots:
     void sltHandleAdapterActivityChange();
     void sltHandleAttachmentTypeChange();
     void sltHandleAlternativeNameChange();
-    void sltHandleAdvancedButtonStateChange();
-    void sltGenerateMac();
-    void sltOpenPortForwardingDlg();
 
 private:
 
@@ -225,67 +206,23 @@ private:
     void prepareWidgets();
     /** Prepares connections. */
     void prepareConnections();
-    /** Prepares advanced settings widgets. */
-    void prepareAdvancedSettingsWidgets(QGridLayout *pLayout);
-
-    /* Helping stuff: */
-    void populateComboboxes();
-
-    /** Handles advanced button state change. */
-    void handleAdvancedButtonStateChange();
-
-    /* Various static stuff: */
-    static int position(QComboBox *pComboBox, int iData);
-    static int position(QComboBox *pComboBox, const QString &strText);
 
     /* Parent page: */
     UIMachineSettingsNetworkPage *m_pParent;
 
     /* Other variables: */
     int m_iSlot;
-    KNetworkAdapterType m_enmAdapterType;
-    UIPortForwardingDataList m_portForwardingRules;
 
     /** @name Widgets
      * @{ */
         /** Holds the adapter check-box instance. */
-        QCheckBox                 *m_pCheckBoxAdapter;
+        QCheckBox                      *m_pCheckBoxAdapter;
         /** Holds the adapter settings widget instance. */
-        QWidget                   *m_pWidgetAdapterSettings;
-        /** Holds the adapter settings layout instance. */
-        QGridLayout               *m_pLayoutAdapterSettings;
-        /** Holds the advanced settings container widget instance. */
-        QWidget                   *m_pWidgetAdvancedSettings;
-        /** Holds the attachment type label instance. */
-        QLabel                    *m_pLabelAttachmentType;
-        /** Holds the network name label instance. */
-        QLabel                    *m_pLabelNetworkName;
+        QWidget                        *m_pWidgetAdapterSettings;
         /** Holds the attachment type editor instance. */
-        UINetworkAttachmentEditor *m_pEditorAttachmentType;
-        /** Holds the advanced button instance. */
-        QIArrowButtonSwitch       *m_pButtonAdvanced;
-        /** Holds the adapter type label instance. */
-        QLabel                    *m_pLabelAdapterType;
-        /** Holds the adapter type editor instance. */
-        QComboBox                 *m_pComboAdapterType;
-        /** Holds the promiscuous mode label instance. */
-        QLabel                    *m_pLabelPromiscuousMode;
-        /** Holds the promiscuous mode combo instance. */
-        QComboBox                 *m_pComboPromiscuousMode;
-        /** Holds the MAC label instance. */
-        QLabel                    *m_pLabelMAC;
-        /** Holds the MAC editor instance. */
-        QILineEdit                *m_pEditorMAC;
-        /** Holds the MAC button instance. */
-        QIToolButton              *m_pButtonMAC;
-        /** Holds the generic properties label instance. */
-        QLabel                    *m_pLabelGenericProperties;
-        /** Holds the generic properties editor instance. */
-        QTextEdit                 *m_pEditorGenericProperties;
-        /** Holds the cable connected check-box instance. */
-        QCheckBox                 *m_pCheckBoxCableConnected;
-        /** Holds the port forwarding button instance. */
-        QPushButton               *m_pButtonPortForwarding;
+        UINetworkAttachmentEditor      *m_pEditorAttachmentType;
+        /** Holds the network features editor instance. */
+        UIMachineNetworkFeaturesEditor *m_pEditorNetworkFeatures;
     /** @} */
 };
 
@@ -298,26 +235,10 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
-    , m_enmAdapterType(KNetworkAdapterType_Null)
     , m_pCheckBoxAdapter(0)
     , m_pWidgetAdapterSettings(0)
-    , m_pLayoutAdapterSettings(0)
-    , m_pWidgetAdvancedSettings(0)
-    , m_pLabelAttachmentType(0)
-    , m_pLabelNetworkName(0)
     , m_pEditorAttachmentType(0)
-    , m_pButtonAdvanced(0)
-    , m_pLabelAdapterType(0)
-    , m_pComboAdapterType(0)
-    , m_pLabelPromiscuousMode(0)
-    , m_pComboPromiscuousMode(0)
-    , m_pLabelMAC(0)
-    , m_pEditorMAC(0)
-    , m_pButtonMAC(0)
-    , m_pLabelGenericProperties(0)
-    , m_pEditorGenericProperties(0)
-    , m_pCheckBoxCableConnected(0)
-    , m_pButtonPortForwarding(0)
+    , m_pEditorNetworkFeatures(0)
 {
     prepare();
 }
@@ -352,24 +273,21 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
-    /* Load adapter type: */
-    m_enmAdapterType = oldAdapterData.m_adapterType;
-
-    /* Load promiscuous mode type: */
-    m_pComboPromiscuousMode->setCurrentIndex(position(m_pComboPromiscuousMode, oldAdapterData.m_promiscuousMode));
-
-    /* Other options: */
-    m_pEditorMAC->setText(oldAdapterData.m_strMACAddress);
-    m_pEditorGenericProperties->setText(oldAdapterData.m_strGenericProperties);
-    m_pCheckBoxCableConnected->setChecked(oldAdapterData.m_fCableConnected);
+    /* Load settings: */
+    m_pEditorNetworkFeatures->setAdapterType(oldAdapterData.m_adapterType);
+    m_pEditorNetworkFeatures->setPromiscuousMode(oldAdapterData.m_promiscuousMode);
+    m_pEditorNetworkFeatures->setMACAddress(oldAdapterData.m_strMACAddress);
+    m_pEditorNetworkFeatures->setGenericProperties(oldAdapterData.m_strGenericProperties);
+    m_pEditorNetworkFeatures->setCableConnected(oldAdapterData.m_fCableConnected);
 
     /* Load port forwarding rules: */
-    m_portForwardingRules.clear();
+    UIPortForwardingDataList portForwardingRules;
     for (int i = 0; i < adapterCache.childCount(); ++i)
-        m_portForwardingRules << adapterCache.child(i).base();
+        portForwardingRules << adapterCache.child(i).base();
+    m_pEditorNetworkFeatures->setPortForwardingRules(portForwardingRules);
 
-    /* Repopulate combo-boxes content: */
-    populateComboboxes();
+    /* Reload alternatives: */
+    reloadAlternatives();
     /* Reapply attachment info: */
     sltHandleAttachmentTypeChange();
 }
@@ -401,7 +319,6 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             break;
         case KNetworkAttachmentType_Generic:
             newAdapterData.m_strGenericDriverName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Generic);
-            newAdapterData.m_strGenericProperties = m_pEditorGenericProperties->toPlainText();
             break;
         case KNetworkAttachmentType_NATNetwork:
             newAdapterData.m_strNATNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_NATNetwork);
@@ -420,18 +337,16 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             break;
     }
 
-    /* Save adapter type: */
-    newAdapterData.m_adapterType = m_pComboAdapterType->currentData().value<KNetworkAdapterType>();
-
-    /* Save promiscuous mode type: */
-    newAdapterData.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pComboPromiscuousMode->itemData(m_pComboPromiscuousMode->currentIndex()).toInt();
-
-    /* Other options: */
-    newAdapterData.m_strMACAddress = m_pEditorMAC->text().isEmpty() ? QString() : m_pEditorMAC->text();
-    newAdapterData.m_fCableConnected = m_pCheckBoxCableConnected->isChecked();
+    /* Save settings: */
+    newAdapterData.m_adapterType = m_pEditorNetworkFeatures->adapterType();
+    newAdapterData.m_promiscuousMode = m_pEditorNetworkFeatures->promiscuousMode();
+    newAdapterData.m_strMACAddress = m_pEditorNetworkFeatures->macAddress();
+    if (newAdapterData.m_attachmentType == KNetworkAttachmentType_Generic)
+        newAdapterData.m_strGenericProperties = m_pEditorNetworkFeatures->genericProperties();
+    newAdapterData.m_fCableConnected = m_pEditorNetworkFeatures->cableConnected();
 
     /* Save port forwarding rules: */
-    foreach (const UIDataPortForwardingRule &rule, m_portForwardingRules)
+    foreach (const UIDataPortForwardingRule &rule, m_pEditorNetworkFeatures->portForwardingRules())
         adapterCache.child(rule.name).cacheCurrentData(rule);
 
     /* Cache new adapter data: */
@@ -535,17 +450,17 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
     }
 
     /* Validate MAC-address length: */
-    if (m_pEditorMAC->text().size() < 12)
+    if (m_pEditorNetworkFeatures->macAddress().size() < 12)
     {
         message.second << tr("The MAC address must be 12 hexadecimal digits long.");
         fPass = false;
     }
 
     /* Make sure MAC-address is unicast: */
-    if (m_pEditorMAC->text().size() >= 2)
+    if (m_pEditorNetworkFeatures->macAddress().size() >= 2)
     {
         QRegExp validator("^[0-9A-Fa-f][02468ACEace]");
-        if (validator.indexIn(m_pEditorMAC->text()) != 0)
+        if (validator.indexIn(m_pEditorNetworkFeatures->macAddress()) != 0)
         {
             message.second << tr("The second digit in the MAC address may not be odd as only unicast addresses are allowed.");
             fPass = false;
@@ -564,15 +479,8 @@ QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
 {
     setTabOrder(pAfter, m_pCheckBoxAdapter);
     setTabOrder(m_pCheckBoxAdapter, m_pEditorAttachmentType);
-    setTabOrder(m_pEditorAttachmentType, m_pButtonAdvanced);
-    setTabOrder(m_pButtonAdvanced, m_pComboAdapterType);
-    setTabOrder(m_pComboAdapterType, m_pComboPromiscuousMode);
-    setTabOrder(m_pComboPromiscuousMode, m_pEditorMAC);
-    setTabOrder(m_pEditorMAC, m_pButtonMAC);
-    setTabOrder(m_pButtonMAC, m_pEditorGenericProperties);
-    setTabOrder(m_pEditorGenericProperties, m_pCheckBoxCableConnected);
-    setTabOrder(m_pCheckBoxCableConnected, m_pButtonPortForwarding);
-    return m_pButtonPortForwarding;
+    setTabOrder(m_pEditorAttachmentType, m_pEditorNetworkFeatures);
+    return m_pEditorNetworkFeatures;
 }
 
 QString UIMachineSettingsNetwork::tabTitle() const
@@ -596,35 +504,18 @@ void UIMachineSettingsNetwork::polishTab()
 {
     /* Basic attributes: */
     m_pCheckBoxAdapter->setEnabled(m_pParent->isMachineOffline());
-    m_pLabelAttachmentType->setEnabled(m_pParent->isMachineInValidMode());
     m_pEditorAttachmentType->setEnabled(m_pParent->isMachineInValidMode());
-    m_pLabelNetworkName->setEnabled(m_pParent->isMachineInValidMode() &&
-                                    attachmentType() != KNetworkAttachmentType_Null &&
-                                    attachmentType() != KNetworkAttachmentType_NAT);
-    m_pButtonAdvanced->setEnabled(m_pParent->isMachineInValidMode());
 
     /* Advanced attributes: */
-    m_pLabelAdapterType->setEnabled(m_pParent->isMachineOffline());
-    m_pComboAdapterType->setEnabled(m_pParent->isMachineOffline());
-    m_pLabelPromiscuousMode->setEnabled(m_pParent->isMachineInValidMode() &&
-                                        attachmentType() != KNetworkAttachmentType_Null &&
-                                        attachmentType() != KNetworkAttachmentType_Generic &&
-                                        attachmentType() != KNetworkAttachmentType_NAT);
-    m_pComboPromiscuousMode->setEnabled(m_pParent->isMachineInValidMode() &&
-                                        attachmentType() != KNetworkAttachmentType_Null &&
-                                        attachmentType() != KNetworkAttachmentType_Generic &&
-                                        attachmentType() != KNetworkAttachmentType_NAT);
-    m_pLabelMAC->setEnabled(m_pParent->isMachineOffline());
-    m_pEditorMAC->setEnabled(m_pParent->isMachineOffline());
-    m_pButtonMAC->setEnabled(m_pParent->isMachineOffline());
-    m_pLabelGenericProperties->setEnabled(m_pParent->isMachineInValidMode());
-    m_pEditorGenericProperties->setEnabled(m_pParent->isMachineInValidMode());
-    m_pCheckBoxCableConnected->setEnabled(m_pParent->isMachineInValidMode());
-    m_pButtonPortForwarding->setEnabled(m_pParent->isMachineInValidMode() &&
-                                        attachmentType() == KNetworkAttachmentType_NAT);
-
-    /* Postprocessing: */
-    handleAdvancedButtonStateChange();
+    m_pEditorNetworkFeatures->setAdvancedOptionsAvailable(m_pParent->isMachineInValidMode());
+    m_pEditorNetworkFeatures->setAdapterOptionsAvailable(m_pParent->isMachineOffline());
+    m_pEditorNetworkFeatures->setPromiscuousOptionsAvailable(   attachmentType() != KNetworkAttachmentType_Null
+                                                             && attachmentType() != KNetworkAttachmentType_Generic
+                                                             && attachmentType() != KNetworkAttachmentType_NAT);
+    m_pEditorNetworkFeatures->setMACOptionsAvailable(m_pParent->isMachineOffline());
+    m_pEditorNetworkFeatures->setGenericPropertiesAvailable(attachmentType() == KNetworkAttachmentType_Generic);
+    m_pEditorNetworkFeatures->setCableOptionsAvailable(m_pParent->isMachineInValidMode());
+    m_pEditorNetworkFeatures->setForwardingOptionsAvailable(attachmentType() == KNetworkAttachmentType_NAT);
 }
 
 void UIMachineSettingsNetwork::reloadAlternatives()
@@ -644,55 +535,21 @@ void UIMachineSettingsNetwork::reloadAlternatives()
 
 void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
 {
-    /* Check whether the button state really changed: */
-    if (m_pButtonAdvanced->isExpanded() == fExpanded)
-        return;
-
-    /* Push the state to button and handle the state change: */
-    m_pButtonAdvanced->setExpanded(fExpanded);
-    handleAdvancedButtonStateChange();
+    m_pEditorNetworkFeatures->setAdvancedButtonExpanded(fExpanded);
 }
 
 void UIMachineSettingsNetwork::retranslateUi()
 {
-    int iFirstColumnWidth = 0;
-    m_pCheckBoxAdapter->setToolTip(tr("When checked, plugs this virtual network adapter into the virtual machine."));
-    m_pCheckBoxAdapter->setText(tr("&Enable Network Adapter"));
-    m_pLabelAttachmentType->setText(tr("&Attached to:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAttachmentType->minimumSizeHint().width());
-    m_pLabelNetworkName->setText(tr("&Name:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelNetworkName->minimumSizeHint().width());
-    m_pButtonAdvanced->setText(tr("A&dvanced"));
-    m_pButtonAdvanced->setToolTip(tr("Shows additional network adapter options."));
-    m_pLabelAdapterType->setText(tr("Adapter &Type:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAdapterType->minimumSizeHint().width());
-    m_pComboAdapterType->setToolTip(tr("Selects the type of the virtual network adapter. Depending on this value, VirtualBox "
-                                       "will provide different network hardware to the virtual machine."));
-    m_pLabelPromiscuousMode->setText(tr("&Promiscuous Mode:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelPromiscuousMode->minimumSizeHint().width());
-    m_pComboPromiscuousMode->setToolTip(tr("Selects the promiscuous mode policy of the network adapter when attached to an "
-                                           "internal network, host only network or a bridge."));
-    m_pLabelMAC->setText(tr("&MAC Address:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelMAC->minimumSizeHint().width());
-    m_pEditorMAC->setToolTip(tr("Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. "
-                                "Note that the second character must be an even digit."));
-    m_pButtonMAC->setToolTip(tr("Generates a new random MAC address."));
-    m_pLabelGenericProperties->setText(tr("Generic Properties:"));
-    m_pEditorGenericProperties->setToolTip(tr("Holds the configuration settings for the network attachment driver. The settings "
-                                              "should be of the form <b>name=value</b> and will depend on the driver. "
-                                              "Use <b>shift-enter</b> to add a new entry."));
-    m_pCheckBoxCableConnected->setToolTip(tr("When checked, the virtual network cable is plugged in."));
-    m_pCheckBoxCableConnected->setText(tr("&Cable Connected"));
-    m_pButtonPortForwarding->setToolTip(tr("Displays a window to configure port forwarding rules."));
-    m_pButtonPortForwarding->setText(tr("&Port Forwarding"));
+    if (m_pCheckBoxAdapter)
+    {
+        m_pCheckBoxAdapter->setText(tr("&Enable Network Adapter"));
+        m_pCheckBoxAdapter->setToolTip(tr("When checked, plugs this virtual network adapter into the virtual machine."));
+    }
 
-    /* Translate combo-boxes content: */
-    populateComboboxes();
-
-    /* Translate attachment info: */
+    /* Reload alternatives: */
+    reloadAlternatives();
+    /* Reapply attachment info: */
     sltHandleAttachmentTypeChange();
-    /* Set the minimum width of the 1st column to size longest label to align all labels: */
-    m_pLayoutAdapterSettings->setColumnMinimumWidth(0, iFirstColumnWidth);
 }
 
 void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
@@ -702,8 +559,8 @@ void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
 
     /* Generate a new MAC address in case this adapter was never enabled before: */
     if (   m_pCheckBoxAdapter->isChecked()
-        && m_pEditorMAC->text().isEmpty())
-        sltGenerateMac();
+        && m_pEditorNetworkFeatures->macAddress().isEmpty())
+        m_pEditorNetworkFeatures->generateMac();
 
     /* Revalidate: */
     m_pParent->revalidate();
@@ -711,23 +568,12 @@ void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
 
 void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
 {
-    /* Update alternative-name combo-box availability: */
-    m_pLabelNetworkName->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                    attachmentType() != KNetworkAttachmentType_NAT);
-    /* Update promiscuous-mode combo-box availability: */
-    m_pLabelPromiscuousMode->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                        attachmentType() != KNetworkAttachmentType_Generic &&
-                                        attachmentType() != KNetworkAttachmentType_NAT);
-    m_pComboPromiscuousMode->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                        attachmentType() != KNetworkAttachmentType_Generic &&
-                                        attachmentType() != KNetworkAttachmentType_NAT);
-    /* Update generic-properties editor visibility: */
-    m_pLabelGenericProperties->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                          m_pButtonAdvanced->isExpanded());
-    m_pEditorGenericProperties->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                             m_pButtonAdvanced->isExpanded());
-    /* Update forwarding rules button availability: */
-    m_pButtonPortForwarding->setEnabled(attachmentType() == KNetworkAttachmentType_NAT);
+    /* Advanced attributes: */
+    m_pEditorNetworkFeatures->setPromiscuousOptionsAvailable(   attachmentType() != KNetworkAttachmentType_Null
+                                                             && attachmentType() != KNetworkAttachmentType_Generic
+                                                             && attachmentType() != KNetworkAttachmentType_NAT);
+    m_pEditorNetworkFeatures->setGenericPropertiesAvailable(attachmentType() == KNetworkAttachmentType_Generic);
+    m_pEditorNetworkFeatures->setForwardingOptionsAvailable(attachmentType() == KNetworkAttachmentType_NAT);
 
     /* Revalidate: */
     m_pParent->revalidate();
@@ -759,27 +605,6 @@ void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
     m_pParent->revalidate();
 }
 
-void UIMachineSettingsNetwork::sltHandleAdvancedButtonStateChange()
-{
-    /* Handle the button state change: */
-    handleAdvancedButtonStateChange();
-
-    /* Notify listeners about the button state change: */
-    emit sigNotifyAdvancedButtonStateChange(m_pButtonAdvanced->isExpanded());
-}
-
-void UIMachineSettingsNetwork::sltGenerateMac()
-{
-    m_pEditorMAC->setText(uiCommon().host().GenerateMACAddress());
-}
-
-void UIMachineSettingsNetwork::sltOpenPortForwardingDlg()
-{
-    UIMachineSettingsPortForwardingDlg dlg(this, m_portForwardingRules);
-    if (dlg.exec() == QDialog::Accepted)
-        m_portForwardingRules = dlg.rules();
-}
-
 void UIMachineSettingsNetwork::prepare()
 {
     /* Prepare everything: */
@@ -793,264 +618,61 @@ void UIMachineSettingsNetwork::prepare()
 void UIMachineSettingsNetwork::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setRowStretch(2, 1);
-
         /* Prepare adapter check-box: */
         m_pCheckBoxAdapter = new QCheckBox(this);
         if (m_pCheckBoxAdapter)
-            pLayoutMain->addWidget(m_pCheckBoxAdapter, 0, 0, 1, 2);
+            pLayout->addWidget(m_pCheckBoxAdapter, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pLayoutMain->addItem(pSpacerItem, 1, 0);
+            pLayout->addItem(pSpacerItem, 1, 0);
 
         /* Prepare adapter settings widget: */
         m_pWidgetAdapterSettings = new QWidget(this);
         if (m_pWidgetAdapterSettings)
         {
             /* Prepare adapter settings widget layout: */
-            m_pLayoutAdapterSettings = new QGridLayout(m_pWidgetAdapterSettings);
-            if (m_pLayoutAdapterSettings)
+            QVBoxLayout *pLayoutAdapterSettings = new QVBoxLayout(m_pWidgetAdapterSettings);
+            if (pLayoutAdapterSettings)
             {
-                m_pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
-                m_pLayoutAdapterSettings->setColumnStretch(2, 1);
+                pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
 
-                /* Prepare attachment type label: */
-                m_pLabelAttachmentType = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelAttachmentType)
-                {
-                    m_pLabelAttachmentType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutAdapterSettings->addWidget(m_pLabelAttachmentType, 0, 0);
-                }
-                /* Prepare adapter name label: */
-                m_pLabelNetworkName = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelNetworkName)
-                {
-                    m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutAdapterSettings->addWidget(m_pLabelNetworkName, 1, 0);
-                }
                 /* Prepare attachment type editor: */
-                m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
+                m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings, true);
                 if (m_pEditorAttachmentType)
-                {
-                    if (m_pLabelAttachmentType)
-                        m_pLabelAttachmentType->setBuddy(m_pEditorAttachmentType);
-                    if (m_pLabelNetworkName)
-                        m_pLabelNetworkName->setBuddy(m_pEditorAttachmentType);
+                    pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType);
 
-                    m_pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType, 0, 1, 2, 3);
-                }
+                /* Prepare advanced settingseditor: */
+                m_pEditorNetworkFeatures = new UIMachineNetworkFeaturesEditor(m_pWidgetAdapterSettings);
+                if (m_pEditorNetworkFeatures)
+                    pLayoutAdapterSettings->addWidget(m_pEditorNetworkFeatures);
 
-                /* Prepare advanced arrow button: */
-                m_pButtonAdvanced = new QIArrowButtonSwitch(m_pWidgetAdapterSettings);
-                if (m_pButtonAdvanced)
-                {
-                    const QStyle *pStyle = QApplication::style();
-                    const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625);
-                    m_pButtonAdvanced->setIconSize(QSize(iIconMetric, iIconMetric));
-                    m_pButtonAdvanced->setIcons(UIIconPool::iconSet(":/arrow_right_10px.png"),
-                                               UIIconPool::iconSet(":/arrow_down_10px.png"));
+                pLayoutAdapterSettings->addStretch();
+            }
 
-                    m_pLayoutAdapterSettings->addWidget(m_pButtonAdvanced, 2, 0);
-                }
-
-                /* Create the container widget for advanced settings related widgets: */
-                m_pWidgetAdvancedSettings = new QWidget;
-                m_pLayoutAdapterSettings->addWidget(m_pWidgetAdvancedSettings, 3, 0, 4, 3, Qt::AlignLeft);
-                QGridLayout *pLayoutAdvancedSettings = new QGridLayout(m_pWidgetAdvancedSettings);
-                pLayoutAdvancedSettings->setContentsMargins(0, 0, 0, 0);
-                prepareAdvancedSettingsWidgets(pLayoutAdvancedSettings);
-           }
-
-            pLayoutMain->addWidget(m_pWidgetAdapterSettings, 1, 1);
+            pLayout->addWidget(m_pWidgetAdapterSettings, 1, 1);
         }
     }
 }
 
 void UIMachineSettingsNetwork::prepareConnections()
 {
-    connect(m_pCheckBoxAdapter, &QCheckBox::toggled, this, &UIMachineSettingsNetwork::sltHandleAdapterActivityChange);
+    connect(m_pCheckBoxAdapter, &QCheckBox::toggled,
+            this, &UIMachineSettingsNetwork::sltHandleAdapterActivityChange);
     connect(m_pEditorAttachmentType, &UINetworkAttachmentEditor::sigValueTypeChanged,
             this, &UIMachineSettingsNetwork::sltHandleAttachmentTypeChange);
     connect(m_pEditorAttachmentType, &UINetworkAttachmentEditor::sigValueNameChanged,
             this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
-    connect(m_pButtonAdvanced, &QIArrowButtonSwitch::sigClicked, this, &UIMachineSettingsNetwork::sltHandleAdvancedButtonStateChange);
-    connect(m_pEditorMAC, &QILineEdit::textChanged, m_pParent, &UIMachineSettingsNetworkPage::revalidate);
-    connect(m_pButtonMAC, &QIToolButton::clicked, this, &UIMachineSettingsNetwork::sltGenerateMac);
-    connect(m_pButtonPortForwarding, &QPushButton::clicked, this, &UIMachineSettingsNetwork::sltOpenPortForwardingDlg);
-    connect(this, &UIMachineSettingsNetwork::sigTabUpdated, m_pParent, &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
-}
-
-void UIMachineSettingsNetwork::prepareAdvancedSettingsWidgets(QGridLayout *pLayout)
-{
-    AssertPtrReturnVoid(pLayout);
-
-    /* Prepare adapter type label: */
-    m_pLabelAdapterType = new QLabel(m_pWidgetAdapterSettings);
-    if (m_pLabelAdapterType)
-    {
-        m_pLabelAdapterType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        pLayout->addWidget(m_pLabelAdapterType, 0, 0);
-    }
-    /* Prepare adapter type combo: */
-    m_pComboAdapterType = new QComboBox(m_pWidgetAdapterSettings);
-    if (m_pComboAdapterType)
-    {
-        if (m_pLabelAdapterType)
-            m_pLabelAdapterType->setBuddy(m_pComboAdapterType);
-        pLayout->addWidget(m_pComboAdapterType, 0, 1, 1, 3);
-    }
-
-    /* Prepare promiscuous mode label: */
-    m_pLabelPromiscuousMode = new QLabel(m_pWidgetAdapterSettings);
-    if (m_pLabelPromiscuousMode)
-    {
-        m_pLabelPromiscuousMode->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        pLayout->addWidget(m_pLabelPromiscuousMode, 1, 0);
-    }
-    /* Prepare promiscuous mode combo: */
-    m_pComboPromiscuousMode = new QComboBox(m_pWidgetAdapterSettings);
-    if (m_pComboPromiscuousMode)
-    {
-        if (m_pLabelPromiscuousMode)
-            m_pLabelPromiscuousMode->setBuddy(m_pComboPromiscuousMode);
-        pLayout->addWidget(m_pComboPromiscuousMode, 1, 1, 1, 3);
-    }
-
-    /* Prepare MAC label: */
-    m_pLabelMAC = new QLabel(m_pWidgetAdapterSettings);
-    if (m_pLabelMAC)
-    {
-        m_pLabelMAC->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        pLayout->addWidget(m_pLabelMAC, 2, 0);
-    }
-    /* Prepare MAC editor: */
-    m_pEditorMAC = new QILineEdit(m_pWidgetAdapterSettings);
-    if (m_pEditorMAC)
-    {
-        if (m_pLabelMAC)
-            m_pLabelMAC->setBuddy(m_pEditorMAC);
-        m_pEditorMAC->setAllowToCopyContentsWhenDisabled(true);
-        m_pEditorMAC->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9A-Fa-f]{12}"), this));
-        m_pEditorMAC->setMinimumWidthByText(QString().fill('0', 12));
-
-        pLayout->addWidget(m_pEditorMAC, 2, 1, 1, 2);
-    }
-    /* Prepare MAC button: */
-    m_pButtonMAC = new QIToolButton(m_pWidgetAdapterSettings);
-    if (m_pButtonMAC)
-    {
-        m_pButtonMAC->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
-        pLayout->addWidget(m_pButtonMAC, 2, 3);
-    }
-
-    /* Prepare MAC label: */
-    m_pLabelGenericProperties = new QLabel(m_pWidgetAdapterSettings);
-    if (m_pLabelGenericProperties)
-    {
-        m_pLabelGenericProperties->setAlignment(Qt::AlignRight | Qt::AlignTop);
-        pLayout->addWidget(m_pLabelGenericProperties, 3, 0);
-    }
-    /* Prepare MAC editor: */
-    m_pEditorGenericProperties = new QTextEdit(m_pWidgetAdapterSettings);
-    if (m_pEditorGenericProperties)
-        pLayout->addWidget(m_pEditorGenericProperties, 3, 1, 1, 3);
-
-    /* Prepare cable connected check-box: */
-    m_pCheckBoxCableConnected = new QCheckBox(m_pWidgetAdapterSettings);
-    if (m_pCheckBoxCableConnected)
-        pLayout->addWidget(m_pCheckBoxCableConnected, 4, 1, 1, 2);
-
-    /* Prepare port forwarding button: */
-    m_pButtonPortForwarding = new QPushButton(m_pWidgetAdapterSettings);
-    if (m_pButtonPortForwarding)
-        pLayout->addWidget(m_pButtonPortForwarding, 5, 1);
-}
-
-void UIMachineSettingsNetwork::populateComboboxes()
-{
-    /* Adapter names: */
-    {
-        reloadAlternatives();
-    }
-
-    /* Adapter type: */
-    {
-        /* Clear the adapter type combo-box: */
-        m_pComboAdapterType->clear();
-
-        /* Load currently supported network adapter types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KNetworkAdapterType> supportedTypes = comProperties.GetSupportedNetworkAdapterTypes();
-        /* Take currently requested type into account if it's sane: */
-        if (!supportedTypes.contains(m_enmAdapterType) && m_enmAdapterType != KNetworkAdapterType_Null)
-            supportedTypes.prepend(m_enmAdapterType);
-
-        /* Populate adapter types: */
-        int iAdapterTypeIndex = 0;
-        foreach (const KNetworkAdapterType &enmType, supportedTypes)
-        {
-            m_pComboAdapterType->insertItem(iAdapterTypeIndex, gpConverter->toString(enmType));
-            m_pComboAdapterType->setItemData(iAdapterTypeIndex, QVariant::fromValue(enmType));
-            m_pComboAdapterType->setItemData(iAdapterTypeIndex, m_pComboAdapterType->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-            ++iAdapterTypeIndex;
-        }
-
-        /* Choose requested adapter type: */
-        const int iIndex = m_pComboAdapterType->findData(m_enmAdapterType);
-        m_pComboAdapterType->setCurrentIndex(iIndex != -1 ? iIndex : 0);
-    }
-
-    /* Promiscuous Mode type: */
-    {
-        /* Remember the currently selected promiscuous mode type: */
-        int iCurrentPromiscuousMode = m_pComboPromiscuousMode->currentIndex();
-
-        /* Clear the promiscuous mode combo-box: */
-        m_pComboPromiscuousMode->clear();
-
-        /* Populate promiscuous modes: */
-        int iPromiscuousModeIndex = 0;
-        m_pComboPromiscuousMode->insertItem(iPromiscuousModeIndex, gpConverter->toString(KNetworkAdapterPromiscModePolicy_Deny));
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_Deny);
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, m_pComboPromiscuousMode->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
-        ++iPromiscuousModeIndex;
-        m_pComboPromiscuousMode->insertItem(iPromiscuousModeIndex, gpConverter->toString(KNetworkAdapterPromiscModePolicy_AllowNetwork));
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_AllowNetwork);
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, m_pComboPromiscuousMode->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
-        ++iPromiscuousModeIndex;
-        m_pComboPromiscuousMode->insertItem(iPromiscuousModeIndex, gpConverter->toString(KNetworkAdapterPromiscModePolicy_AllowAll));
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_AllowAll);
-        m_pComboPromiscuousMode->setItemData(iPromiscuousModeIndex, m_pComboPromiscuousMode->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
-        ++iPromiscuousModeIndex;
-
-        /* Restore the previously selected promiscuous mode type: */
-        m_pComboPromiscuousMode->setCurrentIndex(iCurrentPromiscuousMode == -1 ? 0 : iCurrentPromiscuousMode);
-    }
-}
-
-void UIMachineSettingsNetwork::handleAdvancedButtonStateChange()
-{
-    /* Update visibility of advanced options: */
-    m_pWidgetAdvancedSettings->setVisible(m_pButtonAdvanced->isExpanded());
-}
-
-/* static */
-int UIMachineSettingsNetwork::position(QComboBox *pComboBox, int iData)
-{
-    const int iPosition = pComboBox->findData(iData);
-    return iPosition == -1 ? 0 : iPosition;
-}
-
-/* static */
-int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strText)
-{
-    const int iPosition = pComboBox->findText(strText);
-    return iPosition == -1 ? 0 : iPosition;
+    connect(m_pEditorNetworkFeatures, &UIMachineNetworkFeaturesEditor::sigNotifyAdvancedButtonStateChange,
+            this, &UIMachineSettingsNetwork::sigNotifyAdvancedButtonStateChange);
+    connect(m_pEditorNetworkFeatures, &UIMachineNetworkFeaturesEditor::sigMACAddressChanged,
+            m_pParent, &UIMachineSettingsNetworkPage::revalidate);
+    connect(this, &UIMachineSettingsNetwork::sigTabUpdated, m_pParent,
+            &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
 }
 
 
@@ -1062,13 +684,11 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     : m_pTabWidget(0)
     , m_pCache(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIMachineSettingsNetworkPage::~UIMachineSettingsNetworkPage()
 {
-    /* Cleanup: */
     cleanup();
 }
 
