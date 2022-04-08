@@ -792,6 +792,8 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         *pfOutputting = !mpUnattended->i_isRtcUsingUtc();
     else if (IS_PLACEHOLDER_MATCH("HAS_PROXY"))
         *pfOutputting = mpUnattended->i_getProxy().isNotEmpty();
+    else if (IS_PLACEHOLDER_MATCH("IS_NETWORK_ACCESSIBLE"))
+        *pfOutputting = !mpUnattended->i_getIsNetworkAccessible();
     else
         return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Unknown conditional placeholder '%.*s'"),
                                         cchPlaceholder, pachPlaceholder);

@@ -241,6 +241,7 @@ const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 Unattended::Unattended()
     : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfRtcUseUtc(false), mfGuestOs64Bit(false)
     , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true), mfDoneDetectIsoOS(false)
+    , mfIsNetworkAccessible(true)
 { }
 
 Unattended::~Unattended()
@@ -3641,6 +3642,20 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     return S_OK;
 }
 
+HRESULT Unattended::getIsNetworkAccessible(BOOL *aIsNetworkAccessible)
+{
+    *aIsNetworkAccessible = mfIsNetworkAccessible;
+    return S_OK;
+}
+
+HRESULT Unattended::setIsNetworkAccessible(BOOL aIsNetworkAccessible)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    mfIsNetworkAccessible = RT_BOOL(aIsNetworkAccessible);
+    return S_OK;
+}
+
 /*
  * Getters that the installer and script classes can use.
  */
@@ -3815,6 +3830,12 @@ Utf8Str const &Unattended::i_getDetectedOSVersion()
 {
     Assert(isReadLockedOnCurrentThread());
     return mStrDetectedOSVersion;
+}
+
+bool Unattended::i_getIsNetworkAccessible() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mfIsNetworkAccessible;
 }
 
 HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComPtr<IMachine> const &rPtrSessionMachine,

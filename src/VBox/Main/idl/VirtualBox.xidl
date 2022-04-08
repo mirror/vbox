@@ -4675,7 +4675,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="6f89464f-7193-426c-a4df-592e4e537fa0"
+    uuid="6f89464f-7773-426c-a4df-592e4e537fa0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -5013,6 +5013,7 @@
         Not yet implemented.
       </desc>
     </attribute>
+
     <attribute name="detectedImageNames" type="wstring" readonly="yes" safearray="yes">
       <desc>
         A list of names of the images detected from install.wim file of a Windows Vista
@@ -5034,6 +5035,14 @@
         Checks the detected OS type and version against a set of rules and returns
         whether unattended install is supported or not. Note that failing detecting
         OS type from the ISO causes this attribute to be false by default.
+      </desc>
+    </attribute>
+
+    <attribute name="isNetworkAccessible" type="boolean">
+      <desc>
+        Indicates whether internet is accessible. Currently setting this to
+        false configures debian preseed files so that package mirrors are not
+        used.
       </desc>
     </attribute>
 

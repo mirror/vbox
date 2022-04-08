@@ -99,7 +99,7 @@ public:
     bool           i_isGuestOs64Bit() const;
     bool           i_isFirmwareEFI() const;
     Utf8Str const &i_getDetectedOSVersion();
-
+    bool           i_getIsNetworkAccessible() const;
 
 private:
     ComPtr<VirtualBox> const mParent;       /**< Strong reference to the parent object (VirtualBox/IMachine). */
@@ -147,6 +147,7 @@ private:
     RTCList<RTCString, RTCString *> mDetectedOSLanguages; /**< (only relevant for windows at the moment) */
     Utf8Str         mStrDetectedOSHints;
     RTCList<WIMImage> mDetectedImages;
+    bool            mfIsNetworkAccessible;
     /** @} */
 
     // wrapped IUnattended functions:
@@ -231,6 +232,8 @@ private:
     HRESULT getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames);
     HRESULT getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIndices);
     HRESULT getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported);
+    HRESULT getIsNetworkAccessible(BOOL *aIsNetworkAccessible);
+    HRESULT setIsNetworkAccessible(BOOL aIsNetworkAccessible);
     //internal functions
 
     /**
