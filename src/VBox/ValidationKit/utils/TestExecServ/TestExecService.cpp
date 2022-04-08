@@ -1023,13 +1023,15 @@ static int txsDoCopyFile(PCTXSPKTHDR pPktHdr)
     if (pPktHdr->cb < cbMin)
         return txsReplyBadMinSize(pPktHdr, cbMin);
 
-    RTFMODE const fMode = *(RTFMODE const *)(pPktHdr + 1);
+    /* Packet cursor. */
+    const char *pch = (const char *)(pPktHdr + 1);
 
     int rc;
 
-    char       *pszSrc;
-    const char *pch;
-    if (txsIsStringValid(pPktHdr, "source", (const char *)(pPktHdr + 1) + sizeof(uint32_t) * 2, &pszSrc, &pch, &rc))
+    RTFMODE const fMode = *(RTFMODE const *)pch;
+
+    char *pszSrc;
+    if (txsIsStringValid(pPktHdr, "source", (const char *)pch + sizeof(RTFMODE), &pszSrc, &pch, &rc))
     {
         char *pszDst;
         if (txsIsStringValid(pPktHdr, "dest", pch, &pszDst, NULL /* Check for string termination */, &rc))
