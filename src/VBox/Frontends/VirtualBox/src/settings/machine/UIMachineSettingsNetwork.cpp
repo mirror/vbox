@@ -550,6 +550,13 @@ void UIMachineSettingsNetwork::retranslateUi()
     reloadAlternatives();
     /* Reapply attachment info: */
     sltHandleAttachmentTypeChange();
+
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAttachmentType->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorNetworkFeatures->minimumLabelHorizontalHint());
+    m_pEditorAttachmentType->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorNetworkFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()

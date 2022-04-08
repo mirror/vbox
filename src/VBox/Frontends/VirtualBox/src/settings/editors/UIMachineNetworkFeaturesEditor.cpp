@@ -245,7 +245,7 @@ void UIMachineNetworkFeaturesEditor::retranslateUi()
             const KNetworkAdapterType enmType = m_pComboAdapterType->itemData(i).value<KNetworkAdapterType>();
             m_pComboAdapterType->setItemText(i, gpConverter->toString(enmType));
         }
-        m_pComboAdapterType->setToolTip(tr("Selects the type of the virtual network adapter. Depending on this value, VirtualBox "
+        m_pComboAdapterType->setToolTip(tr("Holds the type of the virtual network adapter. Depending on this value, VirtualBox "
                                            "will provide different network hardware to the virtual machine."));
     }
 
@@ -258,7 +258,7 @@ void UIMachineNetworkFeaturesEditor::retranslateUi()
             const KNetworkAdapterPromiscModePolicy enmType = m_pComboPromiscuousMode->itemData(i).value<KNetworkAdapterPromiscModePolicy>();
             m_pComboPromiscuousMode->setItemText(i, gpConverter->toString(enmType));
         }
-        m_pComboPromiscuousMode->setToolTip(tr("Selects the promiscuous mode policy of the network adapter when attached to an "
+        m_pComboPromiscuousMode->setToolTip(tr("Holds the promiscuous mode policy of the network adapter when attached to an "
                                                "internal network, host only network or a bridge."));
     }
 

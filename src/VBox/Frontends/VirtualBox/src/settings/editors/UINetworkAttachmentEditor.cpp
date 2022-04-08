@@ -46,6 +46,7 @@ UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
     , m_enmType(KNetworkAttachmentType_Max)
+    , m_pLayout(0)
     , m_pLabelType(0)
     , m_pComboType(0)
     , m_pLabelName(0)
@@ -99,6 +100,22 @@ void UINetworkAttachmentEditor::setValueName(KNetworkAttachmentType enmType, con
 QString UINetworkAttachmentEditor::valueName(KNetworkAttachmentType enmType) const
 {
     return m_name.value(enmType);
+}
+
+int UINetworkAttachmentEditor::minimumLabelHorizontalHint() const
+{
+    int iMinimumLabelHorizontalHint = 0;
+    if (m_pLabelType)
+        iMinimumLabelHorizontalHint = qMax(iMinimumLabelHorizontalHint, m_pLabelType->minimumSizeHint().width());
+    if (m_pLabelName)
+        iMinimumLabelHorizontalHint = qMax(iMinimumLabelHorizontalHint, m_pLabelName->minimumSizeHint().width());
+    return iMinimumLabelHorizontalHint;
+}
+
+void UINetworkAttachmentEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
 /* static */
@@ -254,17 +271,17 @@ void UINetworkAttachmentEditor::prepare()
     m_enmRestrictedNetworkAttachmentTypes = gEDataManager->restrictedNetworkAttachmentTypes();
 
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create type label: */
         m_pLabelType = new QLabel(this);
         if (m_pLabelType)
         {
             m_pLabelType->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
-            pMainLayout->addWidget(m_pLabelType, 0, 0);
+            m_pLayout->addWidget(m_pLabelType, 0, 0);
         }
         /* Create type combo layout: */
         QHBoxLayout *pComboLayout = new QHBoxLayout;
@@ -285,14 +302,14 @@ void UINetworkAttachmentEditor::prepare()
             pComboLayout->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, 1);
+            m_pLayout->addLayout(pComboLayout, 0, 1);
         }
 
         /* Create name label: */
         m_pLabelName = new QLabel(this);
         m_pLabelName->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
         if (m_pLabelName)
-            pMainLayout->addWidget(m_pLabelName, 1, 0);
+            m_pLayout->addWidget(m_pLabelName, 1, 0);
         /* Create name combo: */
         m_pComboName = new QComboBox(this);
         if (m_pComboName)
@@ -304,7 +321,7 @@ void UINetworkAttachmentEditor::prepare()
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
             connect(m_pComboName, &QComboBox::editTextChanged,
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
-            pMainLayout->addWidget(m_pComboName, 1, 1);
+            m_pLayout->addWidget(m_pComboName, 1, 1);
         }
     }
 

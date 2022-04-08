@@ -34,6 +34,7 @@
 
 /* Forward declarations: */
 class QComboBox;
+class QGridLayout;
 class QLabel;
 
 /** QWidget subclass used as a network attachment editor. */
@@ -67,6 +68,11 @@ public:
     void setValueName(KNetworkAttachmentType enmType, const QString &strName);
     /** Returns current name for specified @a enmType. */
     QString valueName(KNetworkAttachmentType enmType) const;
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
     /** Returns bridged adapter list. */
     static QStringList bridgedAdapters();
@@ -131,14 +137,16 @@ private:
     /** Holds the requested type. */
     KNetworkAttachmentType  m_enmType;
 
+    /** Holds the main layout instance. */
+    QGridLayout *m_pLayout;
     /** Holds the type label instance. */
-    QLabel    *m_pLabelType;
+    QLabel      *m_pLabelType;
     /** Holds the type combo instance. */
-    QComboBox *m_pComboType;
+    QComboBox   *m_pComboType;
     /** Holds the name label instance. */
-    QLabel    *m_pLabelName;
+    QLabel      *m_pLabelName;
     /** Holds the name combo instance. */
-    QComboBox *m_pComboName;
+    QComboBox   *m_pComboName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UINetworkAttachmentEditor_h */
