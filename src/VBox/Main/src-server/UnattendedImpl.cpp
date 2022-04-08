@@ -241,7 +241,7 @@ const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 Unattended::Unattended()
     : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfRtcUseUtc(false), mfGuestOs64Bit(false)
     , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true), mfDoneDetectIsoOS(false)
-    , mfIsNetworkAccessible(true)
+    , mfAvoidUpdatesOverNetwork(false)
 { }
 
 Unattended::~Unattended()
@@ -3642,17 +3642,17 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     return S_OK;
 }
 
-HRESULT Unattended::getIsNetworkAccessible(BOOL *aIsNetworkAccessible)
+HRESULT Unattended::getAvoidUpdatesOverNetwork(BOOL *aAvoidUpdatesOverNetwork)
 {
-    *aIsNetworkAccessible = mfIsNetworkAccessible;
+    *aAvoidUpdatesOverNetwork = mfAvoidUpdatesOverNetwork;
     return S_OK;
 }
 
-HRESULT Unattended::setIsNetworkAccessible(BOOL aIsNetworkAccessible)
+HRESULT Unattended::setAvoidUpdatesOverNetwork(BOOL aAvoidUpdatesOverNetwork)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
-    mfIsNetworkAccessible = RT_BOOL(aIsNetworkAccessible);
+    mfAvoidUpdatesOverNetwork = RT_BOOL(aAvoidUpdatesOverNetwork);
     return S_OK;
 }
 
@@ -3832,10 +3832,10 @@ Utf8Str const &Unattended::i_getDetectedOSVersion()
     return mStrDetectedOSVersion;
 }
 
-bool Unattended::i_getIsNetworkAccessible() const
+bool Unattended::i_getAvoidUpdatesOverNetwork() const
 {
     Assert(isReadLockedOnCurrentThread());
-    return mfIsNetworkAccessible;
+    return mfAvoidUpdatesOverNetwork;
 }
 
 HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComPtr<IMachine> const &rPtrSessionMachine,

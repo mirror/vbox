@@ -4675,7 +4675,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="6f89464f-7773-426c-a4df-592e4e537fa0"
+    uuid="6f89464f-7773-436a-a4df-592e4e537fa0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -5038,11 +5038,11 @@
       </desc>
     </attribute>
 
-    <attribute name="isNetworkAccessible" type="boolean">
+    <attribute name="avoidUpdatesOverNetwork" type="boolean">
       <desc>
-        Indicates whether internet is accessible. Currently setting this to
-        false configures debian preseed files so that package mirrors are not
-        used.
+        When set to true installation is configured to abstain from
+        using network to update/get data. Especially useful when network
+        is not available (as in our test boxes).
       </desc>
     </attribute>
 
