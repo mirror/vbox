@@ -24,8 +24,8 @@ LIBRARIES += VBox-SoftFloat
 VBox-SoftFloat_TEMPLATE    := VBoxR3DllNonPedantic
 VBox-SoftFloat_DEFS.amd64  := \
 	LITTLEENDIAN \
-	SOFTFLOAT_FAST_INT64 \
 	INLINE_LEVEL=5 \
+	SOFTFLOAT_FAST_INT64 \
 	SOFTFLOAT_FAST_DIV32TO16 \
   	SOFTFLOAT_FAST_DIV64TO32 \
 	SOFTFLOAT_ROUND_ODD
@@ -73,7 +73,7 @@ VBox-SoftFloat_SOURCES     := \
 	source/s_approxRecip_1Ks.c \
 	source/s_approxRecip32_1.c \
 	source/s_approxRecipSqrt_1Ks.c \
-	source/s_approxRecipSqrt32_1.c \
+	source/s_approxRecipSqrt32_1.c
 
 # Specialization (target FPU behaviour):
 # @todo maybe use 8086-SSE here...

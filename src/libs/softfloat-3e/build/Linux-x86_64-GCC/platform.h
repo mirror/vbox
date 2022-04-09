@@ -40,10 +40,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*----------------------------------------------------------------------------
 *----------------------------------------------------------------------------*/
+#ifdef VBOX /* we end up with unresolved externals otherwise */
+# define INLINE static inline
+#else
 #ifdef __GNUC_STDC_INLINE__
 #define INLINE inline
 #else
 #define INLINE extern inline
+#endif
 #endif
 
 /*----------------------------------------------------------------------------
