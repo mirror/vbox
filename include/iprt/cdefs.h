@@ -85,6 +85,7 @@
 # define RT_LITTLE_ENDIAN
 # define RT_COMPILER_GROKS_64BIT_BITFIELDS
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
 # define RT_COMPILER_WITH_128BIT_INT_TYPES
 # define RT_NO_VISIBILITY_HIDDEN
 # define RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
@@ -1114,6 +1115,14 @@
  * IEEE extended precision floating. */
 #if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(RT_OS_WINDOWS)
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#endif
+
+/** @def RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+ * Macro that is defined if the compiler implements long double as the
+ * IEEE quadruple precision floating (128-bit).
+ * @note Currently not able to detect this, so must be explicitly defined. */
+#if 0
+# define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
 #endif
 
 /** @def RT_COMPILER_WITH_128BIT_INT_TYPES
