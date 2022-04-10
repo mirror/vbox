@@ -26,9 +26,11 @@
 #include <iprt/uint128.h>
 #include <iprt/uint256.h>
 
+#ifndef IN_RING0
 RT_C_DECLS_BEGIN
-#include <softfloat.h>
+# include <softfloat.h>
 RT_C_DECLS_END
+#endif
 
 
 /*********************************************************************************************************************************
