@@ -447,6 +447,14 @@ uint8_t const g_afParity[256] =
     /* 0xff = 11111111b */ X86_EFL_PF,
 };
 
+/* for clang: */
+extern const RTFLOAT80U  g_ar80Zero[];
+extern const RTFLOAT80U  g_ar80One[];
+extern const RTFLOAT80U  g_r80Indefinite;
+extern const RTFLOAT128U g_r128Ln2;
+extern const RTUINT128U  g_u128Ln2Mantissa;
+extern const RTUINT128U  g_u128Ln2MantissaIntel;
+extern const RTFLOAT128U g_ar128F2xm1HornerConsts[];
 
 /** Zero values (indexed by fSign). */
 RTFLOAT80U const g_ar80Zero[] = { RTFLOAT80U_INIT_ZERO(0), RTFLOAT80U_INIT_ZERO(1) };
@@ -4493,11 +4501,13 @@ DECLINLINE(float128_t) iemFpuSoftF128PrecisionIprt(PCRTFLOAT128U pr128, unsigned
 }
 
 
+# if 0  /*  unused */
 DECLINLINE(float128_t) iemFpuSoftF128FromIprt(PCRTFLOAT128U pr128)
 {
     float128_t r128 = { pr128->au64[0], pr128->au64[1] };
     return r128;
 }
+# endif
 
 
 /** Converts a 80-bit floating point value to SoftFloat 128-bit floating point. */
