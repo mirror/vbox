@@ -4812,9 +4812,9 @@ SDK_VBOX_SOFTFLOAT             := SoftFloat 3 for dll linking.
  SDK_VBOX_SOFTFLOAT_DEFS.arm64 := LITTLEENDIAN
  SDK_VBOX_SOFTFLOAT_DEFS.x86   := LITTLEENDIAN
 if1of ($(KBUILD_TARGET),win)
- SDK_VBOX_SOFTFLOAT_DEFS       := THREAD_LOCAL=declspec(thread)
+ SDK_VBOX_SOFTFLOAT_DEFS       += THREAD_LOCAL=declspec(thread)
 else
- SDK_VBOX_SOFTFLOAT_DEFS       := THREAD_LOCAL=__thread
+ SDK_VBOX_SOFTFLOAT_DEFS       += THREAD_LOCAL=__thread
 endif
 SDK_VBOX_SOFTFLOAT_INCS         = \
 	$(PATH_ROOT)/src/libs/softfloat-3e/source/include
