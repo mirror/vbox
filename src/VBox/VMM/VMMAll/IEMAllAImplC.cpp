@@ -4495,7 +4495,7 @@ DECLINLINE(float128_t) iemFpuSoftF128PrecisionIprt(PCRTFLOAT128U pr128, unsigned
     }
     return r128;
 # else
-    float128_t r128 = { pr128->au64[0] & ~(RT_BIT_64(1 + 112 - cBits) - 1), pr128->au64[1] };
+    float128_t r128 = { { pr128->au64[0] & ~(RT_BIT_64(1 + 112 - cBits) - 1), pr128->au64[1] } };
     return r128;
 # endif
 }
@@ -4504,7 +4504,7 @@ DECLINLINE(float128_t) iemFpuSoftF128PrecisionIprt(PCRTFLOAT128U pr128, unsigned
 # if 0  /*  unused */
 DECLINLINE(float128_t) iemFpuSoftF128FromIprt(PCRTFLOAT128U pr128)
 {
-    float128_t r128 = { pr128->au64[0], pr128->au64[1] };
+    float128_t r128 = { { pr128->au64[0], pr128->au64[1] } };
     return r128;
 }
 # endif
