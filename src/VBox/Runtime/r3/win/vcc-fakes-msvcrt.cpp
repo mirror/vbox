@@ -77,6 +77,7 @@ extern "C" int __cdecl my_getmainargs(int *pcArgs, char ***ppapszArgs, char ***p
 
 extern "C" void __cdecl my_setusermatherr(PFNRT pfnIgnore)
 {
+    RT_NOREF(pfnIgnore);
     /* pure stub. */
 }
 

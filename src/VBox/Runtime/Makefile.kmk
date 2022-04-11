@@ -2029,8 +2029,7 @@ RuntimeBldProg_SOURCES         = \
 	r3/tcp.cpp \
 	VBox/log-vbox.cpp \
 	VBox/RTAssertShouldPanic-vbox.cpp \
-       \
-       common/string/ministring.cpp # for main
+	common/string/ministring.cpp # for main
 ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
@@ -2447,13 +2446,14 @@ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TAR
  TEMPLATE_VBoxR3RuntimeDllItself_EXTENDS = VBoxR3RuntimeDll
  TEMPLATE_VBoxR3RuntimeDllItself_LIBS.win.x86 = \
  	$(filter-out $(PATH_STAGE_LIB)/RuntimeR3VccTricks%, $(TEMPLATE_VBoxR3RuntimeDll_LIBS.win.x86))
+ TEMPLATE_VBoxR3RuntimeDllItself_DEFS   += IN_RING3 VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
  TEMPLATE_VBoxR3RuntimeDllItself_SOURCES = \
  	r3/win/vcc-fakes-kernel32.cpp \
- 	r3/win/vcc-fakes-kernel32-fakesA.asm \
+ 	r3/win/vcc-fakes-kernel32-A.asm \
  	r3/win/vcc-fakes-ws2_32.cpp \
- 	r3/win/vcc-fakes-ws2_32-fakesA.asm \
+ 	r3/win/vcc-fakes-ws2_32-A.asm \
  	r3/win/vcc-fakes-ntdll.cpp \
- 	r3/win/vcc-fakes-ntdll-fakesA.asm \
+ 	r3/win/vcc-fakes-ntdll-A.asm \
  	r3/win/vcc-fakes-msvcrt.cpp
  VBoxRT_TEMPLATE         = VBoxR3RuntimeDllItself
  VBoxRT_TEMPLATE.win.x86 = VBoxR3RuntimeDllItself
@@ -3904,6 +3904,7 @@ RuntimeR3VccTricks_SOURCES  = \
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
 LIBRARIES += RuntimeR3VccTricks2
 RuntimeR3VccTricks2_TEMPLATE = VBoxR3Dll
+RuntimeR3VccTricks2_DEFS    += $(RuntimeR3VccTricks_DEFS)
 RuntimeR3VccTricks2_SOURCES  = $(RuntimeR3VccTricks_SOURCES)
 RuntimeR3VccTricks2_SOURCES += $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
 RuntimeR3VccTricks2_CLEAN    = $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
