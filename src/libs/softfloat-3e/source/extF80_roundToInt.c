@@ -118,6 +118,7 @@ extFloat80_t
      mag1:
         uiZ64 = signUI64 | 0x3FFF;
         sigZ  = UINT64_C( 0x8000000000000000 );
+        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
         goto uiZ;
     }
     /*------------------------------------------------------------------------
@@ -140,7 +141,8 @@ extFloat80_t
     if ( !sigZ ) {
         ++uiZ64;
         sigZ = UINT64_C( 0x8000000000000000 );
-    }
+        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+    } else if ( sigZ > sigA ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
     if ( sigZ != sigA ) {
 #ifdef SOFTFLOAT_ROUND_ODD
         if ( roundingMode == softfloat_round_odd ) sigZ |= lastBitMask;
