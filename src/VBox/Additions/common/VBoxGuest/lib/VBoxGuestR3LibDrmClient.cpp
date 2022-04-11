@@ -150,7 +150,7 @@ static int VbglR3DrmStart(const char *pszCmd, const char **apszArgs)
 VBGLR3DECL(int) VbglR3DrmClientStart(void)
 {
 #if defined(RT_OS_LINUX)
-    const char *apszArgs[1] = { NULL }; /** @todo r=andy Pass path + process name as argv0? */
+    const char *apszArgs[2] = { VBOX_DRMCLIENT_EXECUTABLE, NULL }; /** @todo r=andy Pass path + process name as argv0? */
     return VbglR3DrmStart(VBOX_DRMCLIENT_EXECUTABLE, apszArgs);
 #else
     return VERR_NOT_SUPPORTED;
