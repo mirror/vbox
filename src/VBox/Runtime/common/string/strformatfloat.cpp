@@ -249,8 +249,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                  ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"))
                  : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"));
         fDenormal = true;
-        if (fInteger)
-            uExponent = 1;
+        uExponent = 1;
     }
     else if (uExponent == RTFLOAT80U_EXP_MAX)
     {
