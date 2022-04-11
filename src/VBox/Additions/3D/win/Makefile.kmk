@@ -19,7 +19,6 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile.
-include $(PATH_SUB_CURRENT)/VBoxWddmUmHlp/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxICD/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGL/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxNine/Makefile.kmk
