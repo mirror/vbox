@@ -26,11 +26,9 @@
 #include <iprt/uint128.h>
 #include <iprt/uint256.h>
 
-#ifndef IN_RING0
 RT_C_DECLS_BEGIN
-# include <softfloat.h>
+#include <softfloat.h>
 RT_C_DECLS_END
-#endif
 
 
 /*********************************************************************************************************************************
@@ -4659,6 +4657,7 @@ static uint16_t iemFpuFloat80RoundAndComposeFrom192(PRTFLOAT80U pr80Dst, bool fS
         bool fAdd;
         switch (fFcw & X86_FCW_RC_MASK)
         {
+            default: /* (for the simple-minded MSC which otherwise things fAdd would be used uninitialized) */
             case X86_FCW_RC_NEAREST:
                 if (puMantissa->QWords.qw1 & RT_BIT_64(63))
                 {
