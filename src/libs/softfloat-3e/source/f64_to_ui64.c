@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-uint_fast64_t f64_to_ui64( float64_t a, uint_fast8_t roundingMode, bool exact )
+uint_fast64_t f64_to_ui64( float64_t a, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui64_f64 uA;
     uint_fast64_t uiA;
@@ -76,7 +76,7 @@ uint_fast64_t f64_to_ui64( float64_t a, uint_fast8_t roundingMode, bool exact )
     }
     return
         softfloat_roundToUI64(
-            sign, sigExtra.v, sigExtra.extra, roundingMode, exact );
+            sign, sigExtra.v, sigExtra.extra, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 #else
     extSig[indexWord( 3, 0 )] = 0;
     if ( shiftDist <= 0 ) {
@@ -89,12 +89,12 @@ uint_fast64_t f64_to_ui64( float64_t a, uint_fast8_t roundingMode, bool exact )
         extSig[indexWord( 3, 1 )] = sig;
         softfloat_shiftRightJam96M( extSig, shiftDist, extSig );
     }
-    return softfloat_roundMToUI64( sign, extSig, roundingMode, exact );
+    return softfloat_roundMToUI64( sign, extSig, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA);
 #endif
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     return
         (exp == 0x7FF) && fracF64UI( uiA ) ? ui64_fromNaN
             : sign ? ui64_fromNegOverflow : ui64_fromPosOverflow;

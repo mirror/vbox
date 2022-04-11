@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-int_fast64_t extF80M_to_i64_r_minMag( const extFloat80_t *aPtr, bool exact )
+int_fast64_t extF80M_to_i64_r_minMag( const extFloat80_t *aPtr, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    return extF80_to_i64_r_minMag( *aPtr, exact );
+    return extF80_to_i64_r_minMag( *aPtr, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-int_fast64_t extF80M_to_i64_r_minMag( const extFloat80_t *aPtr, bool exact )
+int_fast64_t extF80M_to_i64_r_minMag( const extFloat80_t *aPtr, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr;
     uint_fast16_t uiA64;
@@ -104,7 +104,7 @@ int_fast64_t extF80M_to_i64_r_minMag( const extFloat80_t *aPtr, bool exact )
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     return
         (exp == 0x7FFF) && (sig & UINT64_C( 0x7FFFFFFFFFFFFFFF )) ? i64_fromNaN
             : sign ? i64_fromNegOverflow : i64_fromPosOverflow;

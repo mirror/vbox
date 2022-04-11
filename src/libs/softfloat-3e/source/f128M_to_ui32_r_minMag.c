@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-uint_fast32_t f128M_to_ui32_r_minMag( const float128_t *aPtr, bool exact )
+uint_fast32_t f128M_to_ui32_r_minMag( const float128_t *aPtr, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    return f128_to_ui32_r_minMag( *aPtr, exact );
+    return f128_to_ui32_r_minMag( *aPtr, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-uint_fast32_t f128M_to_ui32_r_minMag( const float128_t *aPtr, bool exact )
+uint_fast32_t f128M_to_ui32_r_minMag( const float128_t *aPtr, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr;
     uint32_t uiA96;
@@ -82,7 +82,7 @@ uint_fast32_t f128M_to_ui32_r_minMag( const float128_t *aPtr, bool exact )
     *------------------------------------------------------------------------*/
     sign = signF128UI96( uiA96 );
     if ( sign || (shiftDist < 17) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return
             (exp == 0x7FFF) && sig64 ? ui32_fromNaN
                 : sign ? ui32_fromNegOverflow : ui32_fromPosOverflow;

@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-bool f128M_eq_signaling( const float128_t *aPtr, const float128_t *bPtr )
+bool f128M_eq_signaling( const float128_t *aPtr, const float128_t *bPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    return f128_eq_signaling( *aPtr, *bPtr );
+    return f128_eq_signaling( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-bool f128M_eq_signaling( const float128_t *aPtr, const float128_t *bPtr )
+bool f128M_eq_signaling( const float128_t *aPtr, const float128_t *bPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr, *bWPtr;
     uint32_t wordA, wordB, uiA96, uiB96;
@@ -62,7 +62,7 @@ bool f128M_eq_signaling( const float128_t *aPtr, const float128_t *bPtr )
     aWPtr = (const uint32_t *) aPtr;
     bWPtr = (const uint32_t *) bPtr;
     if ( softfloat_isNaNF128M( aWPtr ) || softfloat_isNaNF128M( bWPtr ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return false;
     }
     wordA = aWPtr[indexWord( 4, 2 )];

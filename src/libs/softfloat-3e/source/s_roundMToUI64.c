@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 uint_fast64_t
  softfloat_roundMToUI64(
-     bool sign, uint32_t *extSigPtr, uint_fast8_t roundingMode, bool exact )
+     bool sign, uint32_t *extSigPtr, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA)
 {
     uint64_t sig;
     uint32_t sigExtra;
@@ -91,7 +91,7 @@ uint_fast64_t
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     return sign ? ui64_fromNegOverflow : ui64_fromPosOverflow;
 
 }

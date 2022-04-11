@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "softfloat.h"
 
 float64_t
- softfloat_subMagsF64( uint_fast64_t uiA, uint_fast64_t uiB, bool signZ )
+ softfloat_subMagsF64( uint_fast64_t uiA, uint_fast64_t uiB, bool signZ SOFTFLOAT_STATE_DECL_COMMA )
 {
     int_fast16_t expA;
     uint_fast64_t sigA;
@@ -70,7 +70,7 @@ float64_t
         *--------------------------------------------------------------------*/
         if ( expA == 0x7FF ) {
             if ( sigA | sigB ) goto propagateNaN;
-            softfloat_raiseFlags( softfloat_flag_invalid );
+            softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
             uiZ = defaultNaNF64UI;
             goto uiZ;
         }
@@ -127,12 +127,12 @@ float64_t
             expZ = expA;
             sigZ = sigA - sigB;
         }
-        return softfloat_normRoundPackToF64( signZ, expZ - 1, sigZ );
+        return softfloat_normRoundPackToF64( signZ, expZ - 1, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNF64UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF64UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
  uiZ:
     uZ.ui = uiZ;
     return uZ.f;

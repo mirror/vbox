@@ -41,16 +41,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-void i64_to_extF80M( int64_t a, extFloat80_t *zPtr )
+void i64_to_extF80M( int64_t a, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = i64_to_extF80( a );
+    *zPtr = i64_to_extF80( a SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-void i64_to_extF80M( int64_t a, extFloat80_t *zPtr )
+void i64_to_extF80M( int64_t a, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     struct extFloat80M *zSPtr;
     uint_fast16_t uiZ64;
@@ -58,6 +58,7 @@ void i64_to_extF80M( int64_t a, extFloat80_t *zPtr )
     bool sign;
     uint64_t absA;
     int_fast8_t shiftDist;
+    SOFTFLOAT_STATE_NOREF();
 
     zSPtr = (struct extFloat80M *) zPtr;
     uiZ64 = 0;

@@ -44,17 +44,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef SOFTFLOAT_FAST_INT64
 
 void
- f128M_rem( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr )
+ f128M_rem( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = f128_rem( *aPtr, *bPtr );
+    *zPtr = f128_rem( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
 void
- f128M_rem( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr )
+ f128M_rem( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr, *bWPtr;
     uint32_t *zWPtr, uiA96;
@@ -79,7 +79,7 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr ) ) return;
+        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         if ( expA == 0x7FFF ) goto invalid;
         goto copyA;
     }
@@ -161,12 +161,12 @@ void
     }
     remPtr -= indexMultiwordLo( 5, 4 );
     remPtr[indexWordHi( 5 )] = 0;
-    softfloat_normRoundPackMToF128M( signRem, expB + 18, remPtr, zWPtr );
+    softfloat_normRoundPackMToF128M( signRem, expB + 18, remPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_invalidF128M( zWPtr );
+    softfloat_invalidF128M( zWPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

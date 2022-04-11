@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iprt/cdefs.h> /* VBox: for RT_FALL_THROUGH */
 
 float128_t
- f128_roundToInt( float128_t a, uint_fast8_t roundingMode, bool exact )
+ f128_roundToInt( float128_t a, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui128_f128 uA;
     uint_fast64_t uiA64, uiA0;
@@ -67,7 +67,7 @@ float128_t
         *--------------------------------------------------------------------*/
         if ( 0x406F <= exp ) {
             if ( (exp == 0x7FFF) && (fracF128UI64( uiA64 ) | uiA0) ) {
-                uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, 0, 0 );
+                uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, 0, 0 SOFTFLOAT_STATE_ARG_COMMA );
                 goto uiZ;
             }
             return a;

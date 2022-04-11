@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 float16_t
  softfloat_mulAddF16(
-     uint_fast16_t uiA, uint_fast16_t uiB, uint_fast16_t uiC, uint_fast8_t op )
+     uint_fast16_t uiA, uint_fast16_t uiB, uint_fast16_t uiC, uint_fast8_t op SOFTFLOAT_STATE_DECL_COMMA )
 {
     bool signA;
     int_fast8_t expA;
@@ -188,11 +188,11 @@ float16_t
         }
     }
  roundPack:
-    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+    return softfloat_roundPackToF16( signZ, expZ, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN_ABC:
-    uiZ = softfloat_propagateNaNF16UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF16UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
     goto propagateNaN_ZC;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -203,10 +203,10 @@ float16_t
         if ( sigC ) goto propagateNaN_ZC;
         if ( signProd == signC ) goto uiZ;
     }
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF16UI;
  propagateNaN_ZC:
-    uiZ = softfloat_propagateNaNF16UI( uiZ, uiC );
+    uiZ = softfloat_propagateNaNF16UI( uiZ, uiC SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

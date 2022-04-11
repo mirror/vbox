@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-float64_t f64_sqrt( float64_t a )
+float64_t f64_sqrt( float64_t a SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui64_f64 uA;
     uint_fast64_t uiA;
@@ -67,7 +67,7 @@ float64_t f64_sqrt( float64_t a )
     *------------------------------------------------------------------------*/
     if ( expA == 0x7FF ) {
         if ( sigA ) {
-            uiZ = softfloat_propagateNaNF64UI( uiA, 0 );
+            uiZ = softfloat_propagateNaNF64UI( uiA, 0 SOFTFLOAT_STATE_ARG_COMMA );
             goto uiZ;
         }
         if ( ! signA ) return a;
@@ -119,11 +119,11 @@ float64_t f64_sqrt( float64_t a )
             if ( rem ) sigZ |= 1;
         }
     }
-    return softfloat_roundPackToF64( 0, expZ, sigZ );
+    return softfloat_roundPackToF64( 0, expZ, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF64UI;
  uiZ:
     uZ.ui = uiZ;

@@ -43,10 +43,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 | to substitute a result value.  If traps are not implemented, this routine
 | should be simply 'softfloat_exceptionFlags |= flags;'.
 *----------------------------------------------------------------------------*/
-void softfloat_raiseFlags( uint_fast8_t flags )
+void softfloat_raiseFlags( uint_fast8_t flags SOFTFLOAT_STATE_ARG_COMMA )
 {
 
+#ifdef VBOX_WITHOUT_SOFTFLOAT_GLOBALS
     softfloat_exceptionFlags |= flags;
+#else
+    pState->exceptionFlags   |= flags;
+#endif
 
 }
 

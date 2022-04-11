@@ -56,6 +56,7 @@ struct uint128
      uint_fast64_t uiA0,
      uint_fast16_t uiB64,
      uint_fast64_t uiB0
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     bool isSigNaNA, isSigNaNB;
@@ -75,7 +76,7 @@ struct uint128
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( isSigNaNA | isSigNaNB ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         if ( isSigNaNA ) {
             if ( isSigNaNB ) goto returnLargerMag;
             if ( isNaNExtF80UI( uiB64, uiB0 ) ) goto returnB;

@@ -49,10 +49,11 @@ void
      uint_fast8_t roundingMode,
      bool exact,
      extFloat80_t *zPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
 
-    *zPtr = extF80_roundToInt( *aPtr, roundingMode, exact );
+    *zPtr = extF80_roundToInt( *aPtr, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
@@ -64,6 +65,7 @@ void
      uint_fast8_t roundingMode,
      bool exact,
      extFloat80_t *zPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     const struct extFloat80M *aSPtr;
@@ -128,7 +130,7 @@ void
     if ( 0x403E <= exp ) {
         if ( exp == 0x7FFF ) {
             if ( sigA & UINT64_C( 0x7FFFFFFFFFFFFFFF ) ) {
-                softfloat_propagateNaNExtF80M( aSPtr, 0, zSPtr );
+                softfloat_propagateNaNExtF80M( aSPtr, 0, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
                 return;
             }
             sigZ = UINT64_C( 0x8000000000000000 );

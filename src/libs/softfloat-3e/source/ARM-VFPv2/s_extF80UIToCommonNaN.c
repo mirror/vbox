@@ -48,11 +48,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *----------------------------------------------------------------------------*/
 void
  softfloat_extF80UIToCommonNaN(
-     uint_fast16_t uiA64, uint_fast64_t uiA0, struct commonNaN *zPtr )
+     uint_fast16_t uiA64, uint_fast64_t uiA0, struct commonNaN *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
     if ( softfloat_isSigNaNExtF80UI( uiA64, uiA0 ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     }
     zPtr->sign = uiA64>>15;
     zPtr->v64  = uiA0<<1;

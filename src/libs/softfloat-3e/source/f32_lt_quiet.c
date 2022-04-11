@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-bool f32_lt_quiet( float32_t a, float32_t b )
+bool f32_lt_quiet( float32_t a, float32_t b SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui32_f32 uA;
     uint_fast32_t uiA;
@@ -57,7 +57,7 @@ bool f32_lt_quiet( float32_t a, float32_t b )
         if (
             softfloat_isSigNaNF32UI( uiA ) || softfloat_isSigNaNF32UI( uiB )
         ) {
-            softfloat_raiseFlags( softfloat_flag_invalid );
+            softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         }
         return false;
     }

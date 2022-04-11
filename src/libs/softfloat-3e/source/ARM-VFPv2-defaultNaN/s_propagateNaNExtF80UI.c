@@ -55,6 +55,7 @@ struct uint128
      uint_fast64_t uiA0,
      uint_fast16_t uiB64,
      uint_fast64_t uiB0
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     struct uint128 uiZ;
@@ -63,7 +64,7 @@ struct uint128
            softfloat_isSigNaNExtF80UI( uiA64, uiA0 )
         || softfloat_isSigNaNExtF80UI( uiB64, uiB0 )
     ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     }
     uiZ.v64 = defaultNaNExtF80UI64;
     uiZ.v0  = defaultNaNExtF80UI0;

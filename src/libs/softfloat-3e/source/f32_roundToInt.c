@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "softfloat.h"
 #include <iprt/cdefs.h> /* VBox: for RT_FALL_THROUGH */
 
-float32_t f32_roundToInt( float32_t a, uint_fast8_t roundingMode, bool exact )
+float32_t f32_roundToInt( float32_t a, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui32_f32 uA;
     uint_fast32_t uiA;
@@ -86,7 +86,7 @@ float32_t f32_roundToInt( float32_t a, uint_fast8_t roundingMode, bool exact )
     *------------------------------------------------------------------------*/
     if ( 0x96 <= exp ) {
         if ( (exp == 0xFF) && fracF32UI( uiA ) ) {
-            uiZ = softfloat_propagateNaNF32UI( uiA, 0 );
+            uiZ = softfloat_propagateNaNF32UI( uiA, 0 SOFTFLOAT_STATE_ARG_COMMA );
             goto uiZ;
         }
         return a;

@@ -44,17 +44,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef SOFTFLOAT_FAST_INT64
 
 void
- f128M_mul( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr )
+ f128M_mul( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = f128_mul( *aPtr, *bPtr );
+    *zPtr = f128_mul( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
 void
- f128M_mul( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr )
+ f128M_mul( const float128_t *aPtr, const float128_t *bPtr, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr, *bWPtr;
     uint32_t *zWPtr;
@@ -85,7 +85,7 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr ) ) return;
+        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         ptr = aWPtr;
         if ( ! expA ) goto possiblyInvalid;
         if ( ! expB ) {
@@ -96,7 +96,7 @@ void
                     && ! (ptr[indexWord( 4, 2 )] | ptr[indexWord( 4, 1 )]
                               | ptr[indexWord( 4, 0 )])
             ) {
-                softfloat_invalidF128M( zWPtr );
+                softfloat_invalidF128M( zWPtr SOFTFLOAT_STATE_ARG_COMMA );
                 return;
             }
         }
@@ -140,7 +140,7 @@ void
         shiftDist = 15;
     }
     softfloat_shortShiftLeft160M( extSigZPtr, shiftDist, extSigZPtr );
-    softfloat_roundPackMToF128M( signZ, expZ, extSigZPtr, zWPtr );
+    softfloat_roundPackMToF128M( signZ, expZ, extSigZPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

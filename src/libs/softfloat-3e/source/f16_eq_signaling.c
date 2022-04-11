@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "softfloat.h"
 
-bool f16_eq_signaling( float16_t a, float16_t b )
+bool f16_eq_signaling( float16_t a, float16_t b SOFTFLOAT_STATE_DECL_COMMA  )
 {
     union ui16_f16 uA;
     uint_fast16_t uiA;
@@ -52,7 +52,7 @@ bool f16_eq_signaling( float16_t a, float16_t b )
     uB.f = b;
     uiB = uB.ui;
     if ( isNaNF16UI( uiA ) || isNaNF16UI( uiB ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return false;
     }
     return (uiA == uiB) || ! (uint16_t) ((uiA | uiB)<<1);

@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void
  extF80M_add(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr, *bSPtr;
     uint_fast16_t uiA64;
@@ -55,7 +55,7 @@ void
 #if ! defined INLINE_LEVEL || (INLINE_LEVEL < 2)
     extFloat80_t
         (*magsFuncPtr)(
-            uint_fast16_t, uint_fast64_t, uint_fast16_t, uint_fast64_t, bool );
+            uint_fast16_t, uint_fast64_t, uint_fast16_t, uint_fast64_t, bool SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 
     aSPtr = (const struct extFloat80M *) aPtr;
@@ -68,14 +68,14 @@ void
     signB = signExtF80UI64( uiB64 );
 #if defined INLINE_LEVEL && (2 <= INLINE_LEVEL)
     if ( signA == signB ) {
-        *zPtr = softfloat_addMagsExtF80( uiA64, uiA0, uiB64, uiB0, signA );
+        *zPtr = softfloat_addMagsExtF80( uiA64, uiA0, uiB64, uiB0, signA SOFTFLOAT_STATE_ARG_COMMA );
     } else {
-        *zPtr = softfloat_subMagsExtF80( uiA64, uiA0, uiB64, uiB0, signA );
+        *zPtr = softfloat_subMagsExtF80( uiA64, uiA0, uiB64, uiB0, signA SOFTFLOAT_STATE_ARG_COMMA );
     }
 #else
     magsFuncPtr =
         (signA == signB) ? softfloat_addMagsExtF80 : softfloat_subMagsExtF80;
-    *zPtr = (*magsFuncPtr)( uiA64, uiA0, uiB64, uiB0, signA );
+    *zPtr = (*magsFuncPtr)( uiA64, uiA0, uiB64, uiB0, signA SOFTFLOAT_STATE_ARG_COMMA );
 #endif
 
 }
@@ -84,7 +84,7 @@ void
 
 void
  extF80M_add(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
     softfloat_addExtF80M(
@@ -92,6 +92,7 @@ void
         (const struct extFloat80M *) bPtr,
         (struct extFloat80M *) zPtr,
         false
+        SOFTFLOAT_STATE_ARG_COMMA
     );
 
 }

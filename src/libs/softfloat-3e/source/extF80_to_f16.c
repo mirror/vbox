@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-float16_t extF80_to_f16( extFloat80_t a )
+float16_t extF80_to_f16( extFloat80_t a SOFTFLOAT_STATE_DECL_COMMA )
 {
     union { struct extFloat80M s; extFloat80_t f; } uA;
     uint_fast16_t uiA64;
@@ -65,7 +65,7 @@ float16_t extF80_to_f16( extFloat80_t a )
     *------------------------------------------------------------------------*/
     if ( exp == 0x7FFF ) {
         if ( sig & UINT64_C( 0x7FFFFFFFFFFFFFFF ) ) {
-            softfloat_extF80UIToCommonNaN( uiA64, uiA0, &commonNaN );
+            softfloat_extF80UIToCommonNaN( uiA64, uiA0, &commonNaN SOFTFLOAT_STATE_ARG_COMMA );
             uiZ = softfloat_commonNaNToF16UI( &commonNaN );
         } else {
             uiZ = packToF16UI( sign, 0x1F, 0 );
@@ -85,7 +85,7 @@ float16_t extF80_to_f16( extFloat80_t a )
     if ( sizeof (int_fast16_t) < sizeof (int_fast32_t) ) {
         if ( exp < -0x40 ) exp = -0x40;
     }
-    return softfloat_roundPackToF16( sign, exp, sig16 );
+    return softfloat_roundPackToF16( sign, exp, sig16 SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  uiZ:

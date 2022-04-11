@@ -47,6 +47,7 @@ void
      const uint32_t *bWPtr,
      uint32_t *zWPtr,
      bool negateB
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint32_t uiA96;
@@ -68,7 +69,7 @@ void
      );
     uint32_t extSigZ[5], wordSigZ;
     uint_fast8_t carry;
-    void (*roundPackRoutinePtr)( bool, int32_t, uint32_t *, uint32_t * );
+    void (*roundPackRoutinePtr)( bool, int32_t, uint32_t *, uint32_t * SOFTFLOAT_STATE_DECL_COMMA );
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -79,12 +80,12 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr ) ) return;
+        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         uiZ96 = uiA96;
         if ( expB == 0x7FFF ) {
             uiZ96 = uiB96 ^ packToF128UI96( negateB, 0, 0 );
             if ( (expA == 0x7FFF) && (uiZ96 != uiA96) ) {
-                softfloat_invalidF128M( zWPtr );
+                softfloat_invalidF128M( zWPtr SOFTFLOAT_STATE_ARG_COMMA );
                 return;
             }
         }
@@ -205,7 +206,7 @@ void
         }
         roundPackRoutinePtr = softfloat_roundPackMToF128M;
     }
-    (*roundPackRoutinePtr)( signZ, expA, extSigZ, zWPtr );
+    (*roundPackRoutinePtr)( signZ, expA, extSigZ, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 

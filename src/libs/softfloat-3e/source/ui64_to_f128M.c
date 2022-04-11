@@ -41,20 +41,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-void ui64_to_f128M( uint64_t a, float128_t *zPtr )
+void ui64_to_f128M( uint64_t a, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = ui64_to_f128( a );
+    *zPtr = ui64_to_f128( a SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-void ui64_to_f128M( uint64_t a, float128_t *zPtr )
+void ui64_to_f128M( uint64_t a, float128_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     uint32_t *zWPtr, uiZ96, uiZ64;
     uint_fast8_t shiftDist;
     uint32_t *ptr;
+    SOFTFLOAT_STATE_NOREF();
 
     zWPtr = (uint32_t *) zPtr;
     uiZ96 = 0;

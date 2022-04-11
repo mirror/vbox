@@ -48,6 +48,7 @@ extFloat80_t
      uint_fast16_t uiB64,
      uint_fast64_t uiB0,
      bool signZ
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     int_fast32_t expA;
@@ -140,11 +141,11 @@ extFloat80_t
  roundAndPack:
     return
         softfloat_roundPackToExtF80(
-            signZ, expZ, sigZ, sigZExtra, extF80_roundingPrecision );
+            signZ, expZ, sigZ, sigZExtra, extF80_roundingPrecision SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNExtF80UI( uiA64, uiA0, uiB64, uiB0 );
+    uiZ = softfloat_propagateNaNExtF80UI( uiA64, uiA0, uiB64, uiB0 SOFTFLOAT_STATE_ARG_COMMA );
     uiZ64 = uiZ.v64;
     uiZ0  = uiZ.v0;
  uiZ:

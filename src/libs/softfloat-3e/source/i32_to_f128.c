@@ -39,13 +39,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "softfloat.h"
 
-float128_t i32_to_f128( int32_t a )
+float128_t i32_to_f128( int32_t a SOFTFLOAT_STATE_DECL_COMMA )
 {
     uint_fast64_t uiZ64;
     bool sign;
     uint_fast32_t absA;
     int_fast8_t shiftDist;
     union ui128_f128 uZ;
+    SOFTFLOAT_STATE_NOREF();
 
     uiZ64 = 0;
     if ( a ) {

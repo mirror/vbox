@@ -44,17 +44,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef SOFTFLOAT_FAST_INT64
 
 uint_fast32_t
- f128M_to_ui32( const float128_t *aPtr, uint_fast8_t roundingMode, bool exact )
+ f128M_to_ui32( const float128_t *aPtr, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    return f128_to_ui32( *aPtr, roundingMode, exact );
+    return f128_to_ui32( *aPtr, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
 uint_fast32_t
- f128M_to_ui32( const float128_t *aPtr, uint_fast8_t roundingMode, bool exact )
+ f128M_to_ui32( const float128_t *aPtr, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr;
     uint32_t uiA96;
@@ -80,7 +80,7 @@ uint_fast32_t
 #elif (ui32_fromNaN == ui32_fromNegOverflow)
         sign = 1;
 #else
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return ui32_fromNaN;
 #endif
     }
@@ -90,7 +90,7 @@ uint_fast32_t
     if ( exp ) sig64 |= UINT64_C( 0x0001000000000000 );
     shiftDist = 0x4023 - exp;
     if ( 0 < shiftDist ) sig64 = softfloat_shiftRightJam64( sig64, shiftDist );
-    return softfloat_roundToUI32( sign, sig64, roundingMode, exact );
+    return softfloat_roundToUI32( sign, sig64, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 

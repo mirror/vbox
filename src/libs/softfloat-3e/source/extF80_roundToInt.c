@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iprt/cdefs.h> /* VBox: for RT_FALL_THROUGH */
 
 extFloat80_t
- extF80_roundToInt( extFloat80_t a, uint_fast8_t roundingMode, bool exact )
+ extF80_roundToInt( extFloat80_t a, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union { struct extFloat80M s; extFloat80_t f; } uA;
     uint_fast16_t uiA64, signUI64;
@@ -80,7 +80,7 @@ extFloat80_t
     if ( 0x403E <= exp ) {
         if ( exp == 0x7FFF ) {
             if ( sigA & UINT64_C( 0x7FFFFFFFFFFFFFFF ) ) {
-                uiZ = softfloat_propagateNaNExtF80UI( uiA64, sigA, 0, 0 );
+                uiZ = softfloat_propagateNaNExtF80UI( uiA64, sigA, 0, 0 SOFTFLOAT_STATE_ARG_COMMA );
                 uiZ64 = uiZ.v64;
                 sigZ  = uiZ.v0;
                 goto uiZ;

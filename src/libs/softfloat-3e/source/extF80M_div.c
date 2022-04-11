@@ -45,10 +45,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void
  extF80M_div(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = extF80_div( *aPtr, *bPtr );
+    *zPtr = extF80_div( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
@@ -56,7 +56,7 @@ void
 
 void
  extF80M_div(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr, *bSPtr;
     struct extFloat80M *zSPtr;
@@ -89,7 +89,7 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr ) ) return;
+        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         if ( expA == 0x7FFF ) {
             if ( expB == 0x7FFF ) goto invalid;
             goto infinity;
@@ -104,7 +104,7 @@ void
     if ( ! (x64 & UINT64_C( 0x8000000000000000 )) ) {
         if ( ! x64 ) {
             if ( ! sigA ) goto invalid;
-            softfloat_raiseFlags( softfloat_flag_infinite );
+            softfloat_raiseFlags( softfloat_flag_infinite SOFTFLOAT_STATE_ARG_COMMA );
             goto infinity;
         }
         expB += softfloat_normExtF80SigM( &x64 );
@@ -166,12 +166,12 @@ void
     y[indexWord( 3, 1 )] = x64;
     y[indexWord( 3, 2 )] = (qs[1]<<3) + (x64>>32);
     softfloat_roundPackMToExtF80M(
-        signZ, expZ, y, extF80_roundingPrecision, zSPtr );
+        signZ, expZ, y, extF80_roundingPrecision, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_invalidExtF80M( zSPtr );
+    softfloat_invalidExtF80M( zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

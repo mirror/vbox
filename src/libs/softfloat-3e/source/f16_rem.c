@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-float16_t f16_rem( float16_t a, float16_t b )
+float16_t f16_rem( float16_t a, float16_t b SOFTFLOAT_STATE_DECL_COMMA  )
 {
     union ui16_f16 uA;
     uint_fast16_t uiA;
@@ -154,14 +154,14 @@ float16_t f16_rem( float16_t a, float16_t b )
         signRem = ! signRem;
         rem = -rem;
     }
-    return softfloat_normRoundPackToF16( signRem, expB, rem );
+    return softfloat_normRoundPackToF16( signRem, expB, rem SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNF16UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF16UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF16UI;
  uiZ:
     uZ.ui = uiZ;

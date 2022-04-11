@@ -49,12 +49,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *----------------------------------------------------------------------------*/
 void
  softfloat_f128UIToCommonNaN(
-     uint_fast64_t uiA64, uint_fast64_t uiA0, struct commonNaN *zPtr )
+     uint_fast64_t uiA64, uint_fast64_t uiA0, struct commonNaN *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     struct uint128 NaNSig;
 
     if ( softfloat_isSigNaNF128UI( uiA64, uiA0 ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     }
     NaNSig = softfloat_shortShiftLeft128( uiA64, uiA0, 16 );
     zPtr->sign = uiA64>>63;

@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-extFloat80_t extF80_mul( extFloat80_t a, extFloat80_t b )
+extFloat80_t extF80_mul( extFloat80_t a, extFloat80_t b SOFTFLOAT_STATE_DECL_COMMA )
 {
     union { struct extFloat80M s; extFloat80_t f; } uA;
     uint_fast16_t uiA64;
@@ -124,11 +124,11 @@ extFloat80_t extF80_mul( extFloat80_t a, extFloat80_t b )
     }
     return
         softfloat_roundPackToExtF80(
-            signZ, expZ, sig128Z.v64, sig128Z.v0, extF80_roundingPrecision );
+            signZ, expZ, sig128Z.v64, sig128Z.v0, extF80_roundingPrecision SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNExtF80UI( uiA64, uiA0, uiB64, uiB0 );
+    uiZ = softfloat_propagateNaNExtF80UI( uiA64, uiA0, uiB64, uiB0 SOFTFLOAT_STATE_ARG_COMMA );
     uiZ64 = uiZ.v64;
     uiZ0  = uiZ.v0;
     goto uiZ;
@@ -136,7 +136,7 @@ extFloat80_t extF80_mul( extFloat80_t a, extFloat80_t b )
     *------------------------------------------------------------------------*/
  infArg:
     if ( ! magBits ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         uiZ64 = defaultNaNExtF80UI64;
         uiZ0  = defaultNaNExtF80UI0;
     } else {

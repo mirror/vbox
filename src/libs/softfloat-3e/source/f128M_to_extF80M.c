@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr )
+void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = f128_to_extF80( *aPtr );
+    *zPtr = f128_to_extF80( *aPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr )
+void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr;
     struct extFloat80M *zSPtr;
@@ -75,7 +75,7 @@ void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr )
     *------------------------------------------------------------------------*/
     if ( exp == 0x7FFF ) {
         if ( softfloat_isNaNF128M( aWPtr ) ) {
-            softfloat_f128MToCommonNaN( aWPtr, &commonNaN );
+            softfloat_f128MToCommonNaN( aWPtr, &commonNaN SOFTFLOAT_STATE_ARG_COMMA );
             softfloat_commonNaNToExtF80M( &commonNaN, zSPtr );
             return;
         }
@@ -93,7 +93,7 @@ void f128M_to_extF80M( const float128_t *aPtr, extFloat80_t *zPtr )
     }
     if ( sig[indexWord( 4, 0 )] ) sig[indexWord( 4, 1 )] |= 1;
     softfloat_roundPackMToExtF80M(
-        sign, exp, &sig[indexMultiwordHi( 4, 3 )], 80, zSPtr );
+        sign, exp, &sig[indexMultiwordHi( 4, 3 )], 80, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 

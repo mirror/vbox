@@ -48,6 +48,7 @@ void
      const uint32_t *cWPtr,
      uint32_t *zWPtr,
      uint_fast8_t op
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint32_t uiA96;
@@ -77,7 +78,7 @@ void
     int32_t expZ;
     uint32_t *extSigPtr;
     uint_fast8_t carry;
-    void (*roundPackRoutinePtr)( bool, int32_t, uint32_t *, uint32_t * );
+    void (*roundPackRoutinePtr)( bool, int32_t, uint32_t *, uint32_t * SOFTFLOAT_STATE_DECL_COMMA );
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -95,7 +96,7 @@ void
     *------------------------------------------------------------------------*/
     prodIsInfinite = false;
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr ) ) {
+        if ( softfloat_tryPropagateNaNF128M( aWPtr, bWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA ) ) {
             goto propagateNaN_ZC;
         }
         ptr = (uint32_t *) aWPtr;
@@ -333,14 +334,14 @@ void
  roundPack:
     roundPackRoutinePtr = softfloat_roundPackMToF128M;
  doRoundPack:
-    (*roundPackRoutinePtr)( signZ, expZ, extSigPtr, zWPtr );
+    (*roundPackRoutinePtr)( signZ, expZ, extSigPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_invalidF128M( zWPtr );
+    softfloat_invalidF128M( zWPtr SOFTFLOAT_STATE_ARG_COMMA );
  propagateNaN_ZC:
-    softfloat_propagateNaNF128M( zWPtr, cWPtr, zWPtr );
+    softfloat_propagateNaNF128M( zWPtr, cWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

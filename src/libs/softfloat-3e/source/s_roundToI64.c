@@ -48,6 +48,7 @@ int_fast64_t
      uint_fast64_t sigExtra,
      uint_fast8_t roundingMode,
      bool exact
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     union { uint64_t ui; int64_t i; } uZ;
@@ -94,7 +95,7 @@ int_fast64_t
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     return sign ? i64_fromNegOverflow : i64_fromPosOverflow;
 
 }

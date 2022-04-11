@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-bool f128M_lt_quiet( const float128_t *aPtr, const float128_t *bPtr )
+bool f128M_lt_quiet( const float128_t *aPtr, const float128_t *bPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    return f128_lt_quiet( *aPtr, *bPtr );
+    return f128_lt_quiet( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-bool f128M_lt_quiet( const float128_t *aPtr, const float128_t *bPtr )
+bool f128M_lt_quiet( const float128_t *aPtr, const float128_t *bPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const uint32_t *aWPtr, *bWPtr;
     uint32_t uiA96, uiB96;
@@ -63,7 +63,7 @@ bool f128M_lt_quiet( const float128_t *aPtr, const float128_t *bPtr )
     bWPtr = (const uint32_t *) bPtr;
     if ( softfloat_isNaNF128M( aWPtr ) || softfloat_isNaNF128M( bWPtr ) ) {
         if ( f128M_isSignalingNaN( aPtr ) || f128M_isSignalingNaN( bPtr ) ) {
-            softfloat_raiseFlags( softfloat_flag_invalid );
+            softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         }
         return false;
     }

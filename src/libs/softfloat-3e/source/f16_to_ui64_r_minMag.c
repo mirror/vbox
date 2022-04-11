@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-uint_fast64_t f16_to_ui64_r_minMag( float16_t a, bool exact )
+uint_fast64_t f16_to_ui64_r_minMag( float16_t a, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui16_f16 uA;
     uint_fast16_t uiA;
@@ -70,7 +70,7 @@ uint_fast64_t f16_to_ui64_r_minMag( float16_t a, bool exact )
     *------------------------------------------------------------------------*/
     sign = signF16UI( uiA );
     if ( sign || (exp == 0x1F) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return
             (exp == 0x1F) && frac ? ui64_fromNaN
                 : sign ? ui64_fromNegOverflow : ui64_fromPosOverflow;

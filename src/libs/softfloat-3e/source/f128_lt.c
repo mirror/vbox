@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "softfloat.h"
 
-bool f128_lt( float128_t a, float128_t b )
+bool f128_lt( float128_t a, float128_t b SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui128_f128 uA;
     uint_fast64_t uiA64, uiA0;
@@ -55,7 +55,7 @@ bool f128_lt( float128_t a, float128_t b )
     uiB64 = uB.ui.v64;
     uiB0  = uB.ui.v0;
     if ( isNaNF128UI( uiA64, uiA0 ) || isNaNF128UI( uiB64, uiB0 ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return false;
     }
     signA = signF128UI64( uiA64 );

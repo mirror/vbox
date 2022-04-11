@@ -77,5 +77,36 @@ struct extFloat80M { uint16_t signExp; uint64_t signif; };
 *----------------------------------------------------------------------------*/
 typedef struct extFloat80M extFloat80_t;
 
+/*----------------------------------------------------------------------------
+| VBox: The four globals as non-globals.
+*----------------------------------------------------------------------------*/
+#ifndef VBOX_WITH_SOFTFLOAT_GLOBALS
+# define VBOX_WITHOUT_SOFTFLOAT_GLOBALS
+# define SOFTFLOAT_STATE_ARG            pState
+# define SOFTFLOAT_STATE_ARG_COMMA      , pState
+# define SOFTFLOAT_STATE_DECL           softfloat_state_t *pState
+# define SOFTFLOAT_STATE_DECL_COMMA     , softfloat_state_t *pState
+# define SOFTFLOAT_STATE_NOREF()        (void)pState
+typedef struct softfloat_state
+{
+    /* softfloat_tininess_beforeRounding or softfloat_tininess_afterRounding */
+    uint8_t detectTininess;
+    /* softfloat_round_near_even and friends. */
+    uint8_t roundingMode;
+    /* softfloat_flag_inexact and friends. */
+    uint8_t exceptionFlags;
+    /* extF80: rounding precsision: 32, 64 or 80 */
+    uint8_t roundingPrecision;
+} softfloat_state_t;
+# define SOFTFLOAT_STATE_INIT_DEFAULTS() { softfloat_round_near_even, softfloat_tininess_afterRounding, 0, 80 }
+#else
+# undef  VBOX_WITHOUT_SOFTFLOAT_GLOBALS
+# define SOFTFLOAT_STATE_ARG
+# define SOFTFLOAT_STATE_ARG_COMMA
+# define SOFTFLOAT_STATE_DECL
+# define SOFTFLOAT_STATE_DECL_COMMA
+# define SOFTFLOAT_STATE_NOREF()        (void)0
+#endif
+
 #endif
 

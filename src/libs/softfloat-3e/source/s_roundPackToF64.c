@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "softfloat.h"
 
 float64_t
- softfloat_roundPackToF64( bool sign, int_fast16_t exp, uint_fast64_t sig )
+ softfloat_roundPackToF64( bool sign, int_fast16_t exp, uint_fast64_t sig SOFTFLOAT_STATE_DECL_COMMA )
 {
     uint_fast8_t roundingMode;
     bool roundNearEven;
@@ -77,7 +77,7 @@ float64_t
             exp = 0;
             roundBits = sig & 0x3FF;
             if ( isTiny && roundBits ) {
-                softfloat_raiseFlags( softfloat_flag_underflow );
+                softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
             }
         } else if (
             (0x7FD < exp)
@@ -86,7 +86,8 @@ float64_t
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             softfloat_raiseFlags(
-                softfloat_flag_overflow | softfloat_flag_inexact );
+                softfloat_flag_overflow | softfloat_flag_inexact
+                SOFTFLOAT_STATE_ARG_COMMA );
             uiZ = packToF64UI( sign, 0x7FF, 0 ) - ! roundIncrement;
             goto uiZ;
         }

@@ -49,11 +49,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 | to form a 128-bit floating-point value.
 *----------------------------------------------------------------------------*/
 void
- softfloat_f128MToCommonNaN( const uint32_t *aWPtr, struct commonNaN *zPtr )
+ softfloat_f128MToCommonNaN( const uint32_t *aWPtr, struct commonNaN *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
     if ( f128M_isSignalingNaN( (const float128_t *) aWPtr ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     }
     zPtr->sign = aWPtr[indexWordHi( 4 )]>>31;
     softfloat_shortShiftLeft128M( aWPtr, 16, (uint32_t *) &zPtr->v0 );

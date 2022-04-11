@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-float128_t f128_mul( float128_t a, float128_t b )
+float128_t f128_mul( float128_t a, float128_t b SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui128_f128 uA;
     uint_fast64_t uiA64, uiA0;
@@ -132,17 +132,17 @@ float128_t f128_mul( float128_t a, float128_t b )
         sigZExtra = sig128Extra.extra;
     }
     return
-        softfloat_roundPackToF128( signZ, expZ, sigZ.v64, sigZ.v0, sigZExtra );
+        softfloat_roundPackToF128( signZ, expZ, sigZ.v64, sigZ.v0, sigZExtra SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 );
+    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  infArg:
     if ( ! magBits ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         uiZ.v64 = defaultNaNF128UI64;
         uiZ.v0  = defaultNaNF128UI0;
         goto uiZ;

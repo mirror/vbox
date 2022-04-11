@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern const uint16_t softfloat_approxRecip_1k0s[];
 extern const uint16_t softfloat_approxRecip_1k1s[];
 
-float16_t f16_div( float16_t a, float16_t b )
+float16_t f16_div( float16_t a, float16_t b SOFTFLOAT_STATE_DECL_COMMA  )
 {
     union ui16_f16 uA;
     uint_fast16_t uiA;
@@ -102,7 +102,7 @@ float16_t f16_div( float16_t a, float16_t b )
     if ( ! expB ) {
         if ( ! sigB ) {
             if ( ! (expA | sigA) ) goto invalid;
-            softfloat_raiseFlags( softfloat_flag_infinite );
+            softfloat_raiseFlags( softfloat_flag_infinite SOFTFLOAT_STATE_ARG_COMMA );
             goto infinity;
         }
         normExpSig = softfloat_normSubnormalF16Sig( sigB );
@@ -157,16 +157,16 @@ float16_t f16_div( float16_t a, float16_t b )
         }
     }
 #endif
-    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+    return softfloat_roundPackToF16( signZ, expZ, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNF16UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF16UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF16UI;
     goto uiZ;
     /*------------------------------------------------------------------------

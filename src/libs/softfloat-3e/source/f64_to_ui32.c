@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-uint_fast32_t f64_to_ui32( float64_t a, uint_fast8_t roundingMode, bool exact )
+uint_fast32_t f64_to_ui32( float64_t a, uint_fast8_t roundingMode, bool exact SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui64_f64 uA;
     uint_fast64_t uiA;
@@ -66,7 +66,7 @@ uint_fast32_t f64_to_ui32( float64_t a, uint_fast8_t roundingMode, bool exact )
 #elif (ui32_fromNaN == ui32_fromNegOverflow)
         sign = 1;
 #else
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         return ui32_fromNaN;
 #endif
     }
@@ -76,7 +76,7 @@ uint_fast32_t f64_to_ui32( float64_t a, uint_fast8_t roundingMode, bool exact )
     if ( exp ) sig |= UINT64_C( 0x0010000000000000 );
     shiftDist = 0x427 - exp;
     if ( 0 < shiftDist ) sig = softfloat_shiftRightJam64( sig, shiftDist );
-    return softfloat_roundToUI32( sign, sig, roundingMode, exact );
+    return softfloat_roundToUI32( sign, sig, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 

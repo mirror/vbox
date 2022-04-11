@@ -44,6 +44,7 @@ bool
      const struct extFloat80M *aSPtr,
      const struct extFloat80M *bSPtr,
      struct extFloat80M *zSPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint_fast16_t ui64;
@@ -57,7 +58,7 @@ bool
     if ( isNaNExtF80UI( ui64, ui0 ) ) goto propagateNaN;
     return false;
  propagateNaN:
-    softfloat_propagateNaNExtF80M( aSPtr, bSPtr, zSPtr );
+    softfloat_propagateNaNExtF80M( aSPtr, bSPtr, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return true;
 
 }

@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 
-float32_t softfloat_subMagsF32( uint_fast32_t uiA, uint_fast32_t uiB )
+float32_t softfloat_subMagsF32( uint_fast32_t uiA, uint_fast32_t uiB SOFTFLOAT_STATE_DECL_COMMA )
 {
     int_fast16_t expA;
     uint_fast32_t sigA;
@@ -70,7 +70,7 @@ float32_t softfloat_subMagsF32( uint_fast32_t uiA, uint_fast32_t uiB )
         *--------------------------------------------------------------------*/
         if ( expA == 0xFF ) {
             if ( sigA | sigB ) goto propagateNaN;
-            softfloat_raiseFlags( softfloat_flag_invalid );
+            softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
             uiZ = defaultNaNF32UI;
             goto uiZ;
         }
@@ -128,13 +128,13 @@ float32_t softfloat_subMagsF32( uint_fast32_t uiA, uint_fast32_t uiB )
         }
         return
             softfloat_normRoundPackToF32(
-                signZ, expZ, sigX - softfloat_shiftRightJam32( sigY, expDiff )
+                signZ, expZ, sigX - softfloat_shiftRightJam32( sigY, expDiff ) SOFTFLOAT_STATE_ARG_COMMA
             );
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:
-    uiZ = softfloat_propagateNaNF32UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF32UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
  uiZ:
     uZ.ui = uiZ;
     return uZ.f;

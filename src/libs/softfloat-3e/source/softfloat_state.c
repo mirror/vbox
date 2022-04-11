@@ -44,9 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define THREAD_LOCAL
 #endif
 
+#ifndef VBOX_WITHOUT_SOFTFLOAT_GLOBALS
 THREAD_LOCAL uint_fast8_t softfloat_roundingMode = softfloat_round_near_even;
 THREAD_LOCAL uint_fast8_t softfloat_detectTininess = init_detectTininess;
 THREAD_LOCAL uint_fast8_t softfloat_exceptionFlags = 0;
 
 THREAD_LOCAL uint_fast8_t extF80_roundingPrecision = 80;
-
+#endif

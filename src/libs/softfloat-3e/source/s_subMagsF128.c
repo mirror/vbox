@@ -48,6 +48,7 @@ float128_t
      uint_fast64_t uiB64,
      uint_fast64_t uiB0,
      bool signZ
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     int_fast32_t expA;
@@ -71,7 +72,7 @@ float128_t
     if ( expDiff < 0 ) goto expBBigger;
     if ( expA == 0x7FFF ) {
         if ( sigA.v64 | sigA.v0 | sigB.v64 | sigB.v0 ) goto propagateNaN;
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         uiZ.v64 = defaultNaNF128UI64;
         uiZ.v0  = defaultNaNF128UI0;
         goto uiZ;
@@ -128,9 +129,9 @@ float128_t
  aBigger:
     sigZ = softfloat_sub128( sigA.v64, sigA.v0, sigB.v64, sigB.v0 );
  normRoundPack:
-    return softfloat_normRoundPackToF128( signZ, expZ - 5, sigZ.v64, sigZ.v0 );
+    return softfloat_normRoundPackToF128( signZ, expZ - 5, sigZ.v64, sigZ.v0 SOFTFLOAT_STATE_ARG_COMMA );
  propagateNaN:
-    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 );
+    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 SOFTFLOAT_STATE_ARG_COMMA );
  uiZ:
     uZ.ui = uiZ;
     return uZ.f;

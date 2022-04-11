@@ -45,10 +45,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void
  extF80M_rem(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = extF80_rem( *aPtr, *bPtr );
+    *zPtr = extF80_rem( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
@@ -56,7 +56,7 @@ void
 
 void
  extF80M_rem(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr, *bSPtr;
     struct extFloat80M *zSPtr;
@@ -82,7 +82,7 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr ) ) return;
+        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         if ( expA == 0x7FFF ) goto invalid;
         /*--------------------------------------------------------------------
         | If we get here, then argument b is an infinity and `expB' is 0x7FFF;
@@ -181,12 +181,12 @@ void
         signRem = ! signRem;
         softfloat_negX96M( remPtr );
     }
-    softfloat_normRoundPackMToExtF80M( signRem, expB + 2, remPtr, 80, zSPtr );
+    softfloat_normRoundPackMToExtF80M( signRem, expB + 2, remPtr, 80, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_invalidExtF80M( zSPtr );
+    softfloat_invalidExtF80M( zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

@@ -45,10 +45,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void
  extF80M_mul(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = extF80_mul( *aPtr, *bPtr );
+    *zPtr = extF80_mul( *aPtr, *bPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
@@ -56,7 +56,7 @@ void
 
 void
  extF80M_mul(
-     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr )
+     const extFloat80_t *aPtr, const extFloat80_t *bPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr, *bSPtr;
     struct extFloat80M *zSPtr;
@@ -85,12 +85,12 @@ void
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( (expA == 0x7FFF) || (expB == 0x7FFF) ) {
-        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr ) ) return;
+        if ( softfloat_tryPropagateNaNExtF80M( aSPtr, bSPtr, zSPtr SOFTFLOAT_STATE_ARG_COMMA ) ) return;
         if (
                (! aSPtr->signif && (expA != 0x7FFF))
             || (! bSPtr->signif && (expB != 0x7FFF))
         ) {
-            softfloat_invalidExtF80M( zSPtr );
+            softfloat_invalidExtF80M( zSPtr SOFTFLOAT_STATE_ARG_COMMA );
             return;
         }
         uiZ64 = packToExtF80UI64( signZ, 0x7FFF );
@@ -122,7 +122,7 @@ void
         softfloat_add96M( extSigZPtr, extSigZPtr, extSigZPtr );
     }
     softfloat_roundPackMToExtF80M(
-        signZ, expZ, extSigZPtr, extF80_roundingPrecision, zSPtr );
+        signZ, expZ, extSigZPtr, extF80_roundingPrecision, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

@@ -47,6 +47,7 @@ float128_t
      uint_fast64_t sig64,
      uint_fast64_t sig0,
      uint_fast64_t sigExtra
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint_fast8_t roundingMode;
@@ -91,7 +92,7 @@ float128_t
             sigExtra = sig128Extra.extra;
             exp = 0;
             if ( isTiny && sigExtra ) {
-                softfloat_raiseFlags( softfloat_flag_underflow );
+                softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
             }
             doIncrement = (UINT64_C( 0x8000000000000000 ) <= sigExtra);
             if (
@@ -117,7 +118,8 @@ float128_t
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             softfloat_raiseFlags(
-                softfloat_flag_overflow | softfloat_flag_inexact );
+                softfloat_flag_overflow | softfloat_flag_inexact
+                SOFTFLOAT_STATE_ARG_COMMA );
             if (
                    roundNearEven
                 || (roundingMode == softfloat_round_near_maxMag)

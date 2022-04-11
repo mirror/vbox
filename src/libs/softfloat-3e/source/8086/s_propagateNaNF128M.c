@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *----------------------------------------------------------------------------*/
 void
  softfloat_propagateNaNF128M(
-     const uint32_t *aWPtr, const uint32_t *bWPtr, uint32_t *zWPtr )
+     const uint32_t *aWPtr, const uint32_t *bWPtr, uint32_t *zWPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     bool isSigNaNA;
     const uint32_t *ptr;
@@ -61,12 +61,12 @@ void
     isSigNaNA = f128M_isSignalingNaN( (const float128_t *) aWPtr );
     ptr = aWPtr;
     if ( ! bWPtr ) {
-        if ( isSigNaNA ) softfloat_raiseFlags( softfloat_flag_invalid );
+        if ( isSigNaNA ) softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         goto copy;
     }
     isSigNaNB = f128M_isSignalingNaN( (const float128_t *) bWPtr );
     if ( isSigNaNA | isSigNaNB ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
         if ( isSigNaNA ) {
             if ( isSigNaNB ) goto returnLargerUIMag;
             if ( softfloat_isNaNF128M( bWPtr ) ) goto copyB;

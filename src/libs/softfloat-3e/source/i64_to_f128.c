@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "softfloat.h"
 
-float128_t i64_to_f128( int64_t a )
+float128_t i64_to_f128( int64_t a SOFTFLOAT_STATE_DECL_COMMA )
 {
     uint_fast64_t uiZ64, uiZ0;
     bool sign;
@@ -47,6 +47,7 @@ float128_t i64_to_f128( int64_t a )
     int_fast8_t shiftDist;
     struct uint128 zSig;
     union ui128_f128 uZ;
+    SOFTFLOAT_STATE_NOREF();
 
     if ( ! a ) {
         uiZ64 = 0;

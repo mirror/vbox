@@ -47,6 +47,7 @@ extFloat80_t
      uint_fast64_t sig,
      uint_fast64_t sigExtra,
      uint_fast8_t roundingPrecision
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint_fast8_t roundingMode;
@@ -93,8 +94,9 @@ extFloat80_t
             sig = softfloat_shiftRightJam64( sig, 1 - exp );
             roundBits = sig & roundMask;
             if ( roundBits ) {
-                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow );
+                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
                 softfloat_exceptionFlags |= softfloat_flag_inexact;
+                if ( roundIncrement ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
 #ifdef SOFTFLOAT_ROUND_ODD
                 if ( roundingMode == softfloat_round_odd ) {
                     sig |= roundMask + 1;
@@ -121,6 +123,7 @@ extFloat80_t
     *------------------------------------------------------------------------*/
     if ( roundBits ) {
         softfloat_exceptionFlags |= softfloat_flag_inexact;
+        if ( roundIncrement ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
 #ifdef SOFTFLOAT_ROUND_ODD
         if ( roundingMode == softfloat_round_odd ) {
             sig = (sig & ~roundMask) | (roundMask + 1);
@@ -167,8 +170,7 @@ extFloat80_t
             sig = sig64Extra.v;
             sigExtra = sig64Extra.extra;
             if ( sigExtra ) {
-                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow );
-                softfloat_exceptionFlags |= softfloat_flag_inexact;
+                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
 #ifdef SOFTFLOAT_ROUND_ODD
                 if ( roundingMode == softfloat_round_odd ) {
                     sig |= 1;
@@ -187,6 +189,7 @@ extFloat80_t
                         && sigExtra;
             }
             if ( doIncrement ) {
+                softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
                 ++sig;
                 sig &=
                     ~(uint_fast64_t)
@@ -206,7 +209,8 @@ extFloat80_t
             roundMask = 0;
  overflow:
             softfloat_raiseFlags(
-                softfloat_flag_overflow | softfloat_flag_inexact );
+                softfloat_flag_overflow | softfloat_flag_inexact
+                SOFTFLOAT_STATE_ARG_COMMA );
             if (
                    roundNearEven
                 || (roundingMode == softfloat_round_near_maxMag)
@@ -234,6 +238,7 @@ extFloat80_t
 #endif
     }
     if ( doIncrement ) {
+        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
         ++sig;
         if ( ! sig ) {
             ++exp;

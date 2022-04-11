@@ -43,16 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef SOFTFLOAT_FAST_INT64
 
-void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr )
+void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
-    *zPtr = extF80_sqrt( *aPtr );
+    *zPtr = extF80_sqrt( *aPtr SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
 #else
 
-void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr )
+void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
     const struct extFloat80M *aSPtr;
     struct extFloat80M *zSPtr;
@@ -78,7 +78,7 @@ void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr )
     *------------------------------------------------------------------------*/
     if ( expA == 0x7FFF ) {
         if ( rem64 & UINT64_C( 0x7FFFFFFFFFFFFFFF ) ) {
-            softfloat_propagateNaNExtF80M( aSPtr, 0, zSPtr );
+            softfloat_propagateNaNExtF80M( aSPtr, 0, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
             return;
         }
         if ( signUI64 ) goto invalid;
@@ -161,12 +161,12 @@ void extF80M_sqrt( const extFloat80_t *aPtr, extFloat80_t *zPtr )
         }
     }
     softfloat_roundPackMToExtF80M(
-        0, expZ, extSigZ, extF80_roundingPrecision, zSPtr );
+        0, expZ, extSigZ, extF80_roundingPrecision, zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  invalid:
-    softfloat_invalidExtF80M( zSPtr );
+    softfloat_invalidExtF80M( zSPtr SOFTFLOAT_STATE_ARG_COMMA );
     return;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/

@@ -42,11 +42,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 bool
  softfloat_tryPropagateNaNF128M(
-     const uint32_t *aWPtr, const uint32_t *bWPtr, uint32_t *zWPtr )
+     const uint32_t *aWPtr, const uint32_t *bWPtr, uint32_t *zWPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
     if ( softfloat_isNaNF128M( aWPtr ) || softfloat_isNaNF128M( bWPtr ) ) {
-        softfloat_propagateNaNF128M( aWPtr, bWPtr, zWPtr );
+        softfloat_propagateNaNF128M( aWPtr, bWPtr, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
         return true;
     }
     return false;

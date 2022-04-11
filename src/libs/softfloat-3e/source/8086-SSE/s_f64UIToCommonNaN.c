@@ -45,11 +45,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 | location pointed to by `zPtr'.  If the NaN is a signaling NaN, the invalid
 | exception is raised.
 *----------------------------------------------------------------------------*/
-void softfloat_f64UIToCommonNaN( uint_fast64_t uiA, struct commonNaN *zPtr )
+void softfloat_f64UIToCommonNaN( uint_fast64_t uiA, struct commonNaN *zPtr SOFTFLOAT_STATE_DECL_COMMA )
 {
 
     if ( softfloat_isSigNaNF64UI( uiA ) ) {
-        softfloat_raiseFlags( softfloat_flag_invalid );
+        softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     }
     zPtr->sign = uiA>>63;
     zPtr->v64  = uiA<<12;

@@ -4346,6 +4346,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_
 /*********************************************************************************************************************************
 *   FPU Helpers                                                                                                                  *
 *********************************************************************************************************************************/
+AssertCompileSize(RTFLOAT128U, 16);
+AssertCompileSize(RTFLOAT80U,  10);
+AssertCompileSize(RTFLOAT64U,   8);
+AssertCompileSize(RTFLOAT32U,   4);
+
 #ifdef IEM_WITH_FLOAT128_FOR_FPU
 
 DECLINLINE(int) iemFpuF128SetRounding(uint16_t fFcw)
@@ -4516,7 +4521,17 @@ DECLINLINE(float128_t) iemFpuSoftF128FromFloat80(PCRTFLOAT80U pr80Val)
     extFloat80_t Tmp;
     Tmp.signExp = pr80Val->s2.uSignAndExponent;
     Tmp.signif  = pr80Val->s2.uMantissa;
-    return extF80_to_f128(Tmp);
+    softfloat_state_t Ignored = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    return extF80_to_f128(Tmp, &Ignored);
+}
+
+
+DECLINLINE(extFloat80_t) iemFpuSoftF80FromIprt(PCRTFLOAT80U pr80Val)
+{
+    extFloat80_t Tmp;
+    Tmp.signExp = pr80Val->s2.uSignAndExponent;
+    Tmp.signif  = pr80Val->s2.uMantissa;
+    return Tmp;
 }
 
 
@@ -4592,15 +4607,16 @@ DECLINLINE(uint16_t) iemFpuSoftF128ToFloat80(PRTFLOAT80U pr80Dst, float128_t r12
  *
  * See https://en.wikipedia.org/wiki/Horner%27s_method for details.
  */
-float128_t iemFpuSoftF128HornerPoly(float128_t z, PCRTFLOAT128U g_par128HornerConsts, size_t cHornerConsts, unsigned cPrecision)
+float128_t iemFpuSoftF128HornerPoly(float128_t z, PCRTFLOAT128U g_par128HornerConsts, size_t cHornerConsts,
+                                    unsigned cPrecision, softfloat_state_t *pSoftState)
 {
     Assert(cHornerConsts > 1);
     size_t     i          = cHornerConsts - 1;
     float128_t r128Result = iemFpuSoftF128PrecisionIprt(&g_par128HornerConsts[i], cPrecision);
     while (i-- > 0)
     {
-        r128Result = iemFpuSoftF128Precision(f128_mul(r128Result, z), cPrecision);
-        r128Result = f128_add(r128Result, iemFpuSoftF128PrecisionIprt(&g_par128HornerConsts[i], cPrecision));
+        r128Result = iemFpuSoftF128Precision(f128_mul(r128Result, z, pSoftState), cPrecision);
+        r128Result = f128_add(r128Result, iemFpuSoftF128PrecisionIprt(&g_par128HornerConsts[i], cPrecision), pSoftState);
         r128Result = iemFpuSoftF128Precision(r128Result, cPrecision);
     }
     return r128Result;
@@ -5117,7 +5133,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_ftst_r80,(PCX86FXSTATE pFpuState, uint16_t *pu1
         fFsw |= X86_FSW_C3;
     else if (RTFLOAT80U_IS_NORMAL(pr80Val) || RTFLOAT80U_IS_INF(pr80Val))
         fFsw |= pr80Val->s.fSign ? X86_FSW_C0 : 0;
-    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val))
     {
         fFsw |= pr80Val->s.fSign ? X86_FSW_C0 | X86_FSW_DE : X86_FSW_DE;
         if (!(pFpuState->FCW & X86_FCW_DM))
@@ -5154,7 +5170,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fxam_r80,(PCX86FXSTATE pFpuState, uint16_t *pu1
         fFsw |= X86_FSW_C0;
     else if (RTFLOAT80U_IS_INF(pr80Val))
         fFsw |= X86_FSW_C0 | X86_FSW_C2;
-    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val))
         fFsw |= X86_FSW_C2 | X86_FSW_C3;
     /* whatever else: 0 */
 
@@ -5248,28 +5264,90 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fscale_r80_by_r80,(PCX86FXSTATE pFpuState, PIEM
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsqrt_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+static uint16_t iemAImpl_fsqrt_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw)
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    Assert(!pr80Val->s.fSign);
+
+    softfloat_state_t SoftState =
+    {
+        softfloat_tininess_afterRounding,
+          (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST ? softfloat_round_near_even
+        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP      ? softfloat_round_max
+        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? softfloat_round_min
+        :                                                  softfloat_round_minMag,
+        0,
+          (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_53      ? (uint8_t)64
+        : (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_24      ? (uint8_t)32 : (uint8_t)80
+    };
+
+    extFloat80_t r80XResult = extF80_sqrt(iemFpuSoftF80FromIprt(pr80Val), &SoftState);
+    pr80Result->s2.uSignAndExponent = r80XResult.signExp;
+    pr80Result->s2.uMantissa        = r80XResult.signif;
+    fFsw |= SoftState.exceptionFlags & X86_FSW_XCPT_MASK;
+    fFsw |= (uint16_t)(SoftState.exceptionFlags & softfloat_flag_c1) << (2);
+    if (!(fFsw & fFcw & X86_FSW_XCPT_MASK))
+        fFsw |= X86_FSW_ES | X86_FSW_B;
+
+    return fFsw;
 }
 
 
-AssertCompileSize(RTFLOAT128U, 16);
-AssertCompileSize(RTFLOAT80U,  10);
-AssertCompileSize(RTFLOAT64U,   8);
-AssertCompileSize(RTFLOAT32U,   4);
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsqrt_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_NORMAL(pr80Val) && !pr80Val->s.fSign)
+        fFsw = iemAImpl_fsqrt_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+    else if (   RTFLOAT80U_IS_ZERO(pr80Val)
+             || RTFLOAT80U_IS_QUIET_NAN(pr80Val)
+             || RTFLOAT80U_IS_INDEFINITE(pr80Val)
+             || (RTFLOAT80U_IS_INF(pr80Val) && !pr80Val->s.fSign))
+        pFpuRes->r80Result = *pr80Val;
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val) && !pr80Val->s.fSign) /* Negative denormals only generate #IE! */
+    {
+        fFsw |= X86_FSW_DE;
+        if (fFcw & X86_FCW_DM)
+            fFsw = iemAImpl_fsqrt_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else
+    {
+        if (fFcw & X86_FCW_IM)
+        {
+            if (!RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val))
+                pFpuRes->r80Result = g_r80Indefinite;
+            else
+            {
+                pFpuRes->r80Result = *pr80Val;
+                pFpuRes->r80Result.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+            }
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    pFpuRes->FSW = fFsw;
+}
 
 
 /**
- * @code
+ * @code{.unparsed}
  *          x          x * ln2
  * f(x) = 2   - 1  =  e         - 1
  *
  * @endcode
  *
- * We can approximate e^x by a Taylor/Maclaurin series:
- * @code
+ * We can approximate e^x by a Taylor/Maclaurin series (see
+ * https://en.wikipedia.org/wiki/Taylor_series#Exponential_function):
+ * @code{.unparsed}
  *        n        0     1     2     3     4
  *  inf  x        x     x     x     x     x
  *  SUM ----- =  --- + --- + --- + --- + --- + ...
@@ -5282,7 +5360,7 @@ AssertCompileSize(RTFLOAT32U,   4);
  * @endcode
  *
  * Given z = x * ln2, we get:
- * @code
+ * @code{.unparsed}
  *                      2     3     4           n
  *    z                z     z     z           z
  *  e   - 1  =  z  +  --- + --- + --- + ... + ---
@@ -5290,7 +5368,7 @@ AssertCompileSize(RTFLOAT32U,   4);
  * @endcode
  *
  * Wanting to use Horner's method, we move one z outside and get:
- * @code
+ * @code{.unparsed}
  *                            2     3           (n-1)
  *                     z     z     z           z
  *       =  z ( 1  +  --- + --- + --- + ... + -------  )
@@ -5362,6 +5440,7 @@ static uint16_t iemAImpl_f2xm1_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80
         iemFpuF128RestoreRounding(fOldRounding);
 
 # else
+        softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
         float128_t const x = iemFpuSoftF128FromFloat80(pr80Val);
 
         /* As mentioned above, enforce 68-bit internal mantissa width to better
@@ -5369,11 +5448,13 @@ static uint16_t iemAImpl_f2xm1_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80
         unsigned const cPrecision = 68;
 
         /* first calculate z = x * ln2 */
-        float128_t z = iemFpuSoftF128Precision(f128_mul(x, iemFpuSoftF128PrecisionIprt(&g_r128Ln2, cPrecision)), cPrecision);
+        float128_t z = iemFpuSoftF128Precision(f128_mul(x, iemFpuSoftF128PrecisionIprt(&g_r128Ln2, cPrecision), &SoftState),
+                                               cPrecision);
 
         /* Then do the polynomial evaluation. */
-        float128_t r = iemFpuSoftF128HornerPoly(z, g_ar128F2xm1HornerConsts, RT_ELEMENTS(g_ar128F2xm1HornerConsts), cPrecision);
-        r = f128_mul(z, r);
+        float128_t r = iemFpuSoftF128HornerPoly(z, g_ar128F2xm1HornerConsts, RT_ELEMENTS(g_ar128F2xm1HornerConsts),
+                                                cPrecision, &SoftState);
+        r = f128_mul(z, r, &SoftState);
 
         /* Output the result. */
         fFsw = iemFpuSoftF128ToFloat80(pr80Result, r, fFcw, fFsw);
@@ -5419,7 +5500,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80,(PCX86FXSTATE pFpuState, PIEMFPURESUL
         pFpuRes->r80Result = *pr80Val;
     else if (RTFLOAT80U_IS_INF(pr80Val))
         pFpuRes->r80Result = pr80Val->s.fSign ? g_ar80One[1] : *pr80Val;
-    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val))
     {
         fFsw |= X86_FSW_DE;
         if (fFcw & X86_FCW_DM)

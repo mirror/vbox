@@ -47,6 +47,7 @@ void
      uint32_t *extSigPtr,
      uint_fast8_t roundingPrecision,
      struct extFloat80M *zSPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     uint_fast8_t roundingMode;
@@ -98,7 +99,7 @@ void
             sig = softfloat_shiftRightJam64( sig, 1 - exp );
             roundBits = sig & roundMask;
             if ( roundBits ) {
-                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow );
+                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
                 softfloat_exceptionFlags |= softfloat_flag_inexact;
 #ifdef SOFTFLOAT_ROUND_ODD
                 if ( roundingMode == softfloat_round_odd ) {
@@ -174,7 +175,7 @@ void
                     | extSigPtr[indexWord( 3, 1 )];
             sigExtra = extSigPtr[indexWordLo( 3 )];
             if ( sigExtra ) {
-                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow );
+                if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
                 softfloat_exceptionFlags |= softfloat_flag_inexact;
 #ifdef SOFTFLOAT_ROUND_ODD
                 if ( roundingMode == softfloat_round_odd ) {
@@ -210,7 +211,8 @@ void
             roundMask = 0;
  overflow:
             softfloat_raiseFlags(
-                softfloat_flag_overflow | softfloat_flag_inexact );
+                softfloat_flag_overflow | softfloat_flag_inexact
+                SOFTFLOAT_STATE_ARG_COMMA );
             if (
                    roundNearEven
                 || (roundingMode == softfloat_round_near_maxMag)

@@ -47,6 +47,7 @@ float128_t
      uint_fast64_t uiB64,
      uint_fast64_t uiB0,
      bool signZ
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     int_fast32_t expA;
@@ -143,9 +144,9 @@ float128_t
     sigZExtra = sig128Extra.extra;
  roundAndPack:
     return
-        softfloat_roundPackToF128( signZ, expZ, sigZ.v64, sigZ.v0, sigZExtra );
+        softfloat_roundPackToF128( signZ, expZ, sigZ.v64, sigZ.v0, sigZExtra SOFTFLOAT_STATE_ARG_COMMA );
  propagateNaN:
-    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 );
+    uiZ = softfloat_propagateNaNF128UI( uiA64, uiA0, uiB64, uiB0 SOFTFLOAT_STATE_ARG_COMMA );
  uiZ:
     uZ.ui = uiZ;
     return uZ.f;

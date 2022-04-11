@@ -49,10 +49,11 @@ void
      uint_fast8_t roundingMode,
      bool exact,
      float128_t *zPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
 
-    *zPtr = f128_roundToInt( *aPtr, roundingMode, exact );
+    *zPtr = f128_roundToInt( *aPtr, roundingMode, exact SOFTFLOAT_STATE_ARG_COMMA );
 
 }
 
@@ -64,6 +65,7 @@ void
      uint_fast8_t roundingMode,
      bool exact,
      float128_t *zPtr
+     SOFTFLOAT_STATE_DECL_COMMA
  )
 {
     const uint32_t *aWPtr;
@@ -133,7 +135,7 @@ void
                         || (aWPtr[indexWord( 4, 2 )] | aWPtr[indexWord( 4, 1 )]
                                 | aWPtr[indexWord( 4, 0 )]))
         ) {
-            softfloat_propagateNaNF128M( aWPtr, 0, zWPtr );
+            softfloat_propagateNaNF128M( aWPtr, 0, zWPtr SOFTFLOAT_STATE_ARG_COMMA );
             return;
         }
         zWPtr[indexWord( 4, 2 )] = aWPtr[indexWord( 4, 2 )];

@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 float64_t
  softfloat_mulAddF64(
-     uint_fast64_t uiA, uint_fast64_t uiB, uint_fast64_t uiC, uint_fast8_t op )
+     uint_fast64_t uiA, uint_fast64_t uiB, uint_fast64_t uiC, uint_fast8_t op SOFTFLOAT_STATE_DECL_COMMA )
 {
     bool signA;
     int_fast16_t expA;
@@ -205,11 +205,11 @@ float64_t
         sigZ |= (sig128Z.v0 != 0);
     }
  roundPack:
-    return softfloat_roundPackToF64( signZ, expZ, sigZ );
+    return softfloat_roundPackToF64( signZ, expZ, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN_ABC:
-    uiZ = softfloat_propagateNaNF64UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF64UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
     goto propagateNaN_ZC;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -220,10 +220,10 @@ float64_t
         if ( sigC ) goto propagateNaN_ZC;
         if ( signZ == signC ) goto uiZ;
     }
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF64UI;
  propagateNaN_ZC:
-    uiZ = softfloat_propagateNaNF64UI( uiZ, uiC );
+    uiZ = softfloat_propagateNaNF64UI( uiZ, uiC SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -245,7 +245,7 @@ float64_t
 
 float64_t
  softfloat_mulAddF64(
-     uint_fast64_t uiA, uint_fast64_t uiB, uint_fast64_t uiC, uint_fast8_t op )
+     uint_fast64_t uiA, uint_fast64_t uiB, uint_fast64_t uiC, uint_fast8_t op SOFTFLOAT_STATE_DECL_COMMA )
 {
     bool signA;
     int_fast16_t expA;
@@ -456,11 +456,11 @@ float64_t
  sigZ:
     if ( sig128Z[indexWord( 4, 1 )] || sig128Z[indexWord( 4, 0 )] ) sigZ |= 1;
  roundPack:
-    return softfloat_roundPackToF64( signZ, expZ - 1, sigZ );
+    return softfloat_roundPackToF64( signZ, expZ - 1, sigZ SOFTFLOAT_STATE_ARG_COMMA );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN_ABC:
-    uiZ = softfloat_propagateNaNF64UI( uiA, uiB );
+    uiZ = softfloat_propagateNaNF64UI( uiA, uiB SOFTFLOAT_STATE_ARG_COMMA );
     goto propagateNaN_ZC;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -471,10 +471,10 @@ float64_t
         if ( sigC ) goto propagateNaN_ZC;
         if ( signZ == signC ) goto uiZ;
     }
-    softfloat_raiseFlags( softfloat_flag_invalid );
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA );
     uiZ = defaultNaNF64UI;
  propagateNaN_ZC:
-    uiZ = softfloat_propagateNaNF64UI( uiZ, uiC );
+    uiZ = softfloat_propagateNaNF64UI( uiZ, uiC SOFTFLOAT_STATE_ARG_COMMA );
     goto uiZ;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
