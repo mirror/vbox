@@ -138,9 +138,6 @@ private:
     /** Saves existing adapter data from cache. */
     bool saveAdapterData(int iSlot);
 
-    /** Holds the tab-widget instance. */
-    QITabWidget *m_pTabWidget;
-
     /** Holds the bridged adapter list. */
     QStringList  m_bridgedAdapterList;
     /** Holds the internal network list. */
@@ -166,6 +163,9 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineNetwork *m_pCache;
+
+    /** Holds the tab-widget instance. */
+    QITabWidget *m_pTabWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsNetwork_h */

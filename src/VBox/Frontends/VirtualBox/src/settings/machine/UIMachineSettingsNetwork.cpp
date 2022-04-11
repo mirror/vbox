@@ -688,8 +688,8 @@ void UIMachineSettingsNetwork::prepareConnections()
 *********************************************************************************************************************************/
 
 UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
-    : m_pTabWidget(0)
-    , m_pCache(0)
+    : m_pCache(0)
+    , m_pTabWidget(0)
 {
     prepare();
 }
@@ -769,7 +769,6 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
                                                                  forwardingData.at(3).toUInt(),
                                                                  forwardingData.at(4),
                                                                  forwardingData.at(5).toUInt());
-
                 const QString &strForwardingKey = forwardingData.at(0);
                 /* Cache old forwarding data: */
                 m_pCache->child(iSlot).child(strForwardingKey).cacheInitialData(oldForwardingData);
@@ -799,6 +798,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
     {
         /* Get adapter page: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
 
         /* Load old adapter data from cache: */
         pTab->getAdapterDataFromCache(m_pCache->child(iSlot));
@@ -827,6 +827,7 @@ void UIMachineSettingsNetworkPage::putToCache()
     {
         /* Get adapter page: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
 
         /* Gather new adapter data: */
         pTab->putAdapterDataToCache(m_pCache->child(iSlot));
@@ -857,7 +858,7 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
     for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(i));
-        AssertMsg(pTab, ("Can't get adapter tab!\n"));
+        AssertPtrReturn(pTab, false);
         if (!pTab->validate(messages))
             fValid = false;
     }
@@ -868,17 +869,16 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
 
 void UIMachineSettingsNetworkPage::retranslateUi()
 {
-    for (int i = 0; i < m_pTabWidget->count(); ++i)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(i));
-        Assert(pTab);
-        m_pTabWidget->setTabText(i, pTab->tabTitle());
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
+        m_pTabWidget->setTabText(iSlot, pTab->tabTitle());
     }
 }
 
 void UIMachineSettingsNetworkPage::polishPage()
 {
-    /* Get the count of network adapter tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         m_pTabWidget->setTabEnabled(iSlot,
@@ -887,6 +887,7 @@ void UIMachineSettingsNetworkPage::polishPage()
                                      m_pCache->childCount() > iSlot &&
                                      m_pCache->child(iSlot).base().m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
         pTab->polishTab();
     }
 }
@@ -895,24 +896,14 @@ void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
 {
     /* Determine the sender: */
     UIMachineSettingsNetwork *pSender = qobject_cast<UIMachineSettingsNetwork*>(sender());
-    AssertMsg(pSender, ("This slot should be called only through signal<->slot mechanism from one of UIMachineSettingsNetwork tabs!\n"));
+    AssertPtrReturnVoid(pSender);
 
     /* Determine sender's attachment type: */
-    const KNetworkAttachmentType enmSenderAttachmentType = pSender->attachmentType();
-    switch (enmSenderAttachmentType)
+    switch (pSender->attachmentType())
     {
-        case KNetworkAttachmentType_Internal:
-        {
-            refreshInternalNetworkList();
-            break;
-        }
-        case KNetworkAttachmentType_Generic:
-        {
-            refreshGenericDriverList();
-            break;
-        }
-        default:
-            break;
+        case KNetworkAttachmentType_Internal: refreshInternalNetworkList(); break;
+        case KNetworkAttachmentType_Generic: refreshGenericDriverList(); break;
+        default: break;
     }
 
     /* Update all the tabs except the sender: */
@@ -920,7 +911,7 @@ void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
     {
         /* Get the iterated tab: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
-        AssertMsg(pTab, ("All the tabs of m_pTabWidget should be of the UIMachineSettingsNetwork type!\n"));
+        AssertPtrReturnVoid(pTab);
 
         /* Update all the tabs (except sender): */
         if (pTab != pSender)
@@ -934,6 +925,7 @@ void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpa
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
         pTab->setAdvancedButtonState(fExpanded);
     }
 }
@@ -946,11 +938,11 @@ void UIMachineSettingsNetworkPage::prepare()
 
     /* Create main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    AssertPtrReturnVoid(pLayoutMain);
+    if (pLayoutMain)
     {
         /* Creating tab-widget: */
         m_pTabWidget = new QITabWidget;
-        AssertPtrReturnVoid(m_pTabWidget);
+        if (m_pTabWidget)
         {
             /* How many adapters to display: */
             /** @todo r=klaus this needs to be done based on the actual chipset type of the VM,
@@ -964,7 +956,7 @@ void UIMachineSettingsNetworkPage::prepare()
             {
                 /* Create adapter tab: */
                 UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
-                AssertPtrReturnVoid(pTab);
+                if (pTab)
                 {
                     /* Configure tab: */
                     connect(pTab, &UIMachineSettingsNetwork::sigNotifyAdvancedButtonStateChange,
@@ -1003,15 +995,13 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
         m_internalNetworkListSaved = UINetworkAttachmentEditor::internalNetworks();
     m_internalNetworkList << m_internalNetworkListSaved;
     /* Append internal network list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iTab));
-        if (pTab)
-        {
-            const QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
-            if (!strName.isEmpty() && !m_internalNetworkList.contains(strName))
-                m_internalNetworkList << strName;
-        }
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
+        const QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
+        if (!strName.isEmpty() && !m_internalNetworkList.contains(strName))
+            m_internalNetworkList << strName;
     }
 }
 
@@ -1046,15 +1036,13 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
         m_genericDriverListSaved = UINetworkAttachmentEditor::genericDrivers();
     m_genericDriverList << m_genericDriverListSaved;
     /* Append generic driver list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iTab));
-        if (pTab)
-        {
-            const QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);
-            if (!strName.isEmpty() && !m_genericDriverList.contains(strName))
-                m_genericDriverList << strName;
-        }
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
+        const QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);
+        if (!strName.isEmpty() && !m_genericDriverList.contains(strName))
+            m_genericDriverList << strName;
     }
 }
 
