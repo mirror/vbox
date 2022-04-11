@@ -5271,10 +5271,10 @@ static uint16_t iemAImpl_fsqrt_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80
     softfloat_state_t SoftState =
     {
         softfloat_tininess_afterRounding,
-          (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST ? softfloat_round_near_even
-        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP      ? softfloat_round_max
-        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? softfloat_round_min
-        :                                                  softfloat_round_minMag,
+          (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST ? (uint8_t)softfloat_round_near_even
+        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP      ? (uint8_t)softfloat_round_max
+        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? (uint8_t)softfloat_round_min
+        :                                                  (uint8_t)softfloat_round_minMag,
         0,
           (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_53      ? (uint8_t)64
         : (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_24      ? (uint8_t)32 : (uint8_t)80
