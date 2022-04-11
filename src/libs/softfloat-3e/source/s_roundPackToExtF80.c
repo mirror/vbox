@@ -121,12 +121,14 @@ extFloat80_t
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+    { /* VBox*/
+    uint64_t const uOldSig = sig; /* VBox */
     if ( roundBits ) {
         softfloat_exceptionFlags |= softfloat_flag_inexact;
-        if ( roundIncrement ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
 #ifdef SOFTFLOAT_ROUND_ODD
         if ( roundingMode == softfloat_round_odd ) {
             sig = (sig & ~roundMask) | (roundMask + 1);
+            if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
             goto packReturn;
         }
 #endif
@@ -135,13 +137,16 @@ extFloat80_t
     if ( sig < roundIncrement ) {
         ++exp;
         sig = UINT64_C( 0x8000000000000000 );
+        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
     }
     roundIncrement = roundMask + 1;
     if ( roundNearEven && (roundBits<<1 == roundIncrement) ) {
         roundMask |= roundIncrement;
     }
     sig &= ~roundMask;
+    if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
     goto packReturn;
+    } /* VBox */
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  precision80:
@@ -238,16 +243,18 @@ extFloat80_t
 #endif
     }
     if ( doIncrement ) {
-        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+        uint64_t const uOldSig = sig; /* VBox */
         ++sig;
         if ( ! sig ) {
             ++exp;
             sig = UINT64_C( 0x8000000000000000 );
+            softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
         } else {
             sig &=
                 ~(uint_fast64_t)
                      (! (sigExtra & UINT64_C( 0x7FFFFFFFFFFFFFFF ))
                           & roundNearEven);
+            if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
         }
     }
     /*------------------------------------------------------------------------
