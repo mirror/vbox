@@ -2912,6 +2912,7 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
+	common/math/RTUInt128MulByU64Ex.asm \
 	common/string/RTStrEnd.asm
 RuntimeR0_SOURCES.arm32 += \
 	common/string/RTStrEnd.cpp
