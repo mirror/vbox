@@ -1234,7 +1234,7 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
         rc = VDOpen(pVDisk,
                     pszFormat,
                     CSTR(pCurMedium->pImagePath),
-                    pCurMedium->fWriteable,
+                    pCurMedium->fWriteable ? 0 : VD_OPEN_FLAGS_READONLY,
                     g_pVdIfs);
 
         if (RT_FAILURE(rc))
