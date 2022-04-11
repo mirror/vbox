@@ -4459,6 +4459,27 @@ DECLINLINE(uint16_t) iemFpuF128ToFloat80(PRTFLOAT80U pr80Dst, _Float128 rd128Val
 
 #else  /* !IEM_WITH_FLOAT128_FOR_FPU - SoftFloat */
 
+/** Initializer for the SoftFloat state structure. */
+# define IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(a_fFcw) \
+    { \
+        softfloat_tininess_afterRounding, \
+          ((a_fFcw) & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST ? (uint8_t)softfloat_round_near_even \
+        : ((a_fFcw) & X86_FCW_RC_MASK) == X86_FCW_RC_UP      ? (uint8_t)softfloat_round_max \
+        : ((a_fFcw) & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? (uint8_t)softfloat_round_min \
+        :                                                      (uint8_t)softfloat_round_minMag, \
+        0, \
+          ((a_fFcw) & X86_FCW_PC_MASK) == X86_FCW_PC_53      ? (uint8_t)64 \
+        : ((a_fFcw) & X86_FCW_PC_MASK) == X86_FCW_PC_24      ? (uint8_t)32 : (uint8_t)80 \
+    }
+
+/** Returns updated FSW from a SoftFloat state and exception mask (FCW). */
+# define IEM_SOFTFLOAT_STATE_TO_FSW(a_fFsw, a_pSoftState, a_fFcw) \
+    (  (a_fFsw) \
+     | (uint16_t)((a_pSoftState)->exceptionFlags & softfloat_flag_c1) << (2) \
+     | ((a_pSoftState)->exceptionFlags & X86_FSW_XCPT_MASK) \
+     | (  ((a_pSoftState)->exceptionFlags & X86_FSW_XCPT_MASK) & (~(a_fFcw) & X86_FSW_XCPT_MASK) \
+        ? X86_FSW_ES | X86_FSW_B : 0) )
+
 
 DECLINLINE(float128_t) iemFpuSoftF128Precision(float128_t r128, unsigned cBits, uint16_t fFcw = X86_FCW_RC_NEAREST)
 {
@@ -4526,12 +4547,32 @@ DECLINLINE(float128_t) iemFpuSoftF128FromFloat80(PCRTFLOAT80U pr80Val)
 }
 
 
+/**
+ * Converts from the packed IPRT 80-bit floating point (RTFLOAT80U) format to
+ * the SoftFloat extended 80-bit floating point format (extFloat80_t).
+ *
+ * This is only a structure format conversion, nothing else.
+ */
 DECLINLINE(extFloat80_t) iemFpuSoftF80FromIprt(PCRTFLOAT80U pr80Val)
 {
     extFloat80_t Tmp;
     Tmp.signExp = pr80Val->s2.uSignAndExponent;
     Tmp.signif  = pr80Val->s2.uMantissa;
     return Tmp;
+}
+
+
+/**
+ * Converts from SoftFloat extended 80-bit floating point format (extFloat80_t)
+ * to the packed IPRT 80-bit floating point (RTFLOAT80U) format.
+ *
+ * This is only a structure format conversion, nothing else.
+ */
+DECLINLINE(PRTFLOAT80U) iemFpuSoftF80ToIprt(PRTFLOAT80U pr80Dst, extFloat80_t const r80XSrc)
+{
+    pr80Dst->s2.uSignAndExponent = r80XSrc.signExp;
+    pr80Dst->s2.uMantissa        = r80XSrc.signif;
+    return pr80Dst;
 }
 
 
@@ -5264,31 +5305,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fscale_r80_by_r80,(PCX86FXSTATE pFpuState, PIEM
 }
 
 
+/**
+ * Helper for iemAImpl_fsqrt_r80, called both on normal and denormal numbers.
+ */
 static uint16_t iemAImpl_fsqrt_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw)
 {
     Assert(!pr80Val->s.fSign);
-
-    softfloat_state_t SoftState =
-    {
-        softfloat_tininess_afterRounding,
-          (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST ? (uint8_t)softfloat_round_near_even
-        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP      ? (uint8_t)softfloat_round_max
-        : (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? (uint8_t)softfloat_round_min
-        :                                                  (uint8_t)softfloat_round_minMag,
-        0,
-          (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_53      ? (uint8_t)64
-        : (fFcw & X86_FCW_PC_MASK) == X86_FCW_PC_24      ? (uint8_t)32 : (uint8_t)80
-    };
-
-    extFloat80_t r80XResult = extF80_sqrt(iemFpuSoftF80FromIprt(pr80Val), &SoftState);
-    pr80Result->s2.uSignAndExponent = r80XResult.signExp;
-    pr80Result->s2.uMantissa        = r80XResult.signif;
-    fFsw |= SoftState.exceptionFlags & X86_FSW_XCPT_MASK;
-    fFsw |= (uint16_t)(SoftState.exceptionFlags & softfloat_flag_c1) << (2);
-    if (!(fFsw & fFcw & X86_FSW_XCPT_MASK))
-        fFsw |= X86_FSW_ES | X86_FSW_B;
-
-    return fFsw;
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(fFcw);
+    iemFpuSoftF80ToIprt(pr80Result, extF80_sqrt(iemFpuSoftF80FromIprt(pr80Val), &SoftState));
+    return IEM_SOFTFLOAT_STATE_TO_FSW(fFsw, &SoftState, fFcw);
 }
 
 
