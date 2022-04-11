@@ -5289,11 +5289,61 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint1
 *   x87 FPU Other Operations                                                                                                     *
 *********************************************************************************************************************************/
 
+/**
+ * Helper for iemAImpl_frndint_r80, called both on normal and denormal numbers.
+ */
+static uint16_t iemAImpl_frndint_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(fFcw);
+    iemFpuSoftF80ToIprt(pr80Result, extF80_roundToInt(iemFpuSoftF80FromIprt(pr80Val), SoftState.roundingMode,
+                                                      true /*exact / generate #PE */, &SoftState));
+    return IEM_SOFTFLOAT_STATE_TO_FSW(fFsw, &SoftState, fFcw);
+}
+
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_frndint_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_NORMAL(pr80Val))
+        fFsw = iemAImpl_frndint_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+    else if (   RTFLOAT80U_IS_ZERO(pr80Val)
+             || RTFLOAT80U_IS_QUIET_NAN(pr80Val)
+             || RTFLOAT80U_IS_INDEFINITE(pr80Val)
+             || RTFLOAT80U_IS_INF(pr80Val))
+        pFpuRes->r80Result = *pr80Val;
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val))
+    {
+        fFsw |= X86_FSW_DE;
+        if (fFcw & X86_FCW_DM)
+            fFsw = iemAImpl_frndint_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else
+    {
+        if (fFcw & X86_FCW_IM)
+        {
+            if (!RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val))
+                pFpuRes->r80Result = g_r80Indefinite;
+            else
+            {
+                pFpuRes->r80Result = *pr80Val;
+                pFpuRes->r80Result.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+            }
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    pFpuRes->FSW = fFsw;
 }
 
 
