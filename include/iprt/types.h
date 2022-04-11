@@ -1206,6 +1206,8 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
     ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa <  RT_BIT_64(63) && (a_pr80)->s.uMantissa != 0)
 # define RTFLOAT80U_IS_PSEUDO_DENORMAL(a_pr80) \
     ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa >= RT_BIT_64(63))
+# define RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(a_pr80) \
+    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa != 0)
 # define RTFLOAT80U_IS_PSEUDO_INF(a_pr80) \
     ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == 0)
 # define RTFLOAT80U_IS_PSEUDO_NAN(a_pr80) \
