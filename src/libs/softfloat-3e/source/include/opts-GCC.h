@@ -60,18 +60,21 @@ INLINE uint_fast8_t softfloat_countLeadingZeros64( uint64_t a )
 
 #ifdef SOFTFLOAT_INTRINSIC_INT128
 
+#include <iprt/cdefs.h> /* VBox: shut up pedantic warnings */
+RT_GCC_EXTENSION typedef unsigned __int128  softfloat_int128_t;
+
 INLINE struct uint128 softfloat_mul64ByShifted32To128( uint64_t a, uint32_t b )
 {
-    union { unsigned __int128 ui; struct uint128 s; } uZ;
-    uZ.ui = (unsigned __int128) a * ((uint_fast64_t) b<<32);
+    union { softfloat_int128_t ui; struct uint128 s; } uZ;
+    uZ.ui = (softfloat_int128_t) a * ((uint_fast64_t) b<<32);
     return uZ.s;
 }
 #define softfloat_mul64ByShifted32To128 softfloat_mul64ByShifted32To128
 
 INLINE struct uint128 softfloat_mul64To128( uint64_t a, uint64_t b )
 {
-    union { unsigned __int128 ui; struct uint128 s; } uZ;
-    uZ.ui = (unsigned __int128) a * b;
+    union { softfloat_int128_t ui; struct uint128 s; } uZ;
+    uZ.ui = (softfloat_int128_t) a * b;
     return uZ.s;
 }
 #define softfloat_mul64To128 softfloat_mul64To128
@@ -79,8 +82,8 @@ INLINE struct uint128 softfloat_mul64To128( uint64_t a, uint64_t b )
 INLINE
 struct uint128 softfloat_mul128By32( uint64_t a64, uint64_t a0, uint32_t b )
 {
-    union { unsigned __int128 ui; struct uint128 s; } uZ;
-    uZ.ui = ((unsigned __int128) a64<<64 | a0) * b;
+    union { softfloat_int128_t ui; struct uint128 s; } uZ;
+    uZ.ui = ((softfloat_int128_t) a64<<64 | a0) * b;
     return uZ.s;
 }
 #define softfloat_mul128By32 softfloat_mul128By32
@@ -90,12 +93,12 @@ void
  softfloat_mul128To256M(
      uint64_t a64, uint64_t a0, uint64_t b64, uint64_t b0, uint64_t *zPtr )
 {
-    unsigned __int128 z0, mid1, mid, z128;
-    z0 = (unsigned __int128) a0 * b0;
-    mid1 = (unsigned __int128) a64 * b0;
-    mid = mid1 + (unsigned __int128) a0 * b64;
-    z128 = (unsigned __int128) a64 * b64;
-    z128 += (unsigned __int128) (mid < mid1)<<64 | mid>>64;
+    softfloat_int128_t z0, mid1, mid, z128;
+    z0 = (softfloat_int128_t) a0 * b0;
+    mid1 = (softfloat_int128_t) a64 * b0;
+    mid = mid1 + (softfloat_int128_t) a0 * b64;
+    z128 = (softfloat_int128_t) a64 * b64;
+    z128 += (softfloat_int128_t) (mid < mid1)<<64 | mid>>64;
     mid <<= 64;
     z0 += mid;
     z128 += (z0 < mid);

@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 
 #ifndef softfloat_approxRecip32_1
+uint32_t softfloat_approxRecip32_1( uint32_t a ); /* VBox: Missing prototype */
 
 extern const uint16_t softfloat_approxRecip_1k0s[16];
 extern const uint16_t softfloat_approxRecip_1k1s[16];

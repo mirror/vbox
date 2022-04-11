@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "primitiveTypes.h"
 
 #ifndef softfloat_add256M
+# include "primitives.h" /* VBox: Missing prototype */
 
 void
  softfloat_add256M(

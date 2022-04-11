@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "primitiveTypes.h"
 
 #ifndef softfloat_shortShiftRightJam128
+# undef INLINE_LEVEL     /* VBox: Missing prototype */
+# include "primitives.h" /* VBox: Missing prototype */
 
 struct uint128
  softfloat_shortShiftRightJam128(

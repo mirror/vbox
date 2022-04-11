@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 
 #ifndef softfloat_shiftRightJam32
+# undef INLINE_LEVEL     /* VBox: Missing prototype */
+# include "primitives.h" /* VBox: Missing prototype */
 
 uint32_t softfloat_shiftRightJam32( uint32_t a, uint_fast16_t dist )
 {

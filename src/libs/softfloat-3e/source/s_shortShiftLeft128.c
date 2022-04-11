@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "primitiveTypes.h"
 
 #ifndef softfloat_shortShiftLeft128
+# undef INLINE_LEVEL     /* VBox: Missing prototype */
+# include "primitives.h" /* VBox: Missing prototype */
 
 struct uint128
  softfloat_shortShiftLeft128( uint64_t a64, uint64_t a0, uint_fast8_t dist )

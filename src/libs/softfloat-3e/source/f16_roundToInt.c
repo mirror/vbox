@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "specialize.h"
 #include "softfloat.h"
+#include <iprt/cdefs.h> /* VBox: for RT_FALL_THROUGH */
 
 float16_t f16_roundToInt( float16_t a, uint_fast8_t roundingMode, bool exact )
 {
@@ -63,6 +64,7 @@ float16_t f16_roundToInt( float16_t a, uint_fast8_t roundingMode, bool exact )
         switch ( roundingMode ) {
          case softfloat_round_near_even:
             if ( !fracF16UI( uiA ) ) break;
+            RT_FALL_THROUGH(); /* VBox */
          case softfloat_round_near_maxMag:
             if ( exp == 0xE ) uiZ |= packToF16UI( 0, 0xF, 0 );
             break;

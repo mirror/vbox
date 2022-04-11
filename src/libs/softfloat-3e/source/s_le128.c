@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 
 #ifndef softfloat_le128
+# undef INLINE_LEVEL     /* VBox: Missing prototype */
+# include "primitives.h" /* VBox: Missing prototype */
 
 bool softfloat_le128( uint64_t a64, uint64_t a0, uint64_t b64, uint64_t b0 )
 {
