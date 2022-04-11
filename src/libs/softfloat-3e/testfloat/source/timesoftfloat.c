@@ -4794,7 +4794,7 @@ void
  )
 {
     int functionAttribs, exactCode;
-    uint_fast8_t roundingMode, tininessMode;
+    uint_fast8_t roundingMode = softfloat_round_near_even, tininessMode;
 
     functionNamePtr = functionInfos[functionCode].namePtr;
     functionAttribs = functionInfos[functionCode].attribs;

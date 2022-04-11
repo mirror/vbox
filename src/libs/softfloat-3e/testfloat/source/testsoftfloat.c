@@ -793,7 +793,7 @@ void
     int functionAttribs;
     uint_fast8_t roundingPrecision;
     int roundingCode;
-    uint_fast8_t roundingMode;
+    uint_fast8_t roundingMode = 0;
     int exactCode;
     bool exact;
     int tininessCode;

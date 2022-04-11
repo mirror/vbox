@@ -1353,7 +1353,7 @@ void
     bool standardFunctionHasFixedRounding;
     int roundingCode;
     bool exact;
-    uint_fast8_t roundingPrecision, roundingMode;
+    uint_fast8_t roundingPrecision, roundingMode = 0;
 
     functionCode = standardFunctionInfoPtr->functionCode;
     functionAttribs = functionInfos[functionCode].attribs;
