@@ -46,4 +46,3 @@
 
 #endif /* !IPRT_INCLUDED_nocrt_stdbool_h */
 
-
