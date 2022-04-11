@@ -631,7 +631,7 @@ static PyObject *UnpackSingleArray(Py_nsISupports *parent, void *array_ptr,
 #if PY_MAJOR_VERSION <= 2
 		return PyString_FromStringAndSize( (char *)array_ptr, sequence_size );
 #else
-		return PyUnicode_FromStringAndSize( (char *)array_ptr, sequence_size );
+		return PyBytes_FromStringAndSize( (char *)array_ptr, sequence_size );
 #endif
 
 	PRUint32 array_element_size = GetArrayElementSize(array_type);
