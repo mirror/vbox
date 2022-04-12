@@ -3528,7 +3528,7 @@ static void FpuBinaryEflR80Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(FPU_UNARY_R80_T, FPU_UNARY_R80_TEST_T, PFNIEMAIMPLFPUR80UNARY);
 
-enum { kUnary_Accurate = 0, kUnary_Rounding_F2xm1 };
+enum { kUnary_Accurate = 0, kUnary_Accurate_Trigonometry /*probably not accurate, but need impl to know*/, kUnary_Rounding_F2xm1 };
 static const FPU_UNARY_R80_T g_aFpuUnaryR80[] =
 {
     ENTRY_EX(      fabs_r80,     kUnary_Accurate),
@@ -3537,10 +3537,10 @@ static const FPU_UNARY_R80_T g_aFpuUnaryR80[] =
     ENTRY_INTEL_EX(f2xm1_r80, 0, kUnary_Rounding_F2xm1),
     ENTRY_EX(      fsqrt_r80,    kUnary_Accurate),
     ENTRY_EX(      frndint_r80,  kUnary_Accurate),
-    ENTRY_AMD_EX(  fsin_r80, 0,  kUnary_Accurate),  // value & C1 differences for pseudo denormals and others (e.g. -1m0x2b1e5683cbca5725^-3485)
-    ENTRY_INTEL_EX(fsin_r80, 0,  kUnary_Accurate),
-    ENTRY_AMD_EX(  fcos_r80, 0,  kUnary_Accurate),  // value & C1 differences
-    ENTRY_INTEL_EX(fcos_r80, 0,  kUnary_Accurate),
+    ENTRY_AMD_EX(  fsin_r80, 0,  kUnary_Accurate_Trigonometry),  // value & C1 differences for pseudo denormals and others (e.g. -1m0x2b1e5683cbca5725^-3485)
+    ENTRY_INTEL_EX(fsin_r80, 0,  kUnary_Accurate_Trigonometry),
+    ENTRY_AMD_EX(  fcos_r80, 0,  kUnary_Accurate_Trigonometry),  // value & C1 differences
+    ENTRY_INTEL_EX(fcos_r80, 0,  kUnary_Accurate_Trigonometry),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -3559,20 +3559,16 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
 {
     static RTFLOAT80U const s_aSpecials[] =
     {
-#if 1
         RTFLOAT80U_INIT_C(0, 0x8000000000000000, RTFLOAT80U_EXP_BIAS - 1), /*  0.5 (for f2xm1) */
         RTFLOAT80U_INIT_C(1, 0x8000000000000000, RTFLOAT80U_EXP_BIAS - 1), /* -0.5 (for f2xm1) */
         RTFLOAT80U_INIT_C(0, 0x8000000000000000, RTFLOAT80U_EXP_BIAS),     /*  1.0 (for f2xm1) */
         RTFLOAT80U_INIT_C(1, 0x8000000000000000, RTFLOAT80U_EXP_BIAS),     /* -1.0 (for f2xm1) */
-#endif
         RTFLOAT80U_INIT_C(0, 0x8000000000000000, 0), /* +1.0^-16382 */
         RTFLOAT80U_INIT_C(1, 0x8000000000000000, 0), /* -1.0^-16382 */
-#if 1
         RTFLOAT80U_INIT_C(0, 0xc000000000000000, 0), /* +1.1^-16382 */
         RTFLOAT80U_INIT_C(1, 0xc000000000000000, 0), /* -1.1^-16382 */
         RTFLOAT80U_INIT_C(0, 0xc000100000000000, 0), /* +1.1xxx1^-16382 */
         RTFLOAT80U_INIT_C(1, 0xc000100000000000, 0), /* -1.1xxx1^-16382 */
-#endif
     };
     X86FXSTATE State;
     RT_ZERO(State);
@@ -3589,7 +3585,8 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
         }
 
         GenerateArrayStart(pOutFn, g_aFpuUnaryR80[iFn].pszName, "FPU_UNARY_R80_TEST_T");
-        uint32_t cNormalInputs = 0;
+        uint32_t iTestOutput        = 0;
+        uint32_t cNormalInputs      = 0;
         uint32_t cTargetRangeInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -3598,8 +3595,9 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
             {
                 if (g_aFpuUnaryR80[iFn].uExtra == kUnary_Rounding_F2xm1)
                 {
-                    unsigned uTargetExp = RTFLOAT80U_EXP_BIAS;
-                    unsigned cTargetExp = 69;
+                    unsigned uTargetExp = g_aFpuUnaryR80[iFn].uExtra == kUnary_Rounding_F2xm1
+                                        ? RTFLOAT80U_EXP_BIAS /* 2^0..2^-69 */ : RTFLOAT80U_EXP_BIAS + 63 + 1 /* 2^64..2^-64 */;
+                    unsigned cTargetExp = g_aFpuUnaryR80[iFn].uExtra == kUnary_Rounding_F2xm1 ? 69 : 63*2 + 2;
                     if (InVal.s.uExponent <= uTargetExp && InVal.s.uExponent >= uTargetExp - cTargetExp)
                         cTargetRangeInputs++;
                     else if (cTargetRangeInputs < cMinNormals / 2 && iTest + cMinNormals / 2 >= cTests && iTest < cTests)
@@ -3621,7 +3619,6 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
             State.FSW = RandFsw();
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
-            {
                 for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
                 {
                     State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
@@ -3630,16 +3627,16 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
                               | X86_FCW_MASK_ALL;
                     IEMFPURESULT ResM = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                     pfn(&State, &ResM, &InVal);
-                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/m */\n",
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/m = #%u */\n",
                                  State.FCW | fFcwExtra, State.FSW, ResM.FSW, GenFormatR80(&InVal),
-                                 GenFormatR80(&ResM.r80Result), iTest, iRounding, iPrecision);
+                                 GenFormatR80(&ResM.r80Result), iTest, iRounding, iPrecision, iTestOutput++);
 
                     State.FCW = State.FCW & ~X86_FCW_MASK_ALL;
                     IEMFPURESULT ResU = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                     pfn(&State, &ResU, &InVal);
-                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/u */\n",
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/u = #%u */\n",
                                  State.FCW | fFcwExtra, State.FSW, ResU.FSW, GenFormatR80(&InVal),
-                                 GenFormatR80(&ResU.r80Result), iTest, iRounding, iPrecision);
+                                 GenFormatR80(&ResU.r80Result), iTest, iRounding, iPrecision, iTestOutput++);
 
                     uint16_t fXcpt = (ResM.FSW | ResU.FSW) & X86_FSW_XCPT_MASK & ~X86_FSW_SF;
                     if (fXcpt)
@@ -3647,18 +3644,18 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
                         State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
                         IEMFPURESULT Res1 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                         pfn(&State, &Res1, &InVal);
-                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/%#x */\n",
+                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/%#x = #%u */\n",
                                      State.FCW | fFcwExtra, State.FSW, Res1.FSW, GenFormatR80(&InVal),
-                                     GenFormatR80(&Res1.r80Result), iTest, iRounding, iPrecision, fXcpt);
+                                     GenFormatR80(&Res1.r80Result), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
                         if (((Res1.FSW & X86_FSW_XCPT_MASK) & fXcpt) != (Res1.FSW & X86_FSW_XCPT_MASK))
                         {
                             fXcpt |= Res1.FSW & X86_FSW_XCPT_MASK;
                             State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
                             IEMFPURESULT Res2 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                             pfn(&State, &Res2, &InVal);
-                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/%#x[!] */\n",
+                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/%#x[!] = #%u */\n",
                                          State.FCW | fFcwExtra, State.FSW, Res2.FSW, GenFormatR80(&InVal),
-                                         GenFormatR80(&Res2.r80Result), iTest, iRounding, iPrecision, fXcpt);
+                                         GenFormatR80(&Res2.r80Result), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
                         }
                         if (!RT_IS_POWER_OF_TWO(fXcpt))
                             for (uint16_t fUnmasked = 1; fUnmasked <= X86_FCW_PM; fUnmasked <<= 1)
@@ -3667,13 +3664,12 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
                                     State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | (fXcpt & ~fUnmasked);
                                     IEMFPURESULT Res3 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                                     pfn(&State, &Res3, &InVal);
-                                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/u%#x */\n",
+                                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u/u%#x = #%u */\n",
                                                  State.FCW | fFcwExtra, State.FSW, Res3.FSW, GenFormatR80(&InVal),
-                                                 GenFormatR80(&Res3.r80Result), iTest, iRounding, iPrecision, fUnmasked);
+                                                 GenFormatR80(&Res3.r80Result), iTest, iRounding, iPrecision, fUnmasked, iTestOutput++);
                                 }
                     }
                 }
-            }
         }
         GenerateArrayEnd(pOutFn, g_aFpuUnaryR80[iFn].pszName);
     }
@@ -3905,9 +3901,9 @@ TYPEDEF_SUBTEST_TYPE(FPU_UNARY_TWO_R80_T, FPU_UNARY_TWO_R80_TEST_T, PFNIEMAIMPLF
 
 static const FPU_UNARY_TWO_R80_T g_aFpuUnaryTwoR80[] =
 {
+    ENTRY(fxtract_r80_r80),
     ENTRY_AMD(  fptan_r80_r80, 0),   // rounding differences
     ENTRY_INTEL(fptan_r80_r80, 0),
-    ENTRY(fxtract_r80_r80),
     ENTRY_AMD(  fsincos_r80_r80, 0), // C1 differences & value differences (e.g. -1m0x235cf2f580244a27^-1696)
     ENTRY_INTEL(fsincos_r80_r80, 0),
 };
@@ -3935,40 +3931,90 @@ static void FpuUnaryTwoR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
         }
 
         GenerateArrayStart(pOutFn, g_aFpuUnaryTwoR80[iFn].pszName, "FPU_UNARY_TWO_R80_TEST_T");
-        uint32_t cNormalInputs = 0;
+        uint32_t iTestOutput        = 0;
+        uint32_t cNormalInputs      = 0;
+        uint32_t cTargetRangeInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests];
+            RTFLOAT80U InVal = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests];
             if (RTFLOAT80U_IS_NORMAL(&InVal))
+            {
+                if (iFn != 0)
+                {
+                    unsigned uTargetExp = RTFLOAT80U_EXP_BIAS + 63 + 1 /* 2^64..2^-64 */;
+                    unsigned cTargetExp = g_aFpuUnaryR80[iFn].uExtra == kUnary_Rounding_F2xm1 ? 69 : 63*2 + 2;
+                    if (InVal.s.uExponent <= uTargetExp && InVal.s.uExponent >= uTargetExp - cTargetExp)
+                        cTargetRangeInputs++;
+                    else if (cTargetRangeInputs < cMinNormals / 2 && iTest + cMinNormals / 2 >= cTests && iTest < cTests)
+                    {
+                        InVal.s.uExponent = RTRandU32Ex(uTargetExp - cTargetExp, uTargetExp);
+                        cTargetRangeInputs++;
+                    }
+                }
                 cNormalInputs++;
+            }
             else if (cNormalInputs < cMinNormals && iTest + cMinNormals >= cTests && iTest < cTests)
             {
                 iTest -= 1;
                 continue;
             }
 
+            uint16_t const fFcwExtra = 0; /* for rounding error indication */
             uint16_t const fFcw = RandFcw();
             State.FSW = RandFsw();
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
-            {
                 for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
                 {
-                    for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+                    State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
+                              | (iRounding  << X86_FCW_RC_SHIFT)
+                              | (iPrecision << X86_FCW_PC_SHIFT)
+                              | X86_FCW_MASK_ALL;
+                    IEMFPURESULTTWO ResM = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
+                    pfn(&State, &ResM, &InVal);
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/m = #%u */\n",
+                                 State.FCW | fFcwExtra, State.FSW, ResM.FSW, GenFormatR80(&InVal), GenFormatR80(&ResM.r80Result1),
+                                 GenFormatR80(&ResM.r80Result2), iTest, iRounding, iPrecision, iTestOutput++);
+
+                    State.FCW = State.FCW & ~X86_FCW_MASK_ALL;
+                    IEMFPURESULTTWO ResU = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
+                    pfn(&State, &ResU, &InVal);
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/u = #%u */\n",
+                                 State.FCW | fFcwExtra, State.FSW, ResU.FSW, GenFormatR80(&InVal), GenFormatR80(&ResU.r80Result1),
+                                 GenFormatR80(&ResU.r80Result2), iTest, iRounding, iPrecision, iTestOutput++);
+
+                    uint16_t fXcpt = (ResM.FSW | ResU.FSW) & X86_FSW_XCPT_MASK & ~X86_FSW_SF;
+                    if (fXcpt)
                     {
-                        IEMFPURESULTTWO Res = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
-                        State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
-                                  | (iRounding  << X86_FCW_RC_SHIFT)
-                                  | (iPrecision << X86_FCW_PC_SHIFT)
-                                  | iMask;
-                        pfn(&State, &Res, &InVal);
-                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n",
-                                     State.FCW, State.FSW, Res.FSW, GenFormatR80(&InVal),
-                                     GenFormatR80(&Res.r80Result1), GenFormatR80(&Res.r80Result2),
-                                     iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
+                        State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
+                        IEMFPURESULTTWO Res1 = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
+                        pfn(&State, &Res1, &InVal);
+                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%#x = #%u */\n",
+                                     State.FCW | fFcwExtra, State.FSW, Res1.FSW, GenFormatR80(&InVal), GenFormatR80(&Res1.r80Result1),
+                                     GenFormatR80(&Res1.r80Result2), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
+                        if (((Res1.FSW & X86_FSW_XCPT_MASK) & fXcpt) != (Res1.FSW & X86_FSW_XCPT_MASK))
+                        {
+                            fXcpt |= Res1.FSW & X86_FSW_XCPT_MASK;
+                            State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
+                            IEMFPURESULTTWO Res2 = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
+                            pfn(&State, &Res2, &InVal);
+                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%#x[!] = #%u */\n",
+                                         State.FCW | fFcwExtra, State.FSW, Res2.FSW, GenFormatR80(&InVal), GenFormatR80(&Res2.r80Result1),
+                                         GenFormatR80(&Res2.r80Result2), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
+                        }
+                        if (!RT_IS_POWER_OF_TWO(fXcpt))
+                            for (uint16_t fUnmasked = 1; fUnmasked <= X86_FCW_PM; fUnmasked <<= 1)
+                                if (fUnmasked & fXcpt)
+                                {
+                                    State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | (fXcpt & ~fUnmasked);
+                                    IEMFPURESULTTWO Res3 = { RTFLOAT80U_INIT(0, 0, 0), 0, RTFLOAT80U_INIT(0, 0, 0) };
+                                    pfn(&State, &Res3, &InVal);
+                                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/u%#x = #%u */\n",
+                                                 State.FCW | fFcwExtra, State.FSW, Res3.FSW, GenFormatR80(&InVal), GenFormatR80(&Res3.r80Result1),
+                                                 GenFormatR80(&Res3.r80Result2), iTest, iRounding, iPrecision, fUnmasked, iTestOutput++);
+                                }
                     }
                 }
-            }
         }
         GenerateArrayEnd(pOutFn, g_aFpuUnaryTwoR80[iFn].pszName);
     }
