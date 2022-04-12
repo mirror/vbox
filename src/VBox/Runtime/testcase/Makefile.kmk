@@ -935,7 +935,7 @@ ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDD
 #
 # Filter out testcases which don't yet work when statically linked as Guest Additions R3 programs.
 #
-# We currently do this for running those via the Validation Kit on old / ancient guests. 
+# We currently do this for running those via the Validation Kit on old / ancient guests.
 # Note that we not necessarily run all unit tests available (white list).
 #
 # See @bugref:10195.
