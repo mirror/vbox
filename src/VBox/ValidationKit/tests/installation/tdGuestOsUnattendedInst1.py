@@ -69,6 +69,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     kfIdeIrqDelay           = 0x1000;
     kfUbuntuNewAmdBug       = 0x2000;
     kfNoWin81Paravirt       = 0x4000;
+    kfAvoidNetwork          = 0x8000;
     ## @}
 
     ## kfUbuntuAvx2Crash: Extra data that disables AVX2.
@@ -114,6 +115,13 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         try:    oIUnattended.validationKitIsoPath   = oTestDrv.sVBoxValidationKitIso;
         except: return reporter.errorXcpt();
         oTestDrv.processPendingEvents();
+
+        #
+        # Avoid using network during unattended install (stalls Debian installs).
+        #
+        if self.fInstVmFlags & UnattendedVm.kfAvoidNetwork:
+            try:    oIUnattended.avoidUpdatesOverNetwork = True;
+            except: return reporter.errorXcpt();
 
         #
         # Install GAs?
@@ -517,8 +525,10 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #             UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-9.3-64',     'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-netinst.iso'),    # >=6GiB?
-            UnattendedVm(oSet, 'tst-debian-9.4-64',     'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-netinst.iso'),    # >=6GiB?
+            UnattendedVm(oSet, 'tst-debian-9.3-64',     'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',      # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork),
+            UnattendedVm(oSet, 'tst-debian-9.4-64',     'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',      # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork),
             #
             # OS/2.
             #
