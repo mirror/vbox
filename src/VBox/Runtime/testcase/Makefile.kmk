@@ -79,6 +79,7 @@ PROGRAMS += \
 	tstHandleTable \
 	tstRTHeapOffset \
 	tstRTHeapSimple \
+ 	tstRTInlineAsm \
 	tstIprtList \
 	tstIprtMiniString \
 	tstLdr \
@@ -88,6 +89,7 @@ PROGRAMS += \
 	tstRTList \
 	tstRTLockValidator \
 	tstLog \
+	tstRTMath \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
@@ -153,7 +155,6 @@ PROGRAMS += \
 	tstRTUri \
 	tstVector \
 	tstRTVfs \
-	tstRTZip \
 	tstRTJson \
 	tstRTShMem
 
@@ -168,7 +169,9 @@ PROGRAMS.win += \
 PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
-	tstRTBitOperationsPIC3
+	tstRTBitOperationsPIC3 \
+	tstRTInlineAsmPIC \
+	tstRTInlineAsmPIC3
 PROGRAMS.solaris += \
 	tstRTCoreDump
 PROGRAMS.darwin += \
@@ -179,15 +182,6 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTHttp-1 \
  	tstRTCRest-1 \
  	tstRTS3
-endif
-ifndef VBOX_ONLY_VALIDATIONKIT
- # Stuff which does not build yet with the Validation Kit unit tests enabled. Skip those for now.
- PROGRAMS += \
- 	tstRTInlineAsm \
- 	tstRTMath
- PROGRAMS.linux += \
- 	tstRTInlineAsmPIC \
- 	tstRTInlineAsmPIC3
 endif
 
 if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
@@ -937,6 +931,49 @@ tstRTDarwinMachKernel_SOURCES  = \
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
 ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+
+#
+# Filter out testcases which don't yet work when statically linked as Guest Additions R3 programs.
+#
+# We currently do this for running those via the Validation Kit on old / ancient guests. 
+# Note that we not necessarily run all unit tests available (white list).
+#
+# See @bugref:10195.
+#
+if defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
+ VBOX_VALIDATIONKIT_UNITTESTS_SKIP=\
+	tstIprtList \
+	tstIprtMiniString \
+	tstLdr \
+	tstLdrLoad \
+ 	tstRTBigNum \
+    tstRTCRest-1 \
+	tstRTCrPkix-1 \
+	tstRTCrX509-1 \
+    tstRTS3 \
+    tstRTHttp-1 \
+	tstRTLdrVerifyPeImage \
+	tstRTMemSafer \
+	tstRTMp-1 \
+	tstRTNtPath-1 \
+	tstRTSemEvent \
+	tstRTSemEventMulti \
+	tstRTSystemQueryDmi \
+	tstRTSystemQueryFirmware \
+	tstRTSystemQueryOsInfo \
+	tstRTTime \
+	tstRTTimerLR \
+	tstTime-2 \
+	tstTime-3 \
+	tstTime-4 \
+	tstTimer \
+	tstRTZip
+ PROGRAMS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(PROGRAMS))
+
+ VBOX_VALIDATIONKIT_UNITTESTS_SKIP.win=\
+    ntGetTimerResolution
+ PROGRAMS.win := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP.win),$(PROGRAMS.win))
+endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 endif # VBOX_WITH_TESTCASES
 
