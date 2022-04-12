@@ -153,38 +153,44 @@ class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about tab content changed. */
+    void sigTabUpdated();
+
+    /** Notifies about advanced button state change to @a fExpanded. */
+    void sigNotifyAdvancedButtonStateChange(bool fExpanded);
+
 public:
 
-    /* Constructor: */
+    /** Constructs tab passing @a pParent to the base-class. */
     UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
 
-    /* Load / Save API: */
+    /** Loads adapter data from @a adapterCache. */
     void getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
+    /** Saves adapter data to @a adapterCache. */
     void putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
 
-    /* Navigation stuff: */
-    QWidget *setOrderAfter(QWidget *pAfter);
+    /** Configures tab order according to passed @a pWidget. */
+    QWidget *setOrderAfter(QWidget *pWidget);
 
-    /* Other public stuff: */
+    /** Returns tab title. */
     QString tabTitle() const;
+    /** Returns tab attachment type. */
     KNetworkAttachmentType attachmentType() const;
+    /** Returne tab alternative name for @a enmType specified. */
     QString alternativeName(KNetworkAttachmentType enmType = KNetworkAttachmentType_Null) const;
+
+    /** Performs tab polishing. */
     void polishTab();
+    /** Reloads tab alternatives. */
     void reloadAlternatives();
 
     /** Defines whether the advanced button is @a fExpanded. */
-    void setAdvancedButtonState(bool fExpanded);
-
-signals:
-
-    /* Signal to notify listeners about tab content changed: */
-    void sigTabUpdated();
-
-    /** Notifies about the advanced button state change to @a fExpanded. */
-    void sigNotifyAdvancedButtonStateChange(bool fExpanded);
+    void setAdvancedButtonExpanded(bool fExpanded);
 
 protected:
 
@@ -193,9 +199,11 @@ protected:
 
 private slots:
 
-    /* Different handlers: */
+    /** Handles adapter activity change. */
     void sltHandleAdapterActivityChange();
+    /** Handles adapter attachment type change. */
     void sltHandleAttachmentTypeChange();
+    /** Handles adapter alternative name change. */
     void sltHandleAlternativeNameChange();
 
 private:
@@ -207,11 +215,11 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
-    /* Parent page: */
+    /** Holds parent page reference. */
     UIMachineSettingsNetworkPage *m_pParent;
 
-    /* Other variables: */
-    int m_iSlot;
+    /** Holds tab slot number. */
+    int  m_iSlot;
 
     /** @name Widgets
      * @{ */
@@ -475,9 +483,9 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
+QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder(pAfter, m_pCheckBoxAdapter);
+    setTabOrder(pWidget, m_pCheckBoxAdapter);
     setTabOrder(m_pCheckBoxAdapter, m_pEditorAttachmentType);
     setTabOrder(m_pEditorAttachmentType, m_pEditorNetworkFeatures);
     return m_pEditorNetworkFeatures;
@@ -533,7 +541,7 @@ void UIMachineSettingsNetwork::reloadAlternatives()
 #endif
 }
 
-void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
+void UIMachineSettingsNetwork::setAdvancedButtonExpanded(bool fExpanded)
 {
     m_pEditorNetworkFeatures->setAdvancedButtonExpanded(fExpanded);
 }
@@ -678,8 +686,8 @@ void UIMachineSettingsNetwork::prepareConnections()
             this, &UIMachineSettingsNetwork::sigNotifyAdvancedButtonStateChange);
     connect(m_pEditorNetworkFeatures, &UIMachineNetworkFeaturesEditor::sigMACAddressChanged,
             m_pParent, &UIMachineSettingsNetworkPage::revalidate);
-    connect(this, &UIMachineSettingsNetwork::sigTabUpdated, m_pParent,
-            &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
+    connect(this, &UIMachineSettingsNetwork::sigTabUpdated,
+            m_pParent, &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
 }
 
 
@@ -926,7 +934,7 @@ void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpa
     {
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         AssertPtrReturnVoid(pTab);
-        pTab->setAdvancedButtonState(fExpanded);
+        pTab->setAdvancedButtonExpanded(fExpanded);
     }
 }
 
