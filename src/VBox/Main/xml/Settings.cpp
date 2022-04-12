@@ -2312,11 +2312,11 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         if (!pelmGlobalChild->getAttributeValue("proxyMode", systemProperties.uProxyMode))
                             fCopyProxySettingsFromExtraData = true;
                         pelmGlobalChild->getAttributeValue("proxyUrl", systemProperties.strProxyUrl);
-                        pelmGlobalChild->getAttributeValue("VBoxUpdateEnabled", systemProperties.fVBoxUpdateEnabled);
-                        pelmGlobalChild->getAttributeValue("VBoxUpdateCount", systemProperties.uVBoxUpdateCount);
-                        pelmGlobalChild->getAttributeValue("VBoxUpdateFrequency", systemProperties.uVBoxUpdateFrequency);
-                        pelmGlobalChild->getAttributeValue("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
-                        pelmGlobalChild->getAttributeValue("VBoxUpdateLastCheckDate",
+                        pelmGlobalChild->getAttributeValue("updateEnabled", systemProperties.fVBoxUpdateEnabled);
+                        pelmGlobalChild->getAttributeValue("updateCount", systemProperties.uVBoxUpdateCount);
+                        pelmGlobalChild->getAttributeValue("updateFrequency", systemProperties.uVBoxUpdateFrequency);
+                        pelmGlobalChild->getAttributeValue("updateTarget", systemProperties.uVBoxUpdateTarget);
+                        pelmGlobalChild->getAttributeValue("updateLastCheckDate",
                             systemProperties.strVBoxUpdateLastCheckDate);
                         pelmGlobalChild->getAttributeValue("LanguageId", systemProperties.strLanguageId);
                     }
@@ -2564,12 +2564,12 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("proxyUrl", systemProperties.strProxyUrl);
     pelmSysProps->setAttribute("proxyMode", systemProperties.uProxyMode);
     pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
-    pelmSysProps->setAttribute("VBoxUpdateEnabled", systemProperties.fVBoxUpdateEnabled);
-    pelmSysProps->setAttribute("VBoxUpdateCount", systemProperties.uVBoxUpdateCount);
-    pelmSysProps->setAttribute("VBoxUpdateFrequency", systemProperties.uVBoxUpdateFrequency);
-    pelmSysProps->setAttribute("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
+    pelmSysProps->setAttribute("updateEnabled", systemProperties.fVBoxUpdateEnabled);
+    pelmSysProps->setAttribute("updateCount", systemProperties.uVBoxUpdateCount);
+    pelmSysProps->setAttribute("updateFrequency", systemProperties.uVBoxUpdateFrequency);
+    pelmSysProps->setAttribute("updateTarget", systemProperties.uVBoxUpdateTarget);
     if (systemProperties.strVBoxUpdateLastCheckDate.length())
-        pelmSysProps->setAttribute("VBoxUpdateLastCheckDate", systemProperties.strVBoxUpdateLastCheckDate);
+        pelmSysProps->setAttribute("updateLastCheckDate", systemProperties.strVBoxUpdateLastCheckDate);
     if (systemProperties.strLanguageId.isNotEmpty())
         pelmSysProps->setAttribute("LanguageId", systemProperties.strLanguageId);
 
