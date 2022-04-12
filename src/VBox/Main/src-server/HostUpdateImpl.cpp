@@ -289,7 +289,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     RTTIMESPEC TimeNow;
     char szTimeStr[RTTIME_STR_LEN];
     RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&TimeNow)), szTimeStr, sizeof(szTimeStr));
-    LogRelFunc(("VBox updating UpdateDate with TimeString = %s\n", szTimeStr));
+    LogRelFunc(("VBox updating VBoxUpdateLastCheckDate with TimeString = %s\n", szTimeStr));
     rc = ptrSystemProperties->COMSETTER(VBoxUpdateLastCheckDate)(Bstr(szTimeStr).raw());
     AssertComRCReturn(rc, rc);
 
