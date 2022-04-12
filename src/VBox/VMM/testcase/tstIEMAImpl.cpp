@@ -763,7 +763,7 @@ static bool IsTestEnabled(const char *pszName)
     /* Process excludes first: */
     uint32_t i = g_cExcludeTestPatterns;
     while (i-- > 0)
-        if (RTStrSimplePatternMatch(g_apszExcludeTestPatterns[i], pszName))
+        if (RTStrSimplePatternMultiMatch(g_apszExcludeTestPatterns[i], RTSTR_MAX, pszName, RTSTR_MAX, NULL))
             return false;
 
     /* If no include patterns, everything is included: */
@@ -773,7 +773,7 @@ static bool IsTestEnabled(const char *pszName)
 
     /* Otherwise only tests in the include patters gets tested: */
     while (i-- > 0)
-        if (RTStrSimplePatternMatch(g_apszIncludeTestPatterns[i], pszName))
+        if (RTStrSimplePatternMultiMatch(g_apszIncludeTestPatterns[i], RTSTR_MAX, pszName, RTSTR_MAX, NULL))
             return true;
 
     return false;
