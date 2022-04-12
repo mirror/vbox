@@ -449,6 +449,7 @@ uint8_t const g_afParity[256] =
 extern const RTFLOAT80U  g_ar80Zero[];
 extern const RTFLOAT80U  g_ar80One[];
 extern const RTFLOAT80U  g_r80Indefinite;
+extern const RTFLOAT80U  g_r80Infinity;
 extern const RTFLOAT128U g_r128Ln2;
 extern const RTUINT128U  g_u128Ln2Mantissa;
 extern const RTUINT128U  g_u128Ln2MantissaIntel;
@@ -463,6 +464,9 @@ RTFLOAT80U const g_ar80One[] =
 
 /** Indefinite (negative). */
 RTFLOAT80U const g_r80Indefinite = RTFLOAT80U_INIT_INDEFINITE(1);
+
+/** Infinities (indexed by fSign). */
+RTFLOAT80U const g_ar80Infinity[] = { RTFLOAT80U_INIT_INF(0), RTFLOAT80U_INIT_INF(1) };
 
 #if 0
 /** 128-bit floating point constant: 2.0 */
@@ -5637,8 +5641,88 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fchs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fxtract_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    {
+        softfloat_state_t Ignored = SOFTFLOAT_STATE_INIT_DEFAULTS();
+        iemFpuSoftF80ToIprt(&pFpuResTwo->r80Result1, i32_to_extF80((int32_t)pr80Val->s.uExponent - RTFLOAT80U_EXP_BIAS, &Ignored));
+
+        pFpuResTwo->r80Result2.s.fSign     = pr80Val->s.fSign;
+        pFpuResTwo->r80Result2.s.uExponent = RTFLOAT80U_EXP_BIAS;
+        pFpuResTwo->r80Result2.s.uMantissa = pr80Val->s.uMantissa;
+    }
+    else if (RTFLOAT80U_IS_ZERO(pr80Val))
+    {
+        fFsw |= X86_FSW_ZE;
+        if (fFcw & X86_FCW_ZM)
+        {
+            pFpuResTwo->r80Result1 = g_ar80Infinity[1];
+            pFpuResTwo->r80Result2 = *pr80Val;
+        }
+        else
+        {
+            pFpuResTwo->r80Result2 = *pr80Val;
+            fFsw = X86_FSW_ES | X86_FSW_B | (fFsw & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);
+        }
+    }
+    else if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val))
+    {
+        fFsw |= X86_FSW_DE;
+        if (fFcw & X86_FCW_DM)
+        {
+            pFpuResTwo->r80Result2.s.fSign     = pr80Val->s.fSign;
+            pFpuResTwo->r80Result2.s.uExponent = RTFLOAT80U_EXP_BIAS;
+            pFpuResTwo->r80Result2.s.uMantissa = pr80Val->s.uMantissa;
+            int32_t iExponent = -16382;
+            while (!(pFpuResTwo->r80Result2.s.uMantissa & RT_BIT_64(63)))
+            {
+                pFpuResTwo->r80Result2.s.uMantissa <<= 1;
+                iExponent--;
+            }
+
+            softfloat_state_t Ignored = SOFTFLOAT_STATE_INIT_DEFAULTS();
+            iemFpuSoftF80ToIprt(&pFpuResTwo->r80Result1, i32_to_extF80(iExponent, &Ignored));
+        }
+        else
+        {
+            pFpuResTwo->r80Result2 = *pr80Val;
+            fFsw = X86_FSW_ES | X86_FSW_B | (fFsw & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);
+        }
+    }
+    else if (   RTFLOAT80U_IS_QUIET_NAN(pr80Val)
+             || RTFLOAT80U_IS_INDEFINITE(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = *pr80Val;
+        pFpuResTwo->r80Result2 = *pr80Val;
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = g_ar80Infinity[0];
+        pFpuResTwo->r80Result2 = *pr80Val;
+    }
+    else
+    {
+        if (fFcw & X86_FCW_IM)
+        {
+            if (!RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val))
+                pFpuResTwo->r80Result1 = g_r80Indefinite;
+            else
+            {
+                pFpuResTwo->r80Result1 = *pr80Val;
+                pFpuResTwo->r80Result1.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+            }
+            pFpuResTwo->r80Result2 = pFpuResTwo->r80Result1;
+        }
+        else
+        {
+            pFpuResTwo->r80Result2 = *pr80Val;
+            fFsw = X86_FSW_ES | X86_FSW_B | (fFsw & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    pFpuResTwo->FSW = fFsw;
 }
 
 
