@@ -2256,19 +2256,19 @@ HRESULT SystemProperties::setVBoxUpdateEnabled(BOOL aVBoxUpdateEnabled)
     return rc;
 }
 
-HRESULT SystemProperties::getVBoxUpdateCount(ULONG *VBoxUpdateCount)
+HRESULT SystemProperties::getVBoxUpdateCount(ULONG *aVBoxUpdateCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *VBoxUpdateCount = m->uVBoxUpdateCount;
+    *aVBoxUpdateCount = m->uVBoxUpdateCount;
 
     return S_OK;
 }
 
-HRESULT SystemProperties::setVBoxUpdateCount(ULONG VBoxUpdateCount)
+HRESULT SystemProperties::setVBoxUpdateCount(ULONG aVBoxUpdateCount)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->uVBoxUpdateCount = VBoxUpdateCount;
+    m->uVBoxUpdateCount = aVBoxUpdateCount;
     alock.release();
 
     // VirtualBox::i_saveSettings() needs vbox write lock
