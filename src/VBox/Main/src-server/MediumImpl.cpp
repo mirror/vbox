@@ -4282,7 +4282,7 @@ bool Medium::i_addRegistryAll(const Guid &id)
         llMediaTodo.pop_front();
 
         AutoCaller mediumCaller(pMedium);
-        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+        if (FAILED(mediumCaller.rc())) continue;
 
         fAdd |= pMedium->i_addRegistryNoCallerCheck(id);
 
@@ -4350,7 +4350,7 @@ bool Medium::i_removeRegistryAll(const Guid &id)
         llMediaTodo.pop_front();
 
         AutoCaller mediumCaller(pMedium);
-        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+        if (FAILED(mediumCaller.rc())) continue;
 
         fRemove |= pMedium->i_removeRegistry(id);
 
