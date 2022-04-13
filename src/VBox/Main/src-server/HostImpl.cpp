@@ -41,7 +41,6 @@
 
 #include "HostNetworkInterfaceImpl.h"
 #include "HostVideoInputDeviceImpl.h"
-#include "MachineImpl.h"
 #include "AutoCaller.h"
 #include "LoggingNew.h"
 #include "Performance.h"
