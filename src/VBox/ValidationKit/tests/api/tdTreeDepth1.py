@@ -113,7 +113,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             else:
                 oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
             oVM = None
-            
+
             # If there is no base image (expected) then there are no leftover
             # child images either. Can be changed later once the todos above
             # and below are resolved.
