@@ -139,7 +139,7 @@ template<> QIcon toIcon(const KMachineState &state)
         case KMachineState_Saved:                  return UIIconPool::iconSet(":/state_saved_16px.png");
         case KMachineState_Teleported:             return UIIconPool::iconSet(":/state_saved_16px.png");
         case KMachineState_Aborted:                return UIIconPool::iconSet(":/state_aborted_16px.png");
-        case KMachineState_AbortedSaved:           return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KMachineState_AbortedSaved:           return UIIconPool::iconSet(":/state_aborted_saved_16px.png");
         case KMachineState_Running:                return UIIconPool::iconSet(":/state_running_16px.png");
         case KMachineState_Paused:                 return UIIconPool::iconSet(":/state_paused_16px.png");
         case KMachineState_Stuck:                  return UIIconPool::iconSet(":/state_stuck_16px.png");

@@ -341,6 +341,7 @@
         <file alias="sound_32px.png">images/sound_32px.png</file>
         <file alias="sound_warning_16px.png">images/sound_warning_16px.png</file>
         <file alias="state_aborted_16px.png">images/state_aborted_16px.png</file>
+        <file alias="state_aborted_saved_16px.png">images/state_aborted_saved_16px.png</file>
         <file alias="state_discarding_16px.png">images/state_discarding_16px.png</file>
         <file alias="state_loading_16px.png">images/state_loading_16px.png</file>
         <file alias="state_paused_16px.png">images/state_paused_16px.png</file>

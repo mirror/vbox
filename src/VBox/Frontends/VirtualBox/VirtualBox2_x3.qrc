@@ -344,6 +344,7 @@
         <file alias="sound_32px_x3.png">images/x3/sound_32px_x3.png</file>
         <file alias="sound_warning_16px_x3.png">images/x3/sound_warning_16px_x3.png</file>
         <file alias="state_aborted_16px_x3.png">images/x3/state_aborted_16px_x3.png</file>
+        <file alias="state_aborted_saved_16px_x3.png">images/x3/state_aborted_saved_16px_x3.png</file>
         <file alias="state_discarding_16px_x3.png">images/x3/state_discarding_16px_x3.png</file>
         <file alias="state_loading_16px_x3.png">images/x3/state_loading_16px_x3.png</file>
         <file alias="state_paused_16px_x3.png">images/x3/state_paused_16px_x3.png</file>
