@@ -79,7 +79,6 @@ PROGRAMS += \
 	tstHandleTable \
 	tstRTHeapOffset \
 	tstRTHeapSimple \
- 	tstRTInlineAsm \
 	tstIprtList \
 	tstIprtMiniString \
 	tstLdr \
@@ -170,9 +169,7 @@ PROGRAMS.win += \
 PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
-	tstRTBitOperationsPIC3 \
-	tstRTInlineAsmPIC \
-	tstRTInlineAsmPIC3
+	tstRTBitOperationsPIC3
 PROGRAMS.solaris += \
 	tstRTCoreDump
 PROGRAMS.darwin += \
@@ -183,6 +180,14 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTHttp-1 \
  	tstRTCRest-1 \
  	tstRTS3
+endif
+ifndef VBOX_ONLY_VALIDATIONKIT
+ # Stuff which does not build yet with the Validation Kit build box. Skip those for now.
+ PROGRAMS += \
+	tstRTInlineAsm
+ PROGRAMS.linux += \
+	tstRTInlineAsmPIC \
+	tstRTInlineAsmPIC3
 endif
 
 if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
