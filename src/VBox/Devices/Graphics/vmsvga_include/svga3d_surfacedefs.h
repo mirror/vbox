@@ -38,8 +38,26 @@
 #define INCLUDE_ALLOW_MODULE
 #include "includeCheck.h"
 
+#ifndef VBOX
 #include <linux/kernel.h>
 #include <drm/vmwgfx_drm.h>
+#else
+#include "svga_types.h"
+typedef uint8_t u8;
+typedef uint32_t u32;
+struct drm_vmw_size
+{
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    uint32_t pad64;
+};
+#define U32_MAX UINT32_MAX
+#define ARRAY_SIZE RT_ELEMENTS
+#define __KERNEL_DIV_ROUND_UP(aDividend, aDivisor) (((aDividend) + (aDivisor) - 1) / (aDivisor))
+#define max_t(aType, aValue1, aValue2) ( (aType)(aValue1) >= (aType)(aValue2) ? (aType)(aValue1) : (aType)(aValue2) )
+#define min_t(aType, aValue1, aValue2) ( (aType)(aValue1) <= (aType)(aValue2) ? (aType)(aValue1) : (aType)(aValue2) )
+#endif
 
 #include "svga3d_reg.h"
 
@@ -1428,6 +1446,7 @@ svga3dsurface_is_screen_target_format(SVGA3dSurfaceFormat format)
 	return svga3dsurface_is_dx_screen_target_format(format);
 }
 
+#ifndef VBOX
 /**
  * struct svga3dsurface_mip - Mimpmap level information
  * @bytes: Bytes required in the backing store of this mipmap level.
@@ -1663,5 +1682,6 @@ svga3dsurface_max_loc(const struct svga3dsurface_cache *cache,
 	loc->y = size->height;
 	loc->z = size->depth;
 }
+#endif /* !VBOX */
 
 #endif /* _SVGA3D_SURFACEDEFS_H_ */
