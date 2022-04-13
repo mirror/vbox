@@ -63,6 +63,11 @@
                      to "hardcoded", then no automatic C++ code should be generated. This is done
                      for webservice APIs that have no counterpart in COM and are hard-coded in
                      the webservice server, such as IManagedObjectReference and ISessionManager. -->
+    <!ATTLIST interface rest (managed|suppress) "suppress">
+                <!-- rest specifies how this interface is mapped to the
+                     web services API (RESTful). One of the following must be specified:
+                        managed: objects of this type are represented
+                        suppress: the default value, skip this interface entirely -->
     <!ATTLIST interface autogen CDATA #IMPLIED>
                 <!-- autogen names the style of code auto-generation for this
                      interface (currently only VBoxEvent). -->
@@ -96,10 +101,11 @@
     <!ATTLIST attribute internal (yes|no) "no">
     <!ATTLIST attribute safearray (yes|no) "no">
     <!ATTLIST attribute wsmap (managed|suppress) "managed">
+    <!ATTLIST attribute rest (uuid|suppress|default) "default">
     <!ATTLIST attribute wrap-hint-server CDATA #IMPLIED>
     <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
     <!ATTLIST attribute dtracename CDATA #IMPLIED>
-  <!ELEMENT method (desc?,param*,result*)>                    <!-- done -->
+  <!ELEMENT method (rest?,desc?,param*,result*)>                    <!-- done -->
     <!ATTLIST method name CDATA #REQUIRED>
     <!ATTLIST method const CDATA "no">
     <!ATTLIST method internal (yes|no) "no">
@@ -107,6 +113,10 @@
     <!ATTLIST method wrap-hint-server CDATA #IMPLIED>
     <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
     <!ATTLIST method dtracename CDATA #IMPLIED>
+  <!ELEMENT rest ANY>                                         <!-- done -->
+    <!ATTLIST rest name CDATA #IMPLIED>
+    <!ATTLIST rest request (get|put|post|delete|patch) "get">
+    <!ATTLIST rest path CDATA #REQUIRED>
   <!ELEMENT param (desc?)>                                    <!-- done -->
     <!ATTLIST param name CDATA #REQUIRED>
     <!ATTLIST param type CDATA #REQUIRED>

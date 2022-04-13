@@ -1764,6 +1764,7 @@
     uuid="c1bcc6d5-7966-481d-ab0b-d0ed73e28135"
     supportsErrorInfo="no"
     wsmap="managed"
+    rest="managed"
     >
     <desc>
       The IVirtualBoxErrorInfo interface represents extended error information.
@@ -1869,6 +1870,7 @@
   <interface name="INATNetwork" extends="$unknown"
     uuid="4fdebbf0-be30-49c0-b315-e9749e1bded1"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="8"
     >
 
@@ -1922,6 +1924,7 @@
     </attribute>
 
     <method name="addLocalMapping">
+      <rest request="post" path="/natnetworks/{networkid}/configuration/"/>
       <desc>
       </desc>
       <param name="hostid" type="wstring" dir="in"/>
@@ -1939,6 +1942,7 @@
       </desc>
     </attribute>
     <method name="addPortForwardRule">
+      <rest request="post" path="/natnetworks/{networkid}/configuration/"/>
       <param name="isIpv6" type="boolean" dir="in"/>
       <param name="ruleName" type="wstring" dir="in"/>
       <param name="proto" type="NATProtocol" dir="in">
@@ -1962,11 +1966,16 @@
         </param>
     </method>
     <method name="removePortForwardRule">
+      <rest request="post" path="/natnetworks/{networkid}/configuration/"/>
       <param name="iSipv6" type="boolean" dir="in"/>
       <param name="ruleName" type="wstring" dir="in"/>
     </method>
-    <method name="start"/>
-    <method name="stop"/>
+    <method name="start">
+      <rest request="post" path="/natnetworks/{networkid}/actions/"/>
+    </method>
+    <method name="stop">
+      <rest request="post" path="/natnetworks/{networkid}/actions/"/>
+    </method>
   </interface>
 
 
@@ -1978,6 +1987,7 @@
   <interface name="ICloudNetwork" extends="$unknown"
     uuid="d8e3496e-735f-4fde-8a54-427d49409b5f"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="12"
     >
 
@@ -2013,6 +2023,7 @@
   <interface name="IHostOnlyNetwork" extends="$unknown"
     uuid="6eb5de7d-9a67-4fde-83be-f768084d03b5"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
 
@@ -2178,6 +2189,7 @@
     name="IDHCPServer" extends="$unknown"
     uuid="cadef0a2-a1a9-4ac2-8e80-c049af69dac8"
     wsmap="managed"
+    rest="managed"
     reservedMethods="0" reservedAttributes="3"
     >
     <desc>
@@ -2257,6 +2269,7 @@
          NATNetwork.
     -->
     <method name="setConfiguration">
+      <rest request="post" path="/dhcpservers/{serverid}/configuration/"/>
       <desc>
         configures the server
         <result name="E_INVALIDARG">
@@ -2286,6 +2299,7 @@
     </method>
 
     <method name="start">
+      <rest request="post" path="/dhcpservers/{serverid}/actions/"/>
       <desc>
         Starts DHCP server process.
         <result name="E_FAIL">
@@ -2305,6 +2319,7 @@
     </method>
 
     <method name="stop">
+      <rest request="post" path="/dhcpservers/{serverid}/actions/"/>
       <desc>
         Stops DHCP server process.
         <result name="E_FAIL">
@@ -2314,6 +2329,7 @@
     </method>
 
     <method name="restart">
+      <rest request="post" path="/dhcpservers/{serverid}/actions/"/>
       <desc>
         Restart running DHCP server process.
         <result name="E_FAIL">
@@ -2353,6 +2369,7 @@
     </method>
 
     <method name="getConfig">
+      <rest request="get" path="/dhcpservers/{serverid}/configuration/"/>
       <desc>
         Gets or adds a configuration.
       </desc>
@@ -2393,6 +2410,7 @@
     name="IDHCPConfig" extends="$unknown"
     uuid="00f4a8dc-0002-4b81-0077-1dcb004571ba"
     wsmap="managed"
+    rest="managed"
     reservedMethods="8" reservedAttributes="16"
     >
     <desc>
@@ -2506,6 +2524,7 @@
     name="IDHCPGlobalConfig" extends="IDHCPConfig"
     uuid="46735de7-f4c4-4020-a185-0d2881bcfa8b"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="4"
     >
     <desc>
@@ -2518,6 +2537,7 @@
     name="IDHCPGroupCondition" extends="$unknown"
     uuid="5ca9e537-5a1d-43f1-6f27-6a0db298a9a8"
     wsmap="managed"
+    rest="managed"
     reservedMethods="3" reservedAttributes="3"
     >
     <attribute name="inclusive" type="boolean">
@@ -2538,6 +2558,7 @@
     name="IDHCPGroupConfig" extends="IDHCPConfig"
     uuid="537707f7-ebf9-4d5c-7aea-877bfc4256ba"
     wsmap="managed"
+    rest="managed"
     reservedMethods="8" reservedAttributes="8"
     >
     <desc>
@@ -2575,6 +2596,7 @@
     name="IDHCPIndividualConfig" extends="IDHCPConfig"
     uuid="c40c2b86-73a5-46cc-8227-93fe57d006a6"
     wsmap="managed"
+    rest="managed"
     reservedMethods="8" reservedAttributes="8"
     >
     <desc>
@@ -2610,8 +2632,9 @@
     name="IVirtualBox" extends="$unknown"
     uuid="6c59f776-3693-4801-8ebf-17e005a62e0c"
     wsmap="managed"
-    reservedMethods="8" reservedAttributes="12"
+    rest="managed"
     wrap-gen-hook="yes"
+    reservedMethods="8" reservedAttributes="12"
     >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
@@ -2848,6 +2871,7 @@
     </attribute>
 
     <method name="composeMachineFilename">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Returns a recommended full path of the settings file name for a new virtual
         machine.
@@ -2905,6 +2929,7 @@
     </method>
 
     <method name="createMachine">
+      <rest name="create" request="post" path="/vms/"/>
       <desc>
         Creates a new virtual machine by creating a machine settings file at
         the given location.
@@ -3011,6 +3036,7 @@
     </method>
 
     <method name="openMachine">
+      <rest name="open" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Opens a virtual machine from the existing settings file.
         The opened machine remains unregistered until you call
@@ -3041,6 +3067,7 @@
     </method>
 
     <method name="registerMachine">
+      <rest name="register" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
 
         Registers the machine previously created using
@@ -3066,6 +3093,7 @@
     </method>
 
     <method name="findMachine" const="yes">
+      <rest name="find" request="get" path="/vms/{vmid}/"/>
       <desc>
         Attempts to find a virtual machine given its name or UUID.
 
@@ -3086,6 +3114,7 @@
     </method>
 
     <method name="getMachinesByGroups">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Gets all machine references which are in one of the specified groups.
       </desc>
@@ -3100,6 +3129,7 @@
     </method>
 
     <method name="getMachineStates">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Gets the state of several machines in a single operation.
       </desc>
@@ -3112,6 +3142,7 @@
     </method>
 
     <method name="createAppliance">
+     <rest name="create" request="post" path="/appliances/"/>
       <desc>
         Creates a new appliance object, which represents an appliance in the Open Virtual Machine
         Format (OVF). This can then be used to import an OVF appliance into VirtualBox or to export
@@ -3123,6 +3154,7 @@
     </method>
 
     <method name="createUnattendedInstaller">
+      <rest request="post" path="/server/methods/"/>
       <desc>
         Creates a new <link to="IUnattended"/> guest installation object.  This can be used to
         analyze an installation ISO to create and configure a new machine for it to be installed
@@ -3134,6 +3166,7 @@
     </method>
 
     <method name="createMedium">
+      <rest name="create" request="post" path="/mediums/"/>
       <desc>
         Creates a new base medium object that will use the given storage
         format and location for medium data.
@@ -3212,6 +3245,7 @@
     </method>
 
     <method name="openMedium">
+      <rest request="post" path="/server/methods/"/>
       <desc>
         Finds existing media or opens a medium from an existing storage location.
 
@@ -3308,6 +3342,7 @@
     </method>
 
     <method name="getGuestOSType">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Returns an object describing the specified guest OS type.
 
@@ -3340,6 +3375,7 @@
     </method>
 
     <method name="createSharedFolder">
+      <rest name="create" request="post" path="/sharedfolders/"/>
       <desc>
         Creates a new global shared folder by associating the given logical
         name with the given host path, adds it to the collection of shared
@@ -3372,6 +3408,7 @@
     </method>
 
     <method name="removeSharedFolder">
+      <rest name="remove" request="delete" path="/sharedfolders/"/>
       <desc>
         Removes the global shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
@@ -3387,6 +3424,7 @@
     </method>
 
     <method name="getExtraDataKeys">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Returns an array representing the global extra data keys which currently
         have values defined.
@@ -3397,6 +3435,7 @@
     </method>
 
     <method name="getExtraData">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Returns associated global extra data.
 
@@ -3420,6 +3459,7 @@
     </method>
 
     <method name="setExtraData">
+      <rest request="put" path="/server/methods/"/>
       <desc>
         Sets associated global extra data.
 
@@ -3498,6 +3538,7 @@
     </method-->
 
     <method name="createDHCPServer">
+      <rest name="create" request="post" path="/dhcpservers/"/>
       <desc>
         Creates a DHCP server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
@@ -3513,6 +3554,7 @@
     </method>
 
     <method name="findDHCPServerByNetworkName">
+      <rest name="find" request="get" path="/dhcpservers/"/>
       <desc>
         Searches a DHCP server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
@@ -3544,6 +3586,7 @@
     </method-->
 
     <method name="removeDHCPServer">
+      <rest name="remove" request="delete" path="/dhcpservers/"/>
       <desc>
         Removes the DHCP server settings
         <result name="E_INVALIDARG">
@@ -3562,6 +3605,7 @@
            be enough for VBoxNetNAT and VBoxNetDHCP for
            servicing the guests.
       -->
+      <rest name="create" request="post" path="/natnetworks/"/>
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="INATNetwork" dir="return"/>
     </method>
@@ -3570,6 +3614,7 @@
           Returns the NATNetwork by name, e.g. for adding port forward rule or deletion.
     -->
     <method name="findNATNetworkByName">
+      <rest name="find" request="get" path="/natnetworks/"/>
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="INATNetwork" dir="return"/>
     </method>
@@ -3577,13 +3622,16 @@
         Deletes given NAT network.
     -->
     <method name="removeNATNetwork">
+      <rest name="remove" request="delete" path="/natnetworks/"/>
       <param name="network" type="INATNetwork" dir="in"/>
     </method>
 
     <!-- bunch of methods to manage host-only networks -->
+    <!--
+        Here we create a record in cloud network array with specified name.
+    -->
     <method name="createHostOnlyNetwork">
-      <!-- Here we create a record in cloud network array with specified name.
-      -->
+      <rest name="create" request="post" path="/hostonlynetworks/"/>
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="IHostOnlyNetwork" dir="return"/>
     </method>
@@ -3599,6 +3647,7 @@
           Returns the host-only network by id.
     -->
     <method name="findHostOnlyNetworkById">
+      <rest name="find" request="get" path="/hostonlynetworks/"/>
       <desc>
         Searches through all host networks for one with
         the given GUID.
@@ -3618,6 +3667,7 @@
         Deletes given host-only network.
     -->
     <method name="removeHostOnlyNetwork">
+      <rest name="remove" request="delete" path="/hostonlynetworks/"/>
       <param name="network" type="IHostOnlyNetwork" dir="in"/>
     </method>
 
@@ -3625,6 +3675,7 @@
     <method name="createCloudNetwork">
       <!-- Here we create a record in cloud network array with specified name.
       -->
+      <rest name="create" request="post" path="/cloudnetworks/"/>
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="ICloudNetwork" dir="return"/>
     </method>
@@ -3633,6 +3684,7 @@
           Returns the cloud network by name.
     -->
     <method name="findCloudNetworkByName">
+      <rest name="find" request="get" path="/cloudnetworks/"/>
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="ICloudNetwork" dir="return"/>
     </method>
@@ -3640,10 +3692,12 @@
         Deletes given cloud network.
     -->
     <method name="removeCloudNetwork">
+      <rest name="remove" request="delete" path="/cloudnetworks/"/>
       <param name="network" type="ICloudNetwork" dir="in"/>
     </method>
 
     <method name="checkFirmwarePresent">
+      <rest request="get" path="/server/methods/"/>
       <desc>
         Check if this VirtualBox installation has a firmware
         of the given type available, either system-wide or per-user.
@@ -3677,6 +3731,7 @@
     </method>
 
     <method name="findProgressById">
+      <rest name="find" request="get" path="/progresses/{progressid}/"/>
       <desc>
         Searches through all progress objects known to VBoxSVC for an
         instance with the given GUID.
@@ -3888,6 +3943,7 @@
     name="ICertificate" extends="$unknown"
     uuid="392f1de4-80e1-4a8a-93a1-67c5f92a838a"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="12" reservedMethods="2"
     >
     <desc>
@@ -3988,6 +4044,7 @@
     name="IAppliance" extends="$unknown"
     uuid="86a98347-7619-41aa-aece-b21ac5c1a7e6"
     wsmap="managed"
+    rest="managed"
     reservedMethods="7" reservedAttributes="8"
     >
     <desc>
@@ -4001,14 +4058,16 @@
             <li>If the appliance is distributed as a set of files, there must be at least one XML descriptor
                 file that conforms to the OVF standard and carries an <tt>.ovf</tt> file extension. If
                 this descriptor file references other files such as disk images, as OVF appliances typically
-                do, those additional files must be in the same directory as the descriptor file.</li>
+                do, those additional files must be in the same directory as the descriptor file.
+            </li>
 
-              <li>If the appliance is distributed as a single file, it must be in TAR format and have the
+            <li>If the appliance is distributed as a single file, it must be in TAR format and have the
                 <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
                 files and optionally other files.
 
                 At this time, VirtualBox does not not yet support the packed (TAR) variant; support will
-                be added with a later version.</li>
+                be added with a later version.
+            </li>
         </ol>
 
         <b>Importing</b> an OVF appliance into VirtualBox as instances of
@@ -4137,6 +4196,7 @@
     </attribute>
 
     <method name="read">
+      <rest request="post" path="/appliances/{applianceid}/actions/"/>
       <desc>
         Reads an OVF file into the appliance object.
 
@@ -4156,6 +4216,7 @@
     </method>
 
     <method name="interpret">
+      <rest request="post" path="/appliances/{applianceid}/actions/"/>
       <desc>
         Interprets the OVF data that was read when the appliance was constructed. After
         calling this method, one can inspect the
@@ -4173,6 +4234,7 @@
     </method>
 
     <method name="importMachines">
+      <rest request="post" path="/appliances/{applianceid}/actions/"/>
       <desc>
         Imports the appliance into VirtualBox by creating instances of <link to="IMachine" />
         and other interfaces that match the information contained in the appliance as
@@ -4212,6 +4274,7 @@
     </method>
 
     <method name="write">
+      <rest request="post" path="/appliances/{applianceid}/actions/"/>
       <desc>
           Writes the contents of the appliance exports into a new OVF file.
 
@@ -4247,6 +4310,7 @@
     </method>
 
     <method name="getWarnings">
+      <rest request="get" path="/appliances/{applianceid}/configuration/"/>
       <desc>Returns textual warnings which occurred during execution of <link to="#interpret" />.</desc>
 
       <param name="warnings" type="wstring" dir="return" safearray="yes">
@@ -4255,6 +4319,7 @@
     </method>
 
     <method name="getPasswordIds">
+      <rest request="get" path="/appliances/{applianceid}/configuration/"/>
       <desc>
         Returns a list of password identifiers which must be supplied to import or export
         encrypted virtual machines.
@@ -4266,6 +4331,7 @@
     </method>
 
     <method name="getMediumIdsForPasswordId">
+      <rest request="get" path="/appliances/{applianceid}/configuration/"/>
       <desc>
         Returns a list of medium identifiers which use the given password identifier.
       </desc>
@@ -4279,6 +4345,7 @@
     </method>
 
     <method name="addPasswords">
+      <rest request="post" path="/appliances/{applianceid}/configuration/"/>
       <desc>
         Adds a list of passwords required to import or export encrypted virtual
         machines.
@@ -4294,6 +4361,7 @@
     </method>
 
     <method name="createVirtualSystemDescriptions">
+      <rest request="post" path="/appliances/{applianceid}/configuration/"/>
       <desc>Creates a number of <link to="IVirtualSystemDescription" /> objects and store them
       in the <link to="#virtualSystemDescriptions" /> array.
       </desc>
@@ -4404,10 +4472,12 @@
     name="IVirtualSystemDescription" extends="$unknown"
     uuid="01510f40-c196-4d26-b8db-4c8c389f1f82"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="4"
     >
 
-    <desc>Represents one virtual system (machine) in an appliance. This interface is used in
+    <desc>
+      Represents one virtual system (machine) in an appliance. This interface is used in
       the <link to="IAppliance::virtualSystemDescriptions" /> array. After
       <link to="IAppliance::interpret" /> has been called, that array contains information
       about how the virtual systems described in the OVF should best be imported into
@@ -4677,6 +4747,7 @@
     name="IUnattended" extends="$unknown"
     uuid="6f89464f-7773-436a-a4df-592e4e537fa0"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="16"
     >
 
@@ -5461,6 +5532,7 @@
     name="IGraphicsAdapter" extends="$unknown"
     uuid="f692806f-febe-4049-b476-1292a8e45b09"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
@@ -5504,6 +5576,7 @@
     name="IBIOSSettings" extends="$unknown"
     uuid="a0a7f210-b857-4468-be26-c29f36a84345"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="8"
     >
     <desc>
@@ -5752,6 +5825,7 @@
     name="IRecordingScreenSettings" extends="$unknown"
     uuid="678fbd9a-93af-42a7-7f13-79ad6ef1a18d"
     wsmap="managed"
+    rest="managed"
     >
 
     <desc>
@@ -5936,6 +6010,7 @@
     name="IRecordingSettings" extends="$unknown"
     uuid="D88F2A5A-47C7-4A3F-AAE1-1B516817DB41"
     wsmap="managed"
+    rest="managed"
     >
 
     <desc>
@@ -5972,6 +6047,7 @@
     name="IPCIAddress" extends="$unknown"
     uuid="c984d15f-e191-400b-840e-970f3dad7296"
     wsmap="managed"
+    rest="managed"
     >
 
     <desc>
@@ -6015,6 +6091,7 @@
     name="IPCIDeviceAttachment" extends="$unknown"
     uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
     wsmap="struct"
+    rest="managed"
     >
 
     <desc>
@@ -6463,6 +6540,7 @@
     name="IMachine" extends="$unknown"
     uuid="8d2e6ace-0162-4985-9424-37d17fd87657"
     wsmap="managed"
+    rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
     reservedMethods="8" reservedAttributes="16"
@@ -6508,7 +6586,7 @@
       <see><link to="ISession"/>, <link to="IConsole"/></see>
     </desc>
 
-    <attribute name="parent" type="IVirtualBox" readonly="yes" wrap-hint-server="limitedcaller">
+    <attribute name="parent" type="IVirtualBox" readonly="yes" wrap-hint-server="limitedcaller" rest="suppress">
       <desc>Associated parent object.</desc>
     </attribute>
 
@@ -6844,13 +6922,13 @@
       </desc>
     </attribute>
 
-    <attribute name="settingsAuxFilePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
+    <attribute name="settingsAuxFilePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller" rest="suppress">
       <desc>
         Full name of the file containing auxiliary machine settings data.
       </desc>
     </attribute>
 
-    <attribute name="settingsModified" type="boolean" readonly="yes">
+    <attribute name="settingsModified" type="boolean" readonly="yes" rest="suppress">
       <desc>
         Whether the settings of this machine have been modified
         (but neither yet saved nor discarded).
@@ -7209,6 +7287,7 @@
     </attribute>
 
     <method name="lockMachine">
+      <rest name="lock" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Locks the machine for the given session to enable the caller
         to make changes to the machine or start the VM or control
@@ -7308,6 +7387,7 @@
     </method>
 
     <method name="launchVMProcess">
+      <rest name="launch" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Spawns a new process that will execute the virtual machine and obtains a shared
         lock on the machine for the calling session.
@@ -7417,6 +7497,7 @@
     </method>
 
     <method name="setBootOrder">
+      <rest name="bootorder" request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Puts the given device to the specified position in
         the boot order.
@@ -7449,6 +7530,7 @@
     </method>
 
     <method name="getBootOrder" const="yes">
+      <rest name="bootorder" request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the device type that occupies the specified
         position in the boot order.
@@ -7483,6 +7565,7 @@
     </method>
 
     <method name="attachDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Attaches a device and optionally mounts a medium to the given storage
         controller (<link to="IStorageController" />, identified by @a name),
@@ -7575,7 +7658,8 @@
       </param>
     </method>
 
-  <method name="attachDeviceWithoutMedium">
+    <method name="attachDeviceWithoutMedium">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
       Attaches a device and optionally mounts a medium to the given storage
       controller (<link to="IStorageController" />, identified by @a name),
@@ -7661,6 +7745,7 @@
     </method>
 
     <method name="detachDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Detaches the device attached to a device slot of the specified bus.
 
@@ -7707,6 +7792,7 @@
     </method>
 
     <method name="passthroughDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets the passthrough mode of an existing DVD device. Changing the
         setting while the VM is running is forbidden. The setting is only used
@@ -7743,6 +7829,7 @@
     </method>
 
     <method name="temporaryEjectDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets the behavior for guest-triggered medium eject. In some situations
         it is desirable that such ejects update the VM configuration, and in
@@ -7779,6 +7866,7 @@
     </method>
 
     <method name="nonRotationalDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets a flag in the device information which indicates that the medium
         is not based on rotational technology, i.e. that the access times are
@@ -7818,6 +7906,7 @@
     </method>
 
     <method name="setAutoDiscardForDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets a flag in the device information which indicates that the medium
         supports discarding unused blocks (called trimming for SATA or unmap
@@ -7857,6 +7946,7 @@
     </method>
 
     <method name="setHotPluggableForDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets a flag in the device information which indicates that the attached
         device is hot pluggable or not. This may or may not be supported by a
@@ -7897,6 +7987,7 @@
     </method>
 
     <method name="setBandwidthGroupForDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets the bandwidth group of an existing storage device.
         The device must already exist; see <link to="IMachine::attachDevice"/>
@@ -7931,6 +8022,7 @@
     </method>
 
     <method name="setNoBandwidthGroupForDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
       Sets no bandwidth group for an existing storage device.
       The device must already exist; see <link to="IMachine::attachDevice"/>
@@ -7960,6 +8052,7 @@
     </method>
 
     <method name="unmountMedium">
+      <rest name="unmount" request="post" path="/vms/{vmid}/mediums/{mediumid}/actions/"/>
       <desc>
         Unmounts any currently mounted medium (<link to="IMedium" />,
         identified by the given UUID @a id) to the given storage controller
@@ -8012,6 +8105,7 @@
     </method>
 
     <method name="mountMedium">
+      <rest name="mount" request="post" path="/vms/{vmid}/mediums/{mediumid}/actions/"/>
       <desc>
         Mounts a medium (<link to="IMedium" />, identified
         by the given UUID @a id) to the given storage controller
@@ -8066,6 +8160,7 @@
     </method>
 
     <method name="getMedium" const="yes">
+      <rest name="find" request="get" path="/vms/{vmid}/mediums/{mediumid}/"/>
       <desc>
         Returns the virtual medium attached to a device slot of the specified
         bus.
@@ -8096,6 +8191,7 @@
     </method>
 
     <method name="getMediumAttachmentsOfController" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns an array of medium attachments which are attached to the
         the controller with the given name.
@@ -8109,6 +8205,7 @@
     </method>
 
     <method name="getMediumAttachment" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns a medium attachment which corresponds to the controller with
         the given name, on the given port and device slot.
@@ -8124,6 +8221,7 @@
     </method>
 
     <method name="attachHostPCIDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Attaches host PCI device with the given (host) PCI address to the
         PCI bus of the virtual machine. Please note, that this operation
@@ -8156,6 +8254,7 @@
     </method>
 
     <method name="detachHostPCIDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Detach host PCI device from the virtual machine.
         Also HostPCIDevicePlugEvent on IVirtualBox event source
@@ -8183,6 +8282,7 @@
     </method>
 
     <method name="getNetworkAdapter" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the network adapter associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
@@ -8200,6 +8300,7 @@
     </method>
 
     <method name="addStorageController">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Adds a new storage controller (SCSI, SAS or SATA controller) to the
         machine and returns it as an instance of
@@ -8227,6 +8328,7 @@
     </method>
 
     <method name="getStorageControllerByName" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns a storage controller with the given name.
 
@@ -8239,6 +8341,7 @@
     </method>
 
     <method name="getStorageControllerByInstance" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns a storage controller of a specific storage bus
         with the given instance number.
@@ -8253,6 +8356,7 @@
     </method>
 
     <method name="removeStorageController">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Removes a storage controller from the machine with all devices attached to it.
 
@@ -8268,6 +8372,7 @@
     </method>
 
     <method name="setStorageControllerBootable">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets the bootable flag of the storage controller with the given name.
 
@@ -8283,6 +8388,7 @@
     </method>
 
     <method name="addUSBController">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Adds a new USB controller to the machine and returns it as an instance of
         <link to="IUSBController" />.
@@ -8300,6 +8406,7 @@
     </method>
 
     <method name="removeUSBController">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Removes a USB controller from the machine.
 
@@ -8311,6 +8418,7 @@
     </method>
 
     <method name="getUSBControllerByName" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns a USB controller with the given type.
 
@@ -8323,6 +8431,7 @@
     </method>
 
     <method name="getUSBControllerCountByType" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the number of USB controllers of the given type attached to the VM.
       </desc>
@@ -8331,6 +8440,7 @@
     </method>
 
     <method name="getSerialPort" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the serial port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
@@ -8348,6 +8458,7 @@
     </method>
 
     <method name="getParallelPort" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the parallel port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
@@ -8365,16 +8476,18 @@
     </method>
 
     <method name="getExtraDataKeys">
-        <desc>
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
+      <desc>
             Returns an array representing the machine-specific extra data keys
             which currently have values defined.
-        </desc>
-        <param name="keys" type="wstring" dir="return" safearray="yes">
-            <desc>Array of extra data keys.</desc>
-        </param>
+      </desc>
+      <param name="keys" type="wstring" dir="return" safearray="yes">
+          <desc>Array of extra data keys.</desc>
+      </param>
     </method>
 
     <method name="getExtraData">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns associated machine-specific extra data.
 
@@ -8398,6 +8511,7 @@
     </method>
 
     <method name="setExtraData">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets associated machine-specific extra data.
 
@@ -8446,6 +8560,7 @@
     </method>
 
     <method name="getCPUProperty" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the virtual CPU boolean value of the specified property.
 
@@ -8467,6 +8582,7 @@
     </method>
 
     <method name="setCPUProperty">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets the virtual CPU boolean value of the specified property.
 
@@ -8666,6 +8782,7 @@
     </method>
 
     <method name="getHWVirtExProperty" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the value of the specified hardware virtualization boolean property.
 
@@ -8687,6 +8804,7 @@
     </method>
 
     <method name="setHWVirtExProperty">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Sets a new value for the specified hardware virtualization boolean property.
 
@@ -8708,6 +8826,7 @@
     </method>
 
     <method name="setSettingsFilePath">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Currently, it is an error to change this property on any machine.
         Later this will allow setting a new path for the settings file, with
@@ -8737,6 +8856,7 @@
     </method>
 
     <method name="saveSettings">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Saves any changes to machine settings made since the session
         has been opened or a new machine has been created, or since the
@@ -8771,6 +8891,7 @@
     </method>
 
     <method name="discardSettings">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Discards any changes to the machine settings made since the session
         has been opened or since the last call to <link to="#saveSettings"/>
@@ -8792,6 +8913,7 @@
     </method>
 
     <method name="unregister" wrap-hint-server="limitedcaller,passcaller">
+      <rest request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Unregisters a machine previously registered with
         <link to="IVirtualBox::registerMachine"/> and optionally do additional
@@ -8874,6 +8996,7 @@
     </method>
 
     <method name="deleteConfig">
+      <rest name="remove" request="delete" path="/vms/{vmid}/"/>
       <desc>
         Deletes the files associated with this machine from disk. If medium objects are passed
         in with the @a aMedia argument, they are closed and, if closing was successful, their
@@ -8925,6 +9048,7 @@
     </method>
 
     <method name="exportTo">
+      <rest name="export" request="post" path="/vms/{vmid}/actions/"/>
       <desc>Exports the machine to an OVF appliance. See <link to="IAppliance" /> for the
             steps required to export VirtualBox machines to OVF.
       </desc>
@@ -8941,6 +9065,7 @@
     </method>
 
     <method name="findSnapshot">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns a snapshot of this machine with the given name or UUID.
 
@@ -8964,6 +9089,7 @@
     </method>
 
     <method name="createSharedFolder">
+      <rest request="post" path="/vms/{vmid}/methods/"/>
       <desc>
         Creates a new permanent shared folder by associating the given logical
         name with the given host path, adds it to the collection of shared
@@ -9000,6 +9126,7 @@
     </method>
 
     <method name="removeSharedFolder">
+      <rest request="delete" path="/vms/{vmid}/methods/"/>
       <desc>
         Removes the permanent shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
@@ -9074,6 +9201,8 @@
     </method>
 
     <method name="getGuestProperty" const="yes">
+      <rest name="Property" request="get" path="/vms/{vmid}/guest/"/>
+
       <desc>
         Reads an entry from the machine's guest property store.
 
@@ -9152,6 +9281,7 @@
     </method>
 
     <method name="setGuestProperty">
+      <rest name="Property" request="patch" path="/vms/{vmid}/guest/"/>
       <desc>
         Sets, changes or deletes an entry in the machine's guest property
         store.
@@ -9223,6 +9353,7 @@
     </method>
 
     <method name="deleteGuestProperty" const="yes">
+      <rest name="Property" request="delete" path="/vms/{vmid}/guest/"/>
       <desc>
         Deletes an entry from the machine's guest property store.
 
@@ -9399,6 +9530,7 @@
     </method>
 
     <method name="hotPlugCPU">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Plugs a CPU into the machine.
       </desc>
@@ -9410,6 +9542,7 @@
     </method>
 
     <method name="hotUnplugCPU">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Removes a CPU from the machine.
       </desc>
@@ -9421,6 +9554,7 @@
     </method>
 
     <method name="getCPUStatus">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the current status of the given CPU.
       </desc>
@@ -9437,6 +9571,7 @@
     </method>
 
     <method name="getEffectiveParavirtProvider"  const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Returns the effective paravirtualization provider for this VM.
       </desc>
@@ -9448,6 +9583,7 @@
     </method>
 
     <method name="queryLogFilename">
+      <rest request="get" path="/vms/{vmid}/logs/"/>
       <desc>
         Queries for the VM log file name of an given index. Returns an empty
         string if a log file with that index doesn't exists.
@@ -9495,6 +9631,7 @@
     </method>
 
     <method name="cloneTo">
+      <rest name="clone" request="put" path="/vms/{vmid}/actions/"/>
       <desc>
         Creates a clone of this machine, either as a full clone (which means
         creating independent copies of the hard disk media, save states and so
@@ -9530,6 +9667,7 @@
     </method>
 
     <method name="moveTo">
+      <rest name="move" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Move machine on to new place/folder
       </desc>
@@ -9556,6 +9694,7 @@
     </method>
 
     <method name="saveState">
+      <rest name="save" request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Saves the current execution state of a running virtual machine
         and stops its execution.
@@ -9629,6 +9768,7 @@
     </method>
 
     <method name="discardSavedState">
+      <rest request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Forcibly resets the machine to "Powered Off" state if it is
         currently in the "Saved" state previously created by <link to="#saveState"/>)
@@ -9656,6 +9796,7 @@
     </method>
 
     <method name="takeSnapshot">
+      <rest request="put" path="/vms/{vmid}/actions/"/>
       <desc>
         Saves the current execution state
         and all settings of the machine and creates differencing images
@@ -9703,6 +9844,7 @@
     </method>
 
     <method name="deleteSnapshot">
+      <rest request="delete" path="/vms/{vmid}/actions/"/>
       <desc>
         Starts deleting the specified snapshot asynchronously.
         See <link to="ISnapshot" /> for an introduction to snapshots.
@@ -9774,6 +9916,7 @@
     </method>
 
     <method name="deleteSnapshotAndAllChildren">
+      <rest request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Starts deleting the specified snapshot and all its children
         asynchronously. See <link to="ISnapshot" /> for an introduction to
@@ -9807,6 +9950,7 @@
     </method>
 
     <method name="deleteSnapshotRange">
+      <rest request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Starts deleting the specified snapshot range. This is limited to
         linear snapshot lists, which means there may not be any other child
@@ -9845,6 +9989,7 @@
     </method>
 
     <method name="restoreSnapshot">
+      <rest request="post" path="/vms/{vmid}/actions/"/>
       <desc>
         Starts resetting the machine's current state to the state contained
         in the given snapshot, asynchronously. All current settings of the
@@ -9884,6 +10029,7 @@
     </method>
 
     <method name="applyDefaults">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Applies the defaults for the configured guest OS type. This is
         primarily for getting sane settings straight after creating a
@@ -9961,6 +10107,7 @@
     name="IVRDEServerInfo" extends="$unknown"
     uuid="c39ef4d6-7532-45e8-96da-eb5986ae76e4"
     wsmap="struct"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -10070,6 +10217,7 @@
     name="IConsole" extends="$unknown"
     uuid="872da645-4a9b-1727-bee2-5585105b9eed"
     wsmap="managed"
+    rest="managed"
     reservedMethods="8" reservedAttributes="8"
     >
     <desc>
@@ -10089,7 +10237,7 @@
       <see><link to="ISession"/></see>
     </desc>
 
-    <attribute name="machine" type="IMachine" readonly="yes">
+    <attribute name="machine" type="IMachine" readonly="yes" rest="uuid">
       <desc>
         Machine object for this console session.
         <note>
@@ -10216,6 +10364,7 @@
     </attribute>
 
     <method name="powerUp">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>
         Starts the virtual machine execution using the current machine
         state (that is, its current execution state, current settings and
@@ -10268,6 +10417,7 @@
     </method>
 
     <method name="powerUpPaused">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>
         Identical to powerUp except that the VM will enter the
         <link to="MachineState_Paused"/> state, instead of
@@ -10290,6 +10440,7 @@
     </method>
 
     <method name="powerDown">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>
         Initiates the power down procedure to stop the virtual machine
         execution.
@@ -10307,6 +10458,7 @@
     </method>
 
     <method name="reset">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>Resets the virtual machine.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
@@ -10318,6 +10470,7 @@
     </method>
 
     <method name="pause">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>Pauses the virtual machine execution.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
@@ -10329,6 +10482,7 @@
     </method>
 
     <method name="resume">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>Resumes the virtual machine execution.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Paused state.
@@ -10340,6 +10494,7 @@
     </method>
 
     <method name="powerButton">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>Sends the ACPI power button event to the guest.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
@@ -10351,6 +10506,7 @@
     </method>
 
     <method name="sleepButton">
+      <rest request="post" path="/vms/{vmid}/console/actions/"/>
       <desc>Sends the ACPI sleep button event to the guest.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
@@ -10393,6 +10549,7 @@
     </method>
 
     <method name="attachUSBDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Attaches a host USB device with the given UUID to the
         USB controller of the virtual machine.
@@ -10425,6 +10582,7 @@
     </method>
 
     <method name="detachUSBDevice">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
         Detaches an USB device with the given UUID from the USB controller
         of the virtual machine.
@@ -10453,6 +10611,7 @@
     </method>
 
     <method name="findUSBDeviceByAddress">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Searches for a USB device with the given host address.
 
@@ -10474,6 +10633,7 @@
     </method>
 
     <method name="findUSBDeviceById">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
       <desc>
         Searches for a USB device with the given UUID.
 
@@ -10492,6 +10652,7 @@
     </method>
 
     <method name="createSharedFolder">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Creates a transient new shared folder by associating the given logical
         name with the given host path, adds it to the collection of shared
@@ -10527,6 +10688,7 @@
     </method>
 
     <method name="removeSharedFolder">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Removes a transient shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
@@ -10583,6 +10745,7 @@
     </method>
 
     <method name="addDiskEncryptionPassword">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Adds a password used for hard disk encryption/decryption.
 
@@ -10609,6 +10772,7 @@
     </method>
 
     <method name="addDiskEncryptionPasswords">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Adds a password used for hard disk encryption/decryption.
 
@@ -10635,6 +10799,7 @@
     </method>
 
     <method name="removeDiskEncryptionPassword">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Removes a password used for hard disk encryption/decryption from
         the running VM. As soon as the medium requiring this password
@@ -10650,6 +10815,7 @@
     </method>
 
     <method name="clearAllDiskEncryptionPasswords">
+      <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>Clears all provided supplied disk encryption passwords.</desc>
     </method>
   </interface>
@@ -10734,6 +10900,7 @@
     name="IHostNetworkInterface" extends="$unknown"
     uuid="455f8c45-44a0-a470-ba20-27890b96dba9"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="4"
     >
     <desc>
@@ -10844,6 +11011,7 @@
     name="IHostVideoInputDevice" extends="$unknown"
     uuid="e8c25d4d-ac97-4c16-b3e2-81bd8a57cc27"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
     <desc>
@@ -10883,6 +11051,7 @@
     name="IHostUpdate" extends="$unknown"
     uuid="6fa2671b-0547-448e-bc7c-94e9e173bf57"
     wsmap="managed"
+    rest="managed"
     reservedMethods="12" reservedAttributes="24"
     >
 
@@ -10935,6 +11104,7 @@
     name="IHostDrivePartition" extends="$unknown"
     uuid="4f529a14-ace3-407c-9c49-066e8e8027f0"
     wsmap="struct"
+    rest="managed"
     >
     <desc>
       The IHostDrivePartition interface represents the partition of the host drive.
@@ -11047,6 +11217,7 @@
     name="IHostDrive" extends="$unknown"
     uuid="70e2e0c3-332c-4d72-b822-2db16e2cb31b"
     wsmap="managed"
+    rest="managed"
     >
     <desc>
       The IHostDrive interface represents the drive of the physical machine.
@@ -11107,6 +11278,7 @@
     name="IHost" extends="$unknown"
     uuid="fc0759a6-a5e2-41e1-93ca-64776335eb2d"
     wsmap="managed"
+    rest="managed"
     reservedMethods="6" reservedAttributes="12"
     >
     <desc>
@@ -11622,6 +11794,7 @@
     extends="$unknown"
     uuid="b7fda727-7a08-46ee-8dd8-f8d7308b519c"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>CPU profile. Immutable.</desc>
@@ -11672,6 +11845,7 @@
     extends="$unknown"
     uuid="31cdb11d-9bb0-455a-b2ca-a1a5b1177912"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="16"
     >
     <desc>
@@ -12448,6 +12622,7 @@
     name="IGuestOSType" extends="$unknown"
     uuid="966303d0-36a8-4180-8971-18650b0d1055"
     wsmap="struct"
+    rest="managed"
     reservedAttributes="16"
     >
     <desc>
@@ -12717,6 +12892,7 @@
     name="IAdditionsFacility" extends="$unknown"
     uuid="f2f7fae4-4a06-81fc-a916-78b2da1fa0e5"
     wsmap="struct"
+    rest="managed"
     reservedAttributes="2"
     >
     <desc>
@@ -16422,6 +16598,7 @@
     name="IProgress" extends="$unknown"
     uuid="d7b98d2b-30e8-447e-99cb-e31becae6ae4"
     wsmap="managed"
+    rest="managed"
     wrap-hint-server-addinterfaces="IInternalProgressControl"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -16558,9 +16735,10 @@
       </desc>
     </attribute>
 
-    <attribute name="eventSource" type="IEventSource" readonly="yes"/>
+    <attribute name="eventSource" type="IEventSource" readonly="yes" rest="suppress"/>
 
     <method name="waitForCompletion">
+      <rest request="post" path="/progresses/{progressid}/actions/"/>
       <desc>
           Waits until the task is done (including all sub-operations)
           with a given timeout in milliseconds; specify -1 for an indefinite wait.
@@ -16586,6 +16764,7 @@
     </method>
 
     <method name="waitForOperationCompletion">
+      <rest request="post" path="/progresses/{progressid}/actions/"/>
       <desc>
           Waits until the given operation is done with a given timeout in
           milliseconds; specify -1 for an indefinite wait.
@@ -16611,6 +16790,7 @@
     </method>
 
     <method name="cancel">
+      <rest request="post" path="/progresses/{progressid}/actions/"/>
       <desc>
         Cancels the task.
         <note>
@@ -16698,6 +16878,7 @@
     name="ISnapshot" extends="$unknown"
     uuid="6cc49055-dad4-4496-85cf-3f76bcb3b5fa"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
@@ -16818,7 +16999,7 @@
       </desc>
     </attribute>
 
-    <attribute name="machine" type="IMachine" readonly="yes">
+    <attribute name="machine" type="IMachine" readonly="yes" rest="uuid">
       <desc>
         Virtual machine this snapshot is taken on. This object
         stores all settings the machine had when taking this snapshot.
@@ -16829,14 +17010,14 @@
       </desc>
     </attribute>
 
-    <attribute name="parent" type="ISnapshot" readonly="yes">
+    <attribute name="parent" type="ISnapshot" readonly="yes" rest="uuid">
       <desc>
         Parent snapshot (a snapshot this one is based on), or
         @c null if the snapshot has no parent (i.e. is the first snapshot).
       </desc>
     </attribute>
 
-    <attribute name="children" type="ISnapshot" readonly="yes" safearray="yes">
+    <attribute name="children" type="ISnapshot" readonly="yes" safearray="yes"  rest="uuid">
       <desc>
         Child snapshots (all snapshots having this one as a parent).
         By inspecting this attribute starting with a machine's root snapshot
@@ -17033,6 +17214,7 @@
     name="IMediumAttachment" extends="$unknown"
     uuid="8d095cb0-0126-43e0-b05d-326e74abb356"
     wsmap="struct"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -17214,11 +17396,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     </desc>
 
-    <attribute name="machine" type="IMachine" readonly="yes">
+    <attribute name="machine" type="IMachine" readonly="yes" rest="uuid">
       <desc>Machine object for this medium attachment.</desc>
     </attribute>
 
-    <attribute name="medium" type="IMedium" readonly="yes">
+    <attribute name="medium" type="IMedium" readonly="yes" rest="uuid">
       <desc>Medium object associated with this attachment; it
         can be @c null for removable devices.</desc>
     </attribute>
@@ -17280,6 +17462,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMedium" extends="$unknown"
     uuid="ad47ad09-787b-44ab-b343-a082a3f2dfb1"
     wsmap="managed"
+    rest="managed"
     reservedMethods="8" reservedAttributes="12"
     >
     <desc>
@@ -17610,7 +17793,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="parent" type="IMedium" readonly="yes" wrap-hint-server="passcaller">
+    <attribute name="parent" type="IMedium" readonly="yes" wrap-hint-server="passcaller" rest="uuid">
       <desc>
         Parent of this medium (the medium this medium is directly based
         on).
@@ -17620,7 +17803,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="children" type="IMedium" safearray="yes" readonly="yes" wrap-hint-server="passcaller">
+    <attribute name="children" type="IMedium" safearray="yes" readonly="yes" wrap-hint-server="passcaller" rest="uuid">
       <desc>
         Children of this medium (all differencing media directly based
         on this medium). A @c null array is returned if this medium
@@ -17628,7 +17811,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="base" type="IMedium" readonly="yes" wrap-hint-server="passcaller">
+    <attribute name="base" type="IMedium" readonly="yes" wrap-hint-server="passcaller" rest="uuid">
       <desc>
         Base medium of this medium.
 
@@ -17743,6 +17926,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <method name="setIds" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Changes the UUID and parent UUID for a hard disk medium.
       </desc>
@@ -17779,6 +17963,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="refreshState" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         If the current medium state (see <link to="MediumState"/>) is one of
         "Created", "Inaccessible" or "LockedRead", then this performs an
@@ -17815,6 +18000,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getSnapshotIds">
+      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Returns an array of UUIDs of all snapshots of the given machine where
         this medium is attached to.
@@ -17844,6 +18030,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="lockRead">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Locks this medium for reading.
 
@@ -17905,6 +18092,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="lockWrite">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Locks this medium for writing.
 
@@ -17958,6 +18146,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="close" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Closes this medium.
 
@@ -17996,6 +18185,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- property methods -->
 
     <method name="getProperty" const="yes">
+      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Returns the value of the custom medium property with the given name.
 
@@ -18019,6 +18209,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="setProperty">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Sets the value of the custom medium property with the given name.
 
@@ -18044,6 +18235,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getProperties" const="yes">
+      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Returns values for a group of properties in one call.
 
@@ -18080,6 +18272,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="setProperties">
+      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Sets values for a group of properties in one call.
 
@@ -18114,6 +18307,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- storage methods -->
 
     <method name="createBaseStorage">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts creating a hard disk storage unit (fixed/dynamic, according
         to the variant flags) in the background. The previous storage unit
@@ -18148,6 +18342,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="deleteStorage">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts deleting the storage unit of this medium.
 
@@ -18194,6 +18389,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- diff methods -->
 
     <method name="createDiffStorage" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts creating an empty differencing storage unit based on this
         medium in the format and at the location defined by the @a target
@@ -18231,6 +18427,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="mergeTo">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts merging the contents of this medium and all intermediate
         differencing media in the chain to the given target medium.
@@ -18313,6 +18510,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- clone method -->
 
     <method name="cloneTo">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts creating a clone of this medium in the format and at the
         location defined by the @a target argument.
@@ -18362,6 +18560,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="cloneToBase">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
     <desc>
     Starts creating a clone of this medium in the format and at the
     location defined by the @a target argument.
@@ -18409,6 +18608,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- other methods -->
 
     <method name="moveTo" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Changes the location of this medium. Some medium types may support
         changing the storage unit location by simply changing the value of the
@@ -18445,6 +18645,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="compact">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts compacting of this medium. This means that the medium is
         transformed into a possibly more compact storage representation.
@@ -18471,6 +18672,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="resize">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts resizing this medium. This means that the nominal size of the
         medium is set to the new value. Both increasing and decreasing the
@@ -18502,6 +18704,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="reset" wrap-hint-server="passcaller">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts erasing the contents of this differencing medium.
 
@@ -18528,6 +18731,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="changeEncryption">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
       <desc>
         Starts encryption of this medium. This means that the stored data in the
         medium is encrypted.
@@ -18571,6 +18775,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getEncryptionSettings" const="yes" wrap-hint-server="passcaller">
+      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Returns the encryption settings for this medium.
 
@@ -18587,6 +18792,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="checkEncryptionPassword" const="yes">
+      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
       <desc>
         Checks whether the supplied password is correct for the medium.
 
@@ -18740,6 +18946,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMediumFormat" extends="$unknown"
     uuid="11be93c7-a862-4dc9-8c89-bf4ba74a886a"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="4"
     >
     <desc>
@@ -19071,6 +19278,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IToken" extends="$unknown"
     uuid="20479eaf-d8ed-44cf-85ac-c83a26c95a4d"
     wsmap="managed"
+    rest="managed"
     reservedMethods="1" reservedAttributes="2"
     >
     <desc>
@@ -19125,6 +19333,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IKeyboard" extends="$unknown"
     uuid="755e6bdf-1640-41f9-bd74-3ef5fd653250"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="4"
     >
     <desc>
@@ -19260,6 +19469,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMousePointerShape" extends="$unknown"
     uuid="1e775ea3-9070-4f9c-b0d5-53054496dbe0"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
     <desc>
@@ -19334,6 +19544,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMouse" extends="$unknown"
     uuid="10cd08d0-e8b8-4838-b10c-45ba193734c1"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="4"
     >
     <desc>
@@ -19606,8 +19817,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-    name="IDisplaySourceBitmap" extends="$unknown" wsmap="suppress"
+    name="IDisplaySourceBitmap" extends="$unknown"
     uuid="5094f67a-8084-11e9-b185-dbe296e54799"
+    wsmap="suppress"
+    rest="managed"
     >
     <attribute name="screenId" type="unsigned long" readonly="yes"/>
     <method name="queryBitmapInfo">
@@ -20643,6 +20856,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="INetworkAdapter" extends="$unknown"
     uuid="dcf47a1d-ed70-4db8-9a4b-2646bd166905"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
@@ -20920,6 +21134,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ISerialPort" extends="$unknown"
     uuid="5587d0f6-a227-4f23-8278-2f675eea1bb2"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
 
@@ -21015,6 +21230,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IParallelPort" extends="$unknown"
     uuid="788b87df-7708-444b-9eef-c116ce423d39"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
 
@@ -21097,6 +21313,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMachineDebugger" extends="$unknown"
     uuid="fa43579a-2272-47c4-a443-9713f19a902f"
     wsmap="managed"
+    rest="managed"
     reservedMethods="16" reservedAttributes="16"
     >
     <method name="dumpGuestCore">
@@ -21637,6 +21854,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBDeviceFilters" extends="$unknown"
     uuid="9709db9b-3346-49d6-8f1c-41b0c4784ff2"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="2"
     >
 
@@ -21782,6 +22000,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBController" extends="$unknown"
     uuid="ee206a6e-7ff8-4a84-bd34-0c651e118bb5"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
 
@@ -21868,6 +22087,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBDevice" extends="$unknown"
     uuid="6dc83c2c-81a9-4005-9d52-fc45a78bf3f5"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
     <desc>
@@ -21988,6 +22208,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBDeviceFilter" extends="$unknown"
     uuid="45587218-4289-ef4e-8e6a-e5b07816b631"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -22235,6 +22456,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IHostUSBDevice" extends="IUSBDevice"
     uuid="c19073dd-cc7b-431b-98b2-951fda8eab89"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
     <desc>
@@ -22289,6 +22511,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
     uuid="01adb2d6-aedf-461c-be2c-99e91bdad8a1"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -22328,6 +22551,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBProxyBackend" extends="$unknown"
     uuid="dfe56449-6989-4002-80cf-3607f377d40c"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
@@ -22434,6 +22658,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IAudioAdapter" extends="$unknown"
     uuid="5155bfd3-7ba7-45a8-b26d-c91ae3754e37"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
@@ -22543,6 +22768,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IVRDEServer" extends="$unknown"
     uuid="08e25756-08a2-41af-a05f-d7c661abaebe"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="4"
     >
 
@@ -22637,6 +22863,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ISharedFolder" extends="$unknown"
     uuid="9622225a-5409-414b-bd16-77df7ba3451e"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -23476,6 +23703,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ISession" extends="$unknown"
     uuid="c0447716-ff5a-4795-b57a-ecd5fffa18a4"
     wsmap="managed"
+    rest="managed"
     wrap-hint-server-addinterfaces="IInternalSessionControl"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -23507,8 +23735,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           already using it, either because that process is modifying machine settings
           or because the machine is running.
         </li>
-        <li>
-          To start a VM using one of the existing VirtualBox front-ends (e.g. the
+        <li>To start a VM using one of the existing VirtualBox front-ends (e.g. the
           VirtualBox GUI or VBoxHeadless), one would use
           <link to="IMachine::launchVMProcess"/>, which also takes a session object
           as its first parameter. This session then identifies the caller and lets the
@@ -23559,7 +23786,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="machine" type="IMachine" readonly="yes">
+    <attribute name="machine" type="IMachine" readonly="yes" rest="uuid">
       <desc>Machine object associated with this session.</desc>
     </attribute>
 
@@ -23696,6 +23923,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="ddca7247-bf98-47fb-ab2f-b5177533f493"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
+    rest="managed"
     >
     <desc>
         Represents a storage controller that is attached to a virtual machine
@@ -23912,6 +24140,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IPerformanceMetric" extends="$unknown"
     uuid="81314d14-fd1c-411a-95c5-e9bb1414e632" wsmap="managed"
+    rest="managed"
     reservedAttributes="8"
     >
     <desc>
@@ -24357,6 +24586,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="INATEngine" extends="$unknown"
     uuid="a06253a7-dcd2-44e3-8689-9c9c4b6b6234"
     wsmap="managed"
+    rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>Interface for managing a NAT engine which is used with a virtual machine. This
@@ -24808,6 +25038,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IBandwidthGroup" extends="$unknown"
     uuid="31587f93-2d12-4d7c-ba6d-ce51d0d5b265"
     wsmap="managed"
+    rest="managed"
     reservedAttributes="4"
     >
     <desc>Represents one bandwidth group.</desc>
@@ -24839,6 +25070,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IBandwidthControl" extends="$unknown"
     uuid="48c7f4c0-c9d6-4742-957c-a6fd52e8c4ae"
     wsmap="managed"
+    rest="managed"
     reservedMethods="2" reservedAttributes="2"
     >
     <desc>
@@ -25445,6 +25677,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IEventSource" extends="$unknown"
     uuid="9b6e1aee-35f3-4f4d-b5bb-ed0ecefd8538"
     wsmap="managed"
+    rest="managed"
     >
     <desc>
       Event source. Generally, any object which could generate events can be an event source,
@@ -25588,6 +25821,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IEventListener" extends="$unknown"
     uuid="67099191-32e7-4f6c-85ee-422304c71b90"
     wsmap="managed"
+    rest="managed"
     >
     <desc>
       Event listener. An event listener can work in either active or passive mode, depending on the way
@@ -25615,6 +25849,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IEvent" extends="$unknown"
     uuid="0ca2adba-8f30-401b-a8cd-fe31dbe839c0"
     wsmap="managed"
+    rest="managed"
     >
     <desc>
       Abstract parent interface for VirtualBox events. Actual events will typically implement
@@ -27833,7 +28068,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface name="ICloudMachine" extends="$unknown"
              uuid="147816c8-17e0-11eb-81fa-87cea6263e1a"
              wsmap="managed"
-             reservedMethods="16" reservedAttributes="8">
+             rest="managed"
+             reservedMethods="16" reservedAttributes="8"
+      >
     <desc>
       Virtual virtual machine (sic) in the cloud.
 
@@ -28099,7 +28336,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="c2db178a-7485-11ec-aec4-2fbf90681a84"
-    wsmap="managed" reservedMethods="16" reservedAttributes="8"
+    wsmap="managed"
+    reservedMethods="16" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -28640,7 +28878,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudProfile" extends="$unknown"
     uuid="b1d978b8-f7b7-4b05-900e-2a9253c00f51"
-    wsmap="managed" reservedMethods="4" reservedAttributes="8"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="4" reservedAttributes="8"
     >
 
     <attribute name="name" type="wstring">
@@ -28773,7 +29013,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudProvider" extends="$unknown"
     uuid="22363cfc-07da-41ec-ac4a-3dd99db35594"
-    wsmap="managed" reservedMethods="8" reservedAttributes="16"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="8" reservedAttributes="16"
     >
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -28879,7 +29121,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudProviderManager" extends="$unknown"
     uuid="9128800f-762e-4120-871c-a2014234a607"
-    wsmap="managed" reservedMethods="4" reservedAttributes="8"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="4" reservedAttributes="8"
     >
 
     <attribute name="providers" type="ICloudProvider" safearray="yes" readonly="yes">
