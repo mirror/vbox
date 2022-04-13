@@ -941,7 +941,7 @@ ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDD
 #
 # See @bugref:10195.
 #
-if defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
+if defined(VBOX_ONLY_VALIDATIONKIT)
  VBOX_VALIDATIONKIT_UNITTESTS_SKIP=\
 	tstIprtList \
 	tstIprtMiniString \
@@ -983,18 +983,23 @@ if defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS
  # Filter out all unit tests we want to skip (see above).
  VBOX_VALIDATIONKIT_UNITTESTS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(VBOX_VALIDATIONKIT_UNITTESTS))
 
- ## @todo There might be a more elegant want of copying a target's stuff. Works for now.
- define def_unittest_valkit
-  $(unittest)_ValKit_TEMPLATE       := VBOXR3TSTEXE_VALKIT
-  $(unittest)_ValKit_SOURCES        += $$($(unittest)_SOURCES)
-  $(unittest)_ValKit_SOURCES.x86    += $$($(unittest)_SOURCES.x86)
-  $(unittest)_ValKit_SOURCES.amd64  += $$($(unittest)_SOURCES.amd64)
-  $(unittest)_ValKit_INCS           += $$($(unittest)_INCS)
-  $(unittest)_ValKit_INTERMEDIATES  += $$($(unittest)_INTERMEDIATES)
-  $(unittest)_ValKit_CLEAN          += $$($(unittest)_CLEAN)
-  $(unittest)_ValKit_NAME           := $(unittest)
-  PROGRAMS += $(unittest)_ValKit
- endef
+ # Also apply filtering to the host's testcases.
+ PROGRAMS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(PROGRAMS))
+
+ if defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
+  ## @todo There might be a more elegant want of copying a target's stuff. Works for now.
+  define def_unittest_valkit
+   $(unittest)_ValKit_TEMPLATE       := VBOXR3TSTEXE_VALKIT
+   $(unittest)_ValKit_SOURCES        += $$($(unittest)_SOURCES)
+   $(unittest)_ValKit_SOURCES.x86    += $$($(unittest)_SOURCES.x86)
+   $(unittest)_ValKit_SOURCES.amd64  += $$($(unittest)_SOURCES.amd64)
+   $(unittest)_ValKit_INCS           += $$($(unittest)_INCS)
+   $(unittest)_ValKit_INTERMEDIATES  += $$($(unittest)_INTERMEDIATES)
+   $(unittest)_ValKit_CLEAN          += $$($(unittest)_CLEAN)
+   $(unittest)_ValKit_NAME           := $(unittest)
+   PROGRAMS += $(unittest)_ValKit
+  endef
+ endif
 
  $(foreach unittest, $(VBOX_VALIDATIONKIT_UNITTESTS), \
 	$(eval $(call def_unittest_valkit)))
