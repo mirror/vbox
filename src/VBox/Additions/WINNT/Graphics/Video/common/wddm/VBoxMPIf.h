@@ -70,6 +70,45 @@ AssertCompileSize(VBOXVIDEO_HWTYPE, 4);
 #endif
 
 
+#ifdef VBOX_WITH_VMSVGA3D_DX
+/*
+ * Structures for the new D3D user mode driver.
+ */
+#pragma pack(1) /* VMSVGA structures are '__packed'. */
+#include <svga3d_reg.h>
+#pragma pack()
+
+/* D3DDDI_ALLOCATIONINFO::pPrivateDriverData */
+typedef enum VBOXDXALLOCATIONTYPE
+{
+    VBOXDXALLOCATIONTYPE_UNKNOWN = 0,
+    VBOXDXALLOCATIONTYPE_SURFACE = 1,
+    VBOXDXALLOCATIONTYPE_SHADERS = 2,
+    VBOXDXALLOCATIONTYPE_MAX,
+    VBOXDXALLOCATIONTYPE_32BIT = 0xFFFFFFFF
+} VBOXDXALLOCATIONTYPE;
+
+/* Information for DxgkDdiCreateAllocation and for SVGA3dCmdDefine[GB]Surface. */
+typedef struct VBOXDXALLOCATIONDESC
+{
+    VBOXDXALLOCATIONTYPE   enmAllocationType;
+    uint32_t               cbAllocation;
+    struct
+    {
+        SVGA3dSurfaceAllFlags surfaceFlags;
+        SVGA3dSurfaceFormat format;
+        uint32 numMipLevels;
+        uint32 multisampleCount;
+        SVGA3dMSPattern multisamplePattern;
+        SVGA3dMSQualityLevel qualityLevel;
+        SVGA3dTextureFilter autogenFilter;
+        SVGA3dSize size;
+        uint32 arraySize;
+        uint32 bufferByteStride;
+    } surfaceInfo;
+} VBOXDXALLOCATIONDESC;
+#endif /* VBOX_WITH_VMSVGA3D_DX */
+
 /* create allocation func */
 typedef enum
 {
