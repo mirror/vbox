@@ -55,7 +55,7 @@ public:
 
     /** Constructor. */
     UIWizardNewVMNameOSTypePage();
-
+    void setISOFilePath(const QString &strISOFilePath);
 
 protected:
 

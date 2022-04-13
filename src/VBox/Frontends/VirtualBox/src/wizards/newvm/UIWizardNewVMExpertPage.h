@@ -54,6 +54,7 @@ class UIWizardNewVMExpertPage : public UINativeWizardPage
 public:
 
     UIWizardNewVMExpertPage(UIActionPool *pActionPool);
+    void setISOFilePath(const QString &strISOFilePath);
 
 private slots:
 

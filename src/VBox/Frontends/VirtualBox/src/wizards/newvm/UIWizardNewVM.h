@@ -50,7 +50,9 @@ class UIWizardNewVM : public UINativeWizard
 public:
 
     UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
-                  const QString &strMachineGroup, const QString &strHelpHashtag, CUnattended &comUnattended);
+                  const QString &strMachineGroup, const QString &strHelpHashtag,
+                  CUnattended &comUnattended, const QString &strISOFilePath = QString());
+
     bool isUnattendedEnabled() const;
     bool isUnattendedInstallSupported() const;
     bool isGuestOSTypeWindows() const;
@@ -224,6 +226,7 @@ private:
        UIActionPool *m_pActionPool;
        CUnattended &m_comUnattended;
        bool m_fStartHeadless;
+       QString m_strInitialISOFilePath;
     /** @} */
 };
 

@@ -367,7 +367,8 @@ private:
       * @{ */
         /** Opens add machine dialog specifying initial name with @a strFileName. */
         void openAddMachineDialog(const QString &strFileName = QString());
-
+        /** Opens new machine dialog specifying initial name with @a strFileName. */
+        void openNewMachineWizard(const QString &strISOFilePath = QString());
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
         static void launchMachine(CMachine &comMachine, UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default);
         /** Launches certain @a comMachine. */

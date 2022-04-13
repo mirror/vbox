@@ -653,6 +653,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
 #else
         const QString strFile = list.at(i).toLocalFile();
 #endif
+        const QStringList isoExtensionList = QStringList() << "iso";
         /* If there is such file exists: */
         if (!strFile.isEmpty() && QFile::exists(strFile))
         {
@@ -687,6 +688,10 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
                 /* Allow update manager to propose us to update EP: */
                 gUpdateManager->setEPInstallationRequested(false);
 #endif
+            }
+            else if (UICommon::hasAllowedExtension(strFile, isoExtensionList))
+            {
+                openNewMachineWizard(strFile);
             }
         }
     }
@@ -956,54 +961,7 @@ void UIVirtualBoxManager::sltPerformExit()
 
 void UIVirtualBoxManager::sltOpenNewMachineWizard()
 {
-    /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_New)
-                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_New)
-                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_New),
-                                       "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
-
-    /* Get first selected item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* For global item or local machine: */
-    if (   !pItem
-        || pItem->itemType() == UIVirtualMachineItemType_Local)
-    {
-        CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
-        AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
-
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
-                                                             m_pWidget->fullGroupName(), "gui-createvm", comUnattendedInstaller);
-        windowManager().registerNewParent(pWizard, pWizardParent);
-
-        /* Execute wizard: */
-        pWizard->exec();
-
-        bool fStartHeadless = pWizard->startHeadless();
-        bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
-        QString strMachineId = pWizard->createdMachineId().toString();
-        delete pWizard;
-        /* Handle unattended install stuff: */
-        if (fUnattendedEnabled)
-            startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
-    }
-    /* For cloud machine: */
-    else
-    {
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, m_pWidget->fullGroupName());
-        windowManager().registerNewParent(pWizard, pWizardParent);
-
-        /* Execute wizard: */
-        pWizard->exec();
-        delete pWizard;
-    }
+    openNewMachineWizard();
 }
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
@@ -2526,6 +2484,59 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
 
     /* Register that machine: */
     comVBox.RegisterMachine(comMachineNew);
+}
+
+void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* = QString() */)
+{
+    /* Lock the actions preventing cascade calls: */
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_New)
+                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_New)
+                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_New),
+                                       "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
+    updateActionsAppearance();
+
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+
+    /* For global item or local machine: */
+    if (   !pItem
+        || pItem->itemType() == UIVirtualMachineItemType_Local)
+    {
+        CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
+        AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
+
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
+                                                             m_pWidget->fullGroupName(), "gui-createvm",
+                                                             comUnattendedInstaller, strISOFilePath);
+        windowManager().registerNewParent(pWizard, pWizardParent);
+
+        /* Execute wizard: */
+        pWizard->exec();
+
+        bool fStartHeadless = pWizard->startHeadless();
+        bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
+        QString strMachineId = pWizard->createdMachineId().toString();
+        delete pWizard;
+        /* Handle unattended install stuff: */
+        if (fUnattendedEnabled)
+            startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
+    }
+    /* For cloud machine: */
+    else
+    {
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, m_pWidget->fullGroupName());
+        windowManager().registerNewParent(pWizard, pWizardParent);
+
+        /* Execute wizard: */
+        pWizard->exec();
+        delete pWizard;
+    }
 }
 
 /* static */

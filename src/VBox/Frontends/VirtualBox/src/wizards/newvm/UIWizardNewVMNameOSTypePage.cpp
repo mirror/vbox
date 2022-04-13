@@ -406,6 +406,13 @@ UIWizardNewVMNameOSTypePage::UIWizardNewVMNameOSTypePage()
     prepare();
 }
 
+void UIWizardNewVMNameOSTypePage::setISOFilePath(const QString &strISOFilePath)
+{
+    QFileInfo isoFileInfo(strISOFilePath);
+    if (isoFileInfo.exists() && m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setISOImagePath(strISOFilePath);
+}
+
 void UIWizardNewVMNameOSTypePage::prepare()
 {
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
@@ -510,7 +517,7 @@ void UIWizardNewVMNameOSTypePage::initializePage()
         if (m_pNameAndSystemEditor)
         {
             m_pNameAndSystemEditor->setFocus();
-            m_pNameAndSystemEditor->setEditionSelectorEnabled(false);
+            setEditionSelectorEnabled();
         }
         setSkipCheckBoxEnable();
     }

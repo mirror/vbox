@@ -48,7 +48,7 @@ using namespace UIExtraDataDefs;
 
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
                              const QString &strMachineGroup, const QString &strHelpHashtag,
-                             CUnattended &comUnattended)
+                             CUnattended &comUnattended, const QString &strISOFilePath /* = QString() */)
     : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, strHelpHashtag)
     , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
@@ -70,6 +70,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
     , m_pActionPool(pActionPool)
     , m_comUnattended(comUnattended)
     , m_fStartHeadless(false)
+    , m_strInitialISOFilePath(strISOFilePath)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -90,7 +91,10 @@ void UIWizardNewVM::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardNewVMNameOSTypePage);
+            UIWizardNewVMNameOSTypePage *pNamePage = new UIWizardNewVMNameOSTypePage;
+            addPage(pNamePage);
+            if (!m_strInitialISOFilePath.isEmpty())
+                pNamePage->setISOFilePath(m_strInitialISOFilePath);
             m_iUnattendedInstallPageIndex = addPage(new UIWizardNewVMUnattendedPage);
             setUnattendedPageVisible(false);
             addPage(new UIWizardNewVMHardwarePage);
@@ -100,7 +104,10 @@ void UIWizardNewVM::populatePages()
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewVMExpertPage(m_pActionPool));
+            UIWizardNewVMExpertPage *pExpertPage = new UIWizardNewVMExpertPage(m_pActionPool);
+            addPage(pExpertPage);
+            if (!m_strInitialISOFilePath.isEmpty())
+                pExpertPage->setISOFilePath(m_strInitialISOFilePath);
             break;
         }
         default:
@@ -707,7 +714,6 @@ QString UIWizardNewVM::ISOFilePath() const
 
 void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 {
-    /* am I being a paranoid?: */
     QFileInfo isoFileInfo(strISOFilePath);
     if (!isoFileInfo.exists())
         return;

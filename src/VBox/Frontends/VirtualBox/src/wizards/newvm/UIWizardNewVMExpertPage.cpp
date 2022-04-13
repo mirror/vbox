@@ -83,6 +83,13 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage(UIActionPool *pActionPool)
     qRegisterMetaType<CMedium>();
 }
 
+void UIWizardNewVMExpertPage::setISOFilePath(const QString &strISOFilePath)
+{
+    QFileInfo isoFileInfo(strISOFilePath);
+    if (isoFileInfo.exists() && m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setISOImagePath(strISOFilePath);
+}
+
 void UIWizardNewVMExpertPage::sltNameChanged(const QString &strNewName)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());

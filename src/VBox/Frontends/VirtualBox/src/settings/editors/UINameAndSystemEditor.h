@@ -110,6 +110,8 @@ public:
 
     /** Returns image string selected by the user. */
     QString ISOImagePath() const;
+    /** Sets image path. */
+    void setISOImagePath(const QString &strPath);
 
     /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
     void setTypeId(QString strTypeId, QString strFamilyId = QString());
