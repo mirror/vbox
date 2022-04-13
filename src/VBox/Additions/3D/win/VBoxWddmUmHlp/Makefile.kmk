@@ -24,12 +24,11 @@ LIBRARIES.amd64 += VBoxWddmUmHlp-x86
 #
 # VBoxWddmUmHlp - logger and other helpers for user mode driver
 #
-VBoxWddmUmHlp_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
+VBoxWddmUmHlp_TEMPLATE = NewerVccVBoxGuestR3Dll
 VBoxWddmUmHlp_INST     = $(INST_ADDITIONS_LIB)
 VBoxWddmUmHlp_DEFS     = VBOX_WITH_WDDM
 VBoxWddmUmHlp_INCS     = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
-	$(VBOX_PATH_3D)/win/include \
 	$(VBOX_GRAPHICS_INCS)
 VBoxWddmUmHlp_SOURCES  = \
 	D3DKMT.cpp \
