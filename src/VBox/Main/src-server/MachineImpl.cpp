@@ -28,6 +28,7 @@
 #include "LoggingNew.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#include "SnapshotImpl.h"
 #include "ClientToken.h"
 #include "ProgressImpl.h"
 #include "ProgressProxyImpl.h"
@@ -4948,7 +4949,7 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
 
         uninit();
 
-        mParent->i_unregisterMachine(this, id);
+        mParent->i_unregisterMachine(this, CleanupMode_UnregisterOnly, id);
             // calls VirtualBox::i_saveSettings()
 
         return S_OK;
@@ -4985,10 +4986,10 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
 
     if (mData->mFirstSnapshot)
     {
-        // add the media from the medium attachments of the snapshots to llMedia
-        // as well, after the "main" machine media; Snapshot::uninitRecursively()
-        // calls Machine::detachAllMedia() for the snapshot machine, recursing
-        // into the children first
+        // add the media from the medium attachments of the snapshots to
+        // llMedia as well, after the "main" machine media;
+        // Snapshot::uninitAll() calls Machine::detachAllMedia() for each
+        // snapshot machine, depth first.
 
         // Snapshot::beginDeletingSnapshot() asserts if the machine state is not this
         MachineState_T oldState = mData->mMachineState;
@@ -5000,7 +5001,7 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
         ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
 
         // GO!
-        pFirstSnapshot->i_uninitRecursively(alock, aCleanupMode, llMedia, mData->llFilesToDelete);
+        pFirstSnapshot->i_uninitAll(alock, aCleanupMode, llMedia, mData->llFilesToDelete);
 
         mData->mMachineState = oldState;
     }
@@ -5033,8 +5034,11 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
          ++it, ++i)
         (*it).queryInterfaceTo(aMedia[i].asOutParam());
 
-    mParent->i_unregisterMachine(this, id);
+    mParent->i_unregisterMachine(this, aCleanupMode, id);
             // calls VirtualBox::i_saveSettings() and VirtualBox::saveModifiedRegistries()
+
+    autoCaller.release();
+    uninit();
 
     return S_OK;
 }
@@ -8401,12 +8405,11 @@ void Machine::uninitDataAndChildObjects()
 
     if (!i_isSessionMachine() && !i_isSnapshotMachine())
     {
-        // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children recursively)
+        // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children)
         if (mData->mFirstSnapshot)
         {
-            // snapshots tree is protected by machine write lock; strictly
-            // this isn't necessary here since we're deleting the entire
-            // machine, but otherwise we assert in Snapshot::uninit()
+            // Snapshots tree is protected by machine write lock.
+            // Otherwise we assert in Snapshot::uninit()
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
             mData->mFirstSnapshot->uninit();
             mData->mFirstSnapshot.setNull();
@@ -8652,12 +8655,10 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     {
         // there must be only one root snapshot
         Assert(cRootSnapshots == 1);
-
         const settings::Snapshot &snap = config.llFirstSnapshot.front();
 
         rc = i_loadSnapshot(snap,
-                            config.uuidCurrentSnapshot,
-                            NULL);        // no parent == first snapshot
+                            config.uuidCurrentSnapshot);
         if (FAILED(rc)) return rc;
     }
 
@@ -8698,80 +8699,90 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
 }
 
 /**
- *  Recursively loads all snapshots starting from the given.
+ *  Loads all snapshots starting from the given settings.
  *
  *  @param data             snapshot settings.
  *  @param aCurSnapshotId   Current snapshot ID from the settings file.
- *  @param aParentSnapshot  Parent snapshot.
  */
 HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
-                                const Guid &aCurSnapshotId,
-                                Snapshot *aParentSnapshot)
+                                const Guid &aCurSnapshotId)
 {
     AssertReturn(!i_isSnapshotMachine(), E_FAIL);
     AssertReturn(!i_isSessionMachine(), E_FAIL);
 
     HRESULT rc = S_OK;
 
-    Utf8Str strStateFile;
-    if (!data.strStateFile.isEmpty())
+    std::list<const settings::Snapshot *> llSettingsTodo;
+    llSettingsTodo.push_back(&data);
+    std::list<Snapshot *> llParentsTodo;
+    llParentsTodo.push_back(NULL);
+
+    while (llSettingsTodo.size() > 0)
     {
-        /* optional */
-        strStateFile = data.strStateFile;
-        int vrc = i_calculateFullPath(strStateFile, strStateFile);
-        if (RT_FAILURE(vrc))
-            return setErrorBoth(E_FAIL, vrc,
-                                tr("Invalid saved state file path '%s' (%Rrc)"),
-                                strStateFile.c_str(),
-                                vrc);
-    }
+        const settings::Snapshot *current = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        Snapshot *pParent = llParentsTodo.front();
+        llParentsTodo.pop_front();
 
-    /* create a snapshot machine object */
-    ComObjPtr<SnapshotMachine> pSnapshotMachine;
-    pSnapshotMachine.createObject();
-    rc = pSnapshotMachine->initFromSettings(this,
-                                            data.hardware,
-                                            &data.debugging,
-                                            &data.autostart,
-                                            data.uuid.ref(),
-                                            strStateFile);
-    if (FAILED(rc)) return rc;
+        Utf8Str strStateFile;
+        if (!current->strStateFile.isEmpty())
+        {
+            /* optional */
+            strStateFile = current->strStateFile;
+            int vrc = i_calculateFullPath(strStateFile, strStateFile);
+            if (RT_FAILURE(vrc))
+            {
+                setErrorBoth(E_FAIL, vrc,
+                             tr("Invalid saved state file path '%s' (%Rrc)"),
+                             strStateFile.c_str(), vrc);
+            }
+        }
 
-    /* create a snapshot object */
-    ComObjPtr<Snapshot> pSnapshot;
-    pSnapshot.createObject();
-    /* initialize the snapshot */
-    rc = pSnapshot->init(mParent, // VirtualBox object
-                         data.uuid,
-                         data.strName,
-                         data.strDescription,
-                         data.timestamp,
-                         pSnapshotMachine,
-                         aParentSnapshot);
-    if (FAILED(rc)) return rc;
+        /* create a snapshot machine object */
+        ComObjPtr<SnapshotMachine> pSnapshotMachine;
+        pSnapshotMachine.createObject();
+        rc = pSnapshotMachine->initFromSettings(this,
+                                                current->hardware,
+                                                &current->debugging,
+                                                &current->autostart,
+                                                current->uuid.ref(),
+                                                strStateFile);
+        if (FAILED(rc)) break;
 
-    /* memorize the first snapshot if necessary */
-    if (!mData->mFirstSnapshot)
-        mData->mFirstSnapshot = pSnapshot;
+        /* create a snapshot object */
+        ComObjPtr<Snapshot> pSnapshot;
+        pSnapshot.createObject();
+        /* initialize the snapshot */
+        rc = pSnapshot->init(mParent, // VirtualBox object
+                             current->uuid,
+                             current->strName,
+                             current->strDescription,
+                             current->timestamp,
+                             pSnapshotMachine,
+                             pParent);
+        if (FAILED(rc)) break;
 
-    /* memorize the current snapshot when appropriate */
-    if (    !mData->mCurrentSnapshot
-         && pSnapshot->i_getId() == aCurSnapshotId
-       )
-        mData->mCurrentSnapshot = pSnapshot;
+        /* memorize the first snapshot if necessary */
+        if (!mData->mFirstSnapshot)
+        {
+            Assert(pParent == NULL);
+            mData->mFirstSnapshot = pSnapshot;
+        }
 
-    // now create the children
-    for (settings::SnapshotsList::const_iterator
-         it = data.llChildSnapshots.begin();
-         it != data.llChildSnapshots.end();
-         ++it)
-    {
-        const settings::Snapshot &childData = *it;
-        // recurse
-        rc = i_loadSnapshot(childData,
-                            aCurSnapshotId,
-                            pSnapshot);       // parent = the one we created above
-        if (FAILED(rc)) return rc;
+        /* memorize the current snapshot when appropriate */
+        if (    !mData->mCurrentSnapshot
+             && pSnapshot->i_getId() == aCurSnapshotId
+           )
+            mData->mCurrentSnapshot = pSnapshot;
+
+        /* create all children */
+        std::list<settings::Snapshot>::const_iterator itBegin = current->llChildSnapshots.begin();
+        std::list<settings::Snapshot>::const_iterator itEnd = current->llChildSnapshots.end();
+        for (std::list<settings::Snapshot>::const_iterator it = itBegin; it != itEnd; ++it)
+        {
+            llSettingsTodo.push_back(&*it);
+            llParentsTodo.push_back(pSnapshot);
+        }
     }
 
     return rc;
@@ -10653,15 +10664,15 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
      * medium isn't yet associated with any medium registry. Do that now. */
     if (pMedium != pBase)
     {
-        /* Tree lock needed by Medium::addRegistry when recursing. */
+        /* Tree lock needed by Medium::addRegistryAll. */
         AutoReadLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        if (fCanHaveOwnMediaRegistry && pMedium->i_removeRegistryRecursive(mParent->i_getGlobalRegistryId()))
+        if (fCanHaveOwnMediaRegistry && pBase->i_removeRegistryAll(mParent->i_getGlobalRegistryId()))
         {
             treeLock.release();
             mParent->i_markRegistryModified(mParent->i_getGlobalRegistryId());
             treeLock.acquire();
         }
-        if (pBase->i_addRegistryRecursive(uuid))
+        if (pBase->i_addRegistryAll(uuid))
         {
             treeLock.release();
             mParent->i_markRegistryModified(uuid);

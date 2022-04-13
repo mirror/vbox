@@ -1212,8 +1212,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 HRESULT Medium::initOne(Medium *aParent,
                         DeviceType_T aDeviceType,
                         const Guid &uuidMachineRegistry,
-                        const settings::Medium &data,
-                        const Utf8Str &strMachineFolder)
+                        const Utf8Str &strMachineFolder,
+                        const settings::Medium &data)
 {
     HRESULT rc;
 
@@ -1355,113 +1355,136 @@ HRESULT Medium::initOne(Medium *aParent,
  * The only caller is currently VirtualBox::initMedia().
  *
  * @param aVirtualBox   VirtualBox object.
- * @param aParent       Parent medium disk or NULL for a root (base) medium.
  * @param aDeviceType   Device type of the medium.
  * @param uuidMachineRegistry The registry to which this medium should be added
  *                      (global registry UUID or machine UUID).
- * @param data          Configuration settings.
  * @param strMachineFolder The machine folder with which to resolve relative
  *                      paths; if empty, then we use the VirtualBox home directory
+ * @param data          Configuration settings.
  * @param mediaTreeLock Autolock.
- * @param ppRegistered  Where to return the registered Medium object.  This is
- *                      for handling the case where the medium object we're
- *                      constructing from settings already has a registered
- *                      instance that should be used instead of this one.
+ * @param uIdsForNotify List to be updated with newly registered media.
  *
- * @note Locks the medium tree for writing.
+ * @note Assumes that the medium tree lock is held for writing. May release
+ * and lock it again. At the end it is always held.
  */
+/* static */
 HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
-                                 Medium *aParent,
                                  DeviceType_T aDeviceType,
                                  const Guid &uuidMachineRegistry,
-                                 const settings::Medium &data,
                                  const Utf8Str &strMachineFolder,
+                                 const settings::Medium &data,
                                  AutoWriteLock &mediaTreeLock,
-                                 ComObjPtr<Medium> *ppRegistered)
+                                 std::list<std::pair<Guid, DeviceType_T> > &uIdsForNotify)
 {
-    using namespace settings;
-
     Assert(aVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     AssertReturn(aVirtualBox, E_INVALIDARG);
 
-    /*
-     * Enclose the state transition NotReady->InInit->Ready.
-     *
-     * Note! This has to be scoped so that we can temporarily drop the
-     *       mediaTreeLock ownership on failure.
-     */
-    HRESULT rc;
-    bool    fRetakeLock = false;
+    HRESULT rc = S_OK;
+
+    MediaList llMediaTocleanup;
+
+    std::list<const settings::Medium *> llSettingsTodo;
+    llSettingsTodo.push_back(&data);
+    MediaList llParentsTodo;
+    llParentsTodo.push_back(NULL);
+
+    while (llSettingsTodo.size() > 0)
     {
-        AutoInitSpan autoInitSpan(this);
-        AssertReturn(autoInitSpan.isOk(), E_FAIL);
+        const settings::Medium *current = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        ComObjPtr<Medium> pParent = llParentsTodo.front();
+        llParentsTodo.pop_front();
 
-        unconst(m->pVirtualBox) = aVirtualBox;
-        ComObjPtr<Medium> pActualThis = this;
+        bool fReleasedMediaTreeLock = false;
+        ComObjPtr<Medium> pMedium;
+        rc = pMedium.createObject();
+        if (FAILED(rc))
+            break;
+        ComObjPtr<Medium> pActualMedium(pMedium);
 
-        // Do not inline this method call, as the purpose of having this separate
-        // is to save on stack size. Less local variables are the key for reaching
-        // deep recursion levels with small stack (XPCOM/g++ without optimization).
-        rc = initOne(aParent, aDeviceType, uuidMachineRegistry, data, strMachineFolder);
-        if (SUCCEEDED(rc))
         {
-            /* In order to avoid duplicate instances of the medium object, we need
-               to register the parent before loading any children.  */
-            rc = m->pVirtualBox->i_registerMedium(pActualThis, &pActualThis, mediaTreeLock, true /*fCalledFromMediumInit*/);
-            if (SUCCEEDED(rc))
+            AutoInitSpan autoInitSpan(pMedium);
+            AssertBreakStmt(autoInitSpan.isOk(), rc = E_FAIL);
+
+            unconst(pMedium->m->pVirtualBox) = aVirtualBox;
+            rc = pMedium->initOne(pParent, aDeviceType, uuidMachineRegistry, strMachineFolder, *current);
+            if (FAILED(rc))
+                break;
+            rc = aVirtualBox->i_registerMedium(pActualMedium, &pActualMedium, mediaTreeLock, true /*fCalledFromMediumInit*/);
+            if (FAILED(rc))
+                break;
+
+            if (pActualMedium == pMedium)
             {
-                /* Don't call Medium::i_queryInfo for registered media to prevent the calling
-                 * thread (i.e. the VirtualBox server startup thread) from an unexpected
-                 * freeze but mark it as initially inaccessible instead. The vital UUID,
-                 * location and format properties are read from the registry file above; to
-                 * get the actual state and the rest of the data, the user will have to call
-                 * COMGETTER(State). */
-
-                /* load all children */
-                for (settings::MediaList::const_iterator it = data.llChildren.begin();
-                     it != data.llChildren.end();
-                     ++it)
-                {
-                    const settings::Medium &med = *it;
-
-                    ComObjPtr<Medium> pMedium;
-                    rc = pMedium.createObject();
-                    if (FAILED(rc)) break;
-
-                    rc = pMedium->initFromSettings(aVirtualBox,
-                                                   pActualThis,       // parent
-                                                   aDeviceType,
-                                                   uuidMachineRegistry,
-                                                   med,               // child data
-                                                   strMachineFolder,
-                                                   mediaTreeLock,
-                                                   NULL /*ppRegistered - must _not_ be &pMedium*/);
-                    if (FAILED(rc)) break;
-                }
+                /* It is a truly new medium, remember details for cleanup. */
+                autoInitSpan.setSucceeded();
+                llMediaTocleanup.push_front(pMedium);
+            }
+            else
+            {
+                /* Since the newly created medium was replaced by an already
+                 * known one when merging medium trees, we can immediately mark
+                 * it as failed. */
+                autoInitSpan.setFailed();
+                mediaTreeLock.release();
+                fReleasedMediaTreeLock = true;
             }
         }
-
-        /* Confirm a successful initialization when it's the case.  Do not confirm duplicates. */
-        if (SUCCEEDED(rc) && (Medium *)pActualThis == this)
-            autoInitSpan.setSucceeded();
-        /* Otherwise we have release the media tree lock so that Medium::uninit()
-           doesn't freak out when it is called by AutoInitSpan::~AutoInitSpan().
-           In the case of duplicates, the uninit will i_deparent this object. */
-        else
+        if (fReleasedMediaTreeLock)
         {
-            /** @todo Non-duplicate: Deregister? What about child load errors, should they
-             *        affect the parents? */
-            mediaTreeLock.release();
-            fRetakeLock = true;
+            /* With the InitSpan out of the way it's safe to let the refcount
+             * drop to 0 without causing uninit trouble. */
+            pMedium.setNull();
+            mediaTreeLock.acquire();
         }
 
-        /* Must be done after the mediaTreeLock.release above. */
-        if (ppRegistered)
-            *ppRegistered = pActualThis;
+        /* create all children */
+        std::list<settings::Medium>::const_iterator itBegin = current->llChildren.begin();
+        std::list<settings::Medium>::const_iterator itEnd = current->llChildren.end();
+        for (std::list<settings::Medium>::const_iterator it = itBegin; it != itEnd; ++it)
+        {
+            llSettingsTodo.push_back(&*it);
+            llParentsTodo.push_back(pActualMedium);
+        }
     }
 
-    if (fRetakeLock)
+    if (SUCCEEDED(rc))
+    {
+        /* Check for consistency. */
+        Assert(llSettingsTodo.size() == 0);
+        Assert(llParentsTodo.size() == 0);
+        /* Create the list of notifications, parent first. */
+        MediaList::const_reverse_iterator itBegin = llMediaTocleanup.rbegin();
+        MediaList::const_reverse_iterator itEnd = llMediaTocleanup.rend();
+        for (MediaList::const_reverse_iterator it = itBegin; it != itEnd; --it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+            AutoCaller mediumCaller(pMedium);
+            if (FAILED(mediumCaller.rc())) continue;
+            const Guid &id = pMedium->i_getId();
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(id, aDeviceType));
+        }
+    }
+    else
+    {
+        /* Forget state of the settings processing. */
+        llSettingsTodo.clear();
+        llParentsTodo.clear();
+        /* Unregister all accumulated medium objects in the right order (last
+         * created to first created, avoiding config leftovers). */
+        MediaList::const_iterator itBegin = llMediaTocleanup.begin();
+        MediaList::const_iterator itEnd = llMediaTocleanup.end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+            pMedium->i_unregisterWithVirtualBox();
+        }
+        /* Forget the only references to all newly created medium objects,
+         * triggering freeing (uninit happened in unregistering above). */
+        mediaTreeLock.release();
+        llMediaTocleanup.clear();
         mediaTreeLock.acquire();
+    }
 
     return rc;
 }
@@ -1532,8 +1555,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  *
  * Called either from FinalRelease() or by the parent when it gets destroyed.
  *
- * @note All children of this medium get uninitialized by calling their
- *       uninit() methods.
+ * @note All children of this medium get uninitialized, too, in a stack
+ *       friendly manner.
  */
 void Medium::uninit()
 {
@@ -1551,55 +1574,67 @@ void Medium::uninit()
     if (!pVirtualBox)
         return;
 
-    /* Caller must not hold the object or media tree lock over uninit(). */
-    Assert(!isWriteLockOnCurrentThread());
+    /* Caller must not hold the object (checked below) or media tree lock. */
     Assert(!pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoWriteLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    MediaList llMediaTodo;
+    llMediaTodo.push_back(this);
+
+    while (!llMediaTodo.empty())
+    {
+        /* This also guarantees that the refcount doesn't actually drop to 0
+         * again while the uninit is already ongoing. */
+        ComObjPtr<Medium> pMedium = llMediaTodo.front();
+        llMediaTodo.pop_front();
+
+        /* Enclose the state transition Ready->InUninit->NotReady */
+        AutoUninitSpan autoUninitSpan(pMedium);
+        if (autoUninitSpan.uninitDone())
+            continue;
+
+        Assert(!pMedium->isWriteLockOnCurrentThread());
 #ifdef DEBUG
-    if (!m->backRefs.empty())
-        i_dumpBackRefs();
+        if (!pMedium->m->backRefs.empty())
+            pMedium->i_dumpBackRefs();
 #endif
-    Assert(m->backRefs.empty());
+        Assert(pMedium->m->backRefs.empty());
 
-    /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan(this);
-    if (autoUninitSpan.uninitDone())
-        return;
+        pMedium->m->formatObj.setNull();
 
-    if (!m->formatObj.isNull())
-        m->formatObj.setNull();
-
-    if (m->state == MediumState_Deleting)
-    {
-        /* This medium has been already deleted (directly or as part of a
-         * merge).  Reparenting has already been done. */
-        Assert(m->pParent.isNull());
-    }
-    else
-    {
-        MediaList llChildren(m->llChildren);
-        m->llChildren.clear();
-        autoUninitSpan.setSucceeded();
-
-        while (!llChildren.empty())
+        if (m->state == MediumState_Deleting)
         {
-            ComObjPtr<Medium> pChild = llChildren.front();
-            llChildren.pop_front();
+            /* This medium has been already deleted (directly or as part of a
+             * merge).  Reparenting has already been done. */
+            Assert(m->pParent.isNull());
+            Assert(m->llChildren.empty());
+            continue;
+        }
+
+        //Assert(!pMedium->m->pParent);
+        /** @todo r=klaus Should not be necessary, since the caller should be
+         * doing the deparenting. No time right now to test everything. */
+        if (pMedium == this && pMedium->m->pParent)
+            pMedium->i_deparent();
+
+        /* Process all children */
+        MediaList::const_iterator itBegin = pMedium->m->llChildren.begin();
+        MediaList::const_iterator itEnd = pMedium->m->llChildren.end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+        {
+            Medium *pChild = *it;
             pChild->m->pParent.setNull();
-            treeLock.release();
-            pChild->uninit();
-            treeLock.acquire();
+            llMediaTodo.push_back(pChild);
         }
 
-        if (m->pParent)
-        {
-            // this is a differencing disk: then remove it from the parent's children list
-            i_deparent();
-        }
+        /* Children information obsolete, will be processed anyway. */
+        pMedium->m->llChildren.clear();
+
+        unconst(pMedium->m->pVirtualBox) = NULL;
+
+        autoUninitSpan.setSucceeded();
     }
-
-    unconst(m->pVirtualBox) = NULL;
 }
 
 /**
@@ -3621,7 +3656,7 @@ HRESULT Medium::reset(AutoCaller &autoCaller, ComPtr<IProgress> &aProgress)
          * cleared the pVirtualBox reference, see #uninit(). */
         ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-        /* canClose() needs the tree lock */
+        /* i_canClose() needs the tree lock */
         AutoMultiWriteLock2 multilock(!pVirtualBox.isNull() ? &pVirtualBox->i_getMediaTreeLockHandle() : NULL,
                                       this->lockHandle()
                                       COMMA_LOCKVAL_SRC_POS);
@@ -4222,7 +4257,7 @@ bool Medium::i_addRegistry(const Guid &id)
  * This adds the given UUID to the list of media registries in which this
  * medium should be registered. The UUID can either be a machine UUID,
  * to add a machine registry, or the global registry UUID as returned by
- * VirtualBox::getGlobalRegistryId(). This recurses over all children.
+ * VirtualBox::getGlobalRegistryId(). Thisis applied to all children.
  *
  * Note that for hard disks, this method does nothing if the medium is
  * already in another registry to avoid having hard disks in more than
@@ -4234,21 +4269,28 @@ bool Medium::i_addRegistry(const Guid &id)
  * @param id
  * @return true if the registry was added; false if the given id was already on the list.
  */
-bool Medium::i_addRegistryRecursive(const Guid &id)
+bool Medium::i_addRegistryAll(const Guid &id)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return false;
+    MediaList llMediaTodo;
+    llMediaTodo.push_back(this);
 
-    bool fAdd = i_addRegistryNoCallerCheck(id);
+    bool fAdd = false;
 
-    // protected by the medium tree lock held by our original caller
-    for (MediaList::const_iterator it = i_getChildren().begin();
-         it != i_getChildren().end();
-         ++it)
+    while (llMediaTodo.size() > 0)
     {
-        Medium *pChild = *it;
-        fAdd |= pChild->i_addRegistryRecursive(id);
+        ComObjPtr<Medium> pMedium = llMediaTodo.front();
+        llMediaTodo.pop_front();
+
+        AutoCaller mediumCaller(pMedium);
+        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+
+        fAdd |= pMedium->i_addRegistryNoCallerCheck(id);
+
+        // protected by the medium tree lock held by our original caller
+        MediaList::const_iterator itBegin = pMedium->i_getChildren().begin();
+        MediaList::const_iterator itEnd = pMedium->i_getChildren().end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+            llMediaTodo.push_back(*it);
     }
 
     return fAdd;
@@ -4288,28 +4330,35 @@ bool Medium::i_removeRegistry(const Guid &id)
 
 /**
  * Removes the given UUID from the list of media registry UUIDs, for this
- * medium and all its children recursively.
+ * medium and all its children.
  *
  * @note the caller must hold the media tree lock for reading.
  *
  * @param id
  * @return true if the UUID was found or false if not.
  */
-bool Medium::i_removeRegistryRecursive(const Guid &id)
+bool Medium::i_removeRegistryAll(const Guid &id)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return false;
+    MediaList llMediaTodo;
+    llMediaTodo.push_back(this);
 
-    bool fRemove = i_removeRegistry(id);
+    bool fRemove = false;
 
-    // protected by the medium tree lock held by our original caller
-    for (MediaList::const_iterator it = i_getChildren().begin();
-         it != i_getChildren().end();
-         ++it)
+    while (llMediaTodo.size() > 0)
     {
-        Medium *pChild = *it;
-        fRemove |= pChild->i_removeRegistryRecursive(id);
+        ComObjPtr<Medium> pMedium = llMediaTodo.front();
+        llMediaTodo.pop_front();
+
+        AutoCaller mediumCaller(pMedium);
+        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+
+        fRemove |= pMedium->i_removeRegistry(id);
+
+        // protected by the medium tree lock held by our original caller
+        MediaList::const_iterator itBegin = pMedium->i_getChildren().begin();
+        MediaList::const_iterator itEnd = pMedium->i_getChildren().end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+            llMediaTodo.push_back(*it);
     }
 
     return fRemove;
@@ -4596,22 +4645,35 @@ const Guid* Medium::i_getFirstMachineBackrefId() const
  * media registry is about to be deleted in VirtualBox::unregisterMachine().
  *
  * Must have caller + locking, *and* caller must hold the media tree lock!
+ * @param aId   Id to ignore when looking for backrefs.
  * @return
  */
-const Guid* Medium::i_getAnyMachineBackref() const
+const Guid* Medium::i_getAnyMachineBackref(const Guid &aId) const
 {
-    if (m->backRefs.size())
-        return &m->backRefs.front().machineId;
+    std::list<const Medium *> llMediaTodo;
+    llMediaTodo.push_back(this);
 
-    for (MediaList::const_iterator it = i_getChildren().begin();
-         it != i_getChildren().end();
-         ++it)
+    while (llMediaTodo.size() > 0)
     {
-        Medium *pChild = *it;
-        // recurse for this child
-        const Guid* puuid;
-        if ((puuid = pChild->i_getAnyMachineBackref()))
-            return puuid;
+        const Medium *pMedium = llMediaTodo.front();
+        llMediaTodo.pop_front();
+
+        if (pMedium->m->backRefs.size())
+        {
+            if (pMedium->m->backRefs.front().machineId != aId)
+                return &pMedium->m->backRefs.front().machineId;
+            if (pMedium->m->backRefs.size() > 1)
+            {
+                BackRefList::const_iterator it = pMedium->m->backRefs.begin();
+                ++it;
+                return &it->machineId;
+            }
+        }
+
+        MediaList::const_iterator itBegin = pMedium->i_getChildren().begin();
+        MediaList::const_iterator itEnd = pMedium->i_getChildren().end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+            llMediaTodo.push_back(*it);
     }
 
     return NULL;
@@ -4935,7 +4997,7 @@ void Medium::i_saveSettingsOne(settings::Medium &data, const Utf8Str &strHardDis
 
 /**
  * Saves medium data by putting it into the provided data structure.
- * Recurses over all children to save their settings, too.
+ * The settings of all children is saved, too.
  *
  * @param data      Settings struct to be updated.
  * @param strHardDiskFolder Folder for which paths should be relative.
@@ -4951,24 +5013,31 @@ HRESULT Medium::i_saveSettings(settings::Medium &data,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    i_saveSettingsOne(data, strHardDiskFolder);
+    MediaList llMediaTodo;
+    llMediaTodo.push_back(this);
+    std::list<settings::Medium *> llSettingsTodo;
+    llSettingsTodo.push_back(&data);
 
-    /* save all children */
-    settings::MediaList &llSettingsChildren = data.llChildren;
-    for (MediaList::const_iterator it = i_getChildren().begin();
-         it != i_getChildren().end();
-         ++it)
+    while (llMediaTodo.size() > 0)
     {
-        // Use the element straight in the list to reduce both unnecessary
-        // deep copying (when unwinding the recursion the entire medium
-        // settings sub-tree is copied) and the stack footprint (the settings
-        // need almost 1K, and there can be VMs with long image chains.
-        llSettingsChildren.push_back(settings::Medium::Empty);
-        HRESULT rc = (*it)->i_saveSettings(llSettingsChildren.back(), strHardDiskFolder);
-        if (FAILED(rc))
+        ComObjPtr<Medium> pMedium = llMediaTodo.front();
+        llMediaTodo.pop_front();
+        settings::Medium *current = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+
+        AutoCaller mediumCaller(pMedium);
+        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+
+        pMedium->i_saveSettingsOne(*current, strHardDiskFolder);
+
+        /* save all children */
+        MediaList::const_iterator itBegin = pMedium->i_getChildren().begin();
+        MediaList::const_iterator itEnd = pMedium->i_getChildren().end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
         {
-            llSettingsChildren.pop_back();
-            return rc;
+            llMediaTodo.push_back(*it);
+            current->llChildren.push_back(settings::Medium::Empty);
+            llSettingsTodo.push_back(&current->llChildren.back());
         }
     }
 
@@ -5401,7 +5470,7 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
 
     try
     {
-        /* we're accessing the media tree, and canClose() needs it too */
+        /* we're accessing the media tree, and i_canClose() needs it too */
         AutoWriteLock treelock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         AutoCaller autoCaller(this);

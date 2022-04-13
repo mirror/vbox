@@ -270,9 +270,8 @@ public:
     HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium,
                              AutoWriteLock &mediaTreeLock, bool fCalledFromMediumInit = false);
     HRESULT i_unregisterMedium(Medium *pMedium);
-    void i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
     HRESULT i_unregisterMachineMedia(const Guid &id);
-    HRESULT i_unregisterMachine(Machine *pMachine, const Guid &id);
+    HRESULT i_unregisterMachine(Machine *pMachine, CleanupMode_T aCleanupMode, const Guid &id);
     void i_rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
                                              const Utf8Str &strNewConfigDir);
     void i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,

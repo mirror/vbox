@@ -23,7 +23,6 @@
 
 #include "AuthLibrary.h"
 #include "VirtualBoxBase.h"
-#include "SnapshotImpl.h"
 #include "ProgressImpl.h"
 #include "VRDEServerImpl.h"
 #include "MediumAttachmentImpl.h"
@@ -644,8 +643,7 @@ protected:
     HRESULT i_loadMachineDataFromSettings(const settings::MachineConfigFile &config,
                                           const Guid *puuidRegistry);
     HRESULT i_loadSnapshot(const settings::Snapshot &data,
-                           const Guid &aCurSnapshotId,
-                           Snapshot *aParentSnapshot);
+                           const Guid &aCurSnapshotId);
     HRESULT i_loadHardware(const Guid *puuidRegistry,
                            const Guid *puuidSnapshot,
                            const settings::Hardware &data,

@@ -25,6 +25,7 @@
 #include <VBox/com/ErrorInfo.h>
 
 #include "MachineImplMoveVM.h"
+#include "SnapshotImpl.h"
 #include "MediumFormatImpl.h"
 #include "VirtualBoxImpl.h"
 #include "LoggingNew.h"

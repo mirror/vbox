@@ -58,7 +58,8 @@
  * Maximum depth of a medium tree, to prevent stack overflows.
  * XPCOM has a relatively low stack size for its workers, and we have
  * to avoid crashes due to exceeding the limit both on reading and
- * writing config files.
+ * writing config files. The bottleneck is in libxml2.
+ * Data point: a release and asan build could both handle 3800 on Debian 10.
  */
 #define SETTINGS_MEDIUM_DEPTH_MAX 300
 
@@ -67,8 +68,8 @@
  * XPCOM has a relatively low stack size for its workers, and we have
  * to avoid crashes due to exceeding the limit both on reading and
  * writing config files. The bottleneck is reading config files with
- * deep snapshot nesting, as libxml2 needs quite some stack space,
- * so with the current stack size the margin isn't big.
+ * deep snapshot nesting, as libxml2 needs quite some stack space.
+ * Data point: a release and asan build could both handle 1300 on Debian 10.
  */
 #define SETTINGS_SNAPSHOT_DEPTH_MAX 250
 
@@ -256,7 +257,7 @@ protected:
     void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
                               USBDeviceFiltersList &ll);
     void readMediumOne(MediaType t, const xml::ElementNode &elmMedium, Medium &med);
-    void readMedium(MediaType t, uint32_t depth, const xml::ElementNode &elmMedium, Medium &med);
+    void readMedium(MediaType t, const xml::ElementNode &elmMedium, Medium &med);
     void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
     void readNATForwardRulesMap(const xml::ElementNode  &elmParent, NATRulesMap &mapRules);
     void readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopBacks);
@@ -270,9 +271,8 @@ protected:
                                const USBDeviceFiltersList &ll,
                                bool fHostMode);
     void buildMedium(MediaType t,
-                     uint32_t depth,
                      xml::ElementNode &elmMedium,
-                     const Medium &mdm);
+                     const Medium &med);
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
     void buildNATForwardRulesMap(xml::ElementNode &elmParent, const NATRulesMap &mapRules);
@@ -1408,11 +1408,11 @@ private:
     void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
     void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
-    void readTeleporter(const xml::ElementNode *pElmTeleporter, MachineUserData *pUserData);
-    void readDebugging(const xml::ElementNode *pElmDbg, Debugging *pDbg);
-    void readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart);
-    void readGroups(const xml::ElementNode *elmGroups, StringsList *pllGroups);
-    bool readSnapshot(const com::Guid &curSnapshotUuid, uint32_t depth, const xml::ElementNode &elmSnapshot, Snapshot &snap);
+    void readTeleporter(const xml::ElementNode &elmTeleporter, MachineUserData &userData);
+    void readDebugging(const xml::ElementNode &elmDbg, Debugging &dbg);
+    void readAutostart(const xml::ElementNode &elmAutostart, Autostart &autostrt);
+    void readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups);
+    bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
 
@@ -1422,10 +1422,10 @@ private:
                                     const Storage &st,
                                     bool fSkipRemovableMedia,
                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
-    void buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg);
-    void buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart);
-    void buildGroupsXML(xml::ElementNode *pElmParent, const StringsList *pllGroups);
-    void buildSnapshotXML(uint32_t depth, xml::ElementNode &elmParent, const Snapshot &snap);
+    void buildDebuggingXML(xml::ElementNode &elmParent, const Debugging &dbg);
+    void buildAutostartXML(xml::ElementNode &elmParent, const Autostart &autostrt);
+    void buildGroupsXML(xml::ElementNode &elmParent, const StringsList &llGroups);
+    void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();
 };

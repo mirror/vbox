@@ -76,16 +76,15 @@ public:
     HRESULT initOne(Medium *aParent,
                     DeviceType_T aDeviceType,
                     const Guid &uuidMachineRegistry,
-                    const settings::Medium &data,
-                    const Utf8Str &strMachineFolder);
-    HRESULT initFromSettings(VirtualBox *aVirtualBox,
-                             Medium *aParent,
-                             DeviceType_T aDeviceType,
-                             const Guid &uuidMachineRegistry,
-                             const settings::Medium &data,
-                             const Utf8Str &strMachineFolder,
-                             AutoWriteLock &mediaTreeLock,
-                             ComObjPtr<Medium> *ppRegistered);
+                    const Utf8Str &strMachineFolder,
+                    const settings::Medium &data);
+    static HRESULT initFromSettings(VirtualBox *aVirtualBox,
+                                    DeviceType_T aDeviceType,
+                                    const Guid &uuidMachineRegistry,
+                                    const Utf8Str &strMachineFolder,
+                                    const settings::Medium &data,
+                                    AutoWriteLock &mediaTreeLock,
+                                    std::list<std::pair<Guid, DeviceType_T> > &uIdsForNotify);
 
     // initializer for host floppy/DVD
     HRESULT init(VirtualBox *aVirtualBox,
@@ -121,11 +120,11 @@ public:
     bool i_addRegistry(const Guid &id);
     bool i_addRegistryNoCallerCheck(const Guid &id);
     /* handles caller/locking itself, caller is responsible for tree lock */
-    bool i_addRegistryRecursive(const Guid &id);
+    bool i_addRegistryAll(const Guid &id);
     /* handles caller/locking itself */
     bool i_removeRegistry(const Guid& id);
     /* handles caller/locking itself, caller is responsible for tree lock */
-    bool i_removeRegistryRecursive(const Guid& id);
+    bool i_removeRegistryAll(const Guid& id);
     bool i_isInRegistry(const Guid& id);
     bool i_getFirstRegistryMachineId(Guid &uuid) const;
     void i_markRegistriesModified();
@@ -139,7 +138,7 @@ public:
 
 
     const Guid* i_getFirstMachineBackrefId() const;
-    const Guid* i_getAnyMachineBackref() const;
+    const Guid* i_getAnyMachineBackref(const Guid &aId) const;
     const Guid* i_getFirstMachineBackrefSnapshotId() const;
     size_t i_getMachineBackRefCount() const;
 

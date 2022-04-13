@@ -934,59 +934,14 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
     {
         const settings::Medium &xmlHD = *it;
 
-        ComObjPtr<Medium> pHardDisk;
-        rc = pHardDisk.createObject();
+        rc = Medium::initFromSettings(this,
+                                      DeviceType_HardDisk,
+                                      uuidRegistry,
+                                      strMachineFolder,
+                                      xmlHD,
+                                      treeLock,
+                                      uIdsForNotify);
         if (FAILED(rc)) return rc;
-        ComObjPtr<Medium> pHardDiskActual(pHardDisk);
-        rc = pHardDisk->initFromSettings(this,
-                                         NULL,          // parent
-                                         DeviceType_HardDisk,
-                                         uuidRegistry,
-                                         xmlHD,         // XML data; this recurses to processes the children
-                                         strMachineFolder,
-                                         treeLock,
-                                         &pHardDiskActual /*never &pHardDisk!*/);
-        if (SUCCEEDED(rc))
-        {
-            /** @todo r=bird: should we really do notifications for duplicates?
-             *  ((Medium *)pHardDisk != (Medium *)pHardDiskActual)
-             * The problem with that, though, is that for the children we don't quite know
-             * which are duplicates and which aren't.   The above initFromSettings is
-             * essentially poforming a merge operation now, so in the duplicate case, we may
-             * just have added a new (grand)child.  Why don't we just pass uIdsForNotify
-             * down to initFromSettings, that'll save us this extra walking? */
-
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pHardDiskActual->i_getId(), DeviceType_HardDisk));
-            // Add children IDs to notification using non-recursive children enumeration.
-            std::vector<std::pair<MediaList::const_iterator, ComObjPtr<Medium> > > llEnumStack;
-            const MediaList& mediaList = pHardDiskActual->i_getChildren();
-            llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(mediaList.begin(), pHardDiskActual));
-            while (!llEnumStack.empty())
-            {
-                if (llEnumStack.back().first == llEnumStack.back().second->i_getChildren().end())
-                {
-                    llEnumStack.pop_back();
-                    if (!llEnumStack.empty())
-                        ++llEnumStack.back().first;
-                    continue;
-                }
-                uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>((*llEnumStack.back().first)->i_getId(), DeviceType_HardDisk));
-                const MediaList& childMediaList = (*llEnumStack.back().first)->i_getChildren();
-                if (!childMediaList.empty())
-                {
-                    llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(childMediaList.begin(),
-                                                                                             *llEnumStack.back().first));
-                    continue;
-                }
-                ++llEnumStack.back().first;
-            }
-        }
-        // Avoid trouble with lock/refcount, before returning or not.
-        treeLock.release();
-        pHardDisk.setNull();
-        pHardDiskActual.setNull();
-        if (FAILED(rc)) return rc;
-        treeLock.acquire();
     }
 
     for (it = mediaRegistry.llDvdImages.begin();
@@ -995,28 +950,14 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
     {
         const settings::Medium &xmlDvd = *it;
 
-        ComObjPtr<Medium> pImage;
-        rc = pImage.createObject();
-        if (FAILED(rc)) return rc;
-
-        ComObjPtr<Medium> pImageActually = pImage;
-        rc = pImage->initFromSettings(this,
-                                      NULL,
+        rc = Medium::initFromSettings(this,
                                       DeviceType_DVD,
                                       uuidRegistry,
-                                      xmlDvd,
                                       strMachineFolder,
+                                      xmlDvd,
                                       treeLock,
-                                      &pImageActually);
-        if (SUCCEEDED(rc))
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImageActually->i_getId(), DeviceType_DVD));
-
-        // Avoid trouble with lock/refcount, before returning or not.
-        treeLock.release();
-        pImage.setNull();
-        pImageActually.setNull();
+                                      uIdsForNotify);
         if (FAILED(rc)) return rc;
-        treeLock.acquire();
     }
 
     for (it = mediaRegistry.llFloppyImages.begin();
@@ -1025,38 +966,21 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
     {
         const settings::Medium &xmlFloppy = *it;
 
-        ComObjPtr<Medium> pImage;
-        rc = pImage.createObject();
-        if (FAILED(rc)) return rc;
-
-        ComObjPtr<Medium> pImageActually = pImage;
-        rc = pImage->initFromSettings(this,
-                                      NULL,
+        rc = Medium::initFromSettings(this,
                                       DeviceType_Floppy,
                                       uuidRegistry,
-                                      xmlFloppy,
                                       strMachineFolder,
+                                      xmlFloppy,
                                       treeLock,
-                                      &pImageActually);
-        if (SUCCEEDED(rc))
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImage->i_getId(), DeviceType_Floppy));
-
-        // Avoid trouble with lock/refcount, before returning or not.
-        treeLock.release();
-        pImage.setNull();
-        pImageActually.setNull();
+                                      uIdsForNotify);
         if (FAILED(rc)) return rc;
-        treeLock.acquire();
     }
 
-    if (SUCCEEDED(rc))
+    for (std::list<std::pair<Guid, DeviceType_T> >::const_iterator itItem = uIdsForNotify.begin();
+         itItem != uIdsForNotify.end();
+         ++itItem)
     {
-        for (std::list<std::pair<Guid, DeviceType_T> >::const_iterator itItem = uIdsForNotify.begin();
-             itItem != uIdsForNotify.end();
-             ++itItem)
-        {
-            i_onMediumRegistered(itItem->first, itItem->second, TRUE);
-        }
+        i_onMediumRegistered(itItem->first, itItem->second, TRUE);
     }
 
     LogFlow(("VirtualBox::initMedia LEAVING\n"));
@@ -5237,30 +5161,6 @@ HRESULT VirtualBox::i_unregisterMedium(Medium *pMedium)
 }
 
 /**
- * Little helper called from unregisterMachineMedia() to recursively add media to the given list,
- * with children appearing before their parents.
- * @param llMedia
- * @param pMedium
- */
-void VirtualBox::i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium)
-{
-    // recurse first, then add ourselves; this way children end up on the
-    // list before their parents
-
-    const MediaList &llChildren = pMedium->i_getChildren();
-    for (MediaList::const_iterator it = llChildren.begin();
-         it != llChildren.end();
-         ++it)
-    {
-        Medium *pChild = *it;
-        i_pushMediumToListWithChildren(llMedia, pChild);
-    }
-
-    Log(("Pushing medium %RTuuid\n", pMedium->i_getId().raw()));
-    llMedia.push_back(pMedium);
-}
-
-/**
  * Unregisters all Medium objects which belong to the given machine registry.
  * Gets called from Machine::uninit() just before the machine object dies
  * and must only be called with a machine UUID as the registry ID.
@@ -5292,10 +5192,39 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
             AutoCaller medCaller(pMedium);
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoReadLock medlock(pMedium COMMA_LOCKVAL_SRC_POS);
+            LogRel(("Looking at medium %RTuuid\n", pMedium->i_getId().raw()));
 
-            if (pMedium->i_isInRegistry(uuidMachine))
-                // recursively with children first
-                i_pushMediumToListWithChildren(llMedia2Close, pMedium);
+            /* If the medium is still in the registry then either some code is
+             * seriously buggy (unregistering a VM removes it automatically),
+             * or the reference to a Machine object is destroyed without ever
+             * being registered. The second condition checks if a medium is
+             * in no registry, which indicates (set by unregistering) that a
+             * medium is not used by any other VM and thus can be closed. */
+            Guid dummy;
+            if (   pMedium->i_isInRegistry(uuidMachine)
+                || !pMedium->i_getFirstRegistryMachineId(dummy))
+            {
+                /* Collect all medium objects into llMedia2Close,
+                 * in right order for closing. */
+                MediaList llMediaTodo;
+                llMediaTodo.push_back(pMedium);
+
+                while (llMediaTodo.size() > 0)
+                {
+                    ComObjPtr<Medium> pCurrent = llMediaTodo.front();
+                    llMediaTodo.pop_front();
+
+                    /* Add to front, order must be children then parent. */
+                    LogRel(("Pushing medium %RTuuid (front)\n", pCurrent->i_getId().raw()));
+                    llMedia2Close.push_front(pCurrent);
+
+                    /* process all children */
+                    MediaList::const_iterator itBegin = pCurrent->i_getChildren().begin();
+                    MediaList::const_iterator itEnd = pCurrent->i_getChildren().end();
+                    for (MediaList::const_iterator it2 = itBegin; it2 != itEnd; ++it2)
+                        llMediaTodo.push_back(*it2);
+                }
+            }
         }
     }
 
@@ -5304,7 +5233,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
          ++it)
     {
         ComObjPtr<Medium> pMedium = *it;
-        Log(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
+        LogRel(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
         AutoCaller mac(pMedium);
         pMedium->i_close(mac);
     }
@@ -5318,10 +5247,15 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
  * Removes the given machine object from the internal list of registered machines.
  * Called from Machine::Unregister().
  * @param pMachine
+ * @param aCleanupMode  How to handle medium attachments. For
+ *      CleanupMode_UnregisterOnly the associated medium objects will be
+ *      closed when the Machine object is uninitialized, otherwise they will
+ *      go to the global registry if no better registry is found.
  * @param id  UUID of the machine. Must be passed by caller because machine may be dead by this time.
  * @return
  */
 HRESULT VirtualBox::i_unregisterMachine(Machine *pMachine,
+                                        CleanupMode_T aCleanupMode,
                                         const Guid &id)
 {
     // remove from the collection of registered machines
@@ -5354,20 +5288,29 @@ HRESULT VirtualBox::i_unregisterMachine(Machine *pMachine,
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->i_removeRegistryRecursive(id))
+            if (pMedium->i_removeRegistryAll(id))
             {
                 // machine ID was found in base medium's registry list:
                 // move this base image and all its children to another registry then
                 // 1) first, find a better registry to add things to
-                const Guid *puuidBetter = pMedium->i_getAnyMachineBackref();
+                const Guid *puuidBetter = pMedium->i_getAnyMachineBackref(id);
                 if (puuidBetter)
                 {
                     // 2) better registry found: then use that
-                    pMedium->i_addRegistryRecursive(*puuidBetter);
+                    pMedium->i_addRegistryAll(*puuidBetter);
                     // 3) and make sure the registry is saved below
                     mlock.release();
                     tlock.release();
                     i_markRegistryModified(*puuidBetter);
+                    tlock.acquire();
+                    mlock.acquire();
+                }
+                else if (aCleanupMode != CleanupMode_UnregisterOnly)
+                {
+                    pMedium->i_addRegistryAll(i_getGlobalRegistryId());
+                    mlock.release();
+                    tlock.release();
+                    i_markRegistryModified(i_getGlobalRegistryId());
                     tlock.acquire();
                     mlock.acquire();
                 }

@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
+import random
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -72,13 +73,15 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         reporter.testStart('mediumTreeDepth')
 
         try:
+            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
             oVM = self.oTstDrv.createTestVM('test-medium', 1, None, 4)
             assert oVM is not None
 
             # create chain with 300 disk images (medium tree depth limit)
             fRc = True
             oSession = self.oTstDrv.openSession(oVM)
-            for i in range(1, 301):
+            cImages = 38 #00
+            for i in range(1, cImages + 1):
                 sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'Test' + str(i) + '.vdi')
                 if i == 1:
                     oHd = oSession.createBaseHd(sHddPath, cb=1024*1024)
@@ -92,14 +95,44 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             fRc = fRc and oSession.attachHd(sHddPath, sController='SATA Controller', fImmutable=False, fForceResource=False)
             fRc = fRc and oSession.saveSettings()
             fRc = oSession.close() and fRc
+            ## @todo r=klaus: count known hard disk images, should be cImages
 
-            # unregister and re-register to test loading of settings
+            # unregister, making sure the images are closed
             sSettingsFile = oVM.settingsFilePath
-            reporter.log('unregistering VM')
-            oVM.unregister(vboxcon.CleanupMode_DetachAllReturnNone)
-            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+            fDetachAll = random.choice([False, True])
+            if fDetachAll:
+                reporter.log('unregistering VM, DetachAll style')
+            else:
+                reporter.log('unregistering VM, UnregisterOnly style')
+            self.oTstDrv.forgetTestMachine(oVM)
+            if fDetachAll:
+                aoHDs = oVM.unregister(vboxcon.CleanupMode_DetachAllReturnHardDisksOnly)
+                for oHD in aoHDs:
+                    oHD.close()
+                aoHDs = None
+            else:
+                oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
+            oVM = None
+            
+            # If there is no base image (expected) then there are no leftover
+            # child images either. Can be changed later once the todos above
+            # and below are resolved.
+            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+            reporter.log('API reports %i base images' % (cBaseImages))
+            fRc = fRc and cBaseImages == 0
+
+            # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
             oVM = oVBox.openMachine(sSettingsFile)
+            ## @todo r=klaus: count known hard disk images, should be cImages
+
+            reporter.log('unregistering VM')
+            oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
+            oVM = None
+
+            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+            reporter.log('API reports %i base images' % (cBaseImages))
+            fRc = fRc and cBaseImages == 0
 
             assert fRc is True
         except:
@@ -114,6 +147,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         reporter.testStart('snapshotTreeDepth')
 
         try:
+            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
             oVM = self.oTstDrv.createTestVM('test-snap', 1, None, 4)
             assert oVM is not None
 
@@ -125,17 +159,53 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             fRc = fRc and oSession.saveSettings()
 
             # take 250 snapshots (snapshot tree depth limit)
-            for i in range(1, 251):
+            cSnapshots = 13 #00
+            for i in range(1, cSnapshots + 1):
                 fRc = fRc and oSession.takeSnapshot('Snapshot ' + str(i))
             fRc = oSession.close() and fRc
+            oSession = None
+            reporter.log('API reports %i snapshots' % (oVM.snapshotCount))
+            fRc = fRc and oVM.snapshotCount == cSnapshots
 
-            # unregister and re-register to test loading of settings
+            assert fRc is True
+
+            # unregister, making sure the images are closed
             sSettingsFile = oVM.settingsFilePath
-            reporter.log('unregistering VM')
-            oVM.unregister(vboxcon.CleanupMode_DetachAllReturnNone)
-            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+            fDetachAll = random.choice([False, True])
+            if fDetachAll:
+                reporter.log('unregistering VM, DetachAll style')
+            else:
+                reporter.log('unregistering VM, UnregisterOnly style')
+            self.oTstDrv.forgetTestMachine(oVM)
+            if fDetachAll:
+                aoHDs = oVM.unregister(vboxcon.CleanupMode_DetachAllReturnHardDisksOnly)
+                for oHD in aoHDs:
+                    oHD.close()
+                aoHDs = None
+            else:
+                oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
+            oVM = None
+
+            # If there is no base image (expected) then there are no leftover
+            # child images either. Can be changed later once the todos above
+            # and below are resolved.
+            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+            reporter.log('API reports %i base images' % (cBaseImages))
+            fRc = fRc and cBaseImages == 0
+
+            # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
             oVM = oVBox.openMachine(sSettingsFile)
+            reporter.log('API reports %i snapshots' % (oVM.snapshotCount))
+            fRc = fRc and oVM.snapshotCount == cSnapshots
+
+            reporter.log('unregistering VM')
+            oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
+            oVM = None
+
+            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+            reporter.log('API reports %i base images' % (cBaseImages))
+            fRc = fRc and cBaseImages == 0
 
             assert fRc is True
         except:

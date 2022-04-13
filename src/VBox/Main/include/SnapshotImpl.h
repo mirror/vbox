@@ -73,7 +73,6 @@ public:
 
     ULONG i_getChildrenCount();
     ULONG i_getAllChildrenCount();
-    ULONG i_getAllChildrenCountImpl();
 
     const ComObjPtr<SnapshotMachine>& i_getSnapshotMachine() const;
 
@@ -97,18 +96,13 @@ public:
     void i_updateNVRAMPathsImpl(const Utf8Str &strOldPath,
                                 const Utf8Str &strNewPath);
 
+    HRESULT i_saveSnapshotOne(settings::Snapshot &data) const;
     HRESULT i_saveSnapshot(settings::Snapshot &data) const;
-    HRESULT i_saveSnapshotImpl(settings::Snapshot &data) const;
-    HRESULT i_saveSnapshotImplOne(settings::Snapshot &data) const;
 
-    HRESULT i_uninitOne(AutoWriteLock &writeLock,
+    HRESULT i_uninitAll(AutoWriteLock &writeLock,
                         CleanupMode_T cleanupMode,
                         MediaList &llMedia,
                         std::list<Utf8Str> &llFilenames);
-    HRESULT i_uninitRecursively(AutoWriteLock &writeLock,
-                                CleanupMode_T cleanupMode,
-                                MediaList &llMedia,
-                                std::list<Utf8Str> &llFilenames);
 
 
 private:

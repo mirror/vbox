@@ -850,45 +850,51 @@ void ConfigFileBase::readMediumOne(MediaType t,
 }
 
 /**
- * Reads a media registry entry from the main VirtualBox.xml file and recurses
- * into children where applicable.
+ * Reads a media registry entry from the main VirtualBox.xml file and
+ * likewise for all children where applicable.
  *
  * @param t
- * @param depth
  * @param elmMedium
  * @param med
  */
 void ConfigFileBase::readMedium(MediaType t,
-                                uint32_t depth,
-                                const xml::ElementNode &elmMedium,  // HardDisk node if root; if recursing,
-                                                                    // child HardDisk node or DiffHardDisk node for pre-1.4
-                                Medium &med)                        // medium settings to fill out
+                                const xml::ElementNode &elmMedium,
+                                Medium &med)
 {
-    if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
-        throw ConfigFileError(this, &elmMedium, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+    std::list<const xml::ElementNode *> llElementsTodo;
+    llElementsTodo.push_back(&elmMedium);
+    std::list<Medium *> llSettingsTodo;
+    llSettingsTodo.push_back(&med);
+    std::list<uint32_t> llDepthsTodo;
+    llDepthsTodo.push_back(1);
 
-    // Do not inline this method call, as the purpose of having this separate
-    // is to save on stack size. Less local variables are the key for reaching
-    // deep recursion levels with small stack (XPCOM/g++ without optimization).
-    readMediumOne(t, elmMedium, med);
-
-    if (t != HardDisk)
-        return;
-
-    // recurse to handle children
-    MediaList &llSettingsChildren = med.llChildren;
-    xml::NodesLoop nl2(elmMedium, m->sv >= SettingsVersion_v1_4 ? "HardDisk" : "DiffHardDisk");
-    const xml::ElementNode *pelmHDChild;
-    while ((pelmHDChild = nl2.forAllNodes()))
+    while (llElementsTodo.size() > 0)
     {
-        // recurse with this element and put the child at the end of the list.
-        // XPCOM has very small stack, avoid big local variables and use the
-        // list element.
-        llSettingsChildren.push_back(Medium::Empty);
-        readMedium(t,
-                   depth + 1,
-                   *pelmHDChild,
-                   llSettingsChildren.back());
+        const xml::ElementNode *pElement = llElementsTodo.front();
+        llElementsTodo.pop_front();
+        Medium *pMed = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        uint32_t depth = llDepthsTodo.front();
+        llDepthsTodo.pop_front();
+
+        if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
+            throw ConfigFileError(this, pElement, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+
+        readMediumOne(t, *pElement, *pMed);
+
+        if (t != HardDisk)
+            return;
+
+        // load all children
+        xml::NodesLoop nl2(*pElement, m->sv >= SettingsVersion_v1_4 ? "HardDisk" : "DiffHardDisk");
+        const xml::ElementNode *pelmHDChild;
+        while ((pelmHDChild = nl2.forAllNodes()))
+        {
+            llElementsTodo.push_back(pelmHDChild);
+            pMed->llChildren.push_back(Medium::Empty);
+            llSettingsTodo.push_back(&pMed->llChildren.back());
+            llDepthsTodo.push_back(depth + 1);
+        }
     }
 }
 
@@ -929,19 +935,19 @@ void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
                 && (pelmMedium->nameEquals("HardDisk")))
             {
                 mr.llHardDisks.push_back(Medium::Empty);
-                readMedium(t, 1, *pelmMedium, mr.llHardDisks.back());
+                readMedium(t, *pelmMedium, mr.llHardDisks.back());
             }
             else if (   t == DVDImage
                      && (pelmMedium->nameEquals("Image")))
             {
                 mr.llDvdImages.push_back(Medium::Empty);
-                readMedium(t, 1, *pelmMedium, mr.llDvdImages.back());
+                readMedium(t, *pelmMedium, mr.llDvdImages.back());
             }
             else if (   t == FloppyImage
                      && (pelmMedium->nameEquals("Image")))
             {
                 mr.llFloppyImages.push_back(Medium::Empty);
-                readMedium(t, 1, *pelmMedium, mr.llFloppyImages.back());
+                readMedium(t, *pelmMedium, mr.llFloppyImages.back());
             }
         }
     }
@@ -1264,81 +1270,94 @@ void ConfigFileBase::buildUSBDeviceFilters(xml::ElementNode &elmParent,
 
 /**
  * Creates a single \<HardDisk\> element for the given Medium structure
- * and recurses to write the child hard disks underneath. Called from
- * MainConfigFile::write().
+ * and all child hard disks underneath. Called from MainConfigFile::write().
  *
  * @param t
- * @param depth
  * @param elmMedium
- * @param mdm
+ * @param med
  */
 void ConfigFileBase::buildMedium(MediaType t,
-                                 uint32_t depth,
                                  xml::ElementNode &elmMedium,
-                                 const Medium &mdm)
+                                 const Medium &med)
 {
-    if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
-        throw ConfigFileError(this, &elmMedium, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+    std::list<const Medium *> llSettingsTodo;
+    llSettingsTodo.push_back(&med);
+    std::list<xml::ElementNode *> llElementsTodo;
+    llElementsTodo.push_back(&elmMedium);
+    std::list<uint32_t> llDepthsTodo;
+    llDepthsTodo.push_back(1);
 
-    xml::ElementNode *pelmMedium;
-
-    if (t == HardDisk)
-        pelmMedium = elmMedium.createChild("HardDisk");
-    else
-        pelmMedium = elmMedium.createChild("Image");
-
-    pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-
-    pelmMedium->setAttributePath("location", mdm.strLocation);
-
-    if (t == HardDisk || RTStrICmp(mdm.strFormat.c_str(), "RAW"))
-        pelmMedium->setAttribute("format", mdm.strFormat);
-    if (   t == HardDisk
-        && mdm.fAutoReset)
-        pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
-    if (mdm.strDescription.length())
-        pelmMedium->createChild("Description")->addContent(mdm.strDescription);
-
-    for (StringsMap::const_iterator it = mdm.properties.begin();
-         it != mdm.properties.end();
-         ++it)
+    while (llSettingsTodo.size() > 0)
     {
-        xml::ElementNode *pelmProp = pelmMedium->createChild("Property");
-        pelmProp->setAttribute("name", it->first);
-        pelmProp->setAttribute("value", it->second);
-    }
+        const Medium *pMed = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        xml::ElementNode *pElement = llElementsTodo.front();
+        llElementsTodo.pop_front();
+        uint32_t depth = llDepthsTodo.front();
+        llDepthsTodo.pop_front();
 
-    // only for base hard disks, save the type
-    if (depth == 1)
-    {
-        // no need to save the usual DVD/floppy medium types
-        if (   (   t != DVDImage
-                || (   mdm.hdType != MediumType_Writethrough // shouldn't happen
-                    && mdm.hdType != MediumType_Readonly))
-            && (   t != FloppyImage
-                || mdm.hdType != MediumType_Writethrough))
+        if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
+            throw ConfigFileError(this, pElement, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+
+        xml::ElementNode *pelmMedium;
+
+        if (t == HardDisk)
+            pelmMedium = pElement->createChild("HardDisk");
+        else
+            pelmMedium = pElement->createChild("Image");
+
+        pelmMedium->setAttribute("uuid", pMed->uuid.toStringCurly());
+
+        pelmMedium->setAttributePath("location", pMed->strLocation);
+
+        if (t == HardDisk || RTStrICmp(pMed->strFormat.c_str(), "RAW"))
+            pelmMedium->setAttribute("format", pMed->strFormat);
+        if (   t == HardDisk
+            && pMed->fAutoReset)
+            pelmMedium->setAttribute("autoReset", pMed->fAutoReset);
+        if (pMed->strDescription.length())
+            pelmMedium->createChild("Description")->addContent(pMed->strDescription);
+
+        for (StringsMap::const_iterator it = pMed->properties.begin();
+             it != pMed->properties.end();
+             ++it)
         {
-            const char *pcszType =
-                mdm.hdType == MediumType_Normal ? "Normal" :
-                mdm.hdType == MediumType_Immutable ? "Immutable" :
-                mdm.hdType == MediumType_Writethrough ? "Writethrough" :
-                mdm.hdType == MediumType_Shareable ? "Shareable" :
-                mdm.hdType == MediumType_Readonly ? "Readonly" :
-                mdm.hdType == MediumType_MultiAttach ? "MultiAttach" :
-                "INVALID";
-            pelmMedium->setAttribute("type", pcszType);
+            xml::ElementNode *pelmProp = pelmMedium->createChild("Property");
+            pelmProp->setAttribute("name", it->first);
+            pelmProp->setAttribute("value", it->second);
         }
-    }
 
-    for (MediaList::const_iterator it = mdm.llChildren.begin();
-         it != mdm.llChildren.end();
-         ++it)
-    {
-        // recurse for children
-        buildMedium(t,              // device type
-                    depth + 1,      // depth
-                    *pelmMedium,    // parent
-                    *it);           // settings::Medium
+        // only for base hard disks, save the type
+        if (depth == 1)
+        {
+            // no need to save the usual DVD/floppy medium types
+            if (   (   t != DVDImage
+                    || (   pMed->hdType != MediumType_Writethrough // shouldn't happen
+                        && pMed->hdType != MediumType_Readonly))
+                && (   t != FloppyImage
+                    || pMed->hdType != MediumType_Writethrough))
+            {
+                const char *pcszType =
+                    pMed->hdType == MediumType_Normal ? "Normal" :
+                    pMed->hdType == MediumType_Immutable ? "Immutable" :
+                    pMed->hdType == MediumType_Writethrough ? "Writethrough" :
+                    pMed->hdType == MediumType_Shareable ? "Shareable" :
+                    pMed->hdType == MediumType_Readonly ? "Readonly" :
+                    pMed->hdType == MediumType_MultiAttach ? "MultiAttach" :
+                    "INVALID";
+                pelmMedium->setAttribute("type", pcszType);
+            }
+        }
+
+        /* save all children */
+        MediaList::const_iterator itBegin = pMed->llChildren.begin();
+        MediaList::const_iterator itEnd = pMed->llChildren.end();
+        for (MediaList::const_iterator it = itBegin; it != itEnd; ++it)
+        {
+            llSettingsTodo.push_back(&*it);
+            llElementsTodo.push_back(pelmMedium);
+            llDepthsTodo.push_back(depth + 1);
+        }
     }
 }
 
@@ -1368,7 +1387,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
              it != mr.llHardDisks.end();
              ++it)
         {
-            buildMedium(HardDisk, 1, *pelmHardDisks, *it);
+            buildMedium(HardDisk, *pelmHardDisks, *it);
         }
     }
 
@@ -1379,7 +1398,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
              it != mr.llDvdImages.end();
              ++it)
         {
-            buildMedium(DVDImage, 1, *pelmDVDImages, *it);
+            buildMedium(DVDImage, *pelmDVDImages, *it);
         }
     }
 
@@ -1390,7 +1409,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
              it != mr.llFloppyImages.end();
              ++it)
         {
-            buildMedium(FloppyImage, 1, *pelmFloppyImages, *it);
+            buildMedium(FloppyImage, *pelmFloppyImages, *it);
         }
     }
 }
@@ -2588,6 +2607,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     m->fFileExists = true;
 
     clearDocument();
+    LogRel(("Finished saving settings file \"%s\"\n", m->strFilename.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5749,74 +5769,74 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
 /**
  * Called for reading the \<Teleporter\> element under \<Machine\>.
  */
-void MachineConfigFile::readTeleporter(const xml::ElementNode *pElmTeleporter,
-                                       MachineUserData *pUserData)
+void MachineConfigFile::readTeleporter(const xml::ElementNode &elmTeleporter,
+                                       MachineUserData &userData)
 {
-    pElmTeleporter->getAttributeValue("enabled", pUserData->fTeleporterEnabled);
-    pElmTeleporter->getAttributeValue("port", pUserData->uTeleporterPort);
-    pElmTeleporter->getAttributeValue("address", pUserData->strTeleporterAddress);
-    pElmTeleporter->getAttributeValue("password", pUserData->strTeleporterPassword);
+    elmTeleporter.getAttributeValue("enabled", userData.fTeleporterEnabled);
+    elmTeleporter.getAttributeValue("port", userData.uTeleporterPort);
+    elmTeleporter.getAttributeValue("address", userData.strTeleporterAddress);
+    elmTeleporter.getAttributeValue("password", userData.strTeleporterPassword);
 
-    if (   pUserData->strTeleporterPassword.isNotEmpty()
-        && !VBoxIsPasswordHashed(&pUserData->strTeleporterPassword))
-        VBoxHashPassword(&pUserData->strTeleporterPassword);
+    if (   userData.strTeleporterPassword.isNotEmpty()
+        && !VBoxIsPasswordHashed(&userData.strTeleporterPassword))
+        VBoxHashPassword(&userData.strTeleporterPassword);
 }
 
 /**
  * Called for reading the \<Debugging\> element under \<Machine\> or \<Snapshot\>.
  */
-void MachineConfigFile::readDebugging(const xml::ElementNode *pElmDebugging, Debugging *pDbg)
+void MachineConfigFile::readDebugging(const xml::ElementNode &elmDebugging, Debugging &dbg)
 {
-    if (!pElmDebugging || m->sv < SettingsVersion_v1_13)
+    if (m->sv < SettingsVersion_v1_13)
         return;
 
-    const xml::ElementNode * const pelmTracing = pElmDebugging->findChildElement("Tracing");
+    const xml::ElementNode *pelmTracing = elmDebugging.findChildElement("Tracing");
     if (pelmTracing)
     {
-        pelmTracing->getAttributeValue("enabled", pDbg->fTracingEnabled);
-        pelmTracing->getAttributeValue("allowTracingToAccessVM", pDbg->fAllowTracingToAccessVM);
-        pelmTracing->getAttributeValue("config", pDbg->strTracingConfig);
+        pelmTracing->getAttributeValue("enabled", dbg.fTracingEnabled);
+        pelmTracing->getAttributeValue("allowTracingToAccessVM", dbg.fAllowTracingToAccessVM);
+        pelmTracing->getAttributeValue("config", dbg.strTracingConfig);
     }
 }
 
 /**
  * Called for reading the \<Autostart\> element under \<Machine\> or \<Snapshot\>.
  */
-void MachineConfigFile::readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart)
+void MachineConfigFile::readAutostart(const xml::ElementNode &elmAutostart, Autostart &autostrt)
 {
     Utf8Str strAutostop;
 
-    if (!pElmAutostart || m->sv < SettingsVersion_v1_13)
+    if (m->sv < SettingsVersion_v1_13)
         return;
 
-    pElmAutostart->getAttributeValue("enabled", pAutostart->fAutostartEnabled);
-    pElmAutostart->getAttributeValue("delay", pAutostart->uAutostartDelay);
-    pElmAutostart->getAttributeValue("autostop", strAutostop);
+    elmAutostart.getAttributeValue("enabled", autostrt.fAutostartEnabled);
+    elmAutostart.getAttributeValue("delay", autostrt.uAutostartDelay);
+    elmAutostart.getAttributeValue("autostop", strAutostop);
     if (strAutostop == "Disabled")
-        pAutostart->enmAutostopType = AutostopType_Disabled;
+        autostrt.enmAutostopType = AutostopType_Disabled;
     else if (strAutostop == "SaveState")
-        pAutostart->enmAutostopType = AutostopType_SaveState;
+        autostrt.enmAutostopType = AutostopType_SaveState;
     else if (strAutostop == "PowerOff")
-        pAutostart->enmAutostopType = AutostopType_PowerOff;
+        autostrt.enmAutostopType = AutostopType_PowerOff;
     else if (strAutostop == "AcpiShutdown")
-        pAutostart->enmAutostopType = AutostopType_AcpiShutdown;
+        autostrt.enmAutostopType = AutostopType_AcpiShutdown;
     else
-        throw ConfigFileError(this, pElmAutostart, N_("Invalid value '%s' for Autostart/@autostop attribute"), strAutostop.c_str());
+        throw ConfigFileError(this, &elmAutostart, N_("Invalid value '%s' for Autostart/@autostop attribute"), strAutostop.c_str());
 }
 
 /**
  * Called for reading the \<Groups\> element under \<Machine\>.
  */
-void MachineConfigFile::readGroups(const xml::ElementNode *pElmGroups, StringsList *pllGroups)
+void MachineConfigFile::readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups)
 {
-    pllGroups->clear();
-    if (!pElmGroups || m->sv < SettingsVersion_v1_13)
+    llGroups.clear();
+    if (m->sv < SettingsVersion_v1_13)
     {
-        pllGroups->push_back("/");
+        llGroups.push_back("/");
         return;
     }
 
-    xml::NodesLoop nlGroups(*pElmGroups);
+    xml::NodesLoop nlGroups(elmGroups);
     const xml::ElementNode *pelmGroup;
     while ((pelmGroup = nlGroups.forAllNodes()))
     {
@@ -5825,7 +5845,7 @@ void MachineConfigFile::readGroups(const xml::ElementNode *pElmGroups, StringsLi
             Utf8Str strGroup;
             if (!pelmGroup->getAttributeValue("name", strGroup))
                 throw ConfigFileError(this, pelmGroup, N_("Required Group/@name attribute is missing"));
-            pllGroups->push_back(strGroup);
+            llGroups.push_back(strGroup);
         }
     }
 }
@@ -5833,90 +5853,118 @@ void MachineConfigFile::readGroups(const xml::ElementNode *pElmGroups, StringsLi
 /**
  * Called initially for the \<Snapshot\> element under \<Machine\>, if present,
  * to store the snapshot's data into the given Snapshot structure (which is
- * then the one in the Machine struct). This might then recurse if
- * a \<Snapshots\> (plural) element is found in the snapshot, which should
- * contain a list of child snapshots; such lists are maintained in the
- * Snapshot structure.
+ * then the one in the Machine struct). This might process further elements
+ * of the snapshot tree if a \<Snapshots\> (plural) element is found in the
+ * snapshot, which should contain a list of child snapshots; such lists are
+ * maintained in the Snapshot structure.
  *
  * @param curSnapshotUuid
- * @param depth
  * @param elmSnapshot
  * @param snap
  * @returns true if curSnapshotUuid is in this snapshot subtree, otherwise false
  */
 bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
-                                     uint32_t depth,
                                      const xml::ElementNode &elmSnapshot,
                                      Snapshot &snap)
 {
-    if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
-        throw ConfigFileError(this, &elmSnapshot, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
+    std::list<const xml::ElementNode *> llElementsTodo;
+    llElementsTodo.push_back(&elmSnapshot);
+    std::list<Snapshot *> llSettingsTodo;
+    llSettingsTodo.push_back(&snap);
+    std::list<uint32_t> llDepthsTodo;
+    llDepthsTodo.push_back(1);
 
-    Utf8Str strTemp;
+    bool foundCurrentSnapshot = false;
 
-    if (!elmSnapshot.getAttributeValue("uuid", strTemp))
-        throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@uuid attribute is missing"));
-    parseUUID(snap.uuid, strTemp, &elmSnapshot);
-    bool foundCurrentSnapshot = (snap.uuid == curSnapshotUuid);
-
-    if (!elmSnapshot.getAttributeValue("name", snap.strName))
-        throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@name attribute is missing"));
-
-    // 3.1 dev builds added Description as an attribute, read it silently
-    // and write it back as an element
-    elmSnapshot.getAttributeValue("Description", snap.strDescription);
-
-    if (!elmSnapshot.getAttributeValue("timeStamp", strTemp))
-        throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@timeStamp attribute is missing"));
-    parseTimestamp(snap.timestamp, strTemp, &elmSnapshot);
-
-    elmSnapshot.getAttributeValuePath("stateFile", snap.strStateFile);      // online snapshots only
-
-    // parse Hardware before the other elements because other things depend on it
-    const xml::ElementNode *pelmHardware;
-    if (!(pelmHardware = elmSnapshot.findChildElement("Hardware")))
-        throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@Hardware element is missing"));
-    readHardware(*pelmHardware, snap.hardware);
-
-    xml::NodesLoop nlSnapshotChildren(elmSnapshot);
-    const xml::ElementNode *pelmSnapshotChild;
-    while ((pelmSnapshotChild = nlSnapshotChildren.forAllNodes()))
+    while (llElementsTodo.size() > 0)
     {
-        if (pelmSnapshotChild->nameEquals("Description"))
-            snap.strDescription = pelmSnapshotChild->getValue();
-        else if (   m->sv < SettingsVersion_v1_7
-                 && pelmSnapshotChild->nameEquals("HardDiskAttachments"))
-            readHardDiskAttachments_pre1_7(*pelmSnapshotChild, snap.hardware.storage);
-        else if (   m->sv >= SettingsVersion_v1_7
-                 && pelmSnapshotChild->nameEquals("StorageControllers"))
-            readStorageControllers(*pelmSnapshotChild, snap.hardware.storage);
-        else if (pelmSnapshotChild->nameEquals("Snapshots"))
+        const xml::ElementNode *pElement = llElementsTodo.front();
+        llElementsTodo.pop_front();
+        Snapshot *pSnap = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        uint32_t depth = llDepthsTodo.front();
+        llDepthsTodo.pop_front();
+
+        if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
+            throw ConfigFileError(this, pElement, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
+
+        Utf8Str strTemp;
+        if (!pElement->getAttributeValue("uuid", strTemp))
+            throw ConfigFileError(this, pElement, N_("Required Snapshot/@uuid attribute is missing"));
+        parseUUID(pSnap->uuid, strTemp, pElement);
+        foundCurrentSnapshot |= (pSnap->uuid == curSnapshotUuid);
+
+        if (!pElement->getAttributeValue("name", pSnap->strName))
+            throw ConfigFileError(this, pElement, N_("Required Snapshot/@name attribute is missing"));
+
+        // 3.1 dev builds added Description as an attribute, read it silently
+        // and write it back as an element
+        pElement->getAttributeValue("Description", pSnap->strDescription);
+
+        if (!pElement->getAttributeValue("timeStamp", strTemp))
+            throw ConfigFileError(this, pElement, N_("Required Snapshot/@timeStamp attribute is missing"));
+        parseTimestamp(pSnap->timestamp, strTemp, pElement);
+
+        pElement->getAttributeValuePath("stateFile", pSnap->strStateFile);      // online snapshots only
+
+        // parse Hardware before the other elements because other things depend on it
+        const xml::ElementNode *pelmHardware;
+        if (!(pelmHardware = pElement->findChildElement("Hardware")))
+            throw ConfigFileError(this, pElement, N_("Required Snapshot/@Hardware element is missing"));
+        readHardware(*pelmHardware, pSnap->hardware);
+
+        const xml::ElementNode *pelmSnapshots = NULL;
+
+        xml::NodesLoop nlSnapshotChildren(*pElement);
+        const xml::ElementNode *pelmSnapshotChild;
+        while ((pelmSnapshotChild = nlSnapshotChildren.forAllNodes()))
         {
-            xml::NodesLoop nlChildSnapshots(*pelmSnapshotChild);
+            if (pelmSnapshotChild->nameEquals("Description"))
+                pSnap->strDescription = pelmSnapshotChild->getValue();
+            else if (   m->sv < SettingsVersion_v1_7
+                    && pelmSnapshotChild->nameEquals("HardDiskAttachments"))
+                readHardDiskAttachments_pre1_7(*pelmSnapshotChild, pSnap->hardware.storage);
+            else if (   m->sv >= SettingsVersion_v1_7
+                    && pelmSnapshotChild->nameEquals("StorageControllers"))
+                readStorageControllers(*pelmSnapshotChild, pSnap->hardware.storage);
+            else if (pelmSnapshotChild->nameEquals("Snapshots"))
+            {
+                if (pelmSnapshots)
+                    throw ConfigFileError(this, pelmSnapshotChild, N_("Just a single Snapshots element is allowed"));
+                pelmSnapshots = pelmSnapshotChild;
+            }
+        }
+
+        if (m->sv < SettingsVersion_v1_9)
+            // go through Hardware once more to repair the settings controller structures
+            // with data from old DVDDrive and FloppyDrive elements
+            readDVDAndFloppies_pre1_9(*pelmHardware, pSnap->hardware.storage);
+
+        const xml::ElementNode *pelmDebugging = elmSnapshot.findChildElement("Debugging");
+        if (pelmDebugging)
+            readDebugging(*pelmDebugging, pSnap->debugging);
+        const xml::ElementNode *pelmAutostart = elmSnapshot.findChildElement("Autostart");
+        if (pelmAutostart)
+            readAutostart(*pelmAutostart, pSnap->autostart);
+        // note: Groups exist only for Machine, not for Snapshot
+
+        // process all child snapshots
+        if (pelmSnapshots)
+        {
+            xml::NodesLoop nlChildSnapshots(*pelmSnapshots);
             const xml::ElementNode *pelmChildSnapshot;
             while ((pelmChildSnapshot = nlChildSnapshots.forAllNodes()))
             {
                 if (pelmChildSnapshot->nameEquals("Snapshot"))
                 {
-                    // recurse with this element and put the child at the
-                    // end of the list. XPCOM has very small stack, avoid
-                    // big local variables and use the list element.
-                    snap.llChildSnapshots.push_back(Snapshot::Empty);
-                    bool found = readSnapshot(curSnapshotUuid, depth + 1, *pelmChildSnapshot, snap.llChildSnapshots.back());
-                    foundCurrentSnapshot = foundCurrentSnapshot || found;
+                    llElementsTodo.push_back(pelmChildSnapshot);
+                    pSnap->llChildSnapshots.push_back(Snapshot::Empty);
+                    llSettingsTodo.push_back(&pSnap->llChildSnapshots.back());
+                    llDepthsTodo.push_back(depth + 1);
                 }
             }
         }
     }
-
-    if (m->sv < SettingsVersion_v1_9)
-        // go through Hardware once more to repair the settings controller structures
-        // with data from old DVDDrive and FloppyDrive elements
-        readDVDAndFloppies_pre1_9(*pelmHardware, snap.hardware.storage);
-
-    readDebugging(elmSnapshot.findChildElement("Debugging"), &snap.debugging);
-    readAutostart(elmSnapshot.findChildElement("Autostart"), &snap.autostart);
-    // note: Groups exist only for Machine, not for Snapshot
 
     return foundCurrentSnapshot;
 }
@@ -6061,25 +6109,27 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 if (uuidCurrentSnapshot.isZero())
                     throw ConfigFileError(this, &elmMachine, N_("Snapshots present but required Machine/@currentSnapshot attribute is missing"));
                 bool foundCurrentSnapshot = false;
-                Snapshot snap;
-                // this will recurse into child snapshots, if necessary
-                foundCurrentSnapshot = readSnapshot(uuidCurrentSnapshot, 1, *pelmMachineChild, snap);
+                // Work directly with the target list, because otherwise
+                // the entire snapshot settings tree will need to be copied,
+                // and the usual STL implementation needs a lot of stack space.
+                llFirstSnapshot.push_back(Snapshot::Empty);
+                // this will also read all child snapshots
+                foundCurrentSnapshot = readSnapshot(uuidCurrentSnapshot, *pelmMachineChild, llFirstSnapshot.back());
                 if (!foundCurrentSnapshot)
                     throw ConfigFileError(this, &elmMachine, N_("Snapshots present but none matches the UUID in the Machine/@currentSnapshot attribute"));
-                llFirstSnapshot.push_back(snap);
             }
             else if (pelmMachineChild->nameEquals("Description"))
                 machineUserData.strDescription = pelmMachineChild->getValue();
             else if (pelmMachineChild->nameEquals("Teleporter"))
-                readTeleporter(pelmMachineChild, &machineUserData);
+                readTeleporter(*pelmMachineChild, machineUserData);
             else if (pelmMachineChild->nameEquals("MediaRegistry"))
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
             else if (pelmMachineChild->nameEquals("Debugging"))
-                readDebugging(pelmMachineChild, &debugging);
+                readDebugging(*pelmMachineChild, debugging);
             else if (pelmMachineChild->nameEquals("Autostart"))
-                readAutostart(pelmMachineChild, &autostart);
+                readAutostart(*pelmMachineChild, autostart);
             else if (pelmMachineChild->nameEquals("Groups"))
-                readGroups(pelmMachineChild, &machineUserData.llGroups);
+                readGroups(*pelmMachineChild, machineUserData.llGroups);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -7603,40 +7653,40 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
  * Creates a \<Debugging\> node under elmParent and then writes out the XML
  * keys under that. Called for both the \<Machine\> node and for snapshots.
  *
- * @param pElmParent    Pointer to the parent element.
- * @param pDbg          Pointer to the debugging settings.
+ * @param elmParent     Parent element.
+ * @param dbg           Debugging settings.
  */
-void MachineConfigFile::buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg)
+void MachineConfigFile::buildDebuggingXML(xml::ElementNode &elmParent, const Debugging &dbg)
 {
-    if (m->sv < SettingsVersion_v1_13 || pDbg->areDefaultSettings())
+    if (m->sv < SettingsVersion_v1_13 || dbg.areDefaultSettings())
         return;
 
-    xml::ElementNode *pElmDebugging = pElmParent->createChild("Debugging");
+    xml::ElementNode *pElmDebugging = elmParent.createChild("Debugging");
     xml::ElementNode *pElmTracing   = pElmDebugging->createChild("Tracing");
-    pElmTracing->setAttribute("enabled", pDbg->fTracingEnabled);
-    pElmTracing->setAttribute("allowTracingToAccessVM", pDbg->fAllowTracingToAccessVM);
-    pElmTracing->setAttribute("config", pDbg->strTracingConfig);
+    pElmTracing->setAttribute("enabled", dbg.fTracingEnabled);
+    pElmTracing->setAttribute("allowTracingToAccessVM", dbg.fAllowTracingToAccessVM);
+    pElmTracing->setAttribute("config", dbg.strTracingConfig);
 }
 
 /**
  * Creates a \<Autostart\> node under elmParent and then writes out the XML
  * keys under that. Called for both the \<Machine\> node and for snapshots.
  *
- * @param pElmParent    Pointer to the parent element.
- * @param pAutostart    Pointer to the autostart settings.
+ * @param elmParent     Parent element.
+ * @param autostrt      Autostart settings.
  */
-void MachineConfigFile::buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart)
+void MachineConfigFile::buildAutostartXML(xml::ElementNode &elmParent, const Autostart &autostrt)
 {
     const char *pcszAutostop = NULL;
 
-    if (m->sv < SettingsVersion_v1_13 || pAutostart->areDefaultSettings())
+    if (m->sv < SettingsVersion_v1_13 || autostrt.areDefaultSettings())
         return;
 
-    xml::ElementNode *pElmAutostart = pElmParent->createChild("Autostart");
-    pElmAutostart->setAttribute("enabled", pAutostart->fAutostartEnabled);
-    pElmAutostart->setAttribute("delay", pAutostart->uAutostartDelay);
+    xml::ElementNode *pElmAutostart = elmParent.createChild("Autostart");
+    pElmAutostart->setAttribute("enabled", autostrt.fAutostartEnabled);
+    pElmAutostart->setAttribute("delay", autostrt.uAutostartDelay);
 
-    switch (pAutostart->enmAutostopType)
+    switch (autostrt.enmAutostopType)
     {
         case AutostopType_Disabled:     pcszAutostop = "Disabled";     break;
         case AutostopType_SaveState:    pcszAutostop = "SaveState";    break;
@@ -7651,18 +7701,18 @@ void MachineConfigFile::buildAutostartXML(xml::ElementNode *pElmParent, const Au
  * Creates a \<Groups\> node under elmParent and then writes out the XML
  * keys under that. Called for the \<Machine\> node only.
  *
- * @param pElmParent    Pointer to the parent element.
- * @param pllGroups     Pointer to the groups list.
+ * @param elmParent     Parent element.
+ * @param llGroups      Groups list.
  */
-void MachineConfigFile::buildGroupsXML(xml::ElementNode *pElmParent, const StringsList *pllGroups)
+void MachineConfigFile::buildGroupsXML(xml::ElementNode &elmParent, const StringsList &llGroups)
 {
-    if (   m->sv < SettingsVersion_v1_13 || pllGroups->size() == 0
-        || (pllGroups->size() == 1 && pllGroups->front() == "/"))
+    if (   m->sv < SettingsVersion_v1_13 || llGroups.size() == 0
+        || (llGroups.size() == 1 && llGroups.front() == "/"))
         return;
 
-    xml::ElementNode *pElmGroups = pElmParent->createChild("Groups");
-    for (StringsList::const_iterator it = pllGroups->begin();
-         it != pllGroups->end();
+    xml::ElementNode *pElmGroups = elmParent.createChild("Groups");
+    for (StringsList::const_iterator it = llGroups.begin();
+         it != llGroups.end();
          ++it)
     {
         const Utf8Str &group = *it;
@@ -7672,48 +7722,66 @@ void MachineConfigFile::buildGroupsXML(xml::ElementNode *pElmParent, const Strin
 }
 
 /**
- * Writes a single snapshot into the DOM tree. Initially this gets called from MachineConfigFile::write()
- * for the root snapshot of a machine, if present; elmParent then points to the \<Snapshots\> node under the
- * \<Machine\> node to which \<Snapshot\> must be added. This may then recurse for child snapshots.
+ * Writes a single snapshot into the DOM tree. Initially this gets called from
+ * MachineConfigFile::write() for the root snapshot of a machine, if present;
+ * elmParent then points to the \<Snapshots\> node under the \<Machine\> node
+ * to which \<Snapshot\> must be added. This may then continue processing the
+ * child snapshots.
  *
- * @param depth
  * @param elmParent
  * @param snap
  */
-void MachineConfigFile::buildSnapshotXML(uint32_t depth,
-                                         xml::ElementNode &elmParent,
+void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
                                          const Snapshot &snap)
 {
-    if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
-        throw ConfigFileError(this, NULL, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
+    std::list<const Snapshot *> llSettingsTodo;
+    llSettingsTodo.push_back(&snap);
+    std::list<xml::ElementNode *> llElementsTodo;
+    llElementsTodo.push_back(&elmParent);
+    std::list<uint32_t> llDepthsTodo;
+    llDepthsTodo.push_back(1);
 
-    xml::ElementNode *pelmSnapshot = elmParent.createChild("Snapshot");
-
-    pelmSnapshot->setAttribute("uuid", snap.uuid.toStringCurly());
-    pelmSnapshot->setAttribute("name", snap.strName);
-    pelmSnapshot->setAttribute("timeStamp", stringifyTimestamp(snap.timestamp));
-
-    if (snap.strStateFile.length())
-        pelmSnapshot->setAttributePath("stateFile", snap.strStateFile);
-
-    if (snap.strDescription.length())
-        pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
-
-    // We only skip removable media for OVF, but OVF never includes snapshots.
-    buildHardwareXML(*pelmSnapshot, snap.hardware, 0 /* fl */, NULL /* pllElementsWithUuidAttributes */);
-    buildDebuggingXML(pelmSnapshot, &snap.debugging);
-    buildAutostartXML(pelmSnapshot, &snap.autostart);
-    // note: Groups exist only for Machine, not for Snapshot
-
-    if (snap.llChildSnapshots.size())
+    while (llSettingsTodo.size() > 0)
     {
-        xml::ElementNode *pelmChildren = pelmSnapshot->createChild("Snapshots");
-        for (SnapshotsList::const_iterator it = snap.llChildSnapshots.begin();
-             it != snap.llChildSnapshots.end();
-             ++it)
+        const Snapshot *pSnap = llSettingsTodo.front();
+        llSettingsTodo.pop_front();
+        xml::ElementNode *pElement = llElementsTodo.front();
+        llElementsTodo.pop_front();
+        uint32_t depth = llDepthsTodo.front();
+        llDepthsTodo.pop_front();
+
+        if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
+            throw ConfigFileError(this, NULL, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
+
+        xml::ElementNode *pelmSnapshot = pElement->createChild("Snapshot");
+
+        pelmSnapshot->setAttribute("uuid", pSnap->uuid.toStringCurly());
+        pelmSnapshot->setAttribute("name", pSnap->strName);
+        pelmSnapshot->setAttribute("timeStamp", stringifyTimestamp(pSnap->timestamp));
+
+        if (pSnap->strStateFile.length())
+            pelmSnapshot->setAttributePath("stateFile", pSnap->strStateFile);
+
+        if (pSnap->strDescription.length())
+            pelmSnapshot->createChild("Description")->addContent(pSnap->strDescription);
+
+        // We only skip removable media for OVF, but OVF never includes snapshots.
+        buildHardwareXML(*pelmSnapshot, pSnap->hardware, 0 /* fl */, NULL /* pllElementsWithUuidAttributes */);
+        buildDebuggingXML(*pelmSnapshot, pSnap->debugging);
+        buildAutostartXML(*pelmSnapshot, pSnap->autostart);
+        // note: Groups exist only for Machine, not for Snapshot
+
+        if (pSnap->llChildSnapshots.size())
         {
-            const Snapshot &child = *it;
-            buildSnapshotXML(depth + 1, *pelmChildren, child);
+            xml::ElementNode *pelmChildren = pelmSnapshot->createChild("Snapshots");
+            for (SnapshotsList::const_iterator it = pSnap->llChildSnapshots.begin();
+                it != pSnap->llChildSnapshots.end();
+                ++it)
+            {
+                llSettingsTodo.push_back(&*it);
+                llElementsTodo.push_back(pelmChildren);
+                llDepthsTodo.push_back(depth + 1);
+            }
         }
     }
 }
@@ -7849,12 +7917,12 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
 
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && llFirstSnapshot.size())
-        buildSnapshotXML(1, elmMachine, llFirstSnapshot.front());
+        buildSnapshotXML(elmMachine, llFirstSnapshot.front());
 
     buildHardwareXML(elmMachine, hardwareMachine, fl, pllElementsWithUuidAttributes);
-    buildDebuggingXML(&elmMachine, &debugging);
-    buildAutostartXML(&elmMachine, &autostart);
-    buildGroupsXML(&elmMachine, &machineUserData.llGroups);
+    buildDebuggingXML(elmMachine, debugging);
+    buildAutostartXML(elmMachine, autostart);
+    buildGroupsXML(elmMachine, machineUserData.llGroups);
 }
 
 /**
@@ -8649,10 +8717,12 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
 
         m->fFileExists = true;
         clearDocument();
+        LogRel(("Finished saving settings file \"%s\"\n", m->strFilename.c_str()));
     }
     catch (...)
     {
         clearDocument();
+        LogRel(("Finished saving settings file \"%s\" with failure\n", m->strFilename.c_str()));
         throw;
     }
 }
