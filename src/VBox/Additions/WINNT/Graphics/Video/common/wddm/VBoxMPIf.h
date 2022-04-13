@@ -289,7 +289,7 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
             /* info to be passed to UMD notification to identify the context */
             uint64_t u64UmInfo;
         } vbox;
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
         struct
         {
             /* VBOXWDDM_F_GA_CONTEXT_* */
@@ -429,7 +429,7 @@ typedef struct VBOXDISPIFESCAPE_SETALLOCHOSTID
 
 } VBOXDISPIFESCAPE_SETALLOCHOSTID, *PVBOXDISPIFESCAPE_SETALLOCHOSTID;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
 
 #define VBOXWDDM_F_GA_CONTEXT_EXTENDED 0x00000001
 #define VBOXWDDM_F_GA_CONTEXT_VGPU10   0x00000002
@@ -565,9 +565,6 @@ typedef struct VBOXDISPIFESCAPE_GAFENCEUNREF
     uint32_t u32FenceHandle;
 } VBOXDISPIFESCAPE_GAFENCEUNREF;
 
-#endif /* VBOX_WITH_MESA3D */
-
-#if defined(VBOX_WITH_MESA3D) || defined(VBOX_WITH_VMSVGA3D_DX)
 #include <VBoxGaHWInfo.h>
 #endif
 
@@ -593,7 +590,7 @@ typedef struct VBOXWDDM_QAI
             /* VBOXVIDEO_HWTYPE_VBOX */
             uint32_t    u32VBox3DCaps;   /* CR_VBOX_CAP_* */
         } vbox;
-#if defined(VBOX_WITH_MESA3D) || defined(VBOX_WITH_VMSVGA3D_DX)
+#if defined(VBOX_WITH_VMSVGA)
         struct
         {
             /* VBOXVIDEO_HWTYPE_VMSVGA */

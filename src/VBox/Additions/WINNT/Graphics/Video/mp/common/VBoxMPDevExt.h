@@ -43,7 +43,7 @@ typedef struct VBOXWDDM_HWRESOURCES
     PHYSICAL_ADDRESS phVRAM;
     ULONG cbVRAM;
     ULONG ulApertureSize;
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     PHYSICAL_ADDRESS phFIFO;
     ULONG cbFIFO;
     PHYSICAL_ADDRESS phIO;
@@ -51,7 +51,7 @@ typedef struct VBOXWDDM_HWRESOURCES
 #endif
 } VBOXWDDM_HWRESOURCES, *PVBOXWDDM_HWRESOURCES;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
 typedef struct VBOXWDDM_EXT_GA *PVBOXWDDM_EXT_GA;
 #endif
 
@@ -218,7 +218,7 @@ typedef struct _VBOXMP_DEVEXT
    VBOXWDDM_HWRESOURCES HwResources;
 #endif
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
    PVBOXWDDM_EXT_GA pGa;                       /* Pointer to Gallium backend data. */
 #endif
 

@@ -36,6 +36,10 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_EXTENDS  = NewerVccVBoxGuestR3Dll
 TEMPLATE_VBoxMesa3DGuestR3Dll_INST     = $(INST_ADDITIONS)
 TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
 	VBOX_WITH_MESA3D
+ifdef VBOX_WITH_VMSVGA
+TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS    += \
+	VBOX_WITH_VMSVGA
+endif
 TEMPLATE_VBoxMesa3DGuestR3Dll_SDKS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) \
 	$(VBOX_WINDDK_GST_W8)
 # VirtualBox specific modifications of the Mesa3D code.

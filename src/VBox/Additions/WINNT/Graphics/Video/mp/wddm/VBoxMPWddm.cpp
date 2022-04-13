@@ -38,7 +38,7 @@
 #include <VBoxVideoVBE.h>
 #include <VBox/Version.h>
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
 #include "gallium/VBoxMPGaWddm.h"
 #endif
 
@@ -661,7 +661,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
                    switch (pPRc->Type)
                    {
                        case CmResourceTypePort:
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                            AssertBreak(pHwResources->phIO.QuadPart == 0);
                            pHwResources->phIO = pPRc->u.Port.Start;
                            pHwResources->cbIO = pPRc->u.Port.Length;
@@ -670,7 +670,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
                        case CmResourceTypeInterrupt:
                            break;
                        case CmResourceTypeMemory:
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                            if (pHwResources->phVRAM.QuadPart)
                            {
                                AssertBreak(pHwResources->phFIFO.QuadPart == 0);
@@ -1024,7 +1024,7 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     pDevExt->f3DEnabled = FALSE;
                 }
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                 else if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
                 {
                     if (pDevExt->f3DEnabled)
@@ -1035,7 +1035,7 @@ NTSTATUS DxgkDdiStartDevice(
                         pDevExt->fComplexTopologiesEnabled = TRUE; /** @todo Implement clones support. */
                     }
                 }
-#endif /* VBOX_WITH_MESA3D */
+#endif /* VBOX_WITH_VMSVGA */
                 else
                 {
                     pDevExt->f3DEnabled = FALSE;
@@ -1190,7 +1190,7 @@ NTSTATUS DxgkDdiStartDevice(
 
                     VBoxWddmVModesInit(pDevExt);
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
                     {
                         LOGREL(("WDDM: VRAM %#RX64/%#RX32, FIFO %#RX64/%#RX32, IO %#RX64/%#RX32",
@@ -1250,7 +1250,7 @@ NTSTATUS DxgkDdiStopDevice(
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
     NTSTATUS Status = STATUS_SUCCESS;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
      if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
      {
          GaAdapterStop(pDevExt);
@@ -1622,7 +1622,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 #endif
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
             pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
             if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
             {
                 pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH_LEGACY;
@@ -1665,7 +1665,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pCaps->MemoryManagementCaps.PagingNode = 0;
                 /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
                 pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                 if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
                 {
                     /* The Gallium node has NodeOrdinal == 0, because:
@@ -1776,7 +1776,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                     {
                         pQAI->u.vbox.u32VBox3DCaps = 0;
                     }
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                     else if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
                         GaQueryInfo(pDevExt->pGa, pDevExt->enmHwType, &pQAI->u.vmsvga.HWInfo);
 #endif
@@ -1848,7 +1848,7 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
 
     pCreateDevice->pInfo = NULL;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
      if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
      {
          Status = GaDeviceCreate(pDevExt->pGa, pDevice);
@@ -2885,7 +2885,7 @@ static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* p
 
 bool vboxWddmUpdatePointerShape(PVBOXMP_DEVEXT pDevExt, PVIDEO_POINTER_ATTRIBUTES pAttrs, uint32_t cbLength)
 {
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VBOX)
     {
         NTSTATUS Status = STATUS_SUCCESS;
@@ -3476,7 +3476,7 @@ DxgkDdiEscape(
 
                 for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
                     {
                         GaVidPnSourceCheckPos(pDevExt, i);
@@ -3490,7 +3490,7 @@ DxgkDdiEscape(
                 break;
             }
             default:
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                 Status = GaDxgkDdiEscape(hAdapter, pEscape);
                 if (NT_SUCCESS(Status) || Status != STATUS_NOT_SUPPORTED)
                     break;
@@ -3647,7 +3647,7 @@ DxgkDdiSetVidPnSourceAddress(
         return STATUS_INVALID_PARAMETER;
     }
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VMSVGA)
 #endif
     vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId);
@@ -3695,7 +3695,7 @@ DxgkDdiSetVidPnSourceAddress(
     /*
      * Report the source.
      */
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
     {
         /* Query the position of the screen to make sure it is up to date. */
@@ -3735,7 +3735,7 @@ DxgkDdiSetVidPnSourceVisibility(
         return STATUS_INVALID_PARAMETER;
     }
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VMSVGA)
 #endif
     vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId);
@@ -3759,7 +3759,7 @@ DxgkDdiSetVidPnSourceVisibility(
 //        }
     }
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
     {
         GaVidPnSourceCheckPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId);
@@ -3852,7 +3852,7 @@ DxgkDdiCommitVidPn(
 
         VBoxDumpSourceTargetArrays(paSources, paTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
         if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
         {
             for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
@@ -4090,7 +4090,7 @@ DxgkDdiDestroyDevice(
 
     vboxVDbgBreakFv();
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)hDevice;
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
@@ -4440,7 +4440,7 @@ DxgkDdiCreateContext(
                         }
                         break;
                     }
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
                     case VBOXWDDM_CONTEXT_TYPE_GA_3D:
                     {
                         pContext->enmType = VBOXWDDM_CONTEXT_TYPE_GA_3D;
@@ -4528,7 +4528,7 @@ DxgkDdiDestroyContext(
             Assert(pContext->CmContext.pSession == NULL);
             break;
         }
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
         case VBOXWDDM_CONTEXT_TYPE_GA_3D:
         {
             Status = GaContextDestroy(pDevExt->pGa, pContext);
@@ -4631,7 +4631,7 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     vboxVDbgBreakFv();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
     {
         return GaDxgkDdiPresentDisplayOnly(hAdapter, pPresentDisplayOnly);
@@ -4827,7 +4827,7 @@ static NTSTATUS DxgkDdiNotifySurpriseRemoval(
 static BOOLEAN DxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
                                        ULONG MessageNumber)
 {
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     BOOLEAN const fVMSVGA = GaDxgkDdiInterruptRoutine(MiniportDeviceContext, MessageNumber);
 #else
     BOOLEAN const fVMSVGA = FALSE;
@@ -4841,7 +4841,7 @@ static VOID DxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     GaDxgkDdiDpcRoutine(MiniportDeviceContext);
 #endif
     DxgkDdiDpcRoutineLegacy(MiniportDeviceContext);
@@ -4929,7 +4929,7 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiInterruptRoutine  = DxgkDdiInterruptRoutine;
     DriverInitializationData.DxgkDdiDpcRoutine        = DxgkDdiDpcRoutine;
 
-#ifdef VBOX_WITH_MESA3D
+#ifdef VBOX_WITH_VMSVGA
     if (enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
     {
         DriverInitializationData.DxgkDdiPatch             = GaDxgkDdiPatch;
