@@ -962,6 +962,7 @@ if defined(VBOX_ONLY_VALIDATIONKIT)
 	tstRTInlineAsmPIC \
 	tstRTInlineAsmPIC3 \
 	tstRTLdrVerifyPeImage \
+	tstRTLocalIpc \
 	tstRTMemSafer \
 	tstRTMp-1 \
 	tstRTNtPath-1 \
