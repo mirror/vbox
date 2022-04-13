@@ -953,6 +953,9 @@ if defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS
 	tstRTCrX509-1 \
 	tstRTS3 \
 	tstRTHttp-1 \
+	tstRTInlineAsm \
+	tstRTInlineAsmPIC \
+	tstRTInlineAsmPIC3 \
 	tstRTLdrVerifyPeImage \
 	tstRTMemSafer \
 	tstRTMp-1 \
