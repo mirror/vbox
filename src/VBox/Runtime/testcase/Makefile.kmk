@@ -973,7 +973,12 @@ if defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS
  VBOX_VALIDATIONKIT_UNITTESTS_SKIP.win +=\
 	ntGetTimerResolution
 
- VBOX_VALIDATIONKIT_UNITTESTS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(PROGRAMS))
+ # Filter out all programs not starting with "tst", as there might be build-related
+ # programs like bldRTIsoMaker etc. not needed here.
+ VBOX_VALIDATIONKIT_UNITTESTS := $(filter tst%,$(PROGRAMS))
+
+ # Filter out all unit tests we want to skip (see above).
+ VBOX_VALIDATIONKIT_UNITTESTS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(VBOX_VALIDATIONKIT_UNITTESTS))
 
  ## @todo There might be a more elegant want of copying a target's stuff. Works for now.
  define def_unittest_valkit
