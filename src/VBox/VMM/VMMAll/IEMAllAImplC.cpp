@@ -4355,6 +4355,30 @@ AssertCompileSize(RTFLOAT80U,  10);
 AssertCompileSize(RTFLOAT64U,   8);
 AssertCompileSize(RTFLOAT32U,   4);
 
+/**
+ * Normalizes a possible pseudo-normal value.
+ *
+ * Psuedo-normal values are some oddities from the 8087 & 287 days.  They are
+ * denormals with the J-bit set, so they can simply be rewritten as 2**-16382,
+ * i.e. changing uExponent from 0 to 1.
+ *
+ * This macro will declare a RTFLOAT80U with the name given by
+ * @a a_r80ValNormalized and update the @a a_pr80Val variable to point to it if
+ * a normalization was performed.
+ *
+ * @note This must be applied before calling SoftFloat with a value that couldbe
+ *       a pseudo-denormal, as SoftFloat doesn't handle pseudo-denormals
+ *       correctly.
+ */
+#define IEM_NORMALIZE_PSEUDO_DENORMAL(a_pr80Val, a_r80ValNormalized) \
+    RTFLOAT80U a_r80ValNormalized; \
+    if (RTFLOAT80U_IS_PSEUDO_DENORMAL(a_pr80Val)) \
+    { \
+        a_r80ValNormalized = *a_pr80Val; \
+        a_r80ValNormalized.s.uExponent = 1; \
+        a_pr80Val = &a_r80ValNormalized; \
+    } else do {} while (0)
+
 #ifdef IEM_WITH_FLOAT128_FOR_FPU
 
 DECLINLINE(int) iemFpuF128SetRounding(uint16_t fFcw)
@@ -4472,6 +4496,7 @@ DECLINLINE(uint16_t) iemFpuF128ToFloat80(PRTFLOAT80U pr80Dst, _Float128 rd128Val
         : ((a_fFcw) & X86_FCW_RC_MASK) == X86_FCW_RC_DOWN    ? (uint8_t)softfloat_round_min \
         :                                                      (uint8_t)softfloat_round_minMag, \
         0, \
+        (uint8_t)((a_fFcw) & X86_FCW_XCPT_MASK), \
           ((a_fFcw) & X86_FCW_PC_MASK) == X86_FCW_PC_53      ? (uint8_t)64 \
         : ((a_fFcw) & X86_FCW_PC_MASK) == X86_FCW_PC_24      ? (uint8_t)32 : (uint8_t)80 \
     }
@@ -4479,7 +4504,7 @@ DECLINLINE(uint16_t) iemFpuF128ToFloat80(PRTFLOAT80U pr80Dst, _Float128 rd128Val
 /** Returns updated FSW from a SoftFloat state and exception mask (FCW). */
 # define IEM_SOFTFLOAT_STATE_TO_FSW(a_fFsw, a_pSoftState, a_fFcw) \
     (  (a_fFsw) \
-     | (uint16_t)((a_pSoftState)->exceptionFlags & softfloat_flag_c1) << (2) \
+     | (uint16_t)(((a_pSoftState)->exceptionFlags & softfloat_flag_c1) << 2) \
      | ((a_pSoftState)->exceptionFlags & X86_FSW_XCPT_MASK) \
      | (  ((a_pSoftState)->exceptionFlags & X86_FSW_XCPT_MASK) & (~(a_fFcw) & X86_FSW_XCPT_MASK) \
         ? X86_FSW_ES | X86_FSW_B : 0) )
@@ -4643,6 +4668,37 @@ DECLINLINE(uint16_t) iemFpuSoftF128ToFloat80(PRTFLOAT80U pr80Dst, float128_t r12
         pr80Dst->s.uExponent = 0;
         pr80Dst->s.uMantissa = 0;
     }
+    return fFsw;
+}
+
+
+/**
+ * Helper for transfering exception and C1 to FSW and setting the result value
+ * accordingly.
+ *
+ * @returns Updated FSW.
+ * @param   pSoftState      The SoftFloat state following the operation.
+ * @param   r80XResult      The result of the SoftFloat operation.
+ * @param   pr80Result      Where to store the result for IEM.
+ * @param   fFcw            The FPU control word.
+ * @param   fFsw            The FSW before the operation, with necessary bits
+ *                          cleared and such.
+ * @param   pr80XcptResult  Alternative return value for use an unmasked \#IE is
+ *                          raised.
+ */
+DECLINLINE(uint16_t) iemFpuSoftStateAndF80ToFswAndIprtResult(softfloat_state_t const *pSoftState, extFloat80_t r80XResult,
+                                                             PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw,
+                                                             PCRTFLOAT80U pr80XcptResult)
+{
+    fFsw |= (pSoftState->exceptionFlags & X86_FSW_XCPT_MASK)
+         | (uint16_t)((pSoftState->exceptionFlags & softfloat_flag_c1) << 2);
+    if (fFsw & ~fFcw & X86_FSW_XCPT_MASK)
+        fFsw |= X86_FSW_ES | X86_FSW_B;
+
+    if (!(fFsw & ~fFcw & X86_FSW_IE))
+        iemFpuSoftF80ToIprt(pr80Result, r80XResult);
+    else
+        *pr80Result = *pr80XcptResult;
     return fFsw;
 }
 
@@ -4958,11 +5014,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
+/** Worker for iemAImpl_fadd_r80_by_r80. */
+static uint16_t iemAImpl_fadd_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
+                                             uint16_t fFcw, uint16_t fFsw, PCRTFLOAT80U pr80Val1Org)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(fFcw);
+    extFloat80_t r80XResult = extF80_add(iemFpuSoftF80FromIprt(pr80Val1), iemFpuSoftF80FromIprt(pr80Val2), &SoftState);
+    return iemFpuSoftStateAndF80ToFswAndIprtResult(&SoftState, r80XResult, pr80Result, fFcw, fFsw, pr80Val1Org);
+}
+
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+
+    /* SoftFloat does not check for Pseudo-Infinity, Pseudo-Nan and Unnormals. */
+    if (RTFLOAT80U_IS_387_INVALID(pr80Val1) || RTFLOAT80U_IS_387_INVALID(pr80Val2))
+    {
+        if (fFcw & X86_FCW_IM)
+            pFpuRes->r80Result = g_r80Indefinite;
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    /* SoftFloat does not check for denormals and certainly not report them to us. NaNs trumps denormals. */
+    else if (   (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val1) && !RTFLOAT80U_IS_NAN(pr80Val2))
+             || (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val2) && !RTFLOAT80U_IS_NAN(pr80Val1)) )
+    {
+        if (fFcw & X86_FCW_DM)
+        {
+            PCRTFLOAT80U const pr80Val1Org = pr80Val1;
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val1, r80Val1Normalized);
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val2, r80Val2Normalized);
+            fFsw = iemAImpl_fadd_f80_r80_worker(pr80Val1, pr80Val2, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1Org);
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_DE;
+    }
+    /* SoftFloat can handle the rest: */
+    else
+        fFsw = iemAImpl_fadd_f80_r80_worker(pr80Val1, pr80Val2, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1);
+
+    pFpuRes->FSW = fFsw;
 }
 
 
