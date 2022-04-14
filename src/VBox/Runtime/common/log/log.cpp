@@ -3049,8 +3049,13 @@ RT_EXPORT_SYMBOL(RTLogBulkWrite);
  */
 RTDECL(int) RTLogFlush(PRTLOGGER pLogger)
 {
+    if (!pLogger)
+    {
+        pLogger = rtLogGetDefaultInstanceCommon(); /* Get it if it exists, do _not_ create one if it doesn't. */
+        if (!pLogger)
+            return VINF_LOG_NO_LOGGER;
+    }
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
-    RTLOG_RESOLVE_DEFAULT_RET(pLoggerInt, VINF_LOG_NO_LOGGER);
     Assert(pLoggerInt->Core.u32Magic == RTLOGGER_MAGIC);
     AssertPtr(pLoggerInt->pBufDesc);
     Assert(pLoggerInt->pBufDesc->u32Magic == RTLOGBUFFERDESC_MAGIC);
