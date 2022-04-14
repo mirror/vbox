@@ -2504,7 +2504,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
             uint8_t bPendingIntr = 0;
             int rc = APICGetTpr(pVCpu, &bTpr, &fPendingIntr, &bPendingIntr);
             AssertRC(rc);
-            *pfInterruptWindows |= (bPendingIntr >> 4) << NEM_WIN_INTW_F_PRIO_SHIFT;
+            *pfInterruptWindows |= ((bPendingIntr >> 4) << NEM_WIN_INTW_F_PRIO_SHIFT) | NEM_WIN_INTW_F_REGULAR;
             Log8(("Interrupt window pending on %u: %#x (bTpr=%#x fPendingIntr=%d bPendingIntr=%#x)\n",
                   pVCpu->idCpu, *pfInterruptWindows, bTpr, fPendingIntr, bPendingIntr));
         }
