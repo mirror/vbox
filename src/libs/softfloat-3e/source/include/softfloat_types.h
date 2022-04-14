@@ -95,10 +95,12 @@ typedef struct softfloat_state
     uint8_t roundingMode;
     /* softfloat_flag_inexact and friends. */
     uint8_t exceptionFlags;
+    /** Masked exceptions (only underflow is relevant). */
+    uint8_t exceptionMask;
     /* extF80: rounding precsision: 32, 64 or 80 */
     uint8_t roundingPrecision;
 } softfloat_state_t;
-# define SOFTFLOAT_STATE_INIT_DEFAULTS() { softfloat_round_near_even, softfloat_tininess_afterRounding, 0, 80 }
+# define SOFTFLOAT_STATE_INIT_DEFAULTS() { softfloat_round_near_even, softfloat_tininess_afterRounding, 0, 0x3f, 80 }
 #else
 # undef  VBOX_WITHOUT_SOFTFLOAT_GLOBALS
 # define SOFTFLOAT_STATE_ARG

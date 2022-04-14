@@ -217,16 +217,32 @@ static uint64_t  RandU64Src(uint32_t iTest)
 }
 
 
-static int16_t  RandI16Src(uint32_t iTest)
+/** 2nd operand for and FPU instruction, pairing with RandR80Src1. */
+static int16_t  RandI16Src2(uint32_t iTest)
 {
-    RT_NOREF(iTest);
+    if (iTest < 18 * 4)
+        switch (iTest % 4)
+        {
+            case 0: return 0;
+            case 1: return INT16_MAX;
+            case 2: return INT16_MIN;
+            case 3: break;
+        }
     return (int16_t)RandU16();
 }
 
 
-static int32_t  RandI32Src(uint32_t iTest)
+/** 2nd operand for and FPU instruction, pairing with RandR80Src1. */
+static int32_t  RandI32Src2(uint32_t iTest)
 {
-    RT_NOREF(iTest);
+    if (iTest < 18 * 4)
+        switch (iTest % 4)
+        {
+            case 0: return 0;
+            case 1: return INT32_MAX;
+            case 2: return INT32_MIN;
+            case 3: break;
+        }
     return (int32_t)RandU32();
 }
 
@@ -262,7 +278,8 @@ static void SafeR80FractionShift(PRTFLOAT80U pr80, uint8_t cShift)
 }
 
 
-static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
+
+static RTFLOAT80U RandR80Ex(uint8_t bType, unsigned cTarget = 80, bool fIntTarget = false)
 {
     Assert(cTarget == (!fIntTarget ? 80U : 16U) || cTarget == 64U || cTarget == 32U || (cTarget == 59U && fIntTarget));
 
@@ -271,9 +288,9 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
     r80.au16[4] = RandU16();
 
     /*
-     * Make it more likely that we get a good selection of special values.
+     * Adjust the random stuff according to bType.
      */
-    uint8_t bType = RandU8() & 0x1f;
+    bType &= 0x1f;
     if (bType == 0 || bType == 1 || bType == 2 || bType == 3)
     {
         /* Zero (0), Pseudo-Infinity (1), Infinity (2), Indefinite (3). We only keep fSign here. */
@@ -282,6 +299,7 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
         r80.sj64.fInteger      = bType >= 2 ? 1 : 0;
         AssertMsg(bType != 0 || RTFLOAT80U_IS_ZERO(&r80),       ("%s\n", FormatR80(&r80)));
         AssertMsg(bType != 1 || RTFLOAT80U_IS_PSEUDO_INF(&r80), ("%s\n", FormatR80(&r80)));
+        Assert(   bType != 1 || RTFLOAT80U_IS_387_INVALID(&r80));
         AssertMsg(bType != 2 || RTFLOAT80U_IS_INF(&r80),        ("%s\n", FormatR80(&r80)));
         AssertMsg(bType != 3 || RTFLOAT80U_IS_INDEFINITE(&r80), ("%s\n", FormatR80(&r80)));
     }
@@ -312,25 +330,28 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
         r80.sj64.fInteger  = 0;
         AssertMsg(RTFLOAT80U_IS_PSEUDO_NAN(&r80), ("%s bType=%#x\n", FormatR80(&r80), bType));
         AssertMsg(RTFLOAT80U_IS_NAN(&r80),        ("%s bType=%#x\n", FormatR80(&r80), bType));
+        Assert(RTFLOAT80U_IS_387_INVALID(&r80));
     }
-    else if (bType == 10 || bType == 11)
+    else if (bType == 10 || bType == 11 || bType == 12 || bType == 13)
     {
-        /* Quiet and signalling NaNs (using fInteger to pick which). */
+        /* Quiet and signalling NaNs. */
         if (bType & 1)
             SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
         else if (r80.sj64.uFraction == 0)
             r80.sj64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT80U_FRACTION_BITS) - 1);
         r80.sj64.uExponent = 0x7fff;
-        if (r80.sj64.fInteger)
-            r80.sj64.uFraction |= RT_BIT_64(62);
+        if (bType < 12)
+            r80.sj64.uFraction |= RT_BIT_64(62);  /* quiet */
         else
-            r80.sj64.uFraction &= ~RT_BIT_64(62);
+            r80.sj64.uFraction &= ~RT_BIT_64(62); /* signaling */
         r80.sj64.fInteger  = 1;
+        AssertMsg(bType >= 12 || RTFLOAT80U_IS_QUIET_NAN(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType <  12 || RTFLOAT80U_IS_SIGNALLING_NAN(&r80), ("%s\n", FormatR80(&r80)));
         AssertMsg(RTFLOAT80U_IS_SIGNALLING_NAN(&r80) || RTFLOAT80U_IS_QUIET_NAN(&r80), ("%s\n", FormatR80(&r80)));
         AssertMsg(RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN(&r80), ("%s\n", FormatR80(&r80)));
         AssertMsg(RTFLOAT80U_IS_NAN(&r80), ("%s\n", FormatR80(&r80)));
     }
-    else if (bType == 12 || bType == 13)
+    else if (bType == 14 || bType == 15)
     {
         /* Unnormals */
         if (bType & 1)
@@ -339,8 +360,9 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
         if (r80.sj64.uExponent == RTFLOAT80U_EXP_MAX || r80.sj64.uExponent == 0)
             r80.sj64.uExponent = (uint16_t)RTRandU32Ex(1, RTFLOAT80U_EXP_MAX - 1);
         AssertMsg(RTFLOAT80U_IS_UNNORMAL(&r80), ("%s\n", FormatR80(&r80)));
+        Assert(RTFLOAT80U_IS_387_INVALID(&r80));
     }
-    else if (bType < 24)
+    else if (bType < 26)
     {
         /* Make sure we have lots of normalized values. */
         if (!fIntTarget)
@@ -355,7 +377,7 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
             else if (r80.sj64.uExponent >= uMaxExp)
                 r80.sj64.uExponent = uMaxExp - 1;
 
-            if (bType == 14)
+            if (bType == 16)
             {   /* All 1s is useful to testing rounding. Also try trigger special
                    behaviour by sometimes rounding out of range, while we're at it. */
                 r80.sj64.uFraction = RT_BIT_64(63) - 1;
@@ -379,7 +401,7 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
             else if (r80.sj64.uExponent > uMaxExp)
                 r80.sj64.uExponent = uMaxExp;
 
-            if (bType == 14)
+            if (bType == 16)
             {   /* All 1s is useful to testing rounding. Also try trigger special
                    behaviour by sometimes rounding out of range, while we're at it. */
                 r80.sj64.uFraction = RT_BIT_64(63) - 1;
@@ -397,10 +419,83 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
 }
 
 
-static RTFLOAT80U RandR80Src(uint32_t iTest)
+static RTFLOAT80U RandR80(unsigned cTarget = 80, bool fIntTarget = false)
 {
-    RT_NOREF(iTest);
-    return RandR80Ex();
+    /*
+     * Make it more likely that we get a good selection of special values.
+     */
+    return RandR80Ex(RandU8(), cTarget, fIntTarget);
+
+}
+
+
+static RTFLOAT80U RandR80Src(uint32_t iTest, unsigned cTarget = 80, bool fIntTarget = false)
+{
+    /* Make sure we cover all the basic types first before going for random selection: */
+    if (iTest <= 18)
+        return RandR80Ex(18 - iTest, cTarget, fIntTarget); /* Starting with 3 normals. */
+    return RandR80(cTarget, fIntTarget);
+}
+
+
+/**
+ * Helper for RandR80Src1 and RandR80Src2 that converts bType from a 0..11 range
+ * to a 0..17, covering all basic value types.
+ */
+static uint8_t RandR80Src12RemapType(uint8_t bType)
+{
+    switch (bType)
+    {
+        case 0:  return 18; /* normal */
+        case 1:  return 16; /* normal extreme rounding */
+        case 2:  return 14; /* unnormal */
+        case 3:  return 12; /* Signalling NaN */
+        case 4:  return 10; /* Quiet NaN */
+        case 5:  return 8;  /* PseudoNaN */
+        case 6:  return 6;  /* Pseudo Denormal */
+        case 7:  return 4;  /* Denormal */
+        case 8:  return 3;  /* Indefinite */
+        case 9:  return 2;  /* Infinity */
+        case 10: return 1;  /* Pseudo-Infinity */
+        case 11: return 0;  /* Zero */
+        default: AssertFailedReturn(18);
+    }
+}
+
+
+/**
+ * This works in tandem with RandR80Src2 to make sure we cover all operand
+ * type mixes first before we venture into regular random testing.
+ *
+ * There are 11 basic variations, when we leave out the five odd ones using
+ * SafeR80FractionShift. Because of the special normalized value targetting at
+ * rounding, we make it an even 12.  So 144 combinations for two operands.
+ */
+static RTFLOAT80U RandR80Src1(uint32_t iTest, unsigned cPartnerBits = 80, bool fPartnerInt = false)
+{
+    if (cPartnerBits == 80)
+    {
+        Assert(!fPartnerInt);
+        if (iTest < 12 * 12)
+            return RandR80Ex(RandR80Src12RemapType(iTest / 12));
+    }
+    else if ((cPartnerBits == 64 || cPartnerBits == 32) && !fPartnerInt)
+    {
+        if (iTest < 12 * 10)
+            return RandR80Ex(RandR80Src12RemapType(iTest / 10));
+    }
+    else if (iTest < 18 * 4 && fPartnerInt)
+        return RandR80Ex(iTest / 4);
+    return RandR80();
+}
+
+
+/** Partner to RandR80Src1. */
+static RTFLOAT80U RandR80Src2(uint32_t iTest)
+{
+    if (iTest < 12 * 12)
+        return RandR80Ex(RandR80Src12RemapType(iTest % 12));
+    return RandR80();
 }
 
 
@@ -413,10 +508,8 @@ static void SafeR64FractionShift(PRTFLOAT64U pr64, uint8_t cShift)
 }
 
 
-static RTFLOAT64U RandR64Src(uint32_t iTest)
+static RTFLOAT64U RandR64Ex(uint8_t bType)
 {
-    RT_NOREF(iTest);
-
     RTFLOAT64U r64;
     r64.u = RandU64();
 
@@ -424,7 +517,7 @@ static RTFLOAT64U RandR64Src(uint32_t iTest)
      * Make it more likely that we get a good selection of special values.
      * On average 6 out of 16 calls should return a special value.
      */
-    uint8_t bType = RandU8() & 0xf;
+    bType &= 0xf;
     if (bType == 0 || bType == 1)
     {
         /* 0 or Infinity. We only keep fSign here. */
@@ -444,14 +537,20 @@ static RTFLOAT64U RandR64Src(uint32_t iTest)
         r64.s64.uExponent = 0;
         AssertMsg(RTFLOAT64U_IS_SUBNORMAL(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
-    else if (bType == 4 || bType == 5)
+    else if (bType == 4 || bType == 5 || bType == 6 || bType == 7)
     {
         /* NaNs */
-        if (bType == 5)
+        if (bType & 1)
             SafeR64FractionShift(&r64, r64.s64.uExponent % 51);
         else if (r64.s64.uFraction == 0)
             r64.s64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1);
         r64.s64.uExponent = 0x7ff;
+        if (bType < 6)
+            r64.s64.uFraction |= RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1); /* quiet */
+        else
+            r64.s64.uFraction &= ~RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1); /* signalling */
+        AssertMsg(bType >= 6 || RTFLOAT64U_IS_QUIET_NAN(&r64),      ("%s bType=%#x\n", FormatR64(&r64), bType));
+        AssertMsg(bType <  6 || RTFLOAT64U_IS_SIGNALLING_NAN(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
         AssertMsg(RTFLOAT64U_IS_NAN(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
     else if (bType < 12)
@@ -467,6 +566,23 @@ static RTFLOAT64U RandR64Src(uint32_t iTest)
 }
 
 
+static RTFLOAT64U RandR64Src(uint32_t iTest)
+{
+    if (iTest < 16)
+        return RandR64Ex(iTest);
+    return RandR64Ex(RandU8());
+}
+
+
+/** Pairing with a 80-bit floating point arg. */
+static RTFLOAT64U RandR64Src2(uint32_t iTest)
+{
+    if (iTest < 12 * 10)
+        return RandR64Ex(9 - iTest % 10); /* start with normal values */
+    return RandR64Ex(RandU8());
+}
+
+
 static void SafeR32FractionShift(PRTFLOAT32U pr32, uint8_t cShift)
 {
     if (pr32->s.uFraction >= RT_BIT_32(cShift))
@@ -476,10 +592,8 @@ static void SafeR32FractionShift(PRTFLOAT32U pr32, uint8_t cShift)
 }
 
 
-static RTFLOAT32U RandR32Src(uint32_t iTest)
+static RTFLOAT32U RandR32Ex(uint8_t bType)
 {
-    RT_NOREF(iTest);
-
     RTFLOAT32U r32;
     r32.u = RandU32();
 
@@ -487,7 +601,7 @@ static RTFLOAT32U RandR32Src(uint32_t iTest)
      * Make it more likely that we get a good selection of special values.
      * On average 6 out of 16 calls should return a special value.
      */
-    uint8_t bType = RandU8() & 0xf;
+    bType &= 0xf;
     if (bType == 0 || bType == 1)
     {
         /* 0 or Infinity. We only keep fSign here. */
@@ -506,14 +620,20 @@ static RTFLOAT32U RandR32Src(uint32_t iTest)
         r32.s.uExponent = 0;
         AssertMsg(RTFLOAT32U_IS_SUBNORMAL(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
-    else if (bType == 4 || bType == 5)
+    else if (bType == 4 || bType == 5 || bType == 6 || bType == 7)
     {
         /* NaNs */
-        if (bType == 5)
+        if (bType & 1)
             SafeR32FractionShift(&r32, r32.s.uExponent % 22);
         else if (r32.s.uFraction == 0)
             r32.s.uFraction = RTRandU32Ex(1, RT_BIT_32(RTFLOAT32U_FRACTION_BITS) - 1);
         r32.s.uExponent = 0xff;
+        if (bType < 6)
+            r32.s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);  /* quiet */
+        else
+            r32.s.uFraction &= ~RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1); /* signalling */
+        AssertMsg(bType >= 6 || RTFLOAT32U_IS_QUIET_NAN(&r32),      ("%s bType=%#x\n", FormatR32(&r32), bType));
+        AssertMsg(bType <  6 || RTFLOAT32U_IS_SIGNALLING_NAN(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
         AssertMsg(RTFLOAT32U_IS_NAN(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
     else if (bType < 12)
@@ -526,6 +646,23 @@ static RTFLOAT32U RandR32Src(uint32_t iTest)
         AssertMsg(RTFLOAT32U_IS_NORMAL(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
     return r32;
+}
+
+
+static RTFLOAT32U RandR32Src(uint32_t iTest)
+{
+    if (iTest < 16)
+        return RandR32Ex(iTest);
+    return RandR32Ex(RandU8());
+}
+
+
+/** Pairing with a 80-bit floating point arg. */
+static RTFLOAT32U RandR32Src2(uint32_t iTest)
+{
+    if (iTest < 12 * 10)
+        return RandR32Ex(9 - iTest % 10); /* start with normal values */
+    return RandR32Ex(RandU8());
 }
 
 
@@ -2561,7 +2698,8 @@ static void FpuStR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
         { \
             uint16_t const fFcw = RandFcw(); \
             State.FSW = RandFsw(); \
-            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest) : g_aFpuStR ## a_cBits ## Specials[iTest - cTests]; \
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest, a_cBits) \
+                                   : g_aFpuStR ## a_cBits ## Specials[iTest - cTests]; \
             \
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
             { \
@@ -2805,7 +2943,7 @@ static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uin
         { \
             uint16_t const fFcw = RandFcw(); \
             State.FSW = RandFsw(); \
-            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex(a_cBits, true) \
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest, a_cBits, true) \
                                    : g_aFpuStI ## a_cBits ## Specials[iTest - cTests]; \
             \
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
@@ -2940,7 +3078,7 @@ static void FpuStD80Generate(PRTSTREAM pOut, uint32_t cTests)
         {
             uint16_t const fFcw = RandFcw();
             State.FSW = RandFsw();
-            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex(59, true) : s_aSpecials[iTest - cTests];
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest, 59, true) : s_aSpecials[iTest - cTests];
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
             {
@@ -3042,15 +3180,21 @@ static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests)
 {
+    cTests = RT_MAX(160, cTests); /* there are 144 standard input variations */
+
     static struct { RTFLOAT80U Val1, Val2; } const s_aSpecials[] =
     {
-        {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
-            RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS)   }, /* whatever */
+        {   RTFLOAT80U_INIT_C(1, 0xdd762f07f2e80eef, 30142),    /* causes weird overflows with DOWN and NEAR rounding. */
+            RTFLOAT80U_INIT_C(1, 0xffffffffffffffff, RTFLOAT80U_EXP_MAX - 1) },
+        {   RTFLOAT80U_INIT_ZERO(0),    /* causes weird overflows with UP and NEAR rounding when precision is lower than 64. */
+            RTFLOAT80U_INIT_C(0, 0xffffffffffffffff, RTFLOAT80U_EXP_MAX - 1) },
+        {   RTFLOAT80U_INIT_ZERO(0),    /* minus variant */
+            RTFLOAT80U_INIT_C(1, 0xffffffffffffffff, RTFLOAT80U_EXP_MAX - 1) },
     };
 
     X86FXSTATE State;
     RT_ZERO(State);
-    uint32_t cMinNormalPairs = cTests / 4;
+    uint32_t cMinNormalPairs = (cTests - 144) / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
     {
         PFNIEMAIMPLFPUR80 const pfn = g_aFpuBinaryR80[iFn].pfnNative ? g_aFpuBinaryR80[iFn].pfnNative : g_aFpuBinaryR80[iFn].pfn;
@@ -3063,11 +3207,12 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
         }
 
         GenerateArrayStart(pOutFn, g_aFpuBinaryR80[iFn].pszName, "FPU_BINARY_R80_TEST_T");
+        uint32_t iTestOutput       = 0;
         uint32_t cNormalInputPairs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests].Val1;
-            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests].Val2;
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Src1(iTest) : s_aSpecials[iTest - cTests].Val1;
+            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Src2(iTest) : s_aSpecials[iTest - cTests].Val2;
             if (RTFLOAT80U_IS_NORMAL(&InVal1) && RTFLOAT80U_IS_NORMAL(&InVal2))
                 cNormalInputPairs++;
             else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
@@ -3076,27 +3221,62 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                 continue;
             }
 
+            uint16_t const fFcwExtra = 0;
             uint16_t const fFcw = RandFcw();
             State.FSW = RandFsw();
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
-            {
                 for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
                 {
-                    for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+                    State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
+                              | (iRounding  << X86_FCW_RC_SHIFT)
+                              | (iPrecision << X86_FCW_PC_SHIFT)
+                              | X86_FCW_MASK_ALL;
+                    IEMFPURESULT ResM = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                    pfn(&State, &ResM, &InVal1, &InVal2);
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/m = #%u */\n",
+                                 State.FCW | fFcwExtra, State.FSW, ResM.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                 GenFormatR80(&ResM.r80Result), iTest, iRounding, iPrecision, iTestOutput++);
+
+                    State.FCW = State.FCW & ~X86_FCW_MASK_ALL;
+                    IEMFPURESULT ResU = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                    pfn(&State, &ResU, &InVal1, &InVal2);
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/u = #%u */\n",
+                                 State.FCW | fFcwExtra, State.FSW, ResU.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                 GenFormatR80(&ResU.r80Result), iTest, iRounding, iPrecision, iTestOutput++);
+
+                    uint16_t fXcpt = (ResM.FSW | ResU.FSW) & X86_FSW_XCPT_MASK & ~X86_FSW_SF;
+                    if (fXcpt)
                     {
-                        State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
-                                  | (iRounding  << X86_FCW_RC_SHIFT)
-                                  | (iPrecision << X86_FCW_PC_SHIFT)
-                                  | iMask;
-                        IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 };
-                        pfn(&State, &Res, &InVal1, &InVal2);
-                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n",
-                                     State.FCW, State.FSW, Res.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
-                                     GenFormatR80(&Res.r80Result), iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
+                        State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
+                        IEMFPURESULT Res1 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                        pfn(&State, &Res1, &InVal1, &InVal2);
+                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%#x = #%u */\n",
+                                     State.FCW | fFcwExtra, State.FSW, Res1.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                     GenFormatR80(&Res1.r80Result), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
+                        if (((Res1.FSW & X86_FSW_XCPT_MASK) & fXcpt) != (Res1.FSW & X86_FSW_XCPT_MASK))
+                        {
+                            fXcpt |= Res1.FSW & X86_FSW_XCPT_MASK;
+                            State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | fXcpt;
+                            IEMFPURESULT Res2 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                            pfn(&State, &Res2, &InVal1, &InVal2);
+                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%#x[!] = #%u */\n",
+                                         State.FCW | fFcwExtra, State.FSW, Res2.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                         GenFormatR80(&Res2.r80Result), iTest, iRounding, iPrecision, fXcpt, iTestOutput++);
+                        }
+                        if (!RT_IS_POWER_OF_TWO(fXcpt))
+                            for (uint16_t fUnmasked = 1; fUnmasked <= X86_FCW_PM; fUnmasked <<= 1)
+                                if (fUnmasked & fXcpt)
+                                {
+                                    State.FCW = (State.FCW & ~X86_FCW_MASK_ALL) | (fXcpt & ~fUnmasked);
+                                    IEMFPURESULT Res3 = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                                    pfn(&State, &Res3, &InVal1, &InVal2);
+                                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/u%#x = #%u */\n",
+                                                 State.FCW | fFcwExtra, State.FSW, Res3.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                                 GenFormatR80(&Res3.r80Result), iTest, iRounding, iPrecision, fUnmasked, iTestOutput++);
+                                }
                     }
                 }
-            }
         }
         GenerateArrayEnd(pOutFn, g_aFpuBinaryR80[iFn].pszName);
     }
@@ -3174,21 +3354,23 @@ static struct { RTFLOAT80U Val1; int16_t Val2; } const s_aFpuBinaryI16Specials[]
     {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS), INT16_MAX    }, /* whatever */
 };
 
-# define GEN_FPU_BINARY_SMALL(a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
+# define GEN_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
 static void FpuBinary ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
+    cTests = RT_MAX(160, cTests); /* there are 144 standard input variations for r80 by r80 */ \
+    \
     X86FXSTATE State; \
     RT_ZERO(State); \
-    uint32_t cMinNormalPairs = cTests / 4; \
+    uint32_t cMinNormalPairs = (cTests - 144) / 4; \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
         uint32_t cNormalInputPairs = 0; \
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinary ## a_UpBits ## Specials); iTest += 1) \
         { \
-            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() \
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Src1(iTest, a_cBits, a_fIntType) \
                                     : s_aFpuBinary ## a_UpBits ## Specials[iTest - cTests].Val1; \
-            a_Type2    const InVal2 = iTest < cTests ? Rand ## a_UpBits ## Src(a_cBits) \
+            a_Type2    const InVal2 = iTest < cTests ? Rand ## a_UpBits ## Src2(iTest) \
                                     : s_aFpuBinary ## a_UpBits ## Specials[iTest - cTests].Val2; \
             if (RTFLOAT80U_IS_NORMAL(&InVal1) && a_Type2 ## _IS_NORMAL(&InVal2)) \
                 cNormalInputPairs++; \
@@ -3224,10 +3406,10 @@ static void FpuBinary ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
     } \
 }
 #else
-# define GEN_FPU_BINARY_SMALL(a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
+# define GEN_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
 #endif
 
-#define TEST_FPU_BINARY_SMALL(a_cBits, a_LoBits, a_UpBits, a_I, a_Type2, a_SubTestType, a_aSubTests, a_TestType) \
+#define TEST_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_I, a_Type2, a_SubTestType, a_aSubTests, a_TestType) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPU ## a_UpBits); \
 \
 static const a_SubTestType a_aSubTests[] = \
@@ -3240,7 +3422,7 @@ static const a_SubTestType a_aSubTests[] = \
     ENTRY(RT_CONCAT4(f, a_I, divr_r80_by_, a_LoBits)), \
 }; \
 \
-GEN_FPU_BINARY_SMALL(a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
+GEN_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
 \
 static void FpuBinary ## a_UpBits ## Test(void) \
 { \
@@ -3283,10 +3465,10 @@ static void FpuBinary ## a_UpBits ## Test(void) \
     } \
 }
 
-TEST_FPU_BINARY_SMALL(64, r64, R64, RT_NOTHING, RTFLOAT64U, FPU_BINARY_R64_T, g_aFpuBinaryR64, FPU_BINARY_R64_TEST_T)
-TEST_FPU_BINARY_SMALL(32, r32, R32, RT_NOTHING, RTFLOAT32U, FPU_BINARY_R32_T, g_aFpuBinaryR32, FPU_BINARY_R32_TEST_T)
-TEST_FPU_BINARY_SMALL(32, i32, I32, i,          int32_t,    FPU_BINARY_I32_T, g_aFpuBinaryI32, FPU_BINARY_I32_TEST_T)
-TEST_FPU_BINARY_SMALL(16, i16, I16, i,          int16_t,    FPU_BINARY_I16_T, g_aFpuBinaryI16, FPU_BINARY_I16_TEST_T)
+TEST_FPU_BINARY_SMALL(0, 64, r64, R64, RT_NOTHING, RTFLOAT64U, FPU_BINARY_R64_T, g_aFpuBinaryR64, FPU_BINARY_R64_TEST_T)
+TEST_FPU_BINARY_SMALL(0, 32, r32, R32, RT_NOTHING, RTFLOAT32U, FPU_BINARY_R32_T, g_aFpuBinaryR32, FPU_BINARY_R32_TEST_T)
+TEST_FPU_BINARY_SMALL(1, 32, i32, I32, i,          int32_t,    FPU_BINARY_I32_T, g_aFpuBinaryI32, FPU_BINARY_I32_TEST_T)
+TEST_FPU_BINARY_SMALL(1, 16, i16, I16, i,          int16_t,    FPU_BINARY_I16_T, g_aFpuBinaryI16, FPU_BINARY_I16_TEST_T)
 
 
 /*
@@ -3317,21 +3499,23 @@ static struct { RTFLOAT80U Val1; int16_t Val2; } const s_aFpuBinaryFswI16Special
     {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS), INT16_MAX   }, /* whatever */
 };
 
-# define GEN_FPU_BINARY_FSW(a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
+# define GEN_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
 static void FpuBinaryFsw ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
+    cTests = RT_MAX(160, cTests); /* there are 144 standard input variations for r80 by r80 */ \
+    \
     X86FXSTATE State; \
     RT_ZERO(State); \
-    uint32_t cMinNormalPairs = cTests / 4; \
+    uint32_t cMinNormalPairs = (cTests - 144) / 4; \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
         uint32_t cNormalInputPairs = 0; \
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinaryFsw ## a_UpBits ## Specials); iTest += 1) \
         { \
-            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() \
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Src1(iTest, a_cBits, a_fIntType) \
                                     : s_aFpuBinaryFsw ## a_UpBits ## Specials[iTest - cTests].Val1; \
-            a_Type2    const InVal2 = iTest < cTests ? Rand ## a_UpBits ## Src(a_cBits) \
+            a_Type2    const InVal2 = iTest < cTests ? Rand ## a_UpBits ## Src2(iTest) \
                                     : s_aFpuBinaryFsw ## a_UpBits ## Specials[iTest - cTests].Val2; \
             if (RTFLOAT80U_IS_NORMAL(&InVal1) && a_Type2 ## _IS_NORMAL(&InVal2)) \
                 cNormalInputPairs++; \
@@ -3359,10 +3543,10 @@ static void FpuBinaryFsw ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests
     } \
 }
 #else
-# define GEN_FPU_BINARY_FSW(a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
+# define GEN_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
 #endif
 
-#define TEST_FPU_BINARY_FSW(a_cBits, a_UpBits, a_Type2, a_SubTestType, a_aSubTests, a_TestType, ...) \
+#define TEST_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_SubTestType, a_aSubTests, a_TestType, ...) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPU ## a_UpBits ## FSW); \
 \
 static const a_SubTestType a_aSubTests[] = \
@@ -3370,7 +3554,7 @@ static const a_SubTestType a_aSubTests[] = \
     __VA_ARGS__ \
 }; \
 \
-GEN_FPU_BINARY_FSW(a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
+GEN_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType) \
 \
 static void FpuBinaryFsw ## a_UpBits ## Test(void) \
 { \
@@ -3410,11 +3594,11 @@ static void FpuBinaryFsw ## a_UpBits ## Test(void) \
     } \
 }
 
-TEST_FPU_BINARY_FSW(80, R80, RTFLOAT80U, FPU_BINARY_FSW_R80_T, g_aFpuBinaryFswR80, FPU_BINARY_R80_TEST_T, ENTRY(fcom_r80_by_r80), ENTRY(fucom_r80_by_r80))
-TEST_FPU_BINARY_FSW(64, R64, RTFLOAT64U, FPU_BINARY_FSW_R64_T, g_aFpuBinaryFswR64, FPU_BINARY_R64_TEST_T, ENTRY(fcom_r80_by_r64))
-TEST_FPU_BINARY_FSW(32, R32, RTFLOAT32U, FPU_BINARY_FSW_R32_T, g_aFpuBinaryFswR32, FPU_BINARY_R32_TEST_T, ENTRY(fcom_r80_by_r32))
-TEST_FPU_BINARY_FSW(32, I32, int32_t,    FPU_BINARY_FSW_I32_T, g_aFpuBinaryFswI32, FPU_BINARY_I32_TEST_T, ENTRY(ficom_r80_by_i32))
-TEST_FPU_BINARY_FSW(16, I16, int16_t,    FPU_BINARY_FSW_I16_T, g_aFpuBinaryFswI16, FPU_BINARY_I16_TEST_T, ENTRY(ficom_r80_by_i16))
+TEST_FPU_BINARY_FSW(0, 80, R80, RTFLOAT80U, FPU_BINARY_FSW_R80_T, g_aFpuBinaryFswR80, FPU_BINARY_R80_TEST_T, ENTRY(fcom_r80_by_r80), ENTRY(fucom_r80_by_r80))
+TEST_FPU_BINARY_FSW(0, 64, R64, RTFLOAT64U, FPU_BINARY_FSW_R64_T, g_aFpuBinaryFswR64, FPU_BINARY_R64_TEST_T, ENTRY(fcom_r80_by_r64))
+TEST_FPU_BINARY_FSW(0, 32, R32, RTFLOAT32U, FPU_BINARY_FSW_R32_T, g_aFpuBinaryFswR32, FPU_BINARY_R32_TEST_T, ENTRY(fcom_r80_by_r32))
+TEST_FPU_BINARY_FSW(1, 32, I32, int32_t,    FPU_BINARY_FSW_I32_T, g_aFpuBinaryFswI32, FPU_BINARY_I32_TEST_T, ENTRY(ficom_r80_by_i32))
+TEST_FPU_BINARY_FSW(1, 16, I16, int16_t,    FPU_BINARY_FSW_I16_T, g_aFpuBinaryFswI16, FPU_BINARY_I16_TEST_T, ENTRY(ficom_r80_by_i16))
 
 
 /*
@@ -3437,17 +3621,19 @@ static struct { RTFLOAT80U Val1, Val2; } const s_aFpuBinaryEflR80Specials[] =
 
 static void FpuBinaryEflR80Generate(PRTSTREAM pOut, uint32_t cTests)
 {
+    cTests = RT_MAX(160, cTests); /* there are 144 standard input variations */
+
     X86FXSTATE State;
     RT_ZERO(State);
-    uint32_t cMinNormalPairs = cTests / 4;
+    uint32_t cMinNormalPairs = (cTests - 144) / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryEflR80); iFn++)
     {
         GenerateArrayStart(pOut, g_aFpuBinaryEflR80[iFn].pszName, "FPU_BINARY_EFL_R80_TEST_T");
         uint32_t cNormalInputPairs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinaryEflR80Specials); iTest += 1)
         {
-            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() : s_aFpuBinaryEflR80Specials[iTest - cTests].Val1;
-            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Ex() : s_aFpuBinaryEflR80Specials[iTest - cTests].Val2;
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Src1(iTest) : s_aFpuBinaryEflR80Specials[iTest - cTests].Val1;
+            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Src2(iTest) : s_aFpuBinaryEflR80Specials[iTest - cTests].Val2;
             if (RTFLOAT80U_IS_NORMAL(&InVal1) && RTFLOAT80U_IS_NORMAL(&InVal2))
                 cNormalInputPairs++;
             else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
@@ -3590,7 +3776,7 @@ static void FpuUnaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTes
         uint32_t cTargetRangeInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U InVal = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests];
+            RTFLOAT80U InVal = iTest < cTests ? RandR80Src(iTest) : s_aSpecials[iTest - cTests];
             if (RTFLOAT80U_IS_NORMAL(&InVal))
             {
                 if (g_aFpuUnaryR80[iFn].uExtra == kUnary_Rounding_F2xm1)
@@ -3805,7 +3991,7 @@ static void FpuUnaryFswR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
         uint32_t cNormalInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests];
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest) : s_aSpecials[iTest - cTests];
             if (RTFLOAT80U_IS_NORMAL(&InVal))
                 cNormalInputs++;
             else if (cNormalInputs < cMinNormals && iTest + cMinNormals >= cTests && iTest < cTests)
@@ -3936,7 +4122,7 @@ static void FpuUnaryTwoR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t c
         uint32_t cTargetRangeInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U InVal = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests];
+            RTFLOAT80U InVal = iTest < cTests ? RandR80Src(iTest) : s_aSpecials[iTest - cTests];
             if (RTFLOAT80U_IS_NORMAL(&InVal))
             {
                 if (iFn != 0)

@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "internals.h"
 #include "softfloat.h"
+#include <iprt/types.h> /* VBox: RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST */
+//#include <iprt/assert.h>
 
 extFloat80_t
  softfloat_roundPackToExtF80(
@@ -56,6 +58,7 @@ extFloat80_t
     bool isTiny, doIncrement;
     struct uint64_extra sig64Extra;
     union { struct extFloat80M s; extFloat80_t f; } uZ;
+    //RTAssertMsg2("softfloat_roundPackToExtF80: exp=%d sig=%RX64 sigExtra=%RX64 rp=%d\n", exp, sig, sigExtra, roundingPrecision);
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -86,17 +89,26 @@ extFloat80_t
         if ( exp <= 0 ) {
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
+            bool fUnmaskedUnderflow = false;                                                /* VBox: unmasked underflow bias */
             isTiny =
                    (softfloat_detectTininess
                         == softfloat_tininess_beforeRounding)
                 || (exp < 0)
                 || (sig <= (uint64_t) (sig + roundIncrement));
-            sig = softfloat_shiftRightJam64( sig, 1 - exp );
+            if (    (pState->exceptionMask & softfloat_flag_underflow)                      /* VBox: unmasked underflow bias */
+                 || (exp == -63 && sig == 0 && sigExtra == 0) /* zero */ ) {                /* VBox: unmasked underflow bias */
+                sig = softfloat_shiftRightJam64(sig, 1 - exp);
+            } else {                                                                        /* VBox: unmasked underflow bias */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: #UE - bias adj: %d -> %d; sig=%#RX64\n", exp, exp + RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST, sig); /* VBox: unmasked underflow bias */
+                softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA ); /* VBox: unmasked underflow bias */
+                exp += RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST;                                /* VBox: unmasked underflow bias */
+                fUnmaskedUnderflow = true;                                                  /* VBox: unmasked underflow bias */
+            }                                                                               /* VBox: unmasked underflow bias */
+            uint64_t const uOldSig = sig; /* VBox */
             roundBits = sig & roundMask;
             if ( roundBits ) {
                 if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
                 softfloat_exceptionFlags |= softfloat_flag_inexact;
-                if ( roundIncrement ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
 #ifdef SOFTFLOAT_ROUND_ODD
                 if ( roundingMode == softfloat_round_odd ) {
                     sig |= roundMask + 1;
@@ -104,12 +116,18 @@ extFloat80_t
 #endif
             }
             sig += roundIncrement;
-            exp = ((sig & UINT64_C( 0x8000000000000000 )) != 0);
+            if ( !fUnmaskedUnderflow ) {                                /* VBox: unmasked underflow bias */
+                exp = ((sig & UINT64_C( 0x8000000000000000 )) != 0);
+            }                                                           /* VBox: unmasked underflow bias */
             roundIncrement = roundMask + 1;
             if ( roundNearEven && (roundBits<<1 == roundIncrement) ) {
                 roundMask |= roundIncrement;
             }
             sig &= ~roundMask;
+            if ( sig > uOldSig ) {                                      /* VBox: C1 */
+                softfloat_exceptionFlags |= softfloat_flag_c1;          /* VBox: C1 */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #1\n"); /* VBox: C1 */
+            }                                                           /* VBox: C1 */
             goto packReturn;
         }
         if (
@@ -121,14 +139,17 @@ extFloat80_t
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    { /* VBox*/
-    uint64_t const uOldSig = sig; /* VBox */
+    {                                                                   /* VBox: C1 */
+    uint64_t const uOldSig = sig;                                       /* VBox: C1 */
     if ( roundBits ) {
         softfloat_exceptionFlags |= softfloat_flag_inexact;
 #ifdef SOFTFLOAT_ROUND_ODD
         if ( roundingMode == softfloat_round_odd ) {
             sig = (sig & ~roundMask) | (roundMask + 1);
-            if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+            if ( sig > uOldSig ) {                                      /* VBox: C1 */
+                softfloat_exceptionFlags |= softfloat_flag_c1;          /* VBox: C1 */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #2\n"); /* VBox: C1 */
+            }                                                           /* VBox: C1 */
             goto packReturn;
         }
 #endif
@@ -137,16 +158,20 @@ extFloat80_t
     if ( sig < roundIncrement ) {
         ++exp;
         sig = UINT64_C( 0x8000000000000000 );
-        softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+        softfloat_exceptionFlags |= softfloat_flag_c1;                  /* VBox: C1 */
+        //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #3\n");         /* VBox: C1 */
     }
     roundIncrement = roundMask + 1;
     if ( roundNearEven && (roundBits<<1 == roundIncrement) ) {
         roundMask |= roundIncrement;
     }
     sig &= ~roundMask;
-    if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+    if ( sig > uOldSig ) {                                              /* VBox: C1 */
+        softfloat_exceptionFlags |= softfloat_flag_c1;                  /* VBox: C1 */
+        //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #4\n");         /* VBox: C1 */
+    }                                                                   /* VBox: C1 */
     goto packReturn;
-    } /* VBox */
+    }                                                                   /* VBox: C1 */
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  precision80:
@@ -163,17 +188,26 @@ extFloat80_t
         if ( exp <= 0 ) {
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
+            bool fUnmaskedUnderflow = false;                                                /* VBox: unmasked underflow bias */
             isTiny =
                    (softfloat_detectTininess
                         == softfloat_tininess_beforeRounding)
                 || (exp < 0)
                 || ! doIncrement
                 || (sig < UINT64_C( 0xFFFFFFFFFFFFFFFF ));
-            sig64Extra =
-                softfloat_shiftRightJam64Extra( sig, sigExtra, 1 - exp );
-            exp = 0;
-            sig = sig64Extra.v;
-            sigExtra = sig64Extra.extra;
+            if (    (pState->exceptionMask & softfloat_flag_underflow)                      /* VBox: unmasked underflow bias */
+                 || (exp == -63 && sig == 0 && sigExtra == 0) /* zero */ ) {                /* VBox: unmasked underflow bias */
+                sig64Extra =
+                    softfloat_shiftRightJam64Extra( sig, sigExtra, 1 - exp );
+                exp = 0;
+                sig = sig64Extra.v;
+                sigExtra = sig64Extra.extra;
+            } else {                                                                        /* VBox: unmasked underflow bias */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: #UE/80 - bias adj: %d -> %d; sig=%#RX64'%016RX64\n", exp, exp + RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST, sig, sigExtra); /* VBox: unmasked underflow bias */
+                softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA ); /* VBox: unmasked underflow bias */
+                exp += RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST;                                /* VBox: unmasked underflow bias */
+                fUnmaskedUnderflow = true;                                                  /* VBox: unmasked underflow bias */
+            }                                                                               /* VBox: unmasked underflow bias */
             if ( sigExtra ) {
                 if ( isTiny ) softfloat_raiseFlags( softfloat_flag_underflow SOFTFLOAT_STATE_ARG_COMMA );
 #ifdef SOFTFLOAT_ROUND_ODD
@@ -194,13 +228,18 @@ extFloat80_t
                         && sigExtra;
             }
             if ( doIncrement ) {
-                softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+                softfloat_exceptionFlags |= softfloat_flag_c1;              /* VBox: C1 */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #5\n");     /* VBox: C1 */
                 ++sig;
                 sig &=
                     ~(uint_fast64_t)
                          (! (sigExtra & UINT64_C( 0x7FFFFFFFFFFFFFFF ))
                               & roundNearEven);
-                exp = ((sig & UINT64_C( 0x8000000000000000 )) != 0);
+                if ( fUnmaskedUnderflow ) {                                 /* VBox: unmasked underflow bias */
+                    exp = ((sig & UINT64_C( 0x8000000000000000 )) != 0);
+                } else if ((sig & UINT64_C( 0x8000000000000000 )) != 0) {   /* VBox: unmasked underflow bias */
+                    exp++;                                                  /* VBox: unmasked underflow bias */
+                }                                                           /* VBox: unmasked underflow bias */
             }
             goto packReturn;
         }
@@ -224,6 +263,12 @@ extFloat80_t
             ) {
                 exp = 0x7FFF;
                 sig = UINT64_C( 0x8000000000000000 );
+                softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox: C1 - Returning infinity means we've rounded up. */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #6\n");
+
+                /* VBox: HACK ALERT! Some utterly weird behaviour, found with 'fadd 0,max', precision < 64 and rounding away from 0. */
+                if ( !(pState->exceptionMask & softfloat_flag_overflow) ) /* VBox */
+                    exp = 8191; /* => -8192 */                            /* VBox */
             } else {
                 exp = 0x7FFE;
                 sig = ~roundMask;
@@ -248,13 +293,17 @@ extFloat80_t
         if ( ! sig ) {
             ++exp;
             sig = UINT64_C( 0x8000000000000000 );
-            softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+            softfloat_exceptionFlags |= softfloat_flag_c1;              /* VBox: C1 */
+            //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #7\n");     /* VBox: C1 */
         } else {
             sig &=
                 ~(uint_fast64_t)
                      (! (sigExtra & UINT64_C( 0x7FFFFFFFFFFFFFFF ))
                           & roundNearEven);
-            if ( sig > uOldSig ) softfloat_exceptionFlags |= softfloat_flag_c1; /* VBox */
+            if ( sig > uOldSig ) {                                      /* VBox: C1 */
+                softfloat_exceptionFlags |= softfloat_flag_c1;          /* VBox: C1 */
+                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #8\n"); /* VBox: C1 */
+            }
         }
     }
     /*------------------------------------------------------------------------
