@@ -1234,6 +1234,9 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
     (!((a_pr80)->s.uMantissa & RT_BIT_64(63)) && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
 # define RTFLOAT80U_IS_NORMAL(a_pr80) \
     (((a_pr80)->s.uMantissa & RT_BIT_64(63))  && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
+/** Invalid 387 (and later) operands: Pseudo-Infinity, Psuedo-NaN, Unnormals. */
+#define RTFLOAT80U_IS_387_INVALID(a_pr80) \
+    (!((a_pr80)->s.uMantissa & RT_BIT_64(63)) && (a_pr80)->s.uExponent > 0)
 /** @} */
 
 
