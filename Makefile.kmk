@@ -945,6 +945,10 @@ VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
 	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT)))
 
+VBOX_CORE_DOXYFILE_INPUT += \
+	$(wildcard $(PATH_ROOT)/src/VBox/VMM/VMMAll/IEM*cpp.h)
+
+
 includedep $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
 
 # Generate the Doxyfile
