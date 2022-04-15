@@ -782,6 +782,7 @@ PREDEFINED          += \
     "CPUM_STRUCT_NM(n)=" \
     "CPUM_UNION_NM(n)=" \
     "DECL_NO_RETURN(type)=type" \
+    "IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList)=a_RetType a_Name a_ArgList" \
     VBOX_WITH_HGCM
 
 EXPAND_AS_DEFINED      = \
