@@ -955,9 +955,9 @@ typedef const RTFLOAT32U RT_FAR *PCRTFLOAT32U;
 #define RTFLOAT32U_EXP_BIAS                     (127)
 /** The max exponent value for the RTFLOAT32U format. */
 #define RTFLOAT32U_EXP_MAX                      (255)
-/** The exponent bias underflow adjust for the RTFLOAT32U format.
- * @note 754-1985 sec 7.4, not mentioned in later standard versions. */
-#define RTFLOAT32U_EXP_BIAS_UNDERFLOW_ADJUST    (192)
+/** The exponent bias overflow/underflow adjust for the RTFLOAT32U format.
+ * @note 754-1985 sec 7.3 & 7.4, not mentioned in later standard versions. */
+#define RTFLOAT32U_EXP_BIAS_ADJUST              (192)
 /** Fraction width (in bits) for the RTFLOAT32U format. */
 #define RTFLOAT32U_FRACTION_BITS                (23)
 /** Check if two 32-bit floating values are identical (memcmp, not
@@ -1059,9 +1059,9 @@ typedef const RTFLOAT64U RT_FAR *PCRTFLOAT64U;
 #define RTFLOAT64U_EXP_BIAS                     (1023)
 /** The max exponent value for the RTFLOAT64U format. */
 #define RTFLOAT64U_EXP_MAX                      (2047)
-/** The exponent bias underflow adjust for the RTFLOAT64U format.
- * @note 754-1985 sec 7.4, not mentioned in later standard versions. */
-#define RTFLOAT64U_EXP_BIAS_UNDERFLOW_ADJUST    (1536)
+/** The exponent bias overflow/underflow adjust for the RTFLOAT64U format.
+ * @note 754-1985 sec 7.3 & 7.4, not mentioned in later standard versions. */
+#define RTFLOAT64U_EXP_BIAS_ADJUST              (1536)
 /** Fraction width (in bits) for the RTFLOAT64U format. */
 #define RTFLOAT64U_FRACTION_BITS                (52)
 /** Check if two 64-bit floating values are identical (memcmp, not
@@ -1188,9 +1188,9 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
 # define RTFLOAT80U_EXP_BIAS                    (16383)
 /** The max exponent value for the RTFLOAT80U format. */
 # define RTFLOAT80U_EXP_MAX                     (32767)
-/** The exponent bias underflow adjust for the RTFLOAT80U format.
- * @note 754-1985 sec 7.4, not mentioned in later standard versions. */
-# define RTFLOAT80U_EXP_BIAS_UNDERFLOW_ADJUST   (24576)
+/** The exponent bias overflow/underflow adjust for the RTFLOAT80U format.
+ * @note 754-1985 sec 7.3 & 7.4, not mentioned in later standard versions. */
+# define RTFLOAT80U_EXP_BIAS_ADJUST             (24576)
 /** Fraction width (in bits) for the RTFLOAT80U format. */
 # define RTFLOAT80U_FRACTION_BITS               (63)
 /** Check if two 80-bit floating values are identical (memcmp, not
@@ -1480,10 +1480,10 @@ typedef const RTFLOAT128U RT_FAR *PCRTFLOAT128U;
 #define RTFLOAT128U_EXP_BIAS                    (16383)
 /** The max exponent value for the RTFLOAT128U format. */
 #define RTFLOAT128U_EXP_MAX                     (32767)
-/** The exponent bias underflow adjust for the RTFLOAT128U format.
+/** The exponent bias overflow/underflow adjust for the RTFLOAT128U format.
  * @note This is stipulated based on RTFLOAT80U, it doesn't appear in any
  *       standard text as far as we know. */
-#define RTFLOAT128U_EXP_BIAS_UNDERFLOW_ADJUST   (24576)
+#define RTFLOAT128U_EXP_BIAS_ADJUST             (24576)
 /** Fraction width (in bits) for the RTFLOAT128U format. */
 #define RTFLOAT128U_FRACTION_BITS               (112)
 /** Check if two 128-bit floating values are identical (memcmp, not
