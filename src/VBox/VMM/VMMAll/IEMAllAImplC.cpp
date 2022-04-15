@@ -4870,11 +4870,83 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
+/** Worker for iemAImpl_fdiv_r80_by_r80 & iemAImpl_fdivr_r80_by_r80. */
+static uint16_t iemAImpl_fdiv_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
+                                             uint16_t fFcw, uint16_t fFsw, PCRTFLOAT80U pr80Val1Org)
+{
+    if (!RTFLOAT80U_IS_ZERO(pr80Val2) || RTFLOAT80U_IS_NAN(pr80Val1) || RTFLOAT80U_IS_INF(pr80Val1))
+    {
+        softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(fFcw);
+        extFloat80_t r80XResult = extF80_div(iemFpuSoftF80FromIprt(pr80Val1), iemFpuSoftF80FromIprt(pr80Val2), &SoftState);
+        return iemFpuSoftStateAndF80ToFswAndIprtResult(&SoftState, r80XResult, pr80Result, fFcw, fFsw, pr80Val1Org);
+    }
+    if (!RTFLOAT80U_IS_ZERO(pr80Val1))
+    {   /* Div by zero. */
+        if (fFcw & X86_FCW_ZM)
+            *pr80Result = g_ar80Infinity[pr80Val1->s.fSign != pr80Val2->s.fSign];
+        else
+        {
+            *pr80Result = *pr80Val1Org;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_ZE;
+    }
+    else
+    {   /* Invalid operand */
+        if (fFcw & X86_FCW_IM)
+            *pr80Result = g_r80Indefinite;
+        else
+        {
+            *pr80Result = *pr80Val1Org;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    return fFsw;
+}
+
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+
+    /* SoftFloat does not check for Pseudo-Infinity, Pseudo-Nan and Unnormals. */
+    if (RTFLOAT80U_IS_387_INVALID(pr80Val1) || RTFLOAT80U_IS_387_INVALID(pr80Val2))
+    {
+        if (fFcw & X86_FCW_IM)
+            pFpuRes->r80Result = g_r80Indefinite;
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    /* SoftFloat does not check for denormals and certainly not report them to us. NaNs & /0 trumps denormals. */
+    else if (   (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val1) && !RTFLOAT80U_IS_NAN(pr80Val2) && !RTFLOAT80U_IS_ZERO(pr80Val2))
+             || (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val2) && !RTFLOAT80U_IS_NAN(pr80Val1)) )
+    {
+        if (fFcw & X86_FCW_DM)
+        {
+            PCRTFLOAT80U const pr80Val1Org = pr80Val1;
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val1, r80Val1Normalized);
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val2, r80Val2Normalized);
+            fFsw = iemAImpl_fdiv_f80_r80_worker(pr80Val1, pr80Val2, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1Org);
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_DE;
+    }
+    /* SoftFloat can handle the rest: */
+    else
+        fFsw = iemAImpl_fdiv_f80_r80_worker(pr80Val1, pr80Val2, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1);
+
+    pFpuRes->FSW = fFsw;
 }
 
 
@@ -4897,8 +4969,44 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMF
 IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+
+    /* SoftFloat does not check for Pseudo-Infinity, Pseudo-Nan and Unnormals. */
+    if (RTFLOAT80U_IS_387_INVALID(pr80Val1) || RTFLOAT80U_IS_387_INVALID(pr80Val2))
+    {
+        if (fFcw & X86_FCW_IM)
+            pFpuRes->r80Result = g_r80Indefinite;
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_IE;
+    }
+    /* SoftFloat does not check for denormals and certainly not report them to us. NaNs & /0 trumps denormals. */
+    else if (   (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val1) && !RTFLOAT80U_IS_NAN(pr80Val2))
+             || (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(pr80Val2) && !RTFLOAT80U_IS_NAN(pr80Val1) && !RTFLOAT80U_IS_ZERO(pr80Val1)) )
+    {
+        if (fFcw & X86_FCW_DM)
+        {
+            PCRTFLOAT80U const pr80Val1Org = pr80Val1;
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val1, r80Val1Normalized);
+            IEM_NORMALIZE_PSEUDO_DENORMAL(pr80Val2, r80Val2Normalized);
+            fFsw = iemAImpl_fdiv_f80_r80_worker(pr80Val2, pr80Val1, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1Org);
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val1;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        fFsw |= X86_FSW_DE;
+    }
+    /* SoftFloat can handle the rest: */
+    else
+        fFsw = iemAImpl_fdiv_f80_r80_worker(pr80Val2, pr80Val1, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1);
+
+    pFpuRes->FSW = fFsw;
 }
 
 
