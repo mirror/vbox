@@ -4131,7 +4131,8 @@ DECLINLINE(void) vmxHCClearNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsI
  * @retval  VINF_EM_RESET if event injection resulted in a triple-fault.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmxTransient   The VMX-transient structure.
+ * @param   pVmcsInfo       The VMCS info object.
+ * @param   fIsNestedGuest  Flag whether this is for a for a pending nested guest event.
  * @param   pEvent          The event being injected.
  * @param   pfIntrState     Pointer to the VT-x guest-interruptibility-state. This
  *                          will be updated if necessary. This cannot not be NULL.
@@ -4140,8 +4141,8 @@ DECLINLINE(void) vmxHCClearNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsI
  *                          directly (registers modified by us, not by hardware on
  *                          VM-entry).
  */
-static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest, PCHMEVENT pEvent, bool fStepping,
-                                           uint32_t *pfIntrState)
+static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest, PCHMEVENT pEvent,
+                                         bool fStepping, uint32_t *pfIntrState)
 {
     /* Intel spec. 24.8.3 "VM-Entry Controls for Event Injection" specifies the interruption-information field to be 32-bits. */
     AssertMsg(!RT_HI_U32(pEvent->u64IntInfo), ("%#RX64\n", pEvent->u64IntInfo));
@@ -4553,6 +4554,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS information structure.
  * @param   fIsNestedGuest  Flag whether the event injection happens for a nested guest.
  * @param   fIntrState      The VT-x guest-interruptibility state.
  * @param   fStepping       Whether we are single-stepping the guest using the
@@ -4560,7 +4562,8 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  *                          VINF_EM_DBG_STEPPED if the event was dispatched
  *                          directly.
  */
-static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest, uint32_t fIntrState, bool fStepping)
+static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest,
+                                            uint32_t fIntrState, bool fStepping)
 {
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
 #ifndef IN_NEM_DARWIN
@@ -5257,7 +5260,6 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 #undef HMVMX_ERROR_BREAK
 #undef HMVMX_CHECK_BREAK
 }
-/** @} */
 
 
 #ifndef HMVMX_USE_FUNCTION_TABLE

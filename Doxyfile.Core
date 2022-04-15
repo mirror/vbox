@@ -559,6 +559,11 @@ PREDEFINED             =  \
     R3_ARCH_BITS=HC_ARCH_BITS \
     R0_ARCH_BITS=HC_ARCH_BITS \
     RTDECL(type)=type \
+    RTRCDECL(type)=type \
+    RTR0DECL(type)=type \
+    RTR3DECL(type)=type \
+    RTDATADECL(type)=type \
+    RT_DECL_NTAPI(type)=type \
     RT_EXPORT_SYMBOL(name)= \
     \
     RT_SRC_POS=1 \
@@ -613,27 +618,45 @@ PREDEFINED += \
     DECLNORETURN(type)=type \
     RTCALL= \
     \
-    APICBOTHCBDECL(type)=type \
     VBOXCALL= \
-    DECLVBGL(type)=type \
+    APICBOTHCBDECL(type)=type \
+    DBGDECL(type)=type \
     DECLR0VBGL(type)=type \
-    USBLIB_DECL(type)=type \
-    VMMDECL(type)=type \
-    VMMR0DECL(type)=type \
-    VMMR3DECL(type)=type \
-    VMMRCDECL(type)=type \
-    VMMRZDECL(type)=type \
-    VMMR0_INT_DECL(type)=type \
-    VMMR3_INT_DECL(type)=type \
-    VMMRC_INT_DECL(type)=type \
-    VMMRZ_INT_DECL(type)=type \
+    DECLSPEC_HIDDEN= \
+    DECLVBGL(type)=type \
+    DISDECL(type)=type \
     GMMR0DECL(type)=type \
     GMMR3DECL(type)=type \
+    GVMMR0DECL(type)=type \
+    INTNETR0DECL(type)=type \
+    INTNETR3DECL(type)=type \
+    PDMBOTHCBDECL(type)=type \
+    SUPDECL(type)=type \
+    SUPR0DECL(type)=type \
+    SUPR3DECL(type)=type \
+    SUPRCDECL(type)=type \
+    USBLIB_DECL(type)=type \
+    VBGLR3DECL(type)=type \
     VBOX_DND_FN_DECL_LOG(x)=x \
-    DECLSPEC_HIDDEN= \
+    VBOXDDU_DECL(type)=type \
+    VMM_INT_DECL(type)=type \
+    VMMDECL(type)=type \
+    VMMR0_INT_DECL(type)=type \
+    VMMR0DECL(type)=type \
+    VMMR3_INT_DECL(type)=type \
+    VMMR3DECL(type)=type \
+    VMMRC_INT_DECL(type)=type \
+    VMMRCDECL(type)=type \
+    VMMRZ_INT_DECL(type)=type \
+    VMMRZDECL(type)=type \
     VMSVGA3DCOCOA_DECL(type)=type \
     VBOX_LISTENER_DECLARE(a)= \
-    VBOX_WITH_RAW_MODE_NOT_R0
+    VBOX_WITH_RAW_MODE_NOT_R0 \
+    \
+    "PGM_BTH_DECL(type,name)=type pgmBth##name" \
+    "PGM_GST_DECL(type,name)=type pgmGst##name" \
+    "PGM_SHW_DECL(type,name)=type pgmShw##name"
+
 
 # BS3Kit
 PREDEFINED += \
@@ -786,8 +809,9 @@ PREDEFINED          += \
     "CPUM_STRUCT_NM(n)=" \
     "CPUM_UNION_NM(n)=" \
     "DECL_NO_RETURN(type)=type" \
-    VBOX_WITH_HGCM \
-    \
+    VBOX_WITH_HGCM
+
+PREDEFINED          += \
     "IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList)=a_RetType a_Name a_ArgList" \
     "IEM_DECL_IMPL_TYPE(a_RetType, a_Name, a_ArgList)=a_RetType (a_Name) a_ArgList" \
     \
@@ -839,40 +863,6 @@ EXPAND_AS_DEFINED      = \
     STDMETHOD_ \
     STDMETHODIMP \
     IFACEMETHODIMP \
-    \
-    DBGDECL \
-    DISDECL \
-    GMMR0DECL \
-    GVMMR0DECL \
-    INTNETDECL \
-    INTNETRCDECL \
-    INTNETR0DECL \
-    INTNETR3DECL \
-    PDMBOTHCBDECL \
-    APICBOTHCBDECL \
-    PGM_BTH_DECL \
-    PGM_GST_DECL \
-    PGM_SHW_DECL \
-    REMDECL \
-    REMRCDECL \
-    REMR0DECL \
-    REMR3DECL \
-    RTDECL \
-    RTRCDECL \
-    RTR0DECL \
-    RTR3DECL \
-    RTDATADECL \
-    RT_DECL_NTAPI \
-    SUPDECL \
-    SUPR0DECL \
-    SUPR3DECL \
-    VBGLR3DECL \
-    VBOXDDU_DECL \
-    VMMDECL \
-    VMMRCDECL \
-    VMMR0DECL \
-    VMMR3DECL \
-    VMM_INT_DECL \
     \
     VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED \
     VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED \
