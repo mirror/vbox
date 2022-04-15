@@ -2220,7 +2220,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
                 || !nemHcWinIsMesaDrvGp(pVCpu, &pVCpu->cpum.GstCtx, pExit->VpException.InstructionBytes,
                                         pExit->VpException.InstructionByteCount))
             {
-#if 1 /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
+#if 1 /** @todo Need to emulate instruction or we get a triple fault when trying to inject the \#GP... */
                 rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
                                                         pExit->VpException.InstructionBytes,
                                                         pExit->VpException.InstructionByteCount);

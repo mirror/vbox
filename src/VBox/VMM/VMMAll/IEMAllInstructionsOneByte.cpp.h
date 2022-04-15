@@ -1033,9 +1033,9 @@ FNIEMOP_DEF(iemOp_seg_DS)
  * @optest      intel / efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,pl,nv
  * @optest      amd   / efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,ng,nv
  * @optest      intel / efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,pl,nv
- * @optest8     amd   / efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,ng,nv
+ * @optest      amd   / efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,ng,nv
  * @optest      intel / efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
- * @optest10    amd   / efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      amd   / efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
  * @optest            / efl|=af  ax=0x010a -> ax=0x0004 efl&|=cf,pe,af,nz,pl,nv
  * @optest            / efl|=af  ax=0x020a -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
  * @optest            / efl|=af  ax=0x0f0a -> ax=0x0e04 efl&|=cf,pe,af,nz,pl,nv
@@ -1047,19 +1047,19 @@ FNIEMOP_DEF(iemOp_seg_DS)
  * @optest      intel / efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,pl,nv
  * @optest      amd   / efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,ng,nv
  * @optest      intel / efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,pl,nv
- * @optest22    amd   / efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,ng,nv
+ * @optest      amd   / efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,ng,nv
  * @optest      intel / efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,pl,nv
- * @optest24    amd   / efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,ng,nv
+ * @optest      amd   / efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,ng,nv
  * @optest      intel / efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,pl,nv
- * @optest26    amd   / efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      amd   / efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,ng,nv
  * @optest      intel / efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,pl,nv
- * @optest28    amd   / efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      amd   / efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,ng,nv
  * @optest      intel / efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,pl,nv
- * @optest30    amd   / efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,ng,nv
- * @optest31    intel / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
- * @optest32    amd   / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
- * @optest33    intel / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
- * @optest34    amd   / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      amd   / efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_aas)
 {
@@ -7080,6 +7080,7 @@ FNIEMOP_DEF(iemOp_xlat)
  * Common worker for FPU instructions working on ST0 and STn, and storing the
  * result in ST0.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
@@ -7112,6 +7113,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
  * Common worker for FPU instructions working on ST0 and STn, and only affecting
  * flags.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
@@ -7144,6 +7146,7 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pf
  * Common worker for FPU instructions working on ST0 and STn, only affecting
  * flags, and popping when done.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
@@ -7240,6 +7243,7 @@ FNIEMOP_DEF_1(iemOp_fdivr_stN,  uint8_t, bRm)
  * Common worker for FPU instructions working on ST0 and an m32r, and storing
  * the result in ST0.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32r, uint8_t, bRm, PFNIEMAIMPLFPUR32, pfnAImpl)
@@ -7939,6 +7943,7 @@ FNIEMOP_DEF(iemOp_f2xm1)
  * Common worker for FPU instructions working on STn and ST0, storing the result
  * in STn, and popping the stack unless IE, DE or ZE was raised.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
@@ -8392,6 +8397,7 @@ FNIEMOP_DEF(iemOp_fucompp)
  * Common worker for FPU instructions working on ST0 and an m32i, and storing
  * the result in ST0.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32i, uint8_t, bRm, PFNIEMAIMPLFPUI32, pfnAImpl)
@@ -9060,6 +9066,7 @@ FNIEMOP_DEF(iemOp_EscF3)
  * Common worker for FPU instructions working on STn and ST0, and storing the
  * result in STn unless IE, DE or ZE was raised.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
@@ -9141,7 +9148,8 @@ FNIEMOP_DEF_1(iemOp_fdiv_stN_st0,   uint8_t, bRm)
  * Common worker for FPU instructions working on ST0 and a 64-bit floating point
  * memory operand, and storing the result in ST0.
  *
- * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
+ * @param   bRm         Mod R/M byte.
+ * @param   pfnImpl     Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_ST0_m64r, uint8_t, bRm, PFNIEMAIMPLFPUR64, pfnImpl)
 {
@@ -9701,6 +9709,7 @@ FNIEMOP_DEF_1(iemOp_fdivp_stN_st0, uint8_t, bRm)
  * Common worker for FPU instructions working on ST0 and an m16i, and storing
  * the result in ST0.
  *
+ * @param   bRm         Mod R/M byte.
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_st0_m16i, uint8_t, bRm, PFNIEMAIMPLFPUI16, pfnAImpl)
@@ -10379,7 +10388,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
-    /** @todo Check out the #GP case if EIP < CS.Base or EIP > CS.Limit when
+    /** @todo Check out the \#GP case if EIP < CS.Base or EIP > CS.Limit when
      * using the 32-bit operand size override.  How can that be restarted?  See
      * weird pseudo code in intel manual. */
 
@@ -10702,7 +10711,7 @@ FNIEMOP_DEF(iemOp_lock)
 FNIEMOP_DEF(iemOp_int1)
 {
     IEMOP_MNEMONIC(int1, "int1"); /* icebp */
-    /** @todo Does not generate #UD on 286, or so they say...  Was allegedly a
+    /** @todo Does not generate \#UD on 286, or so they say...  Was allegedly a
      * prefix byte on 8086 and/or/maybe 80286 without meaning according to the 286
      * LOADALL memo.  Needs some testing. */
     IEMOP_HLP_MIN_386();

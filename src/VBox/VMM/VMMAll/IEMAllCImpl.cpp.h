@@ -86,7 +86,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PVMCPUCC pVCpu, uint16_t u
      * Read the necessary bits.
      */
     /** @todo Test the assertion in the intel manual that the CPU reads two
-     *        bytes.  The question is how this works wrt to #PF and #GP on the
+     *        bytes.  The question is how this works wrt to \#PF and \#GP on the
      *        2nd byte when it's not required. */
     uint16_t bmBytes = UINT16_MAX;
     rcStrict = iemMemFetchSysU16(pVCpu, &bmBytes, UINT8_MAX, pVCpu->cpum.GstCtx.tr.u64Base + offFirstBit);
@@ -663,7 +663,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
-            /** @todo Is the popf VME #GP(0) delivered after updating RSP+RIP
+            /** @todo Is the popf VME \#GP(0) delivered after updating RSP+RIP
              *        or before? */
             if (    (   (u16Value & X86_EFL_IF)
                      && (fEflOld  & X86_EFL_VIP))
@@ -767,7 +767,6 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
  *
  * @param   uNewPC          The new program counter (RIP) value (loaded from the
  *                          operand).
- * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
 {
@@ -822,7 +821,6 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
  *
  * @param   uNewPC          The new program counter (RIP) value (loaded from the
  *                          operand).
- * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
 {
@@ -877,7 +875,6 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
  *
  * @param   uNewPC          The new program counter (RIP) value (loaded from the
  *                          operand).
- * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
 {
@@ -1067,8 +1064,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
      * EFER.LMA=1, the gate must be 64-bit. Conversely if EFER.LMA=0, the gate
      * must be 16-bit or 32-bit.
      */
-    /** @todo: effective operand size is probably irrelevant here, only the
-     *         call gate bitness matters??
+    /** @todo effective operand size is probably irrelevant here, only the
+     *        call gate bitness matters??
      */
     VBOXSTRICTRC    rcStrict;
     RTPTRUNION      uPtrRet;
@@ -1181,7 +1178,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 
     if (enmBranch == IEMBRANCH_JUMP)
     {
-        /** @todo: This is very similar to regular far jumps; merge! */
+        /** @todo This is very similar to regular far jumps; merge! */
         /* Jumps are fairly simple... */
 
         /* Chop the high bits off if 16-bit gate (Intel says so). */
@@ -1384,20 +1381,20 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                 cbNewStack = sizeof(uint64_t) * 4;
             }
 
-            /** @todo: According to Intel, new stack is checked for enough space first,
-             *         then switched. According to AMD, the stack is switched first and
-             *         then pushes might fault!
-             *         NB: OS/2 Warp 3/4 actively relies on the fact that possible
-             *         incoming stack #PF happens before actual stack switch. AMD is
-             *         either lying or implicitly assumes that new state is committed
-             *         only if and when an instruction doesn't fault.
+            /** @todo According to Intel, new stack is checked for enough space first,
+             *        then switched. According to AMD, the stack is switched first and
+             *        then pushes might fault!
+             *        NB: OS/2 Warp 3/4 actively relies on the fact that possible
+             *        incoming stack \#PF happens before actual stack switch. AMD is
+             *        either lying or implicitly assumes that new state is committed
+             *        only if and when an instruction doesn't fault.
              */
 
-            /** @todo: According to AMD, CS is loaded first, then SS.
-             *         According to Intel, it's the other way around!?
+            /** @todo According to AMD, CS is loaded first, then SS.
+             *        According to Intel, it's the other way around!?
              */
 
-            /** @todo: Intel and AMD disagree on when exactly the CPL changes! */
+            /** @todo Intel and AMD disagree on when exactly the CPL changes! */
 
             /* Set the accessed bit before committing new SS. */
             if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
@@ -1597,7 +1594,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
         else
         {
             /* Same privilege. */
-            /** @todo: This is very similar to regular far calls; merge! */
+            /** @todo This is very similar to regular far calls; merge! */
 
             /* Check stack first - may #SS(0). */
             /** @todo check how gate size affects pushing of CS! Does callf 16:32 in
@@ -1892,7 +1889,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         if (offSeg > cbLimit)
         {
             Log(("jmpf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
-            /** @todo: Intel says this is #GP(0)! */
+            /** @todo Intel says this is \#GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
         }
         u64Base = X86DESC_BASE(&Desc.Legacy);
@@ -2096,7 +2093,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         if (offSeg > cbLimit)
         {
             Log(("callf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
-            /** @todo: Intel says this is #GP(0)! */
+            /** @todo Intel says this is \#GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
         }
         u64Base = X86DESC_BASE(&Desc.Legacy);
@@ -2427,7 +2424,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             {
                 Log(("retf %04x:%08RX64 %04x:%08RX64 - out of bounds (%#x)-> #GP(CS).\n",
                      uNewCs, uNewRip, uNewOuterSs, uNewOuterRsp, cbLimitCs));
-                /** @todo: Intel says this is #GP(0)! */
+                /** @todo Intel says this is \#GP(0)! */
                 return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
             }
             u64Base = X86DESC_BASE(&DescCs.Legacy);
@@ -2523,7 +2520,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             if (uNewRip > cbLimitCs)
             {
                 Log(("retf %04x:%08RX64 -> out of bounds (%#x)\n", uNewCs, uNewRip, cbLimitCs));
-                /** @todo: Intel says this is #GP(0)! */
+                /** @todo Intel says this is \#GP(0)! */
                 return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
             }
             u64Base = X86DESC_BASE(&DescCs.Legacy);
@@ -2660,6 +2657,8 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
  * u8NestingLevel=0 case dealing with the stack is tedious.
  *
  * @param   enmEffOpSize    The effective operand size.
+ * @param   cbFrame         Frame size.
+ * @param   cParameters     Frame parameter count.
  */
 IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_t, cParameters)
 {
@@ -3353,7 +3352,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         {
             Log(("iret %04x:%08x/%04x:%08x -> EIP is out of bounds (%#x) -> #GP(0)\n",
                  uNewCs, uNewEip, uNewSS, uNewESP, cbLimitCS));
-            /** @todo: Which is it, #GP(0) or #GP(sel)? */
+            /** @todo Which is it, \#GP(0) or \#GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pVCpu, uNewCs);
         }
 
@@ -3434,7 +3433,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         if (uNewEip > cbLimitCS)
         {
             Log(("iret %04x:%08x - EIP is out of bounds (%#x) -> #GP(0)\n", uNewCs, uNewEip, cbLimitCS));
-            /** @todo: Which is it, #GP(0) or #GP(sel)? */
+            /** @todo Which is it, \#GP(0) or \#GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pVCpu, uNewCs);
         }
 
@@ -3708,7 +3707,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         {
             Log(("iret %04x:%016RX64/%04x:%016RX64 -> EIP is out of bounds (%#x) -> #GP(0)\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, cbLimitCS));
-            /** @todo: Which is it, #GP(0) or #GP(sel)? */
+            /** @todo Which is it, \#GP(0) or \#GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pVCpu, uNewCs);
         }
     }
@@ -4861,7 +4860,7 @@ IEM_CIMPL_DEF_2(iemCImpl_VerX, uint16_t, uSel, bool, fWrite)
  * Implements LAR and LSL with 64-bit operand size.
  *
  * @returns VINF_SUCCESS.
- * @param   pu16Dst         Pointer to the destination register.
+ * @param   pu64Dst         Pointer to the destination register.
  * @param   uSel            The selector to load details for.
  * @param   fIsLar          true = LAR, false = LSL.
  */
@@ -4968,7 +4967,7 @@ IEM_CIMPL_DEF_3(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, bool, 
  *
  * @returns VINF_SUCCESS.
  * @param   pu16Dst         Pointer to the destination register.
- * @param   u16Sel          The selector to load details for.
+ * @param   uSel            The selector to load details for.
  * @param   fIsLar          true = LAR, false = LSL.
  */
 IEM_CIMPL_DEF_3(iemCImpl_LarLsl_u16, uint16_t *, pu16Dst, uint16_t, uSel, bool, fIsLar)
@@ -5310,7 +5309,6 @@ IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 /**
  * Implements sldt mem.
  *
- * @param   iGReg           The general register to store the CRx value in.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrMem.
  * @param   GCPtrEffDst     Where to store the 16-bit CR0 value.
  */
@@ -5488,7 +5486,6 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 /**
  * Implements str mem.
  *
- * @param   iGReg           The general register to store the CRx value in.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrMem.
  * @param   GCPtrEffDst     Where to store the 16-bit CR0 value.
  */
@@ -5681,7 +5678,6 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 /**
  * Implements smsw mem.
  *
- * @param   iGReg           The general register to store the CR0 value in.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrMem.
  * @param   GCPtrEffDst     Where to store the 16-bit CR0 value.
  */
@@ -5738,7 +5734,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
  *
  * @param   iCrReg          The CRx register to write (valid).
  * @param   uNewCrX         The new value.
- * @param   enmAccessCrx    The instruction that caused the CrX load.
+ * @param   enmAccessCrX    The instruction that caused the CrX load.
  * @param   iGReg           The general register in case of a 'mov CRx,GReg'
  *                          instruction.
  */
@@ -8379,6 +8375,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
 /**
  * Implements 'FXRSTOR'.
  *
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
  * @param   GCPtrEff        The address of the image.
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
  */
@@ -8868,6 +8865,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
 /**
  * Implements 'STMXCSR'.
  *
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
  * @param   GCPtrEff        The address of the image.
  */
 IEM_CIMPL_DEF_2(iemCImpl_stmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
@@ -8902,6 +8900,7 @@ IEM_CIMPL_DEF_2(iemCImpl_stmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
 /**
  * Implements 'VSTMXCSR'.
  *
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
  * @param   GCPtrEff        The address of the image.
  */
 IEM_CIMPL_DEF_2(iemCImpl_vstmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
@@ -8938,6 +8937,7 @@ IEM_CIMPL_DEF_2(iemCImpl_vstmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
 /**
  * Implements 'LDMXCSR'.
  *
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
  * @param   GCPtrEff        The address of the image.
  */
 IEM_CIMPL_DEF_2(iemCImpl_ldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
@@ -9122,7 +9122,7 @@ static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RT
  * Implements 'FNSTENV'.
  *
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
- * @param   iEffSeg         The effective segment register for @a GCPtrEff.
+ * @param   iEffSeg         The effective segment register for @a GCPtrEffDst.
  * @param   GCPtrEffDst     The address of the image.
  */
 IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
@@ -9148,8 +9148,9 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
 /**
  * Implements 'FNSAVE'.
  *
- * @param   GCPtrEffDst     The address of the image.
  * @param   enmEffOpSize    The operand size.
+ * @param   iEffSeg         The effective segment register for @a GCPtrEffDst.
+ * @param   GCPtrEffDst     The address of the image.
  */
 IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
@@ -9200,7 +9201,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
  * Implements 'FLDENV'.
  *
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
- * @param   iEffSeg         The effective segment register for @a GCPtrEff.
+ * @param   iEffSeg         The effective segment register for @a GCPtrEffSrc.
  * @param   GCPtrEffSrc     The address of the image.
  */
 IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
@@ -9226,8 +9227,9 @@ IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 /**
  * Implements 'FRSTOR'.
  *
- * @param   GCPtrEffSrc     The address of the image.
  * @param   enmEffOpSize    The operand size.
+ * @param   iEffSeg         The effective segment register for @a GCPtrEffSrc.
+ * @param   GCPtrEffSrc     The address of the image.
  */
 IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
 {
@@ -9336,7 +9338,9 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
 /**
  * Implements 'FCOMI', 'FCOMIP', 'FUCOMI', and 'FUCOMIP'.
  *
- * @param   cToAdd              1 or 7.
+ * @param   iStReg          The other stack register.
+ * @param   pfnAImpl        The assembly comparison implementation.
+ * @param   fPop            Whether we should pop the stack when done or not.
  */
 IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pfnAImpl, bool, fPop)
 {

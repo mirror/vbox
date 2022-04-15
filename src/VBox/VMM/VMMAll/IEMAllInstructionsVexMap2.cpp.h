@@ -559,7 +559,7 @@ FNIEMOP_STUB_1(iemOp_VGrp17_blsi_By_Ey, uint8_t, bRm);
 /*  Opcode VEX.F3.0F38 0xf3 /7 - invalid). */
 
 /**
- * Group 17 jump table for the VEX.F3 variant..
+ * Group 17 jump table for the VEX.F3 variant.
  */
 IEM_STATIC const PFNIEMOPRM g_apfnVexGroup17_f3[] =
 {
