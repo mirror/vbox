@@ -4027,8 +4027,6 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
 
 /**
  * Implements SYSCALL (AMD and Intel64).
- *
- * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_0(iemCImpl_syscall)
 {
