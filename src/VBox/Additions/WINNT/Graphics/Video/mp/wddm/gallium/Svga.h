@@ -59,6 +59,80 @@ typedef struct VMSVGAFIFO
 } VMSVGAFIFO;
 typedef VMSVGAFIFO *PVMSVGAFIFO;
 
+/*
+ * Command buffers.
+ */
+typedef struct VMSVGACBPAGE
+{
+    RTR0MEMOBJ           hMemObj;
+    RTR0PTR              pvR0;
+    RTHCPHYS             PhysAddr;
+} VMSVGACBPAGE, *PVMSVGACBPAGE;
+
+typedef int32_t VMSVGACBHEADERHANDLE;
+#define VMSVGACBHEADER_NIL (-1)
+
+typedef enum VMSVGACBTYPE
+{
+    VMSVGACB_INVALID  = 0,
+    VMSVGACB_CONTEXT_DEVICE = 1,
+    VMSVGACB_MINIPORT = 2,
+    VMSVGACB_UMD = 3
+} VMSVGACBTYPE;
+
+/* Information about a command buffer. */
+typedef struct VMSVGACB
+{
+    RTLISTNODE           nodeQueue;                /* For a queue where the buffer is currently resides. */
+    VMSVGACBTYPE         enmType;                  /* Type of the buffer. */
+    uint32_t             idDXContext;              /* DX context of the buffer or SVGA3D_INVALID_ID. */
+    uint32_t             cbBuffer;                 /* Total size. */
+    uint32_t             cbCommand;                /* Size of commands. */
+    uint32_t             cbReservedCmdHeader;      /* Reserved for the command header. */
+    uint32_t             cbReservedCmd;            /* Reserved for the current command without the header. */
+    uint32_t             u32ReservedCmd;           /* The current command. */
+    VMSVGACBHEADERHANDLE hHeader;                  /* Handle of the header (index in the header pool array). */
+    SVGACBHeader        *pCBHeader;                /* Pointer to the header. */
+    PHYSICAL_ADDRESS     CBHeaderPhysAddr;
+    union                                          /* Command data. */
+    {
+        VMSVGACBPAGE     page;                     /* VMSVGACB_CONTEXT_DEVICE and VMSVGACB_MINIPORT */
+        PHYSICAL_ADDRESS DmaBufferPhysicalAddress; /* VMSVGACB_UMD */
+    } commands;
+} VMSVGACB, *PVMSVGACB;
+
+/* Buffer headers are allocated for submitted buffers, which sometimes are not immediately passed to the host.
+ * Therefore the pool must be a bit larger than SVGA_CB_MAX_QUEUED_PER_CONTEXT * SVGA_CB_CONTEXT_MAX
+ */
+#define VMSVGA_CB_HEADER_POOL_NUM_PAGES         2
+#define VMSVGA_CB_HEADER_POOL_HANDLES_PER_PAGE (PAGE_SIZE / sizeof(SVGACBHeader))
+#define VMSVGA_CB_HEADER_POOL_NUM_HANDLES      (VMSVGA_CB_HEADER_POOL_NUM_PAGES * VMSVGA_CB_HEADER_POOL_HANDLES_PER_PAGE)
+
+typedef struct VMSVGACBHEADERPOOL
+{
+    KSPIN_LOCK           SpinLock;
+    VMSVGACBPAGE         aHeaderPoolPages[VMSVGA_CB_HEADER_POOL_NUM_PAGES];
+    uint32_t             au32HeaderBits[VMSVGA_CB_HEADER_POOL_NUM_HANDLES / 32];
+} VMSVGACBHEADERPOOL, *PVMSVGACBHEADERPOOL;
+
+typedef struct VMSVGACBCONTEXT
+{
+    RTLISTANCHOR         QueuePending;             /* Buffers which will be submitted to the host. */
+    RTLISTANCHOR         QueueSubmitted;           /* Buffers which are being processed by the host. */
+    RTLISTANCHOR         QueuePreempted;           /* Preempted buffers. */
+    uint32_t             cSubmitted;               /* How many buffers were submitted to the host.
+                                                    * Less than SVGA_CB_MAX_QUEUED_PER_CONTEXT */
+} VMSVGACBCONTEXT, *PVMSVGACBCONTEXT;
+
+typedef struct VMSVGACBSTATE
+{
+    VMSVGACBCONTEXT      aCBContexts[SVGA_CB_CONTEXT_MAX]; /* Command buffer contexts. */
+    VMSVGACBHEADERPOOL   HeaderPool;               /* Array of buffer headers. */
+    PVMSVGACB            pCBCurrent;               /* Current buffer for miniport commands. */
+    FAST_MUTEX           CBCurrentMutex;           /* Access pCBCurrent.  KGUARDED_MUTEX? */
+    KSPIN_LOCK           SpinLock;                 /* Lock for aCBContexts. */
+} VMSVGACBSTATE, *PVMSVGACBSTATE;
+
 /* VMSVGA specific part of Gallium device extension. */
 typedef struct VBOXWDDM_EXT_VMSVGA
 {
@@ -93,6 +167,10 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** Fifo state. */
     VMSVGAFIFO fifo;
+
+    /** Command buffers state. */
+    PVMSVGACBSTATE pCBState;
+    bool volatile fCommandBufferIrq;
 
     /** For atomic hardware access. */
     KSPIN_LOCK HwSpinLock;

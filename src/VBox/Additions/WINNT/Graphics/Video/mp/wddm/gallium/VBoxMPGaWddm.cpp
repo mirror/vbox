@@ -1446,6 +1446,9 @@ BOOLEAN GaDxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
         gaReportFence(pDevExt);
     }
 
+    if (u32IrqStatus & (SVGA_IRQFLAG_COMMAND_BUFFER | SVGA_IRQFLAG_ERROR))
+        ASMAtomicWriteBool(&pSvga->fCommandBufferIrq, true);
+
     pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
     GALOG(("leave\n"));
@@ -1533,6 +1536,9 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
             SvgaRenderComplete(pSvga, pIter);
         }
     }
+
+    if (ASMAtomicCmpXchgBool(&pSvga->fCommandBufferIrq, false, true) && pSvga->pCBState)
+        SvgaCmdBufProcess(pSvga);
 }
 
 typedef struct GAPREEMPTCOMMANDCBCTX
