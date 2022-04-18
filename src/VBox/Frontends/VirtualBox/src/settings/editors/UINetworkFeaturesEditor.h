@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineNetworkFeaturesEditor class declaration.
+ * VBox Qt GUI - UINetworkFeaturesEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIMachineNetworkFeaturesEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIMachineNetworkFeaturesEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UINetworkFeaturesEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UINetworkFeaturesEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,8 +38,8 @@ class QIArrowButtonSwitch;
 class QILineEdit;
 class QIToolButton;
 
-/** QWidget subclass used as machine description editor. */
-class SHARED_LIBRARY_STUFF UIMachineNetworkFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass used as a network features editor. */
+class SHARED_LIBRARY_STUFF UINetworkFeaturesEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -53,7 +53,7 @@ signals:
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIMachineNetworkFeaturesEditor(QWidget *pParent = 0);
+    UINetworkFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether advanced button @a fExpanded. */
     void setAdvancedButtonExpanded(bool fExpanded);
@@ -137,7 +137,7 @@ private:
     /** Repopulates promiscuous mode combo. */
     void repopulatePromiscuousModeCombo();
 
-    /** @name Widgets
+    /** @name Values
      * @{ */
         /** Holds whether advanced button expanded. */
         bool                              m_fAdvancedButtonExpanded;
@@ -188,4 +188,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMachineNetworkFeaturesEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UINetworkFeaturesEditor_h */

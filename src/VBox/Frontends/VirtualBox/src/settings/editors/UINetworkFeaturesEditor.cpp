@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineNetworkFeaturesEditor class implementation.
+ * VBox Qt GUI - UINetworkFeaturesEditor class implementation.
  */
 
 /*
@@ -31,13 +31,13 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "UIMachineNetworkFeaturesEditor.h"
+#include "UINetworkFeaturesEditor.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
 
-UIMachineNetworkFeaturesEditor::UIMachineNetworkFeaturesEditor(QWidget *pParent /* = 0 */)
+UINetworkFeaturesEditor::UINetworkFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fAdvancedButtonExpanded(false)
     , m_enmAdapterType(KNetworkAdapterType_Null)
@@ -61,7 +61,7 @@ UIMachineNetworkFeaturesEditor::UIMachineNetworkFeaturesEditor(QWidget *pParent 
     prepare();
 }
 
-void UIMachineNetworkFeaturesEditor::setAdvancedButtonExpanded(bool fExpanded)
+void UINetworkFeaturesEditor::setAdvancedButtonExpanded(bool fExpanded)
 {
     if (m_fAdvancedButtonExpanded != fExpanded)
     {
@@ -74,12 +74,12 @@ void UIMachineNetworkFeaturesEditor::setAdvancedButtonExpanded(bool fExpanded)
     }
 }
 
-bool UIMachineNetworkFeaturesEditor::advancedButtonExpanded() const
+bool UINetworkFeaturesEditor::advancedButtonExpanded() const
 {
     return m_pButtonAdvanced ? m_pButtonAdvanced->isExpanded() : m_fAdvancedButtonExpanded;
 }
 
-void UIMachineNetworkFeaturesEditor::setAdapterType(const KNetworkAdapterType &enmType)
+void UINetworkFeaturesEditor::setAdapterType(const KNetworkAdapterType &enmType)
 {
     if (m_enmAdapterType != enmType)
     {
@@ -88,12 +88,12 @@ void UIMachineNetworkFeaturesEditor::setAdapterType(const KNetworkAdapterType &e
     }
 }
 
-KNetworkAdapterType UIMachineNetworkFeaturesEditor::adapterType() const
+KNetworkAdapterType UINetworkFeaturesEditor::adapterType() const
 {
     return m_pComboAdapterType ? m_pComboAdapterType->currentData().value<KNetworkAdapterType>() : m_enmAdapterType;
 }
 
-void UIMachineNetworkFeaturesEditor::setPromiscuousMode(const KNetworkAdapterPromiscModePolicy &enmMode)
+void UINetworkFeaturesEditor::setPromiscuousMode(const KNetworkAdapterPromiscModePolicy &enmMode)
 {
     if (m_enmPromiscuousMode != enmMode)
     {
@@ -102,12 +102,12 @@ void UIMachineNetworkFeaturesEditor::setPromiscuousMode(const KNetworkAdapterPro
     }
 }
 
-KNetworkAdapterPromiscModePolicy UIMachineNetworkFeaturesEditor::promiscuousMode() const
+KNetworkAdapterPromiscModePolicy UINetworkFeaturesEditor::promiscuousMode() const
 {
     return m_pComboPromiscuousMode ? m_pComboPromiscuousMode->currentData().value<KNetworkAdapterPromiscModePolicy>() : m_enmPromiscuousMode;
 }
 
-void UIMachineNetworkFeaturesEditor::setMACAddress(const QString &strAddress)
+void UINetworkFeaturesEditor::setMACAddress(const QString &strAddress)
 {
     if (m_strMACAddress != strAddress)
     {
@@ -117,12 +117,12 @@ void UIMachineNetworkFeaturesEditor::setMACAddress(const QString &strAddress)
     }
 }
 
-QString UIMachineNetworkFeaturesEditor::macAddress() const
+QString UINetworkFeaturesEditor::macAddress() const
 {
     return m_pEditorMAC ? m_pEditorMAC->text() : m_strMACAddress;
 }
 
-void UIMachineNetworkFeaturesEditor::setGenericProperties(const QString &strProperties)
+void UINetworkFeaturesEditor::setGenericProperties(const QString &strProperties)
 {
     if (m_strGenericProperties != strProperties)
     {
@@ -132,12 +132,12 @@ void UIMachineNetworkFeaturesEditor::setGenericProperties(const QString &strProp
     }
 }
 
-QString UIMachineNetworkFeaturesEditor::genericProperties() const
+QString UINetworkFeaturesEditor::genericProperties() const
 {
     return m_pEditorGenericProperties ? m_pEditorGenericProperties->toPlainText() : m_strGenericProperties;
 }
 
-void UIMachineNetworkFeaturesEditor::setCableConnected(bool fConnected)
+void UINetworkFeaturesEditor::setCableConnected(bool fConnected)
 {
     if (m_fCableConnected != fConnected)
     {
@@ -147,63 +147,63 @@ void UIMachineNetworkFeaturesEditor::setCableConnected(bool fConnected)
     }
 }
 
-bool UIMachineNetworkFeaturesEditor::cableConnected() const
+bool UINetworkFeaturesEditor::cableConnected() const
 {
     return m_pCheckBoxCableConnected ? m_pCheckBoxCableConnected->isChecked() : m_fCableConnected;
 }
 
-void UIMachineNetworkFeaturesEditor::setPortForwardingRules(const UIPortForwardingDataList &rules)
+void UINetworkFeaturesEditor::setPortForwardingRules(const UIPortForwardingDataList &rules)
 {
     if (m_portForwardingRules != rules)
         m_portForwardingRules = rules;
 }
 
-UIPortForwardingDataList UIMachineNetworkFeaturesEditor::portForwardingRules() const
+UIPortForwardingDataList UINetworkFeaturesEditor::portForwardingRules() const
 {
     return m_portForwardingRules;
 }
 
-void UIMachineNetworkFeaturesEditor::setAdvancedOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setAdvancedOptionsAvailable(bool fAvailable)
 {
     m_pButtonAdvanced->setEnabled(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setAdapterOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setAdapterOptionsAvailable(bool fAvailable)
 {
     m_pLabelAdapterType->setEnabled(fAvailable);
     m_pComboAdapterType->setEnabled(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setPromiscuousOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setPromiscuousOptionsAvailable(bool fAvailable)
 {
     m_pLabelPromiscuousMode->setEnabled(fAvailable);
     m_pComboPromiscuousMode->setEnabled(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setMACOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setMACOptionsAvailable(bool fAvailable)
 {
     m_pLabelMAC->setEnabled(fAvailable);
     m_pEditorMAC->setEnabled(fAvailable);
     m_pButtonMAC->setEnabled(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setGenericPropertiesAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setGenericPropertiesAvailable(bool fAvailable)
 {
     m_pLabelGenericProperties->setVisible(fAvailable);
     m_pEditorGenericProperties->setVisible(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setCableOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setCableOptionsAvailable(bool fAvailable)
 {
     m_pCheckBoxCableConnected->setEnabled(fAvailable);
 }
 
-void UIMachineNetworkFeaturesEditor::setForwardingOptionsAvailable(bool fAvailable)
+void UINetworkFeaturesEditor::setForwardingOptionsAvailable(bool fAvailable)
 {
     m_pButtonPortForwarding->setEnabled(fAvailable);
 }
 
-int UIMachineNetworkFeaturesEditor::minimumLabelHorizontalHint() const
+int UINetworkFeaturesEditor::minimumLabelHorizontalHint() const
 {
     int iMinimumLabelHorizontalHint = 0;
     if (m_pLabelAdapterType)
@@ -217,18 +217,18 @@ int UIMachineNetworkFeaturesEditor::minimumLabelHorizontalHint() const
     return iMinimumLabelHorizontalHint;
 }
 
-void UIMachineNetworkFeaturesEditor::setMinimumLayoutIndent(int iIndent)
+void UINetworkFeaturesEditor::setMinimumLayoutIndent(int iIndent)
 {
     if (m_pLayoutSettings)
         m_pLayoutSettings->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMachineNetworkFeaturesEditor::generateMac()
+void UINetworkFeaturesEditor::generateMac()
 {
     setMACAddress(uiCommon().host().GenerateMACAddress());
 }
 
-void UIMachineNetworkFeaturesEditor::retranslateUi()
+void UINetworkFeaturesEditor::retranslateUi()
 {
     if (m_pButtonAdvanced)
     {
@@ -290,7 +290,7 @@ void UIMachineNetworkFeaturesEditor::retranslateUi()
     }
 }
 
-void UIMachineNetworkFeaturesEditor::sltHandleAdvancedButtonStateChange()
+void UINetworkFeaturesEditor::sltHandleAdvancedButtonStateChange()
 {
     /* What's the state? */
     const bool fExpanded = m_pButtonAdvanced->isExpanded();
@@ -300,14 +300,14 @@ void UIMachineNetworkFeaturesEditor::sltHandleAdvancedButtonStateChange()
     emit sigNotifyAdvancedButtonStateChange(fExpanded);
 }
 
-void UIMachineNetworkFeaturesEditor::sltOpenPortForwardingDlg()
+void UINetworkFeaturesEditor::sltOpenPortForwardingDlg()
 {
     UIMachineSettingsPortForwardingDlg dlg(this, m_portForwardingRules);
     if (dlg.exec() == QDialog::Accepted)
         m_portForwardingRules = dlg.rules();
 }
 
-void UIMachineNetworkFeaturesEditor::prepare()
+void UINetworkFeaturesEditor::prepare()
 {
     /* Prepare main layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
@@ -428,16 +428,16 @@ void UIMachineNetworkFeaturesEditor::prepare()
     /* Configure connections: */
     if (m_pButtonAdvanced)
         connect(m_pButtonAdvanced, &QIArrowButtonSwitch::sigClicked,
-                this, &UIMachineNetworkFeaturesEditor::sltHandleAdvancedButtonStateChange);
+                this, &UINetworkFeaturesEditor::sltHandleAdvancedButtonStateChange);
     if (m_pEditorMAC)
         connect(m_pEditorMAC, &QILineEdit::textChanged,
-                this, &UIMachineNetworkFeaturesEditor::sigMACAddressChanged);
+                this, &UINetworkFeaturesEditor::sigMACAddressChanged);
     if (m_pButtonMAC)
         connect(m_pButtonMAC, &QIToolButton::clicked,
-                this, &UIMachineNetworkFeaturesEditor::generateMac);
+                this, &UINetworkFeaturesEditor::generateMac);
     if (m_pButtonPortForwarding)
         connect(m_pButtonPortForwarding, &QPushButton::clicked,
-                this, &UIMachineNetworkFeaturesEditor::sltOpenPortForwardingDlg);
+                this, &UINetworkFeaturesEditor::sltOpenPortForwardingDlg);
 
     /* Update widget availability: */
     m_pWidgetSettings->setVisible(m_pButtonAdvanced->isExpanded());
@@ -446,7 +446,7 @@ void UIMachineNetworkFeaturesEditor::prepare()
     retranslateUi();
 }
 
-void UIMachineNetworkFeaturesEditor::repopulateAdapterTypeCombo()
+void UINetworkFeaturesEditor::repopulateAdapterTypeCombo()
 {
     if (m_pComboAdapterType)
     {
@@ -476,7 +476,7 @@ void UIMachineNetworkFeaturesEditor::repopulateAdapterTypeCombo()
     }
 }
 
-void UIMachineNetworkFeaturesEditor::repopulatePromiscuousModeCombo()
+void UINetworkFeaturesEditor::repopulatePromiscuousModeCombo()
 {
     if (m_pComboPromiscuousMode)
     {

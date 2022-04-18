@@ -25,9 +25,9 @@
 #include "QITabWidget.h"
 #include "UICommon.h"
 #include "UIErrorString.h"
-#include "UIMachineNetworkFeaturesEditor.h"
 #include "UIMachineSettingsNetwork.h"
 #include "UINetworkAttachmentEditor.h"
+#include "UINetworkFeaturesEditor.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -224,13 +224,13 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the adapter check-box instance. */
-        QCheckBox                      *m_pCheckBoxAdapter;
+        QCheckBox                 *m_pCheckBoxAdapter;
         /** Holds the adapter settings widget instance. */
-        QWidget                        *m_pWidgetAdapterSettings;
-        /** Holds the attachment type editor instance. */
-        UINetworkAttachmentEditor      *m_pEditorAttachmentType;
+        QWidget                   *m_pWidgetAdapterSettings;
+        /** Holds the network attachment editor instance. */
+        UINetworkAttachmentEditor *m_pEditorNetworkAttachment;
         /** Holds the network features editor instance. */
-        UIMachineNetworkFeaturesEditor *m_pEditorNetworkFeatures;
+        UINetworkFeaturesEditor   *m_pEditorNetworkFeatures;
     /** @} */
 };
 
@@ -245,7 +245,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_iSlot(-1)
     , m_pCheckBoxAdapter(0)
     , m_pWidgetAdapterSettings(0)
-    , m_pEditorAttachmentType(0)
+    , m_pEditorNetworkAttachment(0)
     , m_pEditorNetworkFeatures(0)
 {
     prepare();
@@ -265,18 +265,18 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     sltHandleAdapterActivityChange();
 
     /* Load attachment type: */
-    m_pEditorAttachmentType->setValueType(oldAdapterData.m_attachmentType);
+    m_pEditorNetworkAttachment->setValueType(oldAdapterData.m_attachmentType);
     /* Load alternative names: */
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Bridged, wipedOutString(oldAdapterData.m_strBridgedAdapterName));
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Internal, wipedOutString(oldAdapterData.m_strInternalNetworkName));
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_Bridged, wipedOutString(oldAdapterData.m_strBridgedAdapterName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_Internal, wipedOutString(oldAdapterData.m_strInternalNetworkName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
 #ifdef VBOX_WITH_CLOUD_NET
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
 #endif
 #ifdef VBOX_WITH_VMNET
-    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
+    m_pEditorNetworkAttachment->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
 #endif
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
@@ -320,25 +320,25 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             newAdapterData.m_strBridgedAdapterName = alternativeName();
             break;
         case KNetworkAttachmentType_Internal:
-            newAdapterData.m_strInternalNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Internal);
+            newAdapterData.m_strInternalNetworkName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_Internal);
             break;
         case KNetworkAttachmentType_HostOnly:
-            newAdapterData.m_strHostInterfaceName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_HostOnly);
+            newAdapterData.m_strHostInterfaceName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_HostOnly);
             break;
         case KNetworkAttachmentType_Generic:
-            newAdapterData.m_strGenericDriverName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Generic);
+            newAdapterData.m_strGenericDriverName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_Generic);
             break;
         case KNetworkAttachmentType_NATNetwork:
-            newAdapterData.m_strNATNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_NATNetwork);
+            newAdapterData.m_strNATNetworkName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_NATNetwork);
             break;
 #ifdef VBOX_WITH_CLOUD_NET
         case KNetworkAttachmentType_Cloud:
-            newAdapterData.m_strCloudNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Cloud);
+            newAdapterData.m_strCloudNetworkName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_Cloud);
             break;
 #endif /* VBOX_WITH_CLOUD_NET */
 #ifdef VBOX_WITH_VMNET
         case KNetworkAttachmentType_HostOnlyNetwork:
-            newAdapterData.m_strHostOnlyNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_HostOnlyNetwork);
+            newAdapterData.m_strHostOnlyNetworkName = m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_HostOnlyNetwork);
             break;
 #endif /* VBOX_WITH_VMNET */
         default:
@@ -486,8 +486,8 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pCheckBoxAdapter);
-    setTabOrder(m_pCheckBoxAdapter, m_pEditorAttachmentType);
-    setTabOrder(m_pEditorAttachmentType, m_pEditorNetworkFeatures);
+    setTabOrder(m_pCheckBoxAdapter, m_pEditorNetworkAttachment);
+    setTabOrder(m_pEditorNetworkAttachment, m_pEditorNetworkFeatures);
     return m_pEditorNetworkFeatures;
 }
 
@@ -498,21 +498,21 @@ QString UIMachineSettingsNetwork::tabTitle() const
 
 KNetworkAttachmentType UIMachineSettingsNetwork::attachmentType() const
 {
-    return m_pEditorAttachmentType->valueType();
+    return m_pEditorNetworkAttachment->valueType();
 }
 
 QString UIMachineSettingsNetwork::alternativeName(KNetworkAttachmentType enmType /* = KNetworkAttachmentType_Null */) const
 {
     if (enmType == KNetworkAttachmentType_Null)
         enmType = attachmentType();
-    return m_pEditorAttachmentType->valueName(enmType);
+    return m_pEditorNetworkAttachment->valueName(enmType);
 }
 
 void UIMachineSettingsNetwork::polishTab()
 {
     /* Basic attributes: */
     m_pCheckBoxAdapter->setEnabled(m_pParent->isMachineOffline());
-    m_pEditorAttachmentType->setEnabled(m_pParent->isMachineInValidMode());
+    m_pEditorNetworkAttachment->setEnabled(m_pParent->isMachineInValidMode());
 
     /* Advanced attributes: */
     m_pEditorNetworkFeatures->setAdvancedOptionsAvailable(m_pParent->isMachineInValidMode());
@@ -528,16 +528,16 @@ void UIMachineSettingsNetwork::polishTab()
 
 void UIMachineSettingsNetwork::reloadAlternatives()
 {
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Bridged, m_pParent->bridgedAdapterList());
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Internal, m_pParent->internalNetworkList());
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_HostOnly, m_pParent->hostInterfaceList());
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Generic, m_pParent->genericDriverList());
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_Bridged, m_pParent->bridgedAdapterList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_Internal, m_pParent->internalNetworkList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_HostOnly, m_pParent->hostInterfaceList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_Generic, m_pParent->genericDriverList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
 #ifdef VBOX_WITH_CLOUD_NET
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
 #endif
 #ifdef VBOX_WITH_VMNET
-    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParent->hostOnlyNetworkList());
+    m_pEditorNetworkAttachment->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParent->hostOnlyNetworkList());
 #endif
 }
 
@@ -561,9 +561,9 @@ void UIMachineSettingsNetwork::retranslateUi()
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAttachmentType->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorNetworkAttachment->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorNetworkFeatures->minimumLabelHorizontalHint());
-    m_pEditorAttachmentType->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorNetworkAttachment->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorNetworkFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
@@ -602,13 +602,13 @@ void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
     {
         case KNetworkAttachmentType_Internal:
         {
-            if (!m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Internal).isNull())
+            if (!m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_Internal).isNull())
                 emit sigTabUpdated();
             break;
         }
         case KNetworkAttachmentType_Generic:
         {
-            if (!m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Generic).isNull())
+            if (!m_pEditorNetworkAttachment->valueName(KNetworkAttachmentType_Generic).isNull())
                 emit sigTabUpdated();
             break;
         }
@@ -657,12 +657,12 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
 
                 /* Prepare attachment type editor: */
-                m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
-                if (m_pEditorAttachmentType)
-                    pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType);
+                m_pEditorNetworkAttachment = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
+                if (m_pEditorNetworkAttachment)
+                    pLayoutAdapterSettings->addWidget(m_pEditorNetworkAttachment);
 
                 /* Prepare advanced settingseditor: */
-                m_pEditorNetworkFeatures = new UIMachineNetworkFeaturesEditor(m_pWidgetAdapterSettings);
+                m_pEditorNetworkFeatures = new UINetworkFeaturesEditor(m_pWidgetAdapterSettings);
                 if (m_pEditorNetworkFeatures)
                     pLayoutAdapterSettings->addWidget(m_pEditorNetworkFeatures);
 
@@ -678,13 +678,13 @@ void UIMachineSettingsNetwork::prepareConnections()
 {
     connect(m_pCheckBoxAdapter, &QCheckBox::toggled,
             this, &UIMachineSettingsNetwork::sltHandleAdapterActivityChange);
-    connect(m_pEditorAttachmentType, &UINetworkAttachmentEditor::sigValueTypeChanged,
+    connect(m_pEditorNetworkAttachment, &UINetworkAttachmentEditor::sigValueTypeChanged,
             this, &UIMachineSettingsNetwork::sltHandleAttachmentTypeChange);
-    connect(m_pEditorAttachmentType, &UINetworkAttachmentEditor::sigValueNameChanged,
+    connect(m_pEditorNetworkAttachment, &UINetworkAttachmentEditor::sigValueNameChanged,
             this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
-    connect(m_pEditorNetworkFeatures, &UIMachineNetworkFeaturesEditor::sigNotifyAdvancedButtonStateChange,
+    connect(m_pEditorNetworkFeatures, &UINetworkFeaturesEditor::sigNotifyAdvancedButtonStateChange,
             this, &UIMachineSettingsNetwork::sigNotifyAdvancedButtonStateChange);
-    connect(m_pEditorNetworkFeatures, &UIMachineNetworkFeaturesEditor::sigMACAddressChanged,
+    connect(m_pEditorNetworkFeatures, &UINetworkFeaturesEditor::sigMACAddressChanged,
             m_pParent, &UIMachineSettingsNetworkPage::revalidate);
     connect(this, &UIMachineSettingsNetwork::sigTabUpdated,
             m_pParent, &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
