@@ -730,11 +730,11 @@ RTDECL(PRTLOGGER)   RTLogCheckGroupFlags(PRTLOGGER pLogger, uint32_t fFlagsAndGr
 RT_EXPORT_SYMBOL(RTLogCheckGroupFlags);
 
 
-#ifdef IN_RING3
 /*********************************************************************************************************************************
 *   Default file I/O interface                                                                                                   *
 *********************************************************************************************************************************/
 
+#ifdef IN_RING3
 static DECLCALLBACK(int) rtLogOutputIfDefOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags)
 {
     RT_NOREF(pIf);
