@@ -579,6 +579,7 @@ static int vboxTrayLogCreate(void)
                            s_szGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
                            0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            RTErrInfoInitStatic(&ErrInfo), NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))
     {
