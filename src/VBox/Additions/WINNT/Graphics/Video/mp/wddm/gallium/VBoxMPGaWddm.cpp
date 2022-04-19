@@ -326,16 +326,17 @@ static void dxgkNotifyDma(DXGKRNL_INTERFACE *pDxgkInterface,
     DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
     memset(&notify, 0, sizeof(notify));
 
-    GALOG(("%d fence %d\n", enmType, uFenceId));
     switch (enmType)
     {
         case DXGK_INTERRUPT_DMA_COMPLETED:
+            GALOG(("COMPLETED fence %d\n", uFenceId));
             notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
             notify.DmaCompleted.SubmissionFenceId = uFenceId;
             notify.DmaCompleted.NodeOrdinal = uNodeOrdinal;
             break;
 
         case DXGK_INTERRUPT_DMA_PREEMPTED:
+            GALOG(("PREEMPTED fence %d, %d\n", uFenceId, uLastCompletedFenceId));
             notify.InterruptType = DXGK_INTERRUPT_DMA_PREEMPTED;
             notify.DmaPreempted.PreemptionFenceId = uFenceId;
             notify.DmaPreempted.NodeOrdinal = uNodeOrdinal;
@@ -343,6 +344,7 @@ static void dxgkNotifyDma(DXGKRNL_INTERFACE *pDxgkInterface,
             break;
 
         case DXGK_INTERRUPT_DMA_FAULTED:
+            GALOG(("COMPLETED fence %d\n", uFenceId));
             notify.InterruptType = DXGK_INTERRUPT_DMA_FAULTED;
             notify.DmaFaulted.FaultedFenceId = uFenceId;
             notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL;
@@ -676,6 +678,8 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
 
+    SvgaFlush(pDevExt->pGa->hw.pSvga);
+
     DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
     DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
 
@@ -912,6 +916,8 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
     VBOXWDDM_EXT_GA *pGaDevExt = pDevExt->pGa;
 
+    SvgaFlush(pDevExt->pGa->hw.pSvga);
+
     AssertReturn(pContext && pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D, STATUS_INVALID_PARAMETER);
     AssertReturn(pRender->CommandLength > pRender->MultipassOffset, STATUS_INVALID_PARAMETER);
     /* Expect 32 bit handle at the start of the command buffer. */
@@ -1059,6 +1065,8 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+
+    SvgaFlush(pDevExt->pGa->hw.pSvga);
 
     GALOG(("DmaBufferPrivateData %p/%d, DmaBuffer %p/%d\n",
            pBuildPagingBuffer->pDmaBufferPrivateData,
@@ -1234,8 +1242,11 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
 
 NTSTATUS APIENTRY GaDxgkDdiPatch(const HANDLE hAdapter, const DXGKARG_PATCH *pPatch)
 {
-    RT_NOREF2(hAdapter, pPatch);
-    /* Nothing to do. */
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+
+    SvgaFlush(pDevExt->pGa->hw.pSvga);
+
+    GALOG(("\n"));
 
     uint8_t *pu8DMABuffer = (uint8_t *)pPatch->pDmaBuffer + pPatch->DmaBufferSubmissionStartOffset;
     UINT const cbDMABuffer = pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset;
@@ -1312,6 +1323,8 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
     GARENDERDATA const *pRenderData = (GARENDERDATA *)pvPrivateData;
     while (cDataBlocks--)
     {
+        GALOG(("pRenderData %p: u32DataType %u, pvDmaBuffer %p, cbData %u\n",
+                pRenderData, pRenderData->u32DataType, pRenderData->pvDmaBuffer, pRenderData->cbData));
         AssertReturn(cbDmaBufferSubmission >= pRenderData->cbData, STATUS_INVALID_PARAMETER);
         cbDmaBufferSubmission -= pRenderData->cbData;
 
@@ -1356,7 +1369,23 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
             AssertFailedReturn(STATUS_INVALID_PARAMETER);
         }
 
-        if (pvDmaBuffer)
+        if (pGaDevExt->hw.pSvga->pCBState)
+        {
+            if (pRenderData->cbData && pvDmaBuffer)
+            {
+                PVMSVGACB pCB;
+                NTSTATUS Status = SvgaCmdBufAllocUMD(pGaDevExt->hw.pSvga, pSubmitCommand->DmaBufferPhysicalAddress,
+                                                     pSubmitCommand->DmaBufferSize, pRenderData->cbData,
+                                                     SVGA3D_INVALID_ID, &pCB);
+                GALOG(("Allocated UMD buffer %p\n", pCB));
+                if (NT_SUCCESS(Status))
+                {
+                    Status = SvgaCmdBufSubmitUMD(pGaDevExt->hw.pSvga, pCB);
+                    Assert(NT_SUCCESS(Status)); RT_NOREF(Status);
+                }
+            }
+        }
+        else if (pvDmaBuffer)
         {
             Assert(pSubmitCommand->DmaBufferSegmentId == 0);
 
@@ -1402,7 +1431,19 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
     ASMAtomicWriteU32(&pGaDevExt->u32LastSubmittedFenceId, pSubmitCommand->SubmissionFenceId);
 
     /* Submit the fence. */
-    SvgaFence(pGaDevExt->hw.pSvga, pSubmitCommand->SubmissionFenceId);
+    if (pGaDevExt->hw.pSvga->pCBState)
+    {
+        struct
+        {
+            uint32_t id;
+            uint32_t fence;
+        } fence;
+        fence.id = SVGA_CMD_FENCE;
+        fence.fence = pSubmitCommand->SubmissionFenceId;
+        SvgaCmdBufSubmitMiniportCommand(pGaDevExt->hw.pSvga, &fence, sizeof(fence));
+    }
+    else
+        SvgaFence(pGaDevExt->hw.pSvga, pSubmitCommand->SubmissionFenceId);
 
     GALOG(("done %d\n", pSubmitCommand->SubmissionFenceId));
     return STATUS_SUCCESS;
@@ -1571,12 +1612,11 @@ NTSTATUS APIENTRY GaDxgkDdiPreemptCommand(const HANDLE hAdapter,
         return STATUS_SUCCESS;
     }
 
-    /* We can not safely remove submitted data from FIFO, so just let the host process all submitted commands.
-     */
     const uint32_t u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
     const uint32_t u32LastSubmittedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastSubmittedFenceId);
     if (u32LastCompletedFenceId == u32LastSubmittedFenceId)
     {
+        /* "the hardware is already finished processing all of the submitted DMA buffers" */
         GAPREEMPTCOMMANDCBCTX Ctx;
         Ctx.pDevExt = pDevExt;
         Ctx.uPreemptionFenceId = pPreemptCommand->PreemptionFenceId;
@@ -1590,10 +1630,42 @@ NTSTATUS APIENTRY GaDxgkDdiPreemptCommand(const HANDLE hAdapter,
     }
     else
     {
-        /* Submit the fence. */
-        Assert(pGaDevExt->u32PreemptionFenceId == 0);
-        ASMAtomicWriteU32(&pGaDevExt->u32PreemptionFenceId, pPreemptCommand->PreemptionFenceId);
-        Status = SvgaFence(pGaDevExt->hw.pSvga, pPreemptCommand->PreemptionFenceId);
+        if (pGaDevExt->hw.pSvga->pCBState)
+        {
+#if 0 /** @todo later */
+            struct
+            {
+                uint32_t id;
+                SVGADCCmdPreempt cmd;
+            } cmd;
+            cmd.id = SVGA_DC_CMD_PREEMPT;
+            cmd.cmd.context = SVGA_CB_CONTEXT_0;
+            cmd.cmd.ignoreIDZero = 1; /* Preempt only the UMD buffers. */
+            Status = SvgaCmdBufDeviceCommand(pGaDevExt->hw.pSvga, &cmd, sizeof(cmd));
+            AssertReturn(NT_SUCCESS(Status), Status);
+#endif
+
+            Assert(pGaDevExt->u32PreemptionFenceId == 0);
+            ASMAtomicWriteU32(&pGaDevExt->u32PreemptionFenceId, pPreemptCommand->PreemptionFenceId);
+
+            struct
+            {
+                uint32_t id;
+                uint32_t fence;
+            } fence;
+            fence.id = SVGA_CMD_FENCE;
+            fence.fence = pPreemptCommand->PreemptionFenceId;
+            Status = SvgaCmdBufSubmitMiniportCommand(pGaDevExt->hw.pSvga, &fence, sizeof(fence));
+        }
+        else
+        {
+            /* We can not safely remove submitted data from FIFO, so just let the host process all submitted commands.
+             */
+            /* Submit the fence. */
+            Assert(pGaDevExt->u32PreemptionFenceId == 0);
+            ASMAtomicWriteU32(&pGaDevExt->u32PreemptionFenceId, pPreemptCommand->PreemptionFenceId);
+            Status = SvgaFence(pGaDevExt->hw.pSvga, pPreemptCommand->PreemptionFenceId);
+        }
     }
 
     return Status;

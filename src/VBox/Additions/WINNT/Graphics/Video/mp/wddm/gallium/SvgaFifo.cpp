@@ -88,6 +88,7 @@ NTSTATUS SvgaFifoInit(PVBOXWDDM_EXT_VMSVGA pSvga)
 
 void *SvgaFifoReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve)
 {
+    Assert(!pSvga->pCBState);
     Assert((cbReserve & 0x3) == 0);
 
     PVMSVGAFIFO pFifo = &pSvga->fifo;
@@ -288,24 +289,33 @@ void SvgaFifoCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
 
 static NTSTATUS svgaCBFreePage(PVMSVGACBPAGE pPage)
 {
-    if (pPage->hMemObj != NIL_RTR0MEMOBJ)
+    if (pPage->hMemObjMapping != NIL_RTR0MEMOBJ)
     {
-        int rc = RTR0MemObjFree(pPage->hMemObj, /* fFreeMappings */ true);
-        AssertReturn(RT_SUCCESS(rc), STATUS_INVALID_PARAMETER);
+        int rc = RTR0MemObjFree(pPage->hMemObjMapping, /* fFreeMappings */ true);
+        Assert(RT_SUCCESS(rc)); RT_NOREF(rc);
+    }
+
+    if (pPage->hMemObjPages != NIL_RTR0MEMOBJ)
+    {
+        int rc = RTR0MemObjFree(pPage->hMemObjPages, /* fFreeMappings */ true);
+        Assert(RT_SUCCESS(rc)); RT_NOREF(rc);
     }
     RT_ZERO(*pPage);
     return STATUS_SUCCESS;
 }
 
 
-static NTSTATUS svgaCBAllocPage(PVMSVGACBPAGE pPage)
+static NTSTATUS svgaCBAllocPage(PVMSVGACBPAGE pPage, uint32_t cb)
 {
-    int rc = RTR0MemObjAllocPageTag(&pPage->hMemObj, PAGE_SIZE,
-                                    /* fExecutable */ false, "WDDMGA");
+    int rc = RTR0MemObjAllocPhysTag(&pPage->hMemObjPages, cb, NIL_RTHCPHYS, "VMSVGACB");
     AssertReturn(RT_SUCCESS(rc), STATUS_INSUFFICIENT_RESOURCES);
 
-    pPage->pvR0     = RTR0MemObjAddress(pPage->hMemObj);
-    pPage->PhysAddr = RTR0MemObjGetPagePhysAddr(pPage->hMemObj, /* iPage */ 0);
+    rc = RTR0MemObjMapKernelTag(&pPage->hMemObjMapping, pPage->hMemObjPages, (void *)-1,
+                                PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, "VMSVGACB");
+    AssertReturnStmt(RT_SUCCESS(rc), svgaCBFreePage(pPage), STATUS_INSUFFICIENT_RESOURCES);
+
+    pPage->pvR0     = RTR0MemObjAddress(pPage->hMemObjMapping);
+    pPage->PhysAddr = RTR0MemObjGetPagePhysAddr(pPage->hMemObjPages, /* iPage */ 0);
     return STATUS_SUCCESS;
 }
 
@@ -325,7 +335,7 @@ static NTSTATUS svgaCBHeaderPoolInit(PVMSVGACBHEADERPOOL pHeaderPool)
     NTSTATUS Status = STATUS_SUCCESS;
     for (unsigned i = 0; i < RT_ELEMENTS(pHeaderPool->aHeaderPoolPages); ++i)
     {
-        Status = svgaCBAllocPage(&pHeaderPool->aHeaderPoolPages[i]);
+        Status = svgaCBAllocPage(&pHeaderPool->aHeaderPoolPages[i], PAGE_SIZE);
         AssertBreak(NT_SUCCESS(Status));
     }
 
@@ -371,7 +381,7 @@ static NTSTATUS svgaCBHeaderPoolAlloc(PVMSVGACBHEADERPOOL pHeaderPool,
     Assert(idxPage < RT_ELEMENTS(pHeaderPool->aHeaderPoolPages));
 
     PVMSVGACBPAGE pPage = &pHeaderPool->aHeaderPoolPages[idxPage];
-    Assert(pPage->hMemObj != NIL_RTR0MEMOBJ);
+    Assert(pPage->hMemObjMapping != NIL_RTR0MEMOBJ);
 
     uint32_t const offPage = (id - idxPage * VMSVGA_CB_HEADER_POOL_HANDLES_PER_PAGE) * sizeof(SVGACBHeader);
     *ppCBHeader = (SVGACBHeader *)((uint8_t *)pPage->pvR0 + offPage);
@@ -383,6 +393,7 @@ static NTSTATUS svgaCBHeaderPoolAlloc(PVMSVGACBHEADERPOOL pHeaderPool,
 
 static NTSTATUS svgaCBFree(PVMSVGACBSTATE pCBState, PVMSVGACB pCB)
 {
+    GALOG(("CB: %p\n", pCB));
     if (pCB->enmType != VMSVGACB_UMD)
         svgaCBFreePage(&pCB->commands.page);
 
@@ -397,14 +408,16 @@ static NTSTATUS svgaCBFree(PVMSVGACBSTATE pCBState, PVMSVGACB pCB)
  * @param pCBState    Command buffers manager.
  * @param enmType     Kind of the buffer.
  * @param idDXContext DX context of the commands in the buffer.
+ * @param cbRequired  How many bytes are required for MINIPORT or CONTEXT_DEVICE buffers.
  * @param ppCB        Where to store the allocated buffer pointer.
  */
-static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint32_t idDXContext, PVMSVGACB *ppCB)
+static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint32_t idDXContext, uint32_t cbRequired, PVMSVGACB *ppCB)
 {
     RT_NOREF(pCBState);
 
     PVMSVGACB pCB = (PVMSVGACB)GaMemAllocZero(sizeof(VMSVGACB));
     AssertReturn(pCB, STATUS_INSUFFICIENT_RESOURCES);
+    GALOG(("CB: %p\n", pCB));
 
     NTSTATUS Status;
 
@@ -416,9 +429,9 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
     pCB->u32ReservedCmd = 0;
     if (enmType != VMSVGACB_UMD)
     {
-        pCB->cbBuffer = PAGE_SIZE;
+        pCB->cbBuffer = RT_ALIGN_32(cbRequired, PAGE_SIZE);
         pCB->cbCommand = 0;
-        Status = svgaCBAllocPage(&pCB->commands.page);
+        Status = svgaCBAllocPage(&pCB->commands.page, pCB->cbBuffer);
         AssertReturnStmt(NT_SUCCESS(Status),
                          GaMemFree(pCB),
                          STATUS_INSUFFICIENT_RESOURCES);
@@ -455,6 +468,7 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
     NTSTATUS Status;
 
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
+    GALOG(("CB: %p\n", pCB));
 
     /* Allocate a header for the buffer. */
     Status = svgaCBHeaderPoolAlloc(&pCBState->HeaderPool, &pCB->hHeader, &pCB->pCBHeader, &pCB->CBHeaderPhysAddr);
@@ -464,7 +478,10 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
     SVGACBHeader *pCBHeader = pCB->pCBHeader;
     pCBHeader->status      = SVGA_CB_STATUS_NONE;
     pCBHeader->errorOffset = 0;
-    pCBHeader->id          = 0;
+    if (pCB->enmType != VMSVGACB_UMD)
+        pCBHeader->id      = 0;
+    else
+        pCBHeader->id      = 1; /* An arbitrary not zero value. SVGA_DC_CMD_PREEMPT will preempt such buffers. */
     if (pCB->idDXContext != SVGA3D_INVALID_ID)
         pCBHeader->flags   = SVGA_CB_FLAG_DX_CONTEXT;
     else
@@ -477,6 +494,7 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
     pCBHeader->offset      = 0;
     pCBHeader->dxContext   = pCB->idDXContext;
     RT_ZERO(pCBHeader->mustBeZero);
+    Assert(pCBHeader->ptr.pa != 0);
 
     /* Select appropriate comamnd buffer context. */
     SVGACBContext CBContext;
@@ -499,6 +517,12 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
 
         RTListAppend(&pCBCtx->QueueSubmitted, &pCB->nodeQueue);
         ++pCBCtx->cSubmitted;
+#ifdef DEBUG
+        Assert(!pCB->fSubmitted);
+        if (pCB->fSubmitted)
+            GALOG(("CB: %p already submitted\n", pCB));
+        pCB->fSubmitted = true;
+#endif
 
         KeReleaseSpinLock(&pCBState->SpinLock, OldIrql);
     }
@@ -514,7 +538,7 @@ NTSTATUS SvgaCmdBufDeviceCommand(PVBOXWDDM_EXT_VMSVGA pSvga, void const *pvCmd, 
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
 
     PVMSVGACB pCB;
-    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_CONTEXT_DEVICE, SVGA3D_INVALID_ID, &pCB);
+    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_CONTEXT_DEVICE, SVGA3D_INVALID_ID, cbCmd, &pCB);
     AssertReturn(NT_SUCCESS(Status), Status);
 
     memcpy(pCB->commands.page.pvR0, pvCmd, cbCmd);
@@ -528,6 +552,21 @@ NTSTATUS SvgaCmdBufDeviceCommand(PVBOXWDDM_EXT_VMSVGA pSvga, void const *pvCmd, 
     }
     svgaCBFree(pCBState, pCB);
     return Status;
+}
+
+
+NTSTATUS SvgaCmdBufSubmitMiniportCommand(PVBOXWDDM_EXT_VMSVGA pSvga, void const *pvCmd, uint32_t cbCmd)
+{
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+
+    PVMSVGACB pCB;
+    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_MINIPORT, SVGA3D_INVALID_ID, cbCmd, &pCB);
+    AssertReturn(NT_SUCCESS(Status), Status);
+
+    memcpy(pCB->commands.page.pvR0, pvCmd, cbCmd);
+    pCB->cbCommand = cbCmd;
+
+    return svgaCBSubmit(pSvga, pCB);
 }
 
 
@@ -569,9 +608,10 @@ static void *svgaCBReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t u32CmdId, uint32
     if (!pCB)
     {
         /* Allocate a new command buffer. */
-        Status = svgaCBAlloc(pCBState, VMSVGACB_MINIPORT, idDXContext, &pCBState->pCBCurrent);
+        Status = svgaCBAlloc(pCBState, VMSVGACB_MINIPORT, idDXContext, cbRequired, &pCBState->pCBCurrent);
         AssertReturnStmt(NT_SUCCESS(Status), ExReleaseFastMutex(&pCBState->CBCurrentMutex), NULL);
         pCB = pCBState->pCBCurrent;
+        AssertReturnStmt(pCB->cbBuffer - pCB->cbCommand >= cbRequired, ExReleaseFastMutex(&pCBState->CBCurrentMutex), NULL);
     }
 
     /* Remember the size and id of the command. */
@@ -618,6 +658,7 @@ void *SvgaCmdBufFifoCmdReserve(PVBOXWDDM_EXT_VMSVGA pSvga, SVGAFifoCmdId enmCmd,
  *
  * @param pSvga            The device instance.
  * @param cbReserve        Expected size of the command data.
+ * @param idDXContext      DX context of the command.
  * @return Pointer to the command data.
  */
 void *SvgaCmdBufReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve, uint32_t idDXContext)
@@ -677,6 +718,7 @@ void SvgaCmdBufFlush(PVBOXWDDM_EXT_VMSVGA pSvga)
     ExAcquireFastMutex(&pCBState->CBCurrentMutex);
 
     PVMSVGACB pCB = pCBState->pCBCurrent;
+    GALOG(("CB: %p\n", pCB));
     if (pCB && pCB->cbCommand)
     {
         NTSTATUS Status = svgaCBSubmit(pSvga, pCB);
@@ -686,6 +728,28 @@ void SvgaCmdBufFlush(PVBOXWDDM_EXT_VMSVGA pSvga)
     }
 
     ExReleaseFastMutex(&pCBState->CBCurrentMutex);
+}
+
+
+NTSTATUS SvgaCmdBufSubmitUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
+{
+    AssertReturn(pCB && pCB->enmType == VMSVGACB_UMD, STATUS_INVALID_PARAMETER);
+    return svgaCBSubmit(pSvga, pCB);
+}
+
+
+NTSTATUS SvgaCmdBufAllocUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS DmaBufferPhysicalAddress,
+                            uint32_t cbBuffer, uint32_t cbCommands, uint32_t idDXContext, PVMSVGACB *ppCB)
+{
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_UMD, idDXContext, cbBuffer, ppCB);
+    AssertReturn(NT_SUCCESS(Status), Status);
+    GALOG(("CB: %p, cbBuffer %d\n", *ppCB, cbBuffer));
+
+    (*ppCB)->cbBuffer = cbBuffer;
+    (*ppCB)->cbCommand = cbCommands;
+    (*ppCB)->commands.DmaBufferPhysicalAddress = DmaBufferPhysicalAddress;
+    return STATUS_SUCCESS;
 }
 
 
@@ -735,11 +799,17 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
                 svgaCBFree(pCBState, pIter);
                 break;
 
+            case SVGA_CB_STATUS_PREEMPTED:
+                /* Delete the buffer. */
+                GALOG(("SVGA_CB_STATUS_PREEMPTED %p\n", pIter));
+                RTListNodeRemove(&pIter->nodeQueue);
+                svgaCBFree(pCBState, pIter);
+                break;
+
             case SVGA_CB_STATUS_NONE:
             case SVGA_CB_STATUS_QUEUE_FULL:
             case SVGA_CB_STATUS_COMMAND_ERROR:
             case SVGA_CB_STATUS_CB_HEADER_ERROR:
-            case SVGA_CB_STATUS_PREEMPTED:
             case SVGA_CB_STATUS_SUBMISSION_ERROR:
             case SVGA_CB_STATUS_PARTIAL_COMPLETE:
             default:

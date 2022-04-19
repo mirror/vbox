@@ -302,13 +302,13 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
 
     const uint32_t cbSubmit =   sizeof(uint32_t)
                               + sizeof(SVGAScreenObject);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         SvgaCmdDefineScreen(pvCmd, u32ScreenId, true,
                             xOrigin, yOrigin, u32Width, u32Height,
                             /* fPrimary = */ false, u32Offset, fBlank);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -325,11 +325,11 @@ NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
 
     const uint32_t cbSubmit =   sizeof(uint32_t)
                               + sizeof(SVGAFifoCmdDestroyScreen);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         SvgaCmdDestroyScreen(pvCmd, u32ScreenId);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -422,11 +422,11 @@ NTSTATUS SvgaContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
      */
     uint32_t cbSubmit =   sizeof(SVGA3dCmdHeader)
                         + sizeof(SVGA3dCmdDefineContext);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Svga3dCmdDefineContext(pvCmd, u32Cid);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -446,11 +446,11 @@ NTSTATUS SvgaContextDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
      */
     const uint32_t cbSubmit =   sizeof(SVGA3dCmdHeader)
                               + sizeof(SVGA3dCmdDestroyContext);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Svga3dCmdDestroyContext(pvCmd, u32Cid);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -467,12 +467,13 @@ NTSTATUS SvgaFence(PVBOXWDDM_EXT_VMSVGA pSvga,
 
     const uint32_t cbSubmit =  sizeof(uint32_t)
                              + sizeof(SVGAFifoCmdFence);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         SvgaCmdFence(pvCmd, u32Fence);
 
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -495,11 +496,11 @@ NTSTATUS SvgaSurfaceDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                               + sizeof(SVGA3dCmdDefineSurface)
                               + cSizes * sizeof(SVGA3dSize);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Svga3dCmdDefineSurface(pvCmd, u32Sid, pCreateParms, paSizes, cSizes);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -516,11 +517,11 @@ NTSTATUS SvgaSurfaceDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
 
     const uint32_t cbSubmit =   sizeof(SVGA3dCmdHeader)
                               + sizeof(SVGA3dCmdDestroySurface);
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Svga3dCmdDestroySurface(pvCmd, u32Sid);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -980,11 +981,12 @@ NTSTATUS SvgaPresent(PVBOXWDDM_EXT_VMSVGA pSvga,
     uint32_t cbSubmit = 0;
     SvgaGenPresent(0, 0, 0, NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         SvgaGenPresent(u32Sid, u32Width, u32Height, pvCmd, cbSubmit, NULL);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -1040,12 +1042,13 @@ NTSTATUS SvgaPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
     uint32_t cbSubmit = 0;
     SvgaGenPresentVRAM(pSvga, 0, 0, 0, 0, NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenPresentVRAM(pSvga, u32Sid, u32Width, u32Height, u32VRAMOffset, pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -1118,29 +1121,6 @@ NTSTATUS SvgaGenBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
     return STATUS_SUCCESS;
 }
 
-void *SvgaReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve, uint32_t idDXContext)
-{
-    if (pSvga->pCBState)
-        return SvgaCmdBufReserve(pSvga, cbReserve, idDXContext);
-    return SvgaFifoReserve(pSvga, cbReserve);
-}
-
-void SvgaCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
-{
-    if (pSvga->pCBState)
-    {
-        SvgaCmdBufCommit(pSvga, cbActual);
-        return;
-    }
-    SvgaFifoCommit(pSvga, cbActual);
-}
-
-void SvgaFlush(PVBOXWDDM_EXT_VMSVGA pSvga)
-{
-    if (pSvga->pCBState)
-        SvgaCmdBufFlush(pSvga);
-}
-
 NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
                                uint32_t idDstScreen,
                                int32_t xSrc,
@@ -1154,7 +1134,7 @@ NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
     SvgaGenBlitGMRFBToScreen(pSvga, idDstScreen, xSrc, ySrc, pDstRect,
                              NULL, 0, &cbSubmit);
 
-    pvCmd = SvgaReserve(pSvga, cbSubmit, SVGA3D_INVALID_ID);
+    pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenBlitGMRFBToScreen(pSvga, idDstScreen, xSrc, ySrc, pDstRect,
@@ -1268,12 +1248,13 @@ NTSTATUS SvgaUpdate(PVBOXWDDM_EXT_VMSVGA pSvga,
     uint32_t cbSubmit =  sizeof(uint32_t)
                        + sizeof(SVGAFifoCmdUpdate);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         /** @todo Multi-monitor. */
         SvgaCmdUpdate(pvCmd, u32X, u32Y, u32Width, u32Height);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -1330,7 +1311,7 @@ NTSTATUS SvgaDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                         pvAndMask, cbAndMask, pvXorMask, cbXorMask,
                         NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenDefineCursor(pSvga,
@@ -1339,7 +1320,7 @@ NTSTATUS SvgaDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                                      pvAndMask, cbAndMask, pvXorMask, cbXorMask,
                                      pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -1391,7 +1372,7 @@ NTSTATUS SvgaDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                              pvImage, cbImage,
                              NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenDefineAlphaCursor(pSvga,
@@ -1399,7 +1380,7 @@ NTSTATUS SvgaDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                                           pvImage, cbImage,
                                           pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -1459,13 +1440,13 @@ NTSTATUS SvgaDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
     SvgaGenDefineGMRFB(pSvga, u32Offset, u32BytesPerLine,
                        NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenDefineGMRFB(pSvga, u32Offset, u32BytesPerLine,
                                     pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -1564,13 +1545,13 @@ NTSTATUS SvgaGMRReport(PVBOXWDDM_EXT_VMSVGA pSvga,
     SvgaGenGMRReport(pSvga, u32GmrId, fRemapGMR2Flags, u32NumPages, paPhysAddresses,
                      NULL, 0, &cbSubmit);
 
-    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         Status = SvgaGenGMRReport(pSvga, u32GmrId, fRemapGMR2Flags, u32NumPages, paPhysAddresses,
                                   pvCmd, cbSubmit, NULL);
         AssertStmt(Status == STATUS_SUCCESS, cbSubmit = 0);
-        SvgaFifoCommit(pSvga, cbSubmit);
+        SvgaCommit(pSvga, cbSubmit);
     }
     else
     {
