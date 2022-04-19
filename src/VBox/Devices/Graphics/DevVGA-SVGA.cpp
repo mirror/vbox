@@ -5508,6 +5508,43 @@ static int vmsvgaR3LoadBufCtx(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
     return rc;
 }
 
+static int vmsvgaR3LoadCommandBuffers(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
+{
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    bool f;
+    uint32_t u32;
+
+    /* Device context command buffers. */
+    int rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, &pSvgaR3State->CmdBufCtxDC, SVGA_CB_CONTEXT_MAX);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* DX contexts command buffers. */
+    uint32_t cBufCtx;
+    rc = pHlp->pfnSSMGetU32(pSSM, &cBufCtx);
+    AssertLogRelRCReturn(rc, rc);
+    AssertReturn(cBufCtx == RT_ELEMENTS(pSvgaR3State->apCmdBufCtxs), VERR_INVALID_STATE);
+    for (uint32_t j = 0; j < cBufCtx; ++j)
+    {
+        rc = pHlp->pfnSSMGetBool(pSSM, &f);
+        AssertLogRelRCReturn(rc, rc);
+        if (f)
+        {
+            pSvgaR3State->apCmdBufCtxs[j] = (PVMSVGACMDBUFCTX)RTMemAlloc(sizeof(VMSVGACMDBUFCTX));
+            AssertPtrReturn(pSvgaR3State->apCmdBufCtxs[j], VERR_NO_MEMORY);
+            vmsvgaR3CmdBufCtxInit(pSvgaR3State->apCmdBufCtxs[j]);
+
+            rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, pSvgaR3State->apCmdBufCtxs[j], (SVGACBContext)j);
+            AssertLogRelRCReturn(rc, rc);
+        }
+    }
+
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    pSvgaR3State->fCmdBuf = u32;
+    return rc;
+}
+
 static int vmsvgaR3LoadGbo(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGAGBO *pGbo)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
@@ -5714,38 +5751,29 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
         bool f;
         uint32_t u32;
 
+        if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_DX_CMDBUF)
+        {
+            /* Command buffers are saved independently from VGPU10. */
+            rc = pHlp->pfnSSMGetBool(pSSM, &f);
+            AssertLogRelRCReturn(rc, rc);
+            if (f)
+            {
+                rc = vmsvgaR3LoadCommandBuffers(pDevIns, pThis, pThisCC, pSSM);
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+
         rc = pHlp->pfnSSMGetBool(pSSM, &f);
         AssertLogRelRCReturn(rc, rc);
         AssertReturn(f == pThis->fVMSVGA10, VERR_INVALID_STATE);
 
         if (pThis->fVMSVGA10)
         {
-            /* Device context command buffers. */
-            rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, &pSVGAState->CmdBufCtxDC, SVGA_CB_CONTEXT_MAX);
-            AssertLogRelRCReturn(rc, rc);
-
-            /* DX contexts command buffers. */
-            uint32_t cBufCtx;
-            rc = pHlp->pfnSSMGetU32(pSSM, &cBufCtx);
-            AssertLogRelRCReturn(rc, rc);
-            AssertReturn(cBufCtx == RT_ELEMENTS(pSVGAState->apCmdBufCtxs), VERR_INVALID_STATE);
-            for (uint32_t j = 0; j < cBufCtx; ++j)
+            if (uVersion < VGA_SAVEDSTATE_VERSION_VMSVGA_DX_CMDBUF)
             {
-                rc = pHlp->pfnSSMGetBool(pSSM, &f);
+                rc = vmsvgaR3LoadCommandBuffers(pDevIns, pThis, pThisCC, pSSM);
                 AssertLogRelRCReturn(rc, rc);
-                if (f)
-                {
-                    pSVGAState->apCmdBufCtxs[j] = (PVMSVGACMDBUFCTX)RTMemAlloc(sizeof(VMSVGACMDBUFCTX));
-                    AssertPtrReturn(pSVGAState->apCmdBufCtxs[j], VERR_NO_MEMORY);
-                    vmsvgaR3CmdBufCtxInit(pSVGAState->apCmdBufCtxs[j]);
-
-                    rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, pSVGAState->apCmdBufCtxs[j], (SVGACBContext)j);
-                    AssertLogRelRCReturn(rc, rc);
-                }
             }
-
-            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
-            pSVGAState->fCmdBuf = u32;
 
             /*
              * OTables GBOs.
@@ -5996,14 +6024,13 @@ int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     /*
-     * VGA_SAVEDSTATE_VERSION_VMSVGA_DX
+     * VGA_SAVEDSTATE_VERSION_VMSVGA_DX+
      */
-
-    rc = pHlp->pfnSSMPutBool(pSSM, pThis->fVMSVGA10);
-    AssertLogRelRCReturn(rc, rc);
-
-    if (pThis->fVMSVGA10)
+    if (pThis->svga.u32DeviceCaps & SVGA_CAP_COMMAND_BUFFERS)
     {
+        rc = pHlp->pfnSSMPutBool(pSSM, true);
+        AssertLogRelRCReturn(rc, rc);
+
         /* Device context command buffers. */
         rc = vmsvgaR3SaveBufCtx(pDevIns, pSSM, &pSVGAState->CmdBufCtxDC);
         AssertRCReturn(rc, rc);
@@ -6025,7 +6052,18 @@ int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
         rc = pHlp->pfnSSMPutU32(pSSM, pSVGAState->fCmdBuf);
         AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        rc = pHlp->pfnSSMPutBool(pSSM, false);
+        AssertLogRelRCReturn(rc, rc);
+    }
 
+    rc = pHlp->pfnSSMPutBool(pSSM, pThis->fVMSVGA10);
+    AssertLogRelRCReturn(rc, rc);
+
+    if (pThis->fVMSVGA10)
+    {
         /*
          * OTables GBOs.
          */
