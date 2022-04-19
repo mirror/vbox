@@ -249,6 +249,92 @@ typedef DECLCALLBACKTYPE(size_t, FNRTLOGPREFIX,(PRTLOGGER pLogger, char *pchBuf,
 typedef FNRTLOGPREFIX *PFNRTLOGPREFIX;
 
 
+/** Pointer to a constant log output interface. */
+typedef const struct RTLOGOUTPUTIF *PCRTLOGOUTPUTIF;
+
+/**
+ * Logging output interface.
+ */
+typedef struct RTLOGOUTPUTIF
+{
+    /**
+     * Opens a new log file with the given name.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pszFilename     The filename to open.
+     * @param   fFlags          Open flags, combination of RTFILE_O_XXX.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags));
+
+    /**
+     * Closes the currently open file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnClose, (PCRTLOGOUTPUTIF pIf, void *pvUser));
+
+    /**
+     * Deletes the given file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pszFilename     The filename to delete.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDelete, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename));
+
+    /**
+     * Renames the given file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pszFilenameOld  The old filename to rename.
+     * @param   pszFilenameNew  The new filename.
+     * @param   fFlags          Flags for the operation, combination of RTFILEMOVE_FLAGS_XXX.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRename, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
+                                          const char *pszFilenameNew, uint32_t fFlags));
+
+    /**
+     * Queries the size of the log file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pcbFile         Where to store the file size in bytes on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQuerySize, (PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize));
+
+    /**
+     * Writes data to the log file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pvBuf           The data to write.
+     * @param   cbWrite         Number of bytes to write.
+     * @param   pcbWritten      Where to store the actual number of bytes written on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
+                                         size_t cbWrite, size_t *pcbWritten));
+
+    /**
+     * Flushes data to the underlying storage medium.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (PCRTLOGOUTPUTIF pIf, void *pvUser));
+} RTLOGOUTPUTIF;
+/** Pointer to a logging output interface. */
+typedef struct RTLOGOUTPUTIF *PRTLOGOUTPUTIF;
+
 
 /**
  * Auxiliary buffer descriptor.
@@ -2028,6 +2114,9 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
  * @param   cSecsHistoryTimeSlot Maximum time interval per log file when
  *                              performing history rotation, in seconds.
  *                              0 means time limit.
+ * @param   pOutputIf           The optional file output interface, can be NULL which will
+ *                              make use of the default one.
+ * @param   pvOutputIfUser      The opaque user data to pass to the callbacks in the output interface.
  * @param   pErrInfo            Where to return extended error information.
  *                              Optional.
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
@@ -2037,6 +2126,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
                           unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                           uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                           PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
+                          PCRTLOGOUTPUTIF pOutputIf, void *pvOutputIfUser,
                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(16, 17);
 
 /**
@@ -2070,6 +2160,9 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
  * @param   cSecsHistoryTimeSlot  Maximum time interval per log file when
  *                              performing history rotation, in seconds.
  *                              0 means no time limit.
+ * @param   pOutputIf           The optional file output interface, can be NULL which will
+ *                              make use of the default one.
+ * @param   pvOutputIfUser      The opaque user data to pass to the callbacks in the output interface.
  * @param   pErrInfo            Where to return extended error information.
  *                              Optional.
  * @param   pszFilenameFmt      Log filename format string.  Standard
@@ -2080,6 +2173,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                            uint32_t cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                            uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                            PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
+                           PCRTLOGOUTPUTIF pOutputIf, void *pvOutputIfUser,
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(16, 0);
 
 /**

@@ -3955,6 +3955,7 @@ int main(int argc, char **argv)
                            0 /*cBufDescs*/, NULL /* paBufDescs */, RTLOGDEST_STDOUT | RTLOGDEST_FILE,
                            logHeaderFooter /* pfnPhase */ ,
                            10 /* cHistory */, 100 * _1M /* cbHistoryFileMax */, RT_SEC_1DAY /* cSecsHistoryTimeSlot */,
+                           NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            NULL /* pErrInfo */, "%s", szLogFile);
         if (RT_SUCCESS(rc))
         {

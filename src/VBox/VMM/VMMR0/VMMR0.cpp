@@ -3329,6 +3329,7 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
                            "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
                            VMMLOGGER_BUFFER_COUNT, pR0Log->aBufDescs, RTLOGDEST_DUMMY,
                            NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                           NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            NULL /*pErrInfo*/, NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))
     {

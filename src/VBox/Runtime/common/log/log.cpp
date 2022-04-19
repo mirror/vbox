@@ -211,8 +211,12 @@ typedef struct RTLOGGERINTERNAL
      * ending or starting a new log file as part of history rotation.
      * This can be NULL. */
     PFNRTLOGPHASE           pfnPhase;
+    /** Pointer to the output interface used. */
+    PCRTLOGOUTPUTIF         pOutputIf;
+    /** Opaque user data passed to the callbacks in the output interface. */
+    void                    *pvOutputIfUser;
 
-    /** Handle to log file (if open). */
+    /** Handle to log file (if open) - only used by the default output interface to avoid additional layers of indirection. */
     RTFILE                  hFile;
     /** Log file history settings: maximum amount of data to put in a file. */
     uint64_t                cbHistoryFileMax;
@@ -227,6 +231,8 @@ typedef struct RTLOGGERINTERNAL
     uint32_t                cHistory;
     /** Pointer to filename. */
     char                    szFilename[RTPATH_MAX];
+    /** Flag whether the log file was opened successfully. */
+    bool                    fLogOpened;
     /** @} */
 #endif /* IN_RING3 */
 
@@ -240,7 +246,7 @@ typedef struct RTLOGGERINTERNAL
 } RTLOGGERINTERNAL;
 
 /** The revision of the internal logger structure. */
-# define RTLOGGERINTERNAL_REV    UINT32_C(12)
+# define RTLOGGERINTERNAL_REV    UINT32_C(13)
 
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbRingBufUnflushed, sizeof(uint64_t));
 #ifdef IN_RING3
@@ -724,6 +730,103 @@ RTDECL(PRTLOGGER)   RTLogCheckGroupFlags(PRTLOGGER pLogger, uint32_t fFlagsAndGr
 RT_EXPORT_SYMBOL(RTLogCheckGroupFlags);
 
 
+#ifdef IN_RING3
+/*********************************************************************************************************************************
+*   Default file I/O interface                                                                                                   *
+*********************************************************************************************************************************/
+
+static DECLCALLBACK(int) rtLogOutputIfDefOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags)
+{
+    RT_NOREF(pIf);
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+
+    return RTFileOpen(&pLoggerInt->hFile, pszFilename, fFlags);
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefClose(PCRTLOGOUTPUTIF pIf, void *pvUser)
+{
+    RT_NOREF(pIf);
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+
+    int rc = VINF_SUCCESS;
+    if (pLoggerInt->hFile != NIL_RTFILE)
+        rc = RTFileClose(pLoggerInt->hFile);
+
+    pLoggerInt->hFile = NIL_RTFILE;
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename)
+{
+    RT_NOREF(pIf, pvUser);
+    return RTFileDelete(pszFilename);
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefRename(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
+                                                const char *pszFilenameNew, uint32_t fFlags)
+{
+    RT_NOREF(pIf, pvUser);
+    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize)
+{
+    RT_NOREF(pIf);
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+
+    if (pLoggerInt->hFile != NIL_RTFILE)
+        return RTFileQuerySize(pLoggerInt->hFile, pcbSize);
+
+    *pcbSize = 0;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
+                                               size_t cbWrite, size_t *pcbWritten)
+{
+    RT_NOREF(pIf);
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+
+    if (pLoggerInt->hFile != NIL_RTFILE)
+        return RTFileWrite(pLoggerInt->hFile, pvBuf, cbWrite, pcbWritten);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtLogOutputIfDefFlush(PCRTLOGOUTPUTIF pIf, void *pvUser)
+{
+    RT_NOREF(pIf);
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+
+    if (pLoggerInt->hFile != NIL_RTFILE)
+        return RTFileFlush(pLoggerInt->hFile);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The default file output interface.
+ */
+static const RTLOGOUTPUTIF g_LogOutputIfDef =
+{
+    rtLogOutputIfDefOpen,
+    rtLogOutputIfDefClose,
+    rtLogOutputIfDefDelete,
+    rtLogOutputIfDefRename,
+    rtLogOutputIfDefQuerySize,
+    rtLogOutputIfDefWrite,
+    rtLogOutputIfDefFlush
+};
+#endif
+
+
 /*********************************************************************************************************************************
 *   Ring Buffer                                                                                                                  *
 *********************************************************************************************************************************/
@@ -953,16 +1056,19 @@ static void rtLogRingBufFlush(PRTLOGGERINTERNAL pLoggerInt)
 # ifdef IN_RING3
     if (pLoggerInt->fDestFlags & RTLOGDEST_FILE)
     {
-        if (pLoggerInt->hFile != NIL_RTFILE)
+        if (pLoggerInt->fLogOpened)
         {
             if (cchPreamble)
-                RTFileWrite(pLoggerInt->hFile, pszPreamble, cchPreamble, NULL);
+                pLoggerInt->pOutputIf->pfnWrite(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                pszPreamble, cchPreamble, NULL /*pcbWritten*/);
             if (cchFirst)
-                RTFileWrite(pLoggerInt->hFile, pszFirst, cchFirst, NULL);
+                pLoggerInt->pOutputIf->pfnWrite(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                pszFirst, cchFirst, NULL /*pcbWritten*/);
             if (cchSecond)
-                RTFileWrite(pLoggerInt->hFile, pszSecond, cchSecond, NULL);
+                pLoggerInt->pOutputIf->pfnWrite(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                pszSecond, cchSecond, NULL /*pcbWritten*/);
             if (pLoggerInt->fFlags & RTLOGFLAGS_FLUSH)
-                RTFileFlush(pLoggerInt->hFile);
+                pLoggerInt->pOutputIf->pfnFlush(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
         }
         if (pLoggerInt->cHistory)
             pLoggerInt->cbHistoryFileWritten += cchFirst + cchSecond;
@@ -1011,6 +1117,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                            uint32_t cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                            uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                            PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
+                           PCRTLOGOUTPUTIF pOutputIf, void *pvOutputIfUser,
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list args)
 {
     int                 rc;
@@ -1112,6 +1219,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
 # ifdef IN_RING3
         pLoggerInt->pfnPhase                    = pfnPhase;
         pLoggerInt->hFile                       = NIL_RTFILE;
+        pLoggerInt->fLogOpened                  = false;
         pLoggerInt->cHistory                    = cHistory;
         if (cbHistoryFileMax == 0)
             pLoggerInt->cbHistoryFileMax        = UINT64_MAX;
@@ -1121,6 +1229,19 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
             pLoggerInt->cSecsHistoryTimeSlot    = UINT32_MAX;
         else
             pLoggerInt->cSecsHistoryTimeSlot    = cSecsHistoryTimeSlot;
+
+        if (pOutputIf)
+        {
+            pLoggerInt->pOutputIf               = pOutputIf;
+            pLoggerInt->pvOutputIfUser          = pvOutputIfUser;
+        }
+        else
+        {
+            /* Use the default interface for output logging. */
+            pLoggerInt->pOutputIf               = &g_LogOutputIfDef;
+            pLoggerInt->pvOutputIfUser          = pLoggerInt;
+        }
+
 # else   /* !IN_RING3 */
         RT_NOREF_PV(pfnPhase); RT_NOREF_PV(cHistory); RT_NOREF_PV(cbHistoryFileMax); RT_NOREF_PV(cSecsHistoryTimeSlot);
 # endif  /* !IN_RING3 */
@@ -1317,7 +1438,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                 RTErrInfoSet(pErrInfo, rc, N_("failed to create semaphore"));
             }
 # ifdef IN_RING3
-            RTFileClose(pLoggerInt->hFile);
+            pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
 # endif
 # if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
             if (pLoggerInt->Core.pfnLogger)
@@ -1349,6 +1470,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
                         UINT32_MAX /*cMaxEntriesPerGroup*/,
                         0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
                         NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                        NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                         NULL /*pErrInfo*/, pszFilenameFmt, va);
     va_end(va);
     return rc;
@@ -1400,19 +1522,18 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
      * Add end of logging message.
      */
     if (   (pLoggerInt->fDestFlags & RTLOGDEST_FILE)
-        && pLoggerInt->hFile != NIL_RTFILE)
+        && pLoggerInt->fLogOpened)
         pLoggerInt->pfnPhase(&pLoggerInt->Core, RTLOGPHASE_END, rtlogPhaseMsgLocked);
 
     /*
      * Close output stuffs.
      */
-    if (pLoggerInt->hFile != NIL_RTFILE)
+    if (pLoggerInt->fLogOpened)
     {
-        int rc2 = RTFileClose(pLoggerInt->hFile);
-        AssertRC(rc2);
+        int rc2 = pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
-        pLoggerInt->hFile = NIL_RTFILE;
+        pLoggerInt->fLogOpened = false;
     }
 # endif
 
@@ -2442,7 +2563,7 @@ RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
             pLoggerInt->fDestFlags &= ~RTLOGDEST_F_DELAY_FILE;
 # ifdef IN_RING3
             if (   pLoggerInt->fDestFlags & RTLOGDEST_FILE
-                && pLoggerInt->hFile == NIL_RTFILE)
+                && !pLoggerInt->fLogOpened)
             {
                 rc = rtR3LogOpenFileDestination(pLoggerInt, pErrInfo);
                 if (RT_SUCCESS(rc))
@@ -2653,7 +2774,8 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
         fOpen |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
     else
     {
-        RTFileDelete(pLoggerInt->szFilename);
+        pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                         pLoggerInt->szFilename);
         fOpen |= RTFILE_O_CREATE;
     }
     if (pLoggerInt->fFlags & RTLOGFLAGS_WRITE_THROUGH)
@@ -2662,19 +2784,25 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
         fOpen = (fOpen & ~RTFILE_O_DENY_NONE) | RTFILE_O_DENY_NOT_DELETE;
 
     unsigned cBackoff = 0;
-    int rc = RTFileOpen(&pLoggerInt->hFile, pLoggerInt->szFilename, fOpen);
+    int rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                            pLoggerInt->szFilename, fOpen);
     while (   (   rc == VERR_SHARING_VIOLATION
                || (rc == VERR_ALREADY_EXISTS && !(pLoggerInt->fFlags & RTLOGFLAGS_APPEND)))
            && cBackoff < RT_ELEMENTS(g_acMsLogBackoff))
     {
         RTThreadSleep(g_acMsLogBackoff[cBackoff++]);
         if (!(pLoggerInt->fFlags & RTLOGFLAGS_APPEND))
-            RTFileDelete(pLoggerInt->szFilename);
-        rc = RTFileOpen(&pLoggerInt->hFile, pLoggerInt->szFilename, fOpen);
+            pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                             pLoggerInt->szFilename);
+        rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                            pLoggerInt->szFilename, fOpen);
     }
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileQuerySize(pLoggerInt->hFile, &pLoggerInt->cbHistoryFileWritten);
+        pLoggerInt->fLogOpened = true;
+
+        rc = pLoggerInt->pOutputIf->pfnQuerySize(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                 &pLoggerInt->cbHistoryFileWritten);
         if (RT_FAILURE(rc))
         {
             /* Don't complain if this fails, assume the file is empty. */
@@ -2684,7 +2812,7 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
     }
     else
     {
-        pLoggerInt->hFile = NIL_RTFILE;
+        pLoggerInt->fLogOpened = false;
         RTErrInfoSetF(pErrInfo, rc, N_("could not open file '%s' (fOpen=%#x)"), pLoggerInt->szFilename, fOpen);
     }
     return rc;
@@ -2733,7 +2861,7 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
     /*
      * Close the old log file.
      */
-    if (pLoggerInt->hFile != NIL_RTFILE)
+    if (pLoggerInt->fLogOpened)
     {
         /* Use the callback to generate some final log contents, but only if
          * this is a rotation with a fully set up logger. Leave the other case
@@ -2745,8 +2873,8 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
             pLoggerInt->pfnPhase(&pLoggerInt->Core, RTLOGPHASE_PREROTATE, rtlogPhaseMsgLocked);
             pLoggerInt->fDestFlags = fODestFlags;
         }
-        RTFileClose(pLoggerInt->hFile);
-        pLoggerInt->hFile = NIL_RTFILE;
+
+        pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
     }
 
     if (cSavedHistory)
@@ -2766,16 +2894,18 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
             RTStrPrintf(szNewName, sizeof(szNewName), "%s.%u", pLoggerInt->szFilename, i + 1);
 
             unsigned cBackoff = 0;
-            int rc = RTFileRename(szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
+            int rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                      szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
             while (   rc == VERR_SHARING_VIOLATION
                    && cBackoff < RT_ELEMENTS(g_acMsLogBackoff))
             {
                 RTThreadSleep(g_acMsLogBackoff[cBackoff++]);
-                rc = RTFileRename(szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
+                rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                      szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
             }
 
             if (rc == VERR_FILE_NOT_FOUND)
-                RTFileDelete(szNewName);
+                pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, szNewName);
         }
 
         /*
@@ -2785,7 +2915,7 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
         {
             char szExcessName[sizeof(pLoggerInt->szFilename) + 32];
             RTStrPrintf(szExcessName, sizeof(szExcessName), "%s.%u", pLoggerInt->szFilename, i);
-            int rc = RTFileDelete(szExcessName);
+            int rc = pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, szExcessName);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -2845,7 +2975,7 @@ static int rtR3LogOpenFileDestination(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO p
         rtlogRotate(pLoggerInt, 0, true /* fFirst */, pErrInfo);
 
         /* If the file is not open then rotation is not set up. */
-        if (pLoggerInt->hFile == NIL_RTFILE)
+        if (!pLoggerInt->fLogOpened)
         {
             pLoggerInt->cbHistoryFileWritten = 0;
             rc = rtlogFileOpen(pLoggerInt, pErrInfo);
@@ -3153,11 +3283,12 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
 #ifdef IN_RING3
         if ((pLoggerInt->fDestFlags & (RTLOGDEST_FILE | RTLOGDEST_RINGBUF)) == RTLOGDEST_FILE)
         {
-            if (pLoggerInt->hFile != NIL_RTFILE)
+            if (pLoggerInt->fLogOpened)
             {
-                RTFileWrite(pLoggerInt->hFile, pchToFlush, cchToFlush, NULL);
+                pLoggerInt->pOutputIf->pfnWrite(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                pchToFlush, cchToFlush, NULL /*pcbWritten*/);
                 if (pLoggerInt->fFlags & RTLOGFLAGS_FLUSH)
-                    RTFileFlush(pLoggerInt->hFile);
+                    pLoggerInt->pOutputIf->pfnFlush(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
             }
             if (pLoggerInt->cHistory)
                 pLoggerInt->cbHistoryFileWritten += cchToFlush;

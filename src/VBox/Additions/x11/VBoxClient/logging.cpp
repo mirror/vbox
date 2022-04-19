@@ -285,6 +285,7 @@ int VBClLogCreate(const char *pszLogFile)
                            RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
                            0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vbClLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            NULL /*pErrInfo*/, "%s", pszLogFile ? pszLogFile : "");
     if (RT_SUCCESS(rc))
     {

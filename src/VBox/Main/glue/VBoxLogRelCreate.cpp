@@ -171,6 +171,7 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
     int vrc = RTLogCreateEx(&pReleaseLogger, pcszEnvVarBase, fFlags, pcszGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups,
                             cMaxEntriesPerGroup, 0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
                             vboxHeaderFooter, cHistory, uHistoryFileSize, uHistoryFileTime,
+                            NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                             pErrInfo, pcszLogFile ? "%s" : NULL, pcszLogFile);
     if (RT_SUCCESS(vrc))
     {
