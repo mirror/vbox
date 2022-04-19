@@ -3128,6 +3128,7 @@ static SVGACBStatus vmsvgaR3CmdBufDCPreempt(PPDMDEVINS pDevIns, PVMSVGAR3STATE p
     else
     {
         RTListMove(&listPreempted, &pCmdBufCtx->listSubmitted);
+        pCmdBufCtx->cSubmitted = 0;
     }
     RTCritSectLeave(&pSvgaR3State->CritSectCmdBuf);
 
@@ -3136,6 +3137,7 @@ static SVGACBStatus vmsvgaR3CmdBufDCPreempt(PPDMDEVINS pDevIns, PVMSVGAR3STATE p
     {
         RTListNodeRemove(&pIter->nodeBuffer);
         vmsvgaR3CmdBufWriteStatus(pDevIns, pIter->GCPhysCB, SVGA_CB_STATUS_PREEMPTED, 0);
+        LogFunc(("Preempted %RX64\n", pIter->GCPhysCB));
         vmsvgaR3CmdBufFree(pIter);
     }
 
