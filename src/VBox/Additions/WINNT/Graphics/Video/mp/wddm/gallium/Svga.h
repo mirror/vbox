@@ -123,7 +123,6 @@ typedef struct VMSVGACBCONTEXT
 {
     RTLISTANCHOR         QueuePending;             /* Buffers which will be submitted to the host. */
     RTLISTANCHOR         QueueSubmitted;           /* Buffers which are being processed by the host. */
-    RTLISTANCHOR         QueuePreempted;           /* Preempted buffers. */
     uint32_t             cSubmitted;               /* How many buffers were submitted to the host.
                                                     * Less than SVGA_CB_MAX_QUEUED_PER_CONTEXT */
 } VMSVGACBCONTEXT, *PVMSVGACBCONTEXT;

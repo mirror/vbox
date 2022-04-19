@@ -54,6 +54,35 @@ static NTSTATUS SvgaObjectTablesInit(VBOXWDDM_EXT_VMSVGA *pSvga)
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS SvgaObjectTablesDestroy(VBOXWDDM_EXT_VMSVGA *pSvga)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    if (pSvga->hMemObjOTables != NIL_RTR0MEMOBJ)
+    {
+        for (uint32_t idOTable = 0; idOTable < SVGA_OTABLE_DX_MAX; idOTable++)
+        {
+            void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_SET_OTABLE_BASE64, sizeof(SVGA3dCmdSetOTableBase64), SVGA3D_INVALID_ID);
+            AssertBreakStmt(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
+
+            SVGA3dCmdSetOTableBase64 *pCmd = (SVGA3dCmdSetOTableBase64 *)pvCmd;
+            pCmd->type             = (SVGAOTableType)idOTable;
+            pCmd->baseAddress      = 0;
+            pCmd->sizeInBytes      = 0;
+            pCmd->validSizeInBytes = 0;
+            pCmd->ptDepth          = SVGA3D_MOBFMT_INVALID;
+
+            SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdSetOTableBase64));
+        }
+
+        if (NT_SUCCESS(Status))
+            SvgaCmdBufFlush(pSvga);
+
+        int rc = RTR0MemObjFree(pSvga->hMemObjOTables, true);
+        AssertRCStmt(rc, Status = STATUS_INVALID_PARAMETER);
+        pSvga->hMemObjOTables = NIL_RTR0MEMOBJ;
+    }
+    return Status;
+}
 
 static NTSTATUS svgaCBContextEnable(VBOXWDDM_EXT_VMSVGA *pSvga, SVGACBContext CBContext, bool fEnable)
 {
@@ -69,8 +98,33 @@ static NTSTATUS svgaCBContextEnable(VBOXWDDM_EXT_VMSVGA *pSvga, SVGACBContext CB
     return STATUS_SUCCESS;
 }
 
+static void svgaHwStop(VBOXWDDM_EXT_VMSVGA *pSvga)
+{
+    /* Undo svgaHwStart. */
 
-static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
+    /* Send commands to host. */
+    if (pSvga->u32Caps & SVGA_CAP_GBOBJECTS)
+        SvgaObjectTablesDestroy(pSvga);
+
+    /* Give the host some time to process them. */
+    LARGE_INTEGER Interval;
+    Interval.QuadPart = -(int64_t)100 /* ms */ * 10000;
+    KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+
+    /* Disable IRQs. */
+    SVGARegWrite(pSvga, SVGA_REG_IRQMASK, 0);
+
+    if (pSvga->pCBState)
+        svgaCBContextEnable(pSvga, SVGA_CB_CONTEXT_0, false);
+
+    /* Disable SVGA. */
+    SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_DISABLE);
+
+    if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
+        SvgaCmdBufDestroy(pSvga);
+}
+
+static NTSTATUS svgaHwStart(VBOXWDDM_EXT_VMSVGA *pSvga)
 {
     pSvga->u32Caps      = SVGARegRead(pSvga, SVGA_REG_CAPABILITIES);
     pSvga->u32VramSize  = SVGARegRead(pSvga, SVGA_REG_VRAM_SIZE);
@@ -162,16 +216,7 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
             pSvga->cbGMRBits = 0;
         }
 
-        /** @todo svgaHwStop(VBOXWDDM_EXT_VMSVGA *pSvga) to undo svgaHwInit */
-        if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
-        {
-            /// @todo SvgaObjectTablesDestroy(pSvga);
-            SvgaCmdBufDestroy(pSvga);
-        }
-
-        /* Disable SVGA device. */
-        SVGARegWrite(pSvga, SVGA_REG_IRQMASK, 0);
-        SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_DISABLE);
+        svgaHwStop(pSvga);
 
         Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
                                                    (PVOID)pSvga->pu32FIFO);
@@ -222,8 +267,7 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
         const uint32_t u32SvgaId = SVGARegRead(pSvga, SVGA_REG_ID);
         if (u32SvgaId == SVGA_ID_2)
         {
-            Status = svgaHwInit(pSvga);
-
+            Status = svgaHwStart(pSvga);
             if (NT_SUCCESS(Status))
             {
                 /*

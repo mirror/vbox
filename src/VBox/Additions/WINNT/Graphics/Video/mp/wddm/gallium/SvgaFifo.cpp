@@ -784,6 +784,21 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
             RTListAppend(&listCompleted, &pIter->nodeQueue);
             --pCBCtx->cSubmitted;
         }
+
+        /* Try to submit pending buffers. */
+        while (!RTListIsEmpty(&pCBCtx->QueuePending))
+        {
+            if (pCBCtx->cSubmitted >= SVGA_CB_MAX_QUEUED_PER_CONTEXT - 1)
+                break;
+
+            PVMSVGACB pCB = RTListGetFirst(&pCBCtx->QueuePending, VMSVGACB, nodeQueue);
+            RTListNodeRemove(&pCB->nodeQueue);
+
+            RTListAppend(&pCBCtx->QueueSubmitted, &pCB->nodeQueue);
+            ++pCBCtx->cSubmitted;
+            svgaCBSubmitHeader(pSvga, pCB->CBHeaderPhysAddr, (SVGACBContext)i);
+            GALOG(("Submitted pending %p\n", pCB));
+        }
     }
     KeReleaseSpinLock(&pCBState->SpinLock, OldIrql);
 
@@ -827,11 +842,34 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
 
 NTSTATUS SvgaCmdBufDestroy(PVBOXWDDM_EXT_VMSVGA pSvga)
 {
-    /** @todo implement */
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
     if (pCBState == NULL)
         return STATUS_SUCCESS;
     pSvga->pCBState = NULL;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pCBState->aCBContexts); ++i)
+    {
+        PVMSVGACBCONTEXT pCBCtx = &pCBState->aCBContexts[i];
+        PVMSVGACB pIter, pNext;
+        RTListForEachSafe(&pCBCtx->QueueSubmitted, pIter, pNext, VMSVGACB, nodeQueue)
+        {
+            RTListNodeRemove(&pIter->nodeQueue);
+            svgaCBFree(pCBState, pIter);
+        }
+        RTListForEachSafe(&pCBCtx->QueuePending, pIter, pNext, VMSVGACB, nodeQueue)
+        {
+            RTListNodeRemove(&pIter->nodeQueue);
+            svgaCBFree(pCBState, pIter);
+        }
+    }
+
+    if (pCBState->pCBCurrent)
+    {
+        svgaCBFree(pCBState, pCBState->pCBCurrent);
+        pCBState->pCBCurrent = NULL;
+    }
+
+    svgaCBHeaderPoolDestroy(&pCBState->HeaderPool);
 
     GaMemFree(pCBState);
     return STATUS_SUCCESS;
@@ -850,7 +888,6 @@ NTSTATUS SvgaCmdBufInit(PVBOXWDDM_EXT_VMSVGA pSvga)
         PVMSVGACBCONTEXT pCBCtx = &pCBState->aCBContexts[i];
         RTListInit(&pCBCtx->QueuePending);
         RTListInit(&pCBCtx->QueueSubmitted);
-        RTListInit(&pCBCtx->QueuePreempted);
         //pCBCtx->cSubmitted = 0;
     }
 
