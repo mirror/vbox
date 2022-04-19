@@ -186,7 +186,7 @@ static extFloat80_t
 //RTAssertMsg2("softfloat_roundPackToExtF80: #2: sig=%#RX64 sigExtra=%#RX64 isTiny=%d exp=%d 1-exp=%d\n", sig, sigExtra, isTiny, exp, 1-exp);
             sig64Extra =
                 softfloat_shiftRightJam64Extra( sig, sigExtra, 1 - exp );
-            if ( exp < -63 || sig64Extra.extra != 0 ) {                                                 /* VBox: Missing inexact result flag */
+            if ( (exp < -63 || sig64Extra.extra != 0) && /* zero: */ sig != 0 && sigExtra != 0 ) {      /* VBox: Missing inexact result flag */
                 softfloat_exceptionFlags |= softfloat_flag_inexact;                                     /* VBox: Missing inexact result flag */
             }                                                                                           /* VBox: Missing inexact result flag */
             exp = 0;
