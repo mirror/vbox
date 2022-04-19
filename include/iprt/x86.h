@@ -3260,11 +3260,14 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 /** Mask of exceptions flags, including the summary bit. */
 #define X86_FSW_XCPT_ES_MASK UINT16_C(0x00ff)
 /** Condition code 0. */
-#define X86_FSW_C0          RT_BIT_32(8)
+#define X86_FSW_C0          RT_BIT_32(X86_FSW_C0_BIT)
+#define X86_FSW_C0_BIT      8
 /** Condition code 1. */
-#define X86_FSW_C1          RT_BIT_32(9)
+#define X86_FSW_C1          RT_BIT_32(X86_FSW_C1_BIT)
+#define X86_FSW_C1_BIT      9
 /** Condition code 2. */
-#define X86_FSW_C2          RT_BIT_32(10)
+#define X86_FSW_C2          RT_BIT_32(X86_FSW_C2_BIT)
+#define X86_FSW_C2_BIT      10
 /** Top of the stack mask. */
 #define X86_FSW_TOP_MASK    UINT16_C(0x3800)
 /** TOP shift value. */
@@ -3276,11 +3279,22 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 /** Get the TOP value offsetted by a_iSt (0-7). */
 #define X86_FSW_TOP_GET_ST(a_uFsw, a_iSt) ((((a_uFsw) >> X86_FSW_TOP_SHIFT) + (a_iSt)) & X86_FSW_TOP_SMASK)
 /** Condition code 3. */
-#define X86_FSW_C3          RT_BIT_32(14)
+#define X86_FSW_C3          RT_BIT_32(X86_FSW_C3_BIT)
+#define X86_FSW_C3_BIT      14
 /** Mask of exceptions flags, including the summary bit. */
 #define X86_FSW_C_MASK      UINT16_C(0x4700)
 /** FPU busy. */
 #define X86_FSW_B           RT_BIT_32(15)
+/** For use with FPREM and FPREM1. */
+#define X86_FSW_CX_TO_QUOTIENT(a_fFsw) \
+    (  (((a_fFsw) & X86_FSW_C1) >> (X86_FSW_C1_BIT - 0)) \
+     | (((a_fFsw) & X86_FSW_C3) >> (X86_FSW_C3_BIT - 1)) \
+     | (((a_fFsw) & X86_FSW_C0) >> (X86_FSW_C0_BIT - 2)) )
+/** For use with FPREM and FPREM1. */
+#define X86_FSW_CX_FROM_QUOTIENT(a_uQuotient) \
+    (  ((uint16_t)((a_uQuotient) & 1) << (X86_FSW_C1_BIT - 0)) \
+     | ((uint16_t)((a_uQuotient) & 2) << (X86_FSW_C3_BIT - 1)) \
+     | ((uint16_t)((a_uQuotient) & 4) << (X86_FSW_C0_BIT - 2)) )
 /** @} */
 
 
