@@ -2704,6 +2704,12 @@
 #define VERR_CR_CIPHER_INVALID_KEY_LENGTH                       (-25807)
 /** Invalid initialization vector length. */
 #define VERR_CR_CIPHER_INVALID_INITIALIZATION_VECTOR_LENGTH     (-25808)
+/** Invalid tag length. */
+#define VERR_CR_CIPHER_INVALID_TAG_LENGTH                       (-25809)
+/** EVP_CIPHER_CTX_ctrl EVP_CTRL_AEAD_GET_TAG failed. */
+#define VERR_CR_CIPHER_OSSL_GET_TAG_FAILED                      (-25810)
+/** EVP_CIPHER_CTX_ctrl EVP_CTRL_AEAD_SET_TAG failed. */
+#define VERR_CR_CIPHER_OSSL_SET_TAG_FAILED                      (-25811)
 /** @} */
 
 

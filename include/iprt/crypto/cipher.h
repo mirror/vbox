@@ -52,6 +52,12 @@ typedef struct RTCRCIPHERINT   *RTCRCIPHER;
 typedef RTCRCIPHER             *PRTCRCIPHER;
 /** Nil symmetric cipher handle. */
 #define NIL_RTCRCIPHER          ((RTCRCIPHER)0)
+/** Symmetric cipher context */
+typedef struct RTCRCIPHERCTXINT *RTCRCIPHERCTX;
+/** Pointer to a symmetric cipher context */
+typedef RTCRCIPHERCTX          *PRTCRCIPHERCTX;
+/** Nil symmetric cipher context */
+#define NIL_RTCRCIPHERCTX       ((RTCRCIPHERCTX)0)
 
 /**
  * Symmetric cipher types.
@@ -66,6 +72,14 @@ typedef enum RTCRCIPHERTYPE
     RTCRCIPHERTYPE_XTS_AES_128,
     /** XTS-AES-256 (NIST SP 800-38E). */
     RTCRCIPHERTYPE_XTS_AES_256,
+    /** GCM-AES-128. */
+    RTCRCIPHERTYPE_GCM_AES_128,
+    /** GCM-AES-256. */
+    RTCRCIPHERTYPE_GCM_AES_256,
+    /* CTR-AES-128 */
+    RTCRCIPHERTYPE_CTR_AES_128,
+    /* CTR-AES-256 */
+    RTCRCIPHERTYPE_CTR_AES_256,
     /** End of valid symmetric cipher types. */
     RTCRCIPHERTYPE_END,
     /** Make sure the type is a 32-bit one. */
@@ -80,6 +94,29 @@ RTDECL(uint32_t) RTCrCipherGetKeyLength(RTCRCIPHER hCipher);
 RTDECL(uint32_t) RTCrCipherGetInitializationVectorLength(RTCRCIPHER hCipher);
 RTDECL(uint32_t) RTCrCipherGetBlockSize(RTCRCIPHER hCipher);
 
+RTDECL(int) RTCrCipherCtxFree(RTCRCIPHERCTX phCipherCtx);
+
+RTDECL(int) RTCrCipherCtxEncryptInit(RTCRCIPHER hCipher, void const *pvKey, size_t cbKey,
+                                     void const *pvInitVector, size_t cbInitVector,
+                                     void const *pvAuthData, size_t cbAuthData,
+                                     PRTCRCIPHERCTX phCipherCtx);
+RTDECL(int) RTCrCipherCtxEncryptProcess(RTCRCIPHERCTX hCipherCtx, void const *pvPlainText, size_t cbPlainText,
+                                        void *pvEncrypted, size_t cbEncrypted, size_t *pcbEncrypted);
+RTDECL(int) RTCrCipherCtxEncryptFinish(RTCRCIPHERCTX hCipherCtx,
+                                       void *pvEncrypted, size_t *pcbEncrypted,
+                                       void *pvTag, size_t cbTag, size_t *pcbTag);
+
+RTDECL(int) RTCrCipherCtxDecryptInit(RTCRCIPHER hCipher, void const *pvKey, size_t cbKey,
+                                     void const *pvInitVector, size_t cbInitVector,
+                                     void const *pvAuthData, size_t cbAuthData,
+                                     void *pvTag, size_t cbTag, PRTCRCIPHERCTX phCipherCtx);
+RTDECL(int) RTCrCipherCtxDecryptProcess(RTCRCIPHERCTX hCipherCtx,
+                                        void const *pvEncrypted, size_t cbEncrypted,
+                                        void *pvPlainText, size_t cbPlainText, size_t *pcbPlainText);
+RTDECL(int) RTCrCipherCtxDecryptFinish(RTCRCIPHERCTX hCipherCtx,
+                                       void *pvPlainText, size_t *pcbPlainText);
+
+
 RTDECL(int) RTCrCipherEncrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKey,
                               void const *pvInitVector, size_t cbInitVector,
                               void const *pvPlainText, size_t cbPlainText,
@@ -88,6 +125,18 @@ RTDECL(int) RTCrCipherDecrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKe
                               void const *pvInitVector, size_t cbInitVector,
                               void const *pvEncrypted, size_t cbEncrypted,
                               void *pvPlainText, size_t cbPlainText, size_t *pcbPlainText);
+RTDECL(int) RTCrCipherEncryptEx(RTCRCIPHER hCipher, void const *pvKey, size_t cbKey,
+                                void const *pvInitVector, size_t cbInitVector,
+                                void const *pvAuthData, size_t cbAuthData,
+                                void const *pvPlainText, size_t cbPlainText,
+                                void *pvEncrypted, size_t cbEncrypted, size_t *pcbEncrypted,
+                                void *pvTag, size_t cbTag, size_t *pcbTag);
+RTDECL(int) RTCrCipherDecryptEx(RTCRCIPHER hCipher, void const *pvKey, size_t cbKey,
+                                void const *pvInitVector, size_t cbInitVector,
+                                void const *pvAuthData, size_t cbAuthData,
+                                void *pvTag, size_t cbTag,
+                                void const *pvEncrypted, size_t cbEncrypted,
+                                void *pvPlainText, size_t cbPlainText, size_t *pcbPlainText);
 
 /** @} */
 
