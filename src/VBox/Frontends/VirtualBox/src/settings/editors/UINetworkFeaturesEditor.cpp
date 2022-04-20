@@ -297,7 +297,7 @@ void UINetworkFeaturesEditor::sltHandleAdvancedButtonStateChange()
     /* Update widget visibility: */
     m_pWidgetSettings->setVisible(fExpanded);
     /* Notify listeners about the button state change: */
-    emit sigNotifyAdvancedButtonStateChange(fExpanded);
+    emit sigAdvancedButtonStateChange(fExpanded);
 }
 
 void UINetworkFeaturesEditor::sltOpenPortForwardingDlg()

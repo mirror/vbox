@@ -66,8 +66,8 @@ public:
 
  public slots:
 
-    /** Handles particular tab update. */
-    void sltHandleTabUpdate();
+    /** Handles adapter alternative name change. */
+    void sltHandleAlternativeNameChange();
 
 protected:
 

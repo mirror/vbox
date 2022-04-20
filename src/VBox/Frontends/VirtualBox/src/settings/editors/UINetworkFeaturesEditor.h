@@ -46,7 +46,7 @@ class SHARED_LIBRARY_STUFF UINetworkFeaturesEditor : public QIWithRetranslateUI<
 signals:
 
     /** Notifies about the advanced button state change to @a fExpanded. */
-    void sigNotifyAdvancedButtonStateChange(bool fExpanded);
+    void sigAdvancedButtonStateChange(bool fExpanded);
     /** Notifies about MAC address changed. */
     void sigMACAddressChanged();
 
