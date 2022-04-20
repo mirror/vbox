@@ -67,10 +67,10 @@ public:
 protected:
     /** @name Wrapped IUpdateAgent attributes and methods
      * @{ */
-    virtual HRESULT check(ComPtr<IProgress> &aProgress);
+    virtual HRESULT check(ComPtr<IProgress> &aProgress) = 0;
     virtual HRESULT download(ComPtr<IProgress> &aProgress);
     virtual HRESULT install(ComPtr<IProgress> &aProgress);
-    virtual HRESULT rollback(void) RT_OVERRIDE;
+    virtual HRESULT rollback(void);
 
     virtual HRESULT getName(com::Utf8Str &aName);
     virtual HRESULT getOrder(ULONG *aOrder);
@@ -156,14 +156,12 @@ public:
 private:
     /** @name Implemented (pure) virtual methods from UpdateAgent.
      * @{ */
-    HRESULT check(ComPtr<IProgress> &aProgress);
+    virtual HRESULT check(ComPtr<IProgress> &aProgress);
     /** @}  */
 
-#ifdef VBOX_WITH_UPDATE_AGENT
     HRESULT i_updateAgentTask(UpdateAgentTask *pTask);
     HRESULT i_checkForUpdate(void);
     HRESULT i_checkForUpdateInner(RTHTTP hHttp, com::Utf8Str const &strUrl, com::Utf8Str const &strUserAgent);
-#endif
 };
 
 #endif /* !MAIN_INCLUDED_UpdateAgentImpl_h */

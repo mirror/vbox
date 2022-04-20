@@ -150,7 +150,7 @@ HRESULT UpdateAgent::install(ComPtr<IProgress> &aProgress)
 
 HRESULT UpdateAgent::rollback(void)
 {
-    return S_OK; /* No-op by default. */
+    return VBOX_E_NOT_SUPPORTED;
 }
 
 HRESULT UpdateAgent::getName(com::Utf8Str &aName)
