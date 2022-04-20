@@ -41,13 +41,15 @@
 #include "CFormValue.h"
 #include "CGuest.h"
 #include "CHost.h"
-#include "CHostUpdate.h"
 #include "CHostNetworkInterface.h"
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CSession.h"
 #include "CSnapshot.h"
 #include "CStringArray.h"
+#ifdef VBOX_WITH_UPDATE_AGENT
+# include "CUpdateAgent.h"
+#endif
 #include "CVFSExplorer.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
@@ -2708,9 +2710,11 @@ private slots:
 
 private:
 
-    CHostUpdate m_comUpdateChecker;
+#ifdef VBOX_WITH_UPDATE_AGENT
+    CUpdateAgent m_comUpdateHost;
+#endif
     /** Holds whether this customer has forced privelegies. */
-    bool        m_fForcedCall;
+    bool         m_fForcedCall;
 };
 
 

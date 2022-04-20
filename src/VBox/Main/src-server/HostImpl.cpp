@@ -44,7 +44,9 @@
 #include "AutoCaller.h"
 #include "LoggingNew.h"
 #include "Performance.h"
-#include "HostUpdateImpl.h"
+#ifdef VBOX_WITH_UPDATE_AGENT
+# include "UpdateAgentImpl.h"
+#endif
 
 #include "MediumImpl.h"
 #include "HostPower.h"
@@ -249,8 +251,10 @@ struct Host::Data
     /** Startup syncing of persistent config in extra data */
     bool                    fPersistentConfigUpToDate;
 
-    /** The reference to the update check handler singleton. */
-    const ComObjPtr<HostUpdate> pHostUpdate;
+#ifdef VBOX_WITH_UPDATE_AGENT
+    /** Reference to the host update agent. */
+    const ComObjPtr<HostUpdateAgent> pUpdateHost;
+#endif
 };
 
 
@@ -307,10 +311,12 @@ HRESULT Host::init(VirtualBox *aParent)
 
     m->hostDnsMonitorProxy.init(m->pParent);
 
-    hrc = unconst(m->pHostUpdate).createObject();
+#ifdef VBOX_WITH_UPDATE_AGENT
+    hrc = unconst(m->pUpdateHost).createObject();
     if (SUCCEEDED(hrc))
-        hrc = m->pHostUpdate->init(m->pParent);
+        hrc = m->pUpdateHost->init(m->pParent);
     AssertComRCReturn(hrc, hrc);
+#endif
 
 #if defined(RT_OS_WINDOWS)
     m->pHostPowerService = new HostPowerServiceWin(m->pParent);
@@ -501,11 +507,13 @@ void Host::uninit()
 
     m->hostDnsMonitorProxy.uninit();
 
-    if (m->pHostUpdate)
+#ifdef VBOX_WITH_UPDATE_AGENT
+    if (m->pUpdateHost)
     {
-        m->pHostUpdate->uninit();
-        unconst(m->pHostUpdate).setNull();
+        m->pUpdateHost->uninit();
+        unconst(m->pUpdateHost).setNull();
     }
+#endif
 
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
@@ -1991,13 +1999,28 @@ HRESULT Host::removeUSBDeviceSource(const com::Utf8Str &aId)
 #endif
 }
 
-
-HRESULT Host::getUpdate(ComPtr<IHostUpdate> &aUpdate)
+HRESULT Host::getUpdateHost(ComPtr<IUpdateAgent> &aUpdate)
 {
-    HRESULT hrc = m->pHostUpdate.queryInterfaceTo(aUpdate.asOutParam());
+#ifdef VBOX_WITH_UPDATE_AGENT
+    HRESULT hrc = m->pUpdateHost.queryInterfaceTo(aUpdate.asOutParam());
     return hrc;
+#else
+    RT_NOREF(aUpdate);
+    ReturnComNotImplemented();
+#endif
 }
 
+HRESULT Host::getUpdateExtPack(ComPtr<IUpdateAgent> &aUpdate)
+{
+    RT_NOREF(aUpdate);
+    ReturnComNotImplemented();
+}
+
+HRESULT Host::getUpdateGuestAdditions(ComPtr<IUpdateAgent> &aUpdate)
+{
+    RT_NOREF(aUpdate);
+    ReturnComNotImplemented();
+}
 
 HRESULT  Host::getHostDrives(std::vector<ComPtr<IHostDrive> > &aHostDrives)
 {
@@ -2066,13 +2089,15 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
 
 HRESULT Host::i_saveSettings(settings::Host &data)
 {
-#ifdef VBOX_WITH_USB
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    HRESULT rc;
+
+#ifdef VBOX_WITH_USB
     data.llUSBDeviceFilters.clear();
     data.llUSBDeviceSources.clear();
 
@@ -2086,12 +2111,19 @@ HRESULT Host::i_saveSettings(settings::Host &data)
         data.llUSBDeviceFilters.push_back(f);
     }
 
-    return m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
+    rc = m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
+    ComAssertComRCRet(rc, rc);
 #else
     RT_NOREF(data);
-    return S_OK;
 #endif /* VBOX_WITH_USB */
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+    rc = m->pUpdateHost->i_saveSettings(data.updateHost);
+    ComAssertComRCRet(rc, rc);
+    /** @todo Add handling for ExtPack and Guest Additions updates here later. See @bugref{7983}. */
+#endif
+
+    return S_OK;
 }
 
 /**

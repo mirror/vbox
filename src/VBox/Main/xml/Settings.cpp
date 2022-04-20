@@ -1637,15 +1637,22 @@ SystemProperties::SystemProperties()
     : uProxyMode(ProxyMode_System)
     , uLogHistoryCount(3)
     , fExclusiveHwVirt(true)
-    , fVBoxUpdateEnabled(true)
-    , uVBoxUpdateCount(0)
-    , uVBoxUpdateFrequency(1)
-    , uVBoxUpdateTarget(VBoxUpdateTarget_Stable)
 {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
     fExclusiveHwVirt = false;
 #endif
 }
+
+#ifdef VBOX_WITH_UPDATE_AGENT
+UpdateAgent::UpdateAgent()
+   : fEnabled(false)
+   , enmChannel(UpdateChannel_Stable)
+   , uCheckFreqSeconds(RT_SEC_1DAY)
+   , enmProxyMode(ProxyMode_NoProxy)
+   , uCheckCount(0)
+{
+}
+#endif /* VBOX_WITH_UPDATE_AGENT */
 
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
@@ -2331,14 +2338,37 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         if (!pelmGlobalChild->getAttributeValue("proxyMode", systemProperties.uProxyMode))
                             fCopyProxySettingsFromExtraData = true;
                         pelmGlobalChild->getAttributeValue("proxyUrl", systemProperties.strProxyUrl);
-                        pelmGlobalChild->getAttributeValue("updateEnabled", systemProperties.fVBoxUpdateEnabled);
-                        pelmGlobalChild->getAttributeValue("updateCount", systemProperties.uVBoxUpdateCount);
-                        pelmGlobalChild->getAttributeValue("updateFrequency", systemProperties.uVBoxUpdateFrequency);
-                        pelmGlobalChild->getAttributeValue("updateTarget", systemProperties.uVBoxUpdateTarget);
-                        pelmGlobalChild->getAttributeValue("updateLastCheckDate",
-                            systemProperties.strVBoxUpdateLastCheckDate);
                         pelmGlobalChild->getAttributeValue("LanguageId", systemProperties.strLanguageId);
                     }
+#ifdef VBOX_WITH_UPDATE_AGENT
+                    else if (pelmGlobalChild->nameEquals("Updates"))
+                    {
+                        /* We keep the updates configuration as part of the host for now, as the API exposes the IHost::updateHost attribute,
+                         * but use an own "Updates" branch in the XML for better structurizing stuff in the future. */
+                        UpdateAgent &updateHost = host.updateHost;
+
+                        xml::NodesLoop nlLevel4(*pelmGlobalChild);
+                        const xml::ElementNode *pelmLevel4Child;
+                        while ((pelmLevel4Child = nlLevel4.forAllNodes()))
+                        {
+                            if (pelmLevel4Child->nameEquals("Host"))
+                            {
+                                pelmLevel4Child->getAttributeValue("enabled", updateHost.fEnabled);
+                                pelmLevel4Child->getAttributeValue("channel", (uint32_t&)updateHost.enmChannel);
+                                pelmLevel4Child->getAttributeValue("checkFrequency", updateHost.uCheckFreqSeconds);
+                                pelmLevel4Child->getAttributeValue("repoUrl", updateHost.strRepoUrl);
+                                pelmLevel4Child->getAttributeValue("proxyMode", (uint32_t&)updateHost.enmProxyMode);
+                                pelmLevel4Child->getAttributeValue("proxyUrl", (uint32_t&)updateHost.enmProxyMode);
+                                pelmLevel4Child->getAttributeValue("lastCheckDate", updateHost.strLastCheckDate);
+                                pelmLevel4Child->getAttributeValue("checkCount", updateHost.uCheckCount);
+                            }
+                            /** @todo Add update settings for ExtPack and Guest Additions here later. See @bugref{7983}. */
+                        }
+
+                        /* Global enabled switch for updates. Currently bound to host updates, as this is the only update we have so far. */
+                        pelmGlobalChild->getAttributeValue("enabled", updateHost.fEnabled);
+                    }
+#endif
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
                     else if (pelmGlobalChild->nameEquals("MachineRegistry"))
@@ -2560,6 +2590,29 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     }
 #endif /* VBOX_WITH_CLOUD_NET */
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+    /* We keep the updates configuration as part of the host for now, as the API exposes the IHost::updateHost attribute,
+     * but use an own "Updates" branch in the XML for better structurizing stuff in the future. */
+    UpdateAgent &updateHost = host.updateHost;
+
+    xml::ElementNode *pelmUpdates = pelmGlobal->createChild("Updates");
+    /* Global enabled switch for updates. Currently bound to host updates, as this is the only update we have so far. */
+    pelmUpdates->setAttribute("enabled", updateHost.fEnabled);
+
+    xml::ElementNode *pelmUpdateHost = pelmUpdates->createChild("Host");
+    pelmUpdateHost->setAttribute("enabled", updateHost.fEnabled);
+    pelmUpdateHost->setAttribute("channel", (int32_t)updateHost.enmChannel);
+    pelmUpdateHost->setAttribute("checkFrequency", updateHost.uCheckFreqSeconds);
+    if (updateHost.strRepoUrl.length())
+        pelmUpdateHost->setAttribute("repoUrl", updateHost.strRepoUrl);
+    pelmUpdateHost->setAttribute("proxyMode", (int32_t)updateHost.enmProxyMode);
+    if (updateHost.strProxyUrl.length())
+        pelmUpdateHost->setAttribute("proxyUrl", updateHost.strProxyUrl);
+    if (updateHost.strLastCheckDate.length())
+        pelmUpdateHost->setAttribute("lastCheckDate", updateHost.strLastCheckDate);
+    pelmUpdateHost->setAttribute("checkCount", updateHost.uCheckCount);
+    /** @todo Add update settings for ExtPack and Guest Additions here later. See @bugref{7983}. */
+#endif
 
     xml::ElementNode *pelmSysProps = pelmGlobal->createChild("SystemProperties");
     if (systemProperties.strDefaultMachineFolder.length())
@@ -2583,12 +2636,6 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("proxyUrl", systemProperties.strProxyUrl);
     pelmSysProps->setAttribute("proxyMode", systemProperties.uProxyMode);
     pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
-    pelmSysProps->setAttribute("updateEnabled", systemProperties.fVBoxUpdateEnabled);
-    pelmSysProps->setAttribute("updateCount", systemProperties.uVBoxUpdateCount);
-    pelmSysProps->setAttribute("updateFrequency", systemProperties.uVBoxUpdateFrequency);
-    pelmSysProps->setAttribute("updateTarget", systemProperties.uVBoxUpdateTarget);
-    if (systemProperties.strVBoxUpdateLastCheckDate.length())
-        pelmSysProps->setAttribute("updateLastCheckDate", systemProperties.strVBoxUpdateLastCheckDate);
     if (systemProperties.strLanguageId.isNotEmpty())
         pelmSysProps->setAttribute("LanguageId", systemProperties.strLanguageId);
 

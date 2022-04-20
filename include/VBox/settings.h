@@ -301,10 +301,30 @@ struct USBDeviceSource
 
 typedef std::list<USBDeviceSource> USBDeviceSourcesList;
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+struct UpdateAgent
+{
+    UpdateAgent();
+
+    bool                    fEnabled;
+    UpdateChannel_T         enmChannel;
+    uint32_t                uCheckFreqSeconds;
+    com::Utf8Str            strRepoUrl;
+    ProxyMode_T             enmProxyMode;
+    com::Utf8Str            strProxyUrl;
+    com::Utf8Str            strLastCheckDate;
+    uint32_t                uCheckCount;
+};
+#endif /* VBOX_WITH_UPDATE_AGENT */
+
 struct Host
 {
     USBDeviceFiltersList    llUSBDeviceFilters;
     USBDeviceSourcesList    llUSBDeviceSources;
+#ifdef VBOX_WITH_UPDATE_AGENT
+    UpdateAgent             updateHost;
+    /** @todo Add handling for ExtPack and Guest Additions updates here later. See @bugref{7983}. */
+#endif /* VBOX_WITH_UPDATE_AGENT */
 };
 
 struct SystemProperties
@@ -325,11 +345,6 @@ struct SystemProperties
     uint32_t                uProxyMode; /**< ProxyMode_T */
     uint32_t                uLogHistoryCount;
     bool                    fExclusiveHwVirt;
-    bool                    fVBoxUpdateEnabled;
-    uint32_t                uVBoxUpdateCount;
-    uint32_t                uVBoxUpdateFrequency;
-    uint32_t                uVBoxUpdateTarget; /**< VBoxUpdateTarget_T */
-    com::Utf8Str            strVBoxUpdateLastCheckDate;
     com::Utf8Str            strLanguageId;
 };
 

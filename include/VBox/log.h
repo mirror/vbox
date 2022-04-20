@@ -508,8 +508,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_HOSTNETWORKINTERFACE,
     /** Main group, IHostOnlyNetwork. */
     LOG_GROUP_MAIN_HOSTONLYNETWORK,
-    /** Main group, IHostUpdate. */
-    LOG_GROUP_MAIN_HOSTUPDATE,
+    /** Main group, IHostUpdateAgent. */
+    LOG_GROUP_MAIN_HOSTUPDATEAGENT,
     /** Main group, IHostUSBDevice. */
     LOG_GROUP_MAIN_HOSTUSBDEVICE,
     /** Main group, IHostUSBDeviceFilter. */
@@ -602,6 +602,18 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_UEFIVARIABLESTORE,
     /** Main group, IUnattended. */
     LOG_GROUP_MAIN_UNATTENDED,
+    /** Main group, IUpdateAgent. */
+    LOG_GROUP_MAIN_UPDATEAGENT,
+    /** Main group, IUpdateAgentAvailableEvent. */
+    LOG_GROUP_MAIN_UPDATEAGENTAVAILABLEEVENT,
+    /** Main group, IUpdateAgentErrorEvent. */
+    LOG_GROUP_MAIN_UPDATEAGENTERROREVENT,
+    /** Main group, IUpdateAgentEvent. */
+    LOG_GROUP_MAIN_UPDATEAGENTEVENT,
+    /** Main group, IUpdateAgentSettingsChangedEvent. */
+    LOG_GROUP_MAIN_UPDATEAGENTSETTINGSCHANGEDEVENT,
+    /** Main group, IUpdateAgentStateChangedEvent. */
+    LOG_GROUP_MAIN_UPDATEAGENTSTATECHANGEDEVENT,
     /** Main group, IUSBController. */
     LOG_GROUP_MAIN_USBCONTROLLER,
     /** Main group, IUSBDevice. */
@@ -1036,7 +1048,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_HOSTDRIVEPARTITION", \
     "MAIN_HOSTNETWORKINTERFACE", \
     "MAIN_HOSTONLYNETWORK", \
-    "MAIN_HOSTUPDATE", \
+    "MAIN_HOSTUPDATEAGENT", \
     "MAIN_HOSTUSBDEVICE", \
     "MAIN_HOSTUSBDEVICEFILTER", \
     "MAIN_HOSTVIDEOINPUTDEVICE", \
@@ -1083,6 +1095,12 @@ typedef enum VBOXLOGGROUP
     "MAIN_TRUSTEDPLATFORMMODULE", \
     "MAIN_UEFIVARIABLESTORE", \
     "MAIN_UNATTENDED", \
+    "MAIN_UPDATEAGENT", \
+    "MAIN_UPDATEAGENTAVAILABLEEVENT", \
+    "MAIN_UPDATEAGENTERROREVENT", \
+    "MAIN_UPDATEAGENTEVENT", \
+    "MAIN_UPDATEAGENTSETTINGSCHANGEDEVENT", \
+    "MAIN_UPDATEAGENTSTATECHANGEDEVENT", \
     "MAIN_USBCONTROLLER", \
     "MAIN_USBDEVICE", \
     "MAIN_USBDEVICEFILTER", \

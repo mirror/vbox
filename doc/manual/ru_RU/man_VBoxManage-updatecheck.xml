@@ -40,17 +40,17 @@
       <command>VBoxManage updatecheck perform</command>
       <arg>--machine-readable</arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
-      <command>VBoxManage updatecheck getsettings</command>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-list">
+      <command>VBoxManage updatecheck list</command>
         <arg>--machine-readable</arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modifysettings">
-      <command>VBoxManage updatecheck modifysettings</command>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modify">
+      <command>VBoxManage updatecheck modify</command>
       <group>
         <arg choice="plain">--disable</arg>
         <arg choice="plain">--enable</arg>
       </group>
-      <arg>--target=<replaceable>stable | withbetas | allreleases</replaceable></arg>
+      <arg>--channel=<replaceable>stable | withbetas | all</replaceable></arg>
       <arg>--frequency=<replaceable>дни</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -75,8 +75,8 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-updatecheck-getsettings">
-      <title>updatecheck getsettings</title>
+    <refsect2 id="vboxmanage-updatecheck-list">
+      <title>updatecheck list</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Отображает текущие настройки, используемый при проверке новой версии VirtualBox.
@@ -88,11 +88,11 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-updatecheck-modifysettings">
-      <title>updatecheck modifysettings</title>
+    <refsect2 id="vboxmanage-updatecheck-modify">
+      <title>updatecheck modify</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Изменяет настройки, используемые при проверке новой версии VirtaulBox.
+        Изменяет настройки, используемые при проверке новой версии VirtualBox.
       </para>
       <variablelist>
         <varlistentry>
@@ -102,7 +102,7 @@
           <term><option>--disable</option></term><listitem><para>Отключает службу проверки обновлений.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--target=stable | withbetas | allreleases</option></term>
+          <term><option>--channel=stable | withbetas | all</option></term>
           <listitem><para>Предпочитаемый тип выпуска, используемый при определении доступности новой версии VirtualBox. По умолчанию 'stable'.</para>
           <variablelist>
             <varlistentry>
@@ -110,7 +110,7 @@
              <listitem><para>Проверяет на новые стабильные выпуски (корректирующие и минорные выпуски внутри того же самого мажорного выпуска) VirtualBox.</para> </listitem>
             </varlistentry>
             <varlistentry>
-             <term><option>allreleases</option></term>
+             <term><option>all</option></term>
              <listitem><para>Проверяет на новые стабильные выпуски (корректирующие и минорные выпуски внутри того же самого мажорного выпуска), а также мажорные выпуски VirtualBox.</para></listitem>
             </varlistentry>
             <varlistentry>
@@ -130,4 +130,3 @@
   </refsect1>
 
 </refentry>
-

@@ -289,8 +289,10 @@ RTEXITCODE handleCloudShowVMInfo(HandlerArg *a, int iFirst,
                                  const char *pcszProviderName,
                                  const char *pcszProfileName);
 
+#ifdef VBOX_WITH_UPDATE_AGENT
 /* VBoxManageUpdateCheck.cpp */
 RTEXITCODE handleUpdateCheck(HandlerArg *a);
+#endif
 
 /* VBoxManageModifyNvram.cpp */
 RTEXITCODE handleModifyNvram(HandlerArg *a);

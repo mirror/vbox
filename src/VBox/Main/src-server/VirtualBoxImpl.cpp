@@ -79,6 +79,9 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+#ifdef VBOX_WITH_UPDATE_AGENT
+# include "UpdateAgentImpl.h"
+#endif
 #include "EventImpl.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"

@@ -11033,68 +11033,396 @@
   </interface>
 
   <enum
-    name="UpdateCheckType"
-    uuid="ac34bb91-6739-4791-b30f-ce84e57928bb"
+    name="UpdateChannel"
+    uuid="9f1562a5-e47a-496b-a818-66776f06ce40"
     >
-    <desc>
-      Which type of software to check whether a new version exists.
-    </desc>
-    <const name="None"              value="0">
-      <desc>No flags specified. Do not use this.</desc>
+    <const name="Invalid"     value="0">
+      <desc>No channel specified. Do not use this.</desc>
     </const>
-    <const name="VirtualBox"        value="1"/>
-    <const name="ExtensionPack"     value="2"/>
-    <const name="GuestAdditions"    value="3"/>
+    <const name="Stable"      value="1">
+      <desc>All stable releases (maintenance and minor releases within the same major release)</desc>
+    </const>
+    <const name="All"         value="2">
+      <desc>All stable releases, including major versions.</desc>
+    </const>
+    <const name="WithBetas"   value="3">
+      <desc>All stable and major releases, including beta versions.</desc>
+    </const>
+    <const name="WithTesting" value="4">
+      <desc>All stable, major and beta releases, including testing versions.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="UpdateSeverity"
+    uuid="359a5fee-8a06-4306-8068-2f2dd5cde06f"
+    >
+    <const name="Invalid"  value="0">
+      <desc>No severity specified. Do not use this.</desc>
+    </const>
+    <const name="Critical" value="1">
+      <desc>Update contains critical patches.</desc>
+    </const>
+    <const name="Major"    value="2">
+      <desc>Update contains a major version.</desc>
+    </const>
+    <const name="Minor"    value="3">
+      <desc>Update contains a minor version.</desc>
+    </const>
+    <const name="Testing"  value="4">
+      <desc>Update contains a testing version. Use with caution!</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="UpdateState"
+    uuid="6623e363-c892-45f8-80cb-4e8ffd9b4e60"
+    >
+    <const name="Invalid"         value="0">
+        <desc>Invalid / not set update state.</desc>
+    </const>
+    <const name="Available"       value="1">
+        <desc>An uppdate is available.</desc>
+    </const>
+    <const name="NotAvailable"    value="2">
+        <desc>No update available.</desc>
+    </const>
+    <const name="Downloading"     value="3">
+        <desc>Update is being downloaded currently.</desc>
+    </const>
+    <const name="Downloaded"      value="4">
+        <desc>Update has been successfully downloaded.</desc>
+    </const>
+    <const name="Installing"      value="5">
+        <desc>Update is being installed currently.</desc>
+    </const>
+    <const name="Installed"       value="6">
+        <desc>Update has been successfully installed.</desc>
+    </const>
+    <const name="UserInteraction" value="7">
+        <desc>Update requires user interaction to continue.</desc>
+    </const>
+    <const name="Canceled"        value="8">
+        <desc>Update has been canceled.</desc>
+    </const>
+    <const name="Maintenance"     value="9">
+        <desc>Update service currently is in maintenance mode.</desc>
+    </const>
+    <const name="Error"           value="10">
+        <desc>An error occurred while updating.</desc>
+    </const>
   </enum>
 
   <interface
-    name="IHostUpdate" extends="$unknown"
-    uuid="6fa2671b-0547-448e-bc7c-94e9e173bf57"
+    name="IUpdateAgent" extends="$unknown"
+    uuid="de87048a-036c-4a27-a0f8-73b51e66c2ca"
     wsmap="managed"
     rest="managed"
     reservedMethods="12" reservedAttributes="24"
     >
 
     <desc>
-      Represents the state of the update checking logic (a singleton returned
-      by <link to="IHost::update" /> attribute).
+      Abstract parent interface for handling updateable software components.
     </desc>
 
-    <method name="updateCheck">
+    <method name="check">
       <desc>
-        Check for a newer version of software based on the 'checkType' value.
+        Checks for an update.
       </desc>
-      <param name="checkType" type="UpdateCheckType" dir="in">
-        <desc>The type of software to check.</desc>
-      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track operation completion.</desc>
       </param>
     </method>
 
-    <attribute name="updateResponse" type="boolean" readonly="yes">
+    <method name="download">
       <desc>
-        The response from the <link to="IHostUpdate::updateCheck"/> method.
+        Downloads the update.
+      </desc>
+      <result name="VBOX_E_NOT_SUPPORTED">
+        Downloading update not supported.
+      </result>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="install">
+      <desc>
+        Installs the update.
+      </desc>
+      <result name="VBOX_E_NOT_SUPPORTED">
+        Installing update not supported.
+      </result>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="rollback">
+      <desc>
+        Rolls back installing the update.
+      </desc>
+      <result name="VBOX_E_NOT_SUPPORTED">
+        Rolling back update not supported.
+      </result>
+    </method>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Name of the update component.
       </desc>
     </attribute>
 
-    <attribute name="updateVersion" type="wstring" readonly="yes">
+    <attribute name="order" type="unsigned long" readonly="yes">
       <desc>
-       The newer version of the software returned by calling the update check
-       <link to="IHostUpdate::updateCheck"/> method.
+        Order hint the update component needs to run at, in conjunction with other update components.
+      </desc>
+      <result name="0">
+        No order preferred / disabled.
+      </result>
+      <note>
+        Lower numbers mean higher priority. 0 means no order or disabled.
+      </note>
+    </attribute>
+
+    <attribute name="dependsOn" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of other update component names this component depends on before being able to get installed.
+      </desc>
+      <note>
+        Ordered entries, highest priority first. No dependencies when array is empty.
+        Dependency entries also can contain a minimum version number after the update component name, separated by an "@",
+        e.g. "Guest Additions@7.1.0_BETA2".
+      </note>
+    </attribute>
+
+    <attribute name="version" type="wstring" readonly="yes">
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+        Result not available yet.
+      </result>
+      <desc>
+        Version the update contains.
       </desc>
     </attribute>
 
-    <attribute name="updateURL" type="wstring" readonly="yes">
+    <attribute name="downloadUrl" type="wstring" readonly="yes">
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+        Result not available yet.
+      </result>
       <desc>
-       The download URL of the newer software version returned by calling the
-       update check <link to="IHostUpdate::updateCheck"/> method.
+        Download URL of the update.
       </desc>
     </attribute>
 
-    <attribute name="updateCheckNeeded" type="boolean" readonly="yes">
+    <attribute name="webUrl" type="wstring" readonly="yes">
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+        Result not available yet.
+      </result>
       <desc>
-        Is it time to check for a newer version of software?
+        Web URL of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="releaseNotes" type="wstring" readonly="yes">
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+        Result not available yet.
+      </result>
+      <desc>
+        Release notes of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="enabled" type="boolean" readonly="no">
+      <desc>
+        Enables or disables the update component.
+      </desc>
+    </attribute>
+
+    <attribute name="hidden" type="boolean" readonly="yes">
+      <desc>
+        Whether the update component shall be hidden from the user or not.
+      </desc>
+    </attribute>
+
+    <attribute name="state" type="UpdateState" readonly="yes">
+      <desc>
+        Returns the current update state.
+      </desc>
+    </attribute>
+
+    <attribute name="checkFrequency" type="unsigned long" readonly="no">
+      <desc>
+        The update check frequency (in seconds).
+      </desc>
+    </attribute>
+
+    <attribute name="channel" type="UpdateChannel" readonly="no">
+      <desc>
+        Update channel to use for checking for updates.
+      </desc>
+    </attribute>
+
+    <attribute name="repositoryURL" type="wstring" readonly="no">
+      <desc>
+        Update repository URL to use for retrieving the update.
+      </desc>
+      <note>
+        Only repositories with the https:// URL scheme are allowed.
+      </note>
+    </attribute>
+
+    <attribute name="proxyMode" type="ProxyMode" readonly="no">
+      <desc>
+        Proxy mode to use.
+      </desc>
+    </attribute>
+
+    <attribute name="proxyURL" type="wstring" readonly="no">
+      <desc>
+        Proxy URL to use.
+      </desc>
+    </attribute>
+
+    <attribute name="lastCheckDate" type="wstring" readonly="yes">
+      <desc>
+        Date of last update check.
+      </desc>
+      <note>
+        Uses ISO date.
+      </note>
+    </attribute>
+
+    <attribute name="checkCount" type="unsigned long" readonly="yes">
+      <desc>
+        How many times the update check has happened already.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IHostUpdateAgent" extends="IUpdateAgent"
+    uuid="26934cbf-5bb6-4a27-9599-83ca057905d4"
+    wsmap="managed"
+    reservedMethods="12" reservedAttributes="24"
+    >
+    <desc>
+      Implementation of the <link to="IUpdateAgent" /> object
+      for VirtualBox host updates.
+    </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="IUpdateAgentEvent" extends="$unknown"
+    uuid="aa1987dc-6402-4e3c-a0e9-68e87d301a83"
+    wsmap="managed"
+    reservedAttributes="4"
+    >
+    <desc>
+      Abstract base interface for update agent events.
+    </desc>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for update agent events.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IUpdateAgentSettingsChangedEvent" extends="IUpdateAgentEvent"
+    uuid="7bfd3718-b2ad-4112-8a86-328ebeb7b091"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      Notification when update agent settings have been changed.
+    </desc>
+  </interface>
+
+  <interface
+    name="IUpdateAgentErrorEvent" extends="IUpdateAgentEvent"
+    uuid="2dad1ad8-78be-441d-b4fa-9cff25ee16b2"
+    wsmap="managed"
+    reservedAttributes="4"
+    >
+    <desc>
+    </desc>
+
+    <attribute name="msg" type="wstring" readonly="yes">
+      <desc>
+        Error message in human readable format.
+      </desc>
+    </attribute>
+
+    <attribute name="rcError" type="long" readonly="yes">
+      <desc>
+        IPRT-style error code.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IUpdateAgentAvailableEvent" extends="IUpdateAgentEvent"
+    uuid="7b931bfa-3b2b-4220-87ce-86cb0dee7ed1"
+    wsmap="managed"
+    reservedAttributes="4"
+    >
+    <desc>
+      Notification when an update is available.
+    </desc>
+
+    <attribute name="version" type="wstring" readonly="yes">
+      <desc>
+        Version of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="channel" type="UpdateChannel" readonly="yes">
+      <desc>
+        Channel containing the update.
+      </desc>
+    </attribute>
+
+    <attribute name="severity" type="UpdateSeverity" readonly="yes">
+      <desc>
+        Severity of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="downloadURL" type="wstring" readonly="yes">
+      <desc>
+        Download URL of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="webURL" type="wstring" readonly="yes">
+      <desc>
+        Web URL of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="releaseNotes" type="wstring" readonly="yes">
+      <desc>
+        Release notes of the update.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IUpdateAgentStateChangedEvent" extends="IUpdateAgentEvent"
+    uuid="7da1b997-10ea-4690-99ff-df78bf309164"
+    wsmap="managed"
+    reservedAttributes="4"
+    >
+    <desc>
+    </desc>
+
+    <attribute name="state" type="UpdateState" readonly="yes">
+      <desc>
       </desc>
     </attribute>
 
@@ -11779,8 +12107,16 @@
       </param>
     </method>
 
-    <attribute name="update" type="IHostUpdate" readonly="yes">
-      <desc>The check for newer software object (singleton).</desc>
+    <attribute name="updateHost" type="IUpdateAgent" readonly="yes">
+      <desc>Checks for new VirtualBox host versions.</desc>
+    </attribute>
+
+    <attribute name="updateExtPack" type="IUpdateAgent" readonly="yes">
+      <desc>Checks for new VirtualBox Extension Pack versions.</desc>
+    </attribute>
+
+    <attribute name="updateGuestAdditions" type="IUpdateAgent" readonly="yes">
+        <desc>Checks for new Guest Additions versions.</desc>
     </attribute>
 
   </interface>
@@ -11827,23 +12163,10 @@
     </const>
   </enum>
 
-  <enum name="VBoxUpdateTarget" uuid="900d4a76-7b08-4af8-a453-f331e783eaee">
-    <desc> The preferred release type used for determining whether a newer version of VirtualBox is available. <link to="ISystemProperties::VBoxUpdateTarget"/></desc>
-    <const name="Stable" value="0">
-      <desc>Stable releases: new maintenance and minor releases within the same major release version.  This is the default.</desc>
-    </const>
-    <const name="AllReleases" value="1">
-      <desc>All releases: new maintenance, minor, and major releases.</desc>
-    </const>
-    <const name="WithBetas" value="2">
-      <desc>With betas: new maintenance, minor, and major releases as well as beta releases.</desc>
-    </const>
-  </enum>
-
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="31cdb11d-9bb0-455a-b2ca-a1a5b1177912"
+    uuid="e6bf9165-6685-4ebe-96cd-9c1b7ab7f776"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12370,35 +12693,6 @@
       <desc>
         Returns an array of officially supported values for enum <link to="ChipsetType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="VBoxUpdateEnabled" type="boolean">
-      <desc> Is the VirtualBox update check enabled?</desc>
-    </attribute>
-
-    <attribute name="VBoxUpdateFrequency" type="unsigned long">
-      <desc> How often should a check for a newer version of VirtualBox be made? (in days)</desc>
-    </attribute>
-
-    <attribute name="VBoxUpdateLastCheckDate" type="wstring">
-      <desc>
-        When was the update check last performed? If updating this attribute the
-        string must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
-      </desc>
-    </attribute>
-
-    <attribute name="VBoxUpdateTarget" type="VBoxUpdateTarget">
-      <desc> The preferred release type used for determining whether a newer version of VirtualBox is available.</desc>
-    </attribute>
-
-    <attribute name="VBoxUpdateCount" type="unsigned long">
-      <desc> The count of update check attempts.</desc>
-    </attribute>
-
-    <attribute name="supportedVBoxUpdateTargetTypes" type="VBoxUpdateTarget" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="VBoxUpdateTarget"/>.
       </desc>
     </attribute>
 

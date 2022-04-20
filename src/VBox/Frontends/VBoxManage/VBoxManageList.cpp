@@ -874,37 +874,6 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("Proxy Mode:                      %s\n"), psz);
     systemProperties->COMGETTER(ProxyURL)(str.asOutParam());
     RTPrintf(List::tr("Proxy URL:                       %ls\n"), str.raw());
-    systemProperties->COMGETTER(VBoxUpdateEnabled)(&fValue);
-    RTPrintf(List::tr("Update check enabled:            %s\n"), fValue ? List::tr("yes") : List::tr("no"));
-    systemProperties->COMGETTER(VBoxUpdateCount)(&ulValue);
-    RTPrintf(List::tr("Update check count:              %u\n"), ulValue);
-    systemProperties->COMGETTER(VBoxUpdateFrequency)(&ulValue);
-    if (ulValue == 0)
-        RTPrintf(List::tr("Update check frequency:          never\n"));
-    else if (ulValue == 1)
-        RTPrintf(List::tr("Update check frequency:          every day\n"));
-    else
-        RTPrintf(List::tr("Update check frequency:          every %u days\n", "", ulValue), ulValue);
-    VBoxUpdateTarget_T enmVBoxUpdateTarget;
-    systemProperties->COMGETTER(VBoxUpdateTarget)(&enmVBoxUpdateTarget);
-    switch (enmVBoxUpdateTarget)
-    {
-        case VBoxUpdateTarget_Stable:
-            psz = List::tr("Stable: new minor and maintenance releases");
-            break;
-        case VBoxUpdateTarget_AllReleases:
-            psz = List::tr("All releases: new minor, maintenance, and major releases");
-            break;
-        case VBoxUpdateTarget_WithBetas:
-            psz = List::tr("With Betas: new minor, maintenance, major, and beta releases");
-            break;
-        default:
-            psz = List::tr("Unset");
-            break;
-    }
-    RTPrintf(List::tr("Update check target:             %s\n"), psz);
-    systemProperties->COMGETTER(VBoxUpdateLastCheckDate)(str.asOutParam());
-    RTPrintf(List::tr("Last check date:                 %ls\n"), str.raw());
 #ifdef VBOX_WITH_MAIN_NLS
     systemProperties->COMGETTER(LanguageId)(str.asOutParam());
     RTPrintf(List::tr("User language:                   %ls\n"), str.raw());
@@ -912,6 +881,66 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     return S_OK;
 }
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+static HRESULT listUpdateAgentConfig(ComPtr<IUpdateAgent> ptrUpdateAgent)
+{
+    BOOL fValue;
+    ptrUpdateAgent->COMGETTER(Enabled)(&fValue);
+    RTPrintf(List::tr("Enabled:                      %s\n"), fValue ? List::tr("yes") : List::tr("no"));
+    ULONG ulValue;
+    ptrUpdateAgent->COMGETTER(CheckCount)(&ulValue);
+    RTPrintf(List::tr("Check count:                  %u\n"), ulValue);
+    ptrUpdateAgent->COMGETTER(CheckFrequency)(&ulValue);
+    if (ulValue == 0)
+        RTPrintf(List::tr("Check frequency:              never\n"));
+    else if (ulValue == 1)
+        RTPrintf(List::tr("Check frequency:              every day\n"));
+    else
+        RTPrintf(List::tr("Check frequency:              every %u days\n", "", ulValue), ulValue);
+
+    Bstr        str;
+    const char *psz;
+    UpdateChannel_T enmUpdateChannel;
+    ptrUpdateAgent->COMGETTER(Channel)(&enmUpdateChannel);
+    switch (enmUpdateChannel)
+    {
+        case UpdateChannel_Stable:
+            psz = List::tr("Stable: Maintenance and minor releases within the same major release");
+            break;
+        case UpdateChannel_All:
+            psz = List::tr("All releases: All stable releases, including major versions");
+            break;
+        case UpdateChannel_WithBetas:
+            psz = List::tr("With Betas: All stable and major releases, including beta versions");
+            break;
+        case UpdateChannel_WithTesting:
+            psz = List::tr("With Testing: All stable, major and beta releases, including testing versions");
+            break;
+        default:
+            psz = List::tr("Unset");
+            break;
+    }
+    RTPrintf(List::tr("Channel:                         %s\n"), psz);
+    ptrUpdateAgent->COMGETTER(RepositoryURL)(str.asOutParam());
+    RTPrintf(List::tr("Repository:                      %ls\n"), str.raw());
+    ptrUpdateAgent->COMGETTER(LastCheckDate)(str.asOutParam());
+    RTPrintf(List::tr("Last check date:                 %ls\n"), str.raw());
+
+    return S_OK;
+}
+
+static HRESULT listUpdateAgents(const ComPtr<IVirtualBox> &pVirtualBox)
+{
+    ComPtr<IHost> pHost;
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()), RTEXITCODE_FAILURE);
+
+    ComPtr<IUpdateAgent> pUpdateHost;
+    CHECK_ERROR2I_RET(pHost, COMGETTER(UpdateHost)(pUpdateHost.asOutParam()), RTEXITCODE_FAILURE);
+    /** @todo Add other update agents here. */
+
+    return listUpdateAgentConfig(pUpdateHost);
+}
+#endif  /* VBOX_WITH_UPDATE_AGENT */
 
 /**
  * Helper for listDhcpServers() that shows a DHCP configuration.
@@ -1882,6 +1911,9 @@ enum ListType_T
     kListUsbHost,
     kListUsbFilters,
     kListSystemProperties,
+#if defined(VBOX_WITH_UPDATE_AGENT)
+    kListUpdateAgents,
+#endif
     kListDhcpServers,
     kListExtPacks,
     kListGroups,
@@ -2166,6 +2198,11 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             rc = listSystemProperties(pVirtualBox);
             break;
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+        case kListUpdateAgents:
+            rc = listUpdateAgents(pVirtualBox);
+            break;
+#endif
         case kListDhcpServers:
             rc = listDhcpServers(pVirtualBox);
             break;
@@ -2260,6 +2297,9 @@ RTEXITCODE handleList(HandlerArg *a)
         { "usbhost",            kListUsbHost,            RTGETOPT_REQ_NOTHING },
         { "usbfilters",         kListUsbFilters,         RTGETOPT_REQ_NOTHING },
         { "systemproperties",   kListSystemProperties,   RTGETOPT_REQ_NOTHING },
+#if defined(VBOX_WITH_UPDATE_AGENT)
+        { "updates",            kListUpdateAgents,       RTGETOPT_REQ_NOTHING },
+#endif
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
         { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
@@ -2320,6 +2360,9 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListUsbHost:
             case kListUsbFilters:
             case kListSystemProperties:
+#if defined(VBOX_WITH_UPDATE_AGENT)
+            case kListUpdateAgents:
+#endif
             case kListDhcpServers:
             case kListExtPacks:
             case kListGroups:

@@ -30,7 +30,7 @@
 
   <refnamediv>
     <refname>VBoxManage-updatecheck</refname>
-    <refpurpose>Check for a newer version of VirtualBox</refpurpose>
+    <refpurpose>Checks for a newer version of VirtualBox</refpurpose>
     <refclass>&product-name;</refclass>
   </refnamediv>
 
@@ -39,17 +39,17 @@
       <command>VBoxManage updatecheck perform</command>
       <arg>--machine-readable</arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
-      <command>VBoxManage updatecheck getsettings</command>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-list">
+      <command>VBoxManage updatecheck list</command>
         <arg>--machine-readable</arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modifysettings">
-      <command>VBoxManage updatecheck modifysettings</command>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modify">
+      <command>VBoxManage updatecheck modify</command>
       <group>
         <arg choice="plain">--disable</arg>
         <arg choice="plain">--enable</arg>
       </group>
-      <arg>--target=<replaceable>stable | withbetas | allreleases</replaceable></arg>
+      <arg>--channel=<replaceable>stable | withbetas | all</replaceable></arg>
       <arg>--frequency=<replaceable>days</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -66,7 +66,7 @@
       <title>updatecheck perform</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Check if a newer version of VirtualBox is available.
+        Checks if a newer version of VirtualBox is available.
       </para>
       <variablelist>
         <varlistentry>
@@ -75,11 +75,11 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-updatecheck-getsettings">
-      <title>updatecheck getsettings</title>
+    <refsect2 id="vboxmanage-updatecheck-list">
+      <title>updatecheck list</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Display the current settings used for specifying when to check for a newer version of VirtualBox.
+        Displays the current settings used for specifying when to check for a newer version of VirtualBox.
       </para>
       <variablelist>
         <varlistentry>
@@ -88,11 +88,11 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-updatecheck-modifysettings">
-      <title>updatecheck modifysettings</title>
+    <refsect2 id="vboxmanage-updatecheck-modify">
+      <title>updatecheck modify</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Modify the settings used for specifying when to check for a newer version of VirtaulBox.
+        Modifies the settings used for specifying when to check for a newer version of VirtualBox.
       </para>
       <variablelist>
         <varlistentry>
@@ -102,27 +102,27 @@
           <term><option>--disable</option></term><listitem><para>Disable the update check service.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--target=stable | withbetas | allreleases</option></term>
+          <term><option>--channel=stable | withbetas | all</option></term>
           <listitem><para>The preferred release type used for determining whether a newer version of VirtualBox is available.  The default is 'stable'.</para>
           <variablelist>
             <varlistentry>
              <term><option>stable</option></term>
-             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release) of VirtualBox.</para> </listitem>
+             <listitem><para>Checks for newer stable releases (maintenance and minor releases within the same major release) of VirtualBox.</para> </listitem>
             </varlistentry>
             <varlistentry>
-             <term><option>allreleases</option></term>
-             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release) and major releases of VirtualBox.</para></listitem>
+             <term><option>all</option></term>
+             <listitem><para>Checks for newer stable releases (maintenance and minor releases within the same major release) and major releases of VirtualBox.</para></listitem>
             </varlistentry>
             <varlistentry>
              <term><option>withbetas</option></term>
-             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release), major releases, and beta releases of VirtualBox.</para></listitem>
+             <listitem><para>Checks for newer stable releases (maintenance and minor releases within the same major release), major releases, and beta releases of VirtualBox.</para></listitem>
             </varlistentry>
           </variablelist>
           </listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--frequency=days</option></term>
-          <listitem><para>Specify how often in days to check for a newer version of VirtualBox.</para></listitem>
+          <listitem><para>Specifies how often in days to check for a newer version of VirtualBox.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -130,4 +130,3 @@
   </refsect1>
 
 </refentry>
-

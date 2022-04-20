@@ -4315,14 +4315,21 @@ UINotificationProgressNewVersionChecker::UINotificationProgressNewVersionChecker
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressNewVersionChecker::sltHandleProgressFinished);
-    CHost comHost = uiCommon().virtualBox().GetHost();
+
+#ifdef VBOX_WITH_UPDATE_AGENT
+    CHost comHost = uiCommon().host();
     if (!comHost.isNull())
-        m_comUpdateChecker = comHost.GetUpdate();
+        m_comUpdateHost = comHost.GetUpdateHost();
+#endif /* VBOX_WITH_UPDATE_AGENT */
 }
 
 QString UINotificationProgressNewVersionChecker::name() const
 {
-    return UINotificationProgress::tr("Check for New Version ...");
+#ifdef VBOX_WITH_UPDATE_AGENT
+    if (m_comUpdateHost.isOk())
+        return UINotificationProgress::tr("Checking for new version of %s ...", m_comUpdateHost.GetName().toLocal8Bit().data());
+#endif /* VBOX_WITH_UPDATE_AGENT */
+    return UINotificationProgress::tr("Checking for new version ...");
 }
 
 QString UINotificationProgressNewVersionChecker::details() const
@@ -4332,32 +4339,37 @@ QString UINotificationProgressNewVersionChecker::details() const
 
 CProgress UINotificationProgressNewVersionChecker::createProgress(COMResult &comResult)
 {
-    if (!m_comUpdateChecker.isOk())
+#ifdef VBOX_WITH_UPDATE_AGENT
+    if (!m_comUpdateHost.isOk())
         return CProgress();
 
-    CProgress comProgress = m_comUpdateChecker.UpdateCheck(KUpdateCheckType_VirtualBox);
-    comResult = m_comUpdateChecker;
+    CProgress comProgress = m_comUpdateHost.Check();
+    comResult = m_comUpdateHost;
 
     return comProgress;
+#else
+    return CProgress();
+#endif /* VBOX_WITH_UPDATE_AGENT */
 }
 
 void UINotificationProgressNewVersionChecker::sltHandleProgressFinished()
 {
-    if (m_comUpdateChecker.isNull() && !m_comUpdateChecker.isOk())
+#ifdef VBOX_WITH_UPDATE_AGENT
+    if (m_comUpdateHost.isNull() && !m_comUpdateHost.isOk())
         return;
 
-    bool fUpdateAvailable = m_comUpdateChecker.GetUpdateResponse();
-    if (!m_comUpdateChecker.isOk())
+    bool const fUpdateAvailable = m_comUpdateHost.GetState() == UpdateState_Available; /** @todo Handle other states. */
+    if (!m_comUpdateHost.isOk())
         return;
 
     if (fUpdateAvailable)
     {
-        QString strVersion = m_comUpdateChecker.GetUpdateVersion();
-        if (!m_comUpdateChecker.isOk())
+        QString strVersion = m_comUpdateHost.GetVersion();
+        if (!m_comUpdateHost.isOk())
             return;
 
-        QString strURL = m_comUpdateChecker.GetUpdateURL();
-        if (!m_comUpdateChecker.isOk())
+        QString strURL = m_comUpdateHost.GetDownloadUrl();
+        if (!m_comUpdateHost.isOk())
             return;
 
         UINotificationMessage::showUpdateSuccess(strVersion, strURL);
@@ -4367,6 +4379,7 @@ void UINotificationProgressNewVersionChecker::sltHandleProgressFinished()
         if (m_fForcedCall)
             UINotificationMessage::showUpdateNotFound();
     }
+#endif /* VBOX_WITH_UPDATE_AGENT */
 }
 
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */

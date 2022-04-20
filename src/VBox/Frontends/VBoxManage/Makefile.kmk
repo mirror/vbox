@@ -21,6 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_ROOT)/doc/manual/Config.kmk
 
 
+## @todo r=andy Sort this stuff alphabetically!
 VBOX_COMMON_VBOXMANAGE_DEFS = \
  	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
  	$(if $(VBOX_WITH_COPYTOGUEST),VBOX_WITH_COPYTOGUEST) \
@@ -50,6 +51,7 @@ VBOX_COMMON_VBOXMANAGE_DEFS = \
  	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS) \
  	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD) \
  	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL) \
+	$(if $(VBOX_WITH_UPDATE_AGENT), VBOX_WITH_UPDATE_AGENT) \
  	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA) \
 	$(if $(VBOX_WITH_MAIN_NLS),VBOX_WITH_MAIN_NLS) \
  	$(if $(VBOX_WITH_TPM),VBOX_WITH_TPM)
@@ -90,7 +92,7 @@ ifndef VBOX_ONLY_DOCS
  	VBoxManageModifyNvram.cpp \
  	VBoxManageSnapshot.cpp \
  	VBoxManageStorageController.cpp \
- 	VBoxManageUpdateCheck.cpp \
+	 $(if $(VBOX_WITH_UPDATE_AGENT),VBoxManageUpdateCheck.cpp) \
  	VBoxManageUSB.cpp \
  	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
  	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,) \

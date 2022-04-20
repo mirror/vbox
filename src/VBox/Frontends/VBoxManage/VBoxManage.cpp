@@ -252,7 +252,9 @@ static const VBMGCMD g_aCommands[] =
     { "usbdevsource",       HELP_CMD_USBDEVSOURCE,      handleUSBDevSource,         0 },
     { "cloudprofile",       HELP_CMD_CLOUDPROFILE,      handleCloudProfile,         0 },
     { "cloud",              HELP_CMD_CLOUD,             handleCloud,                0 },
+#ifdef VBOX_WITH_UPDATE_AGENT
     { "updatecheck",        HELP_CMD_UPDATECHECK,       handleUpdateCheck,          0 },
+#endif
     { "modifynvram",        HELP_CMD_MODIFYNVRAM,       handleModifyNvram,          0 },
 };
 

@@ -999,6 +999,13 @@ endif
 if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_FUSE_PACKING = 1
 endif
+# Enables updating checking through Main.
+# Only available if cURL is being used.
+VBOX_WITH_UPDATE_AGENT = 1
+ifndef VBOX_WITH_LIBCURL
+ $(error Error: Building Update Agent without cURL (VBOX_WITH_LIBCURL not defined) not possible, sorry!)
+ VBOX_WITH_UPDATE_AGENT :=
+endif
 ## @}
 
 
