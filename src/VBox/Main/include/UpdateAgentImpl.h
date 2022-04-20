@@ -129,34 +129,34 @@ public:
 protected:
     /** @name Wrapped IUpdateAgent attributes and methods
      * @{ */
-    virtual HRESULT check(ComPtr<IProgress> &aProgress);
-    virtual HRESULT download(ComPtr<IProgress> &aProgress);
-    virtual HRESULT install(ComPtr<IProgress> &aProgress);
-    virtual HRESULT rollback(void);
+    HRESULT check(ComPtr<IProgress> &aProgress);
+    HRESULT download(ComPtr<IProgress> &aProgress);
+    HRESULT install(ComPtr<IProgress> &aProgress);
+    HRESULT rollback(void);
 
-    virtual HRESULT getName(com::Utf8Str &aName);
-    virtual HRESULT getOrder(ULONG *aOrder);
-    virtual HRESULT getDependsOn(std::vector<com::Utf8Str> &aDeps);
-    virtual HRESULT getVersion(com::Utf8Str &aVer);
-    virtual HRESULT getDownloadUrl(com::Utf8Str &aUrl);
-    virtual HRESULT getWebUrl(com::Utf8Str &aUrl);
-    virtual HRESULT getReleaseNotes(com::Utf8Str &aRelNotes);
-    virtual HRESULT getEnabled(BOOL *aEnabled);
-    virtual HRESULT setEnabled(BOOL aEnabled);
-    virtual HRESULT getHidden(BOOL *aHidden);
-    virtual HRESULT getState(UpdateState_T *aState);
-    virtual HRESULT getCheckCount(ULONG *aCount);
-    virtual HRESULT getCheckFrequency(ULONG  *aFreqSeconds);
-    virtual HRESULT setCheckFrequency(ULONG aFreqSeconds);
-    virtual HRESULT getChannel(UpdateChannel_T *aChannel);
-    virtual HRESULT setChannel(UpdateChannel_T aChannel);
-    virtual HRESULT getRepositoryURL(com::Utf8Str &aRepo);
-    virtual HRESULT setRepositoryURL(const com::Utf8Str &aRepo);
-    virtual HRESULT getProxyMode(ProxyMode_T *aMode);
-    virtual HRESULT setProxyMode(ProxyMode_T aMode);
-    virtual HRESULT getProxyURL(com::Utf8Str &aAddress);
-    virtual HRESULT setProxyURL(const com::Utf8Str &aAddress);
-    virtual HRESULT getLastCheckDate(com::Utf8Str &aData);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getOrder(ULONG *aOrder);
+    HRESULT getDependsOn(std::vector<com::Utf8Str> &aDeps);
+    HRESULT getVersion(com::Utf8Str &aVer);
+    HRESULT getDownloadUrl(com::Utf8Str &aUrl);
+    HRESULT getWebUrl(com::Utf8Str &aUrl);
+    HRESULT getReleaseNotes(com::Utf8Str &aRelNotes);
+    HRESULT getEnabled(BOOL *aEnabled);
+    HRESULT setEnabled(BOOL aEnabled);
+    HRESULT getHidden(BOOL *aHidden);
+    HRESULT getState(UpdateState_T *aState);
+    HRESULT getCheckCount(ULONG *aCount);
+    HRESULT getCheckFrequency(ULONG  *aFreqSeconds);
+    HRESULT setCheckFrequency(ULONG aFreqSeconds);
+    HRESULT getChannel(UpdateChannel_T *aChannel);
+    HRESULT setChannel(UpdateChannel_T aChannel);
+    HRESULT getRepositoryURL(com::Utf8Str &aRepo);
+    HRESULT setRepositoryURL(const com::Utf8Str &aRepo);
+    HRESULT getProxyMode(ProxyMode_T *aMode);
+    HRESULT setProxyMode(ProxyMode_T aMode);
+    HRESULT getProxyURL(com::Utf8Str &aAddress);
+    HRESULT setProxyURL(const com::Utf8Str &aAddress);
+    HRESULT getLastCheckDate(com::Utf8Str &aData);
     /** @} */
 };
 
