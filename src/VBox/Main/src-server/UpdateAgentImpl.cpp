@@ -54,7 +54,7 @@
 class UpdateAgentTask : public ThreadTask
 {
 public:
-    UpdateAgentTask(UpdateAgent *aThat, Progress *aProgress)
+    UpdateAgentTask(UpdateAgentBase *aThat, Progress *aProgress)
         : m_pParent(aThat)
         , m_pProgress(aProgress)
     {
@@ -66,7 +66,7 @@ private:
     void handler(void);
 
     /** Weak pointer to parent (update agent). */
-    UpdateAgent         *m_pParent;
+    UpdateAgentBase     *m_pParent;
     /** Smart pointer to the progress object for this job. */
     ComObjPtr<Progress>  m_pProgress;
 
@@ -75,7 +75,7 @@ private:
 
 void UpdateAgentTask::handler(void)
 {
-    UpdateAgent *pUpdateAgent = this->m_pParent;
+    UpdateAgentBase *pUpdateAgent = this->m_pParent;
     AssertPtr(pUpdateAgent);
 
     HRESULT rc = pUpdateAgent->i_updateTask(this);
@@ -91,8 +91,6 @@ void UpdateAgentTask::handler(void)
 *   Update agent base class implementation                                                                                       *
 *********************************************************************************************************************************/
 UpdateAgent::UpdateAgent()
-    : m_VirtualBox(NULL)
-    , m(new settings::UpdateAgent)
 {
 }
 
@@ -376,7 +374,7 @@ HRESULT UpdateAgent::getLastCheckDate(com::Utf8Str &aDate)
 }
 
 /* static */
-Utf8Str UpdateAgent::i_getPlatformInfo(void)
+Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
 {
     /* Prepare platform report: */
     Utf8Str strPlatform;

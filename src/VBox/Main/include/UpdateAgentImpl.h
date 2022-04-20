@@ -40,8 +40,70 @@ struct UpdateAgentTaskResult
     Utf8Str          strReleaseNotes;
 };
 
-class ATL_NO_VTABLE UpdateAgent
-    : public UpdateAgentWrap
+class UpdateAgentBase
+{
+protected: /* Not directly instancable. */
+
+    UpdateAgentBase()
+        : m_VirtualBox(NULL)
+        , m(new settings::UpdateAgent) { }
+
+    virtual ~UpdateAgentBase() { }
+
+public:
+
+    /** @name Pure virtual public methods for internal purposes only
+     *        (ensure there is a caller and a read lock before calling them!)
+     * @{ */
+    virtual HRESULT i_loadSettings(const settings::UpdateAgent &data) = 0;
+    virtual HRESULT i_saveSettings(settings::UpdateAgent &data) = 0;
+
+    virtual HRESULT i_setCheckCount(ULONG aCount) = 0;
+    virtual HRESULT i_setLastCheckDate(const com::Utf8Str &aDate) = 0;
+    /** @} */
+
+protected:
+
+    /** @name Pure virtual internal task callbacks.
+     * @{ */
+    friend UpdateAgentTask;
+    virtual DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask) = 0;
+    /** @} */
+
+    /** @name Static helper methods.
+     * @{ */
+    static Utf8Str i_getPlatformInfo(void);
+    /** @} */
+
+protected:
+    VirtualBox * const m_VirtualBox;
+
+    /** @name Data members.
+     * @{ */
+    settings::UpdateAgent *m;
+
+    struct Data
+    {
+        UpdateAgentTaskResult m_lastResult;
+
+        Utf8Str               m_strName;
+        bool                  m_fHidden;
+        UpdateState_T         m_enmState;
+        uint32_t              m_uOrder;
+
+        Data(void)
+        {
+            m_fHidden  = true;
+            m_enmState = UpdateState_Invalid;
+            m_uOrder   = UINT32_MAX;
+        }
+    } mData;
+    /** @} */
+};
+
+class ATL_NO_VTABLE UpdateAgent :
+    public UpdateAgentWrap,
+    public UpdateAgentBase
 {
 public:
     DECLARE_COMMON_CLASS_METHODS(UpdateAgent)
@@ -96,42 +158,6 @@ protected:
     virtual HRESULT setProxyURL(const com::Utf8Str &aAddress);
     virtual HRESULT getLastCheckDate(com::Utf8Str &aData);
     /** @} */
-
-    /** @name Internal task callbacks.
-     * @{ */
-    friend UpdateAgentTask;
-    virtual DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask) = 0;
-    /** @} */
-
-    /** @name Static helper methods.
-     * @{ */
-    static Utf8Str i_getPlatformInfo(void);
-    /** @} */
-
-protected:
-    VirtualBox * const m_VirtualBox;
-
-    /** @name Data members.
-     * @{ */
-    settings::UpdateAgent *m;
-
-    struct Data
-    {
-        UpdateAgentTaskResult m_lastResult;
-
-        Utf8Str               m_strName;
-        bool                  m_fHidden;
-        UpdateState_T         m_enmState;
-        uint32_t              m_uOrder;
-
-        Data(void)
-        {
-            m_fHidden  = true;
-            m_enmState = UpdateState_Invalid;
-            m_uOrder   = UINT32_MAX;
-        }
-    } mData;
-    /** @} */
 };
 
 /** @todo Put this into an own module, e.g. HostUpdateAgentImpl.[cpp|h]. */
@@ -154,9 +180,9 @@ public:
 private:
     /** @name Implemented (pure) virtual methods from UpdateAgent.
      * @{ */
-    virtual HRESULT check(ComPtr<IProgress> &aProgress) RT_OVERRIDE;
+    HRESULT check(ComPtr<IProgress> &aProgress);
 
-    virtual DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask) RT_OVERRIDE;
+    DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask);
     /** @}  */
 
     HRESULT i_checkForUpdate(void);
