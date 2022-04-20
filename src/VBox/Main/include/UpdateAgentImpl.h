@@ -156,7 +156,7 @@ public:
 private:
     /** @name Implemented (pure) virtual methods from UpdateAgent.
      * @{ */
-    HRESULT check(ComPtr<IProgress> &aProgress) RT_OVERRIDE;
+    HRESULT check(ComPtr<IProgress> &aProgress);
     /** @}  */
 
 #ifdef VBOX_WITH_UPDATE_AGENT
