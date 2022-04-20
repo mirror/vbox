@@ -11115,7 +11115,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="de87048a-036c-4a27-a0f8-73b51e66c2ca"
+    uuid="d5946b84-6e39-407e-ab41-1f6ec06146c4"
     wsmap="managed"
     rest="managed"
     reservedMethods="12" reservedAttributes="24"
@@ -11301,7 +11301,7 @@
 
   <interface
     name="IHostUpdateAgent" extends="IUpdateAgent"
-    uuid="26934cbf-5bb6-4a27-9599-83ca057905d4"
+    uuid="20711947-1eb5-4924-bf1c-03f8f29303e7"
     wsmap="managed"
     reservedMethods="12" reservedAttributes="24"
     >
