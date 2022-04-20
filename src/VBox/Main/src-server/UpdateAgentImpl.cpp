@@ -134,6 +134,13 @@ void UpdateAgent::uninit()
         return;
 }
 
+HRESULT UpdateAgent::check(ComPtr<IProgress> &aProgress)
+{
+    RT_NOREF(aProgress);
+
+    return VBOX_E_NOT_SUPPORTED;
+}
+
 HRESULT UpdateAgent::download(ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aProgress);
