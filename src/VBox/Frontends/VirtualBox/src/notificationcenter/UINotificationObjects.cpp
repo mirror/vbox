@@ -4358,7 +4358,7 @@ void UINotificationProgressNewVersionChecker::sltHandleProgressFinished()
     if (m_comUpdateHost.isNull() && !m_comUpdateHost.isOk())
         return;
 
-    bool const fUpdateAvailable = m_comUpdateHost.GetState() == UpdateState_Available; /** @todo Handle other states. */
+    bool const fUpdateAvailable = m_comUpdateHost.GetState() == KUpdateState_Available; /** @todo Handle other states. */
     if (!m_comUpdateHost.isOk())
         return;
 
