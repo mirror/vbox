@@ -632,6 +632,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:                     strResult = "SaveState"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:                      strResult = "Shutdown"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:                      strResult = "PowerOff"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_LogDialog:                     strResult = "LogDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing:                       strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:                           strResult = "All"; break;
         default:
@@ -669,6 +670,8 @@ fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QStr
         return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
     if (strRuntimeMenuMachineActionType.compare("PowerOff", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
+    if (strRuntimeMenuMachineActionType.compare("LogDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_LogDialog;
     if (strRuntimeMenuMachineActionType.compare("Nothing", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
     if (strRuntimeMenuMachineActionType.compare("All", Qt::CaseInsensitive) == 0)
@@ -923,7 +926,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDebugg
         case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics:            strResult = "Statistics"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine:           strResult = "CommandLine"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging:               strResult = "Logging"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog:             strResult = "LogDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole:   strResult = "GuestControlConsole"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All:                   strResult = "All"; break;
         default:
@@ -945,8 +947,6 @@ fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(const QSt
         return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
     if (strRuntimeMenuDebuggerActionType.compare("Logging", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
-    if (strRuntimeMenuDebuggerActionType.compare("LogDialog", Qt::CaseInsensitive) == 0)
-        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
     if (strRuntimeMenuDebuggerActionType.compare("GuestControlConsole", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole;
     if (strRuntimeMenuDebuggerActionType.compare("All", Qt::CaseInsensitive) == 0)

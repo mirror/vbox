@@ -565,6 +565,49 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Logs' action class. */
+class UIActionSimpleRuntimeShowLogs : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleRuntimeShowLogs(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_show_logs_16px.png", ":/vm_show_logs_disabled_16px.png", true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const RT_OVERRIDE
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_LogDialog;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const RT_OVERRIDE
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_LogDialog);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const RT_OVERRIDE
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_LogDialog);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("LogWindow");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Show &Log..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the log viewer widget."));
+    }
+};
 
 /** Menu action extension, used as 'View' menu class. */
 class UIActionMenuRuntimeView : public UIActionMenu
@@ -2905,49 +2948,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Logs' action class. */
-class UIActionSimpleRuntimeShowLogs : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleRuntimeShowLogs(UIActionPool *pParent)
-        : UIActionSimple(pParent, true)
-    {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const RT_OVERRIDE
-    {
-        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const RT_OVERRIDE
-    {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
-    }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const RT_OVERRIDE
-    {
-        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
-    }
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("LogWindow");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE
-    {
-        setName(QApplication::translate("UIActionPool", "Show &Log...", "debug action"));
-    }
-};
-
 /** Simple action extension, used as 'Guest Control Terminal' action class. */
 class UIActionSimpleRuntimeGuestControlConsole : public UIActionSimple
 {
@@ -3259,6 +3259,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_SaveState] = new UIActionSimpleRuntimePerformSaveState(this);
     m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimpleRuntimePerformShutdown(this);
     m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimpleRuntimePerformPowerOff(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowLogDialog] = new UIActionSimpleRuntimeShowLogs(this);
 
     /* 'View' actions: */
     m_pool[UIActionIndexRT_M_View] = new UIActionMenuRuntimeView(this);
@@ -3328,7 +3329,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Debug_S_ShowStatistics] = new UIActionSimpleRuntimeShowStatistics(this);
     m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleRuntimeShowCommandLine(this);
     m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleRuntimeLogging(this);
-    m_pool[UIActionIndexRT_M_Debug_S_ShowLogDialog] = new UIActionSimpleRuntimeShowLogs(this);
     m_pool[UIActionIndexRT_M_Debug_S_GuestControlConsole] = new UIActionSimpleRuntimeGuestControlConsole(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -3681,7 +3681,10 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
+    /* 'File Manager' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowFileManager)) || fSeparator;
+    /* 'Log Dialog' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowLogDialog)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -4360,8 +4363,6 @@ void UIActionPoolRuntime::updateMenuDebug()
     addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
     /* 'Logging' action: */
     addAction(pMenu, action(UIActionIndexRT_M_Debug_T_Logging));
-    /* 'Log Dialog' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
     /* 'Guest Control Terminal' action: */
     addAction(pMenu, action(UIActionIndexRT_M_Debug_S_GuestControlConsole));
 

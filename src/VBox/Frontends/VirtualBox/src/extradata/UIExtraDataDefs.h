@@ -575,7 +575,8 @@ public:
         RuntimeMenuMachineActionType_SaveState                     = RT_BIT(8),
         RuntimeMenuMachineActionType_Shutdown                      = RT_BIT(9),
         RuntimeMenuMachineActionType_PowerOff                      = RT_BIT(10),
-        RuntimeMenuMachineActionType_Nothing                       = RT_BIT(11),
+        RuntimeMenuMachineActionType_LogDialog                     = RT_BIT(11),
+        RuntimeMenuMachineActionType_Nothing                       = RT_BIT(12),
         RuntimeMenuMachineActionType_All                           = 0xFFFF
     };
 
@@ -664,8 +665,7 @@ public:
         RuntimeMenuDebuggerActionType_Statistics           = RT_BIT(0),
         RuntimeMenuDebuggerActionType_CommandLine          = RT_BIT(1),
         RuntimeMenuDebuggerActionType_Logging              = RT_BIT(2),
-        RuntimeMenuDebuggerActionType_LogDialog            = RT_BIT(3),
-        RuntimeMenuDebuggerActionType_GuestControlConsole  = RT_BIT(4),
+        RuntimeMenuDebuggerActionType_GuestControlConsole  = RT_BIT(3),
         RuntimeMenuDebuggerActionType_All                  = 0xFFFF
     };
 #endif /* VBOX_WITH_DEBUGGER_GUI */

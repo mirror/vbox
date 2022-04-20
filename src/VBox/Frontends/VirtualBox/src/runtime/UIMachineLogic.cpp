@@ -1056,6 +1056,8 @@ void UIMachineLogic::prepareActionConnections()
             this, &UIMachineLogic::sltShutdown);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff), &UIAction::triggered,
             this, &UIMachineLogic::sltPowerOff, Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowLogDialog), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowLogDialog);
 
     /* 'View' actions connections: */
 #ifndef VBOX_WS_MAC
@@ -1129,8 +1131,6 @@ void UIMachineLogic::prepareActionConnections()
             this, &UIMachineLogic::sltShowDebugCommandLine);
     connect(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging), &UIAction::toggled,
             this, &UIMachineLogic::sltLoggingToggled);
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog), &UIAction::triggered,
-            this, &UIMachineLogic::sltShowLogDialog);
     connect(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole), &UIAction::triggered,
             this, &UIMachineLogic::sltShowGuestControlConsoleDialog);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
