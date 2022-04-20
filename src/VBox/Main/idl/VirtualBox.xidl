@@ -11115,10 +11115,9 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="d5946b84-6e39-407e-ab41-1f6ec06146c4"
+    uuid="c37c534a-b07c-46b1-ab56-344857b81685"
     wsmap="managed"
-    rest="managed"
-    reservedMethods="12" reservedAttributes="24"
+    reservedMethods="2" reservedAttributes="4"
     >
 
     <desc>
@@ -11301,9 +11300,9 @@
 
   <interface
     name="IHostUpdateAgent" extends="IUpdateAgent"
-    uuid="20711947-1eb5-4924-bf1c-03f8f29303e7"
+    uuid="d782dba7-cd4f-4ace-951a-58321c23e258"
     wsmap="managed"
-    reservedMethods="12" reservedAttributes="24"
+    reservedMethods="2" reservedAttributes="4"
     >
     <desc>
       Implementation of the <link to="IUpdateAgent" /> object
@@ -11332,9 +11331,9 @@
 
   <interface
     name="IUpdateAgentSettingsChangedEvent" extends="IUpdateAgentEvent"
-    uuid="7bfd3718-b2ad-4112-8a86-328ebeb7b091"
+    uuid="a3537480-a15f-404c-b540-abae5f6b25a0"
     wsmap="managed"
-    reservedMethods="4" reservedAttributes="8"
+    reservedAttributes="4"
     >
     <desc>
       Notification when update agent settings have been changed.
