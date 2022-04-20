@@ -1003,7 +1003,7 @@ endif
 # Only available if cURL is being used.
 VBOX_WITH_UPDATE_AGENT = 1
 ifndef VBOX_WITH_LIBCURL
- $(error Error: Building Update Agent without cURL (VBOX_WITH_LIBCURL not defined) not possible, sorry!)
+ $(warning Warning: Building Update Agent without cURL not possible, disabling.)
  VBOX_WITH_UPDATE_AGENT :=
 endif
 ## @}
