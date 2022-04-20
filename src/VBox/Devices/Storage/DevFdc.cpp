@@ -86,6 +86,20 @@ typedef struct fdctrl_t fdctrl_t;
 /********************************************************/
 /* Floppy drive emulation                               */
 
+/* Drive selection note:
+ * For many commands, the FDC can select one of four drives through the
+ * second command byte. The Digital Output Register (DOR) can also select
+ * one of four drives. On PCs, the FDC drive selection is ignored, but
+ * should be reflected back in command status. Only the DOR drive selection
+ * is effective; on old PCs with a discrete NEC uPD765 or similar, the FDC
+ * drive selection signals (US0/US1) are not connected at all.
+ * NB: A drive is actually selected only when its motor on bit in the DOR
+ * is also set. It is possible to have no drive selected.
+ *
+ * The FDC cur_drv field tracks the drive the FDC thinks is selected, but
+ * the DOR is used for actual drive selection.
+ */
+
 #define GET_CUR_DRV(fdctrl) ((fdctrl)->cur_drv)
 #define SET_CUR_DRV(fdctrl, drive) ((fdctrl)->cur_drv = (drive))
 
@@ -598,10 +612,14 @@ enum {
 
 enum {
 #if MAX_FD == 4
-    FD_DOR_SELMASK  = 0x03,
+    FD_DRV_SELMASK  = 0x03,
 #else
-    FD_DOR_SELMASK  = 0x01,
+    FD_DRV_SELMASK  = 0x01,
 #endif
+};
+
+enum {
+    FD_DOR_SELMASK  = 0x03, /* Always two bits regardless of FD_DRV_SELMASK. */
     FD_DOR_nRESET   = 0x04,
     FD_DOR_DMAEN    = 0x08,
     FD_DOR_MOTEN0   = 0x10,
@@ -887,7 +905,7 @@ static inline fdrive_t *drv3(fdctrl_t *fdctrl)
 
 static fdrive_t *get_cur_drv(fdctrl_t *fdctrl)
 {
-    switch (fdctrl->cur_drv) {
+    switch (fdctrl->dor & FD_DRV_SELMASK) {
         case 0: return drv0(fdctrl);
         case 1: return drv1(fdctrl);
 #if MAX_FD == 4
@@ -923,8 +941,6 @@ static uint32_t fdctrl_read_dor(fdctrl_t *fdctrl)
 {
     uint32_t retval = fdctrl->dor;
 
-    /* Selected drive */
-    retval |= fdctrl->cur_drv;
     FLOPPY_DPRINTF("digital output register: 0x%02x\n", retval);
 
     return retval;
@@ -962,8 +978,6 @@ static void fdctrl_write_dor(fdctrl_t *fdctrl, uint32_t value)
             fdctrl->dsr &= ~FD_DSR_PWRDOWN;
         }
     }
-    /* Selected drive */
-    fdctrl->cur_drv = value & FD_DOR_SELMASK;
 
     fdctrl->dor = value;
 }
@@ -1056,7 +1070,7 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
      * is *not* selected!
      */
     if (fdctrl_media_changed(get_cur_drv(fdctrl))
-     && (fdctrl->dor & (0x10 << fdctrl->cur_drv)))
+     && (fdctrl->dor & (0x10 << (fdctrl->dor & FD_DOR_SELMASK))))
         retval |= FD_DIR_DSKCHG;
     if (retval != 0)
         FLOPPY_DPRINTF("Floppy digital input register: 0x%02x\n", retval);
