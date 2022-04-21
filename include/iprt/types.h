@@ -1200,43 +1200,72 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
      && (a_pLeft)->au16[4] == (a_pRight)->au16[4] )
 /** @name RTFLOAT80U classification macros
  * @{ */
-# define RTFLOAT80U_IS_ZERO(a_pr80) \
-    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa == 0)
-# define RTFLOAT80U_IS_DENORMAL(a_pr80) \
-    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa <  RT_BIT_64(63) && (a_pr80)->s.uMantissa != 0)
-# define RTFLOAT80U_IS_PSEUDO_DENORMAL(a_pr80) \
-    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa >= RT_BIT_64(63))
+/** Is @a a_pr80 +0 or -0. */
+# define RTFLOAT80U_IS_ZERO(a_pr80)                 RTFLOAT80U_IS_ZERO_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_ZERO_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0 && (a_uMantissa) == 0)
+/** Is @a a_pr80 a denormal (does not match psuedo-denormal). */
+# define RTFLOAT80U_IS_DENORMAL(a_pr80)             RTFLOAT80U_IS_DENORMAL_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_DENORMAL_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0 && (a_uMantissa) <  RT_BIT_64(63) && (a_uMantissa) != 0)
+/** Is @a a_pr80 a pseudo-denormal. */
+# define RTFLOAT80U_IS_PSEUDO_DENORMAL(a_pr80)      RTFLOAT80U_IS_PSEUDO_DENORMAL_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_PSEUDO_DENORMAL_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0 && (a_uMantissa) >= RT_BIT_64(63))
+/** Is @a a_pr80 denormal or pseudo-denormal. */
 # define RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL(a_pr80) \
-    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa != 0)
-# define RTFLOAT80U_IS_PSEUDO_INF(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == 0)
-# define RTFLOAT80U_IS_PSEUDO_NAN(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && !((a_pr80)->s.uMantissa & RT_BIT_64(63)))
-# define RTFLOAT80U_IS_INF(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == RT_BIT_64(63))
-# define RTFLOAT80U_IS_SIGNALLING_NAN(a_pr80) \
-    (   (a_pr80)->s.uExponent == 0x7fff \
-     && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) | RT_BIT_64(62))) == RT_BIT_64(63) \
-     && ((a_pr80)->s.uMantissa & (RT_BIT_64(62) - 1)) != 0)
-# define RTFLOAT80U_IS_QUIET_NAN(a_pr80) \
-    (   (a_pr80)->s.uExponent == 0x7fff \
-     && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) | RT_BIT_64(62))) == (RT_BIT_64(63) | RT_BIT_64(62)) \
-     && ((a_pr80)->s.uMantissa & (RT_BIT_64(62) - 1)) != 0)
-/** Signalling-, Quiet- or Pseudo-NaN. */
-# define RTFLOAT80U_IS_NAN(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) - 1)) != 0)
-/** Signalling- or Quiet-Nan, but not Pseudo-NaN. */
+    RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL_EX(a_uMantissa, a_uExponent)     ((a_uExponent) == 0 && (a_uMantissa) != 0)
+/** Is @a a_pr80 +/-pseudo-infinity. */
+# define RTFLOAT80U_IS_PSEUDO_INF(a_pr80)           RTFLOAT80U_IS_PSEUDO_INF_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_PSEUDO_INF_EX(a_uMantissa, a_uExponent)  ((a_uExponent) == 0x7fff && (a_uMantissa) == 0)
+/** Is @a a_pr80 pseudo-not-a-number. */
+# define RTFLOAT80U_IS_PSEUDO_NAN(a_pr80)           RTFLOAT80U_IS_PSEUDO_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_PSEUDO_NAN_EX(a_uMantissa, a_uExponent)  ((a_uExponent) == 0x7fff && !((a_uMantissa) & RT_BIT_64(63)))
+/** Is @a a_pr80 infinity (does not match pseudo-infinity). */
+# define RTFLOAT80U_IS_INF(a_pr80)                  RTFLOAT80U_IS_INF_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_INF_EX(a_uMantissa, a_uExponent)         ((a_uExponent) == 0x7fff && (a_uMantissa) == RT_BIT_64(63))
+/** Is @a a_pr80 a signalling not-a-number value. */
+# define RTFLOAT80U_IS_SIGNALLING_NAN(a_pr80)       RTFLOAT80U_IS_SIGNALLING_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_SIGNALLING_NAN_EX(a_uMantissa, a_uExponent) \
+    (   (a_uExponent) == 0x7fff \
+     && ((a_uMantissa) & (RT_BIT_64(63) | RT_BIT_64(62))) == RT_BIT_64(63) \
+     && ((a_uMantissa) & (RT_BIT_64(62) - 1)) != 0)
+/** Is @a a_pr80 a quiet not-a-number value. */
+# define RTFLOAT80U_IS_QUIET_NAN(a_pr80)            RTFLOAT80U_IS_QUIET_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_QUIET_NAN_EX(a_uMantissa, a_uExponent) \
+    (   (a_uExponent) == 0x7fff \
+     && ((a_uMantissa) & (RT_BIT_64(63) | RT_BIT_64(62))) == (RT_BIT_64(63) | RT_BIT_64(62)) \
+     && ((a_uMantissa) & (RT_BIT_64(62) - 1)) != 0)
+/** Is @a a_pr80 Signalling-, Quiet- or Pseudo-NaN. */
+# define RTFLOAT80U_IS_NAN(a_pr80)                  RTFLOAT80U_IS_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_NAN_EX(a_uMantissa, a_uExponent) ((a_uExponent) == 0x7fff && ((a_uMantissa) & (RT_BIT_64(63) - 1)) != 0)
+/** Is @a a_pr80 Signalling- or Quiet-Nan, but not Pseudo-NaN. */
 # define RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && ((a_pr80)->s.uMantissa > RT_BIT_64(63)))
-# define RTFLOAT80U_IS_INDEFINITE(a_pr80) \
-    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == (RT_BIT_64(63) | RT_BIT_64(62)))
-# define RTFLOAT80U_IS_UNNORMAL(a_pr80) \
-    (!((a_pr80)->s.uMantissa & RT_BIT_64(63)) && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
-# define RTFLOAT80U_IS_NORMAL(a_pr80) \
-    (((a_pr80)->s.uMantissa & RT_BIT_64(63))  && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
+     RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_QUIET_OR_SIGNALLING_NAN_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0x7fff && ((a_uMantissa) > RT_BIT_64(63)))
+/** Is @a a_pr80 indefinite (ignoring sign). */
+# define RTFLOAT80U_IS_INDEFINITE(a_pr80)           RTFLOAT80U_IS_INDEFINITE_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_INDEFINITE_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0x7fff && (a_uMantissa) == (RT_BIT_64(63) | RT_BIT_64(62)))
+/** Is @a a_pr80 Indefinite, Signalling- or Quiet-Nan, but not Pseudo-NaN (nor Infinity). */
+# define RTFLOAT80U_IS_INDEFINITE_OR_QUIET_OR_SIGNALLING_NAN(a_pr80) \
+    RTFLOAT80U_IS_INDEFINITE_OR_QUIET_OR_SIGNALLING_NAN_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_INDEFINITE_OR_QUIET_OR_SIGNALLING_NAN_EX(a_uMantissa, a_uExponent) \
+    ((a_uExponent) == 0x7fff && (a_uMantissa) > RT_BIT_64(63))
+/** Is @a a_pr80 an unnormal value (invalid operand on 387+). */
+# define RTFLOAT80U_IS_UNNORMAL(a_pr80)             RTFLOAT80U_IS_UNNORMAL_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_UNNORMAL_EX(a_uMantissa, a_uExponent) \
+    (!((a_uMantissa) & RT_BIT_64(63)) && (a_uExponent) > 0 && (a_uExponent) < 0x7fff) /* a_uExponent can be signed and up to 64-bit wide */
+/** Is @a a_pr80 a normal value (excludes zero). */
+# define RTFLOAT80U_IS_NORMAL(a_pr80)               RTFLOAT80U_IS_NORMAL_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+# define RTFLOAT80U_IS_NORMAL_EX(a_uMantissa, a_uExponent) \
+    (((a_uMantissa) & RT_BIT_64(63))  && (a_uExponent) > 0 && (a_uExponent) < 0x7fff) /* a_uExponent can be signed and up to 64-bit wide */
 /** Invalid 387 (and later) operands: Pseudo-Infinity, Psuedo-NaN, Unnormals. */
-#define RTFLOAT80U_IS_387_INVALID(a_pr80) \
-    (!((a_pr80)->s.uMantissa & RT_BIT_64(63)) && (a_pr80)->s.uExponent > 0)
+#define RTFLOAT80U_IS_387_INVALID(a_pr80)           RTFLOAT80U_IS_387_INVALID_EX((a_pr80)->s.uMantissa, (a_pr80)->s.uExponent)
+#define RTFLOAT80U_IS_387_INVALID_EX(a_uMantissa, a_uExponent) \
+    (!((a_uMantissa) & RT_BIT_64(63)) && (a_uExponent) > 0)
 /** @} */
 
 
