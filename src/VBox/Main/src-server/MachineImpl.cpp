@@ -283,6 +283,9 @@ void Machine::FinalRelease()
  *  @param fForceOverwrite Whether to overwrite an existing machine settings file.
  *  @param fDirectoryIncludesUUID Whether the use a special VM directory naming
  *                      scheme (includes the UUID).
+ *  @param aCipher      The cipher to encrypt the VM with.
+ *  @param aPasswordId  The password ID, empty if the VM should not be encrypted.
+ *  @param aPassword    The password to encrypt the VM with.
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
@@ -444,7 +447,6 @@ HRESULT Machine::init(VirtualBox *aParent,
  *  @param strConfigFile Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
  *  @param aId          UUID of the machine or NULL (see above).
- *  @param strKeyId     Key ID of the password for decrypting the config.
  *  @param strPassword  Password for decrypting the config
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
