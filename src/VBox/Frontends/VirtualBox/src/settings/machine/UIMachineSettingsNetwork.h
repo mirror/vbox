@@ -64,11 +64,6 @@ public:
     const QStringList &hostOnlyNetworkList() const { return m_hostOnlyNetworkList; }
 #endif
 
- public slots:
-
-    /** Handles adapter alternative name change. */
-    void sltHandleAlternativeNameChange();
-
 protected:
 
     /** Returns whether the page content was changed. */
@@ -99,6 +94,8 @@ protected:
 
 private slots:
 
+    /** Handles adapter alternative name change. */
+    void sltHandleAlternativeNameChange();
     /** Handles whether the advanced button is @a fExpanded. */
     void sltHandleAdvancedButtonStateChange(bool fExpanded);
 
