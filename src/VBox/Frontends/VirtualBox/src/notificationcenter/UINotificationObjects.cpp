@@ -4343,7 +4343,7 @@ CProgress UINotificationProgressNewVersionChecker::createProgress(COMResult &com
     if (!m_comUpdateHost.isOk())
         return CProgress();
 
-    CProgress comProgress = m_comUpdateHost.Check();
+    CProgress comProgress = m_comUpdateHost.CheckFor();
     comResult = m_comUpdateHost;
 
     return comProgress;
