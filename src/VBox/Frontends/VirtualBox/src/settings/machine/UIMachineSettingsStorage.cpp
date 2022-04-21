@@ -3031,21 +3031,25 @@ void UIMachineSettingsStorage::setChipsetType(KChipsetType enmType)
 
 bool UIMachineSettingsStorage::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old storage data: */
+    /* Prepare old data: */
     UIDataSettingsMachineStorage oldStorageData;
 
-    /* Gather old common data: */
+    /* Gather old data: */
     m_uMachineId = m_machine.GetId();
     m_strMachineSettingsFilePath = m_machine.GetSettingsFilePath();
     m_strMachineName = m_machine.GetName();
@@ -3055,7 +3059,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
     for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
     {
-        /* Prepare old controller data & cache key: */
+        /* Prepare old data & cache key: */
         UIDataSettingsMachineStorageController oldControllerData;
         QString strControllerKey = QString::number(iControllerIndex);
 
@@ -3063,7 +3067,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
         const CStorageController &comController = controllers.at(iControllerIndex);
         if (!comController.isNull())
         {
-            /* Gather old controller data: */
+            /* Gather old data: */
             oldControllerData.m_strName = comController.GetName();
             oldControllerData.m_enmBus = comController.GetBus();
             oldControllerData.m_enmType = comController.GetControllerType();
@@ -3087,7 +3091,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
             /* For each attachment: */
             for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
             {
-                /* Prepare old attachment data & cache key: */
+                /* Prepare old data & cache key: */
                 UIDataSettingsMachineStorageAttachment oldAttachmentData;
                 QString strAttachmentKey = QString::number(iAttachmentIndex);
 
@@ -3095,7 +3099,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                 const CMediumAttachment &comAttachment = attachments.at(iAttachmentIndex);
                 if (!comAttachment.isNull())
                 {
-                    /* Gather old attachment data: */
+                    /* Gather old data: */
                     oldAttachmentData.m_enmDeviceType = comAttachment.GetType();
                     oldAttachmentData.m_iPort = comAttachment.GetPort();
                     oldAttachmentData.m_iDevice = comAttachment.GetDevice();
@@ -3109,16 +3113,16 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     strAttachmentKey = QString("%1:%2").arg(oldAttachmentData.m_iPort).arg(oldAttachmentData.m_iDevice);
                 }
 
-                /* Cache old attachment data: */
+                /* Cache old data: */
                 m_pCache->child(strControllerKey).child(strAttachmentKey).cacheInitialData(oldAttachmentData);
             }
         }
 
-        /* Cache old controller data: */
+        /* Cache old data: */
         m_pCache->child(strControllerKey).cacheInitialData(oldControllerData);
     }
 
-    /* Cache old storage data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldStorageData);
 
     /* Upload machine to data: */
@@ -3127,10 +3131,16 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsStorage::getFromCache()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pModelStorage
+        || !m_pTreeViewStorage)
+        return;
+
     /* Clear model initially: */
     m_pModelStorage->clear();
 
-    /* Load old common data from cache: */
+    /* Load old data from cache: */
     m_pModelStorage->setMachineId(m_uMachineId);
 
     /* For each controller: */
@@ -3138,10 +3148,10 @@ void UIMachineSettingsStorage::getFromCache()
     {
         /* Get controller cache: */
         const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
-        /* Get old controller data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
 
-        /* Load old controller data from cache: */
+        /* Load old data from cache: */
         const QModelIndex controllerIndex = m_pModelStorage->addController(oldControllerData.m_strName,
                                                                            oldControllerData.m_enmBus,
                                                                            oldControllerData.m_enmType);
@@ -3154,10 +3164,10 @@ void UIMachineSettingsStorage::getFromCache()
         {
             /* Get attachment cache: */
             const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
-            /* Get old attachment data from cache: */
+            /* Get old data from cache: */
             const UIDataSettingsMachineStorageAttachment &oldAttachmentData = attachmentCache.base();
 
-            /* Load old attachment data from cache: */
+            /* Load old data from cache: */
             const QModelIndex attachmentIndex = m_pModelStorage->addAttachment(controllerId,
                                                                                oldAttachmentData.m_enmDeviceType,
                                                                                oldAttachmentData.m_uMediumId);
@@ -3188,17 +3198,22 @@ void UIMachineSettingsStorage::getFromCache()
 
 void UIMachineSettingsStorage::putToCache()
 {
-    /* Prepare new storage data: */
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pModelStorage)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineStorage newStorageData;
 
     /* For each controller: */
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int iControllerIndex = 0; iControllerIndex < m_pModelStorage->rowCount(rootIndex); ++iControllerIndex)
     {
-        /* Prepare new controller data & key: */
+        /* Prepare new data & key: */
         UIDataSettingsMachineStorageController newControllerData;
 
-        /* Gather new controller data & cache key from model: */
+        /* Gather new data & cache key from model: */
         const QModelIndex controllerIndex = m_pModelStorage->index(iControllerIndex, 0, rootIndex);
         newControllerData.m_strName = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrName).toString();
         newControllerData.m_enmBus = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
@@ -3210,10 +3225,10 @@ void UIMachineSettingsStorage::putToCache()
         /* For each attachment: */
         for (int iAttachmentIndex = 0; iAttachmentIndex < m_pModelStorage->rowCount(controllerIndex); ++iAttachmentIndex)
         {
-            /* Prepare new attachment data & key: */
+            /* Prepare new data & key: */
             UIDataSettingsMachineStorageAttachment newAttachmentData;
 
-            /* Gather new attachment data & cache key from model: */
+            /* Gather new data & cache key from model: */
             const QModelIndex attachmentIndex = m_pModelStorage->index(iAttachmentIndex, 0, controllerIndex);
             newAttachmentData.m_enmDeviceType = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttDevice).value<KDeviceType>();
             const StorageSlot attachmentSlot = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttSlot).value<StorageSlot>();
@@ -3226,15 +3241,15 @@ void UIMachineSettingsStorage::putToCache()
             newAttachmentData.m_uMediumId = QUuid(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             const QString strAttachmentKey = QString("%1:%2").arg(newAttachmentData.m_iPort).arg(newAttachmentData.m_iDevice);
 
-            /* Cache new attachment data: */
+            /* Cache new data: */
             m_pCache->child(strControllerKey).child(strAttachmentKey).cacheCurrentData(newAttachmentData);
         }
 
-        /* Cache new controller data: */
+        /* Cache new data: */
         m_pCache->child(strControllerKey).cacheCurrentData(newControllerData);
     }
 
-    /* Cache new storage data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newStorageData);
 }
 
@@ -5380,6 +5395,10 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UI
 
 bool UIMachineSettingsStorage::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save storage settings from cache: */
@@ -5444,7 +5463,7 @@ bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMach
     /* Remove controller: */
     if (fSuccess && isMachineOffline())
     {
-        /* Get old controller data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
 
         /* Search for a controller with the same name: */
@@ -5474,7 +5493,7 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
     /* Create controller: */
     if (fSuccess && isMachineOffline())
     {
-        /* Get new controller data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
 
         /* Search for a controller with the same name: */
@@ -5561,9 +5580,9 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
     /* Update controller: */
     if (fSuccess)
     {
-        /* Get old controller data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
-        /* Get new controller data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
 
         /* Search for a controller with the same name: */
@@ -5665,9 +5684,9 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMach
     /* Remove attachment: */
     if (fSuccess)
     {
-        /* Get old controller data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
-        /* Get old attachment data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineStorageAttachment &oldAttachmentData = attachmentCache.base();
 
         /* Search for an attachment with the same parameters: */
@@ -5702,9 +5721,9 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
     /* Create attachment: */
     if (fSuccess)
     {
-        /* Get new controller data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
-        /* Get new attachment data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageAttachment &newAttachmentData = attachmentCache.data();
 
         /* Search for an attachment with the same parameters: */
@@ -5792,9 +5811,9 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
     /* Update attachment: */
     if (fSuccess)
     {
-        /* Get new controller data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
-        /* Get new attachment data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineStorageAttachment &newAttachmentData = attachmentCache.data();
 
         /* Search for an attachment with the same parameters: */

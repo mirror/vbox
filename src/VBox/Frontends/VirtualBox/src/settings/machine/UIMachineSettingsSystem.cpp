@@ -256,18 +256,22 @@ void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
 
 bool UIMachineSettingsSystem::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old system data: */
+    /* Prepare old data: */
     UIDataSettingsMachineSystem oldSystemData;
 
     /* Gather support flags: */
@@ -296,7 +300,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     oldSystemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
     oldSystemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
-    /* Cache old system data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldSystemData);
 
     /* Upload machine to data: */
@@ -305,7 +309,11 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsSystem::getFromCache()
 {
-    /* Get old system data from cache: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Get old data from cache: */
     const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
 
     /* We are doing that *now* because these combos have
@@ -315,27 +323,47 @@ void UIMachineSettingsSystem::getFromCache()
     repopulateComboParavirtProviderType();
 
     /* Load old 'Motherboard' data from cache: */
-    m_pEditorBaseMemory->setValue(oldSystemData.m_iMemorySize);
-    m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
-    const int iChipsetTypePosition = m_pComboChipset->findData(oldSystemData.m_chipsetType);
-    m_pComboChipset->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
-    const int iHIDTypePosition = m_pComboPointingHID->findData(oldSystemData.m_pointingHIDType);
-    m_pComboPointingHID->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
-    m_pCheckBoxAPIC->setChecked(oldSystemData.m_fEnabledIoApic);
-    m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
-    m_pCheckBoxUTC->setChecked(oldSystemData.m_fEnabledUTC);
+    if (m_pEditorBaseMemory)
+        m_pEditorBaseMemory->setValue(oldSystemData.m_iMemorySize);
+    if (m_pEditorBootOrder)
+        m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
+    if (m_pComboChipset)
+    {
+        const int iChipsetTypePosition = m_pComboChipset->findData(oldSystemData.m_chipsetType);
+        m_pComboChipset->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
+    }
+    if (m_pComboPointingHID)
+    {
+        const int iHIDTypePosition = m_pComboPointingHID->findData(oldSystemData.m_pointingHIDType);
+        m_pComboPointingHID->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
+    }
+    if (m_pCheckBoxAPIC)
+        m_pCheckBoxAPIC->setChecked(oldSystemData.m_fEnabledIoApic);
+    if (m_pCheckBoxEFI)
+        m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
+    if (m_pCheckBoxUTC)
+        m_pCheckBoxUTC->setChecked(oldSystemData.m_fEnabledUTC);
 
     /* Load old 'Processor' data from cache: */
-    m_pSliderProcessorCount->setValue(oldSystemData.m_cCPUCount);
-    m_pSliderProcessorExecCap->setValue(oldSystemData.m_iCPUExecCap);
-    m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
-    m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
+    if (m_pSliderProcessorCount)
+        m_pSliderProcessorCount->setValue(oldSystemData.m_cCPUCount);
+    if (m_pSliderProcessorExecCap)
+        m_pSliderProcessorExecCap->setValue(oldSystemData.m_iCPUExecCap);
+    if (m_pCheckBoxPAE)
+        m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
+    if (m_pCheckBoxNestedVirtualization)
+        m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
 
     /* Load old 'Acceleration' data from cache: */
-    const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
-    m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
-    m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
-    m_pCheckBoxNestedPaging->setChecked(oldSystemData.m_fEnabledNestedPaging);
+    if (m_pComboParavirtProvider)
+    {
+        const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
+        m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
+    }
+    if (m_pCheckBoxVirtualization)
+        m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
+    if (m_pCheckBoxNestedPaging)
+        m_pCheckBoxNestedPaging->setChecked(oldSystemData.m_fEnabledNestedPaging);
 
     /* Polish page finally: */
     polishPage();
@@ -346,7 +374,11 @@ void UIMachineSettingsSystem::getFromCache()
 
 void UIMachineSettingsSystem::putToCache()
 {
-    /* Prepare new system data: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineSystem newSystemData;
 
     /* Gather support flags: */
@@ -356,38 +388,52 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_fSupportedNestedPaging = isNestedPagingSupported();
 
     /* Gather 'Motherboard' data: */
-    newSystemData.m_iMemorySize = m_pEditorBaseMemory->value();
-    newSystemData.m_bootItems = m_pEditorBootOrder->value();
-    newSystemData.m_chipsetType = m_pComboChipset->currentData().value<KChipsetType>();
-    newSystemData.m_pointingHIDType = m_pComboPointingHID->currentData().value<KPointingHIDType>();
-    newSystemData.m_fEnabledIoApic =    m_pCheckBoxAPIC->isChecked()
-                                     || m_pSliderProcessorCount->value() > 1
-                                     || m_pComboChipset->currentData().value<KChipsetType>() == KChipsetType_ICH9;
-    newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
-    newSystemData.m_fEnabledUTC = m_pCheckBoxUTC->isChecked();
+    if (m_pEditorBaseMemory)
+        newSystemData.m_iMemorySize = m_pEditorBaseMemory->value();
+    if (m_pEditorBootOrder)
+        newSystemData.m_bootItems = m_pEditorBootOrder->value();
+    if (m_pComboChipset)
+        newSystemData.m_chipsetType = m_pComboChipset->currentData().value<KChipsetType>();
+    if (m_pComboPointingHID)
+        newSystemData.m_pointingHIDType = m_pComboPointingHID->currentData().value<KPointingHIDType>();
+    if (   m_pCheckBoxAPIC
+        && m_pSliderProcessorCount
+        && m_pComboChipset)
+        newSystemData.m_fEnabledIoApic =    m_pCheckBoxAPIC->isChecked()
+                                         || m_pSliderProcessorCount->value() > 1
+                                         || m_pComboChipset->currentData().value<KChipsetType>() == KChipsetType_ICH9;
+    if (m_pCheckBoxEFI)
+        newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
+    if (m_pCheckBoxUTC)
+        newSystemData.m_fEnabledUTC = m_pCheckBoxUTC->isChecked();
 
     /* Gather 'Processor' data: */
-    newSystemData.m_cCPUCount = m_pSliderProcessorCount->value();
-    newSystemData.m_iCPUExecCap = m_pSliderProcessorExecCap->value();
-    newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
+    if (m_pSliderProcessorCount)
+        newSystemData.m_cCPUCount = m_pSliderProcessorCount->value();
+    if (m_pSliderProcessorExecCap)
+        newSystemData.m_iCPUExecCap = m_pSliderProcessorExecCap->value();
+    if (m_pCheckBoxPAE)
+        newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
-    newSystemData.m_paravirtProvider = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
+    if (m_pComboParavirtProvider)
+        newSystemData.m_paravirtProvider = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
     /* Enable HW Virt Ex automatically if it's supported and
      * 1. multiple CPUs, 2. Nested Paging or 3. Nested HW Virt Ex is requested. */
-    newSystemData.m_fEnabledHwVirtEx =    isHWVirtExEnabled()
-                                       || (   isHWVirtExSupported()
-                                           && (   m_pSliderProcessorCount->value() > 1
-                                               || isNestedPagingEnabled()
-                                               || isNestedHWVirtExEnabled()));
+    if (m_pSliderProcessorCount)
+        newSystemData.m_fEnabledHwVirtEx =    isHWVirtExEnabled()
+                                           || (   isHWVirtExSupported()
+                                               && (   m_pSliderProcessorCount->value() > 1
+                                                   || isNestedPagingEnabled()
+                                                   || isNestedHWVirtExEnabled()));
     /* Enable Nested Paging automatically if it's supported and
      * Nested HW Virt Ex is requested. */
     newSystemData.m_fEnabledNestedPaging =    isNestedPagingEnabled()
-                                           || (   isNestedPagingSupported()
-                                               && isNestedHWVirtExEnabled());
+                                     || (   isNestedPagingSupported()
+                                         && isNestedHWVirtExEnabled());
 
-    /* Cache new system data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newSystemData);
 }
 
@@ -685,7 +731,7 @@ void UIMachineSettingsSystem::retranslateUi()
 
 void UIMachineSettingsSystem::polishPage()
 {
-    /* Get old system data from cache: */
+    /* Get old data from cache: */
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Polish 'Motherboard' availability: */
@@ -1319,6 +1365,10 @@ void UIMachineSettingsSystem::retranslateComboParavirtProvider()
 
 bool UIMachineSettingsSystem::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save general settings from cache: */
@@ -1340,14 +1390,18 @@ bool UIMachineSettingsSystem::saveData()
 
 bool UIMachineSettingsSystem::saveMotherboardData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Motherboard' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save memory size: */
@@ -1403,14 +1457,18 @@ bool UIMachineSettingsSystem::saveMotherboardData()
 
 bool UIMachineSettingsSystem::saveProcessorData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Processor' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save CPU count: */
@@ -1448,14 +1506,18 @@ bool UIMachineSettingsSystem::saveProcessorData()
 
 bool UIMachineSettingsSystem::saveAccelerationData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Acceleration' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save paravirtualization provider: */

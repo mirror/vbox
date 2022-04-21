@@ -354,18 +354,22 @@ KGraphicsControllerType UIMachineSettingsDisplay::graphicsControllerTypeCurrent(
 
 bool UIMachineSettingsDisplay::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old display data: */
+    /* Prepare old data: */
     UIDataSettingsMachineDisplay oldDisplayData;
 
     /* Check whether graphics adapter is valid: */
@@ -422,7 +426,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
             oldDisplayData.m_vecRecordingScreens[iScreenIndex] = comRecordingScreenSettings.GetEnabled();
     }
 
-    /* Cache old display data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldDisplayData);
 
     /* Upload machine to data: */
@@ -431,16 +435,26 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsDisplay::getFromCache()
 {
-    /* Get old display data from cache: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Get old data from cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* Load old 'Screen' data from cache: */
-    m_pEditorMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
-    m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
-    m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
-    m_pEditorGraphicsController->setValue(oldDisplayData.m_graphicsControllerType);
+    if (m_pEditorMonitorCount)
+        m_pEditorMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
+    if (m_pEditorScaleFactor)
+    {
+        m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
+        m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
+    }
+    if (m_pEditorGraphicsController)
+        m_pEditorGraphicsController->setValue(oldDisplayData.m_graphicsControllerType);
 #ifdef VBOX_WITH_3D_ACCELERATION
-    m_pEditorDisplayScreenFeatures->setEnable3DAcceleration(oldDisplayData.m_f3dAccelerationEnabled);
+    if (m_pEditorDisplayScreenFeatures)
+        m_pEditorDisplayScreenFeatures->setEnable3DAcceleration(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
     /* Push required value to m_pEditorVideoMemorySize: */
     sltHandleMonitorCountChange();
@@ -449,47 +463,54 @@ void UIMachineSettingsDisplay::getFromCache()
     sltHandle3DAccelerationFeatureStateChange();
 #endif
     // Should be the last one for this tab, since it depends on some of others:
-    m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
+    if (m_pEditorVideoMemorySize)
+        m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
 
     /* If remote display server is supported: */
     if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
         /* Load old 'Remote Display' data from cache: */
-        m_pEditorVRDESettings->setFeatureEnabled(oldDisplayData.m_fRemoteDisplayServerEnabled);
-        m_pEditorVRDESettings->setPort(oldDisplayData.m_strRemoteDisplayPort);
-        m_pEditorVRDESettings->setAuthType(oldDisplayData.m_remoteDisplayAuthType);
-        m_pEditorVRDESettings->setTimeout(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
-        m_pEditorVRDESettings->setMultipleConnectionsAllowed(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
+        if (m_pEditorVRDESettings)
+        {
+            m_pEditorVRDESettings->setFeatureEnabled(oldDisplayData.m_fRemoteDisplayServerEnabled);
+            m_pEditorVRDESettings->setPort(oldDisplayData.m_strRemoteDisplayPort);
+            m_pEditorVRDESettings->setAuthType(oldDisplayData.m_remoteDisplayAuthType);
+            m_pEditorVRDESettings->setTimeout(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
+            m_pEditorVRDESettings->setMultipleConnectionsAllowed(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
+        }
     }
 
-    /* Load old 'Recording' data from cache: */
-    m_pEditorRecordingSettings->setFeatureEnabled(oldDisplayData.m_fRecordingEnabled);
-    m_pEditorRecordingSettings->setFolder(oldDisplayData.m_strRecordingFolder);
-    m_pEditorRecordingSettings->setFilePath(oldDisplayData.m_strRecordingFilePath);
-    m_pEditorRecordingSettings->setFrameWidth(oldDisplayData.m_iRecordingVideoFrameWidth);
-    m_pEditorRecordingSettings->setFrameHeight(oldDisplayData.m_iRecordingVideoFrameHeight);
-    m_pEditorRecordingSettings->setFrameRate(oldDisplayData.m_iRecordingVideoFrameRate);
-    m_pEditorRecordingSettings->setBitRate(oldDisplayData.m_iRecordingVideoBitRate);
-    m_pEditorRecordingSettings->setScreens(oldDisplayData.m_vecRecordingScreens);
+    if (m_pEditorRecordingSettings)
+    {
+        /* Load old 'Recording' data from cache: */
+        m_pEditorRecordingSettings->setFeatureEnabled(oldDisplayData.m_fRecordingEnabled);
+        m_pEditorRecordingSettings->setFolder(oldDisplayData.m_strRecordingFolder);
+        m_pEditorRecordingSettings->setFilePath(oldDisplayData.m_strRecordingFilePath);
+        m_pEditorRecordingSettings->setFrameWidth(oldDisplayData.m_iRecordingVideoFrameWidth);
+        m_pEditorRecordingSettings->setFrameHeight(oldDisplayData.m_iRecordingVideoFrameHeight);
+        m_pEditorRecordingSettings->setFrameRate(oldDisplayData.m_iRecordingVideoFrameRate);
+        m_pEditorRecordingSettings->setBitRate(oldDisplayData.m_iRecordingVideoBitRate);
+        m_pEditorRecordingSettings->setScreens(oldDisplayData.m_vecRecordingScreens);
 
-    /* Load old 'Recording' options: */
-    const bool fRecordVideo =
-        UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
-                                                               UIDataSettingsMachineDisplay::RecordingOption_VC);
-    const bool fRecordAudio =
-        UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
-                                                               UIDataSettingsMachineDisplay::RecordingOption_AC);
-    UISettingsDefs::RecordingMode enmMode;
-    if (fRecordAudio && fRecordVideo)
-        enmMode = UISettingsDefs::RecordingMode_VideoAudio;
-    else if (fRecordAudio && !fRecordVideo)
-        enmMode = UISettingsDefs::RecordingMode_AudioOnly;
-    else
-        enmMode = UISettingsDefs::RecordingMode_VideoOnly;
-    m_pEditorRecordingSettings->setMode(enmMode);
-    const int iAudioQualityRate =
-        UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strRecordingVideoOptions);
-    m_pEditorRecordingSettings->setAudioQualityRate(iAudioQualityRate);
+        /* Load old 'Recording' options: */
+        const bool fRecordVideo =
+            UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
+                                                                   UIDataSettingsMachineDisplay::RecordingOption_VC);
+        const bool fRecordAudio =
+            UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
+                                                                   UIDataSettingsMachineDisplay::RecordingOption_AC);
+        UISettingsDefs::RecordingMode enmMode;
+        if (fRecordAudio && fRecordVideo)
+            enmMode = UISettingsDefs::RecordingMode_VideoAudio;
+        else if (fRecordAudio && !fRecordVideo)
+            enmMode = UISettingsDefs::RecordingMode_AudioOnly;
+        else
+            enmMode = UISettingsDefs::RecordingMode_VideoOnly;
+        m_pEditorRecordingSettings->setMode(enmMode);
+        const int iAudioQualityRate =
+            UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strRecordingVideoOptions);
+        m_pEditorRecordingSettings->setAudioQualityRate(iAudioQualityRate);
+    }
 
     /* Polish page finally: */
     polishPage();
@@ -500,20 +521,31 @@ void UIMachineSettingsDisplay::getFromCache()
 
 void UIMachineSettingsDisplay::putToCache()
 {
-    /* Prepare new display data: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineDisplay newDisplayData;
 
     /* Gather new 'Screen' data: */
-    newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
-    newDisplayData.m_cGuestScreenCount = m_pEditorMonitorCount->value();
-    newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
-    newDisplayData.m_graphicsControllerType = m_pEditorGraphicsController->value();
+    if (m_pEditorVideoMemorySize)
+        newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
+    if (m_pEditorMonitorCount)
+        newDisplayData.m_cGuestScreenCount = m_pEditorMonitorCount->value();
+    if (m_pEditorScaleFactor)
+        newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
+    if (m_pEditorGraphicsController)
+        newDisplayData.m_graphicsControllerType = m_pEditorGraphicsController->value();
 #ifdef VBOX_WITH_3D_ACCELERATION
-    newDisplayData.m_f3dAccelerationEnabled = m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration();
+    if (m_pEditorDisplayScreenFeatures)
+        newDisplayData.m_f3dAccelerationEnabled = m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration();
 #endif
+
     /* If remote display server is supported: */
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
-    if (newDisplayData.m_fRemoteDisplayServerSupported)
+    if (   newDisplayData.m_fRemoteDisplayServerSupported
+        && m_pEditorVRDESettings)
     {
         /* Gather new 'Remote Display' data: */
         newDisplayData.m_fRemoteDisplayServerEnabled = m_pEditorVRDESettings->isFeatureEnabled();
@@ -523,40 +555,43 @@ void UIMachineSettingsDisplay::putToCache()
         newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pEditorVRDESettings->isMultipleConnectionsAllowed();
     }
 
-    /* Gather new 'Recording' data: */
-    newDisplayData.m_fRecordingEnabled = m_pEditorRecordingSettings->isFeatureEnabled();
-    newDisplayData.m_strRecordingFolder = m_pEditorRecordingSettings->folder();
-    newDisplayData.m_strRecordingFilePath = m_pEditorRecordingSettings->filePath();
-    newDisplayData.m_iRecordingVideoFrameWidth = m_pEditorRecordingSettings->frameWidth();
-    newDisplayData.m_iRecordingVideoFrameHeight = m_pEditorRecordingSettings->frameHeight();
-    newDisplayData.m_iRecordingVideoFrameRate = m_pEditorRecordingSettings->frameRate();
-    newDisplayData.m_iRecordingVideoBitRate = m_pEditorRecordingSettings->bitRate();
-    newDisplayData.m_vecRecordingScreens = m_pEditorRecordingSettings->screens();
-
-    /* Gather new 'Recording' options: */
-    const UISettingsDefs::RecordingMode enmRecordingMode = m_pEditorRecordingSettings->mode();
-    QStringList optionValues;
-    optionValues.append(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
-                          || (enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly)
-                        ? "true" : "false");
-    optionValues.append(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
-                          || (enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly)
-                        ? "true" : "false");
-    switch (m_pEditorRecordingSettings->audioQualityRate())
+    if (m_pEditorRecordingSettings)
     {
-        case 1: optionValues.append("low"); break;
-        case 2: optionValues.append("med"); break;
-        default: optionValues.append("high"); break;
-    }
-    QVector<UIDataSettingsMachineDisplay::RecordingOption> optionKeys;
-    optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_VC);
-    optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_AC);
-    optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_AC_Profile);
-    newDisplayData.m_strRecordingVideoOptions =
-        UIDataSettingsMachineDisplay::setRecordingOptions(m_pCache->base().m_strRecordingVideoOptions,
-                                                          optionKeys, optionValues);
+        /* Gather new 'Recording' data: */
+        newDisplayData.m_fRecordingEnabled = m_pEditorRecordingSettings->isFeatureEnabled();
+        newDisplayData.m_strRecordingFolder = m_pEditorRecordingSettings->folder();
+        newDisplayData.m_strRecordingFilePath = m_pEditorRecordingSettings->filePath();
+        newDisplayData.m_iRecordingVideoFrameWidth = m_pEditorRecordingSettings->frameWidth();
+        newDisplayData.m_iRecordingVideoFrameHeight = m_pEditorRecordingSettings->frameHeight();
+        newDisplayData.m_iRecordingVideoFrameRate = m_pEditorRecordingSettings->frameRate();
+        newDisplayData.m_iRecordingVideoBitRate = m_pEditorRecordingSettings->bitRate();
+        newDisplayData.m_vecRecordingScreens = m_pEditorRecordingSettings->screens();
 
-    /* Cache new display data: */
+        /* Gather new 'Recording' options: */
+        const UISettingsDefs::RecordingMode enmRecordingMode = m_pEditorRecordingSettings->mode();
+        QStringList optionValues;
+        optionValues.append(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
+                              || (enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly)
+                            ? "true" : "false");
+        optionValues.append(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
+                              || (enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly)
+                            ? "true" : "false");
+        switch (m_pEditorRecordingSettings->audioQualityRate())
+        {
+            case 1: optionValues.append("low"); break;
+            case 2: optionValues.append("med"); break;
+            default: optionValues.append("high"); break;
+        }
+        QVector<UIDataSettingsMachineDisplay::RecordingOption> optionKeys;
+        optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_VC);
+        optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_AC);
+        optionKeys.append(UIDataSettingsMachineDisplay::RecordingOption_AC_Profile);
+        newDisplayData.m_strRecordingVideoOptions =
+            UIDataSettingsMachineDisplay::setRecordingOptions(m_pCache->base().m_strRecordingVideoOptions,
+                                                              optionKeys, optionValues);
+    }
+
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newDisplayData);
 }
 
@@ -726,7 +761,7 @@ void UIMachineSettingsDisplay::retranslateUi()
 
 void UIMachineSettingsDisplay::polishPage()
 {
-    /* Get old display data from cache: */
+    /* Get old data from cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* Polish 'Screen' availability: */
@@ -959,6 +994,10 @@ void UIMachineSettingsDisplay::updateGuestScreenCount()
 
 bool UIMachineSettingsDisplay::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save display settings from cache: */
@@ -980,14 +1019,18 @@ bool UIMachineSettingsDisplay::saveData()
 
 bool UIMachineSettingsDisplay::saveScreenData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Screen' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         /* Get graphics adapter for further activities: */
@@ -1049,14 +1092,18 @@ bool UIMachineSettingsDisplay::saveScreenData()
 
 bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Remote Display' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         /* Get remote display server for further activities: */
@@ -1112,14 +1159,18 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 
 bool UIMachineSettingsDisplay::saveRecordingData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Recording' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         CRecordingSettings recordingSettings = m_machine.GetRecordingSettings();

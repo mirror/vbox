@@ -237,7 +237,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
 
 void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
-    /* Get old adapter data: */
+    /* Get old data: */
     const UIDataSettingsMachineNetworkAdapter &oldAdapterData = adapterCache.base();
 
     /* Load slot number: */
@@ -283,7 +283,7 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
 
 void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
-    /* Prepare new adapter data: */
+    /* Prepare new data: */
     UIDataSettingsMachineNetworkAdapter newAdapterData;
 
     if (m_pEditorNetworkSettings)
@@ -341,7 +341,7 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             adapterCache.child(rule.name).cacheCurrentData(rule);
     }
 
-    /* Cache new adapter data: */
+    /* Cache new data: */
     adapterCache.cacheCurrentData(newAdapterData);
 }
 
@@ -660,20 +660,20 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshHostOnlyNetworkList();
 #endif
 
-    /* Prepare old network data: */
+    /* Prepare old data: */
     UIDataSettingsMachineNetwork oldNetworkData;
 
     /* For each network adapter: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        /* Prepare old adapter data: */
+        /* Prepare old data: */
         UIDataSettingsMachineNetworkAdapter oldAdapterData;
 
         /* Check whether adapter is valid: */
         const CNetworkAdapter &comAdapter = m_machine.GetNetworkAdapter(iSlot);
         if (!comAdapter.isNull())
         {
-            /* Gather old adapter data: */
+            /* Gather old data: */
             oldAdapterData.m_iSlot = iSlot;
             oldAdapterData.m_fAdapterEnabled = comAdapter.GetEnabled();
             oldAdapterData.m_attachmentType = comAdapter.GetAttachmentType();
@@ -695,7 +695,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_fCableConnected = comAdapter.GetCableConnected();
             foreach (const QString &strRedirect, comAdapter.GetNATEngine().GetRedirects())
             {
-                /* Gather old forwarding data & cache key: */
+                /* Gather old data & cache key: */
                 const QStringList &forwardingData = strRedirect.split(',');
                 AssertMsg(forwardingData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
                 const UIDataPortForwardingRule oldForwardingData(forwardingData.at(0),
@@ -705,16 +705,16 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
                                                                  forwardingData.at(4),
                                                                  forwardingData.at(5).toUInt());
                 const QString &strForwardingKey = forwardingData.at(0);
-                /* Cache old forwarding data: */
+                /* Cache old data: */
                 m_pCache->child(iSlot).child(strForwardingKey).cacheInitialData(oldForwardingData);
             }
         }
 
-        /* Cache old adapter data: */
+        /* Cache old data: */
         m_pCache->child(iSlot).cacheInitialData(oldAdapterData);
     }
 
-    /* Cache old network data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldNetworkData);
 
     /* Upload machine to data: */
@@ -740,7 +740,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         AssertPtrReturnVoid(pTab);
 
-        /* Load old adapter data from cache: */
+        /* Load old data from cache: */
         pTab->getAdapterDataFromCache(m_pCache->child(iSlot));
 
         /* Setup tab order: */
@@ -764,7 +764,7 @@ void UIMachineSettingsNetworkPage::putToCache()
         || !m_pTabWidget)
         return;
 
-    /* Prepare new network data: */
+    /* Prepare new data: */
     UIDataSettingsMachineNetwork newNetworkData;
 
     /* For each adapter: */
@@ -774,11 +774,11 @@ void UIMachineSettingsNetworkPage::putToCache()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         AssertPtrReturnVoid(pTab);
 
-        /* Gather new adapter data: */
+        /* Gather new data: */
         pTab->putAdapterDataToCache(m_pCache->child(iSlot));
     }
 
-    /* Cache new network data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newNetworkData);
 }
 
@@ -1136,9 +1136,9 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
     /* Save adapter settings from cache: */
     if (fSuccess && m_pCache->child(iSlot).wasChanged())
     {
-        /* Get old network data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineNetworkAdapter &oldAdapterData = m_pCache->child(iSlot).base();
-        /* Get new network data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineNetworkAdapter &newAdapterData = m_pCache->child(iSlot).data();
 
         /* Get network adapter for further activities: */

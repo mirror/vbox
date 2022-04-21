@@ -368,11 +368,15 @@ bool UIMachineSettingsUSB::isUSBEnabled() const
 
 bool UIMachineSettingsUSB::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
@@ -397,14 +401,14 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
         const CUSBDeviceFilterVector &filters = comFiltersObject.GetDeviceFilters();
         for (int iFilterIndex = 0; iFilterIndex < filters.size(); ++iFilterIndex)
         {
-            /* Prepare old filter data: */
+            /* Prepare old data: */
             UIDataSettingsMachineUSBFilter oldFilterData;
 
             /* Check whether filter is valid: */
             const CUSBDeviceFilter &filter = filters.at(iFilterIndex);
             if (!filter.isNull())
             {
-                /* Gather old filter data: */
+                /* Gather old data: */
                 oldFilterData.m_fActive = filter.GetActive();
                 oldFilterData.m_strName = filter.GetName();
                 oldFilterData.m_strVendorId = filter.GetVendorId();
@@ -417,7 +421,7 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
                 oldFilterData.m_strRemote = filter.GetRemote();
             }
 
-            /* Cache old filter data: */
+            /* Cache old data: */
             m_pCache->child(iFilterIndex).cacheInitialData(oldFilterData);
         }
     }
@@ -431,6 +435,11 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsUSB::getFromCache()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTreeWidgetFilters)
+        return;
+
     /* Clear list initially: */
     m_pTreeWidgetFilters->clear();
 
@@ -445,18 +454,37 @@ void UIMachineSettingsUSB::getFromCache()
         supportedTypes.prepend(oldUsbData.m_USBControllerType);
 
     /* Adjust radio-button visibility: */
-    m_pRadioButtonUSB1->setVisible(supportedTypes.contains(KUSBControllerType_OHCI));
-    m_pRadioButtonUSB2->setVisible(supportedTypes.contains(KUSBControllerType_EHCI));
-    m_pRadioButtonUSB3->setVisible(supportedTypes.contains(KUSBControllerType_XHCI));
+    if (m_pRadioButtonUSB1)
+        m_pRadioButtonUSB1->setVisible(supportedTypes.contains(KUSBControllerType_OHCI));
+    if (m_pRadioButtonUSB2)
+        m_pRadioButtonUSB2->setVisible(supportedTypes.contains(KUSBControllerType_EHCI));
+    if (m_pRadioButtonUSB3)
+        m_pRadioButtonUSB3->setVisible(supportedTypes.contains(KUSBControllerType_XHCI));
 
     /* Load old USB data from cache: */
-    m_pCheckBoxUSB->setChecked(oldUsbData.m_fUSBEnabled);
+    if (m_pCheckBoxUSB)
+        m_pCheckBoxUSB->setChecked(oldUsbData.m_fUSBEnabled);
     switch (oldUsbData.m_USBControllerType)
     {
         default:
-        case KUSBControllerType_OHCI: m_pRadioButtonUSB1->setChecked(true); break;
-        case KUSBControllerType_EHCI: m_pRadioButtonUSB2->setChecked(true); break;
-        case KUSBControllerType_XHCI: m_pRadioButtonUSB3->setChecked(true); break;
+        case KUSBControllerType_OHCI:
+        {
+            if (m_pRadioButtonUSB1)
+                m_pRadioButtonUSB1->setChecked(true);
+            break;
+        }
+        case KUSBControllerType_EHCI:
+        {
+            if (m_pRadioButtonUSB2)
+                m_pRadioButtonUSB2->setChecked(true);
+            break;
+        }
+        case KUSBControllerType_XHCI:
+        {
+            if (m_pRadioButtonUSB3)
+                m_pRadioButtonUSB3->setChecked(true);
+            break;
+        }
     }
 
     /* For each filter => load it from cache: */
@@ -465,7 +493,8 @@ void UIMachineSettingsUSB::getFromCache()
 
     /* Choose first filter as current: */
     m_pTreeWidgetFilters->setCurrentItem(m_pTreeWidgetFilters->topLevelItem(0));
-    sltHandleUsbAdapterToggle(m_pCheckBoxUSB->isChecked());
+    if (m_pCheckBoxUSB)
+        sltHandleUsbAdapterToggle(m_pCheckBoxUSB->isChecked());
 
     /* Polish page finally: */
     polishPage();
@@ -476,20 +505,29 @@ void UIMachineSettingsUSB::getFromCache()
 
 void UIMachineSettingsUSB::putToCache()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTreeWidgetFilters)
+        return;
+
     /* Prepare new USB data: */
     UIDataSettingsMachineUSB newUsbData;
 
     /* Gather new USB data: */
-    newUsbData.m_fUSBEnabled = m_pCheckBoxUSB->isChecked();
+    if (m_pCheckBoxUSB)
+        newUsbData.m_fUSBEnabled = m_pCheckBoxUSB->isChecked();
     if (!newUsbData.m_fUSBEnabled)
         newUsbData.m_USBControllerType = KUSBControllerType_Null;
     else
     {
-        if (m_pRadioButtonUSB1->isChecked())
+        if (   m_pRadioButtonUSB1
+            && m_pRadioButtonUSB1->isChecked())
             newUsbData.m_USBControllerType = KUSBControllerType_OHCI;
-        else if (m_pRadioButtonUSB2->isChecked())
+        else if (   m_pRadioButtonUSB2
+                 && m_pRadioButtonUSB2->isChecked())
             newUsbData.m_USBControllerType = KUSBControllerType_EHCI;
-        else if (m_pRadioButtonUSB3->isChecked())
+        else if (   m_pRadioButtonUSB3
+                 && m_pRadioButtonUSB3->isChecked())
             newUsbData.m_USBControllerType = KUSBControllerType_XHCI;
     }
 
@@ -497,7 +535,7 @@ void UIMachineSettingsUSB::putToCache()
     QTreeWidgetItem *pMainRootItem = m_pTreeWidgetFilters->invisibleRootItem();
     for (int iFilterIndex = 0; iFilterIndex < pMainRootItem->childCount(); ++iFilterIndex)
     {
-        /* Gather and cache new filter data: */
+        /* Gather and cache new data: */
         const UIUSBFilterItem *pItem = static_cast<UIUSBFilterItem*>(pMainRootItem->child(iFilterIndex));
         m_pCache->child(iFilterIndex).cacheCurrentData(*pItem);
     }
@@ -1088,6 +1126,10 @@ void UIMachineSettingsUSB::addUSBFilterItem(const UIDataSettingsMachineUSBFilter
 
 bool UIMachineSettingsUSB::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save USB settings from cache: */

@@ -319,18 +319,22 @@ UIMachineSettingsSF::~UIMachineSettingsSF()
 
 bool UIMachineSettingsSF::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old folders data: */
+    /* Prepare old data: */
     UIDataSettingsSharedFolders oldFoldersData;
 
     /* Get actual folders: */
@@ -355,7 +359,7 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
         const QList<CSharedFolder> &currentTypeFolders = folders.values(enmFolderType);
         for (int iFolderIndex = 0; iFolderIndex < currentTypeFolders.size(); ++iFolderIndex)
         {
-            /* Prepare old folder data & cache key: */
+            /* Prepare old data & cache key: */
             UIDataSettingsSharedFolder oldFolderData;
             QString strFolderKey = QString::number(iFolderIndex);
 
@@ -363,7 +367,7 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
             const CSharedFolder &comFolder = currentTypeFolders.at(iFolderIndex);
             if (!comFolder.isNull())
             {
-                /* Gather old folder data: */
+                /* Gather old data: */
                 oldFolderData.m_enmType = enmFolderType;
                 oldFolderData.m_strName = comFolder.GetName();
                 oldFolderData.m_strPath = comFolder.GetHostPath();
@@ -374,12 +378,12 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
                 strFolderKey = oldFolderData.m_strName;
             }
 
-            /* Cache old folder data: */
+            /* Cache old data: */
             m_pCache->child(strFolderKey).cacheInitialData(oldFolderData);
         }
     }
 
-    /* Cache old folders data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldFoldersData);
 
     /* Upload machine to data: */
@@ -388,6 +392,11 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsSF::getFromCache()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTreeWidget)
+        return;
+
     /* Clear list initially: */
     m_pTreeWidget->clear();
 
@@ -408,7 +417,12 @@ void UIMachineSettingsSF::getFromCache()
 
 void UIMachineSettingsSF::putToCache()
 {
-    /* Prepare new folders data: */
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTreeWidget)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsSharedFolders newFoldersData;
 
     /* For each folder type: */
@@ -421,13 +435,13 @@ void UIMachineSettingsSF::putToCache()
         /* For each folder of current type: */
         for (int iFolderIndex = 0; iFolderIndex < pFolderTypeRoot->childCount(); ++iFolderIndex)
         {
-            /* Gather and cache new folder data: */
+            /* Gather and cache new data: */
             const SFTreeViewItem *pItem = static_cast<SFTreeViewItem*>(pFolderTypeRoot->child(iFolderIndex));
             m_pCache->child(pItem->m_strName).cacheCurrentData(*pItem);
         }
     }
 
-    /* Cache new folders data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newFoldersData);
 }
 
@@ -514,7 +528,7 @@ void UIMachineSettingsSF::sltAddFolder()
         /* Shared folder's name & path could not be empty: */
         Assert(!strName.isEmpty() && !strPath.isEmpty());
 
-        /* Prepare new folder data: */
+        /* Prepare new data: */
         UIDataSettingsSharedFolder newFolderData;
         newFolderData.m_enmType = enmType;
         newFolderData.m_strName = strName;
@@ -1028,6 +1042,10 @@ bool UIMachineSettingsSF::getSharedFolder(const QString &strFolderName, const CS
 
 bool UIMachineSettingsSF::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save folders settings from cache: */

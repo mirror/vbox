@@ -570,31 +570,36 @@ UIMachineSettingsSerialPage::~UIMachineSettingsSerialPage()
 
 bool UIMachineSettingsSerialPage::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTabWidget)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old serial data: */
+    /* Prepare old data: */
     UIDataSettingsMachineSerial oldSerialData;
 
     /* For each port: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        /* Prepare old port data: */
+        /* Prepare old data: */
         UIDataSettingsMachineSerialPort oldPortData;
 
         /* Check whether port is valid: */
         const CSerialPort &comPort = m_machine.GetSerialPort(iSlot);
         if (!comPort.isNull())
         {
-            /* Gather old port data: */
+            /* Gather old data: */
             oldPortData.m_iSlot = iSlot;
             oldPortData.m_fPortEnabled = comPort.GetEnabled();
             oldPortData.m_uIRQ = comPort.GetIRQ();
@@ -604,11 +609,11 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
             oldPortData.m_strPath = comPort.GetPath();
         }
 
-        /* Cache old port data: */
+        /* Cache old data: */
         m_pCache->child(iSlot).cacheInitialData(oldPortData);
     }
 
-    /* Cache old serial data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldSerialData);
 
     /* Upload machine to data: */
@@ -617,6 +622,11 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsSerialPage::getFromCache()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTabWidget)
+        return;
+
     /* Setup tab order: */
     AssertPtrReturnVoid(firstWidget());
     setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
@@ -626,13 +636,14 @@ void UIMachineSettingsSerialPage::getFromCache()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get port page: */
-        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
 
-        /* Load old port data from cache: */
-        pPage->loadPortData(m_pCache->child(iSlot).base());
+        /* Load old data from cache: */
+        pTab->loadPortData(m_pCache->child(iSlot).base());
 
         /* Setup tab order: */
-        pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
+        pLastFocusWidget = pTab->setOrderAfter(pLastFocusWidget);
     }
 
     /* Apply language settings: */
@@ -647,7 +658,12 @@ void UIMachineSettingsSerialPage::getFromCache()
 
 void UIMachineSettingsSerialPage::putToCache()
 {
-    /* Prepare new serial data: */
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTabWidget)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineSerial newSerialData;
 
     /* For each port: */
@@ -655,18 +671,19 @@ void UIMachineSettingsSerialPage::putToCache()
     {
         /* Getting port page: */
         UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
 
-        /* Prepare new port data: */
+        /* Prepare new data: */
         UIDataSettingsMachineSerialPort newPortData;
 
-        /* Gather new port data: */
+        /* Gather new data: */
         pTab->savePortData(newPortData);
 
-        /* Cache new port data: */
+        /* Cache new data: */
         m_pCache->child(iSlot).cacheCurrentData(newPortData);
     }
 
-    /* Cache new serial data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newSerialData);
 }
 
@@ -776,6 +793,7 @@ void UIMachineSettingsSerialPage::polishPage()
                                      m_pCache->childCount() > iSlot &&
                                      m_pCache->child(iSlot).base().m_fPortEnabled));
         UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
+        AssertPtrReturnVoid(pTab);
         pTab->polishTab();
     }
 }
@@ -824,6 +842,11 @@ void UIMachineSettingsSerialPage::cleanup()
 
 bool UIMachineSettingsSerialPage::saveData()
 {
+    /* Sanity check: */
+    if (   !m_pCache
+        || !m_pTabWidget)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save serial settings from cache: */
@@ -839,14 +862,18 @@ bool UIMachineSettingsSerialPage::saveData()
 
 bool UIMachineSettingsSerialPage::savePortData(int iSlot)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save adapter settings from cache: */
     if (fSuccess && m_pCache->child(iSlot).wasChanged())
     {
-        /* Get old serial data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineSerialPort &oldPortData = m_pCache->child(iSlot).base();
-        /* Get new serial data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineSerialPort &newPortData = m_pCache->child(iSlot).data();
 
         /* Get serial port for further activities: */

@@ -92,25 +92,29 @@ UIMachineSettingsAudio::~UIMachineSettingsAudio()
 
 bool UIMachineSettingsAudio::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old audio data: */
+    /* Prepare old data: */
     UIDataSettingsMachineAudio oldAudioData;
 
     /* Check whether adapter is valid: */
     const CAudioAdapter &comAdapter = m_machine.GetAudioAdapter();
     if (!comAdapter.isNull())
     {
-        /* Gather old audio data: */
+        /* Gather old data: */
         oldAudioData.m_fAudioEnabled = comAdapter.GetEnabled();
         oldAudioData.m_audioDriverType = comAdapter.GetAudioDriver();
         oldAudioData.m_audioControllerType = comAdapter.GetAudioController();
@@ -118,7 +122,7 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
         oldAudioData.m_fAudioInputEnabled = comAdapter.GetEnabledIn();
     }
 
-    /* Cache old audio data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldAudioData);
 
     /* Upload machine to data: */
@@ -127,15 +131,24 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsAudio::getFromCache()
 {
-    /* Get old audio data from cache: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Get old data from cache: */
     const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
 
-    /* Load old audio data from cache: */
+    /* Load old data from cache: */
     m_pCheckBoxAudio->setChecked(oldAudioData.m_fAudioEnabled);
-    m_pEditorAudioHostDriver->setValue(oldAudioData.m_audioDriverType);
-    m_pEditorAudioController->setValue(oldAudioData.m_audioControllerType);
-    m_pEditorAudioFeatures->setEnableOutput(oldAudioData.m_fAudioOutputEnabled);
-    m_pEditorAudioFeatures->setEnableInput(oldAudioData.m_fAudioInputEnabled);
+    if (m_pEditorAudioHostDriver)
+        m_pEditorAudioHostDriver->setValue(oldAudioData.m_audioDriverType);
+    if (m_pEditorAudioController)
+        m_pEditorAudioController->setValue(oldAudioData.m_audioControllerType);
+    if (m_pEditorAudioFeatures)
+    {
+        m_pEditorAudioFeatures->setEnableOutput(oldAudioData.m_fAudioOutputEnabled);
+        m_pEditorAudioFeatures->setEnableInput(oldAudioData.m_fAudioInputEnabled);
+    }
 
     /* Polish page finally: */
     polishPage();
@@ -143,17 +156,25 @@ void UIMachineSettingsAudio::getFromCache()
 
 void UIMachineSettingsAudio::putToCache()
 {
-    /* Prepare new audio data: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineAudio newAudioData;
 
-    /* Gather new audio data: */
-    newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
-    newAudioData.m_audioDriverType = m_pEditorAudioHostDriver->value();
-    newAudioData.m_audioControllerType = m_pEditorAudioController->value();
-    newAudioData.m_fAudioOutputEnabled = m_pEditorAudioFeatures->outputEnabled();
-    newAudioData.m_fAudioInputEnabled = m_pEditorAudioFeatures->inputEnabled();
-
-    /* Cache new audio data: */
+    /* Cache new data: */
+    if (m_pCheckBoxAudio)
+        newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
+    if (m_pEditorAudioHostDriver)
+        newAudioData.m_audioDriverType = m_pEditorAudioHostDriver->value();
+    if (m_pEditorAudioController)
+        newAudioData.m_audioControllerType = m_pEditorAudioController->value();
+    if (m_pEditorAudioFeatures)
+    {
+        newAudioData.m_fAudioOutputEnabled = m_pEditorAudioFeatures->outputEnabled();
+        newAudioData.m_fAudioInputEnabled = m_pEditorAudioFeatures->inputEnabled();
+    }
     m_pCache->cacheCurrentData(newAudioData);
 }
 
@@ -272,14 +293,18 @@ void UIMachineSettingsAudio::cleanup()
 
 bool UIMachineSettingsAudio::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save audio settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Get old audio data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
-        /* Get new audio data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineAudio &newAudioData = m_pCache->data();
 
         /* Get audio adapter for further activities: */

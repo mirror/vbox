@@ -173,18 +173,22 @@ void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
 
 bool UIMachineSettingsGeneral::changed() const
 {
-    return m_pCache->wasChanged();
+    return m_pCache ? m_pCache->wasChanged() : false;
 }
 
 void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old general data: */
+    /* Prepare old data: */
     UIDataSettingsMachineGeneral oldGeneralData;
 
     /* Gather old 'Basic' data: */
@@ -235,7 +239,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
         oldGeneralData.m_enmEncryptionCipherType = gpConverter->fromInternalString<UIDiskEncryptionCipherType>(strCipher);
     oldGeneralData.m_encryptedMedia = encryptedMedia;
 
-    /* Cache old general data: */
+    /* Cache old data: */
     m_pCache->cacheInitialData(oldGeneralData);
 
     /* Upload machine to data: */
@@ -244,33 +248,45 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsGeneral::getFromCache()
 {
-    /* Get old general data from cache: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Get old data from cache: */
     const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
 
     /* Load old 'Basic' data from cache: */
-    AssertPtrReturnVoid(m_pEditorNameAndSystem);
-    m_pEditorNameAndSystem->setName(oldGeneralData.m_strName);
-    m_pEditorNameAndSystem->setTypeId(oldGeneralData.m_strGuestOsTypeId);
+    if (m_pEditorNameAndSystem)
+    {
+        m_pEditorNameAndSystem->setName(oldGeneralData.m_strName);
+        m_pEditorNameAndSystem->setTypeId(oldGeneralData.m_strGuestOsTypeId);
+    }
 
     /* Load old 'Advanced' data from cache: */
-    AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pEditorClipboard);
-    AssertPtrReturnVoid(m_pEditorDragAndDrop);
-    m_pEditorSnapshotFolder->setPath(oldGeneralData.m_strSnapshotsFolder);
-    m_pEditorSnapshotFolder->setInitialPath(oldGeneralData.m_strSnapshotsHomeDir);
-    m_pEditorClipboard->setValue(oldGeneralData.m_clipboardMode);
-    m_pEditorDragAndDrop->setValue(oldGeneralData.m_dndMode);
+    if (m_pEditorSnapshotFolder)
+    {
+        m_pEditorSnapshotFolder->setPath(oldGeneralData.m_strSnapshotsFolder);
+        m_pEditorSnapshotFolder->setInitialPath(oldGeneralData.m_strSnapshotsHomeDir);
+    }
+    if (m_pEditorClipboard)
+        m_pEditorClipboard->setValue(oldGeneralData.m_clipboardMode);
+    if (m_pEditorDragAndDrop)
+        m_pEditorDragAndDrop->setValue(oldGeneralData.m_dndMode);
 
     /* Load old 'Description' data from cache: */
-    AssertPtrReturnVoid(m_pEditorDescription);
-    m_pEditorDescription->setValue(oldGeneralData.m_strDescription);
+    if (m_pEditorDescription)
+        m_pEditorDescription->setValue(oldGeneralData.m_strDescription);
 
     /* Load old 'Encryption' data from cache: */
-    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
-    m_pEditorDiskEncryptionSettings->setFeatureEnabled(oldGeneralData.m_fEncryptionEnabled);
-    m_pEditorDiskEncryptionSettings->setCipherType(oldGeneralData.m_enmEncryptionCipherType);
-    m_fEncryptionCipherChanged = oldGeneralData.m_fEncryptionCipherChanged;
-    m_fEncryptionPasswordChanged = oldGeneralData.m_fEncryptionPasswordChanged;
+    if (m_pEditorDiskEncryptionSettings)
+    {
+        m_pEditorDiskEncryptionSettings->setFeatureEnabled(oldGeneralData.m_fEncryptionEnabled);
+        m_pEditorDiskEncryptionSettings->setCipherType(oldGeneralData.m_enmEncryptionCipherType);
+    }
+    if (m_fEncryptionCipherChanged)
+        m_fEncryptionCipherChanged = oldGeneralData.m_fEncryptionCipherChanged;
+    if (m_fEncryptionPasswordChanged)
+        m_fEncryptionPasswordChanged = oldGeneralData.m_fEncryptionPasswordChanged;
 
     /* Polish page finally: */
     polishPage();
@@ -281,59 +297,67 @@ void UIMachineSettingsGeneral::getFromCache()
 
 void UIMachineSettingsGeneral::putToCache()
 {
-    /* Prepare new general data: */
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
+    /* Prepare new data: */
     UIDataSettingsMachineGeneral newGeneralData;
 
     /* Gather new 'Basic' data: */
-    AssertPtrReturnVoid(m_pEditorNameAndSystem);
-    newGeneralData.m_strName = m_pEditorNameAndSystem->name();
-    newGeneralData.m_strGuestOsTypeId = m_pEditorNameAndSystem->typeId();
+    if (m_pEditorNameAndSystem)
+    {
+        newGeneralData.m_strName = m_pEditorNameAndSystem->name();
+        newGeneralData.m_strGuestOsTypeId = m_pEditorNameAndSystem->typeId();
+    }
 
     /* Gather new 'Advanced' data: */
-    AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pEditorClipboard);
-    AssertPtrReturnVoid(m_pEditorDragAndDrop);
-    newGeneralData.m_strSnapshotsFolder = m_pEditorSnapshotFolder->path();
-    newGeneralData.m_clipboardMode = m_pEditorClipboard->value();
-    newGeneralData.m_dndMode = m_pEditorDragAndDrop->value();
+    if (m_pEditorSnapshotFolder)
+        newGeneralData.m_strSnapshotsFolder = m_pEditorSnapshotFolder->path();
+    if (m_pEditorClipboard)
+        newGeneralData.m_clipboardMode = m_pEditorClipboard->value();
+    if (m_pEditorDragAndDrop)
+        newGeneralData.m_dndMode = m_pEditorDragAndDrop->value();
 
     /* Gather new 'Description' data: */
-    AssertPtrReturnVoid(m_pEditorDescription);
-    newGeneralData.m_strDescription = m_pEditorDescription->value().isEmpty() ?
-                                      QString() : m_pEditorDescription->value();
+    if (m_pEditorDescription)
+        newGeneralData.m_strDescription = m_pEditorDescription->value().isEmpty()
+                                 ? QString() : m_pEditorDescription->value();
 
     /* Gather new 'Encryption' data: */
-    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
-    newGeneralData.m_fEncryptionEnabled = m_pEditorDiskEncryptionSettings->isFeatureEnabled();
-    newGeneralData.m_fEncryptionCipherChanged = m_fEncryptionCipherChanged;
-    newGeneralData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
-    newGeneralData.m_enmEncryptionCipherType = m_pEditorDiskEncryptionSettings->cipherType();
-    newGeneralData.m_strEncryptionPassword = m_pEditorDiskEncryptionSettings->password1();
-    newGeneralData.m_encryptedMedia = m_pCache->base().m_encryptedMedia;
-    /* If encryption status, cipher or password is changed: */
-    if (newGeneralData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
-        newGeneralData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged ||
-        newGeneralData.m_fEncryptionPasswordChanged != m_pCache->base().m_fEncryptionPasswordChanged)
+    if (m_pEditorDiskEncryptionSettings)
     {
-        /* Ask for the disk encryption passwords if necessary: */
-        if (!m_pCache->base().m_encryptedMedia.isEmpty())
+        newGeneralData.m_fEncryptionEnabled = m_pEditorDiskEncryptionSettings->isFeatureEnabled();
+        newGeneralData.m_fEncryptionCipherChanged = m_fEncryptionCipherChanged;
+        newGeneralData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
+        newGeneralData.m_enmEncryptionCipherType = m_pEditorDiskEncryptionSettings->cipherType();
+        newGeneralData.m_strEncryptionPassword = m_pEditorDiskEncryptionSettings->password1();
+        newGeneralData.m_encryptedMedia = m_pCache->base().m_encryptedMedia;
+        /* If encryption status, cipher or password is changed: */
+        if (newGeneralData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
+            newGeneralData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged ||
+            newGeneralData.m_fEncryptionPasswordChanged != m_pCache->base().m_fEncryptionPasswordChanged)
         {
-            /* Create corresponding dialog: */
-            QWidget *pDlgParent = windowManager().realParentWindow(window());
-            QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-                 new UIAddDiskEncryptionPasswordDialog(pDlgParent,
-                                                       newGeneralData.m_strName,
-                                                       newGeneralData.m_encryptedMedia);
-            /* Execute it and acquire the result: */
-            if (pDlg->exec() == QDialog::Accepted)
-                newGeneralData.m_encryptionPasswords = pDlg->encryptionPasswords();
-            /* Delete dialog if still valid: */
-            if (pDlg)
-                delete pDlg;
+            /* Ask for the disk encryption passwords if necessary: */
+            if (!m_pCache->base().m_encryptedMedia.isEmpty())
+            {
+                /* Create corresponding dialog: */
+                QWidget *pDlgParent = windowManager().realParentWindow(window());
+                QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+                     new UIAddDiskEncryptionPasswordDialog(pDlgParent,
+                                                           newGeneralData.m_strName,
+                                                           newGeneralData.m_encryptedMedia);
+                /* Execute it and acquire the result: */
+                if (pDlg->exec() == QDialog::Accepted)
+                    newGeneralData.m_encryptionPasswords = pDlg->encryptionPasswords();
+                /* Delete dialog if still valid: */
+                if (pDlg)
+                    delete pDlg;
+            }
         }
     }
 
-    /* Cache new general data: */
+    /* Cache new data: */
     m_pCache->cacheCurrentData(newGeneralData);
 }
 
@@ -669,6 +693,10 @@ void UIMachineSettingsGeneral::cleanup()
 
 bool UIMachineSettingsGeneral::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save general settings from cache: */
@@ -693,14 +721,18 @@ bool UIMachineSettingsGeneral::saveData()
 
 bool UIMachineSettingsGeneral::saveBasicData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Basic' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine OS type ID: */
@@ -732,14 +764,18 @@ bool UIMachineSettingsGeneral::saveBasicData()
 
 bool UIMachineSettingsGeneral::saveAdvancedData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Advanced' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine clipboard mode: */
@@ -779,14 +815,18 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
 
 bool UIMachineSettingsGeneral::saveDescriptionData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Description' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine description: */
@@ -806,14 +846,18 @@ bool UIMachineSettingsGeneral::saveDescriptionData()
 
 bool UIMachineSettingsGeneral::saveEncryptionData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save 'Encryption' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from cache: */
+        /* Get old data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from cache: */
+        /* Get new data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Make sure it either encryption state is changed itself,
