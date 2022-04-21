@@ -33,7 +33,7 @@
 #include <VBox/types.h>
 
 /** An opaque VBox cryptographic context handle. */
-typedef VBOXCRYPTOCTXINT *VBOXCRYPTOCTX;
+typedef struct VBOXCRYPTOCTXINT *VBOXCRYPTOCTX;
 /**Pointer to an opaque VBox cryptographic context handle. */
 typedef VBOXCRYPTOCTX *PVBOXCRYPTOCTX;
 
@@ -103,7 +103,7 @@ typedef struct VBOXCRYPTOIF
      * @param   ppszStoredCtx       Where to store the base-64 encoded cryptographic context on success.
      *                              Must be freed with RTMemFree() when not required anymore.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxSave, (VBOXCRYPTOCTX hCryptoCtx, chara **ppszStoredCtx));
+    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxSave, (VBOXCRYPTOCTX hCryptoCtx, char **ppszStoredCtx));
 
     /**
      * Changes the encryption password for the given context.
