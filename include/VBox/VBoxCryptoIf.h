@@ -93,7 +93,7 @@ typedef struct VBOXCRYPTOIF
      * @returns VBox status code.
      * @param   hCryptoCtx          Handle of crpytographic context to destroy.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxLoad, (VBOXCRYPTOCTX hCryptoCtx));
+    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxDestroy, (VBOXCRYPTOCTX hCryptoCtx));
 
     /**
      * Returns the given cryptographic context as a base-64 encoded string.
