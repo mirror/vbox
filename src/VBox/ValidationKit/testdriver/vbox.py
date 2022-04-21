@@ -2360,7 +2360,9 @@ class TestDriver(base.TestDriver):                                              
 
         # create + register the VM
         try:
-            if self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
+            if self.fpApiVer >= 7.0: # Introduces VM encryption (three new parameters, empty for now).
+                oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "", "", "", "");
+            elif self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
                 oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "");
             elif self.fpApiVer >= 4.0:
                 oVM = self.oVBox.createMachine("", sName, self.tryFindGuestOsId(sKind), "", False);
