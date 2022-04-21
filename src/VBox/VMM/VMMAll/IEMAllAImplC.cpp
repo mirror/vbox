@@ -4695,10 +4695,13 @@ DECLINLINE(uint16_t) iemFpuSoftStateAndF80ToFswAndIprtResult(softfloat_state_t c
     if (fFsw & ~fFcw & X86_FSW_XCPT_MASK)
         fFsw |= X86_FSW_ES | X86_FSW_B;
 
-    if (!(fFsw & ~fFcw & X86_FSW_IE))
+    if (!(fFsw & ~fFcw & (X86_FSW_IE | X86_FSW_DE)))
         iemFpuSoftF80ToIprt(pr80Result, r80XResult);
     else
+    {
+        fFsw &= ~(X86_FSW_OE | X86_FSW_UE | X86_FSW_PE | X86_FSW_ZE | X86_FSW_C1);
         *pr80Result = *pr80XcptResult;
+    }
     return fFsw;
 }
 
@@ -5042,7 +5045,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fidivr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEM
 }
 
 
-/** Worker for iemAImpl_fdiv_r80_by_r80 & iemAImpl_fdivr_r80_by_r80. */
+/** Worker for iemAImpl_fprem_r80_by_r80 & iemAImpl_fprem1_r80_by_r80. */
 static uint16_t iemAImpl_fprem_fprem1_r80_by_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
                                                         uint16_t fFcw, uint16_t fFsw, PCRTFLOAT80U pr80Val1Org, bool fLegacyInstr)
 {
@@ -5776,8 +5779,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_frndint_r80,(PCX86FXSTATE pFpuState, PIEMFPURES
 IEM_DECL_IMPL_DEF(void, iemAImpl_fscale_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                     PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    /* The SoftFloat worker function extF80_scale_extF80 is of our creation, so
+       it does everything we need it to do. */
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_FCW(fFcw);
+    extFloat80_t r80XResult = extF80_scale_extF80(iemFpuSoftF80FromIprt(pr80Val1), iemFpuSoftF80FromIprt(pr80Val2), &SoftState);
+    pFpuRes->FSW = iemFpuSoftStateAndF80ToFswAndIprtResult(&SoftState, r80XResult, &pFpuRes->r80Result, fFcw, fFsw, pr80Val1);
 }
 
 
