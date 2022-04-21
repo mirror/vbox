@@ -48,6 +48,10 @@ union ui64_f64 { uint64_t ui; float64_t f; };
 
 #ifdef SOFTFLOAT_FAST_INT64
 union extF80M_extF80 { struct extFloat80M fM; extFloat80_t f; };
+# define EXTF80M_EXTF80_INIT( a_signExp, a_signif )        { EXTFLOAT80M_INIT( a_signExp, a_signif ) }         /* VBox */
+# define EXTF80M_EXTF80_INIT3( a_sign, a_signif, a_exp )   { EXTFLOAT80M_INIT3( a_sign, a_signif, a_exp ) }    /* VBox */
+# define EXTF80M_EXTF80_INIT_C( a_signExp, a_signif )      { EXTFLOAT80M_INIT_C( a_signExp, a_signif ) }       /* VBox */
+# define EXTF80M_EXTF80_INIT3_C( a_sign, a_signif, a_exp ) { EXTFLOAT80M_INIT3_C( a_sign, a_signif, a_exp ) }  /* VBox */
 union ui128_f128 { struct uint128 ui; float128_t f; };
 #endif
 

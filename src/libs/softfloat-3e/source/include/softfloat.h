@@ -105,7 +105,7 @@ enum {
     softfloat_flag_invalid   = 16
 #else /* VBox: Match X86_FSW_?E */
     softfloat_flag_invalid   = 1<<0 /**< X86_FSW_IE */,
-    //softfloat_flag_ X86_FSW_DE          RT_BIT_32(1)
+    softfloat_flag_denormal  = 1<<1 /**< X86_FSW_DE - only returned by some VBox specific functions */,
     softfloat_flag_infinite  = 1<<2 /**< X86_FSW_ZE */,
     softfloat_flag_overflow  = 1<<3 /**< X86_FSW_OE */,
     softfloat_flag_underflow = 1<<4 /**< X86_FSW_UE */,
@@ -299,6 +299,7 @@ extFloat80_t extF80_rem( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA )
 extFloat80_t extF80_partialRem( extFloat80_t a, extFloat80_t b, uint8_t roundingMode,                   /* VBox: FPREM/FPREM1 */
                                 uint16_t *pfCxFlags, softfloat_state_t *pState );                       /* VBox: FPREM/FPREM1 */
 extFloat80_t extF80_sqrt( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
+extFloat80_t extF80_scale_extF80( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_eq( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_le( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_lt( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );

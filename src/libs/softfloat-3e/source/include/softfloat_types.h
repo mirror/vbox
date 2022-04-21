@@ -59,9 +59,16 @@ typedef struct { uint64_t v[2]; } float128_t;
 *----------------------------------------------------------------------------*/
 #ifdef LITTLEENDIAN
 struct extFloat80M { uint64_t signif; uint16_t signExp; };
+# define EXTFLOAT80M_INIT( a_signExp, a_signif )    { a_signif, a_signExp }                             /* VBox */
 #else
 struct extFloat80M { uint16_t signExp; uint64_t signif; };
+# define EXTFLOAT80M_INIT( a_signExp, a_signif )    { a_signExp, a_signif }                             /* VBox */
 #endif
+#define EXTFLOAT80M_INIT_C( a_signExp, a_signif )   EXTFLOAT80M_INIT( a_signExp, UINT64_C( a_signif ) ) /* VBox */
+#define EXTFLOAT80M_INIT3( a_sign, a_signif, a_exp ) \
+    EXTFLOAT80M_INIT( packToExtF80UI64( a_sign, a_exp ), a_signif)                                      /* VBox */
+#define EXTFLOAT80M_INIT3_C( a_sign, a_signif, a_exp ) \
+    EXTFLOAT80M_INIT3( a_sign, UINT64_C( a_signif ), a_exp )                                            /* VBox */
 
 /*----------------------------------------------------------------------------
 | The type used to pass 80-bit extended floating-point arguments and
