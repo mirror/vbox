@@ -11344,7 +11344,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="c37c534a-b07c-46b1-ab56-344857b81685"
+    uuid="ca37acc8-420f-4c17-8131-04f07e5834c5"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="4"
     >
@@ -11353,7 +11353,9 @@
       Abstract parent interface for handling updateable software components.
     </desc>
 
-    <method name="check">
+    <method name="checkFor">
+      <!-- Initially named just "check", but older xcode versions on the Mac have trouble naming interface
+           functions like this and thus failing to build, sigh. -->
       <desc>
         Checks for an update.
       </desc>

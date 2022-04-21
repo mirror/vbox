@@ -132,7 +132,7 @@ void UpdateAgent::uninit()
         return;
 }
 
-HRESULT UpdateAgent::check(ComPtr<IProgress> &aProgress)
+HRESULT UpdateAgent::checkFor(ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aProgress);
 
@@ -726,7 +726,7 @@ void HostUpdateAgent::uninit()
         return;
 }
 
-HRESULT HostUpdateAgent::check(ComPtr<IProgress> &aProgress)
+HRESULT HostUpdateAgent::checkFor(ComPtr<IProgress> &aProgress)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

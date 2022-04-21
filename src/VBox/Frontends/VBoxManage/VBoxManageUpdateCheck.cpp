@@ -268,7 +268,7 @@ static RTEXITCODE doUpdateCheck(int argc, char **argv, ComPtr<IUpdateAgent> pUpd
      * return value indicating update checks are disabled.
      */
     ComPtr<IProgress> pProgress;
-    HRESULT rc = pUpdateAgent->Check(pProgress.asOutParam());
+    HRESULT rc = pUpdateAgent->CheckFor(pProgress.asOutParam());
     if (FAILED(rc))
     {
         if (pProgress.isNull())
