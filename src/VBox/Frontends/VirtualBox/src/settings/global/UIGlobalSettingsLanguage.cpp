@@ -68,6 +68,10 @@ UIGlobalSettingsLanguage::~UIGlobalSettingsLanguage()
 
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -85,18 +89,28 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsLanguage::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
-    m_pEditorLanguageSettings->setValue(oldData.m_strLanguageId);
+    if (m_pEditorLanguageSettings)
+        m_pEditorLanguageSettings->setValue(oldData.m_strLanguageId);
 }
 
 void UIGlobalSettingsLanguage::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalLanguage newData = m_pCache->base();
 
     /* Cache new data: */
-    newData.m_strLanguageId = m_pEditorLanguageSettings->value();
+    if (m_pEditorLanguageSettings)
+        newData.m_strLanguageId = m_pEditorLanguageSettings->value();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -151,6 +165,10 @@ void UIGlobalSettingsLanguage::cleanup()
 
 bool UIGlobalSettingsLanguage::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */

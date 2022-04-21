@@ -68,6 +68,10 @@ UIGlobalSettingsInterface::~UIGlobalSettingsInterface()
 
 void UIGlobalSettingsInterface::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -85,9 +89,14 @@ void UIGlobalSettingsInterface::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsInterface::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalInterface &oldData = m_pCache->base();
-    m_pEditorColorTheme->setValue(oldData.m_enmColorTheme);
+    if (m_pEditorColorTheme)
+        m_pEditorColorTheme->setValue(oldData.m_enmColorTheme);
 
     /* Revalidate: */
     revalidate();
@@ -95,11 +104,16 @@ void UIGlobalSettingsInterface::getFromCache()
 
 void UIGlobalSettingsInterface::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalInterface newData;
 
     /* Cache new data: */
-    newData.m_enmColorTheme = m_pEditorColorTheme->value();
+    if (m_pEditorColorTheme)
+        newData.m_enmColorTheme = m_pEditorColorTheme->value();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -157,6 +171,10 @@ void UIGlobalSettingsInterface::cleanup()
 
 bool UIGlobalSettingsInterface::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */

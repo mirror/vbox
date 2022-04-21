@@ -76,6 +76,10 @@ UIGlobalSettingsInput::~UIGlobalSettingsInput()
 
 void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -111,10 +115,16 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsInput::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalInput &oldData = m_pCache->base();
-    m_pEditorShortcutConfiguration->load(oldData.m_shortcuts);
-    m_pEditorAutoCaptureKeyboard->setValue(oldData.m_fAutoCapture);
+    if (m_pEditorShortcutConfiguration)
+        m_pEditorShortcutConfiguration->load(oldData.m_shortcuts);
+    if (m_pEditorAutoCaptureKeyboard)
+        m_pEditorAutoCaptureKeyboard->setValue(oldData.m_fAutoCapture);
 
     /* Revalidate: */
     revalidate();
@@ -122,12 +132,18 @@ void UIGlobalSettingsInput::getFromCache()
 
 void UIGlobalSettingsInput::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalInput newData = m_pCache->base();
 
     /* Cache new data: */
-    m_pEditorShortcutConfiguration->save(newData.m_shortcuts);
-    newData.m_fAutoCapture = m_pEditorAutoCaptureKeyboard->value();
+    if (m_pEditorShortcutConfiguration)
+        m_pEditorShortcutConfiguration->save(newData.m_shortcuts);
+    if (m_pEditorAutoCaptureKeyboard)
+        newData.m_fAutoCapture = m_pEditorAutoCaptureKeyboard->value();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -223,6 +239,10 @@ void UIGlobalSettingsInput::cleanup()
 
 bool UIGlobalSettingsInput::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */

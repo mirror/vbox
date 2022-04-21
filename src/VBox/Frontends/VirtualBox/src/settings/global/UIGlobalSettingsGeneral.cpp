@@ -75,6 +75,10 @@ UIGlobalSettingsGeneral::~UIGlobalSettingsGeneral()
 
 void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -93,20 +97,32 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsGeneral::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalGeneral &oldData = m_pCache->base();
-    m_pEditorDefaultMachineFolder->setValue(oldData.m_strDefaultMachineFolder);
-    m_pEditorVRDEAuthLibrary->setValue(oldData.m_strVRDEAuthLibrary);
+    if (m_pEditorDefaultMachineFolder)
+        m_pEditorDefaultMachineFolder->setValue(oldData.m_strDefaultMachineFolder);
+    if (m_pEditorVRDEAuthLibrary)
+        m_pEditorVRDEAuthLibrary->setValue(oldData.m_strVRDEAuthLibrary);
 }
 
 void UIGlobalSettingsGeneral::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalGeneral newData = m_pCache->base();
 
     /* Cache new data: */
-    newData.m_strDefaultMachineFolder = m_pEditorDefaultMachineFolder->value();
-    newData.m_strVRDEAuthLibrary = m_pEditorVRDEAuthLibrary->value();
+    if (m_pEditorDefaultMachineFolder)
+        newData.m_strDefaultMachineFolder = m_pEditorDefaultMachineFolder->value();
+    if (m_pEditorVRDEAuthLibrary)
+        newData.m_strVRDEAuthLibrary = m_pEditorVRDEAuthLibrary->value();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -175,6 +191,10 @@ void UIGlobalSettingsGeneral::cleanup()
 
 bool UIGlobalSettingsGeneral::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */

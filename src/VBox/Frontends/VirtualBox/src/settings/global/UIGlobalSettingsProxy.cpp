@@ -75,6 +75,10 @@ UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
 
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -93,10 +97,17 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsProxy::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
-    m_pEditorGlobalProxyFeatures->setProxyMode(oldData.m_enmProxyMode);
-    m_pEditorGlobalProxyFeatures->setProxyHost(oldData.m_strProxyHost);
+    if (m_pEditorGlobalProxyFeatures)
+    {
+        m_pEditorGlobalProxyFeatures->setProxyMode(oldData.m_enmProxyMode);
+        m_pEditorGlobalProxyFeatures->setProxyHost(oldData.m_strProxyHost);
+    }
 
     /* Revalidate: */
     revalidate();
@@ -104,12 +115,19 @@ void UIGlobalSettingsProxy::getFromCache()
 
 void UIGlobalSettingsProxy::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalProxy newData = m_pCache->base();
 
     /* Cache new data: */
-    newData.m_enmProxyMode = m_pEditorGlobalProxyFeatures->proxyMode();
-    newData.m_strProxyHost = m_pEditorGlobalProxyFeatures->proxyHost();
+    if (m_pEditorGlobalProxyFeatures)
+    {
+        newData.m_enmProxyMode = m_pEditorGlobalProxyFeatures->proxyMode();
+        newData.m_strProxyHost = m_pEditorGlobalProxyFeatures->proxyHost();
+    }
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -224,6 +242,10 @@ void UIGlobalSettingsProxy::cleanup()
 
 bool UIGlobalSettingsProxy::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save settings from cache: */

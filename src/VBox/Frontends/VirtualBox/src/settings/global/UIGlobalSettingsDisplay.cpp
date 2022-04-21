@@ -83,6 +83,10 @@ UIGlobalSettingsDisplay::~UIGlobalSettingsDisplay()
 
 void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
@@ -106,25 +110,45 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsDisplay::getFromCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Load old data from cache: */
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
-    m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
-    m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
-    m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
-    m_pEditorGlobalDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
-    m_pEditorGlobalDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
+    if (m_pEditorMaximumGuestScreenSize)
+        m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
+    if (m_pEditorScaleFactor)
+    {
+        m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
+        m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
+    }
+    if (m_pEditorGlobalDisplayFeatures)
+    {
+        m_pEditorGlobalDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
+        m_pEditorGlobalDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
+    }
 }
 
 void UIGlobalSettingsDisplay::putToCache()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return;
+
     /* Prepare new data: */
     UIDataSettingsGlobalDisplay newData = m_pCache->base();
 
     /* Cache new data: */
-    newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
-    newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
-    newData.m_fActivateHoveredMachineWindow = m_pEditorGlobalDisplayFeatures->activateOnMouseHover();
-    newData.m_fDisableHostScreenSaver = m_pEditorGlobalDisplayFeatures->disableHostScreenSaver();
+    if (m_pEditorMaximumGuestScreenSize)
+        newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
+    if (m_pEditorScaleFactor)
+        newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
+    if (m_pEditorGlobalDisplayFeatures)
+    {
+        newData.m_fActivateHoveredMachineWindow = m_pEditorGlobalDisplayFeatures->activateOnMouseHover();
+        newData.m_fDisableHostScreenSaver = m_pEditorGlobalDisplayFeatures->disableHostScreenSaver();
+    }
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -200,6 +224,10 @@ void UIGlobalSettingsDisplay::cleanup()
 
 bool UIGlobalSettingsDisplay::saveData()
 {
+    /* Sanity check: */
+    if (!m_pCache)
+        return false;
+
     /* Prepare result: */
     bool fSuccess = true;
     /* Save display settings from cache: */
