@@ -1003,7 +1003,7 @@ if1of ($(KBUILD_TARGET), darwin)
 endif
 # Enables updating checking through Main.
 # Only available if cURL is being used.
-ifndef VBOX_WITH_LIBCURL
+ifdef VBOX_WITH_LIBCURL
  VBOX_WITH_UPDATE_AGENT = 1
 endif
 ## @}
