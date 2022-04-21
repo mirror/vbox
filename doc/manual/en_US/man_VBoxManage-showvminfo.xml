@@ -45,6 +45,8 @@
       </group>
       <arg>--details</arg>
       <arg>--machinereadable</arg>
+      <arg>--password-id</arg>
+      <arg>--password</arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-showvminfo-log">
@@ -54,6 +56,8 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="req">--log=<replaceable>index</replaceable></arg>
+      <arg>--password-id <replaceable>id</replaceable></arg>
+      <arg>--password <replaceable>file</replaceable>|-</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -91,6 +95,21 @@
               format.
             </para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><option>--password-id  <replaceable>id</replaceable></option></term>
+          <listitem><para>
+              Specifies password id of the VM if it is encrypted.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password <replaceable>file</replaceable>|-</option></term>
+          <listitem><para>
+              Specifies password of the VM if it is encrypted. Either
+              specify the absolute pathname of a password file on the
+              host operating system, or <literal>-</literal> to prompt
+              you for the password.
+            </para></listitem>
+        </varlistentry>
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-showvminfo-log">
@@ -112,6 +131,21 @@
               <filename>VBoxHardening.log</filename> file. Index values
               starting at <literal>2</literal> indicate other log files,
               such as the <filename>VBox.log.1</filename> file.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password-id <replaceable>id</replaceable></option></term>
+          <listitem><para>
+              Specifies password id of the VM if it is encrypted.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password <replaceable>file</replaceable>|-</option></term>
+          <listitem><para>
+              Specifies password of the VM if it is encrypted. Either
+              specify the absolute pathname of a password file on the
+              host operating system, or <literal>-</literal> to prompt
+              you for the password.
             </para></listitem>
         </varlistentry>
       </variablelist>

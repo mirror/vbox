@@ -2083,7 +2083,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
             }
 
-            CHECK_ERROR_BREAK(console, AddDiskEncryptionPassword(bstrPwId.raw(), Bstr(strPassword).raw(), fRemoveOnSuspend));
+            CHECK_ERROR_BREAK(console, AddEncryptionPassword(bstrPwId.raw(), Bstr(strPassword).raw(), fRemoveOnSuspend));
         }
         else if (!strcmp(a->argv[1], "removeencpassword"))
         {
@@ -2094,12 +2094,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
             Bstr bstrPwId(a->argv[2]);
-            CHECK_ERROR_BREAK(console, RemoveDiskEncryptionPassword(bstrPwId.raw()));
+            CHECK_ERROR_BREAK(console, RemoveEncryptionPassword(bstrPwId.raw()));
         }
         else if (!strcmp(a->argv[1], "removeallencpasswords"))
         {
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_REMOVEALLENCPASSWORDS);
-            CHECK_ERROR_BREAK(console, ClearAllDiskEncryptionPasswords());
+            CHECK_ERROR_BREAK(console, ClearAllEncryptionPasswords());
         }
         else if (!strncmp(a->argv[1], "changeuartmode", 14))
         {

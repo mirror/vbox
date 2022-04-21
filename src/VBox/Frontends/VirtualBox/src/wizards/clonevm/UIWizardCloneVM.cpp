@@ -180,7 +180,8 @@ bool UIWizardCloneVM::cloneVM()
     /* Get VBox object: */
     CVirtualBox comVBox = uiCommon().virtualBox();
     /* Create a new machine object: */
-    CMachine cloneMachine = comVBox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString());
+    CMachine cloneMachine = comVBox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString(),
+                                                  QString(), QString(), QString());
     if (!comVBox.isOk())
     {
         UINotificationMessage::cannotCreateMachine(comVBox, notificationCenter());

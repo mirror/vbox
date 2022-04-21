@@ -58,18 +58,80 @@ using namespace com;
 
 DECLARE_TRANSLATION_CONTEXT(Misc);
 
+static const RTGETOPTDEF g_aRegisterVMOptions[] =
+{
+    { "--password",       'p', RTGETOPT_REQ_STRING },
+};
+
 RTEXITCODE handleRegisterVM(HandlerArg *a)
 {
     HRESULT rc;
+    const char *VMName = NULL;
 
-    if (a->argc != 1)
-        return errorSyntax(Misc::tr("Incorrect number of parameters"));
+    Bstr bstrVMName;
+    Bstr bstrPasswordFile;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aRegisterVMOptions, RT_ELEMENTS(g_aRegisterVMOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'p':   // --password
+                bstrPasswordFile = ValueUnion.psz;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (bstrVMName.isEmpty())
+                    VMName = ValueUnion.psz;
+                else
+                    return errorSyntax(Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(Misc::tr("Invalid option -%c"), c);
+                    return errorSyntax(Misc::tr("Invalid option case %i"), c);
+                }
+                if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(Misc::tr("unknown option: %s\n"), ValueUnion.psz);
+                if (ValueUnion.pDef)
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                return errorSyntax(Misc::tr("error: %Rrs"), c);
+        }
+    }
+
+    Utf8Str strPassword;
+
+    if (bstrPasswordFile.isNotEmpty())
+    {
+        if (bstrPasswordFile == "-")
+        {
+            /* Get password from console. */
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, Misc::tr("Enter password:"));
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(a->argv[3], &strPassword);
+            if (rcExit == RTEXITCODE_FAILURE)
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Failed to read password from file"));
+        }
+    }
 
     ComPtr<IMachine> machine;
     /** @todo Ugly hack to get both the API interpretation of relative paths
      * and the client's interpretation of relative paths. Remove after the API
      * has been redesigned. */
     rc = a->virtualBox->OpenMachine(Bstr(a->argv[0]).raw(),
+                                    Bstr(strPassword).raw(),
                                     machine.asOutParam());
     if (rc == VBOX_E_FILE_ERROR)
     {
@@ -79,10 +141,12 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Cannot convert filename \"%s\" to absolute path: %Rrc"),
                                   a->argv[0], vrc);
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs).raw(),
+                                               Bstr(strPassword).raw(),
                                                machine.asOutParam()));
     }
     else if (FAILED(rc))
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]).raw(),
+                                               Bstr(strPassword).raw(),
                                                machine.asOutParam()));
     if (SUCCEEDED(rc))
     {
@@ -193,6 +257,12 @@ static const RTGETOPTDEF g_aCreateVMOptions[] =
     { "-register",        'r', RTGETOPT_REQ_NOTHING },
     { "--default",        'd', RTGETOPT_REQ_NOTHING },
     { "-default",         'd', RTGETOPT_REQ_NOTHING },
+    { "--cipher",         'c', RTGETOPT_REQ_STRING },
+    { "-cipher",          'c', RTGETOPT_REQ_STRING },
+    { "--password-id",    'i', RTGETOPT_REQ_STRING },
+    { "-password-id",     'i', RTGETOPT_REQ_STRING },
+    { "--password",       'w', RTGETOPT_REQ_STRING },
+    { "-password",        'w', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleCreateVM(HandlerArg *a)
@@ -207,6 +277,9 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
     /* TBD. Now not used */
     Bstr bstrDefaultFlags;
     com::SafeArray<BSTR> groups;
+    Bstr bstrCipher;
+    Bstr bstrPasswordId;
+    const char *pszPassword = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -246,6 +319,18 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                 fDefault = true;
                 break;
 
+            case 'c':   // --cipher
+                bstrCipher = ValueUnion.psz;
+                break;
+
+            case 'i':   // --password-id
+                bstrPasswordId = ValueUnion.psz;
+                break;
+
+            case 'w':   // --password
+                pszPassword = ValueUnion.psz;
+                break;
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
@@ -270,6 +355,26 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                                                  createFlags.raw(),
                                                  bstrBaseFolder.raw(),
                                                  bstrSettingsFile.asOutParam()));
+        Utf8Str strPassword;
+        if (pszPassword)
+        {
+            if (!RTStrCmp(pszPassword, "-"))
+            {
+                /* Get password from console. */
+                RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+                if (rcExit == RTEXITCODE_FAILURE)
+                    return rcExit;
+            }
+            else
+            {
+                RTEXITCODE rcExit = readPasswordFile(pszPassword, &strPassword);
+                if (rcExit == RTEXITCODE_FAILURE)
+                {
+                    RTMsgError("Failed to read new password from file");
+                    return rcExit;
+                }
+            }
+        }
         ComPtr<IMachine> machine;
         CHECK_ERROR_BREAK(a->virtualBox,
                           CreateMachine(bstrSettingsFile.raw(),
@@ -277,6 +382,9 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                                         ComSafeArrayAsInParam(groups),
                                         bstrOsTypeId.raw(),
                                         createFlags.raw(),
+                                        bstrCipher.raw(),
+                                        bstrPasswordId.raw(),
+                                        Bstr(strPassword).raw(),
                                         machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
@@ -582,6 +690,9 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
                                                  ComSafeArrayAsInParam(groups),
                                                  NULL,
                                                  createFlags.raw(),
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
                                                  trgMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
 
@@ -611,6 +722,9 @@ RTEXITCODE handleStartVM(HandlerArg *a)
     std::list<const char *> VMs;
     Bstr sessionType;
     com::SafeArray<IN_BSTR> aBstrEnv;
+    const char *pszPassword = NULL;
+    const char *pszPasswordId = NULL;
+    Utf8Str strPassword;
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     /* make sure the VM process will by default start on the same display as VBoxManage */
@@ -629,6 +743,8 @@ RTEXITCODE handleStartVM(HandlerArg *a)
         { "--type",         't', RTGETOPT_REQ_STRING },
         { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
         { "--putenv",       'E', RTGETOPT_REQ_STRING },
+        { "--password",     'p', RTGETOPT_REQ_STRING },
+        { "--password-id",  'i', RTGETOPT_REQ_STRING }
     };
     int c;
     RTGETOPTUNION ValueUnion;
@@ -672,6 +788,14 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                     return errorSyntax(Misc::tr("Parameter to option --putenv must not contain any newline character"));
                 break;
 
+            case 'p':   // --password
+                pszPassword = ValueUnion.psz;
+                break;
+
+            case 'i':   // --password-id
+                pszPasswordId = ValueUnion.psz;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
                 VMs.push_back(ValueUnion.psz);
                 break;
@@ -697,6 +821,23 @@ RTEXITCODE handleStartVM(HandlerArg *a)
     if (VMs.empty())
         return errorSyntax(Misc::tr("at least one VM name or uuid required"));
 
+    if (!RTStrCmp(pszPassword, "-"))
+    {
+        /* Get password from console. */
+        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+        if (rcExit == RTEXITCODE_FAILURE)
+            return rcExit;
+    }
+    else
+    {
+        RTEXITCODE rcExit = readPasswordFile(pszPassword, &strPassword);
+        if (rcExit == RTEXITCODE_FAILURE)
+        {
+            RTMsgError("Failed to read new password from file");
+            return rcExit;
+        }
+    }
+
     for (std::list<const char *>::const_iterator it = VMs.begin();
          it != VMs.end();
          ++it)
@@ -708,33 +849,42 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                                                machine.asOutParam()));
         if (machine)
         {
-            ComPtr<IProgress> progress;
-            CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
-                                                 ComSafeArrayAsInParam(aBstrEnv), progress.asOutParam()));
-            if (SUCCEEDED(rc) && !progress.isNull())
+            if (pszPasswordId && strPassword.isNotEmpty())
             {
-                RTPrintf(Misc::tr("Waiting for VM \"%s\" to power on...\n"), pszVM);
-                CHECK_ERROR(progress, WaitForCompletion(-1));
-                if (SUCCEEDED(rc))
+                CHECK_ERROR(machine, AddEncryptionPassword(Bstr(pszPasswordId).raw(), Bstr(strPassword).raw()));
+                if (rc == VBOX_E_PASSWORD_INCORRECT)
+                    RTMsgError("Password incorrect!");
+            }
+            if (SUCCEEDED(rc))
+            {
+                ComPtr<IProgress> progress;
+                CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
+                                                     ComSafeArrayAsInParam(aBstrEnv), progress.asOutParam()));
+                if (SUCCEEDED(rc) && !progress.isNull())
                 {
-                    BOOL completed = true;
-                    CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
+                    RTPrintf("Waiting for VM \"%s\" to power on...\n", pszVM);
+                    CHECK_ERROR(progress, WaitForCompletion(-1));
                     if (SUCCEEDED(rc))
                     {
-                        ASSERT(completed);
-
-                        LONG iRc;
-                        CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
+                        BOOL completed = true;
+                        CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
                         if (SUCCEEDED(rc))
                         {
-                            if (SUCCEEDED(iRc))
-                                RTPrintf(Misc::tr("VM \"%s\" has been successfully started.\n"), pszVM);
-                            else
+                            ASSERT(completed);
+
+                            LONG iRc;
+                            CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
+                            if (SUCCEEDED(rc))
                             {
-                                ProgressErrorInfo info(progress);
-                                com::GluePrintErrorInfo(info);
+                                if (SUCCEEDED(iRc))
+                                    RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
+                                else
+                                {
+                                    ProgressErrorInfo info(progress);
+                                    com::GluePrintErrorInfo(info);
+                                }
+                                rc = iRc;
                             }
-                            rc = iRc;
                         }
                     }
                 }
@@ -751,6 +901,314 @@ RTEXITCODE handleStartVM(HandlerArg *a)
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+static const RTGETOPTDEF g_aSetVMEncryptionOptions[] =
+{
+    { "--new-password",    'n', RTGETOPT_REQ_STRING },
+    { "--old-password",    'o', RTGETOPT_REQ_STRING },
+    { "--cipher",          'c', RTGETOPT_REQ_STRING },
+    { "--new-password-id", 'i', RTGETOPT_REQ_STRING },
+    { "--force",           'f', RTGETOPT_REQ_NOTHING},
+};
+
+RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
+{
+    HRESULT           rc;
+    ComPtr<IMachine>  machine;
+    const char       *pszPasswordNew = NULL;
+    const char       *pszPasswordOld = NULL;
+    const char       *pszCipher = NULL;
+    const char       *pszNewPasswordId = NULL;
+    BOOL              fForce = FALSE;
+    Utf8Str           strPasswordNew;
+    Utf8Str           strPasswordOld;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aSetVMEncryptionOptions, RT_ELEMENTS(g_aSetVMEncryptionOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'n':   // --new-password
+                pszPasswordNew = ValueUnion.psz;
+                break;
+
+            case 'o':   // --old-password
+                pszPasswordOld = ValueUnion.psz;
+                break;
+
+            case 'c':   // --cipher
+                pszCipher = ValueUnion.psz;
+                break;
+
+            case 'i':   // --new-password-id
+                pszNewPasswordId = ValueUnion.psz;
+                break;
+
+            case 'f':   // --force
+                fForce = TRUE;
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(Misc::tr("Invalid option -%c"), c);
+                    else
+                        return errorSyntax(Misc::tr("Invalid option case %i"), c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(Misc::tr("unknown option: %s\n"), ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(Misc::tr("%s: %Rrs"), ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(Misc::tr("error: %Rrs"), c);
+        }
+    }
+
+    if (!pszFilenameOrUuid)
+        return errorSyntax(Misc::tr("VM name or UUID required"));
+
+    if (!pszPasswordNew && !pszPasswordOld)
+        return errorSyntax(Misc::tr("No password specified"));
+
+    if (   (pszPasswordNew && !pszNewPasswordId)
+        || (!pszPasswordNew && pszNewPasswordId))
+        return errorSyntax(Misc::tr("A new password must always have a valid identifier set at the same time"));
+
+    if (pszPasswordOld)
+    {
+        if (!RTStrCmp(pszPasswordOld, "-"))
+        {
+            /* Get password from console. */
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordOld, "Enter old password:");
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(pszPasswordOld, &strPasswordOld);
+            if (rcExit == RTEXITCODE_FAILURE)
+            {
+                RTMsgError("Failed to read old password from file");
+                return rcExit;
+            }
+        }
+    }
+    if (pszPasswordNew)
+    {
+        if (!RTStrCmp(pszPasswordNew, "-"))
+        {
+            /* Get password from console. */
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordNew, "Enter new password:");
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(pszPasswordNew, &strPasswordNew);
+            if (rcExit == RTEXITCODE_FAILURE)
+            {
+                RTMsgError("Failed to read new password from file");
+                return rcExit;
+            }
+        }
+    }
+
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszFilenameOrUuid).raw(),
+                                           machine.asOutParam()));
+    if (machine)
+    {
+        ComPtr<IProgress> progress;
+        CHECK_ERROR(machine, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
+                                              Bstr(strPasswordNew).raw(), Bstr(pszNewPasswordId).raw(),
+                                              fForce, progress.asOutParam()));
+        if (SUCCEEDED(rc))
+            rc = showProgress(progress);
+        if (FAILED(rc))
+        {
+            if (rc == E_NOTIMPL)
+                RTMsgError("Encrypt VM operation is not implemented!");
+            else if (rc == VBOX_E_NOT_SUPPORTED)
+                RTMsgError("Encrypt VM operation for this cipher is not implemented yet!");
+            else if (!progress.isNull())
+                CHECK_PROGRESS_ERROR(progress, ("Failed to encrypt the VM"));
+            else
+                RTMsgError("Failed to encrypt the VM!");
+        }
+    }
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+RTEXITCODE handleCheckVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+{
+    HRESULT rc;
+    ComPtr<IMachine> machine;
+    Utf8Str strPassword;
+
+    if (a->argc != 1)
+        return errorSyntax(Misc::tr("Invalid number of arguments: %d"), a->argc);
+
+    if (!RTStrCmp(a->argv[0], "-"))
+    {
+        /* Get password from console. */
+        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+        if (rcExit == RTEXITCODE_FAILURE)
+            return rcExit;
+    }
+    else
+    {
+        RTEXITCODE rcExit = readPasswordFile(a->argv[0], &strPassword);
+        if (rcExit == RTEXITCODE_FAILURE)
+        {
+            RTMsgError("Failed to read password from file");
+            return rcExit;
+        }
+    }
+
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszFilenameOrUuid).raw(),
+                                           machine.asOutParam()));
+    if (machine)
+    {
+        CHECK_ERROR(machine, CheckEncryptionPassword(Bstr(strPassword).raw()));
+        if (SUCCEEDED(rc))
+            RTPrintf("The given password is correct\n");
+    }
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static const RTGETOPTDEF g_aAddVMOptions[] =
+{
+    { "--password",    'p', RTGETOPT_REQ_STRING },
+    { "--password-id", 'i', RTGETOPT_REQ_STRING }
+};
+
+RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+{
+    HRESULT rc;
+    ComPtr<IMachine> machine;
+    const char *pszPassword = NULL;
+    const char *pszPasswordId = NULL;
+    Utf8Str strPassword;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aAddVMOptions, RT_ELEMENTS(g_aAddVMOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'p':   // --password
+                pszPassword = ValueUnion.psz;
+                break;
+
+            case 'i':   // --password-id
+                pszPasswordId = ValueUnion.psz;
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(Misc::tr("Invalid option -%c"), c);
+                    else
+                        return errorSyntax(Misc::tr("Invalid option case %i"), c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(Misc::tr("unknown option: %s\n"), ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(Misc::tr("%s: %Rrs"), ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(Misc::tr("error: %Rrs"), c);
+        }
+    }
+
+    if (!pszFilenameOrUuid)
+        return errorSyntax(Misc::tr("VM name or UUID required"));
+
+    if (!pszPassword)
+        return errorSyntax(Misc::tr("No password specified"));
+
+    if (!pszPasswordId)
+        return errorSyntax(Misc::tr("No password identifier specified"));
+
+    if (!RTStrCmp(pszPassword, "-"))
+    {
+        /* Get password from console. */
+        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+        if (rcExit == RTEXITCODE_FAILURE)
+            return rcExit;
+    }
+    else
+    {
+        RTEXITCODE rcExit = readPasswordFile(pszPassword, &strPassword);
+        if (rcExit == RTEXITCODE_FAILURE)
+        {
+            RTMsgError("Failed to read new password from file");
+            return rcExit;
+        }
+    }
+
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszFilenameOrUuid).raw(),
+                                           machine.asOutParam()));
+    if (machine)
+    {
+        ComPtr<IProgress> progress;
+        CHECK_ERROR(machine, AddEncryptionPassword(Bstr(pszPasswordId).raw(), Bstr(strPassword).raw()));
+        if (rc == VBOX_E_PASSWORD_INCORRECT)
+            RTMsgError("Password incorrect!");
+    }
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+RTEXITCODE handleRemoveVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+{
+    HRESULT rc;
+    ComPtr<IMachine> machine;
+
+    if (a->argc != 1)
+        return errorSyntax(Misc::tr("Invalid number of arguments: %d"), a->argc);
+
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszFilenameOrUuid).raw(),
+                                           machine.asOutParam()));
+    if (machine)
+    {
+        CHECK_ERROR(machine, RemoveEncryptionPassword(Bstr(a->argv[0]).raw()));
+        if (rc == VBOX_E_INVALID_VM_STATE)
+            RTMsgError("The machine is in online or transient state\n");
+    }
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+RTEXITCODE handleEncryptVM(HandlerArg *a)
+{
+    if (a->argc < 2)
+        return errorSyntax(Misc::tr("subcommand required"));
+
+    HandlerArg  handlerArg;
+    handlerArg.argc = a->argc - 2;
+    handlerArg.argv = &a->argv[2];
+    handlerArg.virtualBox = a->virtualBox;
+    handlerArg.session = a->session;
+    if (!strcmp(a->argv[1], "setencryption"))
+        return handleSetVMEncryption(&handlerArg, a->argv[0]);
+    if (!strcmp(a->argv[1], "checkpassword"))
+        return handleCheckVMPassword(&handlerArg, a->argv[0]);
+    if (!strcmp(a->argv[1], "addpassword"))
+        return handleAddVMPassword(&handlerArg, a->argv[0]);
+    if (!strcmp(a->argv[1], "removepassword"))
+        return handleRemoveVMPassword(&handlerArg, a->argv[0]);
+    return errorSyntax(Misc::tr("unknown subcommand"));
+}
+#endif /* !VBOX_WITH_FULL_VM_ENCRYPTION */
 
 RTEXITCODE handleDiscardState(HandlerArg *a)
 {

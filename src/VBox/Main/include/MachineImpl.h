@@ -198,6 +198,20 @@ public:
 
         // list of files to delete in Delete(); this list is filled by Unregister()
         std::list<Utf8Str>  llFilesToDelete;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        /* Store for secret keys. */
+        SecretKeyStore      *mpKeyStore;
+        BOOL                fEncrypted;
+        /* KeyId of the password encrypting the DEK */
+        com::Utf8Str        mstrKeyId;
+        /* Store containing the DEK used for encrypting the VM */
+        com::Utf8Str        mstrKeyStore;
+        /* KeyId of the password encrypting the DEK for log files */
+        com::Utf8Str        mstrLogKeyId;
+        /* Store containing the DEK used for encrypting the VM's log files */
+        com::Utf8Str        mstrLogKeyStore;
+#endif
 };
 
     /**
@@ -212,6 +226,12 @@ public:
     struct SSData
     {
         Utf8Str strStateFilePath;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        /* KeyId of the password encrypting the DEK for saved state */
+        com::Utf8Str        strStateKeyId;
+        /* Store containing the DEK used for encrypting saved state */
+        com::Utf8Str        strStateKeyStore;
+#endif
     };
 
     /**
@@ -352,12 +372,16 @@ public:
                  GuestOSType *aOsType,
                  const Guid &aId,
                  bool fForceOverwrite,
-                 bool fDirectoryIncludesUUID);
+                 bool fDirectoryIncludesUUID,
+                 const com::Utf8Str &aCipher,
+                 const com::Utf8Str &aPasswordId,
+                 const com::Utf8Str &aPassword);
 
     // initializer for loading existing machine XML (either registered or not)
     HRESULT initFromSettings(VirtualBox *aParent,
                              const Utf8Str &strConfigFile,
-                             const Guid *aId);
+                             const Guid *aId,
+                             const com::Utf8Str &strPassword);
 
     // initializer for machine config in memory (OVF import)
     HRESULT init(VirtualBox *aParent,
@@ -973,6 +997,10 @@ private:
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
     HRESULT getVMProcessPriority(VMProcPriority_T *aVMProcessPriority);
     HRESULT setVMProcessPriority(VMProcPriority_T aVMProcessPriority);
+    HRESULT getStateKeyId(com::Utf8Str &aKeyId);
+    HRESULT getStateKeyStore(com::Utf8Str &aKeyStore);
+    HRESULT getLogKeyId(com::Utf8Str &aKeyId);
+    HRESULT getLogKeyStore(com::Utf8Str &aKeyStore);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,
@@ -1202,6 +1230,22 @@ private:
     HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
                             ComPtr<IProgress> &aProgress);
     HRESULT applyDefaults(const com::Utf8Str &aFlags);
+    HRESULT changeEncryption(const com::Utf8Str &aCurrentPassword,
+                             const com::Utf8Str &aCipher,
+                             const com::Utf8Str &aNewPassword,
+                             const com::Utf8Str &aNewPasswordId,
+                             BOOL aForce,
+                             ComPtr<IProgress> &aProgress);
+    HRESULT getEncryptionSettings(com::Utf8Str &aCipher,
+                                  com::Utf8Str &aPasswordId);
+    HRESULT checkEncryptionPassword(const com::Utf8Str &aPassword);
+    HRESULT addEncryptionPassword(const com::Utf8Str &aId,
+                                  const com::Utf8Str &aPassword);
+    HRESULT addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds,
+                                   const std::vector<com::Utf8Str> &aPasswords);
+    HRESULT removeEncryptionPassword(AutoCaller &autoCaller,
+                                     const com::Utf8Str &aId);
+    HRESULT clearAllEncryptionPasswords(AutoCaller &autoCaller);
 
     // wrapped IInternalMachineControl properties
 

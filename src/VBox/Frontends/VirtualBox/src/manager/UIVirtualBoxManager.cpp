@@ -2467,7 +2467,7 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
         return;
 
     /* Make sure this machine can be opened: */
-    CMachine comMachineNew = comVBox.OpenMachine(strTmpFile);
+    CMachine comMachineNew = comVBox.OpenMachine(strTmpFile, QString());
     if (!comVBox.isOk())
     {
         UINotificationMessage::cannotOpenMachine(comVBox, strTmpFile);

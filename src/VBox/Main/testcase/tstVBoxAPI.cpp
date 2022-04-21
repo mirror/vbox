@@ -127,6 +127,9 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
                                      ComSafeArrayAsInParam(groups), /** Groups */
                                      NULL,                          /** OS Type */
                                      NULL,                          /** Create flags */
+                                     NULL,                          /** Cipher */
+                                     NULL,                          /** Password id */
+                                     NULL,                          /** Password */
                                      ptrMachine.asOutParam()));     /** Machine */
     if (SUCCEEDED(rc))
         RTTestPassed(g_hTest, "IVirtualBox::CreateMachine");

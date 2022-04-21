@@ -6182,6 +6182,193 @@ alice = {
 
   </sect1>
 
+  <sect1 id="vmencryption">
+
+    <title>Encryption of VMs</title>
+
+    <para>
+      &product-name; enables you to transparently encrypt the VM data
+      stored in the configuration file, saved state and EFI boot data
+      for the guest.
+    </para>
+
+    <para>
+      &product-name; uses the AES algorithm in various modes. The selected
+      mode depends on encrypting component of the VM. &product-name;
+      supports 128-bit or 256-bit data encryption keys (DEK). The DEK
+      is stored encrypted in the VM configuration file and is decrypted
+      during VM opening.
+    </para>
+
+    <para>
+      Since the DEK is stored as part of the VM configuration file, it
+      is important that it is kept safe. Losing the DEK means that the
+      data stored in the VM is lost irrecoverably. Having complete and
+      up to date backups of all data related to the VM is the
+      responsibility of the user.
+    </para>
+
+    <para>
+      The VM, even if it is encrypted, may contain mediums encrypted with
+      different passwords. To deal with this, the password for the VM itself
+      also has password identifier such as passwords for mediums. The password
+      ID is an arbitrary string which uniquely identifies the password in the
+      VM and its mediums. It is allowed to use the same password for VM and
+      its mediums with the same ID.
+    </para>
+
+    <sect2 id="vmencryption-limitations">
+
+      <title>Limitations of VM Encryption</title>
+
+      <para>
+        There are some limitations the user needs to be aware of when
+        using this feature:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            Exporting appliances containing encrypted VM is not
+            possible because the OVF specification does not support
+            this. The VM is therefore decrypted during export.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            The DEK is kept in memory while the VM is running to be able
+            to encrypt and decrypt VM data. While this should be obvious
+            the user needs to be aware of this because an attacker might
+            be able to extract the key on a compromised host and decrypt
+            the data.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            When encrypting or decrypting the VM, the password is passed
+            in clear text using the &product-name; API. This needs to be
+            kept in mind, especially when using third party API clients
+            which make use of the webservice where the password might be
+            transmitted over the network. The use of HTTPS is mandatory
+            in such a case.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="vmencryption-encryption">
+
+      <title>Encrypting VMs</title>
+
+      <para>
+        Encrypting VMs can be done either using the GUI or
+        <command>VBoxManage</command>. To encrypt an unencrypted
+        VM with <command>VBoxManage</command>, use:
+      </para>
+
+<screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> setencryption --new-password <replaceable>filename</replaceable>|- \
+--cipher <replaceable>cipher-ID</replaceable> --new-password-id "<replaceable>ID</replaceable></screen>
+
+      <para>
+        To supply the encryption password point
+        <command>VBoxManage</command> to the file where the password is
+        stored or specify <option>-</option> to let VBoxManage ask you
+        for the password on the command line.
+      </para>
+
+      <para>
+        The cipher parameter specifies the cipher to use for encryption
+        and can be either <literal>AES-128</literal> or
+        <literal>AES-256</literal>. Appropriate mode GCM, CTR or XTS will
+        be selected by VM depending on encrypting component.
+        The specified password identifier can be freely chosen by the user
+        and is used for correct identification when supplying multiple
+        passwords for the VM.
+      </para>
+
+    </sect2>
+
+    <sect2 id="vmencryption-addpassword">
+
+      <title>Opening the encrypted VM</title>
+
+      <para>
+        At the time the &product-name; has just started up the encrypted
+        VM can not be opened and it stays inaccessible. Also the encrypted
+        VM stays inaccessible if it just registered without password or
+        password is incorrect. The user needs to provide the password
+        through either GUI or <command>VBoxManage</command> using the
+        following command:
+      </para>
+
+<screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> addpassword --password <replaceable>filename</replaceable>|- --password-id <replaceable>ID</replaceable></screen>
+
+      <para>
+        To supply the encryption password point
+        <command>VBoxManage</command> to the file where the password is
+        stored or specify <option>-</option> to let VBoxManage ask you
+        for the password on the command line.
+      </para>
+
+      <para>
+        If <replaceable>ID</replaceable> is the same as the password
+        identifier supplied when encrypting the VM it updates the
+        accessibility state.
+      </para>
+
+      <para>
+        If user needs to remove the entered password from the VM memory
+        it can call <command>VBoxManage</command> using the following
+        command:
+      </para>
+
+<screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> removepassword <replaceable>ID</replaceable></screen>
+
+      <para>
+        If <replaceable>ID</replaceable> is the same as the password
+        identifier supplied when encrypting the VM it updates the
+        accessibility state.
+      </para>
+
+      <note>
+        <para>
+          If machine becomes inaccessible all passwords are purged.
+          One has to add required passwords again using
+          <command>VBoxManage encryptvm
+          <replaceable>vmname</replaceable> addpassword</command>
+          command, see <xref linkend="vmencryption-addpassword" />.
+        </para>
+      </note>
+
+    </sect2>
+
+    <sect2 id="vmencryption-decryption">
+
+      <title>Decrypting Encrypted VMs</title>
+
+      <para>
+        In some circumstances it might be required to decrypt previously
+        encrypted VMs. This can be done in the GUI or using
+        <command>VBoxManage</command> with the following command:
+      </para>
+
+<screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> setencryption --old-password <replaceable>file</replaceable>|-</screen>
+
+      <para>
+        The only required parameter is the password the VM was
+        encrypted with. The options are the same as for encrypting
+        VMs.
+      </para>
+
+    </sect2>
+
+  </sect1>
+
   <sect1 id="vboxexpertstoragemgmt">
 
     <title>&product-name; Expert Storage Management</title>

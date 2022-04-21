@@ -76,6 +76,12 @@ struct BackupableNvramStoreData
 
     /** The NVRAM file path. */
     com::Utf8Str            strNvramPath;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /** The key id used for encrypting the NVRAM file */
+    com::Utf8Str            strKeyId;
+    /** The key store containing the encrypting DEK */
+    com::Utf8Str            strKeyStore;
+#endif
     /** The NVRAM store. */
     NvramStoreMap           mapNvram;
 };
@@ -367,6 +373,34 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     NOREF(aUefiVarStore);
     return E_NOTIMPL;
 #endif
+}
+
+
+HRESULT NvramStore::getKeyId(com::Utf8Str &aKeyId)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyId = m->bd->strKeyId;
+#else
+    aKeyId = com::Utf8Str::Empty;
+#endif
+
+    return S_OK;
+}
+
+
+HRESULT NvramStore::getKeyStore(com::Utf8Str &aKeyStore)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyStore = m->bd->strKeyStore;
+#else
+    aKeyStore = com::Utf8Str::Empty;
+#endif
+
+    return S_OK;
 }
 
 

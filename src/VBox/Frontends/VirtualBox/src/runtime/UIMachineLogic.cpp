@@ -3128,7 +3128,7 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
             /* Apply the disk encryption passwords: */
             foreach (const QString &strKey, encryptionPasswords.keys())
             {
-                console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
+                console().AddEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
                 if (!console().isOk())
                     msgCenter().cannotAddDiskEncryptionPassword(console());
             }

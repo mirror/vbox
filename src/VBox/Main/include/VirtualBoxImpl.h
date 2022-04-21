@@ -338,8 +338,12 @@ private:
                           const std::vector<com::Utf8Str> &aGroups,
                           const com::Utf8Str &aOsTypeId,
                           const com::Utf8Str &aFlags,
+                          const com::Utf8Str &aCipher,
+                          const com::Utf8Str &aPasswordId,
+                          const com::Utf8Str &aPassword,
                           ComPtr<IMachine> &aMachine);
     HRESULT openMachine(const com::Utf8Str &aSettingsFile,
+                        const com::Utf8Str &aPassword,
                         ComPtr<IMachine> &aMachine);
     HRESULT registerMachine(const ComPtr<IMachine> &aMachine);
     HRESULT findMachine(const com::Utf8Str &aNameOrId,

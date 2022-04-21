@@ -81,11 +81,22 @@ public:
     HRESULT i_releaseUefiVarStore(RTVFS hVfs);
 #endif
 
+    HRESULT i_updateEncryptionSettings(const com::Utf8Str &strKeyId,
+                                       const com::Utf8Str &strKeyStore);
+    HRESULT i_getEncryptionSettings(com::Utf8Str &strKeyId,
+                                    com::Utf8Str &strKeyStore);
+
+    int i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPassword);
+    int i_removePassword(const Utf8Str &strKeyId);
+    int i_removeAllPasswords();
+
 private:
 
     // Wrapped NVRAM store properties
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
     HRESULT getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarStore);
+    HRESULT getKeyId(com::Utf8Str &aKeyId);
+    HRESULT getKeyStore(com::Utf8Str &aKeyStore);
 
     // Wrapped NVRAM store members
     HRESULT initUefiVariableStore(ULONG aSize);

@@ -418,9 +418,12 @@ static void show_usage()
              "                                       between two port numbers specifies range\n"
              "                                     \"TCP/Address\" - interface IP the VRDE\n"
              "                                       server will bind to\n"
-             "   --settingspw <pw>                 Specify the settings password\n"
+             "   --settingspw <pw>                 Specify the VirtualBox settings password\n"
              "   --settingspwfile <file>           Specify a file containing the\n"
-             "                                       settings password\n"
+             "                                       VirtualBox settings password\n"
+             "   --password <file>|-               Specify the VM password. Either file containing\n"
+             "                                     the VM password or \"-\" to read it from console\n"
+             "   --password-id <id>                Specify the password id for the VM password\n"
              "   -start-paused, --start-paused     Start the VM in paused state\n"
 #ifdef VBOX_WITH_RECORDING
              "   -c, -record, --record             Record the VM screen output to a file\n"
@@ -826,7 +829,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         OPT_SETTINGSPW = 0x100,
         OPT_SETTINGSPW_FILE,
         OPT_COMMENT,
-        OPT_PAUSED
+        OPT_PAUSED,
+        OPT_VMPW,
+        OPT_VMPWID
     };
 
     static const RTGETOPTDEF s_aOptions[] =
@@ -845,6 +850,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--vrdeproperty", 'e', RTGETOPT_REQ_STRING },
         { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
         { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
+        { "--password", OPT_VMPW, RTGETOPT_REQ_STRING },
+        { "--password-id", OPT_VMPWID, RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_RECORDING
         { "-record", 'c', 0 },
         { "--record", 'c', 0 },
@@ -865,6 +872,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     int ch;
     const char *pcszSettingsPw = NULL;
     const char *pcszSettingsPwFile = NULL;
+    const char *pcszVmPassword = NULL;
+    const char *pcszVmPasswordId = NULL;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
@@ -897,6 +906,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             case OPT_SETTINGSPW_FILE:
                 pcszSettingsPwFile = ValueUnion.psz;
+                break;
+            case OPT_VMPW:
+                pcszVmPassword = ValueUnion.psz;
+                break;
+            case OPT_VMPWID:
+                pcszVmPasswordId = ValueUnion.psz;
                 break;
             case OPT_PAUSED:
                 fPaused = true;
@@ -1056,6 +1071,26 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
+        /* add VM password if required */
+        if (pcszVmPassword && pcszVmPasswordId)
+        {
+            com::Utf8Str strPassword;
+            if (!RTStrCmp(pcszVmPassword, "-"))
+            {
+                /* Get password from console. */
+                RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+                if (rcExit == RTEXITCODE_FAILURE)
+                    break;
+            }
+            else
+            {
+                RTEXITCODE rcExit = readPasswordFile(pcszVmPassword, &strPassword);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
+            }
+            CHECK_ERROR_BREAK(m, AddEncryptionPassword(Bstr(pcszVmPasswordId).raw(),
+                                                       Bstr(strPassword).raw()));
+        }
         Bstr bstrVMId;
         rc = m->COMGETTER(Id)(bstrVMId.asOutParam());
         AssertComRC(rc);

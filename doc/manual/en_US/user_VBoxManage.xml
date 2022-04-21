@@ -250,6 +250,9 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
     <xi:include href="overview_man_VBoxManage-movevm.xml"         xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+    <!-- @todo Find a way to include such things based on the build options
+    <xi:include href="overview_man_VBoxManage-encryptvm.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" /> -->
+
     <xi:include href="overview_man_VBoxManage-cloud.xml"          xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
     <xi:include href="overview_man_VBoxManage-cloudprofile.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
@@ -416,6 +419,10 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
   <xi:include href="user_man_VBoxManage-clonevm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-movevm.xml"         xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+  <!-- @todo Find a way to include such things based on the build options
+  <xi:include href="user_man_VBoxManage-encryptvm.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  -->
 
   <xi:include href="user_man_VBoxManage-cloud.xml"          xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 

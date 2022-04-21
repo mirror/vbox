@@ -614,7 +614,7 @@
       <!--
           VirtualBox.xml additions: HostOnlyNetworks in NetserviceRegistry
           Machine changes: IOMMU device, HostOnlyNetwork mode for
-          NetworkAdapter.
+          NetworkAdapter, full VM encryption.
       -->
     </const>
     <const name="Future" value="99999">
@@ -2630,7 +2630,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="6c59f776-3693-4801-8ebf-17e005a62e0c"
+    uuid="7682d5eb-f00e-44f1-8ca2-99d08b1cd607"
     wsmap="managed"
     rest="managed"
     wrap-gen-hook="yes"
@@ -3030,6 +3030,21 @@
           naming scheme which should not be used unless necessary.
         </desc>
       </param>
+      <param name="cipher" type="wstring" dir="in">
+        <desc>
+          The cipher. It should be empty if encryption is not required.
+        </desc>
+      </param>
+      <param name="passwordId" type="wstring" dir="in">
+        <desc>
+          The password id. It should be empty if encryption is not required.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          The password. It should be empty if encryption is not required.
+        </desc>
+      </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
       </param>
@@ -3047,6 +3062,15 @@
         whose contents will be used to construct the machine object.
 
         <note>
+          If the VM is encrypted and password is incorrect
+          the method returns success allowing you to register the
+          encrypted machine but it remains in inaccessible state. You
+          can check <link to="IMachine::accessible"/> and
+          <link to="IMachine::accessError"/> properties to determine the
+          real machine state.
+        </note>
+
+        <note>
           <link to="IMachine::settingsModified"/> will return
           @c false for the opened machine, until any of machine settings
           are changed.
@@ -3059,6 +3083,12 @@
       <param name="settingsFile" type="wstring" dir="in">
         <desc>
           Name of the machine settings file.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          The password. If the machine is not encrypted the parameter is
+          ignored.
         </desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -6329,7 +6359,7 @@
 
   <interface
     name="INvramStore" extends="$unknown"
-    uuid="31283924-604c-44f5-b9d7-ac082531ffb7"
+    uuid="5bfd8965-b81b-469f-8649-f717ce97a5d5"
     wsmap="managed"
     >
 
@@ -6347,6 +6377,20 @@
 
     <attribute name="uefiVariableStore" type="IUefiVariableStore" readonly="yes">
       <desc>Object to manipulate the data in an existing UEFI variable store.</desc>
+    </attribute>
+
+     <attribute name="keyId" type="wstring" readonly="yes">
+      <desc>
+        Key Id of the password used for encrypting the NVRAM file.
+        Internal use only for now.
+      </desc>
+    </attribute>
+
+    <attribute name="keyStore" type="wstring" readonly="yes">
+      <desc>
+        Key store used for encrypting the NVRAM file.
+        Internal use only for now.
+      </desc>
     </attribute>
 
     <method name="initUefiVariableStore">
@@ -6538,7 +6582,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="8d2e6ace-0162-4985-9424-37d17fd87657"
+    uuid="42643361-11f7-40b4-8d66-79029838b1f1"
     wsmap="managed"
     rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
@@ -7283,6 +7327,33 @@
 
         Use the <link to="ISystemProperties::getCPUProfiles" /> method to get
         currently available CPU profiles.
+      </desc>
+    </attribute>
+
+    <attribute name="stateKeyId" type="wstring" readonly="yes">
+      <desc>
+        Key Id of the password used for encrypting the state file.
+        Internal use only for now.
+      </desc>
+    </attribute>
+
+    <attribute name="stateKeyStore" type="wstring" readonly="yes">
+      <desc>
+        Key store used for encrypting the state file.
+        Internal use only for now.
+      </desc>
+    </attribute>
+    <attribute name="logKeyId" type="wstring" readonly="yes">
+      <desc>
+        Key Id of the password used for encrypting the log files.
+        Internal use only for now.
+      </desc>
+    </attribute>
+
+    <attribute name="logKeyStore" type="wstring" readonly="yes">
+      <desc>
+        Key store used for encrypting the log files.
+        Internal use only for now.
       </desc>
     </attribute>
 
@@ -10060,6 +10131,164 @@
       </param>
     </method>
 
+    <method name="changeEncryption" wrap-hint-server="limitedcaller">
+      <desc>
+        Starts encryption of this VM. This means that the stored data of the VM is encrypted.
+
+        Please note that the results can be either returned straight away,
+        or later as the result of the background operation via the object
+        returned via the @a progress parameter.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not supported for various reasons e.g. unsupported cipher.
+        </result>
+      </desc>
+      <param name="currentPassword" type="wstring" dir="in">
+        <desc>
+          The current password the VM is protected with. Use an empty string to indicate
+          that the VM isn't encrypted.
+        </desc>
+      </param>
+      <param name="cipher" type="wstring" dir="in">
+        <desc>
+          The cipher to use for encryption. An empty string indicates no encryption for the
+          result.
+        </desc>
+      </param>
+      <param name="newPassword" type="wstring" dir="in">
+        <desc>
+          The new password the VM should be protected with. An empty password and password ID
+          will result in the VM being encrypted with the current password.
+        </desc>
+      </param>
+      <param name="newPasswordId" type="wstring" dir="in">
+        <desc>The ID of the new password when unlocking the VM.</desc>
+      </param>
+      <param name="force" type="boolean" dir="in">
+        <desc>
+          Force reencryption of the data if just password is changed.
+          Otherwise, if data already encrypted and cipher doesn't changed
+          only the password is changed.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="getEncryptionSettings" const="yes" wrap-hint-server="limitedcaller">
+      <desc>
+        Returns the encryption settings for this VM.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not configured for this VM.
+        </result>
+      </desc>
+      <param name="cipher" type="wstring" dir="out">
+        <desc>The cipher used for encryption.</desc>
+      </param>
+      <param name="passwordId" type="wstring" dir="out">
+        <desc>The ID of the password when unlocking the VM.</desc>
+      </param>
+    </method>
+
+    <method name="checkEncryptionPassword" const="yes" wrap-hint-server="limitedcaller">
+      <desc>
+        Checks whether the supplied password is correct for the VM.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not configured for this VM.
+        </result>
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The given password is incorrect.
+        </result>
+      </desc>
+      <param name="password" type="wstring" dir="in">
+        <desc>The password to check.</desc>
+      </param>
+    </method>
+
+    <method name="addEncryptionPassword" wrap-hint-server="limitedcaller">
+      <desc>
+        Adds a password used for encryption. Updates the accesibility
+        state if password used the VM encryption.
+
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The password provided wasn't correct for the VM using the provided
+          ID.
+        </result>
+      </desc>
+      <param name="id" type="wstring" dir="in">
+        <desc>
+          The identifier used for the password. Must match the identifier
+          used when the encrypted VM was created.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>The password.</desc>
+      </param>
+    </method>
+
+    <method name="addEncryptionPasswords" wrap-hint-server="limitedcaller">
+      <desc>
+        Adds passwords used for encryption. Updates the accesibility
+        state if the list contains password used the VM encryption.
+
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The password provided wasn't correct for the VM using the provided
+          ID.
+        </result>
+        <result name="E_INVALIDARG">
+          Id and passwords arrays have different size.
+        </result>
+      </desc>
+      <param name="ids" type="wstring" dir="in" safearray="yes">
+        <desc>
+          List of identifiers for the passwords. Must match the identifier
+          used when the encrypted VM was created.
+        </desc>
+      </param>
+      <param name="passwords" type="wstring" dir="in" safearray="yes">
+        <desc>List of passwords.</desc>
+      </param>
+    </method>
+
+    <method name="removeEncryptionPassword" wrap-hint-server="limitedcaller,passcaller">
+      <desc>
+        Removes a password used for the VM encryption/decryption.
+        The password can be removed only if the VM is powered off.
+        Removing the password causes the VM goes to the inaccessible
+        state and the password must be provided again.
+        <note>
+          If machine becomes inaccessible all passwords are purged.
+          One has to add required passwords again using either
+          <link to="IMachine::addEncryptionPassword"/> or
+          <link to="IMachine::addEncryptionPasswords"/> methods.
+        </note>
+      </desc>
+      <result name="VBOX_E_INVALID_VM_STATE">
+        The VM is not in proper state e.g powered on.
+      </result>
+      <param name="id" type="wstring" dir="in">
+        <desc>
+          The identifier used for the password. Must match the identifier
+          used when the encrypted VM was created.
+        </desc>
+      </param>
+    </method>
+
+    <method name="clearAllEncryptionPasswords" wrap-hint-server="limitedcaller,passcaller">
+      <desc>
+        Clears all provided VM passwords.
+        The passwords can be removed only if the VM is powered off.
+        Removing the passwords causes the VM goes to the inaccessible
+        state and the password must be provided again.
+      </desc>
+      <result name="VBOX_E_INVALID_VM_STATE">
+        The VM is not in proper state e.g powered on.
+      </result>
+    </method>
+
   </interface>
 
   <interface
@@ -10215,7 +10444,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="872da645-4a9b-1727-bee2-5585105b9eed"
+    uuid="6ac83d89-6ee7-4e33-8ae6-b257b2e81be8"
     wsmap="managed"
     rest="managed"
     reservedMethods="8" reservedAttributes="8"
@@ -10744,10 +10973,10 @@
       </param>
     </method>
 
-    <method name="addDiskEncryptionPassword">
+    <method name="addEncryptionPassword">
       <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
-        Adds a password used for hard disk encryption/decryption.
+        Adds a password used for encryption/decryption.
 
         <result name="VBOX_E_PASSWORD_INCORRECT">
           The password provided wasn't correct for at least one disk using the provided
@@ -10771,10 +11000,10 @@
       </param>
     </method>
 
-    <method name="addDiskEncryptionPasswords">
+    <method name="addEncryptionPasswords">
       <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
-        Adds a password used for hard disk encryption/decryption.
+        Adds a password used for encryption/decryption.
 
         <result name="VBOX_E_PASSWORD_INCORRECT">
           The password provided wasn't correct for at least one disk using the provided
@@ -10798,7 +11027,7 @@
       </param>
     </method>
 
-    <method name="removeDiskEncryptionPassword">
+    <method name="removeEncryptionPassword">
       <rest request="post" path="/vms/{vmid}/console/methods/"/>
       <desc>
         Removes a password used for hard disk encryption/decryption from
@@ -10814,9 +11043,9 @@
       </param>
     </method>
 
-    <method name="clearAllDiskEncryptionPasswords">
+    <method name="clearAllEncryptionPasswords">
       <rest request="post" path="/vms/{vmid}/console/methods/"/>
-      <desc>Clears all provided supplied disk encryption passwords.</desc>
+      <desc>Clears all provided supplied encryption passwords.</desc>
     </method>
   </interface>
 

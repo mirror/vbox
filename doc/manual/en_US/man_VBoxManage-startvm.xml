@@ -49,6 +49,8 @@
           <arg choice="plain">sdl</arg>
           <arg choice="plain">separate</arg>
         </group></arg>
+      <arg choice="plain">--password <replaceable>file</replaceable></arg>
+      <arg choice="plain">--password-id <replaceable>password identifier</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -124,6 +126,26 @@
                 </para></listitem>
             </varlistentry>
           </variablelist></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--password</option></term>
+        <listitem>
+          <para>
+            Use the <option>--password</option> to supply the encryption
+            password. Either specify the absolute pathname of a password file
+            on the host operating system, or <literal>-</literal> to prompt
+            you for the password on the command line.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--password-id</option></term>
+        <listitem>
+          <para>
+            Use the <option>--password-id</option> option to specify the
+            id the password is supplied for.
+          </para>
+        </listitem>
       </varlistentry>
     </variablelist>
     <note>

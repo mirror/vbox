@@ -191,6 +191,9 @@ static const VBMGCMD g_aCommands[] =
     { "unregistervm",       HELP_CMD_UNREGISTERVM,      handleUnregisterVM,         0 },
     { "clonevm",            HELP_CMD_CLONEVM,           handleCloneVM,              0 },
     { "movevm",             HELP_CMD_MOVEVM,            handleMoveVM,               0 },
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    { "encryptvm",          HELP_CMD_ENCRYPTVM,         handleEncryptVM,            0 },
+#endif
     { "mediumproperty",     HELP_CMD_MEDIUMPROPERTY,    handleMediumProperty,       0 },
     { "hdproperty",         HELP_CMD_MEDIUMPROPERTY,    handleMediumProperty,       0 }, /* backward compatibility */
     { "createmedium",       HELP_CMD_CREATEMEDIUM,      handleCreateMedium,         0 },

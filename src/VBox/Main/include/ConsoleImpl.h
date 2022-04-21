@@ -380,12 +380,12 @@ private:
                      const com::Utf8Str &aPassword,
                      ULONG aMaxDowntime,
                      ComPtr<IProgress> &aProgress);
-    HRESULT addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
-                                      BOOL aClearOnSuspend);
-    HRESULT addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
-                                      BOOL aClearOnSuspend);
-    HRESULT removeDiskEncryptionPassword(const com::Utf8Str &aId);
-    HRESULT clearAllDiskEncryptionPasswords();
+    HRESULT addEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
+                                  BOOL aClearOnSuspend);
+    HRESULT addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
+                                   BOOL aClearOnSuspend);
+    HRESULT removeEncryptionPassword(const com::Utf8Str &aId);
+    HRESULT clearAllEncryptionPasswords();
 
     void notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax);
     Utf8Str VRDPServerErrorToMsg(int vrc);

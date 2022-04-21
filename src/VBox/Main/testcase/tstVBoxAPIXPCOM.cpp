@@ -190,6 +190,9 @@ void createVM(IVirtualBox *virtualBox)
                                    0, nsnull,   /* groups (safearray)*/
                                    nsnull,      /* ostype */
                                    nsnull,      /* create flags */
+                                   nsnull,      /* cipher */
+                                   nsnull,      /* password id */
+                                   nsnull,      /* password */
                                    getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {

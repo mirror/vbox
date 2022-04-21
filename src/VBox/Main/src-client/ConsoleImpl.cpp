@@ -3124,8 +3124,8 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
     return rc;
 }
 
-HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
-                                           BOOL aClearOnSuspend)
+HRESULT Console::addEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
+                                       BOOL aClearOnSuspend)
 {
     if (   aId.isEmpty()
         || aPassword.isEmpty())
@@ -3180,8 +3180,8 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
     return hrc;
 }
 
-HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
-                                            BOOL aClearOnSuspend)
+HRESULT Console::addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
+                                        BOOL aClearOnSuspend)
 {
     HRESULT hrc = S_OK;
 
@@ -3210,7 +3210,7 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
 
     for (unsigned i = 0; i < aIds.size(); i++)
     {
-        hrc = addDiskEncryptionPassword(aIds[i], aPasswords[i], aClearOnSuspend);
+        hrc = addEncryptionPassword(aIds[i], aPasswords[i], aClearOnSuspend);
         if (FAILED(hrc))
         {
             /*
@@ -3221,7 +3221,7 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
             for (unsigned ii = 0; ii < i; ii++)
             {
                 i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(aIds[ii]);
-                removeDiskEncryptionPassword(aIds[ii]);
+                removeEncryptionPassword(aIds[ii]);
             }
 
             break;
@@ -3231,7 +3231,7 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
     return hrc;
 }
 
-HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
+HRESULT Console::removeEncryptionPassword(const com::Utf8Str &aId)
 {
     if (aId.isEmpty())
         return setError(E_FAIL, tr("The ID must be valid"));
@@ -3255,7 +3255,7 @@ HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
     return S_OK;
 }
 
-HRESULT Console::clearAllDiskEncryptionPasswords()
+HRESULT Console::clearAllEncryptionPasswords()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

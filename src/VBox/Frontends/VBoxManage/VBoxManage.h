@@ -209,6 +209,9 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a);
 RTEXITCODE handleCreateVM(HandlerArg *a);
 RTEXITCODE handleCloneVM(HandlerArg *a);
 RTEXITCODE handleStartVM(HandlerArg *a);
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+RTEXITCODE handleEncryptVM(HandlerArg *a);
+#endif
 RTEXITCODE handleDiscardState(HandlerArg *a);
 RTEXITCODE handleAdoptState(HandlerArg *a);
 RTEXITCODE handleGetExtraData(HandlerArg *a);

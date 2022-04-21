@@ -326,6 +326,9 @@ static int tstCreateMachines(IVirtualBox *pVBox)
                                          machineName.raw(),             /* Name */
                                          ComSafeArrayAsInParam(groups), /* Groups */
                                          NULL,                          /* OS Type */
+                                         NULL,                          /** Cipher */
+                                         NULL,                          /** Password id */
+                                         NULL,                          /** Password */
                                          NULL,                          /* Create flags */
                                          ptrMachine.asOutParam()));
         if (SUCCEEDED(rc))

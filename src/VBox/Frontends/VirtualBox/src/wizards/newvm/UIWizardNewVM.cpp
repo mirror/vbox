@@ -142,7 +142,8 @@ bool UIWizardNewVM::createVM()
             groups << m_strMachineGroup;
         m_machine = vbox.CreateMachine(m_strMachineFilePath,
                                        m_strMachineBaseName,
-                                       groups, strTypeId, QString());
+                                       groups, strTypeId, QString(),
+                                       QString(), QString(), QString());
         if (!vbox.isOk())
         {
             UINotificationMessage::cannotCreateMachine(vbox, notificationCenter());

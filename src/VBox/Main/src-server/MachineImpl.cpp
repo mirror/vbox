@@ -294,10 +294,22 @@ HRESULT Machine::init(VirtualBox *aParent,
                       GuestOSType *aOsType,
                       const Guid &aId,
                       bool fForceOverwrite,
-                      bool fDirectoryIncludesUUID)
+                      bool fDirectoryIncludesUUID,
+                      const com::Utf8Str &aCipher,
+                      const com::Utf8Str &aPasswordId,
+                      const com::Utf8Str &aPassword)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.c_str()));
+
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aCipher);
+    if (aPassword.isNotEmpty() || aPasswordId.isNotEmpty())
+        return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    /** @todo */
+    RT_NOREF(aCipher, aPasswordId, aPassword);
+#endif
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -432,15 +444,26 @@ HRESULT Machine::init(VirtualBox *aParent,
  *  @param strConfigFile Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
  *  @param aId          UUID of the machine or NULL (see above).
+ *  @param strKeyId     Key ID of the password for decrypting the config.
+ *  @param strPassword  Password for decrypting the config
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
 HRESULT Machine::initFromSettings(VirtualBox *aParent,
                                   const Utf8Str &strConfigFile,
-                                  const Guid *aId)
+                                  const Guid *aId,
+                                  const com::Utf8Str &strPassword)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.c_str()));
+
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (strPassword.isNotEmpty())
+        return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    /** @todo */
+    RT_NOREF(strPassword);
+#endif
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -2939,6 +2962,58 @@ HRESULT Machine::setIOCacheSize(ULONG aIOCacheSize)
     i_setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mIOCacheSize = aIOCacheSize;
+
+    return S_OK;
+}
+
+HRESULT Machine::getStateKeyId(com::Utf8Str &aKeyId)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyId = mSSData->strStateKeyId;
+#else
+    aKeyId = com::Utf8Str::Empty;
+#endif
+
+    return S_OK;
+}
+
+HRESULT Machine::getStateKeyStore(com::Utf8Str &aKeyStore)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyStore = mSSData->strStateKeyStore;
+#else
+    aKeyStore = com::Utf8Str::Empty;
+#endif
+
+    return S_OK;
+}
+
+HRESULT Machine::getLogKeyId(com::Utf8Str &aKeyId)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyId = mData->mstrLogKeyId;
+#else
+    aKeyId = com::Utf8Str::Empty;
+#endif
+
+    return S_OK;
+}
+
+HRESULT Machine::getLogKeyStore(com::Utf8Str &aKeyStore)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    aKeyStore = mData->mstrLogKeyStore;
+#else
+    aKeyStore = com::Utf8Str::Empty;
+#endif
 
     return S_OK;
 }
@@ -15526,6 +15601,100 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     }
 
     return S_OK;
+}
+
+HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
+                                  const com::Utf8Str &aCipher,
+                                  const com::Utf8Str &aNewPassword,
+                                  const com::Utf8Str &aNewPasswordId,
+                                  BOOL aForce,
+                                  ComPtr<IProgress> &aProgress)
+{
+    LogFlowFuncEnter();
+
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aCurrentPassword, aCipher, aNewPassword, aNewPasswordId, aForce, aProgress);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(aCurrentPassword, aCipher, aNewPassword, aNewPasswordId, aForce, aProgress);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::getEncryptionSettings(com::Utf8Str &aCipher,
+                                       com::Utf8Str &aPasswordId)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aCipher, aPasswordId);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(aCipher, aPasswordId);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::checkEncryptionPassword(const com::Utf8Str &aPassword)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aPassword);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(aPassword);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::addEncryptionPassword(const com::Utf8Str &aId,
+                                       const com::Utf8Str &aPassword)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aId, aPassword);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(aId, aPassword);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds,
+                                        const std::vector<com::Utf8Str> &aPasswords)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(aIds, aPasswords);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(aIds, aPasswords);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::removeEncryptionPassword(AutoCaller &autoCaller, const com::Utf8Str &aId)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(autoCaller, aId);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(autoCaller, aId);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Machine::clearAllEncryptionPasswords(AutoCaller &autoCaller)
+{
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
+    RT_NOREF(autoCaller);
+    return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
+#else
+    RT_NOREF(autoCaller);
+    /** @todo */
+    return E_NOTIMPL;
+#endif
 }
 
 /* This isn't handled entirely by the wrapper generator yet. */

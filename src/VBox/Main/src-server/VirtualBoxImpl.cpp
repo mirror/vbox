@@ -878,11 +878,13 @@ HRESULT VirtualBox::initMachines()
         }
 
         ComObjPtr<Machine> pMachine;
+        com::Utf8Str strPassword;
         if (SUCCEEDED(rc = pMachine.createObject()))
         {
             rc = pMachine->initFromSettings(this,
                                             xmlMachine.strSettingsFile,
-                                            &uuid);
+                                            &uuid,
+                                            strPassword);
             if (SUCCEEDED(rc))
                 rc = i_registerMachine(pMachine);
             if (FAILED(rc))
@@ -2039,6 +2041,9 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                                   const std::vector<com::Utf8Str> &aGroups,
                                   const com::Utf8Str &aOsTypeId,
                                   const com::Utf8Str &aFlags,
+                                  const com::Utf8Str &aCipher,
+                                  const com::Utf8Str &aPasswordId,
+                                  const com::Utf8Str &aPassword,
                                   ComPtr<IMachine> &aMachine)
 {
     LogFlowThisFuncEnter();
@@ -2137,7 +2142,10 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                        osType,
                        id,
                        fForceOverwrite,
-                       fDirectoryIncludesUUID);
+                       fDirectoryIncludesUUID,
+                       aCipher,
+                       aPasswordId,
+                       aPassword);
     if (SUCCEEDED(rc))
     {
         /* set the return value */
@@ -2156,6 +2164,7 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
 }
 
 HRESULT VirtualBox::openMachine(const com::Utf8Str &aSettingsFile,
+                                const com::Utf8Str &aPassword,
                                 ComPtr<IMachine> &aMachine)
 {
     HRESULT rc = E_FAIL;
@@ -2168,7 +2177,8 @@ HRESULT VirtualBox::openMachine(const com::Utf8Str &aSettingsFile,
         /* initialize the machine object */
         rc = machine->initFromSettings(this,
                                        aSettingsFile,
-                                       NULL);       /* const Guid *aId */
+                                       NULL,          /* const Guid *aId */
+                                       aPassword);
         if (SUCCEEDED(rc))
         {
             /* set the return value */

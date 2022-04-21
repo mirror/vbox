@@ -1119,6 +1119,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 Bstr settingsFilePath;
                 rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
                 RTPrintf(Info::tr("Config file:     %ls\n"), settingsFilePath.raw());
+
+                Bstr strCipher;
+                Bstr strPasswordId;
+                HRESULT rc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
+                if (SUCCEEDED(rc2))
+                {
+                    RTPrintf("Encryption:     enabled\n");
+                    RTPrintf("Cipher:         %ls\n", strCipher.raw());
+                    RTPrintf("Password ID:    %ls\n", strPasswordId.raw());
+                }
+                else
+                    RTPrintf("Encryption:     disabled\n");
+
                 ComPtr<IVirtualBoxErrorInfo> accessError;
                 rc = machine->COMGETTER(AccessError)(accessError.asOutParam());
                 RTPrintf(Info::tr("Access error details:\n"));
@@ -1142,6 +1155,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     }
 
     SHOW_STRING_PROP(      machine, Name,                       "name",                 Info::tr("Name:"));
+    {
+        Bstr strCipher;
+        Bstr strPasswordId;
+        HRESULT rc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
+        if (SUCCEEDED(rc2))
+        {
+            RTPrintf("Encryption:     enabled\n");
+            RTPrintf("Cipher:         %ls\n", strCipher.raw());
+            RTPrintf("Password ID:    %ls\n", strPasswordId.raw());
+        }
+        else
+            RTPrintf("Encryption:     disabled\n");
+    }
     SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               Info::tr("Groups:"));
     Bstr osTypeId;
     CHECK_ERROR2I_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
@@ -3003,6 +3029,10 @@ static const RTGETOPTDEF g_aShowVMInfoOptions[] =
     { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
     { "-machinereadable",   'M', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--log",              'l', RTGETOPT_REQ_UINT32 },
+    { "--password-id",      'i', RTGETOPT_REQ_STRING },
+    { "-password-id",       'i', RTGETOPT_REQ_STRING },
+    { "--password",         'w', RTGETOPT_REQ_STRING },
+    { "-password",          'w', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleShowVMInfo(HandlerArg *a)
@@ -3013,6 +3043,8 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
     uint32_t uLogIdx = 0;
     bool fDetails = false;
     bool fMachinereadable = false;
+    Bstr bstrPasswordId;
+    const char *pszPassword = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -3035,6 +3067,14 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
             case 'l':   // --log
                 fLog = true;
                 uLogIdx = ValueUnion.u32;
+                break;
+
+            case 'i':   // --password-id
+                bstrPasswordId = ValueUnion.psz;
+                break;
+
+            case 'w':   // --password
+                pszPassword = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -3063,6 +3103,29 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
     /* Printing the log is exclusive. */
     if (fLog && (fMachinereadable || fDetails))
         return errorSyntax(Info::tr("Option --log is exclusive"));
+
+    /* add VM password if required */
+    if (pszPassword && bstrPasswordId.isNotEmpty())
+    {
+        Utf8Str strPassword;
+        if (!RTStrCmp(pszPassword, "-"))
+        {
+            /* Get password from console. */
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter the password:");
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(pszPassword, &strPassword);
+            if (rcExit == RTEXITCODE_FAILURE)
+            {
+                RTMsgError("Failed to read new password from file");
+                return rcExit;
+            }
+        }
+        CHECK_ERROR(machine, AddEncryptionPassword(bstrPasswordId.raw(), Bstr(strPassword).raw()));
+    }
 
     if (fLog)
     {

@@ -1124,7 +1124,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             fRc = True;
             if self.fEncryptDisk:
                 try:
-                    oSession.o.console.addDiskEncryptionPassword(self.ksPwId, self.sEncryptPw, False);
+                    if self.oTstDrv.fpApiVer >= 7.0:
+                        oSession.o.console.addEncryptionPassword(self.ksPwId, self.sEncryptPw, False);
+                    else:
+                        oSession.o.console.addDiskEncryptionPassword(self.ksPwId, self.sEncryptPw, False);
                 except:
                     reporter.logXcpt();
                     fRc = False;

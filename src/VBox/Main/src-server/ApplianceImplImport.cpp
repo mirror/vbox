@@ -4403,6 +4403,9 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     ComSafeArrayAsInParam(groups),
                                     Bstr(stack.strOsTypeVBox).raw(),
                                     NULL, /* aCreateFlags */
+                                    NULL, /* aCipher */
+                                    NULL, /* aPasswordId */
+                                    NULL, /* aPassword */
                                     pNewMachine.asOutParam());
     if (FAILED(rc)) throw rc;
     pNewMachineRet = pNewMachine;
