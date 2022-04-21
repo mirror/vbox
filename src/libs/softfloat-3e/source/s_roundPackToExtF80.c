@@ -216,13 +216,16 @@ static extFloat80_t
                         && sigExtra;
             }
             if ( doIncrement ) {
-                softfloat_exceptionFlags |= softfloat_flag_c1;                                          /* VBox: C1 */
-                //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #5\n");                                 /* VBox: C1 */
+                uint64_t const uOldSig = sig;                                                           /* VBox: C1 */
                 ++sig;
                 sig &=
                     ~(uint_fast64_t)
                          (! (sigExtra & UINT64_C( 0x7FFFFFFFFFFFFFFF ))
                               & roundNearEven);
+                if (sig > uOldSig) {                                                                    /* VBox: C1 */
+                    softfloat_exceptionFlags |= softfloat_flag_c1;                                      /* VBox: C1 */
+                    //RTAssertMsg2("softfloat_roundPackToExtF80: C1 #5\n");                             /* VBox: C1 */
+                }                                                                                       /* VBox: C1 */
                 exp = ((sig & UINT64_C( 0x8000000000000000 )) != 0);
             }
             goto packReturn;
@@ -295,6 +298,9 @@ static extFloat80_t
 
 }
 
+/** 
+ * VBox: Wrapper for implementing underflow and overflow bias adjustment.
+ */
 extFloat80_t
  softfloat_roundPackToExtF80(
      bool sign,
@@ -305,20 +311,45 @@ extFloat80_t
      SOFTFLOAT_STATE_DECL_COMMA
  )
 {
+    static union extF80M_extF80 const s_aExtF80Zero[2]     =
+    {
+        EXTF80M_EXTF80_INIT3_C( 0, 0, 0 ), EXTF80M_EXTF80_INIT3_C( 1, 0, 0 ),
+    };
+    static union extF80M_extF80 const s_aExtF80Infinity[2] =
+    {
+        EXTF80M_EXTF80_INIT3( 0, RT_BIT_64( 63 ), RTFLOAT80U_EXP_MAX ),
+        EXTF80M_EXTF80_INIT3( 1, RT_BIT_64( 63 ), RTFLOAT80U_EXP_MAX ),
+    };
+
     uint8_t const exceptionFlagsSaved = softfloat_exceptionFlags;
     softfloat_exceptionFlags = 0;
-    extFloat80_t r80Result = softfloat_roundPackToExtF80Inner(sign, exp, sig, sigExtra, roundingPrecision, pState);
+    extFloat80_t r80Result = softfloat_roundPackToExtF80Inner( sign, exp, sig, sigExtra, roundingPrecision, pState );
 
     if ( !(softfloat_exceptionFlags & ~pState->exceptionMask & (softfloat_flag_underflow | softfloat_flag_overflow)) ) {
         /* likely */
+    }
+    /* On Intel 10980XE the FSCALE instruction can cause really large exponents
+       and the rounding changes when we exceed the bias adjust. */
+    else if (exp >= RTFLOAT80U_EXP_BIAS_ADJUST + RTFLOAT80U_EXP_MAX) {
+        Assert( softfloat_exceptionFlags & softfloat_flag_overflow );
+        softfloat_exceptionFlags |= softfloat_flag_inexact | softfloat_flag_c1;
+        r80Result = s_aExtF80Infinity[sign].f;
+    } else if (exp <= -RTFLOAT80U_EXP_BIAS_ADJUST) {
+        Assert( softfloat_exceptionFlags & softfloat_flag_underflow );
+        softfloat_exceptionFlags &= ~softfloat_flag_c1;
+        softfloat_exceptionFlags |= softfloat_flag_inexact;
+        r80Result = s_aExtF80Zero[sign].f;
     } else {
+        /* Redo the conversion with the bias applied.  */
         softfloat_exceptionFlags &= softfloat_flag_underflow | softfloat_flag_overflow;
         if ( softfloat_exceptionFlags & softfloat_flag_underflow ) {
-            exp = (exp + RTFLOAT80U_EXP_BIAS_ADJUST) & RTFLOAT80U_EXP_MAX;
+            exp += RTFLOAT80U_EXP_BIAS_ADJUST;
+            Assert( exp > 0 );
         } else {
-            exp = (exp - RTFLOAT80U_EXP_BIAS_ADJUST) & RTFLOAT80U_EXP_MAX;
+            exp -= RTFLOAT80U_EXP_BIAS_ADJUST;
+            Assert( exp < RTFLOAT80U_EXP_MAX );
         }
-        r80Result = softfloat_roundPackToExtF80Inner(sign, exp, sig, sigExtra, roundingPrecision, pState);
+        r80Result = softfloat_roundPackToExtF80Inner( sign, exp, sig, sigExtra, roundingPrecision, pState );
     }
 
     softfloat_exceptionFlags |= exceptionFlagsSaved;
