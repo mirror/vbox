@@ -4134,7 +4134,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_fistt_r80_to_i,a_cBits,a_Suffix),(PC
         /* \
          * Figure this weirdness. \
          */ \
-        else if (a_cBits == 16 && fSignIn && iExponent == 31 && uMantissa < UINT64_C(0x8000100000000000) ) \
+        else if (0 /* huh? gone? */ && a_cBits == 16 && fSignIn && iExponent == 31 && uMantissa < UINT64_C(0x8000100000000000) ) \
         { \
             *piDst = 0;  \
             if (uMantissa & (RT_BIT_64(64 - a_cBits + 1) - 1)) \
@@ -4188,10 +4188,10 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_fistt_r80_to_i,a_cBits,a_Suffix),(PC
 #if defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_FISTT(64, 64, int64_t, INT64_MIN, INT64_MAX, X86_FPU_INT64_INDEFINITE, RT_NOTHING, 1)
 EMIT_FISTT(32, 32, int32_t, INT32_MIN, INT32_MAX, X86_FPU_INT32_INDEFINITE, RT_NOTHING, 1)
-EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, RT_NOTHING, 1)
+EMIT_FISTT(16, 16, int16_t, INT16_MIN, INT16_MAX, X86_FPU_INT16_INDEFINITE, RT_NOTHING, 1)
 #endif
-EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, _intel,     1)
-EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, _amd,       0)
+EMIT_FISTT(16, 16, int16_t, INT16_MIN, INT16_MAX, X86_FPU_INT16_INDEFINITE, _intel,     1)
+EMIT_FISTT(16, 16, int16_t, INT16_MIN, INT16_MAX, X86_FPU_INT16_INDEFINITE, _amd,       0)
 
 
 #if defined(IEM_WITHOUT_ASSEMBLY)
