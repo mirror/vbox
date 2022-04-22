@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QRegularExpression>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -451,8 +452,7 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
         /* Make sure MAC-address is unicast: */
         if (m_pEditorNetworkSettings->macAddress().size() >= 2)
         {
-            QRegExp validator("^[0-9A-Fa-f][02468ACEace]");
-            if (validator.indexIn(m_pEditorNetworkSettings->macAddress()) != 0)
+            if (m_pEditorNetworkSettings->macAddress().indexOf(QRegularExpression("^[0-9A-Fa-f][02468ACEace]")) != 0)
             {
                 message.second << tr("The second digit in the MAC address may not be odd as only unicast addresses are allowed.");
                 fPass = false;
