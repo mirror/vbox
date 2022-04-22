@@ -171,6 +171,7 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_1           RT_BIT_32(1)
 /** Bit 2 - PF - Parity flag - Status flag. */
 #define X86_EFL_PF          RT_BIT_32(2)
+#define X86_EFL_PF_BIT      2
 /** Bit 4 - AF - Auxiliary carry flag - Status flag. */
 #define X86_EFL_AF          RT_BIT_32(4)
 #define X86_EFL_AF_BIT      4
@@ -182,10 +183,13 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_SF_BIT      7
 /** Bit 8 - TF - Trap flag - System flag. */
 #define X86_EFL_TF          RT_BIT_32(8)
+#define X86_EFL_TF_BIT      8
 /** Bit 9 - IF - Interrupt flag - System flag. */
 #define X86_EFL_IF          RT_BIT_32(9)
+#define X86_EFL_IF_BIT      9
 /** Bit 10 - DF - Direction flag - Control flag. */
 #define X86_EFL_DF          RT_BIT_32(10)
+#define X86_EFL_DF_BIT      10
 /** Bit 11 - OF - Overflow flag - Status flag. */
 #define X86_EFL_OF          RT_BIT_32(11)
 #define X86_EFL_OF_BIT      11
@@ -193,18 +197,25 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_IOPL        (RT_BIT_32(12) | RT_BIT_32(13))
 /** Bit 14 - NT - Nested task flag - System flag. */
 #define X86_EFL_NT          RT_BIT_32(14)
+#define X86_EFL_NT_BIT      14
 /** Bit 16 - RF - Resume flag - System flag. */
 #define X86_EFL_RF          RT_BIT_32(16)
+#define X86_EFL_RF_BIT      16
 /** Bit 17 - VM - Virtual 8086 mode - System flag. */
 #define X86_EFL_VM          RT_BIT_32(17)
+#define X86_EFL_VM_BIT      17
 /** Bit 18 - AC - Alignment check flag - System flag. Works with CR0.AM. */
 #define X86_EFL_AC          RT_BIT_32(18)
+#define X86_EFL_AC_BIT      18
 /** Bit 19 - VIF - Virtual interrupt flag - System flag. */
 #define X86_EFL_VIF         RT_BIT_32(19)
+#define X86_EFL_VIF_BIT     19
 /** Bit 20 - VIP - Virtual interrupt pending flag - System flag. */
 #define X86_EFL_VIP         RT_BIT_32(20)
+#define X86_EFL_VIP_BIT     20
 /** Bit 21 - ID - CPUID flag - System flag. If this responds to flipping CPUID is supported. */
 #define X86_EFL_ID          RT_BIT_32(21)
+#define X86_EFL_ID_BIT      21
 /** All live bits. */
 #define X86_EFL_LIVE_MASK   UINT32_C(0x003f7fd5)
 /** Read as 1 bits. */
