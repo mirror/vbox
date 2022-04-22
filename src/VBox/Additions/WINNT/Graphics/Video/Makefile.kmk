@@ -39,7 +39,7 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/mp/xpdm/VBoxV
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-if defined(VBOX_SIGN_ADDITIONS) && defined(VBOX_SIGN_ADDITIONS)
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBoxVideo-inf_SOURCES += \
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat \
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat=>VBoxVideo-PreW10.cat \
