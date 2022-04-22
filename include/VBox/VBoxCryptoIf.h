@@ -40,7 +40,7 @@ typedef VBOXCRYPTOCTX *PVBOXCRYPTOCTX;
 /** Magic identifying the cryptographic interface (Charles Babbage). */
 #define VBOXCRYPTOIF_MAGIC UINT32_C(0x17911226)
 
-/** Pointer to const helpers passed to the VBoxExtPackRegister() call. */
+/** Pointer to const cryptographic interface. */
 typedef const struct VBOXCRYPTOIF *PCVBOXCRYPTOIF;
 /**
  * The main cryptographic callbacks interface table.
@@ -52,15 +52,8 @@ typedef struct VBOXCRYPTOIF
     /** Interface version.
      * This is set to VBOXCRYPTOIF_VERSION. */
     uint32_t                    u32Version;
-
-    /** The VirtualBox full version (see VBOX_FULL_VERSION).  */
-    uint32_t                    uVBoxFullVersion;
-    /** The VirtualBox subversion tree revision.  */
-    uint32_t                    uVBoxInternalRevision;
-    /** Explicit alignment padding, must be zero. */
-    uint32_t                    u32Padding;
-    /** Pointer to the version string (read-only). */
-    const char                 *pszVBoxVersion;
+    /** Description string. */
+    const char                 *pszDesc;
 
     /** @name Generic crytographic context operations.
      * @{ */
@@ -84,7 +77,7 @@ typedef struct VBOXCRYPTOIF
      * @param   pszPassword         Password for encrypting the context.
      * @param   phCryptoCtx         Where to store the handle to the crypto context on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxLoad, (const char *pszStoredCtx, const char* pszPassword,
+    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxLoad, (const char *pszStoredCtx, const char *pszPassword,
                                                  PVBOXCRYPTOCTX phCryptoCtx));
 
     /**
@@ -211,7 +204,7 @@ typedef struct VBOXCRYPTOIF
      *                          (you write to this).
      */
     DECLR3CALLBACKMEMBER(int, pfnCryptoIoStrmFromVfsIoStrmEncrypt, (RTVFSIOSTREAM hVfsIosDst, const char *pszKeyStore,
-                                                                    const char* pszPassword, PRTVFSIOSTREAM phVfsIosCrypt));
+                                                                    const char *pszPassword, PRTVFSIOSTREAM phVfsIosCrypt));
 
     /**
      * Opens a new decryption I/O stream.
@@ -225,7 +218,7 @@ typedef struct VBOXCRYPTOIF
      * @param   phVfsIosOut     Where to return the handle to the decrypted I/O stream (read).
      */
     DECLR3CALLBACKMEMBER(int, pfnCryptoIoStrmFromVfsIoStrmDecrypt, (RTVFSIOSTREAM hVfsIosIn, const char *pszKeyStore,
-                                                                    const char* pszPassword, PRTVFSIOSTREAM phVfsIosOut));
+                                                                    const char *pszPassword, PRTVFSIOSTREAM phVfsIosOut));
     /** @} */
 
     /** @name Keystore related functions.
@@ -271,10 +264,10 @@ typedef struct VBOXCRYPTOIF
     /** Reserved for minor structure revisions. */
     uint32_t                    uReserved7;
 
-    /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
+    /** End of structure marker (VBOXCRYPTOIF_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXCRYPTOIF;
-/** Current version of the VBOXEXTPACKHLP structure.  */
+/** Current version of the VBOXCRYPTOIF structure.  */
 #define VBOXCRYPTOIF_VERSION            RT_MAKE_U32(0, 1)
 
 
