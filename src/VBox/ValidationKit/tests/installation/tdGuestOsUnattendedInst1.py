@@ -526,9 +526,9 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-debian-9.3-64',     'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',      # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-debian-9.4-64',     'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',      # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
             #
             # OS/2.
             #
