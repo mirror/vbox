@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCommonStyle>
@@ -4049,7 +4050,7 @@ void UIMachineSettingsStorage::sltChooseDiskFile()
 {
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
-    QUuid uMediumId = uiCommon().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
+    QUuid uMediumId = uiCommon().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), QApplication::activeWindow(), strMachineFolder);
     if (uMediumId.isNull())
         return;
     m_pMediumIdHolder->setId(uMediumId);
