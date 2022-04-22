@@ -4851,27 +4851,215 @@ static uint16_t iemFpuFloat80RoundAndComposeFrom192(PRTFLOAT80U pr80Dst, bool fS
 }
 
 
+/**
+ * See also iemAImpl_fld_r80_from_r32
+ */
+static uint16_t iemAImplConvertR32ToR80(PCRTFLOAT32U pr32Val, PRTFLOAT80U pr80Dst)
+{
+    uint16_t fFsw = 0;
+    if (RTFLOAT32U_IS_NORMAL(pr32Val))
+    {
+        pr80Dst->sj64.fSign     = pr32Val->s.fSign;
+        pr80Dst->sj64.fInteger  = 1;
+        pr80Dst->sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                               << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS);
+        pr80Dst->sj64.uExponent = pr32Val->s.uExponent - RTFLOAT32U_EXP_BIAS + RTFLOAT80U_EXP_BIAS;
+        Assert(RTFLOAT80U_IS_NORMAL(pr80Dst));
+    }
+    else if (RTFLOAT32U_IS_ZERO(pr32Val))
+    {
+        pr80Dst->s.fSign     = pr32Val->s.fSign;
+        pr80Dst->s.uExponent = 0;
+        pr80Dst->s.uMantissa = 0;
+        Assert(RTFLOAT80U_IS_ZERO(pr80Dst));
+    }
+    else if (RTFLOAT32U_IS_SUBNORMAL(pr32Val))
+    {
+        /* Subnormal -> normalized + X86_FSW_DE return. */
+        pr80Dst->sj64.fSign     = pr32Val->s.fSign;
+        pr80Dst->sj64.fInteger  = 1;
+        unsigned const cExtraShift = RTFLOAT32U_FRACTION_BITS - ASMBitLastSetU32(pr32Val->s.uFraction);
+        pr80Dst->sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                               << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS + cExtraShift + 1);
+        pr80Dst->sj64.uExponent = pr32Val->s.uExponent - RTFLOAT32U_EXP_BIAS + RTFLOAT80U_EXP_BIAS - cExtraShift;
+        fFsw = X86_FSW_DE;
+    }
+    else if (RTFLOAT32U_IS_INF(pr32Val))
+    {
+        pr80Dst->s.fSign     = pr32Val->s.fSign;
+        pr80Dst->s.uExponent = RTFLOAT80U_EXP_MAX;
+        pr80Dst->s.uMantissa = RT_BIT_64(63);
+        Assert(RTFLOAT80U_IS_INF(pr80Dst));
+    }
+    else
+    {
+        Assert(RTFLOAT32U_IS_NAN(pr32Val));
+        pr80Dst->sj64.fSign     = pr32Val->s.fSign;
+        pr80Dst->sj64.uExponent = RTFLOAT80U_EXP_MAX;
+        pr80Dst->sj64.fInteger  = 1;
+        pr80Dst->sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                               << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS);
+        Assert(RTFLOAT80U_IS_NAN(pr80Dst));
+        Assert(RTFLOAT80U_IS_SIGNALLING_NAN(pr80Dst) == RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val));
+    }
+    return fFsw;
+}
+
+
+/**
+ * See also iemAImpl_fld_r80_from_r64
+ */
+static uint16_t iemAImplConvertR64ToR80(PCRTFLOAT64U pr64Val, PRTFLOAT80U pr80Dst)
+{
+    uint16_t fFsw = 0;
+    if (RTFLOAT64U_IS_NORMAL(pr64Val))
+    {
+        pr80Dst->sj64.fSign     = pr64Val->s.fSign;
+        pr80Dst->sj64.fInteger  = 1;
+        pr80Dst->sj64.uFraction = pr64Val->s64.uFraction << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS);
+        pr80Dst->sj64.uExponent = pr64Val->s.uExponent - RTFLOAT64U_EXP_BIAS + RTFLOAT80U_EXP_BIAS;
+        Assert(RTFLOAT80U_IS_NORMAL(pr80Dst));
+    }
+    else if (RTFLOAT64U_IS_ZERO(pr64Val))
+    {
+        pr80Dst->s.fSign     = pr64Val->s.fSign;
+        pr80Dst->s.uExponent = 0;
+        pr80Dst->s.uMantissa = 0;
+        Assert(RTFLOAT80U_IS_ZERO(pr80Dst));
+    }
+    else if (RTFLOAT64U_IS_SUBNORMAL(pr64Val))
+    {
+        /* Subnormal values gets normalized. */
+        pr80Dst->sj64.fSign     = pr64Val->s.fSign;
+        pr80Dst->sj64.fInteger  = 1;
+        unsigned const cExtraShift = RTFLOAT64U_FRACTION_BITS - ASMBitLastSetU64(pr64Val->s64.uFraction);
+        pr80Dst->sj64.uFraction = pr64Val->s64.uFraction
+                               << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS + cExtraShift + 1);
+        pr80Dst->sj64.uExponent = pr64Val->s.uExponent - RTFLOAT64U_EXP_BIAS + RTFLOAT80U_EXP_BIAS - cExtraShift;
+        fFsw = X86_FSW_DE;
+    }
+    else if (RTFLOAT64U_IS_INF(pr64Val))
+    {
+        pr80Dst->s.fSign     = pr64Val->s.fSign;
+        pr80Dst->s.uExponent = RTFLOAT80U_EXP_MAX;
+        pr80Dst->s.uMantissa = RT_BIT_64(63);
+        Assert(RTFLOAT80U_IS_INF(pr80Dst));
+    }
+    else
+    {
+        /* Signalling and quiet NaNs, both turn into quiet ones when loaded (weird). */
+        Assert(RTFLOAT64U_IS_NAN(pr64Val));
+        pr80Dst->sj64.fSign     = pr64Val->s.fSign;
+        pr80Dst->sj64.uExponent = RTFLOAT80U_EXP_MAX;
+        pr80Dst->sj64.fInteger  = 1;
+        pr80Dst->sj64.uFraction = pr64Val->s64.uFraction << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS);
+        Assert(RTFLOAT80U_IS_NAN(pr80Dst));
+        Assert(RTFLOAT80U_IS_SIGNALLING_NAN(pr80Dst) == RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val));
+    }
+    return fFsw;
+}
+
+
+/**
+ * See also EMIT_FILD.
+ */
+#define EMIT_CONVERT_IXX_TO_R80(a_cBits) \
+static PRTFLOAT80U iemAImplConvertI ## a_cBits ## ToR80(int ## a_cBits ## _t iVal, PRTFLOAT80U pr80Dst) \
+{ \
+    if (iVal == 0) \
+    { \
+        pr80Dst->s.fSign      = 0; \
+        pr80Dst->s.uExponent  = 0; \
+        pr80Dst->s.uMantissa  = 0; \
+    } \
+    else \
+    { \
+        if (iVal > 0) \
+            pr80Dst->s.fSign  = 0; \
+        else \
+        { \
+            pr80Dst->s.fSign  = 1; \
+            iVal = -iVal; \
+        } \
+        unsigned const cBits = ASMBitLastSetU ## a_cBits((uint ## a_cBits ## _t)iVal); \
+        pr80Dst->s.uExponent  = cBits - 1 + RTFLOAT80U_EXP_BIAS; \
+        pr80Dst->s.uMantissa  = (uint64_t)iVal << (RTFLOAT80U_FRACTION_BITS + 1 - cBits); \
+    } \
+    return pr80Dst; \
+}
+EMIT_CONVERT_IXX_TO_R80(16)
+EMIT_CONVERT_IXX_TO_R80(32)
+//EMIT_CONVERT_IXX_TO_R80(64)
+
+/** For implementing iemAImpl_fmul_r80_by_r64 and such. */
+#define EMIT_R80_BY_R64(a_Name, a_fnR80ByR80, a_DenormalException) \
+IEM_DECL_IMPL_DEF(void, a_Name,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2)) \
+{ \
+    RTFLOAT80U r80Val2; \
+    uint16_t   fFsw = iemAImplConvertR64ToR80(pr64Val2, &r80Val2); \
+    Assert(!fFsw || fFsw == X86_FSW_DE); \
+    if (fFsw) \
+    { \
+        if (RTFLOAT80U_IS_387_INVALID(pr80Val1) || RTFLOAT80U_IS_NAN(pr80Val1) || (a_DenormalException)) \
+            fFsw = 0; \
+        else if (!(pFpuState->FCW & X86_FCW_DM)) \
+        { \
+            pFpuRes->r80Result = *pr80Val1; \
+            pFpuRes->FSW       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT) \
+                               | X86_FSW_DE | X86_FSW_ES | X86_FSW_B; \
+            return; \
+        } \
+    } \
+    a_fnR80ByR80(pFpuState, pFpuRes, pr80Val1, &r80Val2); \
+    pFpuRes->FSW = (pFpuRes->FSW & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT) | fFsw; \
+}
+
+/** For implementing iemAImpl_fmul_r80_by_r32 and such. */
+#define EMIT_R80_BY_R32(a_Name, a_fnR80ByR80, a_DenormalException) \
+IEM_DECL_IMPL_DEF(void, a_Name,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2)) \
+{ \
+    RTFLOAT80U r80Val2; \
+    uint16_t   fFsw = iemAImplConvertR32ToR80(pr32Val2, &r80Val2); \
+    Assert(!fFsw || fFsw == X86_FSW_DE); \
+    if (fFsw) \
+    { \
+        if (RTFLOAT80U_IS_387_INVALID(pr80Val1) || RTFLOAT80U_IS_NAN(pr80Val1) || (a_DenormalException)) \
+            fFsw = 0; \
+        else if (!(pFpuState->FCW & X86_FCW_DM)) \
+        { \
+            pFpuRes->r80Result = *pr80Val1; \
+            pFpuRes->FSW       = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT) \
+                               | X86_FSW_DE | X86_FSW_ES | X86_FSW_B; \
+            return; \
+        } \
+    } \
+    a_fnR80ByR80(pFpuState, pFpuRes, pr80Val1, &r80Val2); \
+    pFpuRes->FSW = (pFpuRes->FSW & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT) | fFsw; \
+}
+
+/** For implementing iemAImpl_fimul_r80_by_i32 and such. */
+#define EMIT_R80_BY_I32(a_Name, a_fnR80ByR80) \
+IEM_DECL_IMPL_DEF(void, a_Name,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2)) \
+{ \
+    RTFLOAT80U r80Val2; \
+    a_fnR80ByR80(pFpuState, pFpuRes, pr80Val1, iemAImplConvertI32ToR80(*pi32Val2, &r80Val2)); \
+    pFpuRes->FSW = (pFpuRes->FSW & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT); \
+}
+
+/** For implementing iemAImpl_fimul_r80_by_i16 and such. */
+#define EMIT_R80_BY_I16(a_Name, a_fnR80ByR80) \
+IEM_DECL_IMPL_DEF(void, a_Name,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2)) \
+{ \
+    RTFLOAT80U r80Val2; \
+    a_fnR80ByR80(pFpuState, pFpuRes, pr80Val1, iemAImplConvertI16ToR80(*pi16Val2, &r80Val2)); \
+    pFpuRes->FSW = (pFpuRes->FSW & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);  \
+}
+
 
 
 /*********************************************************************************************************************************
 *   x86 FPU Division Operations                                                                                                  *
 *********************************************************************************************************************************/
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
 
 /** Worker for iemAImpl_fdiv_r80_by_r80 & iemAImpl_fdivr_r80_by_r80. */
 static uint16_t iemAImpl_fdiv_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
@@ -4953,20 +5141,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
+EMIT_R80_BY_R64(iemAImpl_fdiv_r80_by_r64,  iemAImpl_fdiv_r80_by_r80, 0)
+EMIT_R80_BY_R32(iemAImpl_fdiv_r80_by_r32,  iemAImpl_fdiv_r80_by_r80, 0)
+EMIT_R80_BY_I32(iemAImpl_fidiv_r80_by_i32, iemAImpl_fdiv_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fidiv_r80_by_i16, iemAImpl_fdiv_r80_by_r80)
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
@@ -5013,36 +5191,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fidiv_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fidiv_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fidivr_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fidivr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
+EMIT_R80_BY_R64(iemAImpl_fdivr_r80_by_r64,  iemAImpl_fdivr_r80_by_r80, RTFLOAT80U_IS_ZERO(pr80Val1))
+EMIT_R80_BY_R32(iemAImpl_fdivr_r80_by_r32,  iemAImpl_fdivr_r80_by_r80, RTFLOAT80U_IS_ZERO(pr80Val1))
+EMIT_R80_BY_I32(iemAImpl_fidivr_r80_by_i32, iemAImpl_fdivr_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fidivr_r80_by_i16, iemAImpl_fdivr_r80_by_r80)
 
 
 /** Worker for iemAImpl_fprem_r80_by_r80 & iemAImpl_fprem1_r80_by_r80. */
@@ -5148,22 +5300,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fprem1_r80_by_r80,(PCX86FXSTATE pFpuState, PIEM
 *   x87 FPU Multiplication Operations                                                                                            *
 *********************************************************************************************************************************/
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
-
 /** Worker for iemAImpl_fmul_r80_by_r80. */
 static uint16_t iemAImpl_fmul_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
                                              uint16_t fFcw, uint16_t fFsw, PCRTFLOAT80U pr80Val1Org)
@@ -5218,41 +5354,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
+EMIT_R80_BY_R64(iemAImpl_fmul_r80_by_r64,  iemAImpl_fmul_r80_by_r80, 0)
+EMIT_R80_BY_R32(iemAImpl_fmul_r80_by_r32,  iemAImpl_fmul_r80_by_r80, 0)
+EMIT_R80_BY_I32(iemAImpl_fimul_r80_by_i32, iemAImpl_fmul_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fimul_r80_by_i16, iemAImpl_fmul_r80_by_r80)
 
 
 /*********************************************************************************************************************************
-*   x87 FPU Addition and Subtraction                                                                                             *
+*   x87 FPU Addition                                                                                                             *
 *********************************************************************************************************************************/
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
 
 /** Worker for iemAImpl_fadd_r80_by_r80. */
 static uint16_t iemAImpl_fadd_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
@@ -5308,69 +5418,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
+EMIT_R80_BY_R64(iemAImpl_fadd_r80_by_r64,  iemAImpl_fadd_r80_by_r80, 0)
+EMIT_R80_BY_R32(iemAImpl_fadd_r80_by_r32,  iemAImpl_fadd_r80_by_r80, 0)
+EMIT_R80_BY_I32(iemAImpl_fiadd_r80_by_i32, iemAImpl_fadd_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fiadd_r80_by_i16, iemAImpl_fadd_r80_by_r80)
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsub_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsub_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
+/*********************************************************************************************************************************
+*   x87 FPU Subtraction                                                                                                          *
+*********************************************************************************************************************************/
 
 /** Worker for iemAImpl_fsub_r80_by_r80 and iemAImpl_fsubr_r80_by_r80. */
 static uint16_t iemAImpl_fsub_f80_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PRTFLOAT80U pr80Result,
@@ -5426,20 +5482,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsub_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFP
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsubr_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsubr_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
+EMIT_R80_BY_R64(iemAImpl_fsub_r80_by_r64,  iemAImpl_fsub_r80_by_r80, 0)
+EMIT_R80_BY_R32(iemAImpl_fsub_r80_by_r32,  iemAImpl_fsub_r80_by_r80, 0)
+EMIT_R80_BY_I32(iemAImpl_fisub_r80_by_i32, iemAImpl_fsub_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fisub_r80_by_i16, iemAImpl_fsub_r80_by_r80)
 
 
 /* Same as iemAImpl_fsub_r80_by_r80, but with input operands switched.  */
@@ -5485,6 +5531,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsubr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
 
     pFpuRes->FSW = fFsw;
 }
+
+
+EMIT_R80_BY_R64(iemAImpl_fsubr_r80_by_r64,  iemAImpl_fsubr_r80_by_r80, 0)
+EMIT_R80_BY_R32(iemAImpl_fsubr_r80_by_r32,  iemAImpl_fsubr_r80_by_r80, 0)
+EMIT_R80_BY_I32(iemAImpl_fisubr_r80_by_i32, iemAImpl_fsubr_r80_by_r80)
+EMIT_R80_BY_I16(iemAImpl_fisubr_r80_by_i16, iemAImpl_fsubr_r80_by_r80)
 
 
 /*********************************************************************************************************************************
