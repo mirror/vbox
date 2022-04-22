@@ -1007,6 +1007,10 @@ static const char *FswDiff(uint16_t fActual, uint16_t fExpected)
     if (fXor & X86_FSW_TOP_MASK)
         cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "/TOP%u!%u",
                            X86_FSW_TOP_GET(fActual), X86_FSW_TOP_GET(fExpected));
+#if 0 /* For debugging fprem & fprem1 */
+    cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, " - Q=%d (vs %d)",
+                       X86_FSW_CX_TO_QUOTIENT(fActual), X86_FSW_CX_TO_QUOTIENT(fExpected));
+#endif
     RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "");
     return pszBuf;
 }
@@ -3157,6 +3161,7 @@ static void FpuStD80Test(void)
  * Binary FPU operations on two 80-bit floating point values.
  */
 TYPEDEF_SUBTEST_TYPE(FPU_BINARY_R80_T, FPU_BINARY_R80_TEST_T, PFNIEMAIMPLFPUR80);
+enum { kFpuBinaryHint_fprem = 1, };
 
 static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
 {
@@ -3166,8 +3171,8 @@ static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
     ENTRY(fmul_r80_by_r80),
     ENTRY(fdiv_r80_by_r80),
     ENTRY(fdivr_r80_by_r80),
-    ENTRY(fprem_r80_by_r80),
-    ENTRY(fprem1_r80_by_r80),
+    ENTRY_EX(fprem_r80_by_r80,  kFpuBinaryHint_fprem),
+    ENTRY_EX(fprem1_r80_by_r80, kFpuBinaryHint_fprem),
     ENTRY(fscale_r80_by_r80),
     ENTRY_AMD(  fpatan_r80_by_r80,  0),  // C1 and rounding differs on AMD
     ENTRY_INTEL(fpatan_r80_by_r80,  0),  // C1 and rounding differs on AMD
@@ -3180,7 +3185,7 @@ static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests)
 {
-    cTests = RT_MAX(160, cTests); /* there are 144 standard input variations */
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
     static struct { RTFLOAT80U Val1, Val2; } const s_aSpecials[] =
     {
@@ -3190,11 +3195,73 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
             RTFLOAT80U_INIT_C(0, 0xffffffffffffffff, RTFLOAT80U_EXP_MAX - 1) },
         {   RTFLOAT80U_INIT_ZERO(0),    /* minus variant */
             RTFLOAT80U_INIT_C(1, 0xffffffffffffffff, RTFLOAT80U_EXP_MAX - 1) },
+        {   RTFLOAT80U_INIT_C(0, 0xcef238bb9a0afd86, 577 + RTFLOAT80U_EXP_BIAS),    /* for fprem and fprem1, max sequence length */
+            RTFLOAT80U_INIT_C(0, 0xf11684ec0beaad94,   1 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff, -13396 + RTFLOAT80U_EXP_BIAS), /* for fdiv. We missed PE. */
+            RTFLOAT80U_INIT_C(1, 0xffffffffffffffff,  16383 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8000000000000000,   1 + RTFLOAT80U_EXP_BIAS),    /* for fprem/fprem1 */
+            RTFLOAT80U_INIT_C(0, 0xe000000000000000,   0 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8000000000000000,   1 + RTFLOAT80U_EXP_BIAS),    /* for fprem/fprem1 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   0 + RTFLOAT80U_EXP_BIAS) },
+        /* fscale: This may seriously increase the exponent, and it turns out overflow and underflow behaviour changes
+                   once RTFLOAT80U_EXP_BIAS_ADJUST is exceeded. */
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^1 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   0 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^64 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   6 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^1024 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   10 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^4096 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   12 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^16384 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 49150 */
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^24576 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(0, 0xc000000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 57342 - within 10980XE range */
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^24577 */
+            RTFLOAT80U_INIT_C(0, 0xc002000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 57343 - outside 10980XE range, behaviour changes! */
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^32768 - result is within range on 10980XE */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   15 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 65534 */
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^65536 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   16 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^1048576 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   20 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^16777216 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   24 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8000000000000000,   1),                          /* for fscale: min * 2^-24576 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(1, 0xc000000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: -24575 - within 10980XE range */
+        {   RTFLOAT80U_INIT_C(0, 0x8000000000000000,   1),                          /* for fscale: max * 2^-24577 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(1, 0xc002000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: -24576 - outside 10980XE range, behaviour changes! */
+        /* fscale: Negative variants for the essentials of the above. */
+        {   RTFLOAT80U_INIT_C(1, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^24576 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(0, 0xc000000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 57342 - within 10980XE range */
+        {   RTFLOAT80U_INIT_C(1, 0xffffffffffffffff,   RTFLOAT80U_EXP_MAX - 1),     /* for fscale: max * 2^24577 */
+            RTFLOAT80U_INIT_C(0, 0xc002000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: 57343 - outside 10980XE range, behaviour changes! */
+        {   RTFLOAT80U_INIT_C(1, 0x8000000000000000,   1),                          /* for fscale: min * 2^-24576 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(1, 0xc000000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: -57342 - within 10980XE range */
+        {   RTFLOAT80U_INIT_C(1, 0x8000000000000000,   1),                          /* for fscale: max * 2^-24576 (RTFLOAT80U_EXP_BIAS_ADJUST) */
+            RTFLOAT80U_INIT_C(1, 0xc002000000000000,   14 + RTFLOAT80U_EXP_BIAS) }, /* resulting exponent: -57343 - outside 10980XE range, behaviour changes! */
+        /* fscale: Some fun with denormals and pseudo-denormals. */
+        {   RTFLOAT80U_INIT_C(0, 0x0800000000000000,   0),                          /* for fscale: max * 2^-4 */
+            RTFLOAT80U_INIT_C(1, 0x8000000000000000,   2 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x0800000000000000,   0),                          /* for fscale: max * 2^+1 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   0 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x0800000000000000,   0), RTFLOAT80U_INIT_ZERO(0) }, /* for fscale: max * 2^+0 */
+        {   RTFLOAT80U_INIT_C(0, 0x0000000000000008,   0),                          /* for fscale: max * 2^-4 => underflow */
+            RTFLOAT80U_INIT_C(1, 0x8000000000000000,   2 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8005000300020001,   0), RTFLOAT80U_INIT_ZERO(0) }, /* pseudo-normal number * 2^+0. */
+        {   RTFLOAT80U_INIT_C(1, 0x8005000300020001,   0), RTFLOAT80U_INIT_ZERO(0) }, /* pseudo-normal number * 2^+0. */
+        {   RTFLOAT80U_INIT_C(0, 0x8005000300020001,   0),                          /* pseudo-normal number * 2^-4 */
+            RTFLOAT80U_INIT_C(1, 0x8000000000000000,   2 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8005000300020001,   0),                          /* pseudo-normal number * 2^+0 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   0 + RTFLOAT80U_EXP_BIAS) },
+        {   RTFLOAT80U_INIT_C(0, 0x8005000300020001,   0),                          /* pseudo-normal number * 2^+1 */
+            RTFLOAT80U_INIT_C(0, 0x8000000000000000,   1 + RTFLOAT80U_EXP_BIAS) },
     };
 
     X86FXSTATE State;
     RT_ZERO(State);
-    uint32_t cMinNormalPairs = (cTests - 144) / 4;
+    uint32_t cMinNormalPairs       = (cTests - 144) / 4;
+    uint32_t cMinTargetRangeInputs = cMinNormalPairs / 2;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
     {
         PFNIEMAIMPLFPUR80 const pfn = g_aFpuBinaryR80[iFn].pfnNative ? g_aFpuBinaryR80[iFn].pfnNative : g_aFpuBinaryR80[iFn].pfn;
@@ -3207,14 +3274,28 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
         }
 
         GenerateArrayStart(pOutFn, g_aFpuBinaryR80[iFn].pszName, "FPU_BINARY_R80_TEST_T");
-        uint32_t iTestOutput       = 0;
-        uint32_t cNormalInputPairs = 0;
+        uint32_t iTestOutput        = 0;
+        uint32_t cNormalInputPairs  = 0;
+        uint32_t cTargetRangeInputs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Src1(iTest) : s_aSpecials[iTest - cTests].Val1;
-            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Src2(iTest) : s_aSpecials[iTest - cTests].Val2;
+            RTFLOAT80U InVal1 = iTest < cTests ? RandR80Src1(iTest) : s_aSpecials[iTest - cTests].Val1;
+            RTFLOAT80U InVal2 = iTest < cTests ? RandR80Src2(iTest) : s_aSpecials[iTest - cTests].Val2;
+            bool fTargetRange = false;
             if (RTFLOAT80U_IS_NORMAL(&InVal1) && RTFLOAT80U_IS_NORMAL(&InVal2))
+            {
                 cNormalInputPairs++;
+                if (   g_aFpuBinaryR80[iFn].uExtra == kFpuBinaryHint_fprem
+                    && (uint32_t)InVal1.s.uExponent - (uint32_t)InVal2.s.uExponent - (uint32_t)64 <= (uint32_t)512)
+                    cTargetRangeInputs += fTargetRange = true;
+                else if (cTargetRangeInputs < cMinTargetRangeInputs && iTest < cTests)
+                    if (g_aFpuBinaryR80[iFn].uExtra == kFpuBinaryHint_fprem)
+                    {   /* The aim is two values with an exponent difference between 64 and 640 so we can do the whole sequence. */
+                        InVal2.s.uExponent = RTRandU32Ex(1, RTFLOAT80U_EXP_MAX - 66);
+                        InVal1.s.uExponent = RTRandU32Ex(InVal2.s.uExponent + 64, RT_MIN(InVal2.s.uExponent + 512, RTFLOAT80U_EXP_MAX - 1));
+                        cTargetRangeInputs += fTargetRange = true;
+                    }
+            }
             else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
             {
                 iTest -= 1;
@@ -3275,6 +3356,25 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                                                  State.FCW | fFcwExtra, State.FSW, Res3.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
                                                  GenFormatR80(&Res3.r80Result), iTest, iRounding, iPrecision, fUnmasked, iTestOutput++);
                                 }
+                    }
+
+                    /* If the values are in range and caused no exceptions, do the whole series of
+                       partial reminders till we get the non-partial one or run into an exception. */
+                    if (fTargetRange && fXcpt == 0 && g_aFpuBinaryR80[iFn].uExtra == kFpuBinaryHint_fprem)
+                    {
+                        IEMFPURESULT ResPrev = ResM;
+                        for (unsigned i = 0; i < 32 && (ResPrev.FSW & (X86_FSW_C2 | X86_FSW_XCPT_MASK)) == X86_FSW_C2; i++)
+                        {
+                            State.FCW = State.FCW | X86_FCW_MASK_ALL;
+                            State.FSW = ResPrev.FSW;
+                            IEMFPURESULT ResSeq = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                            pfn(&State, &ResSeq, &ResPrev.r80Result, &InVal2);
+                            RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/seq%u = #%u */\n",
+                                         State.FCW | fFcwExtra, State.FSW, ResSeq.FSW, GenFormatR80(&ResPrev.r80Result),
+                                         GenFormatR80(&InVal2), GenFormatR80(&ResSeq.r80Result),
+                                         iTest, iRounding, iPrecision, i + 1, iTestOutput++);
+                            ResPrev = ResSeq;
+                        }
                     }
                 }
         }
