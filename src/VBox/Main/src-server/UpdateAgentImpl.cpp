@@ -325,7 +325,7 @@ HRESULT UpdateAgent::setRepositoryURL(const com::Utf8Str &aRepo)
 
     m->strRepoUrl = aRepo;
 
- 	return i_commitSettings(alock);
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getProxyMode(ProxyMode_T *aMode)
@@ -609,7 +609,7 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
     aLock.release();
 
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
- 	return m_VirtualBox->i_saveSettings();
+    return m_VirtualBox->i_saveSettings();
 }
 
 #if 0
