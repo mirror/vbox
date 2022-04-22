@@ -183,6 +183,7 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
                     enmChannel = UpdateChannel_Stable;
                 else if (!RTStrICmp(ValueUnion.psz, "withbetas"))
                     enmChannel = UpdateChannel_WithBetas;
+                /** @todo UpdateChannel_WithTesting once supported. */
                 else if (!RTStrICmp(ValueUnion.psz, "all"))
                     enmChannel = UpdateChannel_All;
                 else
@@ -195,13 +196,15 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
                     return errorArgument(UpdateCheck::tr("The update frequency cannot be zero"));
                 break;
 
+            /** @todo Add more options like proxy + repo handling etc. */
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
 
-    if (   fEnabled == -1
-        && enmChannel != enmChannelNil
+    if (   fEnabled       == -1
+        && enmChannel     == enmChannelNil
         && cFrequencyDays == 0)
         return errorSyntax(UpdateCheck::tr("No change requested"));
 
@@ -220,7 +223,6 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
     {
         CHECK_ERROR2I_RET(pUpdateAgent, COMSETTER(CheckFrequency)(cFrequencyDays * RT_SEC_1DAY), RTEXITCODE_FAILURE);
     }
-
     return RTEXITCODE_SUCCESS;
 }
 

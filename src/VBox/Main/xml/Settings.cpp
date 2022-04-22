@@ -2355,7 +2355,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                             {
                                 pelmLevel4Child->getAttributeValue("enabled", updateHost.fEnabled);
                                 pelmLevel4Child->getAttributeValue("channel", (uint32_t&)updateHost.enmChannel);
-                                pelmLevel4Child->getAttributeValue("checkFrequency", updateHost.uCheckFreqSeconds);
+                                pelmLevel4Child->getAttributeValue("checkFreqSec", updateHost.uCheckFreqSeconds);
                                 pelmLevel4Child->getAttributeValue("repoUrl", updateHost.strRepoUrl);
                                 pelmLevel4Child->getAttributeValue("proxyMode", (uint32_t&)updateHost.enmProxyMode);
                                 pelmLevel4Child->getAttributeValue("proxyUrl", (uint32_t&)updateHost.enmProxyMode);
@@ -2602,7 +2602,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     xml::ElementNode *pelmUpdateHost = pelmUpdates->createChild("Host");
     pelmUpdateHost->setAttribute("enabled", updateHost.fEnabled);
     pelmUpdateHost->setAttribute("channel", (int32_t)updateHost.enmChannel);
-    pelmUpdateHost->setAttribute("checkFrequency", updateHost.uCheckFreqSeconds);
+    pelmUpdateHost->setAttribute("checkFreqSec", updateHost.uCheckFreqSeconds);
     if (updateHost.strRepoUrl.length())
         pelmUpdateHost->setAttribute("repoUrl", updateHost.strRepoUrl);
     pelmUpdateHost->setAttribute("proxyMode", (int32_t)updateHost.enmProxyMode);

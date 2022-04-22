@@ -127,7 +127,14 @@ public:
     /** @}  */
 
 protected:
-    /** @name Wrapped IUpdateAgent attributes and methods
+
+    /** @name Internal helper methods.
+     * @{ */
+    HRESULT i_commitSettings(AutoWriteLock &aLock);
+    /** @}  */
+
+protected:
+    /** @name Wrapped IUpdateAgent attributes and methods.
      * @{ */
     HRESULT checkFor(ComPtr<IProgress> &aProgress);
     HRESULT download(ComPtr<IProgress> &aProgress);

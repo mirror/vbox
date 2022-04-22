@@ -237,7 +237,7 @@ HRESULT UpdateAgent::setEnabled(const BOOL aEnabled)
 
     m->fEnabled = aEnabled;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 
@@ -277,7 +277,7 @@ HRESULT UpdateAgent::setCheckFrequency(ULONG aFreqSeconds)
 
     m->uCheckFreqSeconds = aFreqSeconds;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getChannel(UpdateChannel_T *aChannel)
@@ -295,7 +295,7 @@ HRESULT UpdateAgent::setChannel(UpdateChannel_T aChannel)
 
     m->enmChannel = aChannel;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getCheckCount(ULONG *aCount)
@@ -325,7 +325,7 @@ HRESULT UpdateAgent::setRepositoryURL(const com::Utf8Str &aRepo)
 
     m->strRepoUrl = aRepo;
 
-    return S_OK;
+ 	return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getProxyMode(ProxyMode_T *aMode)
@@ -343,7 +343,7 @@ HRESULT UpdateAgent::setProxyMode(ProxyMode_T aMode)
 
     m->enmProxyMode = aMode;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getProxyURL(com::Utf8Str &aAddress)
@@ -361,7 +361,7 @@ HRESULT UpdateAgent::setProxyURL(const com::Utf8Str &aAddress)
 
     m->strProxyUrl = aAddress;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::getLastCheckDate(com::Utf8Str &aDate)
@@ -578,7 +578,7 @@ HRESULT UpdateAgent::i_setCheckCount(ULONG aCount)
 
     m->uCheckCount = aCount;
 
-    return S_OK;
+    return i_commitSettings(alock);
 }
 
 HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
@@ -590,7 +590,26 @@ HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
 
     m->strLastCheckDate = aDate;
 
-    return S_OK;
+    return i_commitSettings(alock);
+}
+
+
+/*********************************************************************************************************************************
+*   Internal helper methods                                                                                                      *
+*********************************************************************************************************************************/
+
+/**
+ * Internal helper function to commit modified settings.
+ *
+ * @returns HRESULT
+ * @param   aLock               Write lock to release before committing settings.
+ */
+HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
+{
+    aLock.release();
+
+    AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
+ 	return m_VirtualBox->i_saveSettings();
 }
 
 #if 0
@@ -798,9 +817,10 @@ DECLCALLBACK(HRESULT) HostUpdateAgent::i_updateTask(UpdateAgentTask *pTask)
     m->strLastCheckDate = szTimeStr;
     m->uCheckCount++;
 
-    strUrl.appendPrintf("&count=%RU32", m->uCheckCount);
+    rc = i_commitSettings(alock);
+    AssertComRCReturn(rc, rc);
 
-    alock.release();
+    strUrl.appendPrintf("&count=%RU32", m->uCheckCount);
 
     // Update the query URL (if necessary) with the 'channel' information.
     switch (m->enmChannel)
