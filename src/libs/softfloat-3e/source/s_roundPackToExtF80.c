@@ -324,13 +324,26 @@ extFloat80_t
     uint8_t const exceptionFlagsSaved = softfloat_exceptionFlags;
     softfloat_exceptionFlags = 0;
     extFloat80_t r80Result = softfloat_roundPackToExtF80Inner( sign, exp, sig, sigExtra, roundingPrecision, pState );
-
     if ( !(softfloat_exceptionFlags & ~pState->exceptionMask & (softfloat_flag_underflow | softfloat_flag_overflow)) ) {
-        /* likely */
+        /* Denormals are fun, because they don't cause #U when masked, and the inner
+           code here assume it's always masked. So, detect denormals and check if it
+           was masked or not, in the latter case do bias adjust. */
+        if (    (r80Result.signif & RT_BIT_64( 63 ))
+             || !r80Result.signif
+             || (pState->exceptionMask & softfloat_flag_underflow) ) {
+            softfloat_exceptionFlags |= exceptionFlagsSaved;
+            return r80Result;
+        }
+
+        /* Denormal and underflow not masked, need to adjust the exponent bias
+           to match 387 behaviour. */
+        Assert( expExtF80UI64( r80Result.signExp ) == 0 );
+        softfloat_exceptionFlags |= softfloat_flag_underflow;
     }
+
     /* On Intel 10980XE the FSCALE instruction can cause really large exponents
        and the rounding changes when we exceed the bias adjust. */
-    else if (exp >= RTFLOAT80U_EXP_BIAS_ADJUST + RTFLOAT80U_EXP_MAX) {
+    if (exp >= RTFLOAT80U_EXP_BIAS_ADJUST + RTFLOAT80U_EXP_MAX) {
         Assert( softfloat_exceptionFlags & softfloat_flag_overflow );
         softfloat_exceptionFlags |= softfloat_flag_inexact | softfloat_flag_c1;
         r80Result = s_aExtF80Infinity[sign].f;
@@ -351,7 +364,6 @@ extFloat80_t
         }
         r80Result = softfloat_roundPackToExtF80Inner( sign, exp, sig, sigExtra, roundingPrecision, pState );
     }
-
     softfloat_exceptionFlags |= exceptionFlagsSaved;
     return r80Result;
 }
