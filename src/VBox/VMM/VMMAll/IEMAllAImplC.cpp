@@ -5700,69 +5700,211 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fxam_r80,(PCX86FXSTATE pFpuState, uint16_t *pu1
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r32,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
+/**
+ * Worker for fcom, fucom, and friends.
+ */
+static uint16_t iemAImpl_fcom_r80_by_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2,
+                                                uint16_t fFcw, uint16_t fFsw, bool fIeOnAllNaNs)
 {
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
+    /*
+     * Unpack the values.
+     */
+    bool const fSign1      = pr80Val1->s.fSign;
+    int32_t    iExponent1  = pr80Val1->s.uExponent;
+    uint64_t   uMantissa1  = pr80Val1->s.uMantissa;
+
+    bool const fSign2      = pr80Val2->s.fSign;
+    int32_t    iExponent2  = pr80Val2->s.uExponent;
+    uint64_t   uMantissa2  = pr80Val2->s.uMantissa;
+
+    /*
+     * Check for invalid inputs.
+     */
+    if (   RTFLOAT80U_IS_387_INVALID_EX(uMantissa1, iExponent1)
+        || RTFLOAT80U_IS_387_INVALID_EX(uMantissa2, iExponent2))
+    {
+         if (!(fFcw & X86_FCW_IM))
+             fFsw |= X86_FSW_ES | X86_FSW_B;
+         return fFsw | X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3 | X86_FSW_IE;
+    }
+
+    /*
+     * Check for NaNs and indefinites, they are all unordered and trumps #DE.
+     */
+    if (   RTFLOAT80U_IS_INDEFINITE_OR_QUIET_OR_SIGNALLING_NAN_EX(uMantissa1, iExponent1)
+        || RTFLOAT80U_IS_INDEFINITE_OR_QUIET_OR_SIGNALLING_NAN_EX(uMantissa2, iExponent2))
+    {
+        if (   fIeOnAllNaNs
+            || RTFLOAT80U_IS_SIGNALLING_NAN_EX(uMantissa1, iExponent1)
+            || RTFLOAT80U_IS_SIGNALLING_NAN_EX(uMantissa2, iExponent2))
+        {
+            fFsw |= X86_FSW_IE;
+            if (!(fFcw & X86_FCW_IM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+        return fFsw | X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3;
+    }
+
+    /*
+     * Normalize the values.
+     */
+    if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL_EX(uMantissa1, iExponent1))
+    {
+        if (RTFLOAT80U_IS_PSEUDO_DENORMAL_EX(uMantissa1, iExponent1))
+            iExponent1 = 1;
+        else
+        {
+            iExponent1 = 64 - ASMBitLastSetU64(uMantissa1);
+            uMantissa1 <<= iExponent1;
+            iExponent1 = 1 - iExponent1;
+        }
+        fFsw |= X86_FSW_DE;
+        if (!(fFcw & X86_FCW_DM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    if (RTFLOAT80U_IS_DENORMAL_OR_PSEUDO_DENORMAL_EX(uMantissa2, iExponent2))
+    {
+        if (RTFLOAT80U_IS_PSEUDO_DENORMAL_EX(uMantissa2, iExponent2))
+            iExponent2 = 1;
+        else
+        {
+            iExponent2 = 64 - ASMBitLastSetU64(uMantissa2);
+            uMantissa2 <<= iExponent2;
+            iExponent2 = 1 - iExponent2;
+        }
+        fFsw |= X86_FSW_DE;
+        if (!(fFcw & X86_FCW_DM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    /*
+     * Test if equal (val1 == val2):
+     */
+    if (   uMantissa1 == uMantissa2
+        && iExponent1 == iExponent2
+        && (   fSign1 == fSign2
+            || (uMantissa1 == 0 && iExponent1 == 0) /* ignore sign for zero */ ) )
+        fFsw |= X86_FSW_C3;
+    /*
+     * Test if less than (val1 < val2):
+     */
+    else if (fSign1 && !fSign2)
+        fFsw |= X86_FSW_C0;
+    else if (fSign1 == fSign2)
+    {
+        /* Zeros are problematic, however at the most one can be zero here. */
+        if (RTFLOAT80U_IS_ZERO_EX(uMantissa1, iExponent1))
+            return !fSign1 ? fFsw | X86_FSW_C0 : fFsw;
+        if (RTFLOAT80U_IS_ZERO_EX(uMantissa2, iExponent2))
+            return fSign1  ? fFsw | X86_FSW_C0 : fFsw;
+
+        if (  fSign1
+            ^ (   iExponent1 < iExponent2
+               || (   iExponent1 == iExponent2
+                   && uMantissa1 < uMantissa2 ) ) )
+        fFsw |= X86_FSW_C0;
+    }
+    /* else: No flags set if greater. */
+
+    return fFsw;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r64,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    *pfFsw = iemAImpl_fcom_r80_by_r80_worker(pr80Val1, pr80Val2, pFpuState->FCW, 6 << X86_FSW_TOP_SHIFT, true /*fIeOnAllNaNs*/);
 }
 
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fcomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-    return 0;
-}
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fucom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+IEM_DECL_IMPL_DEF(void, iemAImpl_fucom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
+    *pfFsw = iemAImpl_fcom_r80_by_r80_worker(pr80Val1, pr80Val2, pFpuState->FCW, 6 << X86_FSW_TOP_SHIFT, false /*fIeOnAllNaNs*/);
 }
 
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fucomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
-                                                        PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r64,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-    return 0;
+    RTFLOAT80U r80Val2;
+    uint16_t   fFsw = iemAImplConvertR64ToR80(pr64Val2, &r80Val2);
+    Assert(!fFsw || fFsw == X86_FSW_DE);
+    *pfFsw = iemAImpl_fcom_r80_by_r80_worker(pr80Val1, &r80Val2, pFpuState->FCW, 7 << X86_FSW_TOP_SHIFT, true /*fIeOnAllNaNs*/);
+    if (fFsw != 0 && !(*pfFsw & X86_FSW_IE))
+    {
+        if (!(pFpuState->FCW & X86_FCW_DM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        *pfFsw |= fFsw;
+    }
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r32,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
+    RTFLOAT80U r80Val2;
+    uint16_t   fFsw = iemAImplConvertR32ToR80(pr32Val2, &r80Val2);
+    Assert(!fFsw || fFsw == X86_FSW_DE);
+    *pfFsw = iemAImpl_fcom_r80_by_r80_worker(pr80Val1, &r80Val2, pFpuState->FCW, 7 << X86_FSW_TOP_SHIFT, true /*fIeOnAllNaNs*/);
+    if (fFsw != 0 && !(*pfFsw & X86_FSW_IE))
+    {
+        if (!(pFpuState->FCW & X86_FCW_DM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        *pfFsw |= fFsw;
+    }
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
+IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
+    RTFLOAT80U r80Val2;
+    iemAImpl_fcom_r80_by_r80(pFpuState, pfFsw, pr80Val1, iemAImplConvertI32ToR80(*pi32Val2, &r80Val2));
+    *pfFsw = (*pfFsw & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i16,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
+                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+{
+    RTFLOAT80U r80Val2;
+    iemAImpl_fcom_r80_by_r80(pFpuState, pfFsw, pr80Val1, iemAImplConvertI16ToR80(*pi16Val2, &r80Val2));
+    *pfFsw = (*pfFsw & ~X86_FSW_TOP_MASK) | (7 << X86_FSW_TOP_SHIFT);
+}
+
+
+/**
+ * Worker for fcomi & fucomi.
+ */
+static uint32_t iemAImpl_fcomi_r80_by_r80_worker(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2,
+                                                 uint16_t fFcw, uint16_t fFswIn, bool fIeOnAllNaNs, uint16_t *pfFsw)
+{
+    uint16_t fFsw    = iemAImpl_fcom_r80_by_r80_worker(pr80Val1, pr80Val2, fFcw, 6 << X86_FSW_TOP_SHIFT, fIeOnAllNaNs);
+    uint32_t fEflags = ((fFsw & X86_FSW_C3) >> (X86_FSW_C3_BIT - X86_EFL_ZF_BIT))
+                     | ((fFsw & X86_FSW_C2) >> (X86_FSW_C2_BIT - X86_EFL_PF_BIT))
+                     | ((fFsw & X86_FSW_C0) >> (X86_FSW_C0_BIT - X86_EFL_CF_BIT));
+
+    /* Note! C1 is not cleared as per docs! Everything is preserved. */
+    *pfFsw = (fFsw & ~X86_FSW_C_MASK) | (fFswIn & X86_FSW_C_MASK);
+    return fEflags | X86_EFL_IF | X86_EFL_RA1_MASK;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fcomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
+                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    return iemAImpl_fcomi_r80_by_r80_worker(pr80Val1, pr80Val2, pFpuState->FCW, pFpuState->FSW, true /*fIeOnAllNaNs*/, pfFsw);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fucomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pfFsw,
+                                                        PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    return iemAImpl_fcomi_r80_by_r80_worker(pr80Val1, pr80Val2, pFpuState->FCW, pFpuState->FSW, false /*fIeOnAllNaNs*/, pfFsw);
 }
 
 
