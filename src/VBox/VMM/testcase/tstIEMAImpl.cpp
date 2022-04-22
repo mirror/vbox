@@ -3789,12 +3789,13 @@ static void FpuBinaryEflR80Test(void)
                     || fEflOut != paTests[iTest].fEflOut)
                     RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in1=%s in2=%s\n"
                                           "%s               -> fsw=%#06x efl=%#08x\n"
-                                          "%s             expected %#06x     %#08x %s (%s)\n",
+                                          "%s             expected %#06x     %#08x %s%s (%s)\n",
                                  iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn,
                                  FormatR80(&paTests[iTest].InVal1), FormatR80(&paTests[iTest].InVal2),
                                  iVar ? "  " : "", uFswOut, fEflOut,
                                  iVar ? "  " : "", paTests[iTest].fFswOut, paTests[iTest].fEflOut,
-                                 EFlagsDiff(fEflOut, paTests[iTest].fEflOut), FormatFcw(paTests[iTest].fFcw));
+                                 FswDiff(uFswOut, paTests[iTest].fFswOut), EFlagsDiff(fEflOut, paTests[iTest].fEflOut),
+                                 FormatFcw(paTests[iTest].fFcw));
             }
             pfn = g_aFpuBinaryEflR80[iFn].pfnNative;
         }
