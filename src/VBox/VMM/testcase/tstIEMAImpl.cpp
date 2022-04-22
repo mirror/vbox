@@ -97,6 +97,8 @@ static uint32_t     g_cExcludeTestPatterns;
 static const char  *g_apszIncludeTestPatterns[64];
 static const char  *g_apszExcludeTestPatterns[64];
 
+static unsigned     g_cVerbosity = 0;
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -922,7 +924,7 @@ static bool SubTestAndCheckIfEnabled(const char *pszName)
     RTTestSub(g_hTest, pszName);
     if (IsTestEnabled(pszName))
         return true;
-    RTTestSkipped(g_hTest, "excluded");
+    RTTestSkipped(g_hTest, g_cVerbosity > 0 ? "excluded" : NULL);
     return false;
 }
 
@@ -4407,6 +4409,8 @@ int main(int argc, char **argv)
         { "--common",               'm', RTGETOPT_REQ_NOTHING },
         { "--cpu",                  'c', RTGETOPT_REQ_NOTHING },
         { "--number-of-tests",      'n', RTGETOPT_REQ_UINT32  },
+        { "--verbose",              'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",                'q', RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE State;
@@ -4483,6 +4487,13 @@ int main(int argc, char **argv)
                 cTests      = ValueUnion.u32;
                 break;
 
+            case 'q':
+                g_cVerbosity = 0;
+                break;
+            case 'v':
+                g_cVerbosity++;
+                break;
+
             case 'h':
                 RTPrintf("usage: %s <-g|-t> [options]\n"
                          "\n"
@@ -4519,6 +4530,11 @@ int main(int argc, char **argv)
                          "    Enable generating CPU specific test data.\n"
                          "  -n, --number-of-test <count>\n"
                          "    Number of tests to generate. Default: %u\n"
+                         "\n"
+                         "Other:\n"
+                         "  -v, --verbose\n"
+                         "  -q, --quiet\n"
+                         "    Noise level.  Default: --quiet\n"
                          , argv[0], cDefaultTests);
                 return RTEXITCODE_SUCCESS;
             default:
