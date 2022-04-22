@@ -146,7 +146,7 @@ VBOX_MAIN_DEFS += VBOX_WITH_SHARED_CLIPBOARD
   VBOX_MAIN_DEFS += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
  endif
 endif
-ifdef VBOX_WITH_UPDATE_AGENT
+if defined(VBOX_WITH_LIBCURL) && defined(VBOX_WITH_UPDATE_AGENT)
 VBOX_MAIN_DEFS += VBOX_WITH_UPDATE_AGENT
 endif
 ifdef VBOX_WITH_USB_CARDREADER
@@ -524,7 +524,6 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,) \
 	$(if $(VBOX_USB_WITH_INOTIFY),VBOX_USB_WITH_INOTIFY,) \
 	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE,) \
-	$(if $(VBOX_WITH_UPDATE_AGENT),VBOX_WITH_UPDATE_AGENT,) \
 	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
 	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,) \
 	$(if $(VBOX_WITH_TPM),VBOX_WITH_TPM,) \
@@ -632,7 +631,10 @@ VBoxSVC_SOURCES = \
 	src-server/HostImpl.cpp \
 	src-server/HostNetworkInterfaceImpl.cpp \
 	src-server/HostPower.cpp \
-	$(if $(VBOX_WITH_UPDATE_AGENT),src-server/UpdateAgentImpl.cpp,) \
+	$(if $(VBOX_WITH_LIBCURL), \
+	$(if $(VBOX_WITH_UPDATE_AGENT), \
+	src-server/UpdateAgentImpl.cpp,), \
+	) \
 	src-server/HostVideoInputDeviceImpl.cpp \
 	src-server/HostDrivePartitionImpl.cpp \
 	src-server/HostDriveImpl.cpp \
