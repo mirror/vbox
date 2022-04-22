@@ -11269,7 +11269,7 @@
       <desc>No channel specified. Do not use this.</desc>
     </const>
     <const name="Stable"      value="1">
-      <desc>All stable releases (maintenance and minor releases within the same major release)</desc>
+      <desc>All stable releases (maintenance and minor releases within the same major release).</desc>
     </const>
     <const name="All"         value="2">
       <desc>All stable releases, including major versions.</desc>
@@ -11518,7 +11518,7 @@
         Date of last update check.
       </desc>
       <note>
-        Uses ISO date.
+        In ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
       </note>
     </attribute>
 
@@ -11578,6 +11578,7 @@
     reservedAttributes="4"
     >
     <desc>
+      Notification when an update agent error occurred.
     </desc>
 
     <attribute name="msg" type="wstring" readonly="yes">
@@ -11649,10 +11650,12 @@
     reservedAttributes="4"
     >
     <desc>
+      Notification when an update agent state has been changed.
     </desc>
 
     <attribute name="state" type="UpdateState" readonly="yes">
       <desc>
+        New update agent state.
       </desc>
     </attribute>
 
