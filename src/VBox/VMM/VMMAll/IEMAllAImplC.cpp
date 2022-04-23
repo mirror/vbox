@@ -4751,7 +4751,6 @@ static uint16_t iemFpuFloat80RoundAndComposeFrom192(PRTFLOAT80U pr80Dst, bool fS
     iExponent += RTFLOAT80U_EXP_BIAS;
 
     /* Do normalization if necessary and possible. */
-    unsigned cShifted = 0;
     if (!(puMantissa->QWords.qw2 & RT_BIT_64(63)))
     {
         int cShift = 192 - RTUInt256BitCount(puMantissa);
@@ -4768,7 +4767,6 @@ static uint16_t iemFpuFloat80RoundAndComposeFrom192(PRTFLOAT80U pr80Dst, bool fS
             }
             iExponent -= cShift;
         }
-        cShifted = cShift;
         RTUInt256AssignShiftLeft(puMantissa, cShift);
     }
 
