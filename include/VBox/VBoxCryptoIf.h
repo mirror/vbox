@@ -115,8 +115,8 @@ typedef struct VBOXCRYPTOIF
      * @param   cbPlainText         The size of the data to be encrypted.
      * @param   pcbEncrypted        Where to store the size in bytes of the encrypted data on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxQueryEncryptedSz, (VBOXCRYPTOCTX hCryptoCtx, size_t cbPlaintext,
-                                                             size_t *pcbEncrypted));
+    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxQueryEncryptedSize, (VBOXCRYPTOCTX hCryptoCtx, size_t cbPlaintext,
+                                                               size_t *pcbEncrypted));
 
     /**
      * Queries the required size of the output buffer for decrypted data. Depends on the cipher.
@@ -126,8 +126,8 @@ typedef struct VBOXCRYPTOIF
      * @param   cbEncrypted         The size of the encrypted chunk before decryption.
      * @param   pcbPlaintext        Where to store the size in bytes of the decrypted data on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxQueryDecryptedSz, (VBOXCRYPTOCTX hCryptoCtx, size_t cbEncrypted,
-                                                             size_t *pcbPlaintext));
+    DECLR3CALLBACKMEMBER(int, pfnCryptoCtxQueryDecryptedSize, (VBOXCRYPTOCTX hCryptoCtx, size_t cbEncrypted,
+                                                               size_t *pcbPlaintext));
 
     /**
      * Encrypts data.
