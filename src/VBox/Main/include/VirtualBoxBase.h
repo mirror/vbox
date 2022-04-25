@@ -764,6 +764,7 @@ public:
     HRESULT setError(HRESULT aResultCode);
     HRESULT setError(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setError(const ErrorInfo &ei);
+    HRESULT setErrorVrcV(int vrc, const char *pcszMsgFmt, va_list va_args);
     HRESULT setErrorVrc(int vrc);
     HRESULT setErrorVrc(int vrc, const char *pcszMsgFmt, ...);
     HRESULT setErrorBoth(HRESULT hrc, int vrc);

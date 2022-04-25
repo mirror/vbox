@@ -682,6 +682,27 @@ HRESULT VirtualBoxBase::setErrorVrc(int vrc)
  *
  * @param   vrc             The VBox status code.
  * @param   pcszMsgFmt      Error message format string.
+ * @param   va_args         Error message format string.
+ * @return  COM status code appropriate for @a vrc.
+ *
+ * @sa      VirtualBoxBase::setError(HRESULT, const char *, ...)
+ */
+HRESULT VirtualBoxBase::setErrorVrcV(int vrc, const char *pcszMsgFmt, va_list va_args)
+{
+    return setErrorInternalV(Global::vboxStatusCodeToCOM(vrc),
+                             this->getClassIID(),
+                             this->getComponentName(),
+                             pcszMsgFmt, va_args,
+                             false /* aWarning */,
+                             true /* aLogIt */,
+                             vrc /* aResultDetail */);
+}
+
+/**
+ * Converts the VBox status code a COM one and sets the error info.
+ *
+ * @param   vrc             The VBox status code.
+ * @param   pcszMsgFmt      Error message format string.
  * @param   ...             Argument specified in the @a pcszMsgFmt
  * @return  COM status code appropriate for @a vrc.
  *
@@ -691,13 +712,7 @@ HRESULT VirtualBoxBase::setErrorVrc(int vrc, const char *pcszMsgFmt, ...)
 {
     va_list va;
     va_start(va, pcszMsgFmt);
-    HRESULT hrc = setErrorInternalV(Global::vboxStatusCodeToCOM(vrc),
-                                    this->getClassIID(),
-                                    this->getComponentName(),
-                                    pcszMsgFmt, va,
-                                    false /* aWarning */,
-                                    true /* aLogIt */,
-                                    vrc /* aResultDetail */);
+    HRESULT hrc = setErrorVrcV(vrc, pcszMsgFmt, va);
     va_end(va);
     return hrc;
 }
