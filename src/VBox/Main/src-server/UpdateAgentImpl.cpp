@@ -98,7 +98,7 @@ void UpdateAgentTask::handler(void)
 /**
  * Returns platform information as a string.
  *
- * @returns HRESULT
+ * @returns Platform information as string.
  */
 /* static */
 Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
@@ -232,8 +232,6 @@ Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
             vrc = VERR_TRY_AGAIN; /* (take the fallback path) */
     }
 
-    LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str()));
-
     if (RT_FAILURE(vrc))
 # endif /* RT_OS_LINUX */
     {
@@ -258,9 +256,9 @@ Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
 
         if (!strPlatform.endsWith("]"))
             strPlatform.append("]");
-
-        LogRelFunc(("strPlatform = %s\n", strPlatform.c_str()));
     }
+
+    LogRel2(("UpdateAgent: Platform is '%s'\n", strPlatform.c_str()));
 
     return strPlatform;
 }
@@ -744,20 +742,20 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
     va_list va;
     va_start(va, pcszMsgFmt);
 
-     char *psz = NULL;
-     if (RTStrAPrintfV(&psz, pcszMsgFmt, va) <= 0)
-         return E_OUTOFMEMORY;
+    char *psz = NULL;
+    if (RTStrAPrintfV(&psz, pcszMsgFmt, va) <= 0)
+     return E_OUTOFMEMORY;
 
-     LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), psz));
+    LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), psz));
 
-     ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
+    ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
 
-     HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, pcszMsgFmt, va);
+    HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, pcszMsgFmt, va);
 
-     va_end(va);
-     RTStrFree(psz);
+    va_end(va);
+    RTStrFree(psz);
 
-     return rc;
+    return rc;
 }
 
 
@@ -1070,8 +1068,8 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
                                    tr("Invalid server response [1]: %Rhrc (%.*Rhxs -- %.*Rhxs)"),
                                    rc, cchWord0, pchWord0, cchWord1, pchWord1);
 
-            LogRel(("Update agent (%s): HTTP server replied: %.*s %.*s\n",
-                    mData.m_strName.c_str(), cchWord0, pchWord0, cchWord1, pchWord1));
+            LogRel2(("Update agent (%s): HTTP server replied: %.*s %.*s\n",
+                     mData.m_strName.c_str(), cchWord0, pchWord0, cchWord1, pchWord1));
         }
         else
             rc = i_reportError(vrc, tr("Invalid server response [2]: %Rrc (%.*Rhxs -- %.*Rhxs)"),
