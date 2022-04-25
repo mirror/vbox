@@ -32,6 +32,7 @@
 #include <iprt/stream.h>
 #include <iprt/time.h>
 #include <VBox/com/defs.h>
+#include <VBox/err.h>
 #include <VBox/version.h>
 
 #include "HostImpl.h"
@@ -751,7 +752,7 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
 
      ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
 
-     HRESULT const rc = setErrorVrc(vrc, pcszMsgFmt, va);
+     HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, pcszMsgFmt, va);
 
      va_end(va);
      RTStrFree(psz);
