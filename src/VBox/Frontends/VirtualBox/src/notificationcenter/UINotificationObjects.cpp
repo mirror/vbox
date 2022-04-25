@@ -4327,7 +4327,7 @@ QString UINotificationProgressNewVersionChecker::name() const
 {
 #ifdef VBOX_WITH_UPDATE_AGENT
     if (m_comUpdateHost.isOk())
-        return UINotificationProgress::tr("Checking for new version of %s ...", m_comUpdateHost.GetName().toLocal8Bit().data());
+        return UINotificationProgress::tr("Checking for new version of %1 ...").arg(m_comUpdateHost.GetName().toLocal8Bit().data());
 #endif /* VBOX_WITH_UPDATE_AGENT */
     return UINotificationProgress::tr("Checking for new version ...");
 }
