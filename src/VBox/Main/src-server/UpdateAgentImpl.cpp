@@ -45,11 +45,9 @@
 #include "VirtualBoxBase.h"
 
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// UpdateAgent private data definition
-//
-////////////////////////////////////////////////////////////////////////////////
+/*********************************************************************************************************************************
+*   Update agent task implementation                                                                                             *
+*********************************************************************************************************************************/
 
 class UpdateAgentTask : public ThreadTask
 {
@@ -89,6 +87,176 @@ void UpdateAgentTask::handler(void)
 
 /*********************************************************************************************************************************
 *   Update agent base class implementation                                                                                       *
+*********************************************************************************************************************************/
+
+/* static */
+Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
+{
+    /* Prepare platform report: */
+    Utf8Str strPlatform;
+
+# if defined (RT_OS_WINDOWS)
+    strPlatform = "win";
+# elif defined (RT_OS_LINUX)
+    strPlatform = "linux";
+# elif defined (RT_OS_DARWIN)
+    strPlatform = "macosx";
+# elif defined (RT_OS_OS2)
+    strPlatform = "os2";
+# elif defined (RT_OS_FREEBSD)
+    strPlatform = "freebsd";
+# elif defined (RT_OS_SOLARIS)
+    strPlatform = "solaris";
+# else
+    strPlatform = "unknown";
+# endif
+
+    /* The format is <system>.<bitness>: */
+    strPlatform.appendPrintf(".%lu", ARCH_BITS);
+
+    /* Add more system information: */
+    int vrc;
+# ifdef RT_OS_LINUX
+    // WORKAROUND:
+    // On Linux we try to generate information using script first of all..
+
+    /* Get script path: */
+    char szAppPrivPath[RTPATH_MAX];
+    vrc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath));
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+        vrc = RTPathAppend(szAppPrivPath, sizeof(szAppPrivPath), "/VBoxSysInfo.sh");
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+    {
+        RTPIPE hPipeR;
+        RTHANDLE hStdOutPipe;
+        hStdOutPipe.enmType = RTHANDLETYPE_PIPE;
+        vrc = RTPipeCreate(&hPipeR, &hStdOutPipe.u.hPipe, RTPIPE_C_INHERIT_WRITE);
+        AssertLogRelRC(vrc);
+
+        char const *szAppPrivArgs[2];
+        szAppPrivArgs[0] = szAppPrivPath;
+        szAppPrivArgs[1] = NULL;
+        RTPROCESS hProc = NIL_RTPROCESS;
+
+        /* Run script: */
+        vrc = RTProcCreateEx(szAppPrivPath, szAppPrivArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL /*phStdin*/, &hStdOutPipe,
+                             NULL /*phStderr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/, NULL /*pvExtraData*/, &hProc);
+
+        (void) RTPipeClose(hStdOutPipe.u.hPipe);
+        hStdOutPipe.u.hPipe = NIL_RTPIPE;
+
+        if (RT_SUCCESS(vrc))
+        {
+            RTPROCSTATUS  ProcStatus;
+            size_t        cbStdOutBuf  = 0;
+            size_t        offStdOutBuf = 0;
+            char          *pszStdOutBuf = NULL;
+            do
+            {
+                if (hPipeR != NIL_RTPIPE)
+                {
+                    char    achBuf[1024];
+                    size_t  cbRead;
+                    vrc = RTPipeReadBlocking(hPipeR, achBuf, sizeof(achBuf), &cbRead);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        /* grow the buffer? */
+                        size_t cbBufReq = offStdOutBuf + cbRead + 1;
+                        if (   cbBufReq > cbStdOutBuf
+                            && cbBufReq < _256K)
+                        {
+                            size_t cbNew = RT_ALIGN_Z(cbBufReq, 16); // 1024
+                            void  *pvNew = RTMemRealloc(pszStdOutBuf, cbNew);
+                            if (pvNew)
+                            {
+                                pszStdOutBuf = (char *)pvNew;
+                                cbStdOutBuf  = cbNew;
+                            }
+                        }
+
+                        /* append if we've got room. */
+                        if (cbBufReq <= cbStdOutBuf)
+                        {
+                            (void) memcpy(&pszStdOutBuf[offStdOutBuf], achBuf, cbRead);
+                            offStdOutBuf = offStdOutBuf + cbRead;
+                            pszStdOutBuf[offStdOutBuf] = '\0';
+                        }
+                    }
+                    else
+                    {
+                        AssertLogRelMsg(vrc == VERR_BROKEN_PIPE, ("%Rrc\n", vrc));
+                        RTPipeClose(hPipeR);
+                        hPipeR = NIL_RTPIPE;
+                    }
+                }
+
+                /*
+                 * Service the process.  Block if we have no pipe.
+                 */
+                if (hProc != NIL_RTPROCESS)
+                {
+                    vrc = RTProcWait(hProc,
+                                     hPipeR == NIL_RTPIPE ? RTPROCWAIT_FLAGS_BLOCK : RTPROCWAIT_FLAGS_NOBLOCK,
+                                     &ProcStatus);
+                    if (RT_SUCCESS(vrc))
+                        hProc = NIL_RTPROCESS;
+                    else
+                        AssertLogRelMsgStmt(vrc == VERR_PROCESS_RUNNING, ("%Rrc\n", vrc), hProc = NIL_RTPROCESS);
+                }
+            } while (   hPipeR != NIL_RTPIPE
+                     || hProc != NIL_RTPROCESS);
+
+            if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+                && ProcStatus.iStatus == 0) {
+                pszStdOutBuf[offStdOutBuf-1] = '\0';  // remove trailing newline
+                Utf8Str pszStdOutBufUTF8(pszStdOutBuf);
+                strPlatform.appendPrintf(" [%s]", pszStdOutBufUTF8.strip().c_str());
+                // For testing, here is some sample output:
+                //strPlatform.appendPrintf(" [Distribution: Redhat | Version: 7.6.1810 | Kernel: Linux version 3.10.0-952.27.2.el7.x86_64 (gcc version 4.8.5 20150623 (Red Hat 4.8.5-36) (GCC) ) #1 SMP Mon Jul 29 17:46:05 UTC 2019]");
+            }
+        }
+        else
+            vrc = VERR_TRY_AGAIN; /* (take the fallback path) */
+    }
+
+    LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str()));
+
+    if (RT_FAILURE(vrc))
+# endif /* RT_OS_LINUX */
+    {
+        /* Use RTSystemQueryOSInfo: */
+        char szTmp[256];
+
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+            strPlatform.appendPrintf(" [Product: %s", szTmp);
+
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+            strPlatform.appendPrintf(" %sRelease: %s", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
+
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+            strPlatform.appendPrintf(" %sVersion: %s", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
+
+        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
+        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
+            strPlatform.appendPrintf(" %sSP: %s]", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
+
+        if (!strPlatform.endsWith("]"))
+            strPlatform.append("]");
+
+        LogRelFunc(("strPlatform = %s\n", strPlatform.c_str()));
+    }
+
+    return strPlatform;
+}
+
+
+/*********************************************************************************************************************************
+*   Update agent class implementation                                                                                            *
 *********************************************************************************************************************************/
 UpdateAgent::UpdateAgent()
 {
@@ -432,170 +600,10 @@ HRESULT UpdateAgent::getIsCheckNeeded(BOOL *aCheckNeeded)
     return S_OK;
 }
 
-/* static */
-Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
-{
-    /* Prepare platform report: */
-    Utf8Str strPlatform;
 
-# if defined (RT_OS_WINDOWS)
-    strPlatform = "win";
-# elif defined (RT_OS_LINUX)
-    strPlatform = "linux";
-# elif defined (RT_OS_DARWIN)
-    strPlatform = "macosx";
-# elif defined (RT_OS_OS2)
-    strPlatform = "os2";
-# elif defined (RT_OS_FREEBSD)
-    strPlatform = "freebsd";
-# elif defined (RT_OS_SOLARIS)
-    strPlatform = "solaris";
-# else
-    strPlatform = "unknown";
-# endif
-
-    /* The format is <system>.<bitness>: */
-    strPlatform.appendPrintf(".%lu", ARCH_BITS);
-
-    /* Add more system information: */
-    int vrc;
-# ifdef RT_OS_LINUX
-    // WORKAROUND:
-    // On Linux we try to generate information using script first of all..
-
-    /* Get script path: */
-    char szAppPrivPath[RTPATH_MAX];
-    vrc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath));
-    AssertRC(vrc);
-    if (RT_SUCCESS(vrc))
-        vrc = RTPathAppend(szAppPrivPath, sizeof(szAppPrivPath), "/VBoxSysInfo.sh");
-    AssertRC(vrc);
-    if (RT_SUCCESS(vrc))
-    {
-        RTPIPE hPipeR;
-        RTHANDLE hStdOutPipe;
-        hStdOutPipe.enmType = RTHANDLETYPE_PIPE;
-        vrc = RTPipeCreate(&hPipeR, &hStdOutPipe.u.hPipe, RTPIPE_C_INHERIT_WRITE);
-        AssertLogRelRC(vrc);
-
-        char const *szAppPrivArgs[2];
-        szAppPrivArgs[0] = szAppPrivPath;
-        szAppPrivArgs[1] = NULL;
-        RTPROCESS hProc = NIL_RTPROCESS;
-
-        /* Run script: */
-        vrc = RTProcCreateEx(szAppPrivPath, szAppPrivArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL /*phStdin*/, &hStdOutPipe,
-                             NULL /*phStderr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/, NULL /*pvExtraData*/, &hProc);
-
-        (void) RTPipeClose(hStdOutPipe.u.hPipe);
-        hStdOutPipe.u.hPipe = NIL_RTPIPE;
-
-        if (RT_SUCCESS(vrc))
-        {
-            RTPROCSTATUS  ProcStatus;
-            size_t        cbStdOutBuf  = 0;
-            size_t        offStdOutBuf = 0;
-            char          *pszStdOutBuf = NULL;
-            do
-            {
-                if (hPipeR != NIL_RTPIPE)
-                {
-                    char    achBuf[1024];
-                    size_t  cbRead;
-                    vrc = RTPipeReadBlocking(hPipeR, achBuf, sizeof(achBuf), &cbRead);
-                    if (RT_SUCCESS(vrc))
-                    {
-                        /* grow the buffer? */
-                        size_t cbBufReq = offStdOutBuf + cbRead + 1;
-                        if (   cbBufReq > cbStdOutBuf
-                            && cbBufReq < _256K)
-                        {
-                            size_t cbNew = RT_ALIGN_Z(cbBufReq, 16); // 1024
-                            void  *pvNew = RTMemRealloc(pszStdOutBuf, cbNew);
-                            if (pvNew)
-                            {
-                                pszStdOutBuf = (char *)pvNew;
-                                cbStdOutBuf  = cbNew;
-                            }
-                        }
-
-                        /* append if we've got room. */
-                        if (cbBufReq <= cbStdOutBuf)
-                        {
-                            (void) memcpy(&pszStdOutBuf[offStdOutBuf], achBuf, cbRead);
-                            offStdOutBuf = offStdOutBuf + cbRead;
-                            pszStdOutBuf[offStdOutBuf] = '\0';
-                        }
-                    }
-                    else
-                    {
-                        AssertLogRelMsg(vrc == VERR_BROKEN_PIPE, ("%Rrc\n", vrc));
-                        RTPipeClose(hPipeR);
-                        hPipeR = NIL_RTPIPE;
-                    }
-                }
-
-                /*
-                 * Service the process.  Block if we have no pipe.
-                 */
-                if (hProc != NIL_RTPROCESS)
-                {
-                    vrc = RTProcWait(hProc,
-                                     hPipeR == NIL_RTPIPE ? RTPROCWAIT_FLAGS_BLOCK : RTPROCWAIT_FLAGS_NOBLOCK,
-                                     &ProcStatus);
-                    if (RT_SUCCESS(vrc))
-                        hProc = NIL_RTPROCESS;
-                    else
-                        AssertLogRelMsgStmt(vrc == VERR_PROCESS_RUNNING, ("%Rrc\n", vrc), hProc = NIL_RTPROCESS);
-                }
-            } while (   hPipeR != NIL_RTPIPE
-                     || hProc != NIL_RTPROCESS);
-
-            if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
-                && ProcStatus.iStatus == 0) {
-                pszStdOutBuf[offStdOutBuf-1] = '\0';  // remove trailing newline
-                Utf8Str pszStdOutBufUTF8(pszStdOutBuf);
-                strPlatform.appendPrintf(" [%s]", pszStdOutBufUTF8.strip().c_str());
-                // For testing, here is some sample output:
-                //strPlatform.appendPrintf(" [Distribution: Redhat | Version: 7.6.1810 | Kernel: Linux version 3.10.0-952.27.2.el7.x86_64 (gcc version 4.8.5 20150623 (Red Hat 4.8.5-36) (GCC) ) #1 SMP Mon Jul 29 17:46:05 UTC 2019]");
-            }
-        }
-        else
-            vrc = VERR_TRY_AGAIN; /* (take the fallback path) */
-    }
-
-    LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str()));
-
-    if (RT_FAILURE(vrc))
-# endif /* RT_OS_LINUX */
-    {
-        /* Use RTSystemQueryOSInfo: */
-        char szTmp[256];
-
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            strPlatform.appendPrintf(" [Product: %s", szTmp);
-
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            strPlatform.appendPrintf(" %sRelease: %s", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
-
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            strPlatform.appendPrintf(" %sVersion: %s", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
-
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
-        if ((RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-            strPlatform.appendPrintf(" %sSP: %s]", strlen(szTmp) == 0 ? "[" : "| ", szTmp);
-
-        if (!strPlatform.endsWith("]"))
-            strPlatform.append("]");
-
-        LogRelFunc(("strPlatform = %s\n", strPlatform.c_str()));
-    }
-
-    return strPlatform;
-}
+/*********************************************************************************************************************************
+*   Internal helper methods of update agent class                                                                                *
+*********************************************************************************************************************************/
 
 HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
 {
@@ -652,10 +660,6 @@ HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
     return i_commitSettings(alock);
 }
 
-
-/*********************************************************************************************************************************
-*   Internal helper methods                                                                                                      *
-*********************************************************************************************************************************/
 
 /**
  * Internal helper function to commit modified settings.
