@@ -16,16 +16,11 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QGridLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIAudioControllerEditor.h"
-#include "UIAudioHostDriverEditor.h"
-#include "UIConverter.h"
+#include "UIAudioSettingsEditor.h"
 #include "UIErrorString.h"
-#include "UIMachineAudioFeaturesEditor.h"
 #include "UIMachineSettingsAudio.h"
 
 /* COM includes: */
@@ -76,11 +71,7 @@ struct UIDataSettingsMachineAudio
 
 UIMachineSettingsAudio::UIMachineSettingsAudio()
     : m_pCache(0)
-    , m_pCheckBoxAudio(0)
-    , m_pWidgetAudioSettings(0)
-    , m_pEditorAudioHostDriver(0)
-    , m_pEditorAudioController(0)
-    , m_pEditorAudioFeatures(0)
+    , m_pEditorAudioSettings(0)
 {
     prepare();
 }
@@ -139,15 +130,13 @@ void UIMachineSettingsAudio::getFromCache()
     const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
 
     /* Load old data from cache: */
-    m_pCheckBoxAudio->setChecked(oldAudioData.m_fAudioEnabled);
-    if (m_pEditorAudioHostDriver)
-        m_pEditorAudioHostDriver->setValue(oldAudioData.m_audioDriverType);
-    if (m_pEditorAudioController)
-        m_pEditorAudioController->setValue(oldAudioData.m_audioControllerType);
-    if (m_pEditorAudioFeatures)
+    if (m_pEditorAudioSettings)
     {
-        m_pEditorAudioFeatures->setEnableOutput(oldAudioData.m_fAudioOutputEnabled);
-        m_pEditorAudioFeatures->setEnableInput(oldAudioData.m_fAudioInputEnabled);
+        m_pEditorAudioSettings->setFeatureEnabled(oldAudioData.m_fAudioEnabled);
+        m_pEditorAudioSettings->setHostDriverType(oldAudioData.m_audioDriverType);
+        m_pEditorAudioSettings->setControllerType(oldAudioData.m_audioControllerType);
+        m_pEditorAudioSettings->setEnableOutput(oldAudioData.m_fAudioOutputEnabled);
+        m_pEditorAudioSettings->setEnableInput(oldAudioData.m_fAudioInputEnabled);
     }
 
     /* Polish page finally: */
@@ -164,16 +153,13 @@ void UIMachineSettingsAudio::putToCache()
     UIDataSettingsMachineAudio newAudioData;
 
     /* Cache new data: */
-    if (m_pCheckBoxAudio)
-        newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
-    if (m_pEditorAudioHostDriver)
-        newAudioData.m_audioDriverType = m_pEditorAudioHostDriver->value();
-    if (m_pEditorAudioController)
-        newAudioData.m_audioControllerType = m_pEditorAudioController->value();
-    if (m_pEditorAudioFeatures)
+    if (m_pEditorAudioSettings)
     {
-        newAudioData.m_fAudioOutputEnabled = m_pEditorAudioFeatures->outputEnabled();
-        newAudioData.m_fAudioInputEnabled = m_pEditorAudioFeatures->inputEnabled();
+        newAudioData.m_fAudioEnabled = m_pEditorAudioSettings->isFeatureEnabled();
+        newAudioData.m_audioDriverType = m_pEditorAudioSettings->hostDriverType();
+        newAudioData.m_audioControllerType = m_pEditorAudioSettings->controllerType();
+        newAudioData.m_fAudioOutputEnabled = m_pEditorAudioSettings->outputEnabled();
+        newAudioData.m_fAudioInputEnabled = m_pEditorAudioSettings->inputEnabled();
     }
     m_pCache->cacheCurrentData(newAudioData);
 }
@@ -192,28 +178,18 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsAudio::retranslateUi()
 {
-    m_pCheckBoxAudio->setText(tr("Enable &Audio"));
-    m_pCheckBoxAudio->setToolTip(tr("When checked, a virtual PCI audio card will be plugged into the virtual machine "
-                                    "and will communicate with the host audio system using the specified driver."));
-
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioHostDriver->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioController->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioFeatures->minimumLabelHorizontalHint());
-    m_pEditorAudioHostDriver->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorAudioController->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorAudioFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsAudio::polishPage()
 {
     /* Polish audio page availability: */
-    m_pCheckBoxAudio->setEnabled(isMachineOffline());
-    m_pEditorAudioHostDriver->setEnabled(isMachineOffline() || isMachineSaved());
-    m_pEditorAudioController->setEnabled(isMachineOffline());
-    m_pEditorAudioFeatures->setEnabled(isMachineInValidMode());
-    m_pWidgetAudioSettings->setEnabled(m_pCheckBoxAudio->isChecked());
+    if (m_pEditorAudioSettings)
+    {
+        m_pEditorAudioSettings->setFeatureAvailable(isMachineOffline());
+        m_pEditorAudioSettings->setHostDriverOptionAvailable(isMachineOffline() || isMachineSaved());
+        m_pEditorAudioSettings->setControllerOptionAvailable(isMachineOffline());
+        m_pEditorAudioSettings->setFeatureOptionsAvailable(isMachineInValidMode());
+    }
 }
 
 void UIMachineSettingsAudio::prepare()
@@ -233,55 +209,20 @@ void UIMachineSettingsAudio::prepare()
 void UIMachineSettingsAudio::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayout = new QGridLayout(this);
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        pLayout->setRowStretch(2, 1);
+        /* Prepare settings editor: */
+        m_pEditorAudioSettings = new UIAudioSettingsEditor(this);
+        if (m_pEditorAudioSettings)
+            pLayout->addWidget(m_pEditorAudioSettings);
 
-        /* Prepare audio check-box: */
-        m_pCheckBoxAudio = new QCheckBox(this);
-        if (m_pCheckBoxAudio)
-            pLayout->addWidget(m_pCheckBoxAudio, 0, 0, 1, 2);
-
-        /* Prepare 20-px shifting spacer: */
-        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-        if (pSpacerItem)
-            pLayout->addItem(pSpacerItem, 1, 0);
-
-        /* Prepare audio settings widget: */
-        m_pWidgetAudioSettings = new QWidget(this);
-        if (m_pWidgetAudioSettings)
-        {
-            /* Prepare audio settings widget layout: */
-            QVBoxLayout *pLayoutAudioSettings = new QVBoxLayout(m_pWidgetAudioSettings);
-            if (pLayoutAudioSettings)
-            {
-                pLayoutAudioSettings->setContentsMargins(0, 0, 0, 0);
-
-                /* Prepare audio host driver editor: */
-                m_pEditorAudioHostDriver = new UIAudioHostDriverEditor(m_pWidgetAudioSettings);
-                if (m_pEditorAudioHostDriver)
-                    pLayoutAudioSettings->addWidget(m_pEditorAudioHostDriver);
-
-                /* Prepare audio host controller editor: */
-                m_pEditorAudioController = new UIAudioControllerEditor(m_pWidgetAudioSettings);
-                if (m_pEditorAudioController)
-                    pLayoutAudioSettings->addWidget(m_pEditorAudioController);
-
-                /* Prepare audio extended features editor: */
-                m_pEditorAudioFeatures = new UIMachineAudioFeaturesEditor(m_pWidgetAudioSettings);
-                if (m_pEditorAudioFeatures)
-                    pLayoutAudioSettings->addWidget(m_pEditorAudioFeatures);
-            }
-
-            pLayout->addWidget(m_pWidgetAudioSettings, 1, 1);
-        }
+        pLayout->addStretch();
     }
 }
 
 void UIMachineSettingsAudio::prepareConnections()
 {
-    connect(m_pCheckBoxAudio, &QCheckBox::toggled, m_pWidgetAudioSettings, &QWidget::setEnabled);
 }
 
 void UIMachineSettingsAudio::cleanup()

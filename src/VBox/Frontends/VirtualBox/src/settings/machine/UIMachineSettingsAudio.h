@@ -25,10 +25,7 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class UIAudioControllerEditor;
-class UIAudioHostDriverEditor;
-class UIMachineAudioFeaturesEditor;
+class UIAudioSettingsEditor;
 struct UIDataSettingsMachineAudio;
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
@@ -88,16 +85,8 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the audio check-box instance. */
-        QCheckBox                    *m_pCheckBoxAudio;
-        /** Holds the audio settings widget instance. */
-        QWidget                      *m_pWidgetAudioSettings;
-        /** Holds the audio host driver editor instance. */
-        UIAudioHostDriverEditor      *m_pEditorAudioHostDriver;
-        /** Holds the audio host controller editor instance. */
-        UIAudioControllerEditor      *m_pEditorAudioController;
-        /** Holds the audio features editor instance. */
-        UIMachineAudioFeaturesEditor *m_pEditorAudioFeatures;
+        /** Holds the audio settings editor instance. */
+        UIAudioSettingsEditor *m_pEditorAudioSettings;
     /** @} */
 };
 

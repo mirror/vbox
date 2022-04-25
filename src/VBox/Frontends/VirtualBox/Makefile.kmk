@@ -895,6 +895,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsSerializer.h \
 	src/settings/editors/UIAudioControllerEditor.h \
 	src/settings/editors/UIAudioHostDriverEditor.h \
+	src/settings/editors/UIAudioSettingsEditor.h \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
 	src/settings/editors/UIBootOrderEditor.h \
@@ -1463,6 +1464,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsSerializer.cpp \
 	src/settings/editors/UIAudioControllerEditor.cpp \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \
+	src/settings/editors/UIAudioSettingsEditor.cpp \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
