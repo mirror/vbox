@@ -49,6 +49,9 @@
 *   Update agent task implementation                                                                                             *
 *********************************************************************************************************************************/
 
+/**
+ * Base task class for asynchronous update agent tasks.
+ */
 class UpdateAgentTask : public ThreadTask
 {
 public:
@@ -76,7 +79,9 @@ void UpdateAgentTask::handler(void)
     UpdateAgentBase *pUpdateAgent = this->m_pParent;
     AssertPtr(pUpdateAgent);
 
-    HRESULT rc = pUpdateAgent->i_updateTask(this);
+    /** @todo Differentiate tasks once we have more stuff to do (downloading, installing, ++). */
+
+    HRESULT rc = pUpdateAgent->i_checkForUpdateTask(this);
 
     if (!m_pProgress.isNull())
         m_pProgress->i_notifyComplete(rc);
@@ -89,6 +94,11 @@ void UpdateAgentTask::handler(void)
 *   Update agent base class implementation                                                                                       *
 *********************************************************************************************************************************/
 
+/**
+ * Returns platform information as a string.
+ *
+ * @returns HRESULT
+ */
 /* static */
 Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
 {
@@ -605,6 +615,12 @@ HRESULT UpdateAgent::getIsCheckNeeded(BOOL *aCheckNeeded)
 *   Internal helper methods of update agent class                                                                                *
 *********************************************************************************************************************************/
 
+/**
+ * Loads the settings of the update agent base class.
+ *
+ * @returns HRESULT
+ * @param   data                Where to load the settings from.
+ */
 HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
 {
     AutoCaller autoCaller(this);
@@ -624,6 +640,12 @@ HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
     return S_OK;
 }
 
+/**
+ * Saves the settings of the update agent base class.
+ *
+ * @returns HRESULT
+ * @param   data                Where to save the settings to.
+ */
 HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
 {
     AutoCaller autoCaller(this);
@@ -636,6 +658,12 @@ HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
     return S_OK;
 }
 
+/**
+ * Sets the update check count.
+ *
+ * @returns HRESULT
+ * @param   aCount              Update check count to set.
+ */
 HRESULT UpdateAgent::i_setCheckCount(ULONG aCount)
 {
     AutoCaller autoCaller(this);
@@ -648,6 +676,13 @@ HRESULT UpdateAgent::i_setCheckCount(ULONG aCount)
     return i_commitSettings(alock);
 }
 
+/**
+ * Sets the last update check date.
+ *
+ * @returns HRESULT
+ * @param   aDate               Last update check date to set.
+ *                              Must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
+ */
 HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
 {
     AutoCaller autoCaller(this);
@@ -659,7 +694,6 @@ HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
 
     return i_commitSettings(alock);
 }
-
 
 /**
  * Internal helper function to commit modified settings.
@@ -722,7 +756,7 @@ HRESULT HostUpdateAgent::init(VirtualBox *aVirtualBox)
     return S_OK;
 }
 
-void HostUpdateAgent::uninit()
+void HostUpdateAgent::uninit(void)
 {
     // Enclose the state transition Ready->InUninit->NotReady.
     AutoUninitSpan autoUninitSpan(this);
@@ -761,7 +795,13 @@ HRESULT HostUpdateAgent::checkFor(ComPtr<IProgress> &aProgress)
 *   Host update internal functions                                                                                               *
 *********************************************************************************************************************************/
 
-DECLCALLBACK(HRESULT) HostUpdateAgent::i_updateTask(UpdateAgentTask *pTask)
+/**
+ * Task callback to perform an update check for the VirtualBox host (core).
+ *
+ * @returns HRESULT
+ * @param   pTask               Associated update agent task to use.
+ */
+DECLCALLBACK(HRESULT) HostUpdateAgent::i_checkForUpdateTask(UpdateAgentTask *pTask)
 {
     RT_NOREF(pTask);
 
@@ -861,6 +901,14 @@ DECLCALLBACK(HRESULT) HostUpdateAgent::i_updateTask(UpdateAgentTask *pTask)
     return rc;
 }
 
+/**
+ * Inner function of the actual update checking mechanism.
+ *
+ * @returns HRESULT
+ * @param   hHttp               HTTP client instance to use for checking.
+ * @param   strUrl              URL of repository to check.
+ * @param   strUserAgent        HTTP user agent to use for checking.
+ */
 HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strUrl, Utf8Str const &strUserAgent)
 {
     /** @todo Are there any other headers needed to be added first via RTHttpSetHeaders()? */

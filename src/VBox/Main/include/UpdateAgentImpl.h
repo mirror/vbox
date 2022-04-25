@@ -67,7 +67,7 @@ protected:
     /** @name Pure virtual internal task callbacks.
      * @{ */
     friend UpdateAgentTask;
-    virtual DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask) = 0;
+    virtual DECLCALLBACK(HRESULT) i_checkForUpdateTask(UpdateAgentTask *pTask) = 0;
     /** @} */
 
     /** @name Static helper methods.
@@ -190,7 +190,7 @@ private:
      * @{ */
     HRESULT checkFor(ComPtr<IProgress> &aProgress);
 
-    DECLCALLBACK(HRESULT) i_updateTask(UpdateAgentTask *pTask);
+    DECLCALLBACK(HRESULT) i_checkForUpdateTask(UpdateAgentTask *pTask);
     /** @}  */
 
     HRESULT i_checkForUpdate(void);
