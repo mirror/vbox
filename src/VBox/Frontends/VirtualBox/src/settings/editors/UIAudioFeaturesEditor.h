@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineAudioFeaturesEditor class declaration.
+ * VBox Qt GUI - UIAudioFeaturesEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIMachineAudioFeaturesEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIMachineAudioFeaturesEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIAudioFeaturesEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIAudioFeaturesEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -29,15 +29,15 @@ class QCheckBox;
 class QGridLayout;
 class QLabel;
 
-/** QWidget subclass used as machine audio features editor. */
-class SHARED_LIBRARY_STUFF UIMachineAudioFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass used as audio features editor. */
+class SHARED_LIBRARY_STUFF UIAudioFeaturesEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIMachineAudioFeaturesEditor(QWidget *pParent = 0);
+    UIAudioFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether 'enable output' feature in @a fOn. */
     void setEnableOutput(bool fOn);
@@ -85,4 +85,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMachineAudioFeaturesEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIAudioFeaturesEditor_h */

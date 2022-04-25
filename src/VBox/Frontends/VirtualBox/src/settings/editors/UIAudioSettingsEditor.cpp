@@ -22,9 +22,9 @@
 
 /* GUI includes: */
 #include "UIAudioControllerEditor.h"
+#include "UIAudioFeaturesEditor.h"
 #include "UIAudioHostDriverEditor.h"
 #include "UIAudioSettingsEditor.h"
-#include "UIMachineAudioFeaturesEditor.h"
 
 
 UIAudioSettingsEditor::UIAudioSettingsEditor(QWidget *pParent /* = 0 */)
@@ -199,13 +199,13 @@ void UIAudioSettingsEditor::prepareWidgets()
                 if (m_pEditorAudioHostDriver)
                     pLayoutAudioSettings->addWidget(m_pEditorAudioHostDriver);
 
-                /* Prepare host controller editor: */
+                /* Prepare controller editor: */
                 m_pEditorAudioController = new UIAudioControllerEditor(m_pWidgetSettings);
                 if (m_pEditorAudioController)
                     pLayoutAudioSettings->addWidget(m_pEditorAudioController);
 
-                /* Prepare extended features editor: */
-                m_pEditorAudioFeatures = new UIMachineAudioFeaturesEditor(m_pWidgetSettings);
+                /* Prepare features editor: */
+                m_pEditorAudioFeatures = new UIAudioFeaturesEditor(m_pWidgetSettings);
                 if (m_pEditorAudioFeatures)
                     pLayoutAudioSettings->addWidget(m_pEditorAudioFeatures);
             }

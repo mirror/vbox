@@ -35,8 +35,8 @@
 /* Forward declarations: */
 class QCheckBox;
 class UIAudioControllerEditor;
+class UIAudioFeaturesEditor;
 class UIAudioHostDriverEditor;
-class UIMachineAudioFeaturesEditor;
 
 /** QWidget subclass used as a audio settings editor. */
 class SHARED_LIBRARY_STUFF UIAudioSettingsEditor : public QIWithRetranslateUI<QWidget>
@@ -128,15 +128,15 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the feature check-box instance. */
-        QCheckBox                    *m_pCheckboxFeature;
+        QCheckBox               *m_pCheckboxFeature;
         /** Holds the settings widget instance. */
-        QWidget                      *m_pWidgetSettings;
-        /** Holds the audio host driver editor instance. */
-        UIAudioHostDriverEditor      *m_pEditorAudioHostDriver;
-        /** Holds the audio host controller editor instance. */
-        UIAudioControllerEditor      *m_pEditorAudioController;
-        /** Holds the audio features editor instance. */
-        UIMachineAudioFeaturesEditor *m_pEditorAudioFeatures;
+        QWidget                 *m_pWidgetSettings;
+        /** Holds the host driver editor instance. */
+        UIAudioHostDriverEditor *m_pEditorAudioHostDriver;
+        /** Holds the controller editor instance. */
+        UIAudioControllerEditor *m_pEditorAudioController;
+        /** Holds the features editor instance. */
+        UIAudioFeaturesEditor   *m_pEditorAudioFeatures;
     /** @} */
 };
 

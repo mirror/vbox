@@ -894,6 +894,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
 	src/settings/editors/UIAudioControllerEditor.h \
+	src/settings/editors/UIAudioFeaturesEditor.h \
 	src/settings/editors/UIAudioHostDriverEditor.h \
 	src/settings/editors/UIAudioSettingsEditor.h \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.h \
@@ -909,7 +910,6 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIHostComboEditor.h \
 	src/settings/editors/UIHotKeyEditor.h \
 	src/settings/editors/UILanguageSettingsEditor.h \
-	src/settings/editors/UIMachineAudioFeaturesEditor.h \
 	src/settings/editors/UIMachineDisplayScreenFeaturesEditor.h \
 	src/settings/editors/UIMachineDescriptionEditor.h \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.h \
@@ -1463,6 +1463,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
 	src/settings/editors/UIAudioControllerEditor.cpp \
+	src/settings/editors/UIAudioFeaturesEditor.cpp \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \
 	src/settings/editors/UIAudioSettingsEditor.cpp \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.cpp \
@@ -1478,7 +1479,6 @@ UICommon_SOURCES = \
 	src/settings/editors/UIHostComboEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
 	src/settings/editors/UILanguageSettingsEditor.cpp \
-	src/settings/editors/UIMachineAudioFeaturesEditor.cpp \
 	src/settings/editors/UIMachineDisplayScreenFeaturesEditor.cpp \
 	src/settings/editors/UIMachineDescriptionEditor.cpp \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.cpp \

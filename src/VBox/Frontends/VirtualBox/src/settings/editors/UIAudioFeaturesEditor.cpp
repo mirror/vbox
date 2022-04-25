@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineAudioFeaturesEditor class implementation.
+ * VBox Qt GUI - UIAudioFeaturesEditor class implementation.
  */
 
 /*
@@ -21,10 +21,10 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UIMachineAudioFeaturesEditor.h"
+#include "UIAudioFeaturesEditor.h"
 
 
-UIMachineAudioFeaturesEditor::UIMachineAudioFeaturesEditor(QWidget *pParent /* = 0 */)
+UIAudioFeaturesEditor::UIAudioFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fEnableOutput(false)
     , m_fEnableInput(false)
@@ -35,7 +35,7 @@ UIMachineAudioFeaturesEditor::UIMachineAudioFeaturesEditor(QWidget *pParent /* =
     prepare();
 }
 
-void UIMachineAudioFeaturesEditor::setEnableOutput(bool fOn)
+void UIAudioFeaturesEditor::setEnableOutput(bool fOn)
 {
     /* Update cached value and
      * check-box if value has changed: */
@@ -47,14 +47,14 @@ void UIMachineAudioFeaturesEditor::setEnableOutput(bool fOn)
     }
 }
 
-bool UIMachineAudioFeaturesEditor::outputEnabled() const
+bool UIAudioFeaturesEditor::outputEnabled() const
 {
     return   m_pCheckBoxEnableOutput
            ? m_pCheckBoxEnableOutput->checkState() == Qt::Checked
            : m_fEnableOutput;
 }
 
-void UIMachineAudioFeaturesEditor::setEnableInput(bool fOn)
+void UIAudioFeaturesEditor::setEnableInput(bool fOn)
 {
     /* Update cached value and
      * check-box if value has changed: */
@@ -66,25 +66,25 @@ void UIMachineAudioFeaturesEditor::setEnableInput(bool fOn)
     }
 }
 
-bool UIMachineAudioFeaturesEditor::inputEnabled() const
+bool UIAudioFeaturesEditor::inputEnabled() const
 {
     return   m_pCheckBoxEnableInput
            ? m_pCheckBoxEnableInput->checkState() == Qt::Checked
            : m_fEnableInput;
 }
 
-int UIMachineAudioFeaturesEditor::minimumLabelHorizontalHint() const
+int UIAudioFeaturesEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
-void UIMachineAudioFeaturesEditor::setMinimumLayoutIndent(int iIndent)
+void UIAudioFeaturesEditor::setMinimumLayoutIndent(int iIndent)
 {
     if (m_pLayout)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMachineAudioFeaturesEditor::retranslateUi()
+void UIAudioFeaturesEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Extended Features:"));
@@ -102,7 +102,7 @@ void UIMachineAudioFeaturesEditor::retranslateUi()
     }
 }
 
-void UIMachineAudioFeaturesEditor::prepare()
+void UIAudioFeaturesEditor::prepare()
 {
     /* Prepare main layout: */
     m_pLayout = new QGridLayout(this);
