@@ -40,8 +40,8 @@
 #include "AutoCaller.h"
 #include "LoggingNew.h"
 #include "VirtualBoxImpl.h"
+#include "VBoxEvents.h"
 #include "ThreadTask.h"
-#include "SystemPropertiesImpl.h"
 #include "VirtualBoxBase.h"
 
 
@@ -274,15 +274,14 @@ UpdateAgent::UpdateAgent()
 
 UpdateAgent::~UpdateAgent()
 {
-    delete m;
 }
 
-HRESULT UpdateAgent::FinalConstruct()
+HRESULT UpdateAgent::FinalConstruct(void)
 {
     return BaseFinalConstruct();
 }
 
-void UpdateAgent::FinalRelease()
+void UpdateAgent::FinalRelease(void)
 {
     uninit();
 
@@ -298,16 +297,25 @@ HRESULT UpdateAgent::init(VirtualBox *aVirtualBox)
     /* Weak reference to a VirtualBox object */
     unconst(m_VirtualBox) = aVirtualBox;
 
-    autoInitSpan.setSucceeded();
-    return S_OK;
+    HRESULT hr = unconst(m_EventSource).createObject();
+    if (SUCCEEDED(hr))
+    {
+        hr = m_EventSource->init();
+        if (SUCCEEDED(hr))
+            autoInitSpan.setSucceeded();
+    }
+
+    return hr;
 }
 
-void UpdateAgent::uninit()
+void UpdateAgent::uninit(void)
 {
     // Enclose the state transition Ready->InUninit->NotReady.
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    unconst(m_EventSource).setNull();
 }
 
 HRESULT UpdateAgent::checkFor(ComPtr<IProgress> &aProgress)
@@ -342,6 +350,17 @@ HRESULT UpdateAgent::getName(com::Utf8Str &aName)
 
     aName = mData.m_strName;
 
+    return S_OK;
+}
+
+HRESULT UpdateAgent::getEventSource(ComPtr<IEventSource> &aEventSource)
+{
+    LogFlowThisFuncEnter();
+
+    /* No need to lock - lifetime constant. */
+    m_EventSource.queryInterfaceTo(aEventSource.asOutParam());
+
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 }
 
@@ -705,8 +724,39 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
 {
     aLock.release();
 
+    ::FireUpdateAgentSettingsChangedEvent(m_EventSource, "" /** @todo Include attribute hints */);
+
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
     return m_VirtualBox->i_saveSettings();
+}
+
+/**
+ * Reports an error by setting the error info and also information subscribed listeners.
+ *
+ * @returns HRESULT
+ * @param   vrc                 Result code (IPRT-style) to report.
+ * @param   pcszMsgFmt          Error message to report.
+ * @param   ...                 Format string for \a pcszMsgFmt.
+ */
+HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+
+     char *psz = NULL;
+     if (RTStrAPrintfV(&psz, pcszMsgFmt, va) <= 0)
+         return E_OUTOFMEMORY;
+
+     LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), psz));
+
+     ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
+
+     HRESULT const rc = setErrorVrc(vrc, pcszMsgFmt, va);
+
+     va_end(va);
+     RTStrFree(psz);
+
+     return rc;
 }
 
 
@@ -896,7 +946,7 @@ DECLCALLBACK(HRESULT) HostUpdateAgent::i_checkForUpdateTask(UpdateAgentTask *pTa
         RTHttpDestroy(hHttp);
     }
     else
-        rc = setErrorVrc(vrc, tr("Update agent (%s): RTHttpCreate() failed: %Rrc"), mData.m_strName.c_str(), vrc);
+        rc = i_reportError(vrc, tr("RTHttpCreate() failed: %Rrc"), vrc);
 
     return rc;
 }
@@ -914,8 +964,7 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
     /** @todo Are there any other headers needed to be added first via RTHttpSetHeaders()? */
     int vrc = RTHttpAddHeader(hHttp, "User-Agent", strUserAgent.c_str(), strUserAgent.length(), RTHTTPADDHDR_F_BACK);
     if (RT_FAILURE(vrc))
-        return setErrorVrc(vrc, tr("Update agent (%s): RTHttpAddHeader() failed: %Rrc (on User-Agent)"),
-                                   mData.m_strName.c_str(), vrc);
+        return i_reportError(vrc, tr("RTHttpAddHeader() failed: %Rrc (user agent)"), vrc);
 
     /*
      * Configure proxying.
@@ -924,14 +973,13 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
     {
         vrc = RTHttpSetProxyByUrl(hHttp, m->strProxyUrl.c_str());
         if (RT_FAILURE(vrc))
-            return setErrorVrc(vrc, tr("Update agent (%s): RTHttpSetProxyByUrl() failed: %Rrc"), mData.m_strName.c_str(), vrc);
+            return i_reportError(vrc, tr("RTHttpSetProxyByUrl() failed: %Rrc"), vrc);
     }
     else if (m->enmProxyMode == ProxyMode_System)
     {
         vrc = RTHttpUseSystemProxySettings(hHttp);
         if (RT_FAILURE(vrc))
-            return setErrorVrc(vrc, tr("Update agent (%s): RTHttpUseSystemProxySettings() failed: %Rrc"),
-                                       mData.m_strName.c_str(), vrc);
+            return i_reportError(vrc, tr("RTHttpUseSystemProxySettings() failed: %Rrc"), vrc);
     }
     else
         Assert(m->enmProxyMode == ProxyMode_NoProxy);
@@ -943,7 +991,7 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
     size_t cbResponse = 0;
     vrc = RTHttpGetBinary(hHttp, strUrl.c_str(), &pvResponse, &cbResponse);
     if (RT_FAILURE(vrc))
-        return setErrorVrc(vrc, tr("Update agent (%s): RTHttpGetBinary() failed: %Rrc"), mData.m_strName.c_str(), vrc);
+        return i_reportError(vrc, tr("RTHttpGetBinary() failed: %Rrc"), vrc);
 
     /* Note! We can do nothing that might throw exceptions till we call RTHttpFreeResponse! */
 
@@ -972,15 +1020,19 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
 
     HRESULT rc;
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* Decode the two word: */
     static char const s_szUpToDate[] = "UPTODATE";
     if (   cchWord0 == sizeof(s_szUpToDate) - 1
         && memcmp(pchWord0, s_szUpToDate, sizeof(s_szUpToDate) - 1) == 0)
     {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
         mData.m_enmState = UpdateState_NotAvailable;
         rc = S_OK;
+
+        alock.release(); /* Release lock before firing off event. */
+
+        ::FireUpdateAgentStateChangedEvent(m_EventSource, UpdateState_NotAvailable);
     }
     else
     {
@@ -996,20 +1048,33 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
             if (SUCCEEDED(rc))
                 rc = mData.m_lastResult.strDownloadUrl.assignEx(pchWord1, cchWord1);
 
-            if (RT_SUCCESS(vrc))
+            if (SUCCEEDED(rc))
             {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                 /** @todo Implement this on the backend first.
                  *        We also could do some guessing based on the installed version vs. reported update version? */
                 mData.m_lastResult.enmSeverity = UpdateSeverity_Invalid;
                 mData.m_enmState               = UpdateState_Available;
+
+                alock.release(); /* Release lock before firing off events. */
+
+                ::FireUpdateAgentStateChangedEvent(m_EventSource, UpdateState_Available);
+                ::FireUpdateAgentAvailableEvent(m_EventSource, mData.m_lastResult.strVer, m->enmChannel,
+                                                mData.m_lastResult.enmSeverity, mData.m_lastResult.strDownloadUrl,
+                                                mData.m_lastResult.strWebUrl, mData.m_lastResult.strReleaseNotes);
             }
+            else
+                rc = i_reportError(VERR_GENERAL_FAILURE /** @todo Use a better rc */,
+                                   tr("Invalid server response [1]: %Rhrc (%.*Rhxs -- %.*Rhxs)"),
+                                   rc, cchWord0, pchWord0, cchWord1, pchWord1);
 
             LogRel(("Update agent (%s): HTTP server replied: %.*s %.*s\n",
                     mData.m_strName.c_str(), cchWord0, pchWord0, cchWord1, pchWord1));
         }
         else
-            rc = setErrorVrc(vrc, tr("Update agent (%s): Invalid server response: %Rrc (%.*Rhxs -- %.*Rhxs)"),
-                             mData.m_strName.c_str(), vrc, cchWord0, pchWord0, cchWord1, pchWord1);
+            rc = i_reportError(vrc, tr("Invalid server response [2]: %Rrc (%.*Rhxs -- %.*Rhxs)"),
+                               vrc, cchWord0, pchWord0, cchWord1, pchWord1);
     }
 
     RTHttpFreeResponse(pvResponse);

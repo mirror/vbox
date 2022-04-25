@@ -25,6 +25,7 @@
 
 #include <VBox/settings.h>
 
+#include "EventImpl.h"
 #include "UpdateAgentWrap.h"
 #include "HostUpdateAgentWrap.h"
 
@@ -48,7 +49,7 @@ protected: /* Not directly instancable. */
         : m_VirtualBox(NULL)
         , m(new settings::UpdateAgent) { }
 
-    virtual ~UpdateAgentBase() { }
+    virtual ~UpdateAgentBase() { delete m; }
 
 public:
 
@@ -76,7 +77,9 @@ protected:
     /** @} */
 
 protected:
-    VirtualBox * const m_VirtualBox;
+    /** The update agent's event source. */
+    const ComObjPtr<EventSource> m_EventSource;
+    VirtualBox * const           m_VirtualBox;
 
     /** @name Data members.
      * @{ */
@@ -131,6 +134,7 @@ protected:
     /** @name Internal helper methods.
      * @{ */
     HRESULT i_commitSettings(AutoWriteLock &aLock);
+    HRESULT i_reportError(int vrc, const char *pcszMsgFmt, ...);
     /** @}  */
 
 protected:
@@ -142,6 +146,7 @@ protected:
     HRESULT rollback(void);
 
     HRESULT getName(com::Utf8Str &aName);
+    HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
     HRESULT getOrder(ULONG *aOrder);
     HRESULT getDependsOn(std::vector<com::Utf8Str> &aDeps);
     HRESULT getVersion(com::Utf8Str &aVer);

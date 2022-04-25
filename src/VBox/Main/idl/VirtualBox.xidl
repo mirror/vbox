@@ -11344,7 +11344,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="d6c683f2-489e-4701-aa6a-d490f7bc0d7e"
+    uuid="4cef7347-ed89-470b-9ac2-524ae889e17c"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="4"
     >
@@ -11400,6 +11400,12 @@
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
         Name of the update component.
+      </desc>
+    </attribute>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for update agent events.
       </desc>
     </attribute>
 
@@ -11550,125 +11556,6 @@
       for VirtualBox host updates.
     </desc>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
-  </interface>
-
-  <interface
-    name="IUpdateAgentEvent" extends="$unknown"
-    uuid="aa1987dc-6402-4e3c-a0e9-68e87d301a83"
-    wsmap="managed"
-    reservedAttributes="4"
-    >
-    <desc>
-      Abstract base interface for update agent events.
-    </desc>
-
-    <attribute name="eventSource" type="IEventSource" readonly="yes">
-      <desc>
-        Event source for update agent events.
-      </desc>
-    </attribute>
-
-  </interface>
-
-  <interface
-    name="IUpdateAgentSettingsChangedEvent" extends="IUpdateAgentEvent"
-    uuid="a3537480-a15f-404c-b540-abae5f6b25a0"
-    wsmap="managed"
-    reservedAttributes="4"
-    >
-    <desc>
-      Notification when update agent settings have been changed.
-    </desc>
-  </interface>
-
-  <interface
-    name="IUpdateAgentErrorEvent" extends="IUpdateAgentEvent"
-    uuid="2dad1ad8-78be-441d-b4fa-9cff25ee16b2"
-    wsmap="managed"
-    reservedAttributes="4"
-    >
-    <desc>
-      Notification when an update agent error occurred.
-    </desc>
-
-    <attribute name="msg" type="wstring" readonly="yes">
-      <desc>
-        Error message in human readable format.
-      </desc>
-    </attribute>
-
-    <attribute name="rcError" type="long" readonly="yes">
-      <desc>
-        IPRT-style error code.
-      </desc>
-    </attribute>
-
-  </interface>
-
-  <interface
-    name="IUpdateAgentAvailableEvent" extends="IUpdateAgentEvent"
-    uuid="7b931bfa-3b2b-4220-87ce-86cb0dee7ed1"
-    wsmap="managed"
-    reservedAttributes="4"
-    >
-    <desc>
-      Notification when an update is available.
-    </desc>
-
-    <attribute name="version" type="wstring" readonly="yes">
-      <desc>
-        Version of the update.
-      </desc>
-    </attribute>
-
-    <attribute name="channel" type="UpdateChannel" readonly="yes">
-      <desc>
-        Channel containing the update.
-      </desc>
-    </attribute>
-
-    <attribute name="severity" type="UpdateSeverity" readonly="yes">
-      <desc>
-        Severity of the update.
-      </desc>
-    </attribute>
-
-    <attribute name="downloadURL" type="wstring" readonly="yes">
-      <desc>
-        Download URL of the update.
-      </desc>
-    </attribute>
-
-    <attribute name="webURL" type="wstring" readonly="yes">
-      <desc>
-        Web URL of the update.
-      </desc>
-    </attribute>
-
-    <attribute name="releaseNotes" type="wstring" readonly="yes">
-      <desc>
-        Release notes of the update.
-      </desc>
-    </attribute>
-
-  </interface>
-
-  <interface
-    name="IUpdateAgentStateChangedEvent" extends="IUpdateAgentEvent"
-    uuid="7da1b997-10ea-4690-99ff-df78bf309164"
-    wsmap="managed"
-    reservedAttributes="4"
-    >
-    <desc>
-      Notification when an update agent state has been changed.
-    </desc>
-
-    <attribute name="state" type="UpdateState" readonly="yes">
-      <desc>
-        New update agent state.
-      </desc>
-    </attribute>
-
   </interface>
 
   <interface
@@ -25736,7 +25623,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="c88a66ed-fbce-4c21-9196-12354bd96b89"
+    uuid="08cc6ebb-1e55-4b78-8fb1-1e06f5b4dbe9"
     >
 
     <desc>
@@ -26200,9 +26087,29 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ILanguageChangedEvent"/>.
       </desc>
     </const>
+    <const name="OnUpdateAgentAvailable" value="112">
+      <desc>
+        See <link to="IUpdateAgentAvailableEvent">IUpdateAgentAvailableEvent</link>.
+      </desc>
+    </const>
+    <const name="OnUpdateAgentError" value="113">
+      <desc>
+        See <link to="IUpdateAgentErrorEvent">IUpdateAgentErrorEvent</link>.
+      </desc>
+    </const>
+    <const name="OnUpdateAgentSettingsChanged" value="114">
+      <desc>
+        See <link to="IUpdateAgentSettingsChangedEvent">IUpdateAgentSettingsChangedEvent</link>.
+      </desc>
+    </const>
+    <const name="OnUpdateAgentStateChanged" value="115">
+      <desc>
+        See <link to="IUpdateAgentStateChangedEvent">IUpdateAgentStateChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="112">
+    <const name="Last" value="116">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28380,6 +28287,114 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="output" readonly="yes" type="unsigned long">
       <desc>The virtual display output on which the monitor has changed.</desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IUpdateAgentEvent" extends="IEvent"
+    uuid="0e33366a-670e-4e1f-9ddc-41c8a346cafd"
+    wsmap="managed">
+    <desc>
+      Abstract base interface for update agent events.
+    </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="IUpdateAgentSettingsChangedEvent" extends="IUpdateAgentEvent"
+    uuid="abef51ae-1493-49f4-aa03-efaf106bf086"
+    wsmap="managed" autogen="VBoxEvent" id="OnUpdateAgentSettingsChanged"
+    >
+    <desc>
+      Notification when update agent settings have been changed.
+    </desc>
+    <attribute name="attributeHint" readonly="yes" type="wstring"/>
+  </interface>
+
+  <interface
+    name="IUpdateAgentErrorEvent" extends="IUpdateAgentEvent"
+    uuid="2a88033d-82db-4ac2-97b5-e786c839420e"
+    wsmap="managed" autogen="VBoxEvent" id="OnUpdateAgentError"
+    >
+    <desc>
+      Notification when an update agent error occurred.
+    </desc>
+
+    <attribute name="msg" type="wstring" readonly="yes">
+      <desc>
+        Error message in human readable format.
+      </desc>
+    </attribute>
+
+    <attribute name="rcError" type="long" readonly="yes">
+      <desc>
+        IPRT-style error code.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IUpdateAgentAvailableEvent" extends="IUpdateAgentEvent"
+    uuid="243829cb-15b7-42a4-8664-7aa4e34993da"
+    wsmap="managed" autogen="VBoxEvent" id="OnUpdateAgentAvailable"
+    >
+    <desc>
+      Notification when an update is available.
+    </desc>
+
+    <attribute name="version" type="wstring" readonly="yes">
+      <desc>
+        Version of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="channel" type="UpdateChannel" readonly="yes">
+      <desc>
+        Channel containing the update.
+      </desc>
+    </attribute>
+
+    <attribute name="severity" type="UpdateSeverity" readonly="yes">
+      <desc>
+        Severity of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="downloadURL" type="wstring" readonly="yes">
+      <desc>
+        Download URL of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="webURL" type="wstring" readonly="yes">
+      <desc>
+        Web URL of the update.
+      </desc>
+    </attribute>
+
+    <attribute name="releaseNotes" type="wstring" readonly="yes">
+      <desc>
+        Release notes of the update.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IUpdateAgentStateChangedEvent" extends="IUpdateAgentEvent"
+    uuid="eb000a0e-2079-4f47-bbcc-c6b28a4e50df"
+    wsmap="managed" autogen="VBoxEvent" id="OnUpdateAgentStateChanged"
+    >
+    <desc>
+      Notification when an update agent state has been changed.
+    </desc>
+
+    <attribute name="state" type="UpdateState" readonly="yes">
+      <desc>
+        New update agent state.
+      </desc>
+    </attribute>
+
   </interface>
 
   <!--
