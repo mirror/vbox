@@ -164,6 +164,7 @@ protected:
     HRESULT getProxyURL(com::Utf8Str &aAddress);
     HRESULT setProxyURL(const com::Utf8Str &aAddress);
     HRESULT getLastCheckDate(com::Utf8Str &aData);
+    HRESULT getIsCheckNeeded(BOOL *aCheckNeeded);
     /** @} */
 };
 

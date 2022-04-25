@@ -373,6 +373,65 @@ HRESULT UpdateAgent::getLastCheckDate(com::Utf8Str &aDate)
     return S_OK;
 }
 
+HRESULT UpdateAgent::getIsCheckNeeded(BOOL *aCheckNeeded)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Is update checking enabled at all?
+     */
+    if (!m->fEnabled)
+    {
+        *aCheckNeeded = FALSE;
+        return S_OK;
+    }
+
+    /*
+     * When was the last update?
+     */
+    if (m->strLastCheckDate.isEmpty()) /* No prior update check performed -- do so now. */
+    {
+        *aCheckNeeded = TRUE;
+        return S_OK;
+    }
+
+    RTTIMESPEC LastCheckTime;
+    if (!RTTimeSpecFromString(&LastCheckTime, Utf8Str(m->strLastCheckDate).c_str()))
+    {
+        *aCheckNeeded = TRUE; /* Invalid date set or error? Perform check. */
+        return S_OK;
+    }
+
+    /*
+     * Compare last update with how often we are supposed to check for updates.
+     */
+    if (   !m->uCheckFreqSeconds                /* Paranoia */
+        ||  m->uCheckFreqSeconds < RT_SEC_1DAY) /* This is the minimum we currently allow. */
+    {
+        /* Consider config (enable, 0 day interval) as checking once but never again.
+           We've already check since we've got a date. */
+        *aCheckNeeded = FALSE;
+        return S_OK;
+    }
+
+    uint64_t const cCheckFreqDays = m->uCheckFreqSeconds / RT_SEC_1DAY_64;
+
+    RTTIMESPEC TimeDiff;
+    RTTimeSpecSub(RTTimeNow(&TimeDiff), &LastCheckTime);
+
+    int64_t const diffLastCheckSecs = RTTimeSpecGetSeconds(&TimeDiff);
+    int64_t const diffLastCheckDays = diffLastCheckSecs / RT_SEC_1DAY_64;
+
+    /* Be as accurate as possible. */
+    *aCheckNeeded = diffLastCheckSecs >= (int64_t)m->uCheckFreqSeconds ? TRUE : FALSE;
+
+    LogRel2(("Update agent (%s): Last update %RU64 days (%RU64 seconds) ago, check frequency is every %RU64 days (%RU64 seconds) -> Check %s\n",
+             mData.m_strName.c_str(), diffLastCheckDays, diffLastCheckSecs, cCheckFreqDays, m->uCheckFreqSeconds,
+             *aCheckNeeded ? "needed" : "not needed"));
+
+    return S_OK;
+}
+
 /* static */
 Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
 {
@@ -611,84 +670,6 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
     return m_VirtualBox->i_saveSettings();
 }
-
-#if 0
-HRESULT UpdateAgent::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc;
-    ComPtr<ISystemProperties> pSystemProperties;
-    rc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    /*
-     * Is update checking enabled?
-     */
-    BOOL fVBoxUpdateEnabled;
-    rc = pSystemProperties->COMGETTER(VBoxUpdateEnabled)(&fVBoxUpdateEnabled);
-    if (FAILED(rc))
-        return rc;
-
-    if (!fVBoxUpdateEnabled)
-    {
-        *aUpdateCheckNeeded = false;
-        return S_OK;
-    }
-
-    /*
-     * When was the last update?
-     */
-    Bstr strVBoxUpdateLastCheckDate;
-    rc = pSystemProperties->COMGETTER(VBoxUpdateLastCheckDate)(strVBoxUpdateLastCheckDate.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    // No prior update check performed so do so now
-    if (strVBoxUpdateLastCheckDate.isEmpty())
-    {
-        *aUpdateCheckNeeded = true;
-        return S_OK;
-    }
-
-    // convert stored timestamp to time spec
-    RTTIMESPEC LastCheckTime;
-    if (!RTTimeSpecFromString(&LastCheckTime, Utf8Str(strVBoxUpdateLastCheckDate).c_str()))
-    {
-        *aUpdateCheckNeeded = true;
-        return S_OK;
-    }
-
-    /*
-     * Compare last update with how often we are supposed to check for updates.
-     */
-    ULONG uVBoxUpdateFrequency = 0;  // value in days
-    rc = pSystemProperties->COMGETTER(VBoxUpdateFrequency)(&uVBoxUpdateFrequency);
-    if (FAILED(rc))
-        return rc;
-
-    if (!uVBoxUpdateFrequency)
-    {
-        /* Consider config (enable, 0 day interval) as checking once but never again.
-           We've already check since we've got a date. */
-        *aUpdateCheckNeeded = false;
-        return S_OK;
-    }
-    uint64_t const cSecsInXDays = uVBoxUpdateFrequency * RT_SEC_1DAY_64;
-
-    RTTIMESPEC TimeDiff;
-    RTTimeSpecSub(RTTimeNow(&TimeDiff), &LastCheckTime);
-
-    LogRelFunc(("Checking if seconds since last check (%lld) >= Number of seconds in %lu day%s (%lld)\n",
-                RTTimeSpecGetSeconds(&TimeDiff), uVBoxUpdateFrequency, uVBoxUpdateFrequency > 1 ? "s" : "", cSecsInXDays));
-
-    if (RTTimeSpecGetSeconds(&TimeDiff) >= (int64_t)cSecsInXDays)
-        *aUpdateCheckNeeded = true;
-
-    return S_OK;
-}
-#endif
 
 
 /*********************************************************************************************************************************

@@ -11344,7 +11344,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="ca37acc8-420f-4c17-8131-04f07e5834c5"
+    uuid="d6c683f2-489e-4701-aa6a-d490f7bc0d7e"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="4"
     >
@@ -11527,6 +11527,16 @@
         How many times the update check has happened already.
       </desc>
     </attribute>
+
+    <attribute name="isCheckNeeded" type="boolean" readonly="yes">
+      <desc>
+        Returns @c TRUE if an update check is needed, or @c FALSE if not.
+
+        <note>Compares the system's current date with the last
+          update check date and currently set check frequency.</note>
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface
