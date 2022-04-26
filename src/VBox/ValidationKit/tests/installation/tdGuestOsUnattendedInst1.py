@@ -529,6 +529,8 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                          UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-debian-9.4-64',     'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',      # >=6GiB?
                          UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-10.0-64',     'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',      # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork),
             #
             # OS/2.
             #
