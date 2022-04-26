@@ -24,16 +24,18 @@
  * Gets the ModR/M, SIB and displacement byte(s) from decoded opcodes given their
  * relative offsets.
  */
-# ifdef IEM_WITH_CODE_TLB
-#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm)         do { } while (0)
-#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)               do { } while (0)
-#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp)         do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp)   do { } while (0)
-#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp)         do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp)   do { } while (0)
-#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)  do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)   do { } while (0)
-#  error "Implement me: Getting ModR/M, SIB, displacement needs to work even when instruction crosses a page boundary."
+# ifdef IEM_WITH_CODE_TLB /** @todo IEM TLB */
+#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm)         do { a_bModRm  = 0; RT_NOREF(a_offModRm); } while (0)
+#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)               do { a_bSib    = 0; RT_NOREF(a_offSib);  } while (0)
+#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp)         do { a_u16Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp)   do { a_u16Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp)         do { a_u32Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp)   do { a_u32Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)  do { a_u64Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)   do { a_u64Disp = 0; RT_NOREF(a_offDisp); } while (0)
+#  if 1
+#   error "Implement me: Getting ModR/M, SIB, displacement needs to work even when instruction crosses a page boundary."
+#  endif
 # else  /* !IEM_WITH_CODE_TLB */
 #  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm) \
     do \

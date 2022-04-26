@@ -74,7 +74,8 @@ RT_C_DECLS_BEGIN
 #endif
 
 
-//#define IEM_WITH_CODE_TLB// - work in progress
+//#define IEM_WITH_CODE_TLB // - work in progress
+//#define IEM_WITH_DATA_TLB // - incomplete in progress
 
 
 #if !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
@@ -211,7 +212,7 @@ typedef IEMFPURESULTTWO const *PCIEMFPURESULTTWO;
         jne     .TlbMiss
 
         ; Check access.
-        movsx   rax, ACCESS_FLAGS | MAPPING_R3_NOT_VALID | 0xffffff00
+        mov     rax, ACCESS_FLAGS | MAPPING_R3_NOT_VALID | 0xffffff00
         and     rax, [rcx + IEMTLBENTRY.fFlagsAndPhysRev]
         cmp     rax, [uTlbPhysRev]
         jne     .TlbMiss
@@ -238,7 +239,9 @@ typedef IEMFPURESULTTWO const *PCIEMFPURESULTTWO;
 typedef struct IEMTLBENTRY
 {
     /** The TLB entry tag.
-     * Bits 35 thru 0 are made up of the virtual address shifted right 12 bits.
+     * Bits 35 thru 0 are made up of the virtual address shifted right 12 bits, this
+     * is ASSUMING a virtual address width of 48 bits.
+     *
      * Bits 63 thru 36 are made up of the TLB revision (zero means invalid).
      *
      * The TLB lookup code uses the current TLB revision, which won't ever be zero,
@@ -247,6 +250,13 @@ typedef struct IEMTLBENTRY
      *
      * @note    Try use SHRD instruction?  After seeing
      *          https://gmplib.org/~tege/x86-timing.pdf, maybe not.
+     *
+     * @todo    This will need to be reorganized for 57-bit wide virtual address and
+     *          PCID (currently 12 bits) and ASID (currently 6 bits) support.  We'll
+     *          have to move the TLB entry versioning entirely to the
+     *          fFlagsAndPhysRev member then, 57 bit wide VAs means we'll only have
+     *          19 bits left (64 - 57 + 12 = 19) and they'll almost entire be
+     *          consumed by PCID and ASID (12 + 6 = 18).
      */
     uint64_t                uTag;
     /** Access flags and physical TLB revision.
@@ -289,8 +299,8 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
 #define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
 #define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(5) /**< Page tables: Not dirty (needs to be made dirty on write). */
-#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(6) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
+#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
 #define IEMTLBE_F_PHYS_REV          UINT64_C(0xffffffffffffff00) /**< Physical revision mask. */
 /** @} */
 
