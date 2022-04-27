@@ -800,12 +800,12 @@ HRESULT HostUpdateAgent::init(VirtualBox *aVirtualBox)
     mData.m_fHidden = false;
 
     const UpdateChannel_T aChannels[] =
- 	{
- 	    UpdateChannel_Stable,
- 	    UpdateChannel_All,
- 	    UpdateChannel_WithBetas
+    {
+        UpdateChannel_Stable,
+        UpdateChannel_All,
+        UpdateChannel_WithBetas
         /** @todo Add UpdateChannel_WithTesting once it's implemented on the backend. */
- 	};
+    };
     unconst(mData.m_enmChannels).assign(aChannels, aChannels + RT_ELEMENTS(aChannels));
 
     /* Set default repository. */
