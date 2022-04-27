@@ -73,8 +73,8 @@ private:
 
     /** Returns period type. */
     VBoxUpdateData::PeriodType periodType() const;
-    /** Returns branch type. */
-    VBoxUpdateData::BranchType branchType() const;
+    /** Returns update channel. */
+    KUpdateChannel updateChannel() const;
 
     /** Holds the value to be set. */
     VBoxUpdateData  m_guiValue;
@@ -97,9 +97,9 @@ private:
         QLabel    *m_pLabelUpdateFilter;
 
         /** Holds the radio button group instance. */
-        QButtonGroup                                       *m_pRadioButtonGroup;
+        QButtonGroup                           *m_pRadioButtonGroup;
         /** Holds the radio button map instance. */
-        QMap<VBoxUpdateData::BranchType, QAbstractButton*>  m_mapRadioButtons;
+        QMap<KUpdateChannel, QAbstractButton*>  m_mapRadioButtons;
     /** @} */
 };
 

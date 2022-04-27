@@ -57,8 +57,8 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
             {
                 if (m_pComboUpdatePeriod)
                     m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.periodIndex());
-                if (m_mapRadioButtons.value(m_guiValue.branchIndex()))
-                    m_mapRadioButtons.value(m_guiValue.branchIndex())->setChecked(true);
+                if (m_mapRadioButtons.value(m_guiValue.updateChannel()))
+                    m_mapRadioButtons.value(m_guiValue.updateChannel())->setChecked(true);
             }
 
             sltHandleUpdateToggle(m_pCheckBox->isChecked());
@@ -68,7 +68,7 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
 
 VBoxUpdateData UIUpdateSettingsEditor::value() const
 {
-    return m_pCheckBox ? VBoxUpdateData(periodType(), branchType()) : m_guiValue;
+    return m_pCheckBox ? VBoxUpdateData(periodType(), updateChannel()) : m_guiValue;
 }
 
 void UIUpdateSettingsEditor::retranslateUi()
@@ -99,24 +99,24 @@ void UIUpdateSettingsEditor::retranslateUi()
         m_pLabelUpdateFilter->setText(tr("Check for:"));
 
     /* Translate branch widgets: */
-    if (m_mapRadioButtons.value(VBoxUpdateData::BranchStable))
+    if (m_mapRadioButtons.value(KUpdateChannel_Stable))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setToolTip(tr("When chosen, you will be notified "
-                                                                             "about stable updates to VirtualBox."));
-        m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setText(tr("&Stable Release Versions"));
+        m_mapRadioButtons.value(KUpdateChannel_Stable)->setText(tr("&Stable Release Versions"));
+        m_mapRadioButtons.value(KUpdateChannel_Stable)->setToolTip(tr("When chosen, you will be notified "
+                                                                      "about stable updates to VirtualBox."));
     }
-    if (m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease))
+    if (m_mapRadioButtons.value(KUpdateChannel_All))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease)->setToolTip(tr("When chosen, you will be notified "
-                                                                                 "about all new VirtualBox releases."));
-        m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease)->setText(tr("&All New Releases"));
+        m_mapRadioButtons.value(KUpdateChannel_All)->setText(tr("&All New Releases"));
+        m_mapRadioButtons.value(KUpdateChannel_All)->setToolTip(tr("When chosen, you will be notified "
+                                                                   "about all new VirtualBox releases."));
     }
-    if (m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas))
+    if (m_mapRadioButtons.value(KUpdateChannel_WithBetas))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas)->setToolTip(tr("When chosen, you will be notified "
-                                                                                "about all new VirtualBox releases and "
-                                                                                "pre-release versions of VirtualBox."));
-        m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas)->setText(tr("All New Releases and &Pre-Releases"));
+        m_mapRadioButtons.value(KUpdateChannel_WithBetas)->setText(tr("All New Releases and &Pre-Releases"));
+        m_mapRadioButtons.value(KUpdateChannel_WithBetas)->setToolTip(tr("When chosen, you will be notified "
+                                                                         "about all new VirtualBox releases and "
+                                                                         "pre-release versions of VirtualBox."));
     }
 }
 
@@ -133,14 +133,14 @@ void UIUpdateSettingsEditor::sltHandleUpdateToggle(bool fEnabled)
     if (   fEnabled
         && m_pRadioButtonGroup
         && !m_pRadioButtonGroup->checkedButton()
-        && m_mapRadioButtons.value(VBoxUpdateData::BranchStable))
-        m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setChecked(true);
+        && m_mapRadioButtons.value(KUpdateChannel_Stable))
+        m_mapRadioButtons.value(KUpdateChannel_Stable)->setChecked(true);
 }
 
 void UIUpdateSettingsEditor::sltHandleUpdatePeriodChange()
 {
     if (m_pFieldUpdateDate)
-        m_pFieldUpdateDate->setText(VBoxUpdateData(periodType(), branchType()).date());
+        m_pFieldUpdateDate->setText(VBoxUpdateData(periodType(), updateChannel()).date());
 }
 
 void UIUpdateSettingsEditor::prepare()
@@ -227,25 +227,25 @@ void UIUpdateSettingsEditor::prepareWidgets()
                 if (m_pRadioButtonGroup)
                 {
                     /* Prepare 'update to "stable"' radio-button: */
-                    m_mapRadioButtons[VBoxUpdateData::BranchStable] = new QRadioButton(m_pWidgetUpdateSettings);
-                    if (m_mapRadioButtons.value(VBoxUpdateData::BranchStable))
+                    m_mapRadioButtons[KUpdateChannel_Stable] = new QRadioButton(m_pWidgetUpdateSettings);
+                    if (m_mapRadioButtons.value(KUpdateChannel_Stable))
                     {
-                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(VBoxUpdateData::BranchStable));
-                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(VBoxUpdateData::BranchStable), 2, 1);
+                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_Stable));
+                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_Stable), 2, 1);
                     }
                     /* Prepare 'update to "all release"' radio-button: */
-                    m_mapRadioButtons[VBoxUpdateData::BranchAllRelease] = new QRadioButton(m_pWidgetUpdateSettings);
-                    if (m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease))
+                    m_mapRadioButtons[KUpdateChannel_All] = new QRadioButton(m_pWidgetUpdateSettings);
+                    if (m_mapRadioButtons.value(KUpdateChannel_All))
                     {
-                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease));
-                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease), 3, 1);
+                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_All));
+                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_All), 3, 1);
                     }
                     /* Prepare 'update to "with betas"' radio-button: */
-                    m_mapRadioButtons[VBoxUpdateData::BranchWithBetas] = new QRadioButton(m_pWidgetUpdateSettings);
-                    if (m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas))
+                    m_mapRadioButtons[KUpdateChannel_WithBetas] = new QRadioButton(m_pWidgetUpdateSettings);
+                    if (m_mapRadioButtons.value(KUpdateChannel_WithBetas))
                     {
-                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas));
-                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas), 4, 1);
+                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_WithBetas));
+                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_WithBetas), 4, 1);
                     }
                 }
             }
@@ -272,8 +272,8 @@ VBoxUpdateData::PeriodType UIUpdateSettingsEditor::periodType() const
     return enmResult == VBoxUpdateData::PeriodUndefined ? VBoxUpdateData::Period1Day : enmResult;
 }
 
-VBoxUpdateData::BranchType UIUpdateSettingsEditor::branchType() const
+KUpdateChannel UIUpdateSettingsEditor::updateChannel() const
 {
     QAbstractButton *pCheckedButton = m_pRadioButtonGroup ? m_pRadioButtonGroup->checkedButton() : 0;
-    return pCheckedButton ? m_mapRadioButtons.key(pCheckedButton, VBoxUpdateData::BranchStable) : VBoxUpdateData::BranchStable;
+    return m_mapRadioButtons.key(pCheckedButton, KUpdateChannel_Stable);
 }

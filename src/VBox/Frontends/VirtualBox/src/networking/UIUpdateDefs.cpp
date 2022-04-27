@@ -67,15 +67,15 @@ QStringList VBoxUpdateData::list()
 VBoxUpdateData::VBoxUpdateData(const QString &strData)
     : m_strData(strData)
     , m_enmPeriodIndex(Period1Day)
-    , m_enmBranchIndex(BranchStable)
+    , m_enmUpdateChannel(KUpdateChannel_Stable)
 {
     decode();
 }
 
-VBoxUpdateData::VBoxUpdateData(PeriodType enmPeriodIndex, BranchType enmBranchIndex)
+VBoxUpdateData::VBoxUpdateData(PeriodType enmPeriodIndex, KUpdateChannel enmUpdateChannel)
     : m_strData(QString())
     , m_enmPeriodIndex(enmPeriodIndex)
-    , m_enmBranchIndex(enmBranchIndex)
+    , m_enmUpdateChannel(enmUpdateChannel)
 {
     encode();
 }
@@ -125,23 +125,14 @@ QDate VBoxUpdateData::internalDate() const
     return m_date;
 }
 
-VBoxUpdateData::BranchType VBoxUpdateData::branchIndex() const
+KUpdateChannel VBoxUpdateData::updateChannel() const
 {
-    return m_enmBranchIndex;
+    return m_enmUpdateChannel;
 }
 
-QString VBoxUpdateData::branchName() const
+QString VBoxUpdateData::updateChannelName() const
 {
-    switch (m_enmBranchIndex)
-    {
-        case BranchStable:
-            return "stable";
-        case BranchAllRelease:
-            return "allrelease";
-        case BranchWithBetas:
-            return "withbetas";
-    }
-    return QString();
+    return updateChannelToInternalString(m_enmUpdateChannel);
 }
 
 UIVersion VBoxUpdateData::version() const
@@ -155,7 +146,7 @@ bool VBoxUpdateData::isEqual(const VBoxUpdateData &another) const
            && (m_strData == another.data())
            && (m_enmPeriodIndex == another.periodIndex())
            && (m_date == another.internalDate())
-           && (m_enmBranchIndex == another.branchIndex())
+           && (m_enmUpdateChannel == another.updateChannel())
            && (m_version == another.version())
               ;
 }
@@ -170,6 +161,28 @@ bool VBoxUpdateData::operator!=(const VBoxUpdateData &another) const
     return !isEqual(another);
 }
 
+/* static */
+QString VBoxUpdateData::updateChannelToInternalString(KUpdateChannel enmUpdateChannel)
+{
+    switch (enmUpdateChannel)
+    {
+        case KUpdateChannel_WithTesting: return "withtesting";
+        case KUpdateChannel_WithBetas: return "withbetas";
+        case KUpdateChannel_All: return "allrelease";
+        default: return "stable";
+    }
+}
+
+/* static */
+KUpdateChannel VBoxUpdateData::updateChannelFromInternalString(const QString &strUpdateChannel)
+{
+    QMap<QString, KUpdateChannel> pairs;
+    pairs["withtesting"] = KUpdateChannel_WithTesting;
+    pairs["withbetas"] = KUpdateChannel_WithBetas;
+    pairs["allrelease"] = KUpdateChannel_All;
+    return pairs.value(strUpdateChannel, KUpdateChannel_Stable);
+}
+
 void VBoxUpdateData::decode()
 {
     /* Parse standard values: */
@@ -179,9 +192,9 @@ void VBoxUpdateData::decode()
     else
     {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        QStringList parser(m_strData.split(", ", Qt::SkipEmptyParts));
+        QStringList parser = m_strData.split(", ", Qt::SkipEmptyParts);
 #else
-        QStringList parser(m_strData.split(", ", QString::SkipEmptyParts));
+        QStringList parser = m_strData.split(", ", QString::SkipEmptyParts);
 #endif
 
         /* Parse 'period' value: */
@@ -189,29 +202,27 @@ void VBoxUpdateData::decode()
         {
             if (m_dayList.isEmpty())
                 populate();
-            PeriodType index = (PeriodType)m_dayList.indexOf(VBoxUpdateDay(QString(), parser[0]));
+            PeriodType index = (PeriodType)m_dayList.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
             m_enmPeriodIndex = index == PeriodUndefined ? Period1Day : index;
         }
 
         /* Parse 'date' value: */
         if (parser.size() > 1)
         {
-            QDate date = QDate::fromString(parser[1], Qt::ISODate);
+            QDate date = QDate::fromString(parser.at(1), Qt::ISODate);
             m_date = date.isValid() ? date : QDate::currentDate();
         }
 
-        /* Parse 'branch' value: */
+        /* Parse 'update channel' value: */
         if (parser.size() > 2)
         {
-            QString branch(parser[2]);
-            m_enmBranchIndex = branch == "withbetas" ? BranchWithBetas :
-                            branch == "allrelease" ? BranchAllRelease : BranchStable;
+            m_enmUpdateChannel = updateChannelFromInternalString(parser.at(2));
         }
 
         /* Parse 'version' value: */
         if (parser.size() > 3)
         {
-            m_version = UIVersion(parser[3]);
+            m_version = UIVersion(parser.at(3));
         }
     }
 }
@@ -240,15 +251,14 @@ void VBoxUpdateData::encode()
             m_date = m_date.addMonths(parser[0].toInt());
         QString remindDate = m_date.toString(Qt::ISODate);
 
-        /* Encode 'branch' value: */
-        QString branchValue = m_enmBranchIndex == BranchWithBetas ? "withbetas" :
-                              m_enmBranchIndex == BranchAllRelease ? "allrelease" : "stable";
+        /* Encode 'update channel' value: */
+        QString strUpdateChannel = updateChannelName();
 
         /* Encode 'version' value: */
         QString versionValue = UIVersion(uiCommon().vboxVersionStringNormalized()).toString();
 
         /* Composite m_strData: */
-        m_strData = QString("%1, %2, %3, %4").arg(remindPeriod, remindDate, branchValue, versionValue);
+        m_strData = QString("%1, %2, %3, %4").arg(remindPeriod, remindDate, strUpdateChannel, versionValue);
     }
 }
 

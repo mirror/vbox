@@ -28,6 +28,9 @@
 #include "UILibraryDefs.h"
 #include "UIVersion.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 
 /** Structure to store retranslated reminder values. */
 struct VBoxUpdateDay
@@ -65,14 +68,6 @@ public:
         Period1Month    =  9
     };
 
-    /** Branch types. */
-    enum BranchType
-    {
-        BranchStable     = 0,
-        BranchAllRelease = 1,
-        BranchWithBetas  = 2
-    };
-
     /** Populates a set of update options. */
     static void populate();
     /** Returns a list of update options. */
@@ -80,8 +75,8 @@ public:
 
     /** Constructs update description on the basis of passed @a strData. */
     VBoxUpdateData(const QString &strData = QString());
-    /** Constructs update description on the basis of passed @a enmPeriodIndex and @a enmBranchIndex. */
-    VBoxUpdateData(PeriodType enmPeriodIndex, BranchType enmBranchIndex);
+    /** Constructs update description on the basis of passed @a enmPeriodIndex and @a enmUpdateChannel. */
+    VBoxUpdateData(PeriodType enmPeriodIndex, KUpdateChannel enmUpdateChannel);
 
     /** Returns whether there is no need to check. */
     bool isNoNeedToCheck() const;
@@ -95,10 +90,10 @@ public:
     QString date() const;
     /** Returns internal update date. */
     QDate internalDate() const;
-    /** Returns branch index. */
-    BranchType branchIndex() const;
-    /** Returns period name. */
-    QString branchName() const;
+    /** Returns update channel. */
+    KUpdateChannel updateChannel() const;
+    /** Returns update channel name. */
+    QString updateChannelName() const;
     /** Returns version. */
     UIVersion version() const;
 
@@ -108,6 +103,15 @@ public:
     bool operator==(const VBoxUpdateData &another) const;
     /** Returns whether this item isn't equal to @a another one. */
     bool operator!=(const VBoxUpdateData &another) const;
+
+    /** Converts passed @a enmUpdateChannel to internal QString value.
+      * @note This isn't a member of UIConverter since it's used for
+      *       legacy extra-data settings saving routine only. */
+    static QString updateChannelToInternalString(KUpdateChannel enmUpdateChannel);
+    /** Converts passed @a strUpdateChannel to KUpdateChannel value.
+      * @note This isn't a member of UIConverter since it's used for
+      *       legacy extra-data settings saving routine only. */
+    static KUpdateChannel updateChannelFromInternalString(const QString &strUpdateChannel);
 
 private:
 
@@ -120,15 +124,15 @@ private:
     static VBoxUpdateDayList m_dayList;
 
     /** Holds the update data. */
-    QString     m_strData;
+    QString         m_strData;
     /** Holds the update period index. */
-    PeriodType  m_enmPeriodIndex;
+    PeriodType      m_enmPeriodIndex;
     /** Holds the update date. */
-    QDate       m_date;
-    /** Holds the update branch index. */
-    BranchType  m_enmBranchIndex;
+    QDate           m_date;
+    /** Holds the update channel. */
+    KUpdateChannel  m_enmUpdateChannel;
     /** Holds the update version. */
-    UIVersion   m_version;
+    UIVersion       m_version;
 };
 
 

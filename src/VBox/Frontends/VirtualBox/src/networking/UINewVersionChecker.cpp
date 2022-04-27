@@ -64,7 +64,7 @@ void UINewVersionChecker::start()
                                                     .arg(uiCommon().virtualBox().GetRevision()));
     }
     url.addQueryItem("count", QString::number(gEDataManager->applicationUpdateCheckCounter()));
-    url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).branchName());
+    url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).updateChannelName());
     const QString strUserAgent(QString("VirtualBox %1 <%2>").arg(uiCommon().virtualBox().GetVersion()).arg(platformInfo()));
 
     /* Send GET request: */
