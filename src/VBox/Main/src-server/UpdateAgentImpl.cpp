@@ -722,7 +722,7 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
 }
 
 /**
- * Reports an error by setting the error info and also information subscribed listeners.
+ * Reports an error by setting the error info and also informs subscribed listeners.
  *
  * @returns HRESULT
  * @param   vrc                 Result code (IPRT-style) to report.
@@ -731,23 +731,26 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
  */
 HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
 {
+    AssertReturn(pcszMsgFmt && *pcszMsgFmt != '\0', E_INVALIDARG);
+
     va_list va;
     va_start(va, pcszMsgFmt);
 
-    char *psz = NULL;
-    if (RTStrAPrintfV(&psz, pcszMsgFmt, va) <= 0)
-     return E_OUTOFMEMORY;
-
-    LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), psz));
-
-    ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
-
-    HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, psz);
+    Utf8Str strMsg;
+    HRESULT const rc = strMsg.printfVNoThrow(pcszMsgFmt, va);
+    if (FAILED(rc))
+    {
+        va_end(va);
+        return rc;
+    }
 
     va_end(va);
-    RTStrFree(psz);
 
-    return rc;
+    LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), strMsg.c_str()));
+
+    ::FireUpdateAgentErrorEvent(m_EventSource, strMsg.c_str(), vrc);
+
+    return setErrorBoth(VERR_COM_IPRT_ERROR, vrc, strMsg.c_str());
 }
 
 
