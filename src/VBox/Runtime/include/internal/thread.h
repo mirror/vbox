@@ -46,8 +46,6 @@
 RT_C_DECLS_BEGIN
 
 
-/** Max thread name length. */
-#define RTTHREAD_NAME_LEN       16
 #ifdef IPRT_WITH_GENERIC_TLS
 /** The number of TLS entries for the generic implementation. */
 # define RTTHREAD_TLS_ENTRIES   64
