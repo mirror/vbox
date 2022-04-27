@@ -49,6 +49,7 @@
 
 #include <VBox/com/Guid.h>
 #include <VBox/com/string.h>
+#include <VBox/VBoxCryptoIf.h>
 
 #include <list>
 #include <map>
@@ -617,6 +618,8 @@ struct NvramSettings
     bool operator==(const NvramSettings &d) const;
 
     com::Utf8Str    strNvramPath;
+    com::Utf8Str    strKeyId;
+    com::Utf8Str    strKeyStore;
 };
 
 /** List for keeping a recording feature list. */
@@ -1367,8 +1370,17 @@ class MachineConfigFile : public ConfigFileBase
 public:
     com::Guid               uuid;
 
+    enum
+    {
+        ParseState_NotParsed,
+        ParseState_PasswordError,
+        ParseState_Parsed
+    }                       enmParseState;
+
     MachineUserData         machineUserData;
 
+    com::Utf8Str            strStateKeyId;
+    com::Utf8Str            strStateKeyStore;
     com::Utf8Str            strStateFile;
     bool                    fCurrentStateModified;      // optional, default is true
     RTTIMESPEC              timeLastStateChange;        // optional, defaults to now
@@ -1385,7 +1397,14 @@ public:
 
     SnapshotsList           llFirstSnapshot;            // first snapshot or empty list if there's none
 
-    MachineConfigFile(const com::Utf8Str *pstrFilename);
+    com::Utf8Str            strKeyId;
+    com::Utf8Str            strKeyStore;                // if not empty, the encryption is used
+    com::Utf8Str            strLogKeyId;
+    com::Utf8Str            strLogKeyStore;
+
+    MachineConfigFile(const com::Utf8Str *pstrFilename,
+                      PCVBOXCRYPTOIF pCryptoIf = NULL,
+                      const char *pszPassword = NULL);
 
     bool operator==(const MachineConfigFile &m) const;
 
@@ -1393,7 +1412,7 @@ public:
 
     void importMachineXML(const xml::ElementNode &elmMachine);
 
-    void write(const com::Utf8Str &strFilename);
+    void write(const com::Utf8Str &strFilename, PCVBOXCRYPTOIF pCryptoIf = NULL, const char *pszPassword = NULL);
 
     enum
     {
@@ -1403,6 +1422,8 @@ public:
         BuildMachineXML_MediaRegistry = 0x08,
         BuildMachineXML_SuppressSavedState = 0x10
     };
+
+    void copyEncryptionSettingsFrom(const MachineConfigFile &other);
     void buildMachineXML(xml::ElementNode &elmMachine,
                          uint32_t fl,
                          std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
@@ -1431,6 +1452,7 @@ private:
     bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
+    void readMachineEncrypted(const xml::ElementNode &elmMachine, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword);
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, uint32_t fl, std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildNetworkXML(NetworkAttachmentType_T mode, bool fEnabled, xml::ElementNode &elmParent, const NetworkAdapter &nic);
@@ -1442,6 +1464,12 @@ private:
     void buildAutostartXML(xml::ElementNode &elmParent, const Autostart &autostrt);
     void buildGroupsXML(xml::ElementNode &elmParent, const StringsList &llGroups);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
+
+    void buildMachineEncryptedXML(xml::ElementNode &elmMachine,
+                                  uint32_t fl,
+                                  std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
+                                  PCVBOXCRYPTOIF pCryptoIf,
+                                  const char *pszPassword);
 
     void bumpSettingsVersionIfNeeded();
 };

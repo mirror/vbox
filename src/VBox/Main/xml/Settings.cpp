@@ -3025,7 +3025,9 @@ NvramSettings::NvramSettings()
  */
 bool NvramSettings::areDefaultSettings() const
 {
-    return strNvramPath.isEmpty();
+    return     strNvramPath.isEmpty()
+            && strKeyId.isEmpty()
+            && strKeyStore.isEmpty();
 }
 
 /**
@@ -3036,7 +3038,9 @@ bool NvramSettings::areDefaultSettings() const
 bool NvramSettings::operator==(const NvramSettings &g) const
 {
     return (this == &g)
-        || (strNvramPath    == g.strNvramPath);
+        || (strNvramPath    == g.strNvramPath)
+        || (strKeyId        == g.strKeyId)
+        || (strKeyStore     == g.strKeyStore);
 }
 
 
@@ -3993,9 +3997,12 @@ bool MachineUserData::operator==(const MachineUserData &c) const
  * variables contain meaningful values (either from the file or defaults).
  *
  * @param pstrFilename
+ * @param pCryptoIf             Pointer to the cryptographic interface, required for an encrypted machine config.
+ * @param pszPassword           The password to use for an encrypted machine config.
  */
-MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
+MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword)
     : ConfigFileBase(pstrFilename),
+      enmParseState(ParseState_NotParsed),
       fCurrentStateModified(true),
       fAborted(false)
 {
@@ -4010,12 +4017,17 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
         const xml::ElementNode *pelmRootChild;
         while ((pelmRootChild = nlRootChildren.forAllNodes()))
         {
+            if (pelmRootChild->nameEquals("MachineEncrypted"))
+                readMachineEncrypted(*pelmRootChild, pCryptoIf, pszPassword);
             if (pelmRootChild->nameEquals("Machine"))
                 readMachine(*pelmRootChild);
         }
 
         // clean up memory allocated by XML engine
         clearDocument();
+
+        if (enmParseState == ParseState_NotParsed)
+            enmParseState = ParseState_Parsed;
     }
 }
 
@@ -4028,6 +4040,18 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
 bool MachineConfigFile::canHaveOwnMediaRegistry() const
 {
     return (m->sv >= SettingsVersion_v1_11);
+}
+
+/**
+ * Public routine which copies encryption settings. Used by Machine::saveSettings
+ * so that the encryption settings do not get lost when a copy of the Machine settings
+ * file is made to see if settings have actually changed.
+ * @param other
+ */
+void MachineConfigFile::copyEncryptionSettingsFrom(const MachineConfigFile &other)
+{
+    strKeyId    = other.strKeyId;
+    strKeyStore = other.strKeyStore;
 }
 
 /**
@@ -4088,7 +4112,13 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
             && hardwareMachine            == c.hardwareMachine      // this one's deep
             && mediaRegistry              == c.mediaRegistry        // this one's deep
             // skip mapExtraDataItems! there is no old state available as it's always forced
-            && llFirstSnapshot            == c.llFirstSnapshot);    // this one's deep
+            && llFirstSnapshot            == c.llFirstSnapshot     // this one's deep
+            && strKeyId                   == c.strKeyId
+            && strKeyStore                == c.strKeyStore
+            && strStateKeyId              == c.strStateKeyId
+            && strStateKeyStore           == c.strStateKeyStore
+            && strLogKeyId                == c.strLogKeyId
+            && strLogKeyStore             == c.strLogKeyStore);
 }
 
 /**
@@ -5168,7 +5198,14 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
                 pelmBIOSChild->getAttributeValue("value", hw.biosSettings.llTimeOffset);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("NVRAM")))
+            {
                 pelmBIOSChild->getAttributeValue("path", hw.nvramSettings.strNvramPath);
+                if (m->sv >= SettingsVersion_v1_19)
+                {
+                    pelmBIOSChild->getAttributeValue("keyId", hw.nvramSettings.strKeyId);
+                    pelmBIOSChild->getAttributeValue("keyStore", hw.nvramSettings.strKeyStore);
+                }
+            }
             if ((pelmBIOSChild = pelmHwChild->findChildElement("SmbiosUuidLittleEndian")))
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
             else
@@ -6097,7 +6134,12 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         if (m->sv < SettingsVersion_v1_5)
             convertOldOSType_pre1_5(machineUserData.strOsType);
 
+        elmMachine.getAttributeValue("stateKeyId", strStateKeyId);
+        elmMachine.getAttributeValue("stateKeyStore", strStateKeyStore);
         elmMachine.getAttributeValuePath("stateFile", strStateFile);
+
+        elmMachine.getAttributeValue("strLogKeyId", strLogKeyId);
+        elmMachine.getAttributeValue("strLogKeyStore", strLogKeyStore);
 
         if (elmMachine.getAttributeValue("currentSnapshot", str))
             parseUUID(uuidCurrentSnapshot, str, &elmMachine);
@@ -6189,6 +6231,83 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
     }
     else
         throw ConfigFileError(this, &elmMachine, N_("Required Machine/@uuid or @name attributes is missing"));
+}
+
+/**
+ * Called from the constructor to decrypt the machine config and read
+ * data from it.
+ * @param elmMachine
+ */
+void MachineConfigFile::readMachineEncrypted(const xml::ElementNode &elmMachine,
+                                             PCVBOXCRYPTOIF pCryptoIf = NULL,
+                                             const char *pszPassword = NULL)
+{
+    Utf8Str strUUID;
+    if (elmMachine.getAttributeValue("uuid", strUUID))
+    {
+        parseUUID(uuid, strUUID, &elmMachine);
+        if (!elmMachine.getAttributeValue("keyId", strKeyId))
+            throw ConfigFileError(this, &elmMachine, N_("Required MachineEncrypted/@keyId attribute is missing"));
+        if (!elmMachine.getAttributeValue("keyStore", strKeyStore))
+            throw ConfigFileError(this, &elmMachine, N_("Required MachineEncrypted/@keyStore attribute is missing"));
+
+        if (!pszPassword)
+        {
+            enmParseState = ParseState_PasswordError;
+            return;
+        }
+
+        VBOXCRYPTOCTX hCryptoCtx = NULL;
+        int rc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
+        if (RT_SUCCESS(rc))
+        {
+            com::Utf8Str str = elmMachine.getValue();
+            IconBlob abEncrypted; /** @todo Rename IconBlob because this is not about icons. */
+            /** @todo This is not nice. */
+            try
+            {
+                parseBase64(abEncrypted, str, &elmMachine);
+            }
+            catch(...)
+            {
+                int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+                AssertRC(rc2);
+                throw;
+            }
+
+            IconBlob abDecrypted(abEncrypted.size());
+            size_t cbDecrypted = 0;
+            rc = pCryptoIf->pfnCryptoCtxDecrypt(hCryptoCtx, false /*fPartial*/,
+                                                &abEncrypted[0], abEncrypted.size(),
+                                                uuid.raw(), sizeof(RTUUID),
+                                                &abDecrypted[0], abDecrypted.size(), &cbDecrypted);
+            int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+            AssertRC(rc2);
+
+            if (RT_SUCCESS(rc))
+            {
+                abDecrypted.resize(cbDecrypted);
+                xml::XmlMemParser parser;
+                xml::Document *pDoc = new xml::Document;
+                parser.read(&abDecrypted[0], abDecrypted.size(), m->strFilename, *pDoc);
+                xml::ElementNode *pelmRoot = pDoc->getRootElement();
+                if (!pelmRoot || !pelmRoot->nameEquals("Machine"))
+                    throw ConfigFileError(this, pelmRoot, N_("Root element in Machine settings encrypted block must be \"Machine\""));
+                readMachine(*pelmRoot);
+                delete pDoc;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_ACCESS_DENIED)
+                enmParseState = ParseState_PasswordError;
+            else
+                throw ConfigFileError(this, &elmMachine, N_("Parsing config failed. (%Rrc)"), rc);
+        }
+    }
+    else
+        throw ConfigFileError(this, &elmMachine, N_("Required MachineEncrypted/@uuid attribute is missing"));
 }
 
 /**
@@ -6663,7 +6782,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (!hw.biosSettings.areDefaultSettings())
+    if (!hw.biosSettings.areDefaultSettings() || !hw.nvramSettings.areDefaultSettings())
     {
         xml::ElementNode *pelmBIOS = pelmHardware->createChild("BIOS");
         if (!hw.biosSettings.fACPIEnabled)
@@ -6717,8 +6836,19 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmBIOS->createChild("TimeOffset")->setAttribute("value", hw.biosSettings.llTimeOffset);
         if (hw.biosSettings.fPXEDebugEnabled)
             pelmBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.biosSettings.fPXEDebugEnabled);
-        if (!hw.nvramSettings.strNvramPath.isEmpty())
-            pelmBIOS->createChild("NVRAM")->setAttribute("path", hw.nvramSettings.strNvramPath);
+        if (!hw.nvramSettings.areDefaultSettings())
+        {
+            xml::ElementNode *pelmNvram = pelmBIOS->createChild("NVRAM");
+            if (!hw.nvramSettings.strNvramPath.isEmpty())
+                pelmNvram->setAttribute("path", hw.nvramSettings.strNvramPath);
+            if (m->sv >= SettingsVersion_v1_9)
+            {
+                if (hw.nvramSettings.strKeyId.isNotEmpty())
+                    pelmNvram->setAttribute("keyId", hw.nvramSettings.strKeyId);
+                if (hw.nvramSettings.strKeyStore.isNotEmpty())
+                    pelmNvram->setAttribute("keyStore", hw.nvramSettings.strKeyStore);
+            }
+        }
         if (hw.biosSettings.fSmbiosUuidLittleEndian)
             pelmBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
     }
@@ -7900,6 +8030,19 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
     elmMachine.setAttribute("OSType", machineUserData.strOsType);
+
+
+    if (m->sv >= SettingsVersion_v1_19)
+    {
+        if (strStateKeyId.length())
+            elmMachine.setAttribute("stateKeyId", strStateKeyId);
+        if (strStateKeyStore.length())
+            elmMachine.setAttribute("stateKeyStore", strStateKeyStore);
+        if (strLogKeyId.length())
+            elmMachine.setAttribute("strLogKeyId", strLogKeyId);
+        if (strLogKeyStore.length())
+            elmMachine.setAttribute("strLogKeyStore", strLogKeyStore);
+    }
     if (    strStateFile.length()
          && !(fl & BuildMachineXML_SuppressSavedState)
        )
@@ -7973,6 +8116,90 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     buildDebuggingXML(elmMachine, debugging);
     buildAutostartXML(elmMachine, autostart);
     buildGroupsXML(elmMachine, machineUserData.llGroups);
+}
+
+ /**
+ * Builds encrypted config.
+ *
+ * @sa MachineConfigFile::buildMachineXML
+ */
+void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
+                                                 uint32_t fl,
+                                                 std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
+                                                 PCVBOXCRYPTOIF pCryptoIf,
+                                                 const char *pszPassword = NULL)
+{
+    if (   !pszPassword
+        || !pCryptoIf)
+        throw ConfigFileError(this, &elmMachine, N_("Password is required"));
+
+    xml::Document *pDoc = new xml::Document;
+    xml::ElementNode *pelmRoot = pDoc->createRootElement("Machine");
+    pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
+    // Have the code for producing a proper schema reference. Not used by most
+    // tools, so don't bother doing it. The schema is not on the server anyway.
+#ifdef VBOX_WITH_SETTINGS_SCHEMA
+    pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    pelmRoot->setAttribute("xsi:schemaLocation", VBOX_XML_NAMESPACE " " VBOX_XML_SCHEMA);
+#endif
+
+    buildMachineXML(*pelmRoot, fl, pllElementsWithUuidAttributes);
+    xml::XmlStringWriter writer;
+    com::Utf8Str strMachineXml;
+    int rc = writer.write(*pDoc, &strMachineXml);
+    delete pDoc;
+    if (RT_SUCCESS(rc))
+    {
+        VBOXCRYPTOCTX hCryptoCtx;
+        if (strKeyStore.isEmpty())
+        {
+            rc = pCryptoIf->pfnCryptoCtxCreate("AES-GCM256", pszPassword, &hCryptoCtx);
+            if (RT_SUCCESS(rc))
+            {
+                char *pszNewKeyStore;
+                rc = pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszNewKeyStore);
+                if (RT_SUCCESS(rc))
+                {
+                    strKeyStore = pszNewKeyStore;
+                    RTStrFree(pszNewKeyStore);
+                }
+                else
+                    pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+            }
+        }
+        else
+            rc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
+        if (RT_SUCCESS(rc))
+        {
+            IconBlob abEncrypted;
+            size_t cbEncrypted = 0;
+            rc = pCryptoIf->pfnCryptoCtxQueryEncryptedSize(hCryptoCtx, strMachineXml.length(), &cbEncrypted);
+            if (RT_SUCCESS(rc))
+            {
+                abEncrypted.resize(cbEncrypted);
+                rc = pCryptoIf->pfnCryptoCtxEncrypt(hCryptoCtx, false /*fPartial*/, NULL /*pvIV*/, 0 /*cbIV*/,
+                                                    strMachineXml.c_str(), strMachineXml.length(),
+                                                    uuid.raw(), sizeof(RTUUID),
+                                                    &abEncrypted[0], abEncrypted.size(), &cbEncrypted);
+                int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+                AssertRC(rc2);
+                if (RT_SUCCESS(rc))
+                {
+                    abEncrypted.resize(cbEncrypted);
+                    toBase64(strMachineXml, abEncrypted);
+                    elmMachine.setAttribute("uuid", uuid.toStringCurly());
+                    elmMachine.setAttribute("keyId", strKeyId);
+                    elmMachine.setAttribute("keyStore", strKeyStore);
+                    elmMachine.setContent(strMachineXml.c_str());
+                }
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            throw ConfigFileError(this, &elmMachine, N_("Creating machine encrypted xml failed. (%Rrc)"), rc);
+    }
+    else
+        throw ConfigFileError(this, &elmMachine, N_("Creating machine xml failed. (%Rrc)"), rc);
 }
 
 /**
@@ -8079,8 +8306,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_19)
     {
-        // VirtualBox 7.0 adds iommu device.
-        if (hardwareMachine.iommuType != IommuType_None)
+        // VirtualBox 7.0 adds iommu device and full VM encryption.
+        if (   hardwareMachine.iommuType != IommuType_None
+            || strKeyId.isNotEmpty()
+            || strKeyStore.isNotEmpty()
+            || strStateKeyId.isNotEmpty()
+            || strStateKeyStore.isNotEmpty()
+            || hardwareMachine.nvramSettings.strKeyId.isNotEmpty()
+            || hardwareMachine.nvramSettings.strKeyStore.isNotEmpty()
+            || strLogKeyId.isNotEmpty()
+            || strLogKeyStore.isEmpty())
         {
             m->sv = SettingsVersion_v1_19;
             return;
@@ -8741,7 +8976,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
  * the member variables and then writes the XML file; it throws xml::Error instances on errors,
  * in particular if the file cannot be written.
  */
-void MachineConfigFile::write(const com::Utf8Str &strFilename)
+void MachineConfigFile::write(const com::Utf8Str &strFilename, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword)
 {
     try
     {
@@ -8751,15 +8986,34 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         bumpSettingsVersionIfNeeded();
 
         m->strFilename = strFilename;
-        specialBackupIfFirstBump();
+        /*
+         * Only create a backup if it is not encrypted.
+         * Otherwise we get an unencrypted copy of the settings.
+         */
+        if (strKeyId.isEmpty() && strKeyStore.isEmpty())
+            specialBackupIfFirstBump();
         createStubDocument();
 
-        xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
-        buildMachineXML(*pelmMachine,
-                          MachineConfigFile::BuildMachineXML_IncludeSnapshots
-                        | MachineConfigFile::BuildMachineXML_MediaRegistry,
-                            // but not BuildMachineXML_WriteVBoxVersionAttribute
-                        NULL); /* pllElementsWithUuidAttributes */
+        if (strKeyStore.isNotEmpty())
+        {
+            xml::ElementNode *pelmMachine = m->pelmRoot->createChild("MachineEncrypted");
+            buildMachineEncryptedXML(*pelmMachine,
+                                       MachineConfigFile::BuildMachineXML_IncludeSnapshots
+                                     | MachineConfigFile::BuildMachineXML_MediaRegistry,
+                                         // but not BuildMachineXML_WriteVBoxVersionAttribute
+                                     NULL, /* pllElementsWithUuidAttributes */
+                                     pCryptoIf,
+                                     pszPassword);
+        }
+        else
+        {
+            xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
+            buildMachineXML(*pelmMachine,
+                              MachineConfigFile::BuildMachineXML_IncludeSnapshots
+                            | MachineConfigFile::BuildMachineXML_MediaRegistry,
+                                // but not BuildMachineXML_WriteVBoxVersionAttribute
+                            NULL); /* pllElementsWithUuidAttributes */
+        }
 
         // now go write the XML
         xml::XmlFileWriter writer(*m->pDoc);
