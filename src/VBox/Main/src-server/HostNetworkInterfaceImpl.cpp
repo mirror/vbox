@@ -81,7 +81,9 @@ HRESULT HostNetworkInterface::init(Utf8Str aInterfaceName, Utf8Str aShortName, G
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mInterfaceName) = aInterfaceName;
+#ifdef VBOX_WITH_HOSTNETIF_API
     unconst(mNetworkName) = i_composeNetworkName(aShortName);
+#endif
     unconst(mShortName) = aShortName;
     unconst(mGuid) = aGuid;
     mIfType = ifType;
@@ -540,6 +542,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
                                                    const com::Utf8Str &aNetworkMask)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
+    RT_NOREF(aIPAddress, aNetworkMask);
     return E_NOTIMPL;
 #else
     HRESULT hrc;
@@ -630,6 +633,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
                                                      ULONG aIPV6NetworkMaskPrefixLength)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
+    RT_NOREF(aIPV6Address, aIPV6NetworkMaskPrefixLength);
     return E_NOTIMPL;
 #else
     if (aIPV6NetworkMaskPrefixLength > 128)

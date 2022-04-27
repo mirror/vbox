@@ -432,7 +432,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->f3DAccelerationSupported = false;
 #endif
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+#if defined(VBOX_WITH_HOSTNETIF_API) && (defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD))
     /* Extract the list of configured host-only interfaces */
     std::set<Utf8Str> aConfiguredNames;
     SafeArray<BSTR> aGlobalExtraDataKeys;
@@ -466,7 +466,7 @@ HRESULT Host::init(VirtualBox *aParent)
             LogRel(("failed to create %s, error (%Rrc)\n", it->c_str(), vrc));
     }
 
-#endif /* defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) */
+#endif /* defined(VBOX_WITH_HOSTNETIF_API) && (defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)) */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -1522,6 +1522,7 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
 
     return S_OK;
 #else
+    RT_NOREF(aHostInterface, aProgress);
     return E_NOTIMPL;
 #endif
 }
@@ -1583,6 +1584,7 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
 
     return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 #else
+    RT_NOREF(aId, aProgress);
     return E_NOTIMPL;
 #endif
 }
@@ -1752,6 +1754,7 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
                                              ComPtr<IHostNetworkInterface> &aNetworkInterface)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
+    RT_NOREF(aName, aNetworkInterface);
     return E_NOTIMPL;
 #else
     if (!aName.length())
@@ -1795,6 +1798,7 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
                                            ComPtr<IHostNetworkInterface> &aNetworkInterface)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
+    RT_NOREF(aId, aNetworkInterface);
     return E_NOTIMPL;
 #else
     if (!aId.isValid())
@@ -1875,6 +1879,7 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
 
     return S_OK;
 #else
+    RT_NOREF(aType, aNetworkInterfaces);
     return E_NOTIMPL;
 #endif
 }
