@@ -89,6 +89,7 @@ static void vboxExtPackClearDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
     a_pExtPackDesc->strMainModule.setNull();
     a_pExtPackDesc->strMainVMModule.setNull();
     a_pExtPackDesc->strVrdeModule.setNull();
+    a_pExtPackDesc->strCryptoModule.setNull();
     a_pExtPackDesc->cPlugIns = 0;
     a_pExtPackDesc->paPlugIns = NULL;
     a_pExtPackDesc->fShowLicense = false;
@@ -209,6 +210,21 @@ static RTCString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACK
     }
 
     /*
+     * The cryptographic module, optional.
+     * Accept both none and empty as tokens of no cryptographic module.
+     */
+    const char *pszCryptoModule = NULL;
+    const xml::ElementNode *pCryptoModuleElm = pVBoxExtPackElm->findChildElement("CryptoModule");
+    if (pCryptoModuleElm)
+    {
+        pszCryptoModule = pCryptoModuleElm->getValueN(RT_XML_CONTENT_SMALL);
+        if (!pszCryptoModule || *pszCryptoModule == '\0')
+            pszCryptoModule = NULL;
+        else if (!VBoxExtPackIsValidModuleString(pszCryptoModule))
+            return &(new RTCString(ExtPackUtil::tr("Invalid cryptographic module string: ")))->append(pszCryptoModule);
+    }
+
+    /*
      * Whether to show the license, optional. (presense is enough here)
      */
     const xml::ElementNode *pShowLicenseElm = pVBoxExtPackElm->findChildElement("ShowLicense");
@@ -237,6 +253,7 @@ static RTCString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACK
     a_pExtPackDesc->strMainModule   = pszMainModule;
     a_pExtPackDesc->strMainVMModule = pszMainVMModule;
     a_pExtPackDesc->strVrdeModule   = pszVrdeModule;
+    a_pExtPackDesc->strCryptoModule = pszCryptoModule;
     a_pExtPackDesc->cPlugIns        = cPlugIns;
     a_pExtPackDesc->paPlugIns       = paPlugIns;
     a_pExtPackDesc->fShowLicense    = fShowLicense;
@@ -410,6 +427,7 @@ void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
     a_pExtPackDesc->strMainModule.setNull();
     a_pExtPackDesc->strMainVMModule.setNull();
     a_pExtPackDesc->strVrdeModule.setNull();
+    a_pExtPackDesc->strCryptoModule.setNull();
     a_pExtPackDesc->cPlugIns = 0;
     RTMemFree(a_pExtPackDesc->paPlugIns);
     a_pExtPackDesc->paPlugIns = NULL;

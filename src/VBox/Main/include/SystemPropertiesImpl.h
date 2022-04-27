@@ -100,6 +100,8 @@ private:
     HRESULT setWebServiceAuthLibrary(const com::Utf8Str &aWebServiceAuthLibrary) RT_OVERRIDE;
     HRESULT getDefaultVRDEExtPack(com::Utf8Str &aDefaultVRDEExtPack) RT_OVERRIDE;
     HRESULT setDefaultVRDEExtPack(const com::Utf8Str &aDefaultVRDEExtPack) RT_OVERRIDE;
+    HRESULT getDefaultCryptoExtPack(com::Utf8Str &aDefaultCryptoExtPack) RT_OVERRIDE;
+    HRESULT setDefaultCryptoExtPack(const com::Utf8Str &aDefaultCryptoExtPack) RT_OVERRIDE;
     HRESULT getLogHistoryCount(ULONG *aLogHistoryCount) RT_OVERRIDE;
     HRESULT setLogHistoryCount(ULONG aLogHistoryCount) RT_OVERRIDE;
     HRESULT getDefaultAudioDriver(AudioDriverType_T *aDefaultAudioDriver) RT_OVERRIDE;
@@ -184,6 +186,7 @@ private:
 
     HRESULT i_setWebServiceAuthLibrary(const com::Utf8Str &aPath);
     HRESULT i_setDefaultVRDEExtPack(const com::Utf8Str &aExtPack);
+    HRESULT i_setDefaultCryptoExtPack(const com::Utf8Str &aExtPack);
     HRESULT i_setAutostartDatabasePath(const com::Utf8Str &aPath);
     HRESULT i_setDefaultAdditionsISO(const com::Utf8Str &aPath);
     HRESULT i_setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);

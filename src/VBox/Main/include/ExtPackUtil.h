@@ -106,6 +106,8 @@ typedef struct VBOXEXTPACKDESC
     RTCString               strMainVMModule;
     /** The name of the VRDE module, empty if none. */
     RTCString               strVrdeModule;
+    /** The name of the cryptographic module, empty if none. */
+    RTCString               strCryptoModule;
     /** The number of plug-in descriptors. */
     uint32_t                cPlugIns;
     /** Pointer to an array of plug-in descriptors. */

@@ -833,6 +833,8 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("Webservice auth. library:        %ls\n"), str.raw());
     systemProperties->COMGETTER(DefaultVRDEExtPack)(str.asOutParam());
     RTPrintf(List::tr("Remote desktop ExtPack:          %ls\n"), str.raw());
+    systemProperties->COMGETTER(DefaultCryptoExtPack)(str.asOutParam());
+    RTPrintf(List::tr("VM encryption ExtPack:           %ls\n"), str.raw());
     systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
     RTPrintf(List::tr("Log history count:               %u\n"), ulValue);
     systemProperties->COMGETTER(DefaultFrontend)(str.asOutParam());
@@ -1212,6 +1214,8 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &pVirtualBox)
         CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Edition)(bstrEdition.asOutParam()),    hrc = hrcCheck; bstrEdition.setNull());
         Bstr bstrVrdeModule;
         CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam()),hrc=hrcCheck; bstrVrdeModule.setNull());
+        Bstr bstrCryptoModule;
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(CryptoModule)(bstrCryptoModule.asOutParam()),hrc=hrcCheck; bstrCryptoModule.setNull());
         BOOL fUsable;
         CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Usable)(&fUsable),                     hrc = hrcCheck; fUsable = FALSE);
         Bstr bstrWhy;
@@ -1222,19 +1226,21 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &pVirtualBox)
             RTPrintf("\n");
         RTPrintf(List::tr(
                    "Pack no.%2zu:   %ls\n"
-                   "Version:      %ls\n"
-                   "Revision:     %u\n"
-                   "Edition:      %ls\n"
-                   "Description:  %ls\n"
-                   "VRDE Module:  %ls\n"
-                   "Usable:       %RTbool\n"
-                   "Why unusable: %ls\n"),
+                   "Version:        %ls\n"
+                   "Revision:       %u\n"
+                   "Edition:        %ls\n"
+                   "Description:    %ls\n"
+                   "VRDE Module:    %ls\n"
+                   "Crypto Module:  %ls\n"
+                   "Usable:         %RTbool\n"
+                   "Why unusable:   %ls\n"),
                  i, bstrName.raw(),
                  bstrVersion.raw(),
                  uRevision,
                  bstrEdition.raw(),
                  bstrDesc.raw(),
                  bstrVrdeModule.raw(),
+                 bstrCryptoModule.raw(),
                  fUsable != FALSE,
                  bstrWhy.raw());
 

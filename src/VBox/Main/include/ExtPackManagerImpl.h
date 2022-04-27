@@ -66,6 +66,7 @@ private:
     HRESULT getRevision(ULONG *aRevision);
     HRESULT getEdition(com::Utf8Str &aEdition);
     HRESULT getVRDEModule(com::Utf8Str &aVRDEModule);
+    HRESULT getCryptoModule(com::Utf8Str &aCryptoModule);
     HRESULT getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns);
     HRESULT getUsable(BOOL *aUsable);
     HRESULT getWhyUnusable(com::Utf8Str &aWhyUnusable);
@@ -130,9 +131,12 @@ public:
     bool        i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock);
 #endif
     HRESULT     i_checkVrde(void);
+    HRESULT     i_checkCrypto(void);
     HRESULT     i_getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
+    HRESULT     i_getCryptoLibraryName(Utf8Str *a_pstrCryptoLibrary);
     HRESULT     i_getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary);
     bool        i_wantsToBeDefaultVrde(void) const;
+    bool        i_wantsToBeDefaultCrypto(void) const;
     HRESULT     i_refresh(bool *pfCanDelete);
 #ifndef VBOX_COM_INPROC
     bool        i_areThereCloudProviderUninstallVetos();
@@ -199,6 +203,7 @@ private:
     HRESULT getRevision(ULONG *aRevision);
     HRESULT getEdition(com::Utf8Str &aEdition);
     HRESULT getVRDEModule(com::Utf8Str &aVRDEModule);
+    HRESULT getCryptoModule(com::Utf8Str &aCryptoModule);
     HRESULT getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns);
     HRESULT getUsable(BOOL *aUsable);
     HRESULT getWhyUnusable(com::Utf8Str &aWhyUnusable);
@@ -260,8 +265,11 @@ public:
 #endif
     HRESULT     i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
     int         i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
+    HRESULT     i_checkCryptoExtPack(Utf8Str const *a_pstrExtPack);
+    int         i_getCryptoLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
     HRESULT     i_getLibraryPathForExtPack(const char *a_pszModuleName, const char *a_pszExtPack, Utf8Str *a_pstrLibrary);
     HRESULT     i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
+    HRESULT     i_getDefaultCryptoExtPack(Utf8Str *a_pstrExtPack);
     bool        i_isExtPackUsable(const char *a_pszExtPack);
     void        i_dumpAllToReleaseLog(void);
     uint64_t    i_getUpdateCounter(void);

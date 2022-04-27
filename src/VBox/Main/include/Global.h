@@ -57,6 +57,13 @@
  */
 #define VBOXVRDP_KLUDGE_EXTPACK_NAME    "Built-in-VBoxVRDP"
 
+/** The VBoxPuelCrypto kludge extension pack name.
+ *
+ * This is not a valid extension pack name (dashes are not allowed), and
+ * hence will not conflict with real extension packs.
+ */
+#define VBOXPUELCRYPTO_KLUDGE_EXTPACK_NAME    "Built-in-VBoxPuelCrypto"
+
 /**
  * Contains global static definitions that can be referenced by all COM classes
  * regardless of the apartment.

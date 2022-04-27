@@ -2331,6 +2331,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                             pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strVRDEAuthLibrary);
                         pelmGlobalChild->getAttributeValue("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
                         pelmGlobalChild->getAttributeValue("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
+                        pelmGlobalChild->getAttributeValue("defaultCryptoExtPack", systemProperties.strDefaultCryptoExtPack);
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.uLogHistoryCount);
                         pelmGlobalChild->getAttributeValue("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
                         pelmGlobalChild->getAttributeValue("defaultFrontend", systemProperties.strDefaultFrontend);
@@ -2627,6 +2628,8 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
     if (systemProperties.strDefaultVRDEExtPack.length())
         pelmSysProps->setAttribute("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
+    if (systemProperties.strDefaultCryptoExtPack.length())
+        pelmSysProps->setAttribute("defaultCryptoExtPack", systemProperties.strDefaultCryptoExtPack);
     pelmSysProps->setAttribute("LogHistoryCount", systemProperties.uLogHistoryCount);
     if (systemProperties.strAutostartDatabasePath.length())
         pelmSysProps->setAttribute("autostartDatabasePath", systemProperties.strAutostartDatabasePath);

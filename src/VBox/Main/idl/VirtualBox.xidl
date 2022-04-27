@@ -12296,7 +12296,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="e6bf9165-6685-4ebe-96cd-9c1b7ab7f776"
+    uuid="a2a3be3d-664a-47e9-a4c5-add220d4ebb1"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12561,6 +12561,18 @@
 
         For details about VirtualBox Remote Desktop Extension and how to
         implement one, please refer to the VirtualBox SDK.
+      </desc>
+    </attribute>
+
+    <attribute name="defaultCryptoExtPack" type="wstring">
+      <desc>
+        The name of the extension pack providing the default cryptographic support
+        for full VM encryption.
+
+        This attribute is for choosing between multiple extension packs
+        providing cryptographic support. If only one is installed, it will automatically be the
+        default one. The attribute value can be empty if no cryptographic extension
+        pack is installed.
       </desc>
     </attribute>
 
@@ -25156,7 +25168,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackBase" extends="$unknown"
-    uuid="f25aca3d-0b79-4350-bdd9-a0376cd6e6e3"
+    uuid="aa204a12-5b29-45a5-b5d6-c2bafcdb9b0b"
     wsmap="suppress"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -25195,6 +25207,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="VRDEModule" type="wstring" readonly="yes">
       <desc>The name of the VRDE module if the extension pack sports one.</desc>
+    </attribute>
+    <attribute name="CryptoModule" type="wstring" readonly="yes">
+      <desc>
+        The name of the crypto module if the extension pack sports one.
+        This module is required for full VM encryption.
+      </desc>
     </attribute>
     <attribute name="plugIns" type="IExtPackPlugIn" safearray="yes" readonly="yes">
       <desc>Plug-ins provided by this extension pack.</desc>

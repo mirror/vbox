@@ -483,6 +483,12 @@ HRESULT ExtPackFile::getVRDEModule(com::Utf8Str &aVRDEModule)
     return S_OK;
 }
 
+HRESULT ExtPackFile::getCryptoModule(com::Utf8Str &aCryptoModule)
+{
+    aCryptoModule = m->Desc.strCryptoModule;
+    return S_OK;
+}
+
 HRESULT ExtPackFile::getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns)
 {
     /** @todo implement plug-ins. */
@@ -1155,6 +1161,30 @@ HRESULT ExtPack::i_checkVrde(void)
 }
 
 /**
+ * Check if the extension pack is usable and has a cryptographic module.
+ *
+ * @returns S_OK or COM error status with error information.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+HRESULT ExtPack::i_checkCrypto(void)
+{
+    HRESULT hrc;
+    if (   m != NULL
+        && m->fUsable)
+    {
+        if (m->Desc.strCryptoModule.isNotEmpty())
+            hrc = S_OK;
+        else
+            hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a cryptographic module"), m->Desc.strName.c_str());
+    }
+    else
+        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+    return hrc;
+}
+
+/**
  * Same as checkVrde(), except that it also resolves the path to the module.
  *
  * @returns S_OK or COM error status with error information.
@@ -1174,6 +1204,30 @@ HRESULT ExtPack::i_getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
         else
             hrc = setError(E_FAIL, tr("Failed to locate the VRDE module '%s' in extension pack '%s'"),
                            m->Desc.strVrdeModule.c_str(), m->Desc.strName.c_str());
+    }
+    return hrc;
+}
+
+/**
+ * Same as i_checkCrypto(), except that it also resolves the path to the module.
+ *
+ * @returns S_OK or COM error status with error information.
+ * @param   a_pstrCryptoLibrary  Where to return the path on success.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+HRESULT ExtPack::i_getCryptoLibraryName(Utf8Str *a_pstrCryptoLibrary)
+{
+    HRESULT hrc = i_checkCrypto();
+    if (SUCCEEDED(hrc))
+    {
+        if (i_findModule(m->Desc.strCryptoModule.c_str(), NULL, VBOXEXTPACKMODKIND_R3,
+                         a_pstrCryptoLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
+            hrc = S_OK;
+        else
+            hrc = setError(E_FAIL, tr("Failed to locate the cryptographic module '%s' in extension pack '%s'"),
+                           m->Desc.strCryptoModule.c_str(), m->Desc.strName.c_str());
     }
     return hrc;
 }
@@ -1213,6 +1267,21 @@ bool ExtPack::i_wantsToBeDefaultVrde(void) const
 {
     return m->fUsable
         && m->Desc.strVrdeModule.isNotEmpty();
+}
+
+/**
+ * Check if this extension pack wishes to be the default cryptographic provider.
+ *
+ * @returns @c true if it wants to and it is in a usable state, otherwise
+ *          @c false.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+bool ExtPack::i_wantsToBeDefaultCrypto(void) const
+{
+    return m->fUsable
+        && m->Desc.strCryptoModule.isNotEmpty();
 }
 
 /**
@@ -2096,6 +2165,12 @@ HRESULT ExtPack::getEdition(com::Utf8Str &aEdition)
 HRESULT ExtPack::getVRDEModule(com::Utf8Str &aVRDEModule)
 {
     aVRDEModule = m->Desc.strVrdeModule;
+    return S_OK;
+}
+
+HRESULT ExtPack::getCryptoModule(com::Utf8Str &aCryptoModule)
+{
+    aCryptoModule = m->Desc.strCryptoModule;
     return S_OK;
 }
 
@@ -3508,6 +3583,62 @@ int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack,
 }
 
 /**
+ * Checks that the specified extension pack contains a cryptographic module and that it
+ * is shipshape.
+ *
+ * @returns S_OK if ok, appropriate failure status code with details.
+ * @param   a_pstrExtPack   The name of the extension pack.
+ */
+HRESULT ExtPackManager::i_checkCryptoExtPack(Utf8Str const *a_pstrExtPack)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
+        if (pExtPack)
+            hrc = pExtPack->i_checkCrypto();
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+    }
+
+    return hrc;
+}
+
+/**
+ * Gets the full path to the cryptographic library of the specified extension pack.
+ *
+ * This will do extacly the same as checkCryptoExtPack and then resolve the
+ * library path.
+ *
+ * @returns VINF_SUCCESS if a path is returned, VBox error status and message
+ *          return if not.
+ * @param   a_pstrExtPack       The extension pack.
+ * @param   a_pstrCryptoLibrary Where to return the path.
+ */
+int ExtPackManager::i_getCryptoLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrCryptoLibrary)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
+        if (pExtPack)
+            hrc = pExtPack->i_getCryptoLibraryName(a_pstrCryptoLibrary);
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"),
+                           a_pstrExtPack->c_str());
+    }
+
+    return Global::vboxStatusCodeFromCOM(hrc);
+}
+
+
+/**
  * Gets the full path to the specified library of the specified extension pack.
  *
  * @returns S_OK if a path is returned, COM error status and message return if
@@ -3567,6 +3698,38 @@ HRESULT ExtPackManager::i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
 }
 
 /**
+ * Gets the name of the default cryptographic extension pack.
+ *
+ * @returns S_OK or some COM error status on red tape failure.
+ * @param   a_pstrExtPack   Where to return the extension pack name.  Returns
+ *                          empty if no extension pack wishes to be the default
+ *                          VRDP provider.
+ */
+HRESULT ExtPackManager::i_getDefaultCryptoExtPack(Utf8Str *a_pstrExtPack)
+{
+    a_pstrExtPack->setNull();
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+             it != m->llInstalledExtPacks.end();
+             ++it)
+        {
+            if ((*it)->i_wantsToBeDefaultCrypto())
+            {
+                *a_pstrExtPack = (*it)->m->Desc.strName;
+                break;
+            }
+        }
+    }
+    return hrc;
+}
+
+/**
  * Checks if an extension pack is (present and) usable.
  *
  * @returns @c true if it is, otherwise @c false.
@@ -3605,21 +3768,23 @@ void ExtPackManager::i_dumpAllToReleaseLog(void)
         if (pExtPackData)
         {
             if (pExtPackData->fUsable)
-                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s)\n",
-                        pExtPackData->Desc.strName.c_str(),
-                        pExtPackData->Desc.strVersion.c_str(),
-                        pExtPackData->Desc.uRevision,
-                        pExtPackData->Desc.strEdition.isEmpty() ? "" : " ",
-                        pExtPackData->Desc.strEdition.c_str(),
-                        pExtPackData->Desc.strVrdeModule.c_str() ));
-            else
-                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s unusable because of '%s')\n",
+                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s; Crypto Module: %s)\n",
                         pExtPackData->Desc.strName.c_str(),
                         pExtPackData->Desc.strVersion.c_str(),
                         pExtPackData->Desc.uRevision,
                         pExtPackData->Desc.strEdition.isEmpty() ? "" : " ",
                         pExtPackData->Desc.strEdition.c_str(),
                         pExtPackData->Desc.strVrdeModule.c_str(),
+                        pExtPackData->Desc.strCryptoModule.c_str() ));
+            else
+                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s; Crypto Module: %s unusable because of '%s')\n",
+                        pExtPackData->Desc.strName.c_str(),
+                        pExtPackData->Desc.strVersion.c_str(),
+                        pExtPackData->Desc.uRevision,
+                        pExtPackData->Desc.strEdition.isEmpty() ? "" : " ",
+                        pExtPackData->Desc.strEdition.c_str(),
+                        pExtPackData->Desc.strVrdeModule.c_str(),
+                        pExtPackData->Desc.strCryptoModule.c_str(),
                         pExtPackData->strWhyUnusable.c_str() ));
         }
         else

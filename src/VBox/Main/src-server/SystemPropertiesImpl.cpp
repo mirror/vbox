@@ -102,6 +102,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
 
     i_setVRDEAuthLibrary(Utf8Str::Empty);
     i_setDefaultVRDEExtPack(Utf8Str::Empty);
+    i_setDefaultCryptoExtPack(Utf8Str::Empty);
 
     m->uLogHistoryCount = 3;
 
@@ -1156,6 +1157,85 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
 }
 
 
+HRESULT SystemProperties::getDefaultCryptoExtPack(com::Utf8Str &aExtPack)
+{
+    HRESULT hrc = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Utf8Str strExtPack(m->strDefaultCryptoExtPack);
+    if (strExtPack.isNotEmpty())
+    {
+        if (strExtPack.equals(VBOXPUELCRYPTO_KLUDGE_EXTPACK_NAME))
+            hrc = S_OK;
+        else
+#ifdef VBOX_WITH_EXTPACK
+            hrc = mParent->i_getExtPackManager()->i_checkCryptoExtPack(&strExtPack);
+#else
+            hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), strExtPack.c_str());
+#endif
+    }
+    else
+    {
+#ifdef VBOX_WITH_EXTPACK
+        hrc = mParent->i_getExtPackManager()->i_getDefaultCryptoExtPack(&strExtPack);
+#endif
+        if (strExtPack.isEmpty())
+        {
+            /*
+            * Klugde - check if VBoxPuelCrypto.dll/.so/.dylib is installed.
+            * This is hardcoded uglyness, sorry.
+            */
+            char szPath[RTPATH_MAX];
+            int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+            if (RT_SUCCESS(vrc))
+                vrc = RTPathAppend(szPath, sizeof(szPath), "VBoxPuelCrypto");
+            if (RT_SUCCESS(vrc))
+                vrc = RTStrCat(szPath, sizeof(szPath), RTLdrGetSuff());
+            if (RT_SUCCESS(vrc) && RTFileExists(szPath))
+            {
+                /* Illegal extpack name, so no conflict. */
+                strExtPack = VBOXPUELCRYPTO_KLUDGE_EXTPACK_NAME;
+            }
+        }
+    }
+
+    if (SUCCEEDED(hrc))
+          aExtPack = strExtPack;
+
+    return S_OK;
+}
+
+
+HRESULT SystemProperties::setDefaultCryptoExtPack(const com::Utf8Str &aExtPack)
+{
+    HRESULT hrc = S_OK;
+    if (aExtPack.isNotEmpty())
+    {
+        if (aExtPack.equals(VBOXPUELCRYPTO_KLUDGE_EXTPACK_NAME))
+            hrc = S_OK;
+        else
+#ifdef VBOX_WITH_EXTPACK
+            hrc = mParent->i_getExtPackManager()->i_checkCryptoExtPack(&aExtPack);
+#else
+            hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), aExtPack.c_str());
+#endif
+    }
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = i_setDefaultCryptoExtPack(aExtPack);
+        if (SUCCEEDED(hrc))
+        {
+            /* VirtualBox::i_saveSettings() needs the VirtualBox write lock. */
+            alock.release();
+            AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+            hrc = mParent->i_saveSettings();
+        }
+    }
+
+    return hrc;
+}
+
+
 HRESULT SystemProperties::getLogHistoryCount(ULONG *count)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1852,6 +1932,9 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     rc = i_setDefaultVRDEExtPack(data.strDefaultVRDEExtPack);
     if (FAILED(rc)) return rc;
 
+    rc = i_setDefaultCryptoExtPack(data.strDefaultCryptoExtPack);
+    if (FAILED(rc)) return rc;
+
     m->uLogHistoryCount  = data.uLogHistoryCount;
     m->fExclusiveHwVirt  = data.fExclusiveHwVirt;
     m->uProxyMode        = data.uProxyMode;
@@ -2117,6 +2200,13 @@ HRESULT SystemProperties::i_setWebServiceAuthLibrary(const com::Utf8Str &aPath)
 HRESULT SystemProperties::i_setDefaultVRDEExtPack(const com::Utf8Str &aExtPack)
 {
     m->strDefaultVRDEExtPack = aExtPack;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::i_setDefaultCryptoExtPack(const com::Utf8Str &aExtPack)
+{
+    m->strDefaultCryptoExtPack = aExtPack;
 
     return S_OK;
 }
