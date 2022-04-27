@@ -289,20 +289,12 @@ void UpdateAgent::FinalRelease(void)
 
 HRESULT UpdateAgent::init(VirtualBox *aVirtualBox)
 {
-    // Enclose the state transition NotReady->InInit->Ready.
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
     /* Weak reference to a VirtualBox object */
     unconst(m_VirtualBox) = aVirtualBox;
 
     HRESULT hr = unconst(m_EventSource).createObject();
     if (SUCCEEDED(hr))
-    {
         hr = m_EventSource->init();
-        if (SUCCEEDED(hr))
-            autoInitSpan.setSucceeded();
-    }
 
     return hr;
 }
@@ -750,7 +742,7 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
 
     ::FireUpdateAgentErrorEvent(m_EventSource, psz, vrc);
 
-    HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, pcszMsgFmt, va);
+    HRESULT const rc = setErrorVrc(VERR_COM_IPRT_ERROR /** @todo Translate HTTP errors to COM? */, psz);
 
     va_end(va);
     RTStrFree(psz);
@@ -790,9 +782,6 @@ HRESULT HostUpdateAgent::init(VirtualBox *aVirtualBox)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* Weak reference to a VirtualBox object */
-    unconst(m_VirtualBox) = aVirtualBox;
-
     /* Initialize the bare minimum to get things going.
      ** @todo Add more stuff later here. */
     mData.m_strName = "VirtualBox";
@@ -801,8 +790,11 @@ HRESULT HostUpdateAgent::init(VirtualBox *aVirtualBox)
     /* Set default repository. */
     m->strRepoUrl = "https://update.virtualbox.org";
 
-    autoInitSpan.setSucceeded();
-    return S_OK;
+    HRESULT hr = UpdateAgent::init(aVirtualBox);
+    if (SUCCEEDED(hr))
+        autoInitSpan.setSucceeded();
+
+    return hr;
 }
 
 void HostUpdateAgent::uninit(void)
