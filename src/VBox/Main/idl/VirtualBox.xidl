@@ -11344,7 +11344,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="4cef7347-ed89-470b-9ac2-524ae889e17c"
+    uuid="4c3788aa-747f-4a3c-a159-fb6df7a00532"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="4"
     >
@@ -11540,6 +11540,12 @@
 
         <note>Compares the system's current date with the last
           update check date and currently set check frequency.</note>
+      </desc>
+    </attribute>
+
+    <attribute name="supportedChannels" type="UpdateChannel" safearray="yes"  readonly="yes">
+      <desc>
+        Returns a safe array of all supported update channels this agents offers.
       </desc>
     </attribute>
 
