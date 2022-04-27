@@ -270,7 +270,7 @@ typedef enum RTTHREADFLAGS
     RTTHREADFLAGS_MASK = UINT32_C(0xf)
 } RTTHREADFLAGS;
 
-/** Max thread name length. */
+/** Max thread name length (including zero terminator). */
 #define RTTHREAD_NAME_LEN       16
 
 /**
