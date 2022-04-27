@@ -608,12 +608,12 @@ HRESULT UpdateAgent::getIsCheckNeeded(BOOL *aCheckNeeded)
     RTTimeSpecSub(RTTimeNow(&TimeDiff), &LastCheckTime);
 
     int64_t const diffLastCheckSecs = RTTimeSpecGetSeconds(&TimeDiff);
-    int64_t const diffLastCheckDays = diffLastCheckSecs / RT_SEC_1DAY_64;
+    int64_t const diffLastCheckDays = diffLastCheckSecs / (int64_t)RT_SEC_1DAY_64;
 
     /* Be as accurate as possible. */
     *aCheckNeeded = diffLastCheckSecs >= (int64_t)m->uCheckFreqSeconds ? TRUE : FALSE;
 
-    LogRel2(("Update agent (%s): Last update %RU64 days (%RU64 seconds) ago, check frequency is every %RU64 days (%RU64 seconds) -> Check %s\n",
+    LogRel2(("Update agent (%s): Last update %RI64 days (%RI64 seconds) ago, check frequency is every %RU64 days (%RU64 seconds) -> Check %s\n",
              mData.m_strName.c_str(), diffLastCheckDays, diffLastCheckSecs, cCheckFreqDays, m->uCheckFreqSeconds,
              *aCheckNeeded ? "needed" : "not needed"));
 
@@ -746,11 +746,11 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
     va_start(va, pcszMsgFmt);
 
     Utf8Str strMsg;
-    HRESULT const rc = strMsg.printfVNoThrow(pcszMsgFmt, va);
-    if (FAILED(rc))
+    int const vrc2 = strMsg.printfVNoThrow(pcszMsgFmt, va);
+    if (RT_FAILURE(vrc2))
     {
         va_end(va);
-        return rc;
+        return setErrorBoth(VERR_COM_IPRT_ERROR, vrc2, tr("Failed to format update agent error string (%Rrc)"), vrc2);
     }
 
     va_end(va);
