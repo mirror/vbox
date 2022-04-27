@@ -6099,6 +6099,7 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
     HRESULT hrc = S_OK;
     if (m->hLdrModCrypto == NIL_RTLDRMOD)
     {
+#ifdef VBOX_WITH_EXTPACK
         /*
          * Check that a crypto extension pack name is set and resolve it into a
          * library path.
@@ -6109,7 +6110,7 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
             return hrc;
         if (strExtPack.isEmpty())
             return setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Ńo extension pack providing a crpytographic support module could be found"));
+                            tr("Ńo extension pack providing a cryptographic support module could be found"));
 
         Utf8Str strCryptoLibrary;
         int vrc = m->ptrExtPackManager->i_getCryptoLibraryPathForExtPack(&strExtPack, &strCryptoLibrary);
@@ -6144,6 +6145,10 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                tr("Couldn't resolve the library path of the crpytographic support module for extension pack '%s'"),
                                strExtPack.c_str());
+#else
+        hrc = setError(VBOX_E_NOT_SUPPORTED,
+                       tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
+#endif
     }
 
     if (SUCCEEDED(hrc))
