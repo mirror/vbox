@@ -3098,6 +3098,7 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                 autoLock.release();
                 bool fRunningVMs = i_areThereAnyRunningVMs();
                 bool fVetoingCP = pExtPack->i_areThereCloudProviderUninstallVetos();
+                bool fUnloadedCryptoMod = m->pVirtualBox->i_unloadCryptoIfModule() == S_OK;
                 autoLock.acquire();
                 hrc = i_refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
                 if (fRunningVMs)
@@ -3110,6 +3111,12 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                 {
                     LogRel(("Upgrading extension pack '%s' failed because at least one Cloud Provider is still busy.", pStrName->c_str()));
                     hrc = setError(E_FAIL, tr("Upgrading extension pack '%s' failed because at least one Cloud Provider is still busy"),
+                                   pStrName->c_str());
+                }
+                else if (!fUnloadedCryptoMod)
+                {
+                    LogRel(("Upgrading extension pack '%s' failed because the cryptographic support module is still in use.", pStrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Upgrading extension pack '%s' failed because the cryptographic support module is still in use"),
                                    pStrName->c_str());
                 }
                 else if (SUCCEEDED(hrc) && pExtPack)
@@ -3226,8 +3233,9 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
             autoLock.release();
             bool fRunningVMs = i_areThereAnyRunningVMs();
             bool fVetoingCP = pExtPack->i_areThereCloudProviderUninstallVetos();
+            bool fUnloadedCryptoMod = m->pVirtualBox->i_unloadCryptoIfModule() == S_OK;
             autoLock.acquire();
-            if (a_fForcedRemoval || (!fRunningVMs && !fVetoingCP))
+            if (a_fForcedRemoval || (!fRunningVMs && !fVetoingCP && fUnloadedCryptoMod))
             {
                 hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
                 if (SUCCEEDED(hrc))
@@ -3293,6 +3301,12 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
                 {
                     LogRel(("Uninstall extension pack '%s' failed because at least one Cloud Provider is still busy.", a_pstrName->c_str()));
                     hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed because at least one Cloud Provider is still busy"),
+                                   a_pstrName->c_str());
+                }
+                else if (!fUnloadedCryptoMod)
+                {
+                    LogRel(("Uninstall extension pack '%s' failed because the cryptographic support module is still in use.", a_pstrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed because the cryptographic support module is still in use"),
                                    a_pstrName->c_str());
                 }
                 else
