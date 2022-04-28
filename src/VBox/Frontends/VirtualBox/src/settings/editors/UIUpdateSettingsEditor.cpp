@@ -140,7 +140,7 @@ void UIUpdateSettingsEditor::sltHandleUpdateToggle(bool fEnabled)
 void UIUpdateSettingsEditor::sltHandleUpdatePeriodChange()
 {
     if (m_pFieldUpdateDate)
-        m_pFieldUpdateDate->setText(VBoxUpdateData(updatePeriod(), updateChannel()).date());
+        m_pFieldUpdateDate->setText(VBoxUpdateData(updatePeriod(), updateChannel()).dateToString());
 }
 
 void UIUpdateSettingsEditor::prepare()
