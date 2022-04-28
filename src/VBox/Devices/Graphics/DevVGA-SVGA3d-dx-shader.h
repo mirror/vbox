@@ -37,6 +37,7 @@
 typedef struct DXShaderInfo
 {
     VGPU10_PROGRAM_TYPE enmProgramType;
+    bool fGuestSignatures : 1;
     void *pvBytecode;
     uint32_t cbBytecode;
     uint32_t cInputSignature;

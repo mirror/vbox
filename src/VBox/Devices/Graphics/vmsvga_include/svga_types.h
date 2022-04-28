@@ -48,7 +48,7 @@ typedef bool Bool;
 
 #define MAX_UINT64 UINT64_MAX
 #define MAX_UINT32 UINT32_MAX
-#define MAX_UINT16 U16_MAX
+#define MAX_UINT16 UINT16_MAX
 
 #define CONST64U(x) x##ULL
 
