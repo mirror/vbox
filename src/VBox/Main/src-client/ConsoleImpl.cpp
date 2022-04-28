@@ -416,6 +416,9 @@ Console::Console()
     , mVMStateChangeCallbackDisabled(false)
     , mfUseHostClipboard(true)
     , mMachineState(MachineState_PoweredOff)
+    , mhLdrModCrypto(NIL_RTLDRMOD)
+    , mcRefsCrypto(0)
+    , mpCryptoIf(NULL)
 {
 }
 
@@ -8925,6 +8928,44 @@ HRESULT Console::i_removeSharedFolder(const Utf8Str &strName)
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_FAIL, vrc, tr("Could not remove the shared folder '%s' (%Rrc)"), strName.c_str(), vrc);
 
+    return S_OK;
+}
+
+/**
+ * Retains a reference to the default cryptographic interface.
+ *
+ * @returns COM status code.
+ * @param   ppCryptoIf          Where to store the pointer to the cryptographic interface on success.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
+{
+    AssertReturn(ppCryptoIf != NULL, E_INVALIDARG);
+
+    if (mhLdrModCrypto == NIL_RTLDRMOD)
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("The VM is not configured for encryption"));
+
+    ASMAtomicIncU32(&mcRefsCrypto);
+    *ppCryptoIf = mpCryptoIf;
+
+    return S_OK;
+}
+
+/**
+ * Releases the reference of the given cryptographic interface.
+ *
+ * @returns COM status code.
+ * @param   pCryptoIf           Pointer to the cryptographic interface to release.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
+{
+    AssertReturn(pCryptoIf == mpCryptoIf, E_INVALIDARG);
+
+    ASMAtomicDecU32(&mcRefsCrypto);
     return S_OK;
 }
 

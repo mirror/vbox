@@ -75,6 +75,7 @@ class NvramStore;
 #ifdef VBOX_WITH_USB
 # include <VBox/vrdpusb.h>
 #endif
+#include <VBox/VBoxCryptoIf.h>
 
 #if    defined(VBOX_WITH_GUEST_PROPS) || defined(VBOX_WITH_SHARED_CLIPBOARD) \
     || defined(VBOX_WITH_DRAG_AND_DROP)
@@ -321,6 +322,8 @@ public:
      */
     HRESULT i_setDiskEncryptionKeys(const Utf8Str &strCfg);
 
+    HRESULT i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
+    HRESULT i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     // VMMDev needs:
@@ -1084,6 +1087,17 @@ private:
 
     /** Machine uuid string. */
     Bstr mstrUuid;
+
+    /** @name Members related to the cryptographic support interface.
+     * @{ */
+    /** The loaded module handle if loaded. */
+    RTLDRMOD                            mhLdrModCrypto;
+    /** Reference counter tracking how many users of the cryptographic support
+     * are there currently. */
+    volatile uint32_t                   mcRefsCrypto;
+    /** Pointer to the cryptographic support interface. */
+    PCVBOXCRYPTOIF                      mpCryptoIf;
+    /** @} */
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     HGCMSVCEXTHANDLE m_hHgcmSvcExtDragAndDrop;
