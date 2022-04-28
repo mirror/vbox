@@ -1301,6 +1301,10 @@ private:
                                ULONG aVmNetTx);
     HRESULT authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
                                  com::Utf8Str &aResult);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    HRESULT i_setInaccessible(void);
+#endif
 };
 
 // SessionMachine class

@@ -15928,9 +15928,37 @@ HRESULT Machine::getEncryptionSettings(com::Utf8Str &aCipher,
     RT_NOREF(aCipher, aPasswordId);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(aCipher, aPasswordId);
-    /** @todo */
-    return E_NOTIMPL;
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    PCVBOXCRYPTOIF pCryptoIf = NULL;
+    HRESULT hrc = mParent->i_retainCryptoIf(&pCryptoIf);
+    if (FAILED(hrc)) return hrc; /* Error is set */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mstrKeyStore.isNotEmpty())
+    {
+        char *pszCipher = NULL;
+        int vrc = pCryptoIf->pfnCryptoKeyStoreGetDekFromEncoded(mData->mstrKeyStore.c_str(), NULL /*pszPassword*/,
+                                                                NULL /*ppbKey*/, NULL /*pcbKey*/, &pszCipher);
+        if (RT_SUCCESS(vrc))
+        {
+            aCipher = getCipherStringWithoutMode(pszCipher);
+            RTStrFree(pszCipher);
+            aPasswordId = mData->mstrKeyId;
+        }
+        else
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                               tr("Failed to query the encryption settings with %Rrc"),
+                               vrc);
+    }
+    else
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("This VM is not encrypted"));
+
+    mParent->i_releaseCryptoIf(pCryptoIf);
+
+    return hrc;
 #endif
 }
 
@@ -15940,9 +15968,37 @@ HRESULT Machine::checkEncryptionPassword(const com::Utf8Str &aPassword)
     RT_NOREF(aPassword);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(aPassword);
-    /** @todo */
-    return E_NOTIMPL;
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    PCVBOXCRYPTOIF pCryptoIf = NULL;
+    HRESULT hrc = mParent->i_retainCryptoIf(&pCryptoIf);
+    if (FAILED(hrc)) return hrc; /* Error is set */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mstrKeyStore.isNotEmpty())
+    {
+        char *pszCipher = NULL;
+        uint8_t *pbDek  = NULL;
+        size_t   cbDek  = 0;
+        int vrc = pCryptoIf->pfnCryptoKeyStoreGetDekFromEncoded(mData->mstrKeyStore.c_str(), aPassword.c_str(),
+                                                                &pbDek, &cbDek, &pszCipher);
+        if (RT_SUCCESS(vrc))
+        {
+            RTStrFree(pszCipher);
+            RTMemSaferFree(pbDek, cbDek);
+        }
+        else
+            hrc = setErrorBoth(VBOX_E_PASSWORD_INCORRECT, vrc,
+                               tr("The password supplied for the encrypted machine is incorrect"));
+    }
+    else
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("This VM is not encrypted"));
+
+    mParent->i_releaseCryptoIf(pCryptoIf);
+
+    return hrc;
 #endif
 }
 
@@ -15953,9 +16009,59 @@ HRESULT Machine::addEncryptionPassword(const com::Utf8Str &aId,
     RT_NOREF(aId, aPassword);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(aId, aPassword);
-    /** @todo */
-    return E_NOTIMPL;
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    size_t   cbPassword = aPassword.length() + 1;
+    uint8_t *pbPassword = (uint8_t *)aPassword.c_str();
+
+    mData->mpKeyStore->addSecretKey(aId, pbPassword, cbPassword);
+
+    if (   mData->mAccessible
+        && mData->mSession.mState == SessionState_Locked
+        && mData->mSession.mLockType == LockType_VM
+        && mData->mSession.mDirectControl != NULL)
+    {
+        /* get the console from the direct session */
+        ComPtr<IConsole> console;
+        HRESULT rc = mData->mSession.mDirectControl->COMGETTER(RemoteConsole)(console.asOutParam());
+        ComAssertComRC(rc);
+        /* send passsword to console */
+        console->AddEncryptionPassword(Bstr(aId).raw(),
+                                       Bstr(aPassword).raw(),
+                                       TRUE);
+    }
+
+    if (mData->mstrKeyId == aId)
+    {
+        HRESULT hrc = checkEncryptionPassword(aPassword);
+        if (FAILED(hrc))
+            return hrc;
+
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Encryption is used and password is correct,
+             * Reinit the machine if required.
+             */
+            BOOL fAccessible;
+            alock.release();
+            getAccessible(&fAccessible);
+            alock.acquire();
+        }
+    }
+
+    /*
+     * Add the password into the NvramStore only after
+     * the machine becomes accessible and the NvramStore
+     * contains key id and key store.
+     */
+    if (mNvramStore.isNotNull())
+        mNvramStore->i_addPassword(aId, aPassword);
+
+    return S_OK;
 #endif
 }
 
@@ -15966,9 +16072,14 @@ HRESULT Machine::addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds,
     RT_NOREF(aIds, aPasswords);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(aIds, aPasswords);
-    /** @todo */
-    return E_NOTIMPL;
+    if (aIds.size() != aPasswords.size())
+        return setError(E_INVALIDARG, tr("Id and passwords arrays must have the same size"));
+
+    HRESULT hrc = S_OK;
+    for (size_t i = 0; i < aIds.size() && SUCCEEDED(hrc); ++i)
+        hrc = addEncryptionPassword(aIds[i], aPasswords[i]);
+
+    return hrc;
 #endif
 }
 
@@ -15978,9 +16089,35 @@ HRESULT Machine::removeEncryptionPassword(AutoCaller &autoCaller, const com::Utf
     RT_NOREF(autoCaller, aId);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(autoCaller, aId);
-    /** @todo */
-    return E_NOTIMPL;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   mData->mAccessible
+        && mData->mSession.mState == SessionState_Locked
+        && mData->mSession.mLockType == LockType_VM
+        && mData->mSession.mDirectControl != NULL)
+    {
+        /* get the console from the direct session */
+        ComPtr<IConsole> console;
+        HRESULT rc = mData->mSession.mDirectControl->COMGETTER(RemoteConsole)(console.asOutParam());
+        ComAssertComRC(rc);
+        /* send passsword to console */
+        console->RemoveEncryptionPassword(Bstr(aId).raw());
+    }
+
+    if (mData->mAccessible && mData->mstrKeyStore.isNotEmpty() && mData->mstrKeyId == aId)
+    {
+        if (Global::IsOnlineOrTransient(mData->mMachineState))
+            return setError(VBOX_E_INVALID_VM_STATE, tr("The machine is in online or transient state"));
+        alock.release();
+        autoCaller.release();
+        /* return because all passwords are purged when machine becomes inaccessible; */
+        return i_setInaccessible();
+    }
+
+    if (mNvramStore.isNotNull())
+        mNvramStore->i_removePassword(aId);
+    mData->mpKeyStore->deleteSecretKey(aId);
+    return S_OK;
 #endif
 }
 
@@ -15990,11 +16127,45 @@ HRESULT Machine::clearAllEncryptionPasswords(AutoCaller &autoCaller)
     RT_NOREF(autoCaller);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(autoCaller);
-    /** @todo */
-    return E_NOTIMPL;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mAccessible && mData->mstrKeyStore.isNotEmpty())
+    {
+        if (Global::IsOnlineOrTransient(mData->mMachineState))
+            return setError(VBOX_E_INVALID_VM_STATE, tr("The machine is in online or transient state"));
+        alock.release();
+        autoCaller.release();
+        /* return because all passwords are purged when machine becomes inaccessible; */
+        return i_setInaccessible();
+    }
+
+    mNvramStore->i_removeAllPasswords();
+    mData->mpKeyStore->deleteAllSecretKeys(false, true);
+    return S_OK;
 #endif
 }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+HRESULT Machine::i_setInaccessible()
+{
+    if (!mData->mAccessible)
+        return S_OK;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    VirtualBox   *pParent = mParent;
+    com::Utf8Str strConfigFile = mData->m_strConfigFile;
+    Guid         id(i_getId());
+
+    alock.release();
+
+    uninit();
+    HRESULT rc = initFromSettings(pParent, strConfigFile, &id, com::Utf8Str());
+
+    alock.acquire();
+    mParent->i_onMachineStateChanged(mData->mUuid, mData->mMachineState);
+    return rc;
+}
+#endif
 
 /* This isn't handled entirely by the wrapper generator yet. */
 #ifdef VBOX_WITH_XPCOM
