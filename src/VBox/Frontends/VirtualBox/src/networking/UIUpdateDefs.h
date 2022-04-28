@@ -32,16 +32,39 @@
 #include "COMEnums.h"
 
 
-/** Structure to store retranslated reminder values. */
+/** Update period types. */
+enum UpdatePeriodType
+{
+    UpdatePeriodType_Never  = -1,
+    UpdatePeriodType_1Day   =  0,
+    UpdatePeriodType_2Days  =  1,
+    UpdatePeriodType_3Days  =  2,
+    UpdatePeriodType_4Days  =  3,
+    UpdatePeriodType_5Days  =  4,
+    UpdatePeriodType_6Days  =  5,
+    UpdatePeriodType_1Week  =  6,
+    UpdatePeriodType_2Weeks =  7,
+    UpdatePeriodType_3Weeks =  8,
+    UpdatePeriodType_1Month =  9
+};
+
+
+/** Structure to store retranslated period type values. */
 struct VBoxUpdateDay
 {
     VBoxUpdateDay(const QString &strVal, const QString &strKey)
-        : val(strVal), key(strKey) {}
+        : val(strVal)
+        , key(strKey)
+    {}
 
-    bool operator==(const VBoxUpdateDay &other) const { return val == other.val || key == other.key; }
+    bool operator==(const VBoxUpdateDay &other) const
+    {
+        return    val == other.val
+               || key == other.key;
+    }
 
-    QString val;
-    QString key;
+    QString     val;
+    QString     key;
 };
 typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
 
@@ -51,23 +74,6 @@ class SHARED_LIBRARY_STUFF VBoxUpdateData
 {
 public:
 
-    /** Period types. */
-    enum PeriodType
-    {
-        PeriodNever     = -2,
-        PeriodUndefined = -1,
-        Period1Day      =  0,
-        Period2Days     =  1,
-        Period3Days     =  2,
-        Period4Days     =  3,
-        Period5Days     =  4,
-        Period6Days     =  5,
-        Period1Week     =  6,
-        Period2Weeks    =  7,
-        Period3Weeks    =  8,
-        Period1Month    =  9
-    };
-
     /** Populates a set of update options. */
     static void populate();
     /** Returns a list of update options. */
@@ -75,17 +81,19 @@ public:
 
     /** Constructs update description on the basis of passed @a strData. */
     VBoxUpdateData(const QString &strData = QString());
-    /** Constructs update description on the basis of passed @a enmPeriodIndex and @a enmUpdateChannel. */
-    VBoxUpdateData(PeriodType enmPeriodIndex, KUpdateChannel enmUpdateChannel);
+    /** Constructs update description on the basis of passed @a enmUpdatePeriod and @a enmUpdateChannel. */
+    VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel);
 
     /** Returns whether there is no need to check. */
     bool isNoNeedToCheck() const;
     /** Returns whether there is really need to check. */
     bool isNeedToCheck() const;
+
     /** Returns update data. */
     QString data() const;
-    /** Returns period index. */
-    PeriodType periodIndex() const;
+
+    /** Returns update period. */
+    UpdatePeriodType updatePeriod() const;
     /** Returns update date. */
     QString date() const;
     /** Returns internal update date. */
@@ -120,19 +128,19 @@ private:
     /** Encodes data. */
     void encode();
 
-    /** Holds the populated list of update options. */
-    static VBoxUpdateDayList m_dayList;
+    /** Holds the populated list of update period options. */
+    static VBoxUpdateDayList  s_days;
 
     /** Holds the update data. */
-    QString         m_strData;
-    /** Holds the update period index. */
-    PeriodType      m_enmPeriodIndex;
+    QString           m_strData;
+    /** Holds the update period. */
+    UpdatePeriodType  m_enmUpdatePeriod;
     /** Holds the update date. */
-    QDate           m_date;
+    QDate             m_date;
     /** Holds the update channel. */
-    KUpdateChannel  m_enmUpdateChannel;
+    KUpdateChannel    m_enmUpdateChannel;
     /** Holds the update version. */
-    UIVersion       m_version;
+    UIVersion         m_version;
 };
 
 

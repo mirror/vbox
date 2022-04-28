@@ -363,7 +363,7 @@ void UIUpdateManager::sltHandleUpdateFinishing()
     /* Load/decode curent update data: */
     VBoxUpdateData currentData(gEDataManager->applicationUpdateData());
     /* Encode/save new update data: */
-    VBoxUpdateData newData(currentData.periodIndex(), currentData.updateChannel());
+    VBoxUpdateData newData(currentData.updatePeriod(), currentData.updateChannel());
     gEDataManager->setApplicationUpdateData(newData.data());
 
 #ifdef VBOX_WITH_UPDATE_REQUEST

@@ -71,8 +71,8 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
-    /** Returns period type. */
-    VBoxUpdateData::PeriodType periodType() const;
+    /** Returns update period. */
+    UpdatePeriodType updatePeriod() const;
     /** Returns update channel. */
     KUpdateChannel updateChannel() const;
 

@@ -26,55 +26,55 @@
 
 
 /* static: */
-VBoxUpdateDayList VBoxUpdateData::m_dayList = VBoxUpdateDayList();
+VBoxUpdateDayList VBoxUpdateData::s_days = VBoxUpdateDayList();
 
 /* static */
 void VBoxUpdateData::populate()
 {
     /* Clear list initially: */
-    m_dayList.clear();
+    s_days.clear();
 
     // WORKAROUND:
     // To avoid re-translation complexity
     // all values will be retranslated separately.
 
     /* Separately retranslate each day: */
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 day"),  "1 d");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 days"), "2 d");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 days"), "3 d");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "4 days"), "4 d");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "5 days"), "5 d");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "6 days"), "6 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 day"),   "1 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 days"),  "2 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 days"),  "3 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "4 days"),  "4 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "5 days"),  "5 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "6 days"),  "6 d");
 
     /* Separately retranslate each week: */
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 week"),  "1 w");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 weeks"), "2 w");
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 weeks"), "3 w");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 week"),  "1 w");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 weeks"), "2 w");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 weeks"), "3 w");
 
     /* Separately retranslate each month: */
-    m_dayList << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 month"), "1 m");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 month"), "1 m");
 }
 
 /* static */
 QStringList VBoxUpdateData::list()
 {
     QStringList result;
-    for (int i = 0; i < m_dayList.size(); ++i)
-        result << m_dayList.at(i).val;
+    foreach (const VBoxUpdateDay &day, s_days)
+        result << day.val;
     return result;
 }
 
 VBoxUpdateData::VBoxUpdateData(const QString &strData)
     : m_strData(strData)
-    , m_enmPeriodIndex(Period1Day)
+    , m_enmUpdatePeriod(UpdatePeriodType_1Day)
     , m_enmUpdateChannel(KUpdateChannel_Stable)
 {
     decode();
 }
 
-VBoxUpdateData::VBoxUpdateData(PeriodType enmPeriodIndex, KUpdateChannel enmUpdateChannel)
+VBoxUpdateData::VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel)
     : m_strData(QString())
-    , m_enmPeriodIndex(enmPeriodIndex)
+    , m_enmUpdatePeriod(enmUpdatePeriod)
     , m_enmUpdateChannel(enmUpdateChannel)
 {
     encode();
@@ -83,7 +83,7 @@ VBoxUpdateData::VBoxUpdateData(PeriodType enmPeriodIndex, KUpdateChannel enmUpda
 bool VBoxUpdateData::isNoNeedToCheck() const
 {
     /* No need to check if Period == Never: */
-    return m_enmPeriodIndex == PeriodNever;
+    return m_enmUpdatePeriod == UpdatePeriodType_Never;
 }
 
 bool VBoxUpdateData::isNeedToCheck() const
@@ -109,9 +109,9 @@ QString VBoxUpdateData::data() const
     return m_strData;
 }
 
-VBoxUpdateData::PeriodType VBoxUpdateData::periodIndex() const
+UpdatePeriodType VBoxUpdateData::updatePeriod() const
 {
-    return m_enmPeriodIndex;
+    return m_enmUpdatePeriod;
 }
 
 QString VBoxUpdateData::date() const
@@ -144,7 +144,7 @@ bool VBoxUpdateData::isEqual(const VBoxUpdateData &another) const
 {
     return    true
            && (m_strData == another.data())
-           && (m_enmPeriodIndex == another.periodIndex())
+           && (m_enmUpdatePeriod == another.updatePeriod())
            && (m_date == another.internalDate())
            && (m_enmUpdateChannel == another.updateChannel())
            && (m_version == another.version())
@@ -187,7 +187,7 @@ void VBoxUpdateData::decode()
 {
     /* Parse standard values: */
     if (m_strData == "never")
-        m_enmPeriodIndex = PeriodNever;
+        m_enmUpdatePeriod = UpdatePeriodType_Never;
     /* Parse other values: */
     else
     {
@@ -200,10 +200,10 @@ void VBoxUpdateData::decode()
         /* Parse 'period' value: */
         if (parser.size() > 0)
         {
-            if (m_dayList.isEmpty())
+            if (s_days.isEmpty())
                 populate();
-            PeriodType index = (PeriodType)m_dayList.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
-            m_enmPeriodIndex = index == PeriodUndefined ? Period1Day : index;
+            const UpdatePeriodType enmUpdatePeriod = (UpdatePeriodType)s_days.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
+            m_enmUpdatePeriod = enmUpdatePeriod == UpdatePeriodType_Never ? UpdatePeriodType_1Day : enmUpdatePeriod;
         }
 
         /* Parse 'date' value: */
@@ -230,15 +230,15 @@ void VBoxUpdateData::decode()
 void VBoxUpdateData::encode()
 {
     /* Encode standard values: */
-    if (m_enmPeriodIndex == PeriodNever)
+    if (m_enmUpdatePeriod == UpdatePeriodType_Never)
         m_strData = "never";
     /* Encode other values: */
     else
     {
         /* Encode 'period' value: */
-        if (m_dayList.isEmpty())
+        if (s_days.isEmpty())
             populate();
-        QString remindPeriod = m_dayList[m_enmPeriodIndex].key;
+        QString remindPeriod = s_days.at(m_enmUpdatePeriod).key;
 
         /* Encode 'date' value: */
         m_date = QDate::currentDate();

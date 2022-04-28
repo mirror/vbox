@@ -56,7 +56,7 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
             if (m_pCheckBox->isChecked())
             {
                 if (m_pComboUpdatePeriod)
-                    m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.periodIndex());
+                    m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.updatePeriod());
                 if (m_mapRadioButtons.value(m_guiValue.updateChannel()))
                     m_mapRadioButtons.value(m_guiValue.updateChannel())->setChecked(true);
             }
@@ -68,7 +68,7 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
 
 VBoxUpdateData UIUpdateSettingsEditor::value() const
 {
-    return m_pCheckBox ? VBoxUpdateData(periodType(), updateChannel()) : m_guiValue;
+    return m_pCheckBox ? VBoxUpdateData(updatePeriod(), updateChannel()) : m_guiValue;
 }
 
 void UIUpdateSettingsEditor::retranslateUi()
@@ -140,7 +140,7 @@ void UIUpdateSettingsEditor::sltHandleUpdateToggle(bool fEnabled)
 void UIUpdateSettingsEditor::sltHandleUpdatePeriodChange()
 {
     if (m_pFieldUpdateDate)
-        m_pFieldUpdateDate->setText(VBoxUpdateData(periodType(), updateChannel()).date());
+        m_pFieldUpdateDate->setText(VBoxUpdateData(updatePeriod(), updateChannel()).date());
 }
 
 void UIUpdateSettingsEditor::prepare()
@@ -264,16 +264,15 @@ void UIUpdateSettingsEditor::prepareConnections()
                 this, &UIUpdateSettingsEditor::sltHandleUpdatePeriodChange);
 }
 
-VBoxUpdateData::PeriodType UIUpdateSettingsEditor::periodType() const
+UpdatePeriodType UIUpdateSettingsEditor::updatePeriod() const
 {
-    const VBoxUpdateData::PeriodType enmResult = m_pCheckBox && m_pCheckBox->isChecked() && m_pComboUpdatePeriod
-                                               ? (VBoxUpdateData::PeriodType)m_pComboUpdatePeriod->currentIndex()
-                                               : VBoxUpdateData::PeriodNever;
-    return enmResult == VBoxUpdateData::PeriodUndefined ? VBoxUpdateData::Period1Day : enmResult;
+    return   m_pCheckBox && m_pCheckBox->isChecked() && m_pComboUpdatePeriod
+           ? (UpdatePeriodType)m_pComboUpdatePeriod->currentIndex()
+           : UpdatePeriodType_Never;
 }
 
 KUpdateChannel UIUpdateSettingsEditor::updateChannel() const
 {
     QAbstractButton *pCheckedButton = m_pRadioButtonGroup ? m_pRadioButtonGroup->checkedButton() : 0;
-    return m_mapRadioButtons.key(pCheckedButton, KUpdateChannel_Stable);
+    return m_mapRadioButtons.key(pCheckedButton, m_guiValue.updateChannel());
 }
