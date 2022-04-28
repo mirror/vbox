@@ -22,7 +22,10 @@
 #endif
 
 #include "NvramStoreWrap.h"
+#include "SecretKeyStore.h"
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/VBoxCryptoIf.h>
+
 
 #ifdef VBOX_COM_INPROC
 class Console;
@@ -81,6 +84,7 @@ public:
     HRESULT i_releaseUefiVarStore(RTVFS hVfs);
 #endif
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     HRESULT i_updateEncryptionSettings(const com::Utf8Str &strKeyId,
                                        const com::Utf8Str &strKeyStore);
     HRESULT i_getEncryptionSettings(com::Utf8Str &strKeyId,
@@ -89,8 +93,11 @@ public:
     int i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPassword);
     int i_removePassword(const Utf8Str &strKeyId);
     int i_removeAllPasswords();
+#endif
 
 private:
+
+    int initImpl(void);
 
     // Wrapped NVRAM store properties
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
@@ -103,6 +110,17 @@ private:
 
     int i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar);
     int i_saveStoreAsTar(const char *pszPath);
+
+    int i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
+    int i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    int i_setupEncryptionOrDecryption(RTVFSIOSTREAM hVfsIosInOut, bool fEncrypt,
+                                      PCVBOXCRYPTOIF *ppCryptoIf, SecretKey **ppKey,
+                                      PRTVFSIOSTREAM phVfsIos);
+    void i_releaseEncryptionOrDecryptionResources(RTVFSIOSTREAM hVfsIos, PCVBOXCRYPTOIF pCryptoIf,
+                                                  SecretKey *pKey);
+#endif
 
 #ifdef VBOX_COM_INPROC
     static DECLCALLBACK(int)    i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);

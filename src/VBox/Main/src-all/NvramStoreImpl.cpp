@@ -27,6 +27,7 @@
 # include "AutoStateDep.h"
 #endif
 #include "UefiVariableStoreImpl.h"
+#include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
 
@@ -97,6 +98,9 @@ struct NvramStore::Data
 #ifdef VBOX_COM_INPROC
           , cRefs(0)
 #endif
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+          , mpKeyStore(NULL)
+#endif
     { }
 
 #ifdef VBOX_COM_INPROC
@@ -114,6 +118,11 @@ struct NvramStore::Data
     ComObjPtr<NvramStore>              pPeer;
     /** The UEFI variable store. */
     const ComObjPtr<UefiVariableStore> pUefiVarStore;
+#endif
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /* Store for secret keys. */
+    SecretKeyStore                      *mpKeyStore;
 #endif
 
     Backupable<BackupableNvramStoreData> bd;
@@ -138,6 +147,31 @@ void NvramStore::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Initialization stuff shared across the different methods.
+ *
+ * @returns COM result indicator
+ */
+int NvramStore::initImpl()
+{
+    m = new Data();
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+# ifdef VBOX_COM_INPROC
+    bool fNonPageable = true;
+# else
+    /* Non-pageable memory is not accessible for non-VM process */
+    bool fNonPageable = false;
+# endif
+
+    m->mpKeyStore = new SecretKeyStore(fNonPageable /* fKeyBufNonPageable */);
+    AssertReturn(m->mpKeyStore, VERR_NO_MEMORY);
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
 #if !defined(VBOX_COM_INPROC)
 /**
  * Initializes the NVRAM store object.
@@ -155,7 +189,9 @@ HRESULT NvramStore::init(Machine *aParent)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    int vrc = initImpl();
+    if (RT_FAILURE(vrc))
+        return E_FAIL;
 
     /* share the parent weakly */
     unconst(m->pParent) = aParent;
@@ -187,7 +223,7 @@ HRESULT NvramStore::init(Machine *aParent, NvramStore *that)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    initImpl();
 
     unconst(m->pParent) = aParent;
     m->pPeer = that;
@@ -217,7 +253,7 @@ HRESULT NvramStore::initCopy(Machine *aParent, NvramStore *that)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    initImpl();
 
     unconst(m->pParent) = aParent;
     // mPeer is left null
@@ -250,7 +286,8 @@ HRESULT NvramStore::init(Console *aParent, const com::Utf8Str &strNonVolatileSto
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    initImpl();
+
     unconst(m->pParent) = aParent;
 
     m->bd.allocate();
@@ -291,6 +328,11 @@ void NvramStore::uninit()
     }
 
     m->bd->mapNvram.clear();
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (m->mpKeyStore != NULL)
+        delete m->mpKeyStore;
+#endif
 
     delete m;
     m = NULL;
@@ -558,6 +600,87 @@ int NvramStore::i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar)
 }
 
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+/**
+ * Sets up the encryption or decryption machinery.
+ *
+ * @returns VBox status code.
+ * @param   hVfsIosInOut        Handle to the input stream to be decrypted or the destination to the encrypted
+ *                              output is written to.
+ * @param   fEncrypt            Flag whether to setup encryption or decryption.
+ * @param   ppCryptoIf          Where to store the pointer to the cryptographic interface which needs to be released
+ *                              when done.
+ * @param   ppKey               Where to store the pointer to the secret key buffer which needs to be released when done.
+ * @param   phVfsIos            Where to store the handle to the plaintext I/O stream (either input or output) on success.
+ */
+int NvramStore::i_setupEncryptionOrDecryption(RTVFSIOSTREAM hVfsIosInOut, bool fEncrypt,
+                                              PCVBOXCRYPTOIF *ppCryptoIf, SecretKey **ppKey,
+                                              PRTVFSIOSTREAM phVfsIos)
+{
+    int rc = VINF_SUCCESS;
+    PCVBOXCRYPTOIF pCryptoIf = NULL;
+    SecretKey *pKey = NULL;
+    const char *pszPassword = NULL;
+
+    rc = i_retainCryptoIf(&pCryptoIf);
+    if (RT_SUCCESS(rc))
+    {
+        rc = m->mpKeyStore->retainSecretKey(m->bd->strKeyId, &pKey);
+        if (RT_SUCCESS(rc))
+        {
+            pszPassword = (const char *)pKey->getKeyBuffer();
+            if (fEncrypt)
+                rc = pCryptoIf->pfnCryptoIoStrmFromVfsIoStrmEncrypt(hVfsIosInOut, m->bd->strKeyStore.c_str(), pszPassword,
+                                                                    phVfsIos);
+            else
+                rc = pCryptoIf->pfnCryptoIoStrmFromVfsIoStrmDecrypt(hVfsIosInOut, m->bd->strKeyStore.c_str(), pszPassword,
+                                                                    phVfsIos);
+            if (RT_SUCCESS(rc))
+            {
+                *ppCryptoIf = pCryptoIf;
+                *ppKey      = pKey;
+                return VINF_SUCCESS;
+            }
+            else
+                LogRelMax(10, ("Failed to decrypt the NVRAM store using secret key ID '%s' with %Rrc\n",
+                               m->bd->strKeyId.c_str(), rc));
+
+            m->mpKeyStore->releaseSecretKey(m->bd->strKeyId);
+        }
+        else
+            LogRelMax(10, ("Failed to retain the secret key ID '%s' with %Rrc\n",
+                           m->bd->strKeyId.c_str(), rc));
+
+        i_releaseCryptoIf(pCryptoIf);
+    }
+    else
+        LogRelMax(10, ("Failed to retain the cryptographic interface with %Rrc\n", rc));
+
+    return rc;
+}
+
+/**
+ * Releases all resources acquired in NvramStore::i_setupEncryptionOrDecryption().
+ *
+ * @returns nothing.
+ * @param   hVfsIos             Handle to the I/O stream previously created.
+ * @param   pCryptoIf           Pointer to the cryptographic interface being released.
+ * @param   pKey                Pointer to the key buffer being released.
+ */
+void NvramStore::i_releaseEncryptionOrDecryptionResources(RTVFSIOSTREAM hVfsIos, PCVBOXCRYPTOIF pCryptoIf,
+                                                          SecretKey *pKey)
+{
+    Assert(hVfsIos != NIL_RTVFSIOSTREAM);
+    AssertPtr(pCryptoIf);
+    AssertPtr(pKey);
+
+    i_releaseCryptoIf(pCryptoIf);
+    m->mpKeyStore->releaseSecretKey(m->bd->strKeyId);
+    RTVfsIoStrmRelease(hVfsIos);
+}
+#endif
+
+
 /**
  * Loads the NVRAM store.
  *
@@ -585,52 +708,77 @@ int NvramStore::i_loadStore(const char *pszPath)
                                        &hVfsIosNvram);
             if (RT_SUCCESS(rc))
             {
-                /* Read the content. */
-                RTVFSFILE hVfsFileNvram;
-                rc = RTVfsMemorizeIoStreamAsFile(hVfsIosNvram, RTFILE_O_READ, &hVfsFileNvram);
+                RTVFSIOSTREAM hVfsIosDecrypted = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                PCVBOXCRYPTOIF pCryptoIf = NULL;
+                SecretKey *pKey = NULL;
+
+                if (   m->bd->strKeyId.isNotEmpty()
+                    && m->bd->strKeyStore.isNotEmpty())
+                    rc = i_setupEncryptionOrDecryption(hVfsIosNvram, false /*fEncrypt*/,
+                                                       &pCryptoIf, &pKey, &hVfsIosDecrypted);
+#endif
                 if (RT_SUCCESS(rc))
                 {
-                    /* Try to parse it as an EFI variable store. */
-                    RTVFS hVfsEfiVarStore;
-                    rc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, RTVFSMNT_F_READ_ONLY, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore,
-                                                NULL /*pErrInfo*/);
+                    /* Read the content. */
+                    RTVFSFILE hVfsFileNvram;
+                    rc = RTVfsMemorizeIoStreamAsFile(  hVfsIosDecrypted != NIL_RTVFSIOSTREAM
+                                                     ? hVfsIosDecrypted
+                                                     : hVfsIosNvram,
+                                                     RTFILE_O_READ, &hVfsFileNvram);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-                        AssertRC(rc);
-
-                        RTVfsFileRetain(hVfsFileNvram); /* Retain a new reference for the map. */
-                        m->bd->mapNvram[Utf8Str("efi/nvram")] = hVfsFileNvram;
-
-                        RTVfsRelease(hVfsEfiVarStore);
-                    }
-                    else if (rc == VERR_VFS_UNKNOWN_FORMAT)
-                    {
-                        /* Check for the new style tar archive. */
-                        rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-                        AssertRC(rc);
-
-                        RTVFSIOSTREAM hVfsIosTar = RTVfsFileToIoStream(hVfsFileNvram);
-                        Assert(hVfsIosTar != NIL_RTVFSIOSTREAM);
-
-                        RTVFSFSSTREAM hVfsFssTar;
-                        rc = RTZipTarFsStreamFromIoStream(hVfsIosTar, 0 /*fFlags*/, &hVfsFssTar);
-                        RTVfsIoStrmRelease(hVfsIosTar);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = i_loadStoreFromTar(hVfsFssTar);
-                            RTVfsFsStrmRelease(hVfsFssTar);
+                            /* Try to parse it as an EFI variable store. */
+                            RTVFS hVfsEfiVarStore;
+                            rc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, RTVFSMNT_F_READ_ONLY, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore,
+                                                        NULL /*pErrInfo*/);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+                                AssertRC(rc);
+
+                                RTVfsFileRetain(hVfsFileNvram); /* Retain a new reference for the map. */
+                                m->bd->mapNvram[Utf8Str("efi/nvram")] = hVfsFileNvram;
+
+                                RTVfsRelease(hVfsEfiVarStore);
+                            }
+                            else if (rc == VERR_VFS_UNKNOWN_FORMAT)
+                            {
+                                /* Check for the new style tar archive. */
+                                rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+                                AssertRC(rc);
+
+                                RTVFSIOSTREAM hVfsIosTar = RTVfsFileToIoStream(hVfsFileNvram);
+                                Assert(hVfsIosTar != NIL_RTVFSIOSTREAM);
+
+                                RTVFSFSSTREAM hVfsFssTar;
+                                rc = RTZipTarFsStreamFromIoStream(hVfsIosTar, 0 /*fFlags*/, &hVfsFssTar);
+                                RTVfsIoStrmRelease(hVfsIosTar);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = i_loadStoreFromTar(hVfsFssTar);
+                                    RTVfsFsStrmRelease(hVfsFssTar);
+                                }
+                                else
+                                    LogRel(("The given NVRAM file is neither a raw UEFI variable store nor a tar archive (opening failed with %Rrc)\n", rc));
+                            }
+                            else
+                                LogRel(("Opening the UEFI variable store '%s' failed with %Rrc\n", pszPath, rc));
+
+                            RTVfsFileRelease(hVfsFileNvram);
                         }
                         else
-                            LogRel(("The given NVRAM file is neither a raw UEFI variable store nor a tar archive (opening failed with %Rrc)\n", rc));
+                            LogRel(("Failed to memorize NVRAM store '%s' with %Rrc\n", pszPath, rc));
                     }
-                    else
-                        LogRel(("Opening the UEFI variable store '%s' failed with %Rrc\n", pszPath, rc));
-
-                    RTVfsFileRelease(hVfsFileNvram);
                 }
-                else
-                    LogRel(("Failed to memorize NVRAM store '%s' with %Rrc\n", pszPath, rc));
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                if (hVfsIosDecrypted != NIL_RTVFSIOSTREAM)
+                    i_releaseEncryptionOrDecryptionResources(hVfsIosDecrypted, pCryptoIf, pKey);
+#endif
 
                 RTVfsIoStrmRelease(hVfsIosNvram);
             }
@@ -661,35 +809,78 @@ int NvramStore::i_saveStoreAsTar(const char *pszPath)
                                     &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
-        RTVFSFSSTREAM hVfsFss;
-        rc = RTZipTarFsStreamToIoStream(hVfsIos, RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFss);
+        RTVFSIOSTREAM hVfsIosEncrypted = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        PCVBOXCRYPTOIF pCryptoIf = NULL;
+        SecretKey *pKey = NULL;
+
+        if (   m->bd->strKeyId.isNotEmpty()
+            && m->bd->strKeyStore.isNotEmpty())
+            rc = i_setupEncryptionOrDecryption(hVfsIos, true /*fEncrypt*/,
+                                               &pCryptoIf, &pKey, &hVfsIosEncrypted);
+#endif
+
         if (RT_SUCCESS(rc))
         {
-            NvramStoreIter it = m->bd->mapNvram.begin();
-
-            while (it != m->bd->mapNvram.end())
+            RTVFSFSSTREAM hVfsFss;
+            rc = RTZipTarFsStreamToIoStream(  hVfsIosEncrypted != NIL_RTVFSIOSTREAM
+                                            ? hVfsIosEncrypted
+                                            : hVfsIos,
+                                            RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFss);
+            if (RT_SUCCESS(rc))
             {
-                RTVFSFILE hVfsFile = it->second;
+                NvramStoreIter it = m->bd->mapNvram.begin();
 
-                rc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-                AssertRC(rc);
+                while (it != m->bd->mapNvram.end())
+                {
+                    RTVFSFILE hVfsFile = it->second;
 
-                RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFile);
-                rc = RTVfsFsStrmAdd(hVfsFss, it->first.c_str(), hVfsObj, 0 /*fFlags*/);
-                RTVfsObjRelease(hVfsObj);
-                if (RT_FAILURE(rc))
-                    break;
+                    rc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+                    AssertRC(rc);
 
-                it++;
+                    RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFile);
+                    rc = RTVfsFsStrmAdd(hVfsFss, it->first.c_str(), hVfsObj, 0 /*fFlags*/);
+                    RTVfsObjRelease(hVfsObj);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    it++;
+                }
+
+                RTVfsFsStrmRelease(hVfsFss);
             }
 
-            RTVfsFsStrmRelease(hVfsFss);
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+            if (hVfsIosEncrypted != NIL_RTVFSIOSTREAM)
+                i_releaseEncryptionOrDecryptionResources(hVfsIosEncrypted, pCryptoIf, pKey);
+#endif
         }
 
         RTVfsIoStrmRelease(hVfsIos);
     }
 
     return rc;
+}
+
+
+int NvramStore::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
+{
+#ifdef VBOX_COM_INPROC
+    return m->pParent->i_retainCryptoIf(ppCryptoIf);
+#else
+    return m->pParent->i_getVirtualBox()->i_retainCryptoIf(ppCryptoIf);
+#endif
+}
+
+
+int NvramStore::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
+{
+#ifdef VBOX_COM_INPROC
+    return m->pParent->i_releaseCryptoIf(pCryptoIf);
+#else
+    return m->pParent->i_getVirtualBox()->i_releaseCryptoIf(pCryptoIf);
+#endif
 }
 
 
@@ -734,7 +925,28 @@ int NvramStore::i_saveStore(void)
                 RTVFSIOSTREAM hVfsIosSrc = RTVfsFileToIoStream(hVfsFileNvram);
                 Assert(hVfsIosSrc != NIL_RTVFSIOSTREAM);
 
-                rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0 /*cbBufHint*/);
+                RTVFSIOSTREAM hVfsIosEncrypted = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                PCVBOXCRYPTOIF pCryptoIf = NULL;
+                SecretKey *pKey = NULL;
+
+                if (   m->bd->strKeyId.isNotEmpty()
+                    && m->bd->strKeyStore.isNotEmpty())
+                    rc = i_setupEncryptionOrDecryption(hVfsIosDst, true /*fEncrypt*/,
+                                                       &pCryptoIf, &pKey, &hVfsIosEncrypted);
+#endif
+
+                rc = RTVfsUtilPumpIoStreams(hVfsIosSrc,
+                                              hVfsIosEncrypted != NIL_RTVFSIOSTREAM
+                                            ? hVfsIosEncrypted
+                                            : hVfsIosDst
+                                            , 0 /*cbBufHint*/);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                if (hVfsIosEncrypted != NIL_RTVFSIOSTREAM)
+                    i_releaseEncryptionOrDecryptionResources(hVfsIosEncrypted, pCryptoIf, pKey);
+#endif
 
                 RTVfsIoStrmRelease(hVfsIosSrc);
                 RTVfsIoStrmRelease(hVfsIosDst);
@@ -747,6 +959,83 @@ int NvramStore::i_saveStore(void)
 
     return rc;
 }
+
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+HRESULT NvramStore::i_updateEncryptionSettings(const com::Utf8Str &strKeyId,
+                                               const com::Utf8Str &strKeyStore)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->bd.backup();
+    m->bd->strKeyId = strKeyId;
+    m->bd->strKeyStore = strKeyStore;
+
+    /* clear all passwords because they are invalid now */
+    m->mpKeyStore->deleteAllSecretKeys(false, true);
+
+    alock.release();
+    AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+#ifndef VBOX_COM_INPROC
+    m->pParent->i_setModified(Machine::IsModified_NvramStore);
+#endif
+    return S_OK;
+}
+
+
+HRESULT NvramStore::i_getEncryptionSettings(com::Utf8Str &strKeyId,
+                                            com::Utf8Str &strKeyStore)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    strKeyId    = m->bd->strKeyId;
+    strKeyStore = m->bd->strKeyStore;
+
+    return S_OK;
+}
+
+
+int NvramStore::i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPassword)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* keep only required password */
+    if (strKeyId != m->bd->strKeyId)
+        return VINF_SUCCESS;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return m->mpKeyStore->addSecretKey(strKeyId, (const uint8_t *)strPassword.c_str(), strPassword.length() + 1);
+}
+
+
+int NvramStore::i_removePassword(const Utf8Str &strKeyId)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return m->mpKeyStore->deleteSecretKey(strKeyId);
+}
+
+
+int NvramStore::i_removeAllPasswords()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->mpKeyStore->deleteAllSecretKeys(false, true);
+    return VINF_SUCCESS;
+}
+#endif
 
 
 #ifndef VBOX_COM_INPROC
@@ -808,6 +1097,10 @@ HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->strNvramPath = data.strNvramPath;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    m->bd->strKeyId     = data.strKeyId;
+    m->bd->strKeyStore  = data.strKeyStore;
+#endif
 
     Utf8Str strTmp(m->bd->strNvramPath);
     if (strTmp.isNotEmpty())
@@ -834,6 +1127,10 @@ HRESULT NvramStore::i_saveSettings(settings::NvramSettings &data)
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     data.strNvramPath = m->bd->strNvramPath;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    data.strKeyId     = m->bd->strKeyId;
+    data.strKeyStore  = m->bd->strKeyStore;
+#endif
 
     int vrc = i_saveStore();
     if (RT_FAILURE(vrc))
