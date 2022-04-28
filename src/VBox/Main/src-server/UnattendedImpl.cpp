@@ -3628,7 +3628,7 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
             return S_OK;
         }
     }
-    /* Earlier than OL 6.4 cannot be installer. OL 6.x fails with unsupported hardware error (CPU family). */
+    /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
     if (mEnmOsType == VBOXOSTYPE_Oracle || mEnmOsType == VBOXOSTYPE_Oracle_x64)
     {
         if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "6.4") < 0)

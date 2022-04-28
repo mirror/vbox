@@ -588,12 +588,22 @@ protected:
     HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                      RTVFS hVfsOrgIso, bool fOverwrite);
     /**
-     * Performs basic edits on menu configuration file(s) (txt.cfg or menu.cfg etc).
+     * Performs basic edits on menu configuration file(s) of isolinux (txt.cfg or menu.cfg etc).
      *
      * @returns COM status code
-     * @param   pEditor         Editor with the isolinux.cfg file loaded and parsed.
+     * @param   pEditor                  Editor with the menu config. file loaded and parsed.
+     * @param   pszMenuConfigFileName    Name of the menu file.
      */
-    HRESULT editDebianMenuCfg(GeneralTextScript *pEditor);
+    HRESULT editDebianMenuCfg(GeneralTextScript *pEditor, const char *pszMenuConfigFileName);
+    /**
+     * Performs basic edits on grub configuration file (grub.cfg).
+     *
+     * @returns COM status code
+     * @param   pEditor                Editor with the grub.cfg file loaded and parsed.
+     * @param   pszMenuGrubFileName    Name of the grub config file.
+     */
+    HRESULT editDebianGrubCfg(GeneralTextScript *pEditor, const char *pszGrubConfigFileName);
+
     /**
      * Performs basic edits on a isolinux.cfg file.
      *

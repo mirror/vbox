@@ -995,11 +995,18 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
                                                             RTVFS hVfsOrgIso, bool fOverwrite)
 {
     /* On Debian Live ISOs (at least from 9 to 11) the there is only menu.cfg. */
-    const char *pszMenuConfigFileName = "/isolinux/txt.cfg";
-    if (   !hlpVfsFileExists(hVfsOrgIso, pszMenuConfigFileName)
+    RTCString strMenuConfigFileName("/isolinux/txt.cfg");
+    if (   !hlpVfsFileExists(hVfsOrgIso, strMenuConfigFileName.c_str())
         && hlpVfsFileExists(hVfsOrgIso, "/isolinux/menu.cfg"))
-        pszMenuConfigFileName     = "/isolinux/menu.cfg";
+        strMenuConfigFileName     = "/isolinux/menu.cfg";
 
+    /* Ubuntus 21.10+ are UEFI only. No isolinux directory. We modify grub.cfg. */
+    if (   !hlpVfsFileExists(hVfsOrgIso, strMenuConfigFileName.c_str())
+        && hlpVfsFileExists(hVfsOrgIso, "/boot/grub/grub.cfg"))
+        strMenuConfigFileName     = "/boot/grub/grub.cfg";
+
+    /* Check for existence of isolinux.cfg since UEFI-only ISOs do not have this file.  */
+    bool fIsoLinuxCfgExists = hlpVfsFileExists(hVfsOrgIso, "isolinux/isolinux.cfg");
     /*
      * VISO bits and filenames.
      */
@@ -1017,18 +1024,25 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         rVecArgs.append() = "--file-mode=0444";
         rVecArgs.append() = "--dir-mode=0555";
 
-        /* Remove the two isolinux configure files we'll be replacing. */
-        rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
-        rVecArgs.append().assign(&pszMenuConfigFileName[1]).append("=:must-remove:");
+        /* Replace the isolinux.cfg configuration file. */
+        if (fIsoLinuxCfgExists)
+        {
+            /* First remove. */
+            rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
+            /* Then add the modified file. */
+            strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
+            strIsoLinuxCfg.append("isolinux-isolinux.cfg");
+            rVecArgs.append().append("isolinux/isolinux.cfg=").append(strIsoLinuxCfg);
+        }
 
-        /* Add the replacement files. */
-        strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
-        strIsoLinuxCfg.append("isolinux-isolinux.cfg");
-        rVecArgs.append().append("isolinux/isolinux.cfg=").append(strIsoLinuxCfg);
-
+        /* Replace menu configuration file as well. */
+        rVecArgs.append().assign(strMenuConfigFileName).append("=:must-remove:");
         strTxtCfg = mpParent->i_getAuxiliaryBasePath();
-        strTxtCfg.append("isolinux-txt.cfg");
-        rVecArgs.append().assign(&pszMenuConfigFileName[1]).append("=").append(strTxtCfg);
+        if (strMenuConfigFileName.compare("/boot/grub/grub.cfg", RTCString::CaseInsensitive) == 0)
+            strTxtCfg.append("grub.cfg");
+        else
+            strTxtCfg.append("isolinux-.cfg");
+        rVecArgs.append().assign(strMenuConfigFileName).append("=").append(strTxtCfg);
     }
     catch (std::bad_alloc &)
     {
@@ -1036,13 +1050,14 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
     }
 
     /*
-     * Edit the isolinux.cfg file.
+     * Edit the isolinux.cfg file if it is there.
      */
+    if (fIsoLinuxCfgExists)
     {
         GeneralTextScript Editor(mpParent);
         HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, "/isolinux/isolinux.cfg", &Editor);
         if (SUCCEEDED(hrc))
-            hrc = editIsoLinuxCfg(&Editor, RTPathFilename(pszMenuConfigFileName));
+            hrc = editIsoLinuxCfg(&Editor, RTPathFilename(strMenuConfigFileName.c_str()));
         if (SUCCEEDED(hrc))
         {
             hrc = Editor.save(strIsoLinuxCfg, fOverwrite);
@@ -1064,13 +1079,18 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
     }
 
     /*
-     * Edit the menu config file file.
+     * Edit the menu config file.
      */
     {
         GeneralTextScript Editor(mpParent);
-        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszMenuConfigFileName, &Editor);
+        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, strMenuConfigFileName.c_str(), &Editor);
         if (SUCCEEDED(hrc))
-            hrc = editDebianMenuCfg(&Editor);
+        {
+            if (strMenuConfigFileName.compare("/boot/grub/grub.cfg", RTCString::CaseInsensitive) == 0)
+                hrc = editDebianGrubCfg(&Editor, strMenuConfigFileName.c_str());
+            else
+                hrc = editDebianMenuCfg(&Editor, strMenuConfigFileName.c_str());
+        }
         if (SUCCEEDED(hrc))
         {
             hrc = Editor.save(strTxtCfg, fOverwrite);
@@ -1135,7 +1155,7 @@ HRESULT UnattendedDebianInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor, c
     return UnattendedLinuxInstaller::editIsoLinuxCfg(pEditor);
 }
 
-HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
+HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor, const char *pszMenuConfigFileName)
 {
     /*
      * Unlike Redhats, Debian variants define boot menu not in isolinux.cfg but some other
@@ -1144,6 +1164,7 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
      */
     try
     {
+        HRESULT hrc = S_OK;
         const char *pszNewLabel = "VBoxUnatendedInstall";
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("label", RTCString::CaseInsensitive);
         bool fLabelFound = false;
@@ -1160,37 +1181,41 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
                  * does not work very well in some cases. */
                 Utf8Str strNewLabel("label ");
                 strNewLabel.append(pszNewLabel);
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers[i], strNewLabel);
-                if (!SUCCEEDED(hrc))
-                    return hrc;
-                fLabelFound = true;
-                break;
+                hrc = pEditor->setContentOfLine(vecLineNumbers[i], strNewLabel);
+                if (SUCCEEDED(hrc))
+                {
+                    fLabelFound = true;
+                    break;
+                }
             }
         }
         if (!fLabelFound)
-            return E_FAIL;
-        /* Modify the content of default lines so that they point to label we have chosen above. */
-        Utf8Str strNewContent("default ");
-        strNewContent.append(pszNewLabel);
+            hrc = VBOX_E_FILE_ERROR;
 
-        std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
-        if (!vecDefaultLineNumbers.empty())
+        if (SUCCEEDED(hrc))
         {
-            for (size_t j = 0; j < vecDefaultLineNumbers.size(); ++j)
+            /* Modify the content of default lines so that they point to label we have chosen above. */
+            Utf8Str strNewContent("default ");
+            strNewContent.append(pszNewLabel);
+
+            std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
+            if (!vecDefaultLineNumbers.empty())
             {
-                HRESULT hrc = pEditor->setContentOfLine(vecDefaultLineNumbers[j], strNewContent);
-                if (FAILED(hrc))
-                    return hrc;
+                for (size_t j = 0; j < vecDefaultLineNumbers.size(); ++j)
+                {
+                    hrc = pEditor->setContentOfLine(vecDefaultLineNumbers[j], strNewContent);
+                    if (FAILED(hrc))
+                        break;
+                }
             }
+            /* Add a defaul label line. */
+            else
+                hrc = pEditor->appendLine(strNewContent);
         }
-        /* Add a defaul label line. */
-        else
-        {
-            HRESULT hrc = pEditor->appendLine(strNewContent);
-            if (FAILED(hrc))
-                return hrc;
-        }
-
+        if (FAILED(hrc))
+            return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, hrc,
+                                          tr("Failed to edit menu configuration file: \"%s\": (%Rrc)"),
+                                          pszMenuConfigFileName, hrc);
     }
     catch (std::bad_alloc &)
     {
@@ -1199,6 +1224,85 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
     return UnattendedLinuxInstaller::editIsoLinuxCommon(pEditor);
 }
 
+HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor, const char *pszGrubConfigFileName)
+{
+    /* Default menu entry of grub.cfg is set in /etc/deafult/grub file. */
+    try
+    {
+        /* Set timeouts to 10 seconds. */
+        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("set timeout", RTCString::CaseInsensitive);
+        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
+            {
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=10");
+                if (FAILED(hrc))
+                    return hrc;
+            }
+
+        /* Modify kernel lines assuming that they starts with 'linux' keyword and 2nd word is the kernel command.*
+         * we remove whatever comes after command and add our own command line options. */
+        vecLineNumbers = pEditor->findTemplate("linux", RTCString::CaseInsensitive);
+        if (vecLineNumbers.size() > 0)
+        {
+            Utf8Str const &rStrAppend = mpParent->i_getExtraInstallKernelParameters().isNotEmpty()
+                                      ? mpParent->i_getExtraInstallKernelParameters()
+                                      : mStrDefaultExtraInstallKernelParameters;
+
+            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            {
+                HRESULT hrc = S_OK;
+                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("linux", RTCString::CaseInsensitive))
+                {
+                    Utf8Str strLine = pEditor->getContentOfLine(vecLineNumbers[i]);
+                    size_t cbPos = strLine.find("linux") + strlen("linux");
+                    bool fSecondWord = false;
+                    /* Find the end of 2nd word assuming that it is kernel command. */
+                    while (cbPos < strLine.length())
+                    {
+                        if (!fSecondWord)
+                        {
+                            if (strLine[cbPos] != '\t' && strLine[cbPos] != ' ')
+                                fSecondWord = true;
+                        }
+                        else
+                        {
+                            if (strLine[cbPos] == '\t' || strLine[cbPos] == ' ')
+                                break;
+                        }
+                        ++cbPos;
+                    }
+                    if (!fSecondWord)
+                        hrc = VBOX_E_FILE_ERROR;
+
+                    if (SUCCEEDED(hrc))
+                    {
+                        strLine.erase(cbPos, strLine.length() - cbPos);
+
+                        /* Do the appending. */
+                        if (rStrAppend.isNotEmpty())
+                        {
+                            if (!rStrAppend.startsWith(" ") && !strLine.endsWith(" "))
+                                strLine.append(' ');
+                            strLine.append(rStrAppend);
+                        }
+
+                        /* Update line. */
+                        hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), strLine);
+                    }
+                    if (FAILED(hrc))
+                        return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, hrc,
+                                                      tr("Failed to edit grub configuration file: \"%s\": (%Rrc)"),
+                                                      pszGrubConfigFileName, hrc);
+                }
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return S_OK;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
