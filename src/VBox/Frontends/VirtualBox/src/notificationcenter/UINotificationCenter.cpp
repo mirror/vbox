@@ -37,8 +37,6 @@
 #include "UINotificationCenter.h"
 #include "UINotificationObjectItem.h"
 #include "UINotificationModel.h"
-#include "UIVirtualBoxEventHandler.h" /** @todo EXAMPLE -- REMOVE THIS */
-#include "CUpdateAgent.h"             /** @todo EXAMPLE -- REMOVE THIS */
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -405,12 +403,6 @@ void UINotificationCenter::sltHandleOrderChange()
         m_pButtonOpen->toggle();
 }
 
-/** @todo EXAMPLE -- REMOVE THIS */
-void UINotificationCenter::sltUpdateAgentAvailable(CUpdateAgent comAgent, QString strVer, KUpdateChannel, KUpdateSeverity, QString, QString, QString)
-{
-    RT_NOREF(comAgent, strVer);
-}
-
 void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
 {
     if (fToggled)
@@ -529,10 +521,6 @@ void UINotificationCenter::prepare()
     m_enmOrder = gEDataManager->notificationCenterOrder();
     connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
             this, &UINotificationCenter::sltHandleOrderChange);
-
-    /** @todo EXAMPLE -- REMOVE THIS */
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigUpdateAgentAvailable,
-            this, &UINotificationCenter::sltUpdateAgentAvailable);
 
     /* Prepare the rest of stuff: */
     prepareModel();

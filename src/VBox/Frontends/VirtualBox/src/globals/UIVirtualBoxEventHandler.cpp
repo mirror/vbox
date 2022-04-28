@@ -77,14 +77,6 @@ signals:
       * @param  enmMediumType  Brings corresponding medium type.
       * @param  fRegistered    Brings whether medium is registered or unregistered. */
     void sigMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
-    /** Notifies about an available update of an update agent. */
-    void sigUpdateAgentAvailable(CUpdateAgent, QString, KUpdateChannel, KUpdateSeverity, QString, QString, QString);
-    /** Notifies about an error of an update agent. */
-    void sigUpdateAgentError(CUpdateAgent, QString, long);
-    /** Notifies about a state change of an update agent. */
-    void sigUpdateAgentStateChanged(CUpdateAgent, KUpdateState);
-    /** Notifies about update agent @a comAgent settings change. */
-    void sigUpdateAgentSettingsChanged(CUpdateAgent comAgent, const QString &strAttributeHint);
 
 public:
 
@@ -189,26 +181,6 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
 
     /* Register event sources in their listeners as well: */
     m_pQtListener->getWrapped()->registerSource(m_comEventSource, m_comEventListener);
-
-    /* Update agent event handling: */
-    const CUpdateAgent comUpdateAgentHost = uiCommon().host().GetUpdateHost();
-    AssertWrapperOk(comUpdateAgentHost);
-          CEventSource comUpdateAgentHostEventSource = comUpdateAgentHost.GetEventSource();
-    AssertWrapperOk(comUpdateAgentHostEventSource);
-
-    eventTypes.clear();
-    eventTypes
-        << KVBoxEventType_OnUpdateAgentAvailable
-        << KVBoxEventType_OnUpdateAgentStateChanged
-        << KVBoxEventType_OnUpdateAgentError
-        << KVBoxEventType_OnUpdateAgentSettingsChanged;
-
-    /* Register event listener for event source aggregator: */
-    comUpdateAgentHostEventSource.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
-    AssertWrapperOk(m_comEventSource);
-
-    /* Register event sources in their listeners as well: */
-    m_pQtListener->getWrapped()->registerSource(comUpdateAgentHostEventSource, m_comEventListener);
 }
 
 void UIVirtualBoxEventHandlerProxy::prepareConnections()
@@ -265,20 +237,6 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
-            Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigUpdateAgentAvailable(CUpdateAgent, QString, KUpdateChannel, KUpdateSeverity,
-                                                                        QString, QString, QString)),
-            this, SIGNAL(sigUpdateAgentAvailable(CUpdateAgent, QString, KUpdateChannel, KUpdateSeverity,
-                                                 QString, QString, QString)),
-            Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigUpdateAgentError(CUpdateAgent, QString, long)),
-            this, SIGNAL(sigUpdateAgentError(CUpdateAgent, QString, long)),
-            Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigUpdateAgentStateChanged(CUpdateAgent, KUpdateState)),
-            this, SIGNAL(sigUpdateAgentStateChanged(CUpdateAgent, KUpdateState)),
-            Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigUpdateAgentSettingsChanged(CUpdateAgent, QString)),
-            this, SIGNAL(sigUpdateAgentSettingsChanged(CUpdateAgent, QString)),
             Qt::DirectConnection);
 }
 
@@ -397,20 +355,6 @@ void UIVirtualBoxEventHandler::prepareConnections()
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
-            Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigUpdateAgentAvailable(CUpdateAgent, QString, KUpdateChannel, KUpdateSeverity,
-                                                     QString, QString, QString)),
-            this, SIGNAL(sigUpdateAgentAvailable(CUpdateAgent, QString, KUpdateChannel, KUpdateSeverity,
-                                                 QString, QString, QString)),
-            Qt::DirectConnection);
-    connect(m_pProxy, SIGNAL(sigUpdateAgentError(CUpdateAgent, QString, long)),
-            this, SIGNAL(sigUpdateAgentError(CUpdateAgent, QString, long)),
-            Qt::DirectConnection);
-    connect(m_pProxy, SIGNAL(sigUpdateAgentStateChanged(CUpdateAgent, KUpdateState)),
-            this, SIGNAL(sigUpdateAgentStateChanged(CUpdateAgent, KUpdateState)),
-            Qt::DirectConnection);
-    connect(m_pProxy, SIGNAL(sigUpdateAgentSettingsChanged(CUpdateAgent, QString)),
-            this, SIGNAL(sigUpdateAgentSettingsChanged(CUpdateAgent, QString)),
             Qt::QueuedConnection);
 }
 
