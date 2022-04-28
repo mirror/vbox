@@ -51,7 +51,7 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
 
         if (m_pCheckBox)
         {
-            m_pCheckBox->setChecked(!m_guiValue.isNoNeedToCheck());
+            m_pCheckBox->setChecked(m_guiValue.isCheckEnabled());
 
             if (m_pCheckBox->isChecked())
             {

@@ -66,99 +66,95 @@ QStringList VBoxUpdateData::list()
 
 VBoxUpdateData::VBoxUpdateData(const QString &strData)
     : m_strData(strData)
-    , m_enmUpdatePeriod(UpdatePeriodType_1Day)
-    , m_enmUpdateChannel(KUpdateChannel_Stable)
+    , m_enmUpdatePeriod(UpdatePeriodType_Never)
+    , m_enmUpdateChannel(KUpdateChannel_Invalid)
 {
-    /* Parse standard values: */
+    /* Skip 'never' case: */
     if (m_strData == "never")
-        m_enmUpdatePeriod = UpdatePeriodType_Never;
-    /* Parse other values: */
-    else
-    {
+        return;
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        QStringList parser = m_strData.split(", ", Qt::SkipEmptyParts);
+    const QStringList parser = m_strData.split(", ", Qt::SkipEmptyParts);
 #else
-        QStringList parser = m_strData.split(", ", QString::SkipEmptyParts);
+    const QStringList parser = m_strData.split(", ", QString::SkipEmptyParts);
 #endif
 
-        /* Parse 'period' value: */
-        if (parser.size() > 0)
-        {
-            if (s_days.isEmpty())
-                populate();
-            const UpdatePeriodType enmUpdatePeriod = (UpdatePeriodType)s_days.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
-            m_enmUpdatePeriod = enmUpdatePeriod == UpdatePeriodType_Never ? UpdatePeriodType_1Day : enmUpdatePeriod;
-        }
+    /* Parse 'period' value: */
+    if (parser.size() > 0)
+    {
+        if (s_days.isEmpty())
+            populate();
+        m_enmUpdatePeriod = (UpdatePeriodType)s_days.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
+        if (m_enmUpdatePeriod == UpdatePeriodType_Never)
+            m_enmUpdatePeriod = UpdatePeriodType_1Day;
+    }
 
-        /* Parse 'date' value: */
-        if (parser.size() > 1)
-        {
-            QDate date = QDate::fromString(parser.at(1), Qt::ISODate);
-            m_date = date.isValid() ? date : QDate::currentDate();
-        }
+    /* Parse 'date' value: */
+    if (parser.size() > 1)
+    {
+        QDate date = QDate::fromString(parser.at(1), Qt::ISODate);
+        m_date = date.isValid() ? date : QDate::currentDate();
+    }
 
-        /* Parse 'update channel' value: */
-        if (parser.size() > 2)
-        {
-            m_enmUpdateChannel = updateChannelFromInternalString(parser.at(2));
-        }
+    /* Parse 'update channel' value: */
+    if (parser.size() > 2)
+    {
+        m_enmUpdateChannel = updateChannelFromInternalString(parser.at(2));
+    }
 
-        /* Parse 'version' value: */
-        if (parser.size() > 3)
-        {
-            m_version = UIVersion(parser.at(3));
-        }
+    /* Parse 'version' value: */
+    if (parser.size() > 3)
+    {
+        m_version = UIVersion(parser.at(3));
     }
 }
 
 VBoxUpdateData::VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel)
-    : m_strData(QString())
+    : m_strData("never")
     , m_enmUpdatePeriod(enmUpdatePeriod)
     , m_enmUpdateChannel(enmUpdateChannel)
 {
-    /* Encode standard values: */
+    /* Skip 'UpdatePeriodType_Never' case: */
     if (m_enmUpdatePeriod == UpdatePeriodType_Never)
-        m_strData = "never";
-    /* Encode other values: */
-    else
-    {
-        /* Encode 'period' value: */
-        if (s_days.isEmpty())
-            populate();
-        QString remindPeriod = s_days.at(m_enmUpdatePeriod).key;
+        return;
 
-        /* Encode 'date' value: */
-        m_date = QDate::currentDate();
-        QStringList parser(remindPeriod.split(' '));
-        if (parser[1] == "d")
-            m_date = m_date.addDays(parser[0].toInt());
-        else if (parser[1] == "w")
-            m_date = m_date.addDays(parser[0].toInt() * 7);
-        else if (parser[1] == "m")
-            m_date = m_date.addMonths(parser[0].toInt());
-        QString remindDate = m_date.toString(Qt::ISODate);
+    /* Encode 'period' value: */
+    if (s_days.isEmpty())
+        populate();
+    const QString strRemindPeriod = s_days.at(m_enmUpdatePeriod).key;
 
-        /* Encode 'update channel' value: */
-        QString strUpdateChannel = updateChannelName();
+    /* Encode 'date' value: */
+    m_date = QDate::currentDate();
+    QStringList parser(strRemindPeriod.split(' '));
+    if (parser[1] == "d")
+        m_date = m_date.addDays(parser[0].toInt());
+    else if (parser[1] == "w")
+        m_date = m_date.addDays(parser[0].toInt() * 7);
+    else if (parser[1] == "m")
+        m_date = m_date.addDays(parser[0].toInt() * 30);
+    const QString strRemindDate = m_date.toString(Qt::ISODate);
 
-        /* Encode 'version' value: */
-        QString versionValue = UIVersion(uiCommon().vboxVersionStringNormalized()).toString();
+    /* Encode 'update channel' value: */
+    const QString strUpdateChannel = updateChannelName();
 
-        /* Composite m_strData: */
-        m_strData = QString("%1, %2, %3, %4").arg(remindPeriod, remindDate, strUpdateChannel, versionValue);
-    }
+    /* Encode 'version' value: */
+    m_version = UIVersion(uiCommon().vboxVersionStringNormalized());
+    const QString strVersionValue = m_version.toString();
+
+    /* Compose m_strData: */
+    m_strData = QString("%1, %2, %3, %4").arg(strRemindPeriod, strRemindDate, strUpdateChannel, strVersionValue);
 }
 
-bool VBoxUpdateData::isNoNeedToCheck() const
+bool VBoxUpdateData::isCheckEnabled() const
 {
-    /* No need to check if Period == Never: */
-    return m_enmUpdatePeriod == UpdatePeriodType_Never;
+    /* Check is enabled if Period != Never: */
+    return m_enmUpdatePeriod != UpdatePeriodType_Never;
 }
 
-bool VBoxUpdateData::isNeedToCheck() const
+bool VBoxUpdateData::isCheckRequired() const
 {
-    /* Return 'false' if there is no need to check: */
-    if (isNoNeedToCheck())
+    /* Return 'false' if there check is disabled: */
+    if (!isCheckEnabled())
         return false;
 
     /* Return 'true' if date of next check is today or missed: */
@@ -190,8 +186,9 @@ QDate VBoxUpdateData::date() const
 
 QString VBoxUpdateData::dateToString() const
 {
-    return isNoNeedToCheck() ? QCoreApplication::translate("UIUpdateManager", "Never")
-                             : QLocale::system().toString(m_date, QLocale::ShortFormat);
+    return   isCheckEnabled()
+           ? QLocale::system().toString(m_date, QLocale::ShortFormat)
+           : QCoreApplication::translate("UIUpdateManager", "Never");
 }
 
 KUpdateChannel VBoxUpdateData::updateChannel() const

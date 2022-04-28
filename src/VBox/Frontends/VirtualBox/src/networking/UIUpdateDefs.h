@@ -63,8 +63,8 @@ struct VBoxUpdateDay
                || key == other.key;
     }
 
-    QString     val;
-    QString     key;
+    QString  val;
+    QString  key;
 };
 typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
 
@@ -84,10 +84,10 @@ public:
     /** Constructs update description on the basis of passed @a enmUpdatePeriod and @a enmUpdateChannel. */
     VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel);
 
-    /** Returns whether there is no need to check. */
-    bool isNoNeedToCheck() const;
-    /** Returns whether there is really need to check. */
-    bool isNeedToCheck() const;
+    /** Returns whether check is enabled. */
+    bool isCheckEnabled() const;
+    /** Returns whether check is required. */
+    bool isCheckRequired() const;
 
     /** Returns update data. */
     QString data() const;
@@ -128,16 +128,16 @@ private:
 
     /** Holds the update data. */
     QString  m_strData;
+
     /** Holds the update period. */
-    UpdatePeriodType      m_enmUpdatePeriod;
+    UpdatePeriodType  m_enmUpdatePeriod;
     /** Holds the update date. */
-    QDate           m_date;
+    QDate             m_date;
     /** Holds the update channel. */
-    KUpdateChannel  m_enmUpdateChannel;
+    KUpdateChannel    m_enmUpdateChannel;
     /** Holds the update version. */
-    UIVersion       m_version;
+    UIVersion         m_version;
 };
 
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UIUpdateDefs_h */
-

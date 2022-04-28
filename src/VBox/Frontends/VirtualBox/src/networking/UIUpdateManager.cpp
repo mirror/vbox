@@ -346,7 +346,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForcedCall /* = false */
 #ifdef VBOX_NEW_VERSION_TEST
         true ||
 #endif
-        fForcedCall || currentData.isNeedToCheck())
+        fForcedCall || currentData.isCheckRequired())
     {
         /* Prepare update queue: */
         m_pQueue->enqueue(new UIUpdateStepVirtualBox(fForcedCall));
