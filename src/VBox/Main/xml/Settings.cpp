@@ -2359,7 +2359,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                                 pelmLevel4Child->getAttributeValue("checkFreqSec", updateHost.uCheckFreqSeconds);
                                 pelmLevel4Child->getAttributeValue("repoUrl", updateHost.strRepoUrl);
                                 pelmLevel4Child->getAttributeValue("proxyMode", (uint32_t&)updateHost.enmProxyMode);
-                                pelmLevel4Child->getAttributeValue("proxyUrl", (uint32_t&)updateHost.enmProxyMode);
+                                pelmLevel4Child->getAttributeValue("proxyUrl", updateHost.strProxyUrl);
                                 pelmLevel4Child->getAttributeValue("lastCheckDate", updateHost.strLastCheckDate);
                                 pelmLevel4Child->getAttributeValue("checkCount", updateHost.uCheckCount);
                             }
