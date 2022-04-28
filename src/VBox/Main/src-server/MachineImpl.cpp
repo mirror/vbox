@@ -68,6 +68,7 @@
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/lockvalidator.h>
+#include <iprt/memsafer.h>
 #include <iprt/process.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/xml.h>               /* xml::XmlFileWriter::s_psz*Suff. */
@@ -77,6 +78,7 @@
 
 #include <VBox/com/array.h>
 #include <VBox/com/list.h>
+#include <VBox/VBoxCryptoIf.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -109,6 +111,58 @@
 
 // defines / prototypes
 /////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+# define BUF_DATA_SIZE     _64K
+
+enum CipherMode
+{
+    CipherModeGcm = 0,
+    CipherModeCtr,
+    CipherModeXts,
+    CipherModeMax
+};
+
+enum AesSize
+{
+    Aes128 = 0,
+    Aes256,
+    AesMax
+};
+
+const char *g_apszCipher[AesMax][CipherModeMax] =
+{
+    {"AES-GCM128", "AES-CTR128", "AES-XTS128-PLAIN64"},
+    {"AES-GCM256", "AES-CTR256", "AES-XTS256-PLAIN64"}
+};
+const char *g_apszCipherAlgo[AesMax] = {"AES-128", "AES-256"};
+
+static const char *getCipherString(const char *pszAlgo, const int iMode)
+{
+    if (iMode >= CipherModeMax)
+        return pszAlgo;
+
+    for (int i = 0; i < AesMax; i++)
+    {
+        if (strcmp(pszAlgo, g_apszCipherAlgo[i]) == 0)
+            return g_apszCipher[i][iMode];
+    }
+    return pszAlgo;
+}
+
+static const char *getCipherStringWithoutMode(const char *pszAlgo)
+{
+    for (int i = 0; i < AesMax; i++)
+    {
+        for (int j = 0; j < CipherModeMax; j++)
+        {
+            if (strcmp(pszAlgo, g_apszCipher[i][j]) == 0)
+                return g_apszCipherAlgo[i];
+        }
+    }
+    return pszAlgo;
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // Machine::Data structure
@@ -143,6 +197,10 @@ Machine::Data::Data()
     mSession.mPID              = NIL_RTPROCESS;
     mSession.mLockType         = LockType_Null;
     mSession.mState            = SessionState_Unlocked;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    mpKeyStore                 = NULL;
+#endif
 }
 
 Machine::Data::~Data()
@@ -309,9 +367,6 @@ HRESULT Machine::init(VirtualBox *aParent,
     RT_NOREF(aCipher);
     if (aPassword.isNotEmpty() || aPasswordId.isNotEmpty())
         return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
-#else
-    /** @todo */
-    RT_NOREF(aCipher, aPasswordId, aPassword);
 #endif
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -320,6 +375,68 @@ HRESULT Machine::init(VirtualBox *aParent,
 
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    com::Utf8Str strSsmKeyId;
+    com::Utf8Str strSsmKeyStore;
+    com::Utf8Str strNVRAMKeyId;
+    com::Utf8Str strNVRAMKeyStore;
+
+    if (aPassword.isNotEmpty() && aPasswordId.isNotEmpty())
+    {
+        /* Resolve the cryptographic interface. */
+        PCVBOXCRYPTOIF pCryptoIf = NULL;
+        HRESULT hrc = aParent->i_retainCryptoIf(&pCryptoIf);
+        if (SUCCEEDED(hrc))
+        {
+            CipherMode aenmMode[]        = {CipherModeGcm, CipherModeGcm, CipherModeGcm, CipherModeCtr};
+            com::Utf8Str *astrKeyId[]    = {&mData->mstrKeyId, &strSsmKeyId, &strNVRAMKeyId, &mData->mstrLogKeyId};
+            com::Utf8Str *astrKeyStore[] = {&mData->mstrKeyStore, &strSsmKeyStore, &strNVRAMKeyStore, &mData->mstrLogKeyStore};
+
+            for (uint32_t i = 0; i < RT_ELEMENTS(astrKeyId); i++)
+            {
+                const char *pszCipher = getCipherString(aCipher.c_str(), aenmMode[i]);
+                if (!pszCipher)
+                {
+                    hrc = setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("The cipher '%s' is not supported"), aCipher.c_str());
+                    break;
+                }
+
+                VBOXCRYPTOCTX hCryptoCtx;
+                int vrc = pCryptoIf->pfnCryptoCtxCreate(pszCipher, aPassword.c_str(), &hCryptoCtx);
+                if (RT_FAILURE(vrc))
+                {
+                    hrc = setErrorBoth(E_FAIL, vrc, tr("New key store creation failed, (%Rrc)"), vrc);
+                    break;
+                }
+
+                char *pszKeyStore;
+                vrc = pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszKeyStore);
+                int vrc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+                AssertRC(vrc2);
+
+                if (RT_FAILURE(vrc))
+                {
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Saving the key store failed, (%Rrc)"), vrc);
+                    break;
+                }
+
+                *(astrKeyStore[i]) = pszKeyStore;
+                RTMemFree(pszKeyStore);
+                *(astrKeyId[i]) = aPasswordId;
+            }
+
+            HRESULT hrc2 = aParent->i_releaseCryptoIf(pCryptoIf);
+            Assert(hrc2 == S_OK);
+
+            if (FAILED(hrc))
+                return hrc; /* Error is set. */
+        }
+        else
+            return hrc; /* Error is set. */
+    }
+#endif
 
     rc = i_tryCreateMachineConfigFile(fForceOverwrite);
     if (FAILED(rc)) return rc;
@@ -334,6 +451,11 @@ HRESULT Machine::init(VirtualBox *aParent,
 
     if (SUCCEEDED(rc))
     {
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        mSSData->strStateKeyId = strSsmKeyId;
+        mSSData->strStateKeyStore = strSsmKeyStore;
+#endif
+
         // set to true now to cause uninit() to call uninitDataAndChildObjects() on failure
         mData->mAccessible = TRUE;
 
@@ -416,6 +538,15 @@ HRESULT Machine::init(VirtualBox *aParent,
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
     {
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (aPassword.isNotEmpty() && aPasswordId.isNotEmpty())
+        {
+            size_t   cbPassword = aPassword.length() + 1;
+            uint8_t *pbPassword = (uint8_t *)aPassword.c_str();
+            mData->mpKeyStore->addSecretKey(aPasswordId, pbPassword, cbPassword);
+        }
+#endif
+
         if (mData->mAccessible)
             autoInitSpan.setSucceeded();
         else
@@ -459,12 +590,18 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.c_str()));
 
+    PCVBOXCRYPTOIF pCryptoIf = NULL;
 #ifndef VBOX_WITH_FULL_VM_ENCRYPTION
     if (strPassword.isNotEmpty())
         return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    /** @todo */
-    RT_NOREF(strPassword);
+    if (strPassword.isNotEmpty())
+    {
+        /* Get at the crpytographic interface. */
+        HRESULT hrc = aParent->i_retainCryptoIf(&pCryptoIf);
+        if (FAILED(hrc))
+            return hrc; /* Error is set. */
+    }
 #endif
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -496,7 +633,9 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
             try
             {
                 // load and parse machine XML; this will throw on XML or logic errors
-                mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
+                mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull,
+                                                                            pCryptoIf,
+                                                                            strPassword.c_str());
 
                 // reject VM UUID duplicates, they can happen if someone
                 // tries to register an already known VM config again
@@ -513,15 +652,47 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
                 // use UUID from machine config
                 unconst(mData->mUuid) = mData->pMachineConfigFile->uuid;
 
-                rc = i_loadMachineDataFromSettings(*mData->pMachineConfigFile,
-                                                 NULL /* puuidRegistry */);
-                if (FAILED(rc)) throw rc;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                // No exception is thrown if config is encrypted, allowing us to get the uuid and the encryption fields.
+                // We fill in the encryptions fields, and the rest will be filled in if all data parsed.
+                mData->mstrKeyId    = mData->pMachineConfigFile->strKeyId;
+                mData->mstrKeyStore = mData->pMachineConfigFile->strKeyStore;
+#endif
 
-                /* At this point the changing of the current state modification
-                 * flag is allowed. */
-                i_allowStateModification();
+                if (mData->pMachineConfigFile->enmParseState == settings::MachineConfigFile::ParseState_PasswordError)
+                {
+                    // We just set the inaccessible state and fill the error info allowing the caller
+                    // to register the machine with encrypted config even if the password is incorrect
+                    mData->mAccessible = FALSE;
 
-                i_commit();
+                    /* fetch the current error info */
+                    mData->mAccessError = com::ErrorInfo();
+
+                    throw setError(VBOX_E_PASSWORD_INCORRECT,
+                                   tr("Decryption of the machine {%RTuuid} failed. Incorrect or unknown password"),
+                                   mData->pMachineConfigFile->uuid.raw());
+                }
+                else
+                {
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                    if (strPassword.isNotEmpty())
+                    {
+                        size_t cbKey = strPassword.length() + 1; /* Include terminator */
+                        const uint8_t *pbKey = (const uint8_t *)strPassword.c_str();
+                        mData->mpKeyStore->addSecretKey(mData->mstrKeyId, pbKey, cbKey);
+                    }
+#endif
+
+                    rc = i_loadMachineDataFromSettings(*mData->pMachineConfigFile,
+                                                       NULL /* puuidRegistry */);
+                    if (FAILED(rc)) throw rc;
+
+                    /* At this point the changing of the current state modification
+                     * flag is allowed. */
+                    i_allowStateModification();
+
+                    i_commit();
+                }
             }
             catch (HRESULT err)
             {
@@ -549,6 +720,14 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
             mParent->i_unregisterMachineMedia(i_getId());
         }
     }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (pCryptoIf)
+    {
+        HRESULT hrc2 = aParent->i_releaseCryptoIf(pCryptoIf);
+        Assert(hrc2 == S_OK);
+    }
+#endif
 
     LogFlowThisFunc(("mName='%s', mRegistered=%RTbool, mAccessible=%RTbool "
                       "rc=%08X\n",
@@ -683,6 +862,13 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
                             strConfigFile.c_str(),
                             vrc1);
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /** @todo Only create when the machine is going to be encrypted. */
+    /* Non-pageable memory is not accessible for non-VM process */
+    mData->mpKeyStore = new SecretKeyStore(false /* fKeyBufNonPageable */);
+    AssertReturn(mData->mpKeyStore, VERR_NO_MEMORY);
+#endif
+
     LogFlowThisFuncLeave();
 
     return rc;
@@ -761,35 +947,81 @@ HRESULT Machine::i_registeredInit()
          * is TRUE). */
         mData->mRegistered = FALSE;
 
-        try
+        PCVBOXCRYPTOIF pCryptoIf = NULL;
+        SecretKey *pKey = NULL;
+        const char *pszPassword = NULL;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        /* Resolve password and cryptographic support interface if machine is encrypted. */
+        if (mData->mstrKeyId.isNotEmpty())
         {
-            // load and parse machine XML; this will throw on XML or logic errors
-            mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
-
-            if (mData->mUuid != mData->pMachineConfigFile->uuid)
-                throw setError(E_FAIL,
-                               tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
-                               mData->pMachineConfigFile->uuid.raw(),
-                               mData->m_strConfigFileFull.c_str(),
-                               mData->mUuid.toString().c_str(),
-                               mParent->i_settingsFilePath().c_str());
-
-            rc = i_loadMachineDataFromSettings(*mData->pMachineConfigFile,
-                                               NULL /* const Guid *puuidRegistry */);
-            if (FAILED(rc)) throw rc;
+            /* Get at the crpytographic interface. */
+            rc = mParent->i_retainCryptoIf(&pCryptoIf);
+            if (SUCCEEDED(rc))
+            {
+                int vrc = mData->mpKeyStore->retainSecretKey(mData->mstrKeyId, &pKey);
+                if (RT_SUCCESS(vrc))
+                    pszPassword = (const char *)pKey->getKeyBuffer();
+                else
+                    rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to retain key for key ID '%s' with %Rrc"),
+                                      mData->mstrKeyId.c_str(), vrc);
+            }
         }
-        catch (HRESULT err)
+#else
+        RT_NOREF(pKey);
+#endif
+
+        if (SUCCEEDED(rc))
         {
-            /* we assume that error info is set by the thrower */
-            rc = err;
-        }
-        catch (...)
-        {
-            rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+            try
+            {
+                // load and parse machine XML; this will throw on XML or logic errors
+                mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull,
+                                                                            pCryptoIf, pszPassword);
+
+                if (mData->mUuid != mData->pMachineConfigFile->uuid)
+                    throw setError(E_FAIL,
+                                   tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
+                                   mData->pMachineConfigFile->uuid.raw(),
+                                   mData->m_strConfigFileFull.c_str(),
+                                   mData->mUuid.toString().c_str(),
+                                   mParent->i_settingsFilePath().c_str());
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                // If config is encrypted, no exception is thrown allowing us to get the uuid and the encryption fields.
+                // We fill in the encryptions fields, and the rest will be filled in if all data parsed
+                mData->mstrKeyId    = mData->pMachineConfigFile->strKeyId;
+                mData->mstrKeyStore = mData->pMachineConfigFile->strKeyStore;
+
+                if (mData->pMachineConfigFile->enmParseState == settings::MachineConfigFile::ParseState_PasswordError)
+                    throw setError(VBOX_E_PASSWORD_INCORRECT,
+                                   tr("Config decryption of the machine {%RTuuid} failed. Incorrect or unknown password"),
+                                   mData->pMachineConfigFile->uuid.raw());
+#endif
+
+                rc = i_loadMachineDataFromSettings(*mData->pMachineConfigFile,
+                                                   NULL /* const Guid *puuidRegistry */);
+                if (FAILED(rc)) throw rc;
+            }
+            catch (HRESULT err)
+            {
+                /* we assume that error info is set by the thrower */
+                rc = err;
+            }
+            catch (...)
+            {
+                rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+            }
+
+            /* Restore the registered flag (even on failure) */
+            mData->mRegistered = TRUE;
         }
 
-        /* Restore the registered flag (even on failure) */
-        mData->mRegistered = TRUE;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (pCryptoIf)
+            mParent->i_releaseCryptoIf(pCryptoIf);
+        if (pKey)
+            mData->mpKeyStore->releaseSecretKey(mData->mstrKeyId);
+#endif
     }
 
     if (SUCCEEDED(rc))
@@ -928,6 +1160,11 @@ void Machine::uninit()
 
     if (mData->mAccessible)
         uninitDataAndChildObjects();
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (mData->mpKeyStore != NULL)
+        delete mData->mpKeyStore;
+#endif
 
     /* free the essential data structure last */
     mData.free();
@@ -10001,6 +10238,34 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
                         tr("The machine is not accessible, so cannot save settings"));
 
     HRESULT rc = S_OK;
+    PCVBOXCRYPTOIF pCryptoIf = NULL;
+    const char  *pszPassword = NULL;
+    SecretKey   *pKey        = NULL;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (mData->mstrKeyId.isNotEmpty())
+    {
+        /* VM is going to be encrypted. */
+        alock.release(); /** @todo Revise the locking. */
+        rc = mParent->i_retainCryptoIf(&pCryptoIf);
+        alock.acquire();
+        if (FAILED(rc)) return rc; /* Error is set. */
+
+        int vrc = mData->mpKeyStore->retainSecretKey(mData->mstrKeyId, &pKey);
+        if (RT_SUCCESS(vrc))
+            pszPassword = (const char *)pKey->getKeyBuffer();
+        else
+        {
+            mParent->i_releaseCryptoIf(pCryptoIf);
+            return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                tr("Failed to retain VM encryption password using ID '%s' with %Rrc"),
+                                mData->mstrKeyId.c_str(), vrc);
+        }
+    }
+#else
+    RT_NOREF(pKey);
+#endif
+
     bool fNeedsWrite = false;
     bool fSettingsFileIsNew = false;
 
@@ -10009,7 +10274,20 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
      * creating a new settings file if this is a new machine. */
     rc = i_prepareSaveSettings(pfNeedsGlobalSaveSettings,
                                &fSettingsFileIsNew);
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc))
+    {
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (pCryptoIf)
+        {
+            alock.release(); /** @todo Revise the locking. */
+            mParent->i_releaseCryptoIf(pCryptoIf);
+            alock.acquire();
+        }
+        if (pKey)
+            mData->mpKeyStore->releaseSecretKey(mData->mstrKeyId);
+#endif
+        return rc;
+    }
 
     // keep a pointer to the current settings structures
     settings::MachineConfigFile *pOldConfig = mData->pMachineConfigFile;
@@ -10020,6 +10298,10 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
         // make a fresh one to have everyone write stuff into
         pNewConfig = new settings::MachineConfigFile(NULL);
         pNewConfig->copyBaseFrom(*mData->pMachineConfigFile);
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        pNewConfig->strKeyId    = mData->mstrKeyId;
+        pNewConfig->strKeyStore = mData->mstrKeyStore;
+#endif
 
         // now go and copy all the settings data from COM to the settings structures
         // (this calls i_saveSettings() on all the COM objects in the machine)
@@ -10057,8 +10339,12 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
         pNewConfig->fCurrentStateModified = !!mData->mCurrentStateModified;
 
         if (fNeedsWrite)
+        {
             // now spit it all out!
-            pNewConfig->write(mData->m_strConfigFileFull);
+            pNewConfig->write(mData->m_strConfigFileFull, pCryptoIf, pszPassword);
+            if (aFlags & SaveS_RemoveBackup)
+                RTFileDelete((mData->m_strConfigFileFull + "-prev").c_str());
+        }
 
         mData->pMachineConfigFile = pNewConfig;
         delete pOldConfig;
@@ -10084,6 +10370,17 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
     {
         rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (pCryptoIf)
+    {
+        alock.release(); /** @todo Revise the locking. */
+        mParent->i_releaseCryptoIf(pCryptoIf);
+        alock.acquire();
+    }
+    if (pKey)
+        mData->mpKeyStore->releaseSecretKey(mData->mstrKeyId);
+#endif
 
     if (fNeedsWrite)
     {

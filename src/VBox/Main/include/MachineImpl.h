@@ -212,14 +212,15 @@ public:
         /* Store containing the DEK used for encrypting the VM's log files */
         com::Utf8Str        mstrLogKeyStore;
 #endif
-};
+    };
 
     /**
      *  Saved state data.
      *
-     *  It's actually only the state file path string, but it needs to be
-     *  separate from Data, because Machine and SessionMachine instances
-     *  share it, while SnapshotMachine does not.
+     *  It's actually only the state file path string and its encryption
+     *  settings, but it needs to be separate from Data, because Machine
+     *  and SessionMachine instances share it, while SnapshotMachine does
+     *  not.
      *
      *  The data variable is |mSSData|.
      */
@@ -697,6 +698,7 @@ protected:
         /* flags for #saveSettings() */
         SaveS_ResetCurStateModified = 0x01,
         SaveS_Force = 0x04,
+        SaveS_RemoveBackup = 0x08,
         /* flags for #saveStateSettings() */
         SaveSTS_CurStateModified = 0x20,
         SaveSTS_StateFilePath = 0x40,
