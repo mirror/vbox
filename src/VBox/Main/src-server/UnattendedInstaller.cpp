@@ -1087,9 +1087,9 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         if (SUCCEEDED(hrc))
         {
             if (strMenuConfigFileName.compare("/boot/grub/grub.cfg", RTCString::CaseInsensitive) == 0)
-                hrc = editDebianGrubCfg(&Editor, strMenuConfigFileName.c_str());
+                hrc = editDebianGrubCfg(&Editor);
             else
-                hrc = editDebianMenuCfg(&Editor, strMenuConfigFileName.c_str());
+                hrc = editDebianMenuCfg(&Editor);
         }
         if (SUCCEEDED(hrc))
         {
@@ -1155,7 +1155,7 @@ HRESULT UnattendedDebianInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor, c
     return UnattendedLinuxInstaller::editIsoLinuxCfg(pEditor);
 }
 
-HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor, const char *pszMenuConfigFileName)
+HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
 {
     /*
      * Unlike Redhats, Debian variants define boot menu not in isolinux.cfg but some other
@@ -1190,7 +1190,7 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor,
             }
         }
         if (!fLabelFound)
-            hrc = VBOX_E_FILE_ERROR;
+            hrc = E_FAIL;;
 
         if (SUCCEEDED(hrc))
         {
@@ -1213,9 +1213,7 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor,
                 hrc = pEditor->appendLine(strNewContent);
         }
         if (FAILED(hrc))
-            return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, hrc,
-                                          tr("Failed to edit menu configuration file: \"%s\": (%Rrc)"),
-                                          pszMenuConfigFileName, hrc);
+            return hrc;
     }
     catch (std::bad_alloc &)
     {
@@ -1224,7 +1222,7 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor,
     return UnattendedLinuxInstaller::editIsoLinuxCommon(pEditor);
 }
 
-HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor, const char *pszGrubConfigFileName)
+HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
 {
     /* Default menu entry of grub.cfg is set in /etc/deafult/grub file. */
     try
@@ -1272,7 +1270,7 @@ HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor,
                         ++cbPos;
                     }
                     if (!fSecondWord)
-                        hrc = VBOX_E_FILE_ERROR;
+                        hrc = E_FAIL;
 
                     if (SUCCEEDED(hrc))
                     {
@@ -1290,9 +1288,7 @@ HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor,
                         hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), strLine);
                     }
                     if (FAILED(hrc))
-                        return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, hrc,
-                                                      tr("Failed to edit grub configuration file: \"%s\": (%Rrc)"),
-                                                      pszGrubConfigFileName, hrc);
+                        return hrc;
                 }
             }
         }
