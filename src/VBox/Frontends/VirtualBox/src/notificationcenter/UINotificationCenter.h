@@ -110,6 +110,8 @@ private slots:
 
     /** Issues request to make open button @a fToggled. */
     void sltHandleOpenButtonToggled(bool fToggled);
+    /** @todo EXAMPLE -- REMOVE THIS */
+    void sltUpdateAgentAvailable(CUpdateAgent comAgent, QString, KUpdateChannel, KUpdateSeverity, QString, QString, QString);
     /** Toggles notification-progresses keep approach. */
     void sltHandleKeepButtonToggled(bool fToggled);
     /** Removes finished notifications. */
