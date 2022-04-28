@@ -8,6 +8,7 @@ openSUSE113     = OPENSUSE_11_3
 sles11.0        = SLES_11_0
 sles10.1        = SLES_10_1
 mdv2011.0       = MANDRIVA_2011_0
+fedora35        = FEDORA_35
 fedora33        = FEDORA_33
 fedora32        = FEDORA_32
 fedora31        = FEDORA_31
