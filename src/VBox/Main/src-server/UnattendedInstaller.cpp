@@ -994,19 +994,29 @@ static bool hlpVfsFileExists(RTVFS hVfs, const char *pszPath)
 HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                                             RTVFS hVfsOrgIso, bool fOverwrite)
 {
-    /* On Debian Live ISOs (at least from 9 to 11) the there is only menu.cfg. */
-    RTCString strMenuConfigFileName("/isolinux/txt.cfg");
-    if (   !hlpVfsFileExists(hVfsOrgIso, strMenuConfigFileName.c_str())
-        && hlpVfsFileExists(hVfsOrgIso, "/isolinux/menu.cfg"))
-        strMenuConfigFileName     = "/isolinux/menu.cfg";
+    /*
+     * Figure out the name of the menu config file that we have to edit.
+     */
+    bool        fMenuConfigIsGrub     = false;
+    const char *pszMenuConfigFilename = "/isolinux/txt.cfg";
+    if (!hlpVfsFileExists(hVfsOrgIso, pszMenuConfigFilename))
+    {
+        /* On Debian Live ISOs (at least from 9 to 11) the there is only menu.cfg. */
+        if (hlpVfsFileExists(hVfsOrgIso, "/isolinux/menu.cfg"))
+            pszMenuConfigFilename     =  "/isolinux/menu.cfg";
 
-    /* Ubuntus 21.10+ are UEFI only. No isolinux directory. We modify grub.cfg. */
-    if (   !hlpVfsFileExists(hVfsOrgIso, strMenuConfigFileName.c_str())
-        && hlpVfsFileExists(hVfsOrgIso, "/boot/grub/grub.cfg"))
-        strMenuConfigFileName     = "/boot/grub/grub.cfg";
+        /* Ubuntus 21.10+ are UEFI only. No isolinux directory. We modify grub.cfg. */
+        else if (hlpVfsFileExists(hVfsOrgIso, "/boot/grub/grub.cfg"))
+        {
+            pszMenuConfigFilename     =       "/boot/grub/grub.cfg";
+            fMenuConfigIsGrub         = true;
+        }
+    }
 
     /* Check for existence of isolinux.cfg since UEFI-only ISOs do not have this file.  */
-    bool fIsoLinuxCfgExists = hlpVfsFileExists(hVfsOrgIso, "isolinux/isolinux.cfg");
+    bool const fIsoLinuxCfgExists = hlpVfsFileExists(hVfsOrgIso, "isolinux/isolinux.cfg");
+    Assert(!fIsoLinuxCfgExists || !fMenuConfigIsGrub); /** @todo r=bird: Perhaps prefix the hlpVfsFileExists call with 'fIsoLinuxCfgExists &&' above ? */
+
     /*
      * VISO bits and filenames.
      */
@@ -1036,13 +1046,13 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         }
 
         /* Replace menu configuration file as well. */
-        rVecArgs.append().assign(strMenuConfigFileName).append("=:must-remove:");
+        rVecArgs.append().assign(pszMenuConfigFilename).append("=:must-remove:");
         strTxtCfg = mpParent->i_getAuxiliaryBasePath();
-        if (strMenuConfigFileName.compare("/boot/grub/grub.cfg", RTCString::CaseInsensitive) == 0)
+        if (fMenuConfigIsGrub)
             strTxtCfg.append("grub.cfg");
         else
             strTxtCfg.append("isolinux-.cfg");
-        rVecArgs.append().assign(strMenuConfigFileName).append("=").append(strTxtCfg);
+        rVecArgs.append().assign(pszMenuConfigFilename).append("=").append(strTxtCfg);
     }
     catch (std::bad_alloc &)
     {
@@ -1057,7 +1067,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         GeneralTextScript Editor(mpParent);
         HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, "/isolinux/isolinux.cfg", &Editor);
         if (SUCCEEDED(hrc))
-            hrc = editIsoLinuxCfg(&Editor, RTPathFilename(strMenuConfigFileName.c_str()));
+            hrc = editIsoLinuxCfg(&Editor, RTPathFilename(pszMenuConfigFilename));
         if (SUCCEEDED(hrc))
         {
             hrc = Editor.save(strIsoLinuxCfg, fOverwrite);
@@ -1083,27 +1093,27 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
      */
     {
         GeneralTextScript Editor(mpParent);
-        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, strMenuConfigFileName.c_str(), &Editor);
+        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszMenuConfigFilename, &Editor);
         if (SUCCEEDED(hrc))
         {
-            if (strMenuConfigFileName.compare("/boot/grub/grub.cfg", RTCString::CaseInsensitive) == 0)
+            if (fMenuConfigIsGrub)
                 hrc = editDebianGrubCfg(&Editor);
             else
                 hrc = editDebianMenuCfg(&Editor);
-        }
-        if (SUCCEEDED(hrc))
-        {
-            hrc = Editor.save(strTxtCfg, fOverwrite);
             if (SUCCEEDED(hrc))
             {
-                try
+                hrc = Editor.save(strTxtCfg, fOverwrite);
+                if (SUCCEEDED(hrc))
                 {
-                    rVecFiles.append(strTxtCfg);
-                }
-                catch (std::bad_alloc &)
-                {
-                    RTFileDelete(strTxtCfg.c_str());
-                    hrc = E_OUTOFMEMORY;
+                    try
+                    {
+                        rVecFiles.append(strTxtCfg);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        RTFileDelete(strTxtCfg.c_str());
+                        hrc = E_OUTOFMEMORY;
+                    }
                 }
             }
         }
