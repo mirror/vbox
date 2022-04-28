@@ -869,7 +869,11 @@ int NvramStore::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
 #ifdef VBOX_COM_INPROC
     return m->pParent->i_retainCryptoIf(ppCryptoIf);
 #else
-    return m->pParent->i_getVirtualBox()->i_retainCryptoIf(ppCryptoIf);
+    HRESULT hrc = m->pParent->i_getVirtualBox()->i_retainCryptoIf(ppCryptoIf);
+    if (SUCCEEDED(hrc))
+        return VINF_SUCCESS;
+
+    return VERR_COM_IPRT_ERROR;
 #endif
 }
 
@@ -879,7 +883,11 @@ int NvramStore::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 #ifdef VBOX_COM_INPROC
     return m->pParent->i_releaseCryptoIf(pCryptoIf);
 #else
-    return m->pParent->i_getVirtualBox()->i_releaseCryptoIf(pCryptoIf);
+    HRESULT hrc = m->pParent->i_getVirtualBox()->i_releaseCryptoIf(pCryptoIf);
+    if (SUCCEEDED(hrc))
+        return VINF_SUCCESS;
+
+    return VERR_COM_IPRT_ERROR;
 #endif
 }
 
