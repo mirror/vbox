@@ -3744,6 +3744,42 @@ void VirtualBox::i_onProgressCreated(const Guid &aId, BOOL aCreated)
     ::FireProgressCreatedEvent(m->pEventSource, aId.toString(), aCreated);
 }
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onUpdateAgentAvailable(IUpdateAgent *aAgent,
+                                          const Utf8Str &aVer, UpdateChannel_T aChannel, UpdateSeverity_T aSev,
+                                          const Utf8Str &aDownloadURL, const Utf8Str &aWebURL, const Utf8Str &aReleaseNotes)
+{
+    ::FireUpdateAgentAvailableEvent(m->pEventSource, aAgent, aVer, aChannel, aSev,
+                                    aDownloadURL, aWebURL, aReleaseNotes);
+}
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onUpdateAgentError(IUpdateAgent *aAgent, const Utf8Str &aErrMsg, LONG aRc)
+{
+    ::FireUpdateAgentErrorEvent(m->pEventSource, aAgent, aErrMsg, aRc);
+}
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onUpdateAgentStateChanged(IUpdateAgent *aAgent, UpdateState_T aState)
+{
+    ::FireUpdateAgentStateChangedEvent(m->pEventSource, aAgent, aState);
+}
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onUpdateAgentSettingsChanged(IUpdateAgent *aAgent, const Utf8Str &aAttributeHint)
+{
+    ::FireUpdateAgentSettingsChangedEvent(m->pEventSource, aAgent, aAttributeHint);
+}
+#endif /* VBOX_WITH_UPDATE_AGENT */
 
 /**
  *  @note Locks the list of other objects for reading.

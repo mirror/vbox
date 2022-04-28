@@ -43,6 +43,7 @@
 #include "VirtualBoxImpl.h"
 #include "VBoxEvents.h"
 #include "ThreadTask.h"
+#include "VirtualBoxImpl.h"
 #include "VirtualBoxBase.h"
 
 
@@ -725,7 +726,7 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
 {
     aLock.release();
 
-    ::FireUpdateAgentSettingsChangedEvent(m_EventSource, this, "" /** @todo Include attribute hints */);
+    m_VirtualBox->i_onUpdateAgentSettingsChanged(this, "" /** @todo Include attribute hints */);
 
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
     return m_VirtualBox->i_saveSettings();
@@ -758,7 +759,7 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
 
     LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), strMsg.c_str()));
 
-    ::FireUpdateAgentErrorEvent(m_EventSource, this, strMsg.c_str(), vrc);
+    m_VirtualBox->i_onUpdateAgentError(this, strMsg.c_str(), vrc);
 
     return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, strMsg.c_str());
 }
@@ -1047,7 +1048,7 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
 
         alock.release(); /* Release lock before firing off event. */
 
-        ::FireUpdateAgentStateChangedEvent(m_EventSource, this, UpdateState_NotAvailable);
+        m_VirtualBox->i_onUpdateAgentStateChanged(this, UpdateState_NotAvailable);
     }
     else
     {
@@ -1074,10 +1075,10 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
 
                 alock.release(); /* Release lock before firing off events. */
 
-                ::FireUpdateAgentStateChangedEvent(m_EventSource, this, UpdateState_Available);
-                ::FireUpdateAgentAvailableEvent(m_EventSource, this, mData.m_lastResult.strVer, m->enmChannel,
-                                                mData.m_lastResult.enmSeverity, mData.m_lastResult.strDownloadUrl,
-                                                mData.m_lastResult.strWebUrl, mData.m_lastResult.strReleaseNotes);
+                m_VirtualBox->i_onUpdateAgentStateChanged(this, UpdateState_Available);
+                m_VirtualBox->i_onUpdateAgentAvailable(this, mData.m_lastResult.strVer, m->enmChannel,
+                                                       mData.m_lastResult.enmSeverity, mData.m_lastResult.strDownloadUrl,
+                                                       mData.m_lastResult.strWebUrl, mData.m_lastResult.strReleaseNotes);
             }
             else
                 rc = i_reportError(VERR_GENERAL_FAILURE /** @todo Use a better rc */,

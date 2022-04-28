@@ -206,6 +206,15 @@ public:
 
     void i_onLanguageChanged(const Utf8Str &aLanguageId);
 
+#ifdef VBOX_WITH_UPDATE_AGENT
+    void i_onUpdateAgentAvailable(IUpdateAgent *aAgent,
+                                  const Utf8Str &aVer, UpdateChannel_T aChannel, UpdateSeverity_T aSev,
+                                  const Utf8Str &aDownloadURL, const Utf8Str &aWebURL, const Utf8Str &aReleaseNotes);
+    void i_onUpdateAgentError(IUpdateAgent *aAgent, const Utf8Str &aErrMsg, LONG aRc);
+    void i_onUpdateAgentStateChanged(IUpdateAgent *aAgent, UpdateState_T aState);
+    void i_onUpdateAgentSettingsChanged(IUpdateAgent *aAgent, const Utf8Str &aAttributeHint);
+#endif /* VBOX_WITH_UPDATE_AGENT */
+
 #ifdef VBOX_WITH_CLOUD_NET
     HRESULT i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
                                      ComObjPtr<CloudNetwork> *aNetwork = NULL);
