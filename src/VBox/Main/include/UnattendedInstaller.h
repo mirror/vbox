@@ -599,8 +599,8 @@ protected:
      * Performs basic edits on grub configuration file (grub.cfg).
      *
      * @returns COM status code
-     * @param   pEditor                Editor with the grub.cfg file loaded and parsed.
-     * @param   pszMenuGrubFileName    Name of the grub config file.
+     * @param   pEditor                 Editor with the grub.cfg file loaded and parsed.
+     * @param   pszGrubConfigFileName   Name of the grub config file.
      */
     HRESULT editDebianGrubCfg(GeneralTextScript *pEditor, const char *pszGrubConfigFileName);
 
