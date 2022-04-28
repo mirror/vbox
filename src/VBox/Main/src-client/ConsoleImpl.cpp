@@ -8934,39 +8934,39 @@ HRESULT Console::i_removeSharedFolder(const Utf8Str &strName)
 /**
  * Retains a reference to the default cryptographic interface.
  *
- * @returns COM status code.
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the VM is not configured for encryption.
  * @param   ppCryptoIf          Where to store the pointer to the cryptographic interface on success.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
+int Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
 {
-    AssertReturn(ppCryptoIf != NULL, E_INVALIDARG);
+    AssertReturn(ppCryptoIf != NULL, VERR_INVALID_PARAMETER);
 
     if (mhLdrModCrypto == NIL_RTLDRMOD)
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("The VM is not configured for encryption"));
+        return VERR_NOT_SUPPORTED;
 
     ASMAtomicIncU32(&mcRefsCrypto);
     *ppCryptoIf = mpCryptoIf;
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 /**
  * Releases the reference of the given cryptographic interface.
  *
- * @returns COM status code.
+ * @returns VBox status code.
  * @param   pCryptoIf           Pointer to the cryptographic interface to release.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
+int Console::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 {
-    AssertReturn(pCryptoIf == mpCryptoIf, E_INVALIDARG);
+    AssertReturn(pCryptoIf == mpCryptoIf, VERR_INVALID_PARAMETER);
 
     ASMAtomicDecU32(&mcRefsCrypto);
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 /** @callback_method_impl{FNVMATSTATE}

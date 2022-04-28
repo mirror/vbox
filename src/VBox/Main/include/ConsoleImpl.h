@@ -322,8 +322,8 @@ public:
      */
     HRESULT i_setDiskEncryptionKeys(const Utf8Str &strCfg);
 
-    HRESULT i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
-    HRESULT i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
+    int i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
+    int i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     // VMMDev needs:
