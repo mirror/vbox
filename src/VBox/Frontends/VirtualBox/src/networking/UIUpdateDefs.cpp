@@ -66,12 +66,17 @@ QStringList VBoxUpdateData::list()
 
 VBoxUpdateData::VBoxUpdateData(const QString &strData)
     : m_strData(strData)
+    , m_fCheckEnabled(false)
+    , m_fCheckRequired(false)
     , m_enmUpdatePeriod(UpdatePeriodType_Never)
     , m_enmUpdateChannel(KUpdateChannel_Invalid)
 {
     /* Skip 'never' case: */
     if (m_strData == "never")
         return;
+
+    /* Check is enabled in all cases besides 'never': */
+    m_fCheckEnabled = true;
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     const QStringList parser = m_strData.split(", ", Qt::SkipEmptyParts);
@@ -107,15 +112,22 @@ VBoxUpdateData::VBoxUpdateData(const QString &strData)
     {
         m_version = UIVersion(parser.at(3));
     }
+
+    /* Decide whether we need to check: */
+    m_fCheckRequired =    (QDate::currentDate() >= date())
+                       && (   !version().isValid()
+                           || version() != UIVersion(uiCommon().vboxVersionStringNormalized()));
 }
 
-VBoxUpdateData::VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel)
+VBoxUpdateData::VBoxUpdateData(bool fCheckEnabled, UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel)
     : m_strData("never")
+    , m_fCheckEnabled(fCheckEnabled)
+    , m_fCheckRequired(false)
     , m_enmUpdatePeriod(enmUpdatePeriod)
     , m_enmUpdateChannel(enmUpdateChannel)
 {
-    /* Skip 'UpdatePeriodType_Never' case: */
-    if (m_enmUpdatePeriod == UpdatePeriodType_Never)
+    /* Skip 'check disabled' case: */
+    if (!m_fCheckEnabled)
         return;
 
     /* Encode 'period' value: */
@@ -143,30 +155,21 @@ VBoxUpdateData::VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel 
 
     /* Compose m_strData: */
     m_strData = QString("%1, %2, %3, %4").arg(strRemindPeriod, strRemindDate, strUpdateChannel, strVersionValue);
+
+    /* Decide whether we need to check: */
+    m_fCheckRequired =    (QDate::currentDate() >= date())
+                       && (   !version().isValid()
+                           || version() != UIVersion(uiCommon().vboxVersionStringNormalized()));
 }
 
 bool VBoxUpdateData::isCheckEnabled() const
 {
-    /* Check is enabled if Period != Never: */
-    return m_enmUpdatePeriod != UpdatePeriodType_Never;
+    return m_fCheckEnabled;
 }
 
 bool VBoxUpdateData::isCheckRequired() const
 {
-    /* Return 'false' if there check is disabled: */
-    if (!isCheckEnabled())
-        return false;
-
-    /* Return 'true' if date of next check is today or missed: */
-    if (QDate::currentDate() >= m_date)
-        return true;
-
-    /* Return 'true' if saved version value is NOT valid or NOT equal to current: */
-    if (!version().isValid() || version() != UIVersion(uiCommon().vboxVersionStringNormalized()))
-        return true;
-
-    /* Return 'false' in all other cases: */
-    return false;
+    return m_fCheckRequired;
 }
 
 QString VBoxUpdateData::data() const

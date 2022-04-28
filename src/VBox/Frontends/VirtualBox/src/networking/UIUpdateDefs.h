@@ -81,8 +81,8 @@ public:
 
     /** Constructs update description on the basis of passed @a strData. */
     VBoxUpdateData(const QString &strData = QString());
-    /** Constructs update description on the basis of passed @a enmUpdatePeriod and @a enmUpdateChannel. */
-    VBoxUpdateData(UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel);
+    /** Constructs update description on the basis of passed @a fCheckEnabled, @a enmUpdatePeriod and @a enmUpdateChannel. */
+    VBoxUpdateData(bool fCheckEnabled, UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel);
 
     /** Returns whether check is enabled. */
     bool isCheckEnabled() const;
@@ -129,14 +129,19 @@ private:
     /** Holds the update data. */
     QString  m_strData;
 
+    /** Holds whether check is enabled. */
+    bool  m_fCheckEnabled;
+    /** Holds whether it's need to check for update. */
+    bool  m_fCheckRequired;
+
     /** Holds the update period. */
-    UpdatePeriodType  m_enmUpdatePeriod;
+    UpdatePeriodType      m_enmUpdatePeriod;
     /** Holds the update date. */
-    QDate             m_date;
+    QDate           m_date;
     /** Holds the update channel. */
-    KUpdateChannel    m_enmUpdateChannel;
+    KUpdateChannel  m_enmUpdateChannel;
     /** Holds the update version. */
-    UIVersion         m_version;
+    UIVersion       m_version;
 };
 
 
