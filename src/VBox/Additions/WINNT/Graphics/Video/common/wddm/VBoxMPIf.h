@@ -106,7 +106,7 @@ typedef struct VBOXDXALLOCATIONDESC
         uint32 arraySize;
         uint32 bufferByteStride;
     } surfaceInfo;
-} VBOXDXALLOCATIONDESC;
+} VBOXDXALLOCATIONDESC, *PVBOXDXALLOCATIONDESC;
 #endif /* VBOX_WITH_VMSVGA3D_DX */
 
 /* create allocation func */
@@ -121,6 +121,9 @@ typedef enum
     /* custom allocation types requested from user-mode d3d module will go here */
     , VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
     , VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    , VBOXWDDM_ALLOC_TYPE_D3D /* Direct3D UMD driver allocation. Actual type is a VBOXDXALLOCATIONTYPE value. */
+#endif /* VBOX_WITH_VMSVGA3D_DX */
 } VBOXWDDM_ALLOC_TYPE;
 
 /* usage */
@@ -167,6 +170,10 @@ typedef struct VBOXWDDM_ALLOCINFO
         };
     };
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
+
+#ifdef VBOX_WITH_VMSVGA3D_DX
+AssertCompile(sizeof(VBOXDXALLOCATIONDESC) != sizeof(VBOXWDDM_ALLOCINFO));
+#endif
 
 typedef struct VBOXWDDM_RC_DESC
 {
