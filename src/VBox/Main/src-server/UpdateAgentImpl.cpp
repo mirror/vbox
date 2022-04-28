@@ -724,7 +724,7 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
 {
     aLock.release();
 
-    ::FireUpdateAgentSettingsChangedEvent(m_EventSource, "" /** @todo Include attribute hints */);
+    ::FireUpdateAgentSettingsChangedEvent(m_EventSource, this, "" /** @todo Include attribute hints */);
 
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
     return m_VirtualBox->i_saveSettings();
@@ -757,7 +757,7 @@ HRESULT UpdateAgent::i_reportError(int vrc, const char *pcszMsgFmt, ...)
 
     LogRel(("Update agent (%s): %s\n", mData.m_strName.c_str(), strMsg.c_str()));
 
-    ::FireUpdateAgentErrorEvent(m_EventSource, strMsg.c_str(), vrc);
+    ::FireUpdateAgentErrorEvent(m_EventSource, this, strMsg.c_str(), vrc);
 
     return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, strMsg.c_str());
 }
@@ -1044,7 +1044,7 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
 
         alock.release(); /* Release lock before firing off event. */
 
-        ::FireUpdateAgentStateChangedEvent(m_EventSource, UpdateState_NotAvailable);
+        ::FireUpdateAgentStateChangedEvent(m_EventSource, this, UpdateState_NotAvailable);
     }
     else
     {
@@ -1071,8 +1071,8 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
 
                 alock.release(); /* Release lock before firing off events. */
 
-                ::FireUpdateAgentStateChangedEvent(m_EventSource, UpdateState_Available);
-                ::FireUpdateAgentAvailableEvent(m_EventSource, mData.m_lastResult.strVer, m->enmChannel,
+                ::FireUpdateAgentStateChangedEvent(m_EventSource, this, UpdateState_Available);
+                ::FireUpdateAgentAvailableEvent(m_EventSource, this, mData.m_lastResult.strVer, m->enmChannel,
                                                 mData.m_lastResult.enmSeverity, mData.m_lastResult.strDownloadUrl,
                                                 mData.m_lastResult.strWebUrl, mData.m_lastResult.strReleaseNotes);
             }

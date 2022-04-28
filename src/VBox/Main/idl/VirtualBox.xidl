@@ -28315,12 +28315,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUpdateAgentEvent" extends="IEvent"
-    uuid="0e33366a-670e-4e1f-9ddc-41c8a346cafd"
+    uuid="ff58a51d-54a1-411c-93e9-3047eb4dcd21"
     wsmap="managed">
     <desc>
       Abstract base interface for update agent events.
     </desc>
-    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="agent" readonly="yes" type="IUpdateAgent">
+      <desc>Update agent this event belongs to.</desc>
+    </attribute>
   </interface>
 
   <interface
