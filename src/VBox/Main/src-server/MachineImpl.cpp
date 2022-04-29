@@ -5351,9 +5351,6 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
     mParent->i_unregisterMachine(this, aCleanupMode, id);
             // calls VirtualBox::i_saveSettings() and VirtualBox::saveModifiedRegistries()
 
-    autoCaller.release();
-    uninit();
-
     return S_OK;
 }
 
