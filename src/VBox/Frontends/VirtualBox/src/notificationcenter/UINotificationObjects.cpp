@@ -4318,6 +4318,12 @@ UINotificationProgressNewVersionChecker::UINotificationProgressNewVersionChecker
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressNewVersionChecker::sltHandleProgressFinished);
+
+#ifdef VBOX_WITH_UPDATE_AGENT
+    CHost comHost = uiCommon().host();
+    if (!comHost.isNull())
+       m_comUpdateHost = comHost.GetUpdateHost();
+#endif /* VBOX_WITH_UPDATE_AGENT */
 }
 
 QString UINotificationProgressNewVersionChecker::name() const
