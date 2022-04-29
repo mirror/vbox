@@ -33,6 +33,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CConsole.h"
+#include "CHost.h"
 #include "CMachine.h"
 #include "CSystemProperties.h"
 
@@ -52,11 +53,13 @@ struct UISettingsDataGlobal
 {
     /** Constructs NULL global settings data struct. */
     UISettingsDataGlobal() {}
-    /** Constructs global settings data struct on the basis of @a comProperties. */
-    UISettingsDataGlobal(const CSystemProperties &comProperties)
-        : m_properties(comProperties) {}
-    /** Holds the global VirtualBox properties. */
-    CSystemProperties m_properties;
+    /** Constructs global settings data struct on the basis of @a comHost and @a comProperties. */
+    UISettingsDataGlobal(const CHost &comHost, const CSystemProperties &comProperties)
+        : m_host(comHost), m_properties(comProperties) {}
+    /** Holds the host reference. */
+    CHost              m_host;
+    /** Holds the properties reference. */
+    CSystemProperties  m_properties;
 };
 Q_DECLARE_METATYPE(UISettingsDataGlobal);
 
@@ -70,9 +73,9 @@ struct UISettingsDataMachine
     UISettingsDataMachine(const CMachine &comMachine, const CConsole &comConsole)
         : m_machine(comMachine), m_console(comConsole) {}
     /** Holds the machine reference. */
-    CMachine m_machine;
+    CMachine  m_machine;
     /** Holds the console reference. */
-    CConsole m_console;
+    CConsole  m_console;
 };
 Q_DECLARE_METATYPE(UISettingsDataMachine);
 
@@ -233,8 +236,10 @@ protected:
     /** Uploads m_properties & m_settings to data. */
     void uploadData(QVariant &data) const;
 
+    /** Holds the source of host preferences. */
+    CHost              m_host;
     /** Holds the source of global preferences. */
-    CSystemProperties m_properties;
+    CSystemProperties  m_properties;
 };
 
 
@@ -263,9 +268,9 @@ protected:
     void uploadData(QVariant &data) const;
 
     /** Holds the source of machine settings. */
-    CMachine m_machine;
+    CMachine  m_machine;
     /** Holds the source of console settings. */
-    CConsole m_console;
+    CConsole  m_console;
 };
 
 

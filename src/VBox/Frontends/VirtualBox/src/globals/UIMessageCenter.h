@@ -282,6 +282,7 @@ public:
         bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium,
                                  bool fMount, bool fRetry, QWidget *pParent = 0) const;
 
+        void cannotSetHostSettings(const CHost &comHost, QWidget *pParent = 0) const;
         void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
         void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
 

@@ -693,6 +693,13 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     return false;
 }
 
+void UIMessageCenter::cannotSetHostSettings(const CHost &comHost, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical,
+          tr("Failed to set global host settings."),
+          UIErrorString::formatErrorInfo(comHost));
+}
+
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Critical,

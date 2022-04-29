@@ -94,14 +94,15 @@ QPixmap UISettingsPageGlobal::warningPixmap() const
 
 void UISettingsPageGlobal::fetchData(const QVariant &data)
 {
-    /* Fetch data to m_properties: */
+    /* Fetch data to m_host & m_properties: */
+    m_host = data.value<UISettingsDataGlobal>().m_host;
     m_properties = data.value<UISettingsDataGlobal>().m_properties;
 }
 
 void UISettingsPageGlobal::uploadData(QVariant &data) const
 {
-    /* Upload m_properties to data: */
-    data = QVariant::fromValue(UISettingsDataGlobal(m_properties));
+    /* Upload m_host & m_properties to data: */
+    data = QVariant::fromValue(UISettingsDataGlobal(m_host, m_properties));
 }
 
 

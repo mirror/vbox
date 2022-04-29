@@ -123,11 +123,12 @@ void UISettingsDialogGlobal::retranslateUi()
 
 void UISettingsDialogGlobal::loadOwnData()
 {
-    /* Get properties: */
+    /* Get host & properties: */
+    CHost comHost = uiCommon().host();
     CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
-    UISettingsDataGlobal data(comProperties);
+    UISettingsDataGlobal data(comHost, comProperties);
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
@@ -136,15 +137,22 @@ void UISettingsDialogGlobal::loadOwnData()
 
 void UISettingsDialogGlobal::saveOwnData()
 {
-    /* Get properties: */
+    /* Get host & properties: */
+    CHost comHost = uiCommon().host();
     CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
-    UISettingsDataGlobal data(comProperties);
+    UISettingsDataGlobal data(comHost, comProperties);
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
     UISettingsDialog::saveData(varData);
+
+    /* Get updated host: */
+    CHost comNewHost = varData.value<UISettingsDataGlobal>().m_host;
+    /* If host is not OK => show the error: */
+    if (!comNewHost.isOk())
+        msgCenter().cannotSetHostSettings(comNewHost, this);
 
     /* Get updated properties: */
     CSystemProperties comNewProperties = varData.value<UISettingsDataGlobal>().m_properties;
