@@ -22,21 +22,12 @@ VBOX_SOFTFLOAT_SPECIALIZATION := 8086
 
 LIBRARIES += VBox-SoftFloat
 VBox-SoftFloat_TEMPLATE    := VBoxR3DllNonPedantic
-VBox-SoftFloat_DEFS.amd64  := \
-	LITTLEENDIAN \
-	INLINE_LEVEL=5 \
-	SOFTFLOAT_FAST_INT64 \
-	SOFTFLOAT_FAST_DIV32TO16 \
-  	SOFTFLOAT_FAST_DIV64TO32 \
-	SOFTFLOAT_ROUND_ODD
-if1of ($(KBUILD_TARGET), win)
- VBox-SoftFloat_DEFS       := THREAD_LOCAL=__declspec(thread)
- VBox-SoftFloat_INCS.amd64 := build/Win-amd64-VCC source/include
-else
- VBox-SoftFloat_DEFS       := THREAD_LOCAL=__thread
- VBox-SoftFloat_INCS.amd64 := build/Linux-x86_64-GCC source/include
-endif
-VBox-SoftFloat_INCS        := source source/$(VBOX_SOFTFLOAT_SPECIALIZATION)
+VBox-SoftFloat_DEFS        := \
+	INLINE_LEVEL=5
+VBox-SoftFloat_INCS        := \
+	build/vbox \
+	source/$(VBOX_SOFTFLOAT_SPECIALIZATION) \
+	source/include
 
 # -wd4146: primitives.h(74): warning C4146: unary minus operator applied to unsigned type, result still unsigned
 VBox-SoftFloat_CFLAGS.win  := -wd4146
