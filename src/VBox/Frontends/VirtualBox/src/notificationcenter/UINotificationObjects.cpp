@@ -4318,20 +4318,6 @@ UINotificationProgressNewVersionChecker::UINotificationProgressNewVersionChecker
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressNewVersionChecker::sltHandleProgressFinished);
-
-#ifdef VBOX_WITH_UPDATE_AGENT
-    CHost comHost = uiCommon().host();
-    if (!comHost.isNull())
-    {
-        m_comUpdateHost = comHost.GetUpdateHost();
-
-        /** @todo For now just grab the proxy settings from the system properties object.
-         *        We might want to differentiate this later. */
-        const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        m_comUpdateHost.SetProxyMode(comProperties.GetProxyMode());
-        m_comUpdateHost.SetProxyURL(comProperties.GetProxyURL());
-    }
-#endif /* VBOX_WITH_UPDATE_AGENT */
 }
 
 QString UINotificationProgressNewVersionChecker::name() const

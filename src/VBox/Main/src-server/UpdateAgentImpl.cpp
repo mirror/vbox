@@ -42,6 +42,7 @@
 #include "LoggingNew.h"
 #include "VirtualBoxImpl.h"
 #include "VBoxEvents.h"
+#include "SystemPropertiesImpl.h"
 #include "ThreadTask.h"
 #include "VirtualBoxImpl.h"
 #include "VirtualBoxBase.h"
@@ -264,6 +265,27 @@ Utf8Str UpdateAgentBase::i_getPlatformInfo(void)
     return strPlatform;
 }
 
+/**
+ * Returns the proxy mode as a string.
+ *
+ * @returns Proxy mode as string.
+ * @param   enmMode             Proxy mode to return as string.
+ */
+/* static */
+const char *UpdateAgentBase::i_proxyModeToStr(ProxyMode_T enmMode)
+{
+    switch (enmMode)
+    {
+        case ProxyMode_System:  return "System";
+        case ProxyMode_Manual:  return "Manual";
+        case ProxyMode_NoProxy: return "None";
+        default:                break;
+    }
+
+    AssertFailed();
+    return "<Invalid>";
+}
+
 
 /*********************************************************************************************************************************
 *   Update agent class implementation                                                                                            *
@@ -295,7 +317,11 @@ HRESULT UpdateAgent::init(VirtualBox *aVirtualBox)
 
     HRESULT hr = unconst(m_EventSource).createObject();
     if (SUCCEEDED(hr))
+    {
         hr = m_EventSource->init();
+        if (SUCCEEDED(hr))
+            mData.m_fUseOwnProxy = false;
+    }
 
     return hr;
 }
@@ -521,9 +547,7 @@ HRESULT UpdateAgent::getProxyMode(ProxyMode_T *aMode)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = m->enmProxyMode;
-
-    return S_OK;
+    return i_getProxyMode(aMode);
 }
 
 HRESULT UpdateAgent::setProxyMode(ProxyMode_T aMode)
@@ -531,6 +555,7 @@ HRESULT UpdateAgent::setProxyMode(ProxyMode_T aMode)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->enmProxyMode = aMode;
+    mData.m_fUseOwnProxy = true;
 
     return i_commitSettings(alock);
 }
@@ -539,9 +564,7 @@ HRESULT UpdateAgent::getProxyURL(com::Utf8Str &aAddress)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aAddress = m->strProxyUrl;
-
-    return S_OK;
+    return i_getProxyURL(aAddress);
 }
 
 HRESULT UpdateAgent::setProxyURL(const com::Utf8Str &aAddress)
@@ -549,6 +572,7 @@ HRESULT UpdateAgent::setProxyURL(const com::Utf8Str &aAddress)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->strProxyUrl = aAddress;
+    mData.m_fUseOwnProxy = true;
 
     return i_commitSettings(alock);
 }
@@ -676,6 +700,14 @@ HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
 
     data = *m;
 
+    /* Cancel out eventually set proxy settings if those were not explicitly set.
+     * This way the ISystemProperties proxy settings will be used then. */
+    if (!mData.m_fUseOwnProxy)
+    {
+        data.strProxyUrl  = "";
+        data.enmProxyMode = ProxyMode_System;
+    }
+
     return S_OK;
 }
 
@@ -730,6 +762,101 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
 
     AutoWriteLock vboxLock(m_VirtualBox COMMA_LOCKVAL_SRC_POS);
     return m_VirtualBox->i_saveSettings();
+}
+
+/**
+ * Returns the proxy mode to use.
+ *
+ * @returns HRESULT
+ * @param   aMode               Where to return the proxy mode.
+ */
+HRESULT UpdateAgent::i_getProxyMode(ProxyMode_T *aMode)
+{
+    HRESULT hrc;
+
+    if (!mData.m_fUseOwnProxy) /* If not explicitly set, use the ISystemProperties proxy settings. */
+    {
+        ComPtr<ISystemProperties> pSystemProperties;
+        hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = pSystemProperties->COMGETTER(ProxyMode)(aMode);
+    }
+    else
+    {
+        *aMode = m->enmProxyMode;
+        hrc = S_OK;
+    }
+
+    return hrc;
+}
+
+/**
+ * Returns the proxy URL to use.
+ *
+ * @returns HRESULT
+ * @param   aUrl                Where to return the proxy URL to use.
+ */
+HRESULT UpdateAgent::i_getProxyURL(com::Utf8Str &aUrl)
+{
+    HRESULT hrc;
+
+    if (!mData.m_fUseOwnProxy) /* If not explicitly set, use the ISystemProperties proxy settings. */
+    {
+        ComPtr<ISystemProperties> pSystemProperties;
+        hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            com::Bstr bstrVal;
+            hrc = pSystemProperties->COMGETTER(ProxyURL)(bstrVal.asOutParam());
+            if (SUCCEEDED(hrc))
+                aUrl = bstrVal;
+        }
+    }
+    else
+    {
+        aUrl = m->strProxyUrl;
+        hrc = S_OK;
+    }
+
+    return hrc;
+}
+
+/**
+ * Configures a HTTP client's proxy.
+ *
+ * @returns HRESULT
+ * @param   hHttp               HTTP client to configure proxy for.
+ */
+HRESULT UpdateAgent::i_configureProxy(RTHTTP hHttp)
+{
+    HRESULT rc;
+
+    ProxyMode_T enmProxyMode;
+    rc = i_getProxyMode(&enmProxyMode);
+    ComAssertComRCRetRC(rc);
+    Utf8Str strProxyUrl;
+    rc = i_getProxyURL(strProxyUrl);
+    ComAssertComRCRetRC(rc);
+
+    if (enmProxyMode == ProxyMode_Manual)
+    {
+        int vrc = RTHttpSetProxyByUrl(hHttp, strProxyUrl.c_str());
+        if (RT_FAILURE(vrc))
+            return i_reportError(vrc, tr("RTHttpSetProxyByUrl() failed: %Rrc"), vrc);
+    }
+    else if (enmProxyMode == ProxyMode_System)
+    {
+        int vrc = RTHttpUseSystemProxySettings(hHttp);
+        if (RT_FAILURE(vrc))
+            return i_reportError(vrc, tr("RTHttpUseSystemProxySettings() failed: %Rrc"), vrc);
+    }
+    else
+        Assert(enmProxyMode == ProxyMode_NoProxy);
+
+    LogRel2(("Update agent (%s): Using proxy mode = '%s', URL = '%s'\n",
+             mData.m_strName.c_str(), UpdateAgentBase::i_proxyModeToStr(enmProxyMode), strProxyUrl.c_str()));
+
+    return S_OK;
 }
 
 /**
@@ -977,28 +1104,17 @@ DECLCALLBACK(HRESULT) HostUpdateAgent::i_checkForUpdateTask(UpdateAgentTask *pTa
  */
 HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strUrl, Utf8Str const &strUserAgent)
 {
+    /*
+     * Configure the proxy (if any).
+     */
+    HRESULT rc = i_configureProxy(hHttp);
+    if (FAILED(rc))
+        return rc;
+
     /** @todo Are there any other headers needed to be added first via RTHttpSetHeaders()? */
     int vrc = RTHttpAddHeader(hHttp, "User-Agent", strUserAgent.c_str(), strUserAgent.length(), RTHTTPADDHDR_F_BACK);
     if (RT_FAILURE(vrc))
         return i_reportError(vrc, tr("RTHttpAddHeader() failed: %Rrc (user agent)"), vrc);
-
-    /*
-     * Configure proxying.
-     */
-    if (m->enmProxyMode == ProxyMode_Manual)
-    {
-        vrc = RTHttpSetProxyByUrl(hHttp, m->strProxyUrl.c_str());
-        if (RT_FAILURE(vrc))
-            return i_reportError(vrc, tr("RTHttpSetProxyByUrl() failed: %Rrc"), vrc);
-    }
-    else if (m->enmProxyMode == ProxyMode_System)
-    {
-        vrc = RTHttpUseSystemProxySettings(hHttp);
-        if (RT_FAILURE(vrc))
-            return i_reportError(vrc, tr("RTHttpUseSystemProxySettings() failed: %Rrc"), vrc);
-    }
-    else
-        Assert(m->enmProxyMode == ProxyMode_NoProxy);
 
     /*
      * Perform the GET request, returning raw binary stuff.
@@ -1033,8 +1149,6 @@ HRESULT HostUpdateAgent::i_checkForUpdateInner(RTHTTP hHttp, Utf8Str const &strU
     while (cbResponse > 0 && (ch = *pchResponse) != ' ' && ch != '\0')
         cbResponse--, pchResponse++;
     size_t const cchWord1 = (size_t)(pchResponse - pchWord1);
-
-    HRESULT rc;
 
     /* Decode the two word: */
     static char const s_szUpToDate[] = "UPTODATE";

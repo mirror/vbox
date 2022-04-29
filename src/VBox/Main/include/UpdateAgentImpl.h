@@ -74,6 +74,7 @@ protected:
     /** @name Static helper methods.
      * @{ */
     static Utf8Str i_getPlatformInfo(void);
+    const char *i_proxyModeToStr(ProxyMode_T enmMode);
     /** @} */
 
 protected:
@@ -94,6 +95,9 @@ protected:
         bool                               m_fHidden;
         UpdateState_T                      m_enmState;
         uint32_t                           m_uOrder;
+        /** Whether to use the own (dedicated) proxy settings or
+         *  use the ones of ISystemProperties. */
+        bool                               m_fUseOwnProxy;
 
         Data(void)
         {
@@ -134,6 +138,9 @@ protected:
 
     /** @name Internal helper methods.
      * @{ */
+    HRESULT i_getProxyMode(ProxyMode_T *aMode);
+    HRESULT i_getProxyURL(com::Utf8Str &aAddress);
+    HRESULT i_configureProxy(RTHTTP hHttp);
     HRESULT i_commitSettings(AutoWriteLock &aLock);
     HRESULT i_reportError(int vrc, const char *pcszMsgFmt, ...);
     /** @}  */

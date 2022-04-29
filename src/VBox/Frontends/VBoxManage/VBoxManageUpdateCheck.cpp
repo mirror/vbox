@@ -40,6 +40,27 @@ DECLARE_TRANSLATION_CONTEXT(UpdateCheck);
 
 using namespace com;    // SafeArray
 
+
+/**
+ * Returns the proxy mode as a string.
+ *
+ * @returns Proxy mode as string.
+ * @param   enmMode             Proxy mode to return as string.
+ */
+static const char *proxyModeToStr(ProxyMode_T enmMode)
+{
+    switch (enmMode)
+    {
+        case ProxyMode_System:  return "System";
+        case ProxyMode_Manual:  return "Manual";
+        case ProxyMode_NoProxy: return "None";
+        default:                break;
+    }
+
+    AssertFailed();
+    return "<Invalid>";
+}
+
 static RTEXITCODE doUpdateList(int argc, char **argv, ComPtr<IUpdateAgent> pUpdateAgent)
 {
     /*
@@ -91,16 +112,16 @@ static RTEXITCODE doUpdateList(int argc, char **argv, ComPtr<IUpdateAgent> pUpda
     ULONG uCheckFreqSeconds;
     CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(CheckFrequency)(&uCheckFreqSeconds), RTEXITCODE_FAILURE);
 
-    ULONG const uCheckFreqDays = uCheckFreqSeconds / RT_SEC_1DAY;
+    ULONG uCheckFreqDays = uCheckFreqSeconds / RT_SEC_1DAY;
 
     if (fMachineReadable)
-        outputMachineReadableULong("frequency", &uCheckFreqSeconds);
+        outputMachineReadableULong("frequency-days", &uCheckFreqDays);
     else if (uCheckFreqDays == 0)
-        RTPrintf(UpdateCheck::tr("Frequency:              never\n")); /** @todo r=bird: Two inconsistencies here. HostUpdateImpl.cpp code will indicate the need for updating if no last-check-date.  modifysettings cannot set it to zero (I added the error message, you just skipped setting it originally). */
+        RTPrintf(UpdateCheck::tr("Frequency:              Never\n"));
     else if (uCheckFreqDays == 1)
-        RTPrintf(UpdateCheck::tr("Frequency:              every day\n"));
+        RTPrintf(UpdateCheck::tr("Frequency:              Every day\n"));
     else
-        RTPrintf(UpdateCheck::tr("Frequency:              every %u days\n"), uCheckFreqDays);
+        RTPrintf(UpdateCheck::tr("Frequency:              Every %u days\n"), uCheckFreqDays);
 
     UpdateChannel_T enmUpdateChannel;
     CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(Channel)(&enmUpdateChannel), RTEXITCODE_FAILURE);
@@ -131,13 +152,31 @@ static RTEXITCODE doUpdateList(int argc, char **argv, ComPtr<IUpdateAgent> pUpda
     else
         RTPrintf(UpdateCheck::tr("Channel:                %s\n"), psz);
 
-    Bstr bstrLastCheckDate;
-    CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(LastCheckDate)(bstrLastCheckDate.asOutParam()),
+    Bstr bstrVal;
+    CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(LastCheckDate)(bstrVal.asOutParam()),
                       RTEXITCODE_FAILURE);
     if (fMachineReadable)
-        outputMachineReadableString("last-check-date", &bstrLastCheckDate);
-    else if (bstrLastCheckDate.isNotEmpty())
-        RTPrintf(UpdateCheck::tr("Last Check Date:        %ls\n"), bstrLastCheckDate.raw());
+        outputMachineReadableString("last-check-date", &bstrVal);
+    else if (bstrVal.isNotEmpty())
+        RTPrintf(UpdateCheck::tr("Last Check Date:        %ls\n"), bstrVal.raw());
+
+    CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(RepositoryURL)(bstrVal.asOutParam()), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+        outputMachineReadableString("repo-url", &bstrVal);
+    else
+        RTPrintf(UpdateCheck::tr("Repository:             %ls\n"), bstrVal.raw());
+
+    ProxyMode_T enmProxyMode;
+    CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(ProxyMode)(&enmProxyMode), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+        outputMachineReadableString("proxy-mode", proxyModeToStr(enmProxyMode));
+    else
+        RTPrintf(UpdateCheck::tr("Proxy mode:             %s\n"), proxyModeToStr(enmProxyMode));
+    CHECK_ERROR2I_RET(pUpdateAgent, COMGETTER(ProxyURL)(bstrVal.asOutParam()), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+        outputMachineReadableString("proxy-url", &bstrVal);
+    else
+        RTPrintf(UpdateCheck::tr("Proxy URL:              %ls\n"), bstrVal.raw());
 
     return RTEXITCODE_SUCCESS;
 }
@@ -147,22 +186,30 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
     /*
      * Parse options.
      */
+    enum GETOPTDEF_UPDATEMODIFY
+    {
+        GETOPTDEF_UPDATEMODIFY_PROXY_MODE = 2000,
+        GETOPTDEF_UPDATEMODIFY_PROXY_URL
+    };
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--enable",        'e', RTGETOPT_REQ_NOTHING },
-        { "--disable",       'd', RTGETOPT_REQ_NOTHING },
-        { "--channel",       'c', RTGETOPT_REQ_STRING },
-        { "--frequency",     'f', RTGETOPT_REQ_UINT32 },
+        { "--enable",        'e',                                   RTGETOPT_REQ_NOTHING },
+        { "--disable",       'd',                                   RTGETOPT_REQ_NOTHING },
+        { "--channel",       'c',                                   RTGETOPT_REQ_STRING  },
+        { "--frequency",     'f',                                   RTGETOPT_REQ_UINT32  },
+        { "--proxy-mode",    GETOPTDEF_UPDATEMODIFY_PROXY_MODE,     RTGETOPT_REQ_STRING  },
+        { "--proxy-url",     GETOPTDEF_UPDATEMODIFY_PROXY_URL,      RTGETOPT_REQ_STRING  }
     };
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /* First */, 0);
     AssertRCReturn(vrc, RTEXITCODE_INIT);
 
-    int                         fEnabled       = -1; /* tristate: -1 (not modified), false, true */
-    UpdateChannel_T const       enmChannelNil  = (UpdateChannel_T)-999;
-    UpdateChannel_T             enmChannel     = enmChannelNil;
+    int                         fEnabled       = -1;               /* Tristate: -1 (not modified), false, true. */
+    UpdateChannel_T             enmChannel     = (UpdateChannel_T)-1;
     uint32_t                    cFrequencyDays = 0;
+    ProxyMode_T                 enmProxyMode   = (ProxyMode_T)-1; /* Default  if not modified, or ProxyMode_T values. */
+    Bstr                        strProxyURL    = "unmodified";    /* Default if not modified, so that empty values also can be set (clears proxy). */
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -187,7 +234,7 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
                 else if (!RTStrICmp(ValueUnion.psz, "all"))
                     enmChannel = UpdateChannel_All;
                 else
-                    return errorArgument(UpdateCheck::tr("Unknown channel specified: '%s'"), ValueUnion.psz);
+                    return errorArgument(UpdateCheck::tr("Invalid channel specified: '%s'"), ValueUnion.psz);
                 break;
 
             case 'f':
@@ -196,7 +243,24 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
                     return errorArgument(UpdateCheck::tr("The update frequency cannot be zero"));
                 break;
 
-            /** @todo Add more options like proxy + repo handling etc. */
+            case GETOPTDEF_UPDATEMODIFY_PROXY_MODE:
+                if (!RTStrICmp(ValueUnion.psz, "system"))
+                    enmProxyMode = ProxyMode_System;
+                else if (   !RTStrICmp(ValueUnion.psz, "none")
+                         || !RTStrICmp(ValueUnion.psz, "disabled")
+                         || !RTStrICmp(ValueUnion.psz, "off"))
+                    enmProxyMode = ProxyMode_NoProxy;
+                else if (!RTStrICmp(ValueUnion.psz, "manual"))
+                    enmProxyMode = ProxyMode_Manual;
+                else
+                    return errorArgument(UpdateCheck::tr("Invalid proxy mode specified: '%s'"), ValueUnion.psz);
+                break;
+
+            case GETOPTDEF_UPDATEMODIFY_PROXY_URL:
+                strProxyURL = ValueUnion.psz;
+                break;
+
+            /** @todo Add more options like repo handling etc. */
 
             default:
                 return errorGetOpt(c, &ValueUnion);
@@ -204,14 +268,16 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
     }
 
     if (   fEnabled       == -1
-        && enmChannel     == enmChannelNil
-        && cFrequencyDays == 0)
+        && enmChannel     == (UpdateChannel_T)-1
+        && cFrequencyDays == 0
+        && enmProxyMode   == (ProxyMode_T)-1
+        && strProxyURL    == "unmodified")
         return errorSyntax(UpdateCheck::tr("No change requested"));
 
     /*
      * Make the changes.
      */
-    if (enmChannel != enmChannelNil)
+    if (enmChannel != (UpdateChannel_T)-1)
     {
         CHECK_ERROR2I_RET(pUpdateAgent, COMSETTER(Channel)(enmChannel), RTEXITCODE_FAILURE);
     }
@@ -222,6 +288,14 @@ static RTEXITCODE doUpdateModify(int argc, char **argv, ComPtr<IUpdateAgent> pUp
     if (cFrequencyDays)
     {
         CHECK_ERROR2I_RET(pUpdateAgent, COMSETTER(CheckFrequency)(cFrequencyDays * RT_SEC_1DAY), RTEXITCODE_FAILURE);
+    }
+    if (enmProxyMode != (ProxyMode_T)-1)
+    {
+        CHECK_ERROR2I_RET(pUpdateAgent, COMSETTER(ProxyMode)(enmProxyMode), RTEXITCODE_FAILURE);
+    }
+    if (strProxyURL.compare("unmodified") != 0)
+    {
+        CHECK_ERROR2I_RET(pUpdateAgent, COMSETTER(ProxyURL)(strProxyURL.raw()), RTEXITCODE_FAILURE);
     }
     return RTEXITCODE_SUCCESS;
 }

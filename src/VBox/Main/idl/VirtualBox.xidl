@@ -11561,6 +11561,9 @@
       Implementation of the <link to="IUpdateAgent" /> object
       for VirtualBox host updates.
     </desc>
+    <note>
+      If no proxy is explicitly set, the proxy settings from <link to="ISystemProperties" /> will be used.
+    </note>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
