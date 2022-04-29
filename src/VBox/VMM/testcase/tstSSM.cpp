@@ -805,7 +805,7 @@ int main(int argc, char **argv)
      * Validate it.
      */
     u64Start = RTTimeNanoTS();
-    rc = SSMR3ValidateFile(pszFilename, false /* fChecksumIt*/ );
+    rc = SSMR3ValidateFile(pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOps*/, false /* fChecksumIt*/ );
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3ValidateFile #1 -> %Rrc\n", rc);
@@ -815,7 +815,7 @@ int main(int argc, char **argv)
     RTPrintf("tstSSM: Validated without checksumming in %'RI64 ns\n", u64Elapsed);
 
     u64Start = RTTimeNanoTS();
-    rc = SSMR3ValidateFile(pszFilename, true /* fChecksumIt */);
+    rc = SSMR3ValidateFile(pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOps*/, true /* fChecksumIt */);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3ValidateFile #1 -> %Rrc\n", rc);
@@ -829,7 +829,7 @@ int main(int argc, char **argv)
      */
     u64Start = RTTimeNanoTS();
     PSSMHANDLE pSSM;
-    rc = SSMR3Open(pszFilename, 0, &pSSM);
+    rc = SSMR3Open(pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOps*/, 0, &pSSM);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Open #1 -> %Rrc\n", rc);

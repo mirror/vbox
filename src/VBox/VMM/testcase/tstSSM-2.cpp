@@ -33,7 +33,7 @@
 static RTEXITCODE extractUnit(const char *pszFilename, const char *pszUnitname, const char *pszOutputFilename)
 {
     PSSMHANDLE pSSM;
-    int rc = SSMR3Open(pszFilename, 0, &pSSM);
+    int rc = SSMR3Open(pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOps*/, 0, &pSSM);
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
     if (RT_SUCCESS(rc))
     {

@@ -9325,11 +9325,14 @@ VMMR3DECL(int) SSMR3SetCfgErrorV(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *p
  * @returns VBox status code on other failures.
  *
  * @param   pszFilename     The path to the file to validate.
+ * @param   pStreamOps      The stream method table. NULL if pszFilename is
+ *                          used.
+ * @param   pvStreamOps     The user argument to the stream methods.
  * @param   fChecksumIt     Whether to checksum the file or not.
  *
  * @thread  Any.
  */
-VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
+VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps, bool fChecksumIt)
 {
     LogFlow(("SSMR3ValidateFile: pszFilename=%p:{%s} fChecksumIt=%RTbool\n", pszFilename, pszFilename, fChecksumIt));
 
@@ -9337,7 +9340,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
      * Try open the file and validate it.
      */
     SSMHANDLE Handle;
-    int rc = ssmR3OpenFile(NULL, pszFilename, NULL /*pStreamOps*/, NULL /*pvUser*/, fChecksumIt,
+    int rc = ssmR3OpenFile(NULL, pszFilename, pStreamOps, pvStreamOps, fChecksumIt,
                            false /*fChecksumOnRead*/, 1 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
         ssmR3StrmClose(&Handle.Strm, false /*fCancelled*/);
@@ -9353,12 +9356,16 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
  * @returns VBox status code.
  *
  * @param   pszFilename     The path to the saved state file.
+ * @param   pStreamOps      The stream method table. NULL if pszFilename is
+ *                          used.
+ * @param   pvStreamOps     The user argument to the stream methods.
  * @param   fFlags          Open flags. Reserved, must be 0.
  * @param   ppSSM           Where to store the SSM handle.
  *
  * @thread  Any.
  */
-VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM)
+VMMR3DECL(int) SSMR3Open(const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
+                         unsigned fFlags, PSSMHANDLE *ppSSM)
 {
     LogFlow(("SSMR3Open: pszFilename=%p:{%s} fFlags=%#x ppSSM=%p\n", pszFilename, pszFilename, fFlags, ppSSM));
 
@@ -9378,7 +9385,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     /*
      * Try open the file and validate it.
      */
-    int rc = ssmR3OpenFile(NULL, pszFilename, NULL /*pStreamOps*/, NULL /*pvUser*/, false /*fChecksumIt*/,
+    int rc = ssmR3OpenFile(NULL, pszFilename, pStreamOps, pvStreamOps, false /*fChecksumIt*/,
                            true /*fChecksumOnRead*/, 1 /*cBuffers*/, pSSM);
     if (RT_SUCCESS(rc))
     {

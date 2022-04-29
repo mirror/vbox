@@ -1211,8 +1211,10 @@ VMMR3_INT_DECL(int)     SSMR3LiveDoStep2(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDone(PSSMHANDLE pSSM);
 VMMR3DECL(int)          SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
                                   SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser);
-VMMR3DECL(int)          SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt);
-VMMR3DECL(int)          SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM);
+VMMR3DECL(int)          SSMR3ValidateFile(const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
+                                          bool fChecksumIt);
+VMMR3DECL(int)          SSMR3Open(const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
+                                  unsigned fFlags, PSSMHANDLE *ppSSM);
 VMMR3DECL(int)          SSMR3Close(PSSMHANDLE pSSM);
 VMMR3DECL(int)          SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion);
 VMMR3DECL(int)          SSMR3HandleGetStatus(PSSMHANDLE pSSM);

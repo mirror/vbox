@@ -1615,7 +1615,8 @@ HRESULT Console::i_loadDataFromSavedState()
         AssertPtrReturn(pVMM, E_UNEXPECTED);
 
         PSSMHANDLE pSSM;
-        int vrc = pVMM->pfnSSMR3Open(strSavedStateFile.c_str(), 0, &pSSM);
+        int vrc = pVMM->pfnSSMR3Open(strSavedStateFile.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
+                                     0, &pSSM);
         if (RT_SUCCESS(vrc))
         {
             uint32_t uVersion = 0;
@@ -7860,7 +7861,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             strSavedStateFile = bstrSavedStateFile;
 
             ComAssertRet(bstrSavedStateFile.isNotEmpty(), E_FAIL);
-            int vrc = pVMM->pfnSSMR3ValidateFile(strSavedStateFile.c_str(), false /* fChecksumIt */);
+            int vrc = pVMM->pfnSSMR3ValidateFile(strSavedStateFile.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
+                                                 false /* fChecksumIt */);
             if (RT_FAILURE(vrc))
             {
                 Utf8Str errMsg;
