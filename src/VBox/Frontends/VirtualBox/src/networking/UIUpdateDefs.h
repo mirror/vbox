@@ -30,6 +30,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CHost.h"
 
 
 /** Update period types. */
@@ -52,19 +53,22 @@ enum UpdatePeriodType
 /** Structure to store retranslated period type values. */
 struct VBoxUpdateDay
 {
-    VBoxUpdateDay(const QString &strVal, const QString &strKey)
+    VBoxUpdateDay(const QString &strVal, const QString &strKey, ULONG uLength)
         : val(strVal)
         , key(strKey)
+        , length(uLength)
     {}
 
     bool operator==(const VBoxUpdateDay &other) const
     {
         return    val == other.val
-               || key == other.key;
+               || key == other.key
+               || length == other.length;
     }
 
     QString  val;
     QString  key;
+    ULONG    length;
 };
 typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
 
@@ -83,6 +87,11 @@ public:
     VBoxUpdateData(const QString &strData = QString());
     /** Constructs update description on the basis of passed @a fCheckEnabled, @a enmUpdatePeriod and @a enmUpdateChannel. */
     VBoxUpdateData(bool fCheckEnabled, UpdatePeriodType enmUpdatePeriod, KUpdateChannel enmUpdateChannel);
+
+    /** Loads data from IHost. */
+    bool load(const CHost &comHost);
+    /** Saves data to IHost. */
+    bool save(const CHost &comHost) const;
 
     /** Returns whether check is enabled. */
     bool isCheckEnabled() const;
@@ -122,6 +131,9 @@ public:
     static KUpdateChannel updateChannelFromInternalString(const QString &strUpdateChannel);
 
 private:
+
+    /** Gathers period suitable to passed @a uFrequency rounding up. */
+    static UpdatePeriodType gatherSuitablePeriod(ULONG uFrequency);
 
     /** Holds the populated list of update period options. */
     static VBoxUpdateDayList s_days;

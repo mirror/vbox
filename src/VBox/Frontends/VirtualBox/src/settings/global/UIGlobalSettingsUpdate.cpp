@@ -80,7 +80,10 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 
     /* Cache old data: */
     UIDataSettingsGlobalUpdate oldData;
-    oldData.m_guiUpdateData = gEDataManager->applicationUpdateData();
+    VBoxUpdateData guiUpdateData;
+    /* Load old data from host: */
+    guiUpdateData.load(m_host);
+    oldData.m_guiUpdateData = guiUpdateData;
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
@@ -186,7 +189,13 @@ bool UIGlobalSettingsUpdate::saveData()
         /* Save new data from cache: */
         if (   fSuccess
             && newData != oldData)
+        {
+            /* We still prefer data to be saved to extra-data as well, for backward compartibility: */
             /* fSuccess = */ gEDataManager->setApplicationUpdateData(newData.m_guiUpdateData.data());
+            /* Save new data to host finally: */
+            const VBoxUpdateData guiUpdateData = newData.m_guiUpdateData;
+            fSuccess = guiUpdateData.save(m_host);
+        }
     }
     /* Return result: */
     return fSuccess;

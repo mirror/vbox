@@ -22,7 +22,11 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
+
+/* COM includes: */
+#include "CUpdateAgent.h"
 
 
 /* static: */
@@ -39,20 +43,20 @@ void VBoxUpdateData::populate()
     // all values will be retranslated separately.
 
     /* Separately retranslate each day: */
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 day"),   "1 d");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 days"),  "2 d");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 days"),  "3 d");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "4 days"),  "4 d");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "5 days"),  "5 d");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "6 days"),  "6 d");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 day"),   "1 d",   86400);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 days"),  "2 d",  172800);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 days"),  "3 d",  259200);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "4 days"),  "4 d",  345600);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "5 days"),  "5 d",  432000);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "6 days"),  "6 d",  518400);
 
     /* Separately retranslate each week: */
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 week"),  "1 w");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 weeks"), "2 w");
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 weeks"), "3 w");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 week"),  "1 w",  604800);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "2 weeks"), "2 w", 1209600);
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "3 weeks"), "3 w", 1814400);
 
     /* Separately retranslate each month: */
-    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 month"), "1 m");
+    s_days << VBoxUpdateDay(QCoreApplication::translate("UIUpdateManager", "1 month"), "1 m", 2592000);
 }
 
 /* static */
@@ -89,7 +93,7 @@ VBoxUpdateData::VBoxUpdateData(const QString &strData)
     {
         if (s_days.isEmpty())
             populate();
-        m_enmUpdatePeriod = (UpdatePeriodType)s_days.indexOf(VBoxUpdateDay(QString(), parser.at(0)));
+        m_enmUpdatePeriod = (UpdatePeriodType)s_days.indexOf(VBoxUpdateDay(QString(), parser.at(0), 0));
         if (m_enmUpdatePeriod == UpdatePeriodType_Never)
             m_enmUpdatePeriod = UpdatePeriodType_1Day;
     }
@@ -160,6 +164,114 @@ VBoxUpdateData::VBoxUpdateData(bool fCheckEnabled, UpdatePeriodType enmUpdatePer
     m_fCheckRequired =    (QDate::currentDate() >= date())
                        && (   !version().isValid()
                            || version() != UIVersion(uiCommon().vboxVersionStringNormalized()));
+}
+
+bool VBoxUpdateData::load(const CHost &comHost)
+{
+    /* Acquire update agent: */
+    CUpdateAgent comAgent = comHost.GetUpdateHost();
+    if (!comHost.isOk())
+    {
+        UINotificationMessage::cannotAcquireHostParameter(comHost);
+        return false;
+    }
+
+    /* Fetch whether agent is enabled: */
+    const BOOL fEnabled = comAgent.GetEnabled();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_fCheckEnabled = fEnabled;
+
+    /* Fetch 'period' value: */
+    const ULONG uFrequency = comAgent.GetCheckFrequency();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_enmUpdatePeriod = gatherSuitablePeriod(uFrequency);
+
+    /* Fetch 'date' value: */
+    const QString strLastDate = comAgent.GetLastCheckDate();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_date = QDate::fromString(strLastDate, Qt::ISODate);
+    const ULONG uFrequencyInDays = (uFrequency / 86400) + 1;
+    m_date = m_date.addDays(uFrequencyInDays);
+
+    /* Fetch 'update channel' value: */
+    KUpdateChannel enmUpdateChannel = comAgent.GetChannel();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_enmUpdateChannel = enmUpdateChannel;
+
+    /* Fetch 'version' value: */
+    const QString strVersion = comAgent.GetVersion();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_version = strVersion;
+
+    /* Fetch whether we need to check: */
+    const BOOL fNeedToCheck = comAgent.GetIsCheckNeeded();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_fCheckRequired = fNeedToCheck;
+
+    /* Success finally: */
+    return true;
+}
+
+bool VBoxUpdateData::save(const CHost &comHost) const
+{
+    /* Acquire update agent: */
+    CUpdateAgent comAgent = comHost.GetUpdateHost();
+    if (!comHost.isOk())
+    {
+        UINotificationMessage::cannotAcquireHostParameter(comHost);
+        return false;
+    }
+
+    /* Save whether agent is enabled: */
+    comAgent.SetEnabled(m_fCheckEnabled);
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotChangeUpdateAgentParameter(comAgent);
+        return false;
+    }
+
+    /* Save 'period' value: */
+    comAgent.SetCheckFrequency(s_days.at(m_enmUpdatePeriod).length);
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotChangeUpdateAgentParameter(comAgent);
+        return false;
+    }
+
+    /* Save 'update channel' value: */
+    comAgent.SetChannel(m_enmUpdateChannel);
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotChangeUpdateAgentParameter(comAgent);
+        return false;
+    }
+
+    /* Success finally: */
+    return true;
 }
 
 bool VBoxUpdateData::isCheckEnabled() const
@@ -250,4 +362,21 @@ KUpdateChannel VBoxUpdateData::updateChannelFromInternalString(const QString &st
     pairs["withbetas"] = KUpdateChannel_WithBetas;
     pairs["allrelease"] = KUpdateChannel_All;
     return pairs.value(strUpdateChannel, KUpdateChannel_Stable);
+}
+
+/* static */
+UpdatePeriodType VBoxUpdateData::gatherSuitablePeriod(ULONG uFrequency)
+{
+    if (s_days.isEmpty())
+        populate();
+
+    UpdatePeriodType enmType = UpdatePeriodType_1Day;
+    foreach (const VBoxUpdateDay &day, s_days)
+    {
+        if (uFrequency <= day.length)
+            return enmType;
+        enmType = (UpdatePeriodType)(enmType + 1);
+    }
+
+    return UpdatePeriodType_1Month;
 }

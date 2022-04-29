@@ -59,6 +59,7 @@
 # include "CSystemProperties.h"
 #endif
 #include "CUnattended.h"
+#include "CUpdateAgent.h"
 #include "CVRDEServer.h"
 
 /* Other VBox stuff: */
@@ -718,6 +719,15 @@ void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisp
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireUpdateAgentParameter(const CUpdateAgent &comAgent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Update failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire update agent parameter.") +
+        UIErrorString::formatErrorInfo(comAgent));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
                                                                            UINotificationCenter *pParent /* = 0 */)
 {
@@ -882,6 +892,15 @@ void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfil
         QApplication::translate("UIMessageCenter", "Cloud profile failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to assign cloud profile parameter.") +
         UIErrorString::formatErrorInfo(comProfile));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeUpdateAgentParameter(const CUpdateAgent &comAgent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Update failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to assign update agent parameter.") +
+        UIErrorString::formatErrorInfo(comAgent));
 }
 
 /* static */

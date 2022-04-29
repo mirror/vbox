@@ -303,6 +303,9 @@ public:
         /** Notifies about inability to acquire INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter get acquired from. */
         static void cannotAcquireDispayParameter(const CDisplay &comDisplay);
+        /** Notifies about inability to acquire IUpdateAgent parameter.
+          * @param  comAgent  Brings the object parameter get acquired from. */
+        static void cannotAcquireUpdateAgentParameter(const CUpdateAgent &comAgent);
         /** Notifies about inability to acquire IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
@@ -361,6 +364,9 @@ public:
         /** Notifies about inability to change ICloudProfile parameter.
           * @param  comProfile  Brings the object parameter being changed for. */
         static void cannotChangeCloudProfileParameter(const CCloudProfile &comProfile);
+        /** Notifies about inability to change IUpdateAgent parameter.
+          * @param  comAgent  Brings the object parameter being changed for. */
+        static void cannotChangeUpdateAgentParameter(const CUpdateAgent &comAgent);
         /** Notifies about inability to change IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter being changed for. */
         static void cannotChangeVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
