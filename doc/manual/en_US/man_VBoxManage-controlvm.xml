@@ -331,7 +331,6 @@
       </group>
     </cmdsynopsis>
 
-    <!--
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard-filetransfers">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -344,7 +343,6 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-    -->
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-draganddrop">
       <command>VBoxManage controlvm</command>
@@ -1150,7 +1148,7 @@
         are installed in the VM.
       </para>
     </refsect2>
-    <!--
+
     <refsect2 id="vboxmanage-controlvm-clipboard-filetransfers">
       <title>Specify If Files Can Be Transferred Through the Clipboard</title>
       <remark role="help-copy-synopsis"/>
@@ -1167,7 +1165,7 @@
         are installed in the VM.
       </para>
     </refsect2>
-    -->
+
     <refsect2 id="vboxmanage-controlvm-draganddrop">
       <title>Set the Drag and Drop Mode Between the Host System and a Virtual Machine</title>
       <remark role="help-copy-synopsis"/>
