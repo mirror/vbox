@@ -461,6 +461,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_iGeometrySaveTimerId(-1)
 {
     s_pInstance = this;
+    setAcceptDrops(true);
 }
 
 UIVirtualBoxManager::~UIVirtualBoxManager()
@@ -589,6 +590,20 @@ void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
 
     /* Quit application: */
     QApplication::quit();
+}
+
+void UIVirtualBoxManager::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    if (pEvent->mimeData()->hasUrls())
+        pEvent->acceptProposedAction();
+}
+
+void UIVirtualBoxManager::dropEvent(QDropEvent *pEvent)
+{
+    if (!pEvent->mimeData()->hasUrls())
+        return;
+    sltHandleOpenUrlCall(pEvent->mimeData()->urls());
+    pEvent->acceptProposedAction();
 }
 
 #ifdef VBOX_WS_X11

@@ -102,6 +102,10 @@ protected:
         virtual void polishEvent(QShowEvent *pEvent);
         /** Handles close @a pEvent. */
         virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
+        /** Handles drag enter @a pEvent. */
+        virtual void dragEnterEvent(QDragEnterEvent *event) RT_OVERRIDE;
+        /** Handles drop @a pEvent. */
+        virtual void dropEvent(QDropEvent *event) RT_OVERRIDE;
     /** @} */
 
 private slots:
