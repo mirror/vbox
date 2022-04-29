@@ -50,15 +50,36 @@
 # error "Port me!"
 #endif
 
+/* Generic IPRT asm.h based optimizations: */
+#if !defined(__GNUC__)
+# include <iprt/asm.h>
+# define softfloat_countLeadingZeros16 softfloat_iprt_countLeadingZeros16
+DECLINLINE(uint_fast8_t) softfloat_iprt_countLeadingZeros16(uint16_t uVal)
+{
+    return 16 - ASMBitLastSetU16(uVal);
+}
+# define softfloat_countLeadingZeros32 softfloat_iprt_countLeadingZeros32
+DECLINLINE(uint_fast8_t) softfloat_iprt_countLeadingZeros32(uint32_t uVal)
+{
+    return 32 - ASMBitLastSetU32(uVal);
+}
+# define softfloat_countLeadingZeros64 softfloat_iprt_countLeadingZeros64
+DECLINLINE(uint_fast8_t) softfloat_iprt_countLeadingZeros64(uint64_t uVal)
+{
+    return 64 - ASMBitLastSetU64(uVal);
+}
+#endif
+
 /* Include GCC optimizations: */
 #ifdef __GNUC__
-# define SOFTFLOAT_BUILTIN_CLZ          1
+# ifndef softfloat_countLeadingZeros16
+#  define SOFTFLOAT_BUILTIN_CLZ         1
+# endif
 # if ARCH_BITS > 32
 #  define SOFTFLOAT_INTRINSIC_INT128    1
 # endif
 # include "opts-GCC.h"
 #endif
-/** @todo do Visual C++ optimization / generic IPRT based ones. */
 
 /* We've eliminated the global variables and need no TLS variable tricks. */
 #ifndef THREAD_LOCAL
