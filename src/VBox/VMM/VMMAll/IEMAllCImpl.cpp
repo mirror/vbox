@@ -15,8 +15,45 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "IEMAllCImplSvmInstr.cpp.h"
-#include "IEMAllCImplVmxInstr.cpp.h"
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP   LOG_GROUP_IEM
+#define VMCPU_INCL_CPUM_GST_CTX
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/apic.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/hm.h>
+#include <VBox/vmm/nem.h>
+#include <VBox/vmm/gim.h>
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# include <VBox/vmm/em.h>
+# include <VBox/vmm/hm_svm.h>
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# include <VBox/vmm/hmvmxinline.h>
+#endif
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgftrace.h>
+#include "IEMInternal.h"
+#include <VBox/vmm/vmcc.h>
+#include <VBox/log.h>
+#include <VBox/err.h>
+#include <VBox/param.h>
+#include <VBox/dis.h>
+#include <VBox/disopcode.h>
+#include <iprt/asm-math.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
+#include <iprt/x86.h>
+
+#include "IEMInline.h"
 
 
 /** @name Misc Helpers
@@ -4711,12 +4748,7 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
 /**
  * Implements lgs, lfs, les, lds & lss.
  */
-IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
-                uint16_t, uSel,
-                uint64_t, offSeg,
-                uint8_t,  iSegReg,
-                uint8_t,  iGReg,
-                IEMMODE,  enmEffOpSize)
+IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg, uint16_t, uSel, uint64_t, offSeg, uint8_t, iSegReg, uint8_t, iGReg, IEMMODE, enmEffOpSize)
 {
     /*
      * Use iemCImpl_LoadSReg to do the tricky segment register loading.

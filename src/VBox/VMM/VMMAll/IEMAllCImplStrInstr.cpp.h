@@ -145,12 +145,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
     PCCPUMSELREGHID pSrc1Hid     = iemSRegGetHid(pVCpu, iEffSeg);
-    uint64_t        uSrc1Base;
+    uint64_t        uSrc1Base    = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC    rcStrict     = iemMemSegCheckReadAccessEx(pVCpu, pSrc1Hid, iEffSeg, &uSrc1Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    uint64_t        uSrc2Base;
+    uint64_t        uSrc2Base    = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckReadAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uSrc2Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -314,13 +314,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
-    PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pVCpu, iEffSeg);
-    uint64_t        uSrc1Base;
+    PCCPUMSELREGHID pSrc1Hid     = iemSRegGetHid(pVCpu, iEffSeg);
+    uint64_t        uSrc1Base    = 0; /* gcc may not be used uninitialized */;
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pVCpu, pSrc1Hid, iEffSeg, &uSrc1Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    uint64_t        uSrc2Base;
+    uint64_t        uSrc2Base    = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckReadAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uSrc2Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -483,7 +483,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
     }
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
-    uint64_t        uBaseAddr;
+    uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -615,7 +615,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
     }
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
-    uint64_t        uBaseAddr;
+    uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -749,13 +749,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
-    PCCPUMSELREGHID pSrcHid = iemSRegGetHid(pVCpu, iEffSeg);
-    uint64_t        uSrcBase;
+    PCCPUMSELREGHID pSrcHid   = iemSRegGetHid(pVCpu, iEffSeg);
+    uint64_t        uSrcBase  = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pVCpu, pSrcHid, iEffSeg, &uSrcBase);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    uint64_t        uDstBase;
+    uint64_t        uDstBase  = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckWriteAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uDstBase);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -909,7 +909,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
 
-    uint64_t        uBaseAddr;
+    uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -1057,8 +1057,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
     }
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg));
-    PCCPUMSELREGHID pSrcHid = iemSRegGetHid(pVCpu, iEffSeg);
-    uint64_t        uBaseAddr;
+    PCCPUMSELREGHID pSrcHid   = iemSRegGetHid(pVCpu, iEffSeg);
+    uint64_t        uBaseAddr = 0; /* gcc may not be used uninitialized */
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pVCpu, pSrcHid, iEffSeg, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -1321,7 +1321,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
         return VINF_SUCCESS;
     }
 
-    uint64_t        uBaseAddr;
+    uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckWriteAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -1609,8 +1609,8 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
         return VINF_SUCCESS;
     }
 
-    PCCPUMSELREGHID pHid = iemSRegGetHid(pVCpu, iEffSeg);
-    uint64_t        uBaseAddr;
+    PCCPUMSELREGHID pHid      = iemSRegGetHid(pVCpu, iEffSeg);
+    uint64_t        uBaseAddr = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckReadAccessEx(pVCpu, pHid, iEffSeg, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;

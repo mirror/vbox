@@ -177,7 +177,11 @@ VBoxVMM_SOURCES  = \
 	VMMAll/HMSVMAll.cpp \
 	VMMAll/HMVMXAll.cpp \
 	VMMAll/IEMAll.cpp \
+	VMMAll/IEMAllInstructionsInterpretOnly.cpp \
 	VMMAll/IEMAllAImplC.cpp \
+	VMMAll/IEMAllCImpl.cpp \
+	VMMAll/IEMAllCImplSvmInstr.cpp \
+	VMMAll/IEMAllCImplVmxInstr.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
@@ -280,11 +284,12 @@ endif
 #endif
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
-VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS   = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_CLEAN += $(addprefix $(VBoxVMM_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod PGMAll.cod PDMAllCritSect.cod)
+VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS                          = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS                    = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS                          = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS                  = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_CLEAN += $(addprefix $(VBoxVMM_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod IEMAllInstructionsInterpretOnly.cod PGMAll.cod PDMAllCritSect.cod)
 endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
@@ -309,7 +314,7 @@ VBoxVMM_CLEAN         += \
 $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts)
 $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h: \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsInterpretOnly.cpp \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f38.cpp.h \
@@ -333,7 +338,7 @@ $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 		-e 's/  */ /g' \
 		-e 's/^.*IEMOP_MNEMONIC\(\|[01234]\|[01234]EX\)(/IEM_DO_INSTR_STAT\1(/' \
 		-e 's/;.*$(DOLLAR)//' \
-		--output "$@.tmp" $(filter %.cpp.h,$^)
+		--output "$@.tmp" $(filter %.cpp.h %IEMAllInstructionsInterpretOnly.cpp,$^)
 # Windows sort does some kind of seeking. So, we must use a temporary file and kmk_cat to define and undefine our macros.
 	$(QUIET)$(REDIRECT) -wto "$@.sorted" -- sort "$@.tmp"
 	$(QUIET)$(APPEND) -nt "$@" \
@@ -522,8 +527,12 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/HMSVMAll.cpp \
  	VMMAll/HMVMXAll.cpp \
  	VMMAll/IEMAll.cpp \
+ 	VMMAll/IEMAllInstructionsInterpretOnly.cpp \
 	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
  	VMMAll/IEMAllAImplC.cpp \
+ 	VMMAll/IEMAllCImpl.cpp \
+ 	VMMAll/IEMAllCImplSvmInstr.cpp \
+ 	VMMAll/IEMAllCImplVmxInstr.cpp \
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMmioNew.cpp \
  	VMMAll/MMAll.cpp \
@@ -782,7 +791,6 @@ PGMPhysRWTmpl.o PGMPhysRWTmpl.obj: 		PGMPhys.o
 PGMInline.o 	PGMInline.obj: 			PGMDbg.o
 
 # Alias the IEM templates to the object in which they are instantiated.
-IEMInternal.o \
 IEMAllInstructions.cpp.o           IEMAllInstructions.cpp.obj \
 IEMAllInstructionsOneByte.cpp.o    IEMAllInstructionsOneByte.cpp.obj \
 IEMAllInstructionsTwoByte0f.cpp.o  IEMAllInstructionsTwoByte0f.cpp.obj \
@@ -791,11 +799,11 @@ IEMAllInstructionsThree0f3a.cpp.o  IEMAllInstructionsThree0f3a.cpp.obj \
 IEMAllInstructionsVexMap1.cpp.o    IEMAllInstructionsVexMap1.cpp.obj \
 IEMAllInstructionsVexMap2.cpp.o    IEMAllInstructionsVexMap2.cpp.obj \
 IEMAllInstructionsVexMap3.cpp.o    IEMAllInstructionsVexMap3.cpp.obj \
-IEMAllInstructions3DNow.cpp.o      IEMAllInstructions3DNow.cpp.obj \
-IEMAllCImpl.cpp.o                  IEMAllCImpl.cpp.obj \
-IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj \
-IEMAllCImplSvmInstr.cpp.o          IEMAllCImplSvmInstr.cpp.obj \
-IEMAllCImplVmxInstr.cpp.o          IEMAllCImplVmxInstr.cpp.obj: IEMAll.o
+IEMAllInstructions3DNow.cpp.o      IEMAllInstructions3DNow.cpp.obj: IEMAllInstructionsInterpretOnly.o
+
+IEMInternal.o                      IEMInternal.obj: IEMAll.o
+
+IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj: IEMAllCImpl.o
 
 # Alias the NEM template to the objects where it is used:
 NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o

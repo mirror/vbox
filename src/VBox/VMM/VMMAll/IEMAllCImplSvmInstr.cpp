@@ -17,6 +17,35 @@
 
 
 /*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP   LOG_GROUP_IEM
+#define VMCPU_INCL_CPUM_GST_CTX
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/apic.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/hm.h>
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# include <VBox/vmm/hm_svm.h>
+#endif
+#include <VBox/vmm/gim.h>
+#include <VBox/vmm/tm.h>
+#include "IEMInternal.h"
+#include <VBox/vmm/vmcc.h>
+#include <VBox/log.h>
+#include <VBox/disopcode.h> /* for OP_VMMCALL */
+#include <VBox/err.h>
+#include <VBox/param.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
+#include <iprt/x86.h>
+
+#include "IEMInline.h"
+
+
+/*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -119,7 +148,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
  * @param   uExitInfo1  The exit info. 1 field.
  * @param   uExitInfo2  The exit info. 2 field.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
+VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2) RT_NOEXCEPT
 {
     VBOXSTRICTRC rcStrict;
     if (   CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
@@ -355,6 +384,26 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
 
 
 /**
+ * Interface for HM and EM to emulate \#VMEXIT.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uExitCode   The exit code.
+ * @param   uExitInfo1  The exit info. 1 field.
+ * @param   uExitInfo2  The exit info. 2 field.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+    VBOXSTRICTRC rcStrict = iemSvmVmexit(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Performs the operations necessary that are part of the vmrun instruction
  * execution in the guest.
  *
@@ -368,7 +417,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
  * @param   cbInstr             The length of the VMRUN instruction.
  * @param   GCPhysVmcb          Guest physical address of the VMCB to run.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
+static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhysVmcb) RT_NOEXCEPT
 {
     LogFlow(("iemSvmVmrun\n"));
 
@@ -897,7 +946,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
  * @param   uErr        The error-code associated with the exception.
  * @param   uCr2        The CR2 value in case of a \#PF exception.
  */
-IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2)
+VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2) RT_NOEXCEPT
 {
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
 
@@ -1002,8 +1051,8 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vec
  * @param   fStrIo          Whether this is a string IO instruction.
  * @param   cbInstr         The length of the IO instruction in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
-                                                uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr)
+VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                     uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr) RT_NOEXCEPT
 {
     Assert(IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT));
     Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
@@ -1046,7 +1095,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port
  *                      MSR read.
  * @param   cbInstr     The length of the MSR read/write instruction in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite)
+VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite) RT_NOEXCEPT
 {
     /*
      * Check if any MSRs are being intercepted.
@@ -1130,6 +1179,26 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 
 
 /**
+ * Interface for HM and EM to emulate the VMRUN instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmrun(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMRUN_MASK);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmrun);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * Implements 'VMLOAD'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmload)
@@ -1181,6 +1250,25 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     }
     return rcStrict;
 # endif
+}
+
+
+/**
+ * Interface for HM and EM to emulate the VMLOAD instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmload(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmload);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -1246,6 +1334,25 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
 
 
 /**
+ * Interface for HM and EM to emulate the VMSAVE instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmsave(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmsave);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * Implements 'CLGI'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_clgi)
@@ -1271,6 +1378,25 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     return VINF_SUCCESS;
 #  endif
 # endif
+}
+
+
+/**
+ * Interface for HM and EM to emulate the CLGI instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClgi(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clgi);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -1304,6 +1430,25 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 
 
 /**
+ * Interface for HM and EM to emulate the STGI instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * Implements 'INVLPGA'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_invlpga)
@@ -1325,6 +1470,25 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     PGMInvalidatePage(pVCpu, GCPtrPage);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Interface for HM and EM to emulate the INVLPGA instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpga(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_invlpga);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
