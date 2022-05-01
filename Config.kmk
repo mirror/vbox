@@ -3411,22 +3411,22 @@ endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
 
 
 #
-# C++ language level.
-## @todo consider maxing this.
+# C++ language level
+# See https://en.cppreference.com/w/cpp/compiler_support and compiler docs.
 #
+## @todo consider maxing this out.
 ifndef VBOX_GCC_std
- ## @todo rewrite using "$(VBOX_CLANG_VERSION_CXX)" vge 50000 so we can skip the ifneq stuff here.
- ifneq ($(VBOX_CLANG_VERSION_CXX),)
-  if $(VBOX_CLANG_VERSION_CXX) >= 50000 # darwin Xcode 5 allegedly knows what C++11 is
+ if 0
+# else if "$(VBOX_CLANG_VERSION_CXX)" vge 60000 # Most language features complete by v6. Lib stuff was less complete in v6, but hopefully acceptable for out purposes.
+#VBOX_GCC_std := -std=c++17
+ else if "$(VBOX_CLANG_VERSION_CXX)" vge 50000 # darwin Xcode 5 allegedly knows what C++11 is
 VBOX_GCC_std := -std=c++11
-  endif
- endif
- if "$(VBOX_GCC_VERSION_CXX)" != "" && !defined(VBOX_GCC_std)
-  if $(VBOX_GCC_VERSION_CXX) >= 40800
+# else if "$(VBOX_GCC_VERSION_CXX)" vge 70000 # Language feature P0512R0 was v8, rest v7 or earlier. Most lib stuff present in 7, complete in v12.
+#VBOX_GCC_std := -std=gnu++17
+ else if "$(VBOX_GCC_VERSION_CXX)" vge 40800
 VBOX_GCC_std := -std=c++11
-  else if $(VBOX_GCC_VERSION_CXX) >= 40600
+ else if "$(VBOX_GCC_VERSION_CXX)" vge 40600
 VBOX_GCC_std := -std=c++0x
-  endif
  endif
 endif
 
