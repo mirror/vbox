@@ -151,7 +151,6 @@ include $(FILE_KBUILD_SUB_FOOTER)
 
 
 VBOX_VALIDATIONKIT_ISO_RSP = $(PATH_TARGET)/VBoxValidationKitISO.rsp
-OTHERS                    += $(VBOX_VALIDATIONKIT_ISO_RSP)
 OTHERS_CLEAN              += $(VBOX_VALIDATIONKIT_ISO_RSP)
 
 #
@@ -367,19 +366,19 @@ $(foreach os, darwin,$(foreach arch, amd64, \
 endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 #
-# Build the Validation Kit guest ISO recipe consumed by RTIsoMaker.
+# Build the Validation Kit guest ISO response file for RTIsoMaker.
 #
-# We need this recipe file because passing all those arguments to RTIsoMaker will blow up
-# the maximum command line length on some OSes.
+# We need this response file because passing all those arguments to RTIsoMaker
+# will blow up the maximum command line length on some OSes.
 #
 $(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
-	$(call MSG_L1,Creating Validation Kit guest ISO recipe $@)
-	$(APPEND) -nt $@ \
-		--iso-level 3 \
-		--rock-ridge \
-		--joliet \
-		--rational-attribs \
-		--random-order-verification 2048 \
+	$(call MSG_L1,Creating Validation Kit guest ISO response file $@ )
+	kmk_builtin_append -nt "$@" \
+		'--iso-level=3' \
+		'--rock-ridge' \
+		'--joliet' \
+		'--rational-attribs' \
+		'--random-order-verification=2048' \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
 			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS) \
@@ -392,9 +391,9 @@ $(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
 			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
 				        	   $(subst =, $(SP), $(spec)), \
 						   $(subst $(PATH_OUT_BASE), testcase,$(spec))))) \
-		--volume-id \"VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)\" \
-		--name-setup joliet \
-		--volume-id \"VBoxValK $(VBOX_SVN_REV)\"
+		'--volume-id="VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)"' \
+		'--name-setup=joliet' \
+		'--volume-id="VBoxValK $(VBOX_SVN_REV)"'
 
 #
 # Build the Validation Kit guest ISO.
@@ -420,5 +419,5 @@ endif
 
 
 # Alias for creating the iso.
-.PHONY: $(QUIET)$(RM) -f $(VBOX_VALIDATIONKIT_ISO_RSP) validationkit-iso
+.PHONY: validationkit-iso
 validationkit-iso: $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso
