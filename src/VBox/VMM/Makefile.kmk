@@ -733,14 +733,19 @@ if "$(KBUILD_TYPE)" == "release" || ($(USERNAME) != "aeichner")
 # -noover is recognized despite the statement saying otherwise. It silences these warnings:
 # cl : Command line warning D9025 : overriding '/Od' with '/O2'
 # cl : Command line warning D9025 : overriding '/Oy-' with '/Oy'
-VMMAll/IEMAll.cpp_CXXFLAGS       += -noover -O2xy
-VMMAll/IEMAllAImplC.cpp_CXXFLAGS += -noover -O2xy
+VMMAll/IEMAll.cpp_CXXFLAGS                          += -noover -O2xy
+VMMAll/IEMAllAImplC.cpp_CXXFLAGS                    += -noover -O2xy
+VMMAll/IEMAllCImpl.cpp_CXXFLAGS                     += -noover -O2xy
+VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS             += -noover -O2xy
+VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS             += -noover -O2xy
+VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS += -noover -O2xy
  else
-VMMAll/IEMAll.cpp_CXXFLAGS += -O2
-VMMAll/IEMAllAImplC.cpp_CXXFLAGS += -O2 -fomit-frame-pointer
-#VMMAll/IEMAll.cpp_CXXFLAGS += -fno-align-functions -fno-align-jumps -fno-align-loops # Saves a few of percents, not worth it.
-#VMMAll/IEMAll.cpp_CXXFLAGS += -fno-reorder-blocks    # Saves one or two percent ... never mind.
-VMMAll/IEMAll.cpp_CXXFLAGS += -fomit-frame-pointer # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
+# Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
+VMMAll/IEMAll.cpp_CXXFLAGS                          += -O2 -fomit-frame-pointer
+VMMAll/IEMAllCImpl.cpp_CXXFLAGS                     += -O2 -fomit-frame-pointer
+VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS             += -O2 -fomit-frame-pointer
+VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS             += -O2 -fomit-frame-pointer
+VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS += -O2 -fomit-frame-pointer
  endif
 endif # bird wants good stacks (aeichner as well)
 
