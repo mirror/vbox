@@ -199,7 +199,6 @@ UIDetailsItem::UIDetailsItem(UIDetailsItem *pParent)
 
     /* Basic item setup: */
     setOwnedByLayout(false);
-    setAcceptDrops(false);
     setFocusPolicy(Qt::NoFocus);
     setFlag(QGraphicsItem::ItemIsSelectable, false);
 
