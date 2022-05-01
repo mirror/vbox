@@ -1051,7 +1051,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         if (fMenuConfigIsGrub)
             strTxtCfg.append("grub.cfg");
         else
-            strTxtCfg.append("isolinux-.cfg");
+            strTxtCfg.append("isolinux-txt.cfg");
         rVecArgs.append().assign(pszMenuConfigFilename).append("=").append(strTxtCfg);
     }
     catch (std::bad_alloc &)
