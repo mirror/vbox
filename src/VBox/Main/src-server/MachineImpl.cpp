@@ -528,12 +528,18 @@ HRESULT Machine::init(VirtualBox *aParent,
         if (aOsType && aOsType->i_id() == "VBoxBS_64")
             mData->pMachineConfigFile->mapExtraDataItems["VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled"] = "1";
 
-        /* At this point the changing of the current state modification
-         * flag is allowed. */
-        i_allowStateModification();
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        rc = mNvramStore->i_updateEncryptionSettings(strNVRAMKeyId, strNVRAMKeyStore);
+#endif
+        if (SUCCEEDED(rc))
+        {
+            /* At this point the changing of the current state modification
+             * flag is allowed. */
+            i_allowStateModification();
 
-        /* commit all changes made during the initialization */
-        i_commit();
+            /* commit all changes made during the initialization */
+            i_commit();
+        }
     }
 
     /* Confirm a successful initialization when it's the case */
