@@ -83,6 +83,33 @@ RTTHREAD mX11MonitorThread = NIL_RTTHREAD;
 /** Shutdown indicator for the monitor thread. */
 static bool g_fMonitorThreadShutdown = false;
 
+#define X_VMwareCtrlSetRes  1
+
+typedef struct
+{
+   CARD8    reqType;
+   CARD8    VMwareCtrlReqType;
+   CARD16   length B16;
+   CARD32   screen B32;
+   CARD32   x B32;
+   CARD32   y B32;
+} xVMwareCtrlSetResReq;
+#define sz_xVMwareCtrlSetResReq 16
+
+typedef struct
+{
+   BYTE     type;
+   BYTE     pad1;
+   CARD16   sequenceNumber B16;
+   CARD32   length B32;
+   CARD32   screen B32;
+   CARD32   x B32;
+   CARD32   y B32;
+   CARD32   pad2 B32;
+   CARD32   pad3 B32;
+   CARD32   pad4 B32;
+} xVMwareCtrlSetResReply;
+#define sz_xVMwareCtrlSetResReply 32
 
 typedef struct {
    CARD8  reqType;           /* always X_VMwareCtrlReqCode */
@@ -438,6 +465,33 @@ DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, B
     return Mode;
 }
 
+#ifdef RT_OS_SOLARIS
+static bool VMwareCtrlSetRes(
+    Display *dpy, int hExtensionMajorOpcode, int screen, int x, int y)
+{
+    xVMwareCtrlSetResReply rep;
+    xVMwareCtrlSetResReq *pReq;
+    bool fResult = false;
+
+    LockDisplay(dpy);
+
+    GetReq(VMwareCtrlSetRes, pReq);
+    AssertPtrReturn(pReq, false);
+
+    pReq->reqType = hExtensionMajorOpcode;
+    pReq->VMwareCtrlReqType = X_VMwareCtrlSetRes;
+    pReq->screen = screen;
+    pReq->x = x;
+    pReq->y = y;
+
+    fResult = !!_XReply(dpy, (xReply *)&rep, (SIZEOF(xVMwareCtrlSetResReply) - SIZEOF(xReply)) >> 2, xFalse);
+
+    UnlockDisplay(dpy);
+
+    return fResult;
+}
+#endif /* RT_OS_SOLARIS */
+
 /** Makes a call to vmwarectrl extension. This updates the
  * connection information and possible resolutions (modes)
  * of each monitor on the driver. Also sets the preferred mode
@@ -481,6 +535,10 @@ static int getMonitorIdFromName(const char *sMonitorName)
 {
     if (!sMonitorName)
         return -1;
+#ifdef RT_OS_SOLARIS
+    if (!strcmp(sMonitorName, "default"))
+        return 1;
+#endif
     int iLen = strlen(sMonitorName);
     if (iLen <= 0)
         return -1;
@@ -663,6 +721,11 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
 {
     int hHeight = 600;
     int hWidth = 800;
+    bool fResult = false;
+    int idxDefaultScreen = DefaultScreen(x11Context.pDisplay);
+
+    AssertReturn(idxDefaultScreen >= 0, false);
+    AssertReturn(idxDefaultScreen < x11Context.hOutputCount, false);
 
     xXineramaScreenInfo *extents = (xXineramaScreenInfo *)malloc(x11Context.hOutputCount * sizeof(xXineramaScreenInfo));
     if (!extents)
@@ -686,9 +749,14 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
         extents[i].height = hHeight;
         hRunningOffset += hWidth;
     }
-    bool fResult = VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
-                                         DefaultScreen(x11Context.pDisplay),
-                                         extents, x11Context.hOutputCount);
+#ifdef RT_OS_SOLARIS
+    fResult = VMwareCtrlSetRes(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
+                               idxDefaultScreen, extents[idxDefaultScreen].width,
+                               extents[idxDefaultScreen].height);
+#else
+    fResult = VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
+                                    idxDefaultScreen, extents, x11Context.hOutputCount);
+#endif
     free(extents);
     return fResult;
 }
@@ -1138,7 +1206,14 @@ static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
 #endif
     XRRScreenSize newSize = currentSize();
 
-    if (!event || newSize.width != (int)iXRes || newSize.height != (int)iYRes)
+    /* On Solaris guest, new screen size is not reported properly despite
+     * RRScreenChangeNotify event arrives. Hense, only check for event here.
+     * Linux guests do report new size correctly. */
+    if (   !event
+#ifndef RT_OS_SOLARIS
+        || newSize.width != (int)iXRes || newSize.height != (int)iYRes
+#endif
+       )
     {
         VBClLogError("Resizing frame buffer to %d %d has failed, current mode %d %d\n",
                      iXRes, iYRes, newSize.width, newSize.height);
