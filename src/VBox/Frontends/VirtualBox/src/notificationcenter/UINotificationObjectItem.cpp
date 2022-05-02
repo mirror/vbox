@@ -413,99 +413,6 @@ void UINotificationDownloaderItem::updateDetails()
     }
 }
 
-
-/*********************************************************************************************************************************
-*   Class UINotificationNewVersionCheckerItem implementation.                                                                    *
-*********************************************************************************************************************************/
-
-UINotificationNewVersionCheckerItem::UINotificationNewVersionCheckerItem(QWidget *pParent, UINotificationNewVersionChecker *pChecker /* = 0 */)
-    : UINotificationObjectItem(pParent, pChecker)
-    , m_pProgressBar(0)
-{
-    /* Main layout was prepared in base-class: */
-    if (m_pLayoutMain)
-    {
-        /* Name label was prepared in base-class: */
-        if (m_pLabelName)
-            m_pLabelName->setText(checker()->name());
-        /* Details label was prepared in base-class: */
-        if (m_pLabelDetails)
-        {
-            const int iHint = m_pLabelName->minimumSizeHint().width()
-                            + m_pLayoutUpper->spacing()
-                            + m_pButtonClose->minimumSizeHint().width();
-            m_pLabelDetails->setMinimumTextWidth(iHint);
-            updateDetails();
-        }
-
-        /* Prepare check-box: */
-        m_pProgressBar = new QProgressBar(this);
-        if (m_pProgressBar)
-        {
-            if (!checker()->isDone())
-                m_pProgressBar->setMaximum(0);
-            else
-            {
-                m_pProgressBar->setMaximum(1);
-                m_pProgressBar->setValue(1);
-            }
-            m_pLayoutMain->addWidget(m_pProgressBar);
-        }
-    }
-
-    /* Prepare checker connections: */
-    connect(checker(), &UINotificationNewVersionChecker::sigProgressFailed,
-            this, &UINotificationNewVersionCheckerItem::sltHandleProgressNotFinished);
-    connect(checker(), &UINotificationNewVersionChecker::sigProgressCanceled,
-            this, &UINotificationNewVersionCheckerItem::sltHandleProgressNotFinished);
-    connect(checker(), &UINotificationNewVersionChecker::sigProgressFinished,
-            this, &UINotificationNewVersionCheckerItem::sltHandleProgressFinished);
-}
-
-void UINotificationNewVersionCheckerItem::sltHandleProgressNotFinished()
-{
-    /* Finalize progress-bar state: */
-    if (m_pProgressBar)
-        m_pProgressBar->hide();
-    /* Update details with error text if any: */
-    if (m_pLabelDetails)
-        updateDetails();
-}
-
-void UINotificationNewVersionCheckerItem::sltHandleProgressFinished()
-{
-    /* Finalize progress-bar state: */
-    if (m_pProgressBar)
-    {
-        m_pProgressBar->setMaximum(1);
-        m_pProgressBar->setValue(1);
-    }
-    /* Update details with error text if any: */
-    if (m_pLabelDetails)
-        updateDetails();
-}
-
-UINotificationNewVersionChecker *UINotificationNewVersionCheckerItem::checker() const
-{
-    return qobject_cast<UINotificationNewVersionChecker*>(m_pObject);
-}
-
-void UINotificationNewVersionCheckerItem::updateDetails()
-{
-    AssertPtrReturnVoid(m_pLabelDetails);
-    const QString strDetails = checker()->details();
-    const QString strError = checker()->error();
-    const QString strFullDetails = strError.isNull()
-                                 ? strDetails
-                                 : QString("%1<br>%2").arg(strDetails, strError);
-    m_pLabelDetails->setText(strFullDetails);
-    if (!strError.isEmpty())
-    {
-        m_fToggled = true;
-        m_pLabelDetails->setVisible(m_fToggled);
-    }
-}
-
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
@@ -521,8 +428,6 @@ UINotificationObjectItem *UINotificationItem::create(QWidget *pParent, UINotific
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     else if (pObject->inherits("UINotificationDownloader"))
         return new UINotificationDownloaderItem(pParent, static_cast<UINotificationDownloader*>(pObject));
-    else if (pObject->inherits("UINotificationNewVersionChecker"))
-        return new UINotificationNewVersionCheckerItem(pParent, static_cast<UINotificationNewVersionChecker*>(pObject));
 #endif
     /* Handle defaults: */
     return new UINotificationObjectItem(pParent, pObject);

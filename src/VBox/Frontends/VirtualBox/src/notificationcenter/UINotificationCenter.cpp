@@ -210,8 +210,7 @@ QUuid UINotificationCenter::append(UINotificationObject *pObject)
     /* Is object critical? */
     const bool fCritical = pObject->isCritical();
     /* Is object progress? */
-    const bool fProgress =  pObject->inherits("UINotificationProgress")
-                         || pObject->inherits("UINotificationNewVersionChecker");
+    const bool fProgress = pObject->inherits("UINotificationProgress");
 
     /* Handle object. Be aware it can be deleted during handling! */
     const QUuid uId = m_pModel->appendObject(pObject);

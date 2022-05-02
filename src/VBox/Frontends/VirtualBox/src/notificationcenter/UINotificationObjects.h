@@ -2650,48 +2650,6 @@ private:
     QString  m_strFileName;
 };
 
-/** UINotificationNewVersionChecker extension for VirtualBox new version check functionality. */
-class SHARED_LIBRARY_STUFF UINotificationNewVersionCheckerVirtualBox : public UINotificationNewVersionChecker
-{
-    Q_OBJECT;
-
-public:
-
-    /** Returns singleton instance, creates if necessary.
-      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
-    static UINotificationNewVersionCheckerVirtualBox *instance(bool fForcedCall);
-    /** Returns whether singleton instance already created. */
-    static bool exists();
-
-    /** Destructs VirtualBox notification-new-version-checker.
-      * @note  Notification-center can destroy us at any time. */
-    virtual ~UINotificationNewVersionCheckerVirtualBox() /* override final */;
-
-protected:
-
-    /** Constructs VirtualBox notification-new-version-checker.
-      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
-    UINotificationNewVersionCheckerVirtualBox(bool fForcedCall);
-
-    /** Returns object name. */
-    virtual QString name() const /* override final */;
-    /** Returns object details. */
-    virtual QString details() const /* override final */;
-    /** Creates and returns started new-version-checker. */
-    virtual UINewVersionChecker *createChecker() /* override final */;
-
-private:
-
-    /** Holds the singleton instance. */
-    static UINotificationNewVersionCheckerVirtualBox *s_pInstance;
-
-    /** Holds whether this customer has forced privelegies. */
-    bool  m_fForcedCall;
-
-    /** Holds the url. */
-    QString  m_strUrl;
-};
-
 /** UINotificationProgress extension for checking a new VirtualBox version. */
 class SHARED_LIBRARY_STUFF UINotificationProgressNewVersionChecker : public UINotificationProgress
 {
@@ -2699,6 +2657,8 @@ class SHARED_LIBRARY_STUFF UINotificationProgressNewVersionChecker : public UINo
 
 public:
 
+    /** Constructs new version check notification-progress.
+      * @param  fForcedCall  Brings whether even negative result should be reflected. */
     UINotificationProgressNewVersionChecker(bool fForcedCall);
 
 protected:
@@ -2712,18 +2672,18 @@ protected:
 
 private slots:
 
+    /** Handles signal about progress being finished. */
     void sltHandleProgressFinished();
 
 private:
 
-#ifdef VBOX_WITH_UPDATE_AGENT
-    CUpdateAgent m_comUpdateHost;
-#endif
     /** Holds whether this customer has forced privelegies. */
-    bool         m_fForcedCall;
+    bool          m_fForcedCall;
+# ifdef VBOX_WITH_UPDATE_AGENT
+    /** Holds the host update agent reference. */
+    CUpdateAgent  m_comUpdateHost;
+# endif
 };
-
-
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
