@@ -29,7 +29,7 @@ DECLCALLBACK(int) SsmStream::i_ssmCryptoWrite(void *pvUser, uint64_t offStream, 
 {
     SsmStream *pThis = static_cast<SsmStream *>(pvUser);
 
-    return RTVfsFileWriteAt(pThis->m_hVfsFile, offStream, pvBuf, cbToWrite, NULL /*pcbWritten*/);
+    return RTVfsFileWriteAt(pThis->m_hVfsFile, (RTFOFF)offStream, pvBuf, cbToWrite, NULL /*pcbWritten*/);
 }
 
 
@@ -38,7 +38,7 @@ DECLCALLBACK(int) SsmStream::i_ssmCryptoRead(void *pvUser, uint64_t offStream, v
 {
     SsmStream *pThis = static_cast<SsmStream *>(pvUser);
 
-    return RTVfsFileReadAt(pThis->m_hVfsFile, offStream, pvBuf, cbToRead, pcbRead);
+    return RTVfsFileReadAt(pThis->m_hVfsFile, (RTFOFF)offStream, pvBuf, cbToRead, pcbRead);
 }
 
 
@@ -47,7 +47,7 @@ DECLCALLBACK(int) SsmStream::i_ssmCryptoSeek(void *pvUser, int64_t offSeek, unsi
 {
     SsmStream *pThis = static_cast<SsmStream *>(pvUser);
 
-    return RTVfsFileSeek(pThis->m_hVfsFile, offSeek, uMethod, poffActual);
+    return RTVfsFileSeek(pThis->m_hVfsFile, (RTFOFF)offSeek, uMethod, poffActual);
 }
 
 
