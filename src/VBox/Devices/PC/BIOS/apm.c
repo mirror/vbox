@@ -205,6 +205,12 @@ void BIOSCALL apm_function(sys_regs_t r)
         /// @todo actually perform a disconnect...
     case APM_BUSY:      /* Nothing to do as APM Idle doesn't slow CPU clock. */
         break;
+    case APM_STATUS:
+        /* We do not attempt to report battery status. */
+        BX = 0x01FF;    /* AC line power, battery unknown. */
+        CX = 0x80FF;    /* No battery. */
+        DX = 0xFFFF;    /* No idea about remaining battery life. */
+        break;
     case APM_GET_EVT:
         /// @todo error should be different if interface not connected + engaged
         SET_AH(APM_ERR_NO_EVENTS);  /* PM events don't happen. */
