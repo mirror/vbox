@@ -56,7 +56,7 @@ DECLCALLBACK(uint64_t) SsmStream::i_ssmCryptoTell(void *pvUser)
 {
     SsmStream *pThis = static_cast<SsmStream *>(pvUser);
 
-    return RTVfsFileTell(pThis->m_hVfsFile);
+    return (uint64_t)RTVfsFileTell(pThis->m_hVfsFile);
 }
 
 
