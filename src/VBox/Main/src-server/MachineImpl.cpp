@@ -6530,7 +6530,11 @@ HRESULT Machine::querySavedGuestScreenInfo(ULONG aScreenId,
     uint32_t u32Height = 0;
     uint16_t u16Flags = 0;
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+#else
+    SsmStream SavedStateStream(mParent, NULL /*pKeyStore*/, Utf8Str::Empty, Utf8Str::Empty);
+#endif
     int vrc = readSavedGuestScreenInfo(SavedStateStream, mSSData->strStateFilePath, aScreenId,
                                        &u32OriginX, &u32OriginY, &u32Width, &u32Height, &u16Flags);
     if (RT_FAILURE(vrc))
@@ -6578,7 +6582,11 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+#else
+    SsmStream SavedStateStream(mParent, NULL /*pKeyStore*/, Utf8Str::Empty, Utf8Str::Empty);
+#endif
     int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 0 /* u32Type */,
                                          &pu8Data, &cbData, &u32Width, &u32Height);
     if (RT_FAILURE(vrc))
@@ -6668,7 +6676,11 @@ HRESULT Machine::querySavedScreenshotInfo(ULONG aScreenId,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+#else
+    SsmStream SavedStateStream(mParent, NULL /*pKeyStore*/, Utf8Str::Empty, Utf8Str::Empty);
+#endif
     int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 1 /* u32Type */,
                                          &pu8Data, &cbData, &u32Width, &u32Height);
 
@@ -6706,7 +6718,11 @@ HRESULT Machine::readSavedScreenshotToArray(ULONG aScreenId,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+#else
+    SsmStream SavedStateStream(mParent, NULL /*pKeyStore*/, Utf8Str::Empty, Utf8Str::Empty);
+#endif
     int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 1 /* u32Type */,
                                          &pu8Data, &cbData, &u32Width, &u32Height);
 
