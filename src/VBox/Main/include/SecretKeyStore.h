@@ -118,6 +118,8 @@ class SecretKeyStore
 {
     public:
 
+        typedef std::map<com::Utf8Str, SecretKey *> SecretKeyMap;
+
         /**
          * Constructor for a secret key store.
          *
@@ -180,9 +182,20 @@ class SecretKeyStore
          */
         int deleteAllSecretKeys(bool fSuspend, bool fForce);
 
-    private:
+        /**
+         * Iterators for enumerating keys
+         */
+        SecretKeyMap::iterator begin()
+        {
+            return m_mapSecretKeys.begin();
+        }
 
-        typedef std::map<com::Utf8Str, SecretKey *> SecretKeyMap;
+        SecretKeyMap::iterator end()
+        {
+            return m_mapSecretKeys.end();
+        }
+
+    private:
 
         /** The map to map key identifers to secret keys. */
         SecretKeyMap m_mapSecretKeys;
