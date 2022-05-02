@@ -37,8 +37,7 @@ ifndef VBOX_ONLY_SDK
   	tstMediumLock \
 	tstBstr \
   	tstGuid \
-  	tstUnattendedScript \
-  	tstVBoxCrypto
+  	tstUnattendedScript
   PROGRAMS.linux += \
   	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -297,13 +296,6 @@ tstUnattendedScriptFiles_TEMPLATE = VBOXMAINTSTEXE
 tstUnattendedScriptFiles_SOURCES = \
 	tstUnattendedScript-1.template \
 	tstUnattendedScript-1.expected
-
-
-#
-# tstVBoxCrypto
-#
-tstVBoxCrypto_TEMPLATE = VBOXMAINCLIENTTSTEXE
-tstVBoxCrypto_SOURCES  = tstVBoxCrypto.cpp
 
 
 
