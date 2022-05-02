@@ -3607,6 +3607,29 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
              * at least on XPCOM) */
             ComPtr<IUnknown> unk = mData->mSession.mDirectControl;
             NOREF(unk);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+            if (aLockType == LockType_VM)
+            {
+                /* get the console from the direct session */
+                ComPtr<IConsole> console;
+                rc = pSessionControl->COMGETTER(RemoteConsole)(console.asOutParam());
+                ComAssertComRC(rc);
+                /* send passswords to console */
+                for (SecretKeyStore::SecretKeyMap::iterator it = mData->mpKeyStore->begin();
+                     it != mData->mpKeyStore->end();
+                     ++it)
+                {
+                    SecretKey *pKey = it->second;
+                    pKey->retain();
+                    console->AddEncryptionPassword(Bstr(it->first).raw(),
+                                                   Bstr((const char*)pKey->getKeyBuffer()).raw(),
+                                                   TRUE);
+                    pKey->release();
+                }
+
+            }
+#endif
         }
 
         /* Release the lock since SessionMachine::uninit() locks VirtualBox which
@@ -6870,19 +6893,61 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
     size_t cbData = (size_t)RT_MIN(aSize, _512K);
     aData.resize(cbData);
 
-    RTFILE LogFile;
-    int vrc = RTFileOpen(&LogFile, log.c_str(),
-                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int vrc = VINF_SUCCESS;
+    RTVFSIOSTREAM hVfsIosLog = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (mData->mstrLogKeyId.isNotEmpty() && mData->mstrLogKeyStore.isNotEmpty())
+    {
+        PCVBOXCRYPTOIF pCryptoIf = NULL;
+        rc = i_getVirtualBox()->i_retainCryptoIf(&pCryptoIf);
+        if (SUCCEEDED(rc))
+        {
+            alock.acquire();
+
+            SecretKey *pKey = NULL;
+            vrc = mData->mpKeyStore->retainSecretKey(mData->mstrLogKeyId, &pKey);
+            alock.release();
+
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTVfsIoStrmOpenNormal(log.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosLog);
+                if (RT_SUCCESS(vrc))
+                {
+                    RTVFSIOSTREAM hVfsIosLogDec = NIL_RTVFSIOSTREAM;
+                    vrc = pCryptoIf->pfnCryptoIoStrmFromVfsIoStrmDecrypt(hVfsIosLog, mData->mstrLogKeyStore.c_str(),
+                                                                         (const char *)pKey->getKeyBuffer(), &hVfsIosLogDec);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        RTVfsIoStrmRelease(hVfsIosLog);
+                        hVfsIosLog = hVfsIosLogDec;
+                    }
+                }
+
+                pKey->release();
+            }
+
+            i_getVirtualBox()->i_releaseCryptoIf(pCryptoIf);
+        }
+    }
+    else
+        vrc = RTVfsIoStrmOpenNormal(log.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosLog);
+#else
+    vrc = RTVfsIoStrmOpenNormal(log.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosLog);
+#endif
     if (RT_SUCCESS(vrc))
     {
-        vrc = RTFileReadAt(LogFile, aOffset, cbData ? &aData.front() : NULL, cbData, &cbData);
+        vrc = RTVfsIoStrmReadAt(hVfsIosLog, aOffset,
+                                cbData ? &aData.front() : NULL, cbData,
+                                true /*fBlocking*/, &cbData);
         if (RT_SUCCESS(vrc))
             aData.resize(cbData);
         else
             rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                               tr("Could not read log file '%s' (%Rrc)"),
                               log.c_str(), vrc);
-        RTFileClose(LogFile);
+
+        RTVfsIoStrmRelease(hVfsIosLog);
     }
     else
         rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
