@@ -55,7 +55,7 @@ typedef struct VBOXCRYPTOIF
     /** Description string. */
     const char                 *pszDesc;
 
-    /** @name Generic cryptographic context operations.
+    /** @name Generic crytographic context operations.
      * @{ */
 
     /**
