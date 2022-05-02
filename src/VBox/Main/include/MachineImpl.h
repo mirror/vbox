@@ -53,6 +53,10 @@
 #include "VBox/com/ErrorInfo.h"
 
 #include <iprt/time.h>
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+# include <VBox/VBoxCryptoIf.h>
+# include <iprt/vfs.h>
+#endif
 
 #include <list>
 #include <vector>
@@ -868,6 +872,19 @@ protected:
 
     class DeleteConfigTask;
     void i_deleteConfigHandler(DeleteConfigTask &task);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    class ChangeEncryptionTask;
+    void i_changeEncryptionHandler(ChangeEncryptionTask &task);
+    HRESULT i_changeEncryptionForComponent(ChangeEncryptionTask &task, const com::Utf8Str strDirectory,
+                                           const com::Utf8Str strFilePattern, com::Utf8Str &strKeyStore,
+                                           com::Utf8Str &strKeyId, int iCipherMode);
+    int i_findFiles(std::list<com::Utf8Str> &lstFiles, const com::Utf8Str &strDir,
+                    const com::Utf8Str &strPattern);
+    int i_createIoStreamForFile(const char *pszFilename, PCVBOXCRYPTOIF pCryptoIf,
+                                const char *pszKeyStore, const char *pszPassword,
+                                uint64_t fOpen, PRTVFSIOSTREAM phVfsIos);
+#endif
 
     friend class Appliance;
     friend class RecordingSettings;

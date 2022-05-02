@@ -8940,6 +8940,14 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     if (!pGuestOSType.isNull())
         mUserData->s.strOsType = pGuestOSType->i_id();
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    // stateFile encryption (optional)
+    mSSData->strStateKeyId = config.strStateKeyId;
+    mSSData->strStateKeyStore = config.strStateKeyStore;
+    mData->mstrLogKeyId = config.strLogKeyId;
+    mData->mstrLogKeyStore = config.strLogKeyStore;
+#endif
+
     // stateFile (optional)
     if (config.strStateFile.isEmpty())
         mSSData->strStateFilePath.setNull();
@@ -10460,6 +10468,13 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
 
     // copy name, description, OS type, teleport, UTC etc.
     config.machineUserData = mUserData->s;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    config.strStateKeyId    = mSSData->strStateKeyId;
+    config.strStateKeyStore = mSSData->strStateKeyStore;
+    config.strLogKeyId      = mData->mstrLogKeyId;
+    config.strLogKeyStore   = mData->mstrLogKeyStore;
+#endif
 
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_AbortedSaved
@@ -15928,6 +15943,604 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     return S_OK;
 }
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+/**
+ * Task record for change encryption settins.
+ */
+class Machine::ChangeEncryptionTask
+    : public Machine::Task
+{
+public:
+    ChangeEncryptionTask(Machine *m,
+                         Progress *p,
+                         const Utf8Str &t,
+                         const com::Utf8Str &aCurrentPassword,
+                         const com::Utf8Str &aCipher,
+                         const com::Utf8Str &aNewPassword,
+                         const com::Utf8Str &aNewPasswordId,
+                         const BOOL         aForce,
+                         const MediaList    &llMedia)
+        : Task(m, p, t),
+          mstrNewPassword(aNewPassword),
+          mstrCurrentPassword(aCurrentPassword),
+          mstrCipher(aCipher),
+          mstrNewPasswordId(aNewPasswordId),
+          mForce(aForce),
+          mllMedia(llMedia)
+    {}
+
+    ~ChangeEncryptionTask()
+    {
+        if (mstrNewPassword.length())
+            RTMemWipeThoroughly(mstrNewPassword.mutableRaw(), mstrNewPassword.length(), 10 /* cPasses */);
+        if (mstrCurrentPassword.length())
+            RTMemWipeThoroughly(mstrCurrentPassword.mutableRaw(), mstrCurrentPassword.length(), 10 /* cPasses */);
+        if (m_pCryptoIf)
+        {
+            m_pMachine->i_getVirtualBox()->i_releaseCryptoIf(m_pCryptoIf);
+            m_pCryptoIf = NULL;
+        }
+    }
+
+    Utf8Str   mstrNewPassword;
+    Utf8Str   mstrCurrentPassword;
+    Utf8Str   mstrCipher;
+    Utf8Str   mstrNewPasswordId;
+    BOOL      mForce;
+    MediaList mllMedia;
+    PCVBOXCRYPTOIF m_pCryptoIf;
+private:
+    void handler()
+    {
+        try
+        {
+            m_pMachine->i_changeEncryptionHandler(*this);
+        }
+        catch (...)
+        {
+            LogRel(("Some exception in the function Machine::i_changeEncryptionHandler()\n"));
+        }
+    }
+
+    friend void Machine::i_changeEncryptionHandler(ChangeEncryptionTask &task);
+};
+
+/**
+ * Scans specified directory and fills list by files found
+ *
+ * @returns VBox status code.
+ * @param   lstFiles
+ * @param   strDir
+ * @param   filePattern
+ */
+int Machine::i_findFiles(std::list<com::Utf8Str> &lstFiles, const com::Utf8Str &strDir,
+                         const com::Utf8Str &strPattern)
+{
+    /* To get all entries including subdirectories. */
+    char *pszFilePattern = RTPathJoinA(strDir.c_str(), "*");
+    if (!pszFilePattern)
+        return VERR_NO_STR_MEMORY;
+
+    PRTDIRENTRYEX pDirEntry = NULL;
+    RTDIR hDir;
+    size_t cbDirEntry = sizeof(RTDIRENTRYEX);
+    int rc = RTDirOpenFiltered(&hDir, pszFilePattern, RTDIRFILTER_WINNT, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        pDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+        if (pDirEntry)
+        {
+            while (   (rc = RTDirReadEx(hDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
+                   != VERR_NO_MORE_FILES)
+            {
+                char *pszFilePath = NULL;
+
+                if (rc == VERR_BUFFER_OVERFLOW)
+                {
+                    /* allocate new buffer. */
+                    RTMemFree(pDirEntry);
+                    pDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbDirEntry);
+                    if (!pDirEntry)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    /* Retry. */
+                    rc = RTDirReadEx(hDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                else if (RT_FAILURE(rc))
+                    break;
+
+                /* Exclude . and .. */
+                if (   (pDirEntry->szName[0] == '.' && pDirEntry->szName[1] == '\0')
+                    || (pDirEntry->szName[0] == '.' && pDirEntry->szName[1] == '.' && pDirEntry->szName[2] == '\0'))
+                    continue;
+                if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
+                {
+                    char *pszSubDirPath = RTPathJoinA(strDir.c_str(), pDirEntry->szName);
+                    if (!pszSubDirPath)
+                    {
+                        rc = VERR_NO_STR_MEMORY;
+                        break;
+                    }
+                    rc = i_findFiles(lstFiles, pszSubDirPath, strPattern);
+                    RTMemFree(pszSubDirPath);
+                    if (RT_FAILURE(rc))
+                        break;
+                    continue;
+                }
+
+                /* We got the new entry. */
+                if (!RTFS_IS_FILE(pDirEntry->Info.Attr.fMode))
+                    continue;
+
+                if (!RTStrSimplePatternMatch(strPattern.c_str(), pDirEntry->szName))
+                    continue;
+
+                /* Prepend the path to the libraries. */
+                pszFilePath = RTPathJoinA(strDir.c_str(), pDirEntry->szName);
+                if (!pszFilePath)
+                {
+                    rc = VERR_NO_STR_MEMORY;
+                    break;
+                }
+
+                lstFiles.push_back(pszFilePath);
+                RTStrFree(pszFilePath);
+            }
+
+            RTMemFree(pDirEntry);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTDirClose(hDir);
+    }
+    else
+    {
+        /* On Windows the above immediately signals that there are no
+         * files matching, while on other platforms enumerating the
+         * files below fails. Either way: stop searching. */
+    }
+
+    if (   rc == VERR_NO_MORE_FILES
+        || rc == VERR_FILE_NOT_FOUND
+        || rc == VERR_PATH_NOT_FOUND)
+        rc = VINF_SUCCESS;
+    RTStrFree(pszFilePattern);
+    return rc;
+}
+
+/**
+ * Helper to set up an I/O stream to read or write a possibly encrypted file.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename         The file to open.
+ * @param   pCryptoIf           Pointer to the cryptographic interface if the file should be encrypted or contains encrypted data.
+ * @param   pszKeyStore         The keystore if the file should be encrypted or contains encrypted data.
+ * @param   pszPassword         The password if the file should be encrypted or contains encrypted data.
+ * @param   fOpen               The open flags for the file.
+ * @param   phVfsIos            Where to store the handle to the I/O stream on success.
+ */
+int Machine::i_createIoStreamForFile(const char *pszFilename, PCVBOXCRYPTOIF pCryptoIf,
+                                     const char *pszKeyStore, const char *pszPassword,
+                                     uint64_t fOpen, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int vrc = RTVfsFileOpenNormal(pszFilename, fOpen, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        if (pCryptoIf)
+        {
+            RTVFSFILE hVfsFileCrypto = NIL_RTVFSFILE;
+            vrc = pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFile, pszKeyStore, pszPassword, &hVfsFileCrypto);
+            if (RT_SUCCESS(vrc))
+            {
+                RTVfsFileRelease(hVfsFile);
+                hVfsFile = hVfsFileCrypto;
+            }
+        }
+
+        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+        RTVfsFileRelease(hVfsFile);
+    }
+
+    return vrc;
+}
+
+/**
+ * Helper function processing all actions for one component (saved state files,
+ * NVRAM files, etc). Used by Machine::i_changeEncryptionHandler only.
+ *
+ * @param task
+ * @param strDirectory
+ * @param strFilePattern
+ * @param strMagic
+ * @param strKeyStore
+ * @param strKeyId
+ * @return
+ */
+HRESULT Machine::i_changeEncryptionForComponent(ChangeEncryptionTask &task, const com::Utf8Str strDirectory,
+                                                const com::Utf8Str strFilePattern, com::Utf8Str &strKeyStore,
+                                                com::Utf8Str &strKeyId, int iCipherMode)
+{
+    bool fDecrypt =    task.mstrCurrentPassword.isNotEmpty()
+                    && task.mstrCipher.isEmpty()
+                    && task.mstrNewPassword.isEmpty()
+                    && task.mstrNewPasswordId.isEmpty();
+    bool fEncrypt =    task.mstrCurrentPassword.isEmpty()
+                    && task.mstrCipher.isNotEmpty()
+                    && task.mstrNewPassword.isNotEmpty()
+                    && task.mstrNewPasswordId.isNotEmpty();
+
+    /* check if the cipher is changed which causes the reencryption*/
+
+    const char *pszTaskCipher = NULL;
+    if (task.mstrCipher.isNotEmpty())
+        pszTaskCipher = getCipherString(task.mstrCipher.c_str(), iCipherMode);
+
+    if (!task.mForce && !fDecrypt && !fEncrypt)
+    {
+        char *pszCipher = NULL;
+        int vrc = task.m_pCryptoIf->pfnCryptoKeyStoreGetDekFromEncoded(strKeyStore.c_str(),
+                                                                       NULL /*pszPassword*/,
+                                                                       NULL /*ppbKey*/,
+                                                                       NULL /*pcbKey*/,
+                                                                       &pszCipher);
+        if (RT_SUCCESS(vrc))
+        {
+            task.mForce = strcmp(pszTaskCipher, pszCipher) != 0;
+            RTMemFree(pszCipher);
+        }
+        else
+            return setErrorBoth(E_FAIL, vrc, tr("Obtain cipher for '%s' files failed (%Rrc)"),
+                              strFilePattern.c_str(), vrc);
+    }
+
+    /* Only the password needs to be changed */
+    if (!task.mForce && !fDecrypt && !fEncrypt)
+    {
+        Assert(task.m_pCryptoIf);
+
+        VBOXCRYPTOCTX hCryptoCtx;
+        int vrc = task.m_pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), task.mstrCurrentPassword.c_str(), &hCryptoCtx);
+        if (RT_FAILURE(vrc))
+            return setErrorBoth(E_FAIL, vrc, tr("Loading old key store for '%s' files failed, (%Rrc)"),
+                                strFilePattern.c_str(), vrc);
+        vrc = task.m_pCryptoIf->pfnCryptoCtxPasswordChange(hCryptoCtx, task.mstrNewPassword.c_str());
+        if (RT_FAILURE(vrc))
+            return setErrorBoth(E_FAIL, vrc, tr("Changing the password for '%s' files failed, (%Rrc)"),
+                                strFilePattern.c_str(), vrc);
+
+        char *pszKeyStore = NULL;
+        vrc = task.m_pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszKeyStore);
+        task.m_pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+        if (RT_FAILURE(vrc))
+            return setErrorBoth(E_FAIL, vrc, tr("Saving the key store for '%s' files failed, (%Rrc)"),
+                                strFilePattern.c_str(), vrc);
+        strKeyStore = pszKeyStore;
+        RTMemFree(pszKeyStore);
+        strKeyId = task.mstrNewPasswordId;
+        return S_OK;
+    }
+
+    /* Reencryption required */
+    HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
+
+    std::list<com::Utf8Str> lstFiles;
+    if (SUCCEEDED(rc))
+    {
+        vrc = i_findFiles(lstFiles, strDirectory, strFilePattern);
+        if (RT_FAILURE(vrc))
+            rc = setErrorBoth(E_FAIL, vrc, tr("Getting file list for '%s' files failed, (%Rrc)"),
+                              strFilePattern.c_str(), vrc);
+    }
+    com::Utf8Str strNewKeyStore;
+    if (SUCCEEDED(rc))
+    {
+        if (!fDecrypt)
+        {
+            VBOXCRYPTOCTX hCryptoCtx;
+            vrc = task.m_pCryptoIf->pfnCryptoCtxCreate(pszTaskCipher, task.mstrNewPassword.c_str(), &hCryptoCtx);
+            if (RT_FAILURE(vrc))
+                return setErrorBoth(E_FAIL, vrc, tr("Create new key store for '%s' files failed, (%Rrc)"),
+                                    strFilePattern.c_str(), vrc);
+
+            char *pszKeyStore = NULL;
+            vrc = task.m_pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszKeyStore);
+            task.m_pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+            if (RT_FAILURE(vrc))
+                return setErrorBoth(E_FAIL, vrc, tr("Saving the new key store for '%s' files failed, (%Rrc)"),
+                                    strFilePattern.c_str(), vrc);
+            strNewKeyStore = pszKeyStore;
+            RTMemFree(pszKeyStore);
+        }
+
+        for (std::list<com::Utf8Str>::iterator it = lstFiles.begin();
+             it != lstFiles.end();
+             ++it)
+        {
+            RTVFSIOSTREAM hVfsIosOld = NIL_RTVFSIOSTREAM;
+            RTVFSIOSTREAM hVfsIosNew = NIL_RTVFSIOSTREAM;
+
+            uint64_t fOpenForRead = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE;
+            uint64_t fOpenForWrite = RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE;
+
+            vrc = i_createIoStreamForFile((*it).c_str(),
+                                          fEncrypt ? NULL : task.m_pCryptoIf,
+                                          fEncrypt ? NULL : strKeyStore.c_str(),
+                                          fEncrypt ? NULL : task.mstrCurrentPassword.c_str(),
+                                          fOpenForRead, &hVfsIosOld);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = i_createIoStreamForFile((*it + ".tmp").c_str(),
+                                              fDecrypt ? NULL : task.m_pCryptoIf,
+                                              fDecrypt ? NULL : strNewKeyStore.c_str(),
+                                              fDecrypt ? NULL : task.mstrNewPassword.c_str(),
+                                              fOpenForWrite, &hVfsIosNew);
+                if (RT_FAILURE(vrc))
+                    rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening file '%s' failed, (%Rrc)"),
+                                      (*it + ".tmp").c_str(), vrc);
+            }
+            else
+                rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening file '%s' failed, (%Rrc)"),
+                                  (*it).c_str(), vrc);
+
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTVfsUtilPumpIoStreams(hVfsIosOld, hVfsIosNew, BUF_DATA_SIZE);
+                if (RT_FAILURE(vrc))
+                    rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Changing encryption of the file '%s' failed with %Rrc"),
+                                      (*it).c_str(), vrc);
+            }
+
+            if (hVfsIosOld != NIL_RTVFSIOSTREAM)
+                RTVfsIoStrmRelease(hVfsIosOld);
+            if (hVfsIosNew != NIL_RTVFSIOSTREAM)
+                RTVfsIoStrmRelease(hVfsIosNew);
+        }
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        for (std::list<com::Utf8Str>::iterator it = lstFiles.begin();
+             it != lstFiles.end();
+             ++it)
+        {
+            vrc = RTFileRename((*it + ".tmp").c_str(), (*it).c_str(), RTPATHRENAME_FLAGS_REPLACE);
+            if (RT_FAILURE(vrc))
+            {
+                rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Renaming the file '%s' failed, (%Rrc)"),
+                                  (*it + ".tmp").c_str(), vrc);
+                break;
+            }
+        }
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        strKeyStore = strNewKeyStore;
+        strKeyId    = task.mstrNewPasswordId;
+    }
+
+    return rc;
+}
+
+/**
+ * Task thread implementation for Machine::changeEncryption(), called from
+ * Machine::taskHandler().
+ *
+ * @note Locks this object for writing.
+ *
+ * @param task
+ * @return
+ */
+void Machine::i_changeEncryptionHandler(ChangeEncryptionTask &task)
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
+    if (FAILED(autoCaller.rc()))
+    {
+        /* we might have been uninitialized because the session was accidentally
+         * closed by the client, so don't assert */
+        HRESULT rc = setError(E_FAIL,
+                              tr("The session has been accidentally closed"));
+        task.m_pProgress->i_notifyComplete(rc);
+        LogFlowThisFuncLeave();
+        return;
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    com::Utf8Str strOldKeyId = mData->mstrKeyId;
+    com::Utf8Str strOldKeyStore = mData->mstrKeyStore;
+    try
+    {
+        rc = this->i_getVirtualBox()->i_retainCryptoIf(&task.m_pCryptoIf);
+        if (FAILED(rc))
+            throw rc;
+
+        if (task.mstrCurrentPassword.isEmpty())
+        {
+            if (mData->mstrKeyStore.isNotEmpty())
+                throw setError(VBOX_E_PASSWORD_INCORRECT,
+                               tr("The password given for the encrypted VM is incorrect"));
+        }
+        else
+        {
+            if (mData->mstrKeyStore.isEmpty())
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("The VM is not configured for encryption"));
+            rc = checkEncryptionPassword(task.mstrCurrentPassword);
+            if (rc == VBOX_E_PASSWORD_INCORRECT)
+                throw setError(VBOX_E_PASSWORD_INCORRECT,
+                               tr("The password to decrypt the VM is incorrect"));
+        }
+
+        if (task.mstrCipher.isNotEmpty())
+        {
+            if (   task.mstrNewPassword.isEmpty()
+                && task.mstrNewPasswordId.isEmpty()
+                && task.mstrCurrentPassword.isNotEmpty())
+            {
+                /* An empty password and password ID will default to the current password. */
+                task.mstrNewPassword = task.mstrCurrentPassword;
+            }
+            else if (task.mstrNewPassword.isEmpty())
+                throw setError(VBOX_E_OBJECT_NOT_FOUND,
+                               tr("A password must be given for the VM encryption"));
+            else if (task.mstrNewPasswordId.isEmpty())
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("A valid identifier for the password must be given"));
+        }
+        else if (task.mstrNewPasswordId.isNotEmpty() || task.mstrNewPassword.isNotEmpty())
+            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                           tr("The password and password identifier must be empty if the output should be unencrypted"));
+
+        /*
+         * Save config.
+         * Must be first operation to prevent making encrypted copies
+         * for old version of the config file.
+         */
+        int fSave = Machine::SaveS_Force;
+        if (task.mstrNewPassword.isNotEmpty())
+        {
+            VBOXCRYPTOCTX hCryptoCtx;
+
+            int vrc = VINF_SUCCESS;
+            if (task.mForce || task.mstrCurrentPassword.isEmpty() || task.mstrCipher.isNotEmpty())
+            {
+                vrc = task.m_pCryptoIf->pfnCryptoCtxCreate(getCipherString(task.mstrCipher.c_str(), CipherModeGcm),
+                                                           task.mstrNewPassword.c_str(), &hCryptoCtx);
+                if (RT_FAILURE(vrc))
+                    throw setErrorBoth(E_FAIL, vrc, tr("New key store creation failed, (%Rrc)"), vrc);
+            }
+            else
+            {
+                vrc = task.m_pCryptoIf->pfnCryptoCtxLoad(mData->mstrKeyStore.c_str(),
+                                                         task.mstrCurrentPassword.c_str(),
+                                                         &hCryptoCtx);
+                if (RT_FAILURE(vrc))
+                    throw setErrorBoth(E_FAIL, vrc, tr("Loading old key store failed, (%Rrc)"), vrc);
+                vrc = task.m_pCryptoIf->pfnCryptoCtxPasswordChange(hCryptoCtx, task.mstrNewPassword.c_str());
+                if (RT_FAILURE(vrc))
+                    throw setErrorBoth(E_FAIL, vrc, tr("Changing the password failed, (%Rrc)"), vrc);
+            }
+
+            char *pszKeyStore;
+            vrc = task.m_pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszKeyStore);
+            task.m_pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+            if (RT_FAILURE(vrc))
+                throw setErrorBoth(E_FAIL, vrc, tr("Saving the key store failed, (%Rrc)"), vrc);
+            mData->mstrKeyStore = pszKeyStore;
+            RTStrFree(pszKeyStore);
+            mData->mstrKeyId = task.mstrNewPasswordId;
+            size_t   cbPassword = task.mstrNewPassword.length() + 1;
+            uint8_t *pbPassword = (uint8_t *)task.mstrNewPassword.c_str();
+            mData->mpKeyStore->deleteSecretKey(task.mstrNewPasswordId);
+            mData->mpKeyStore->addSecretKey(task.mstrNewPasswordId, pbPassword, cbPassword);
+            mNvramStore->i_addPassword(task.mstrNewPasswordId, task.mstrNewPassword);
+
+            /*
+             * Remove backuped config after saving because it can contain
+             * unencrypted version of the config
+             */
+            fSave |= Machine::SaveS_RemoveBackup;
+        }
+        else
+        {
+            mData->mstrKeyId.setNull();
+            mData->mstrKeyStore.setNull();
+        }
+
+        Bstr bstrCurrentPassword(task.mstrCurrentPassword);
+        Bstr bstrCipher(getCipherString(task.mstrCipher.c_str(), CipherModeXts));
+        Bstr bstrNewPassword(task.mstrNewPassword);
+        Bstr bstrNewPasswordId(task.mstrNewPasswordId);
+        /* encrypt mediums */
+        alock.release();
+        for (MediaList::iterator it = task.mllMedia.begin();
+             it != task.mllMedia.end();
+             ++it)
+        {
+            ComPtr<IProgress> pProgress1;
+            HRESULT hrc = (*it)->ChangeEncryption(bstrCurrentPassword.raw(), bstrCipher.raw(),
+                                                  bstrNewPassword.raw(), bstrNewPasswordId.raw(),
+                                                  pProgress1.asOutParam());
+            if (FAILED(hrc)) throw hrc;
+            hrc = task.m_pProgress->WaitForOtherProgressCompletion(pProgress1, 0 /* indefinite wait */);
+            if (FAILED(hrc)) throw hrc;
+        }
+        alock.acquire();
+
+        task.m_pProgress->SetNextOperation(Bstr(tr("Change encryption of the SAV files")).raw(), 1);
+
+        Utf8Str strFullSnapshotFolder;
+        i_calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+
+        /* .sav files (main and snapshots) */
+        rc = i_changeEncryptionForComponent(task, strFullSnapshotFolder, "*.sav",
+                                            mSSData->strStateKeyStore, mSSData->strStateKeyId, CipherModeGcm);
+        if (FAILED(rc))
+            /* the helper function already sets error object */
+            throw rc;
+
+        task.m_pProgress->SetNextOperation(Bstr(tr("Change encryption of the NVRAM files")).raw(), 1);
+
+        /* .nvram files */
+        com::Utf8Str strNVRAMKeyId;
+        com::Utf8Str strNVRAMKeyStore;
+        rc = mNvramStore->i_getEncryptionSettings(strNVRAMKeyId, strNVRAMKeyStore);
+        if (FAILED(rc))
+            throw setError(rc, tr("Getting NVRAM encryption settings failed (%Rhrc)"), rc);
+
+        Utf8Str strMachineFolder;
+        i_calculateFullPath(".", strMachineFolder);
+
+        rc = i_changeEncryptionForComponent(task, strMachineFolder, "*.nvram",
+                                            strNVRAMKeyStore, strNVRAMKeyId, CipherModeGcm);
+        if (FAILED(rc))
+            /* the helper function already sets error object */
+            throw rc;
+
+        rc = mNvramStore->i_updateEncryptionSettings(strNVRAMKeyId, strNVRAMKeyStore);
+        if (FAILED(rc))
+            throw setError(rc, tr("Setting NVRAM encryption settings failed (%Rhrc)"), rc);
+
+        task.m_pProgress->SetNextOperation(Bstr(tr("Change encryption of log files")).raw(), 1);
+
+        /* .log files */
+        com::Utf8Str strLogFolder;
+        i_getLogFolder(strLogFolder);
+        rc = i_changeEncryptionForComponent(task, strLogFolder, "VBox.log*",
+                                            mData->mstrLogKeyStore, mData->mstrLogKeyId, CipherModeCtr);
+        if (FAILED(rc))
+            /* the helper function already sets error object */
+            throw rc;
+
+        task.m_pProgress->SetNextOperation(Bstr(tr("Change encryption of the config file")).raw(), 1);
+
+        i_saveSettings(NULL, alock, fSave);
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+        mData->mstrKeyId = strOldKeyId;
+        mData->mstrKeyStore = strOldKeyStore;
+    }
+
+    task.m_pProgress->i_notifyComplete(rc);
+
+    LogFlowThisFuncLeave();
+}
+#endif /*!VBOX_WITH_FULL_VM_ENCRYPTION*/
+
 HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
                                   const com::Utf8Str &aCipher,
                                   const com::Utf8Str &aNewPassword,
@@ -15941,9 +16554,128 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
     RT_NOREF(aCurrentPassword, aCipher, aNewPassword, aNewPasswordId, aForce, aProgress);
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
-    RT_NOREF(aCurrentPassword, aCipher, aNewPassword, aNewPasswordId, aForce, aProgress);
-    /** @todo */
-    return E_NOTIMPL;
+    /* make the VM accessible */
+    if (!mData->mAccessible)
+    {
+        if (   aCurrentPassword.isEmpty()
+            || mData->mstrKeyId.isEmpty())
+            return setError(E_ACCESSDENIED, tr("Machine is inaccessible"));
+
+        HRESULT rc = addEncryptionPassword(mData->mstrKeyId, aCurrentPassword);
+        if (FAILED(rc))
+            return rc;
+    }
+
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* define mediums to be change encryption */
+
+    MediaList llMedia;
+    for (MediumAttachmentList::iterator
+         it = mMediumAttachments->begin();
+         it != mMediumAttachments->end();
+         ++it)
+    {
+        ComObjPtr<MediumAttachment> &pAttach = *it;
+        ComObjPtr<Medium> pMedium = pAttach->i_getMedium();
+
+        if (!pMedium.isNull())
+        {
+            AutoCaller mac(pMedium);
+            if (FAILED(mac.rc())) return mac.rc();
+            AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
+            DeviceType_T devType = pMedium->i_getDeviceType();
+            if (devType == DeviceType_HardDisk)
+            {
+                /*
+                 * We need to move to last child because the Medium::changeEncryption
+                 * encrypts all chain of specified medium with its parents.
+                 * Also we perform cheking of back reference and children for
+                 * all media in the chain to raise error before we start any action.
+                 * So, we first move into root parent and then we will move to last child
+                 * keeping latter in the list for encryption.
+                 */
+
+                /* move to root parent */
+                ComObjPtr<Medium> pTmpMedium = pMedium;
+                while (pTmpMedium.isNotNull())
+                {
+                    AutoCaller mediumAC(pTmpMedium);
+                    if (FAILED(mediumAC.rc())) return mac.rc();
+                    AutoReadLock mlock(pTmpMedium COMMA_LOCKVAL_SRC_POS);
+
+                    /* Cannot encrypt media which are attached to more than one virtual machine. */
+                    size_t cBackRefs = pTmpMedium->i_getMachineBackRefCount();
+                    if (cBackRefs > 1)
+                        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                        tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines", "", cBackRefs),
+                                        pTmpMedium->i_getName().c_str(), cBackRefs);
+
+                    size_t cChildren = pTmpMedium->i_getChildren().size();
+                    if (cChildren  > 1)
+                        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                        tr("Cannot encrypt medium '%s' because it has %d children", "", cChildren),
+                                        pTmpMedium->i_getName().c_str(), cChildren);
+
+                    pTmpMedium = pTmpMedium->i_getParent();
+                }
+                /* move to last child */
+                pTmpMedium = pMedium;
+                while (pTmpMedium.isNotNull() && pTmpMedium->i_getChildren().size() != 0)
+                {
+                    AutoCaller mediumAC(pTmpMedium);
+                    if (FAILED(mediumAC.rc())) return mac.rc();
+                    AutoReadLock mlock(pTmpMedium COMMA_LOCKVAL_SRC_POS);
+
+                    /* Cannot encrypt media which are attached to more than one virtual machine. */
+                    size_t cBackRefs = pTmpMedium->i_getMachineBackRefCount();
+                    if (cBackRefs > 1)
+                        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                        tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines", "", cBackRefs),
+                                        pTmpMedium->i_getName().c_str(), cBackRefs);
+
+                    size_t cChildren = pTmpMedium->i_getChildren().size();
+                    if (cChildren  > 1)
+                        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                        tr("Cannot encrypt medium '%s' because it has %d children", "", cChildren),
+                                        pTmpMedium->i_getName().c_str(), cChildren);
+
+                    pTmpMedium = pTmpMedium->i_getChildren().front();
+                }
+                llMedia.push_back(pTmpMedium);
+            }
+        }
+    }
+
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    HRESULT rc = pProgress->init(i_getVirtualBox(),
+                                 static_cast<IMachine*>(this) /* aInitiator */,
+                                 tr("Change encryption"),
+                                 TRUE /* fCancellable */,
+                                 (ULONG)(4 + + llMedia.size()), // cOperations
+                                 tr("Change encryption of the mediuma"));
+    if (FAILED(rc))
+        return rc;
+
+    /* create and start the task on a separate thread (note that it will not
+     * start working until we release alock) */
+    ChangeEncryptionTask *pTask = new ChangeEncryptionTask(this, pProgress, "VM encryption",
+                                                           aCurrentPassword, aCipher, aNewPassword,
+                                                           aNewPasswordId, aForce, llMedia);
+    rc = pTask->createThread();
+    pTask = NULL;
+    if (FAILED(rc))
+        return rc;
+
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
+
+    LogFlowFuncLeave();
+
+    return S_OK;
 #endif
 }
 
