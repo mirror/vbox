@@ -1388,7 +1388,7 @@ HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
     MediaList llParentsTodo;
     llParentsTodo.push_back(NULL);
 
-    while (llSettingsTodo.size() > 0)
+    while (!llSettingsTodo.empty())
     {
         const settings::Medium *current = llSettingsTodo.front();
         llSettingsTodo.pop_front();
@@ -1579,20 +1579,27 @@ void Medium::uninit()
 
     AutoWriteLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    MediaList llMediaTodo;
+    /* Must use a list without refcounting help since "this" might already have
+     * reached 0, and then the refcount must not be increased again since it
+     * would otherwise trigger a double free. For all other list entries this
+     * needs manual refcount updating, to make sure the refcount for children
+     * does not drop to 0 too early. */
+    std::list<Medium *> llMediaTodo;
     llMediaTodo.push_back(this);
 
     while (!llMediaTodo.empty())
     {
-        /* This also guarantees that the refcount doesn't actually drop to 0
-         * again while the uninit is already ongoing. */
-        ComObjPtr<Medium> pMedium = llMediaTodo.front();
+        Medium *pMedium = llMediaTodo.front();
         llMediaTodo.pop_front();
 
         /* Enclose the state transition Ready->InUninit->NotReady */
         AutoUninitSpan autoUninitSpan(pMedium);
         if (autoUninitSpan.uninitDone())
+        {
+            if (pMedium != this)
+                pMedium->Release();
             continue;
+        }
 
         Assert(!pMedium->isWriteLockOnCurrentThread());
 #ifdef DEBUG
@@ -1603,12 +1610,14 @@ void Medium::uninit()
 
         pMedium->m->formatObj.setNull();
 
-        if (m->state == MediumState_Deleting)
+        if (pMedium->m->state == MediumState_Deleting)
         {
             /* This medium has been already deleted (directly or as part of a
              * merge).  Reparenting has already been done. */
-            Assert(m->pParent.isNull());
-            Assert(m->llChildren.empty());
+            Assert(pMedium->m->pParent.isNull());
+            Assert(pMedium->m->llChildren.empty());
+            if (pMedium != this)
+                pMedium->Release();
             continue;
         }
 
@@ -1625,6 +1634,7 @@ void Medium::uninit()
         {
             Medium *pChild = *it;
             pChild->m->pParent.setNull();
+            pChild->AddRef();
             llMediaTodo.push_back(pChild);
         }
 
@@ -1632,6 +1642,9 @@ void Medium::uninit()
         pMedium->m->llChildren.clear();
 
         unconst(pMedium->m->pVirtualBox) = NULL;
+
+        if (pMedium != this)
+            pMedium->Release();
 
         autoUninitSpan.setSucceeded();
     }
@@ -4276,7 +4289,7 @@ bool Medium::i_addRegistryAll(const Guid &id)
 
     bool fAdd = false;
 
-    while (llMediaTodo.size() > 0)
+    while (!llMediaTodo.empty())
     {
         ComObjPtr<Medium> pMedium = llMediaTodo.front();
         llMediaTodo.pop_front();
@@ -4344,7 +4357,7 @@ bool Medium::i_removeRegistryAll(const Guid &id)
 
     bool fRemove = false;
 
-    while (llMediaTodo.size() > 0)
+    while (!llMediaTodo.empty())
     {
         ComObjPtr<Medium> pMedium = llMediaTodo.front();
         llMediaTodo.pop_front();
@@ -4653,7 +4666,7 @@ const Guid* Medium::i_getAnyMachineBackref(const Guid &aId) const
     std::list<const Medium *> llMediaTodo;
     llMediaTodo.push_back(this);
 
-    while (llMediaTodo.size() > 0)
+    while (!llMediaTodo.empty())
     {
         const Medium *pMedium = llMediaTodo.front();
         llMediaTodo.pop_front();
@@ -5018,7 +5031,7 @@ HRESULT Medium::i_saveSettings(settings::Medium &data,
     std::list<settings::Medium *> llSettingsTodo;
     llSettingsTodo.push_back(&data);
 
-    while (llMediaTodo.size() > 0)
+    while (!llMediaTodo.empty())
     {
         ComObjPtr<Medium> pMedium = llMediaTodo.front();
         llMediaTodo.pop_front();
