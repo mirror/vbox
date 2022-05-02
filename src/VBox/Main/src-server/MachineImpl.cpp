@@ -50,6 +50,7 @@
 #include "MachineImplMoveVM.h"
 #include "ExtPackManagerImpl.h"
 #include "MachineLaunchVMCommonWorker.h"
+#include "CryptoUtils.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -6523,7 +6524,8 @@ HRESULT Machine::querySavedGuestScreenInfo(ULONG aScreenId,
     uint32_t u32Height = 0;
     uint16_t u16Flags = 0;
 
-    int vrc = readSavedGuestScreenInfo(mSSData->strStateFilePath, aScreenId,
+    SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+    int vrc = readSavedGuestScreenInfo(SavedStateStream, mSSData->strStateFilePath, aScreenId,
                                        &u32OriginX, &u32OriginY, &u32Width, &u32Height, &u16Flags);
     if (RT_FAILURE(vrc))
     {
@@ -6570,8 +6572,9 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
-
+    SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+    int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 0 /* u32Type */,
+                                         &pu8Data, &cbData, &u32Width, &u32Height);
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                             tr("Saved thumbnail data is not available (%Rrc)"),
@@ -6659,7 +6662,9 @@ HRESULT Machine::querySavedScreenshotInfo(ULONG aScreenId,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+    int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 1 /* u32Type */,
+                                         &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
@@ -6695,7 +6700,9 @@ HRESULT Machine::readSavedScreenshotToArray(ULONG aScreenId,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    SsmStream SavedStateStream(mParent, mData->mpKeyStore, mSSData->strStateKeyId, mSSData->strStateKeyStore);
+    int vrc = readSavedDisplayScreenshot(SavedStateStream, mSSData->strStateFilePath, 1 /* u32Type */,
+                                         &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,

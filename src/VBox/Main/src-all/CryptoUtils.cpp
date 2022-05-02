@@ -113,6 +113,7 @@ SsmStream::SsmStream(VirtualBox *pParent, SecretKeyStore *pKeyStore, const Utf8S
     m_pParent               = pParent;
     m_hVfsFile              = NIL_RTVFSFILE;
     m_pSsm                  = NULL;
+    m_pCryptoIf             = NULL;
 }
 
 

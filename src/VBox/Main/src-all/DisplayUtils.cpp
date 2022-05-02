@@ -22,7 +22,8 @@
 #include <VBox/vmm/ssm.h>
 #include <VBoxVideo.h>
 
-int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData,
+int readSavedDisplayScreenshot(SsmStream &ssmStream, const Utf8Str &strStateFilePath,
+                               uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData,
                                uint32_t *pu32Width, uint32_t *pu32Height)
 {
     LogFlowFunc(("u32Type = %d [%s]\n", u32Type, strStateFilePath.c_str()));
@@ -40,8 +41,7 @@ int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type
     uint32_t u32Height = 0;
 
     PSSMHANDLE pSSM;
-    int vrc = SSMR3Open(strStateFilePath.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                        0 /*fFlags*/, &pSSM);
+    int vrc = ssmStream.open(strStateFilePath.c_str(), false /*fWrite*/, &pSSM);
     if (RT_SUCCESS(vrc))
     {
         uint32_t uVersion;
@@ -112,7 +112,7 @@ int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type
             }
         }
 
-        SSMR3Close(pSSM);
+        ssmStream.close();
     }
 
     if (RT_SUCCESS(vrc))
@@ -143,8 +143,8 @@ void freeSavedDisplayScreenshot(uint8_t *pu8Data)
     RTMemFree(pu8Data);
 }
 
-int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32ScreenId,
-                             uint32_t *pu32OriginX, uint32_t *pu32OriginY,
+int readSavedGuestScreenInfo(SsmStream &ssmStream, const Utf8Str &strStateFilePath,
+                             uint32_t u32ScreenId, uint32_t *pu32OriginX, uint32_t *pu32OriginY,
                              uint32_t *pu32Width, uint32_t *pu32Height, uint16_t *pu16Flags)
 {
     LogFlowFunc(("u32ScreenId = %d [%s]\n", u32ScreenId, strStateFilePath.c_str()));
@@ -157,8 +157,7 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
     }
 
     PSSMHANDLE pSSM;
-    int vrc = SSMR3Open(strStateFilePath.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                        0 /*fFlags*/, &pSSM);
+    int vrc = ssmStream.open(strStateFilePath.c_str(), false /*fWrite*/, &pSSM);
     if (RT_SUCCESS(vrc))
     {
         uint32_t uVersion;
@@ -207,7 +206,7 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
             }
         }
 
-        SSMR3Close(pSSM);
+        ssmStream.close();
     }
 
     LogFlowFunc(("vrc %Rrc\n", vrc));
