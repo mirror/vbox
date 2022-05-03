@@ -499,7 +499,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_64(VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL_BIT)
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL_BIT 17
 /** Check for pending TLB shootdown actions (deprecated)
- * Reserved for furture HM re-use if necessary / safe.
+ * Reserved for future HM re-use if necessary / safe.
  * Consumer: HM */
 #define VMCPU_FF_TLB_SHOOTDOWN_UNUSED       RT_BIT_64(VMCPU_FF_TLB_SHOOTDOWN_UNUSED_BIT)
 #define VMCPU_FF_TLB_SHOOTDOWN_UNUSED_BIT   18
