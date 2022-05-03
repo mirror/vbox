@@ -506,7 +506,7 @@ void UIMediumManagerWidget::sltRemoveMedium()
     AssertReturnVoid(!pMediumItem->id().isNull());
 
     /* Remove current medium-item: */
-    pMediumItem->remove();
+    pMediumItem->remove(true /* show message box */);
 }
 
 void UIMediumManagerWidget::sltReleaseMedium()
@@ -517,7 +517,7 @@ void UIMediumManagerWidget::sltReleaseMedium()
     AssertReturnVoid(!pMediumItem->id().isNull());
 
     /* Remove current medium-item: */
-    bool fResult = pMediumItem->release();
+    bool fResult = pMediumItem->release(true /* show message box */, false /* induced */);
 
     /* Refetch currently chosen medium-item: */
     if (fResult)
@@ -526,6 +526,34 @@ void UIMediumManagerWidget::sltReleaseMedium()
 
 void UIMediumManagerWidget::sltClear()
 {
+    /* Currently we clear only DVD medium type items: */
+    if (currentMediumType() != UIMediumDeviceType_DVD)
+        return;
+    QITreeWidget* pTreeWidget = currentTreeWidget();
+    AssertReturnVoid(pTreeWidget);
+    /* Iterate over the tree items assuming medium items are immediate children of the root and they dont have children
+    *  themselves which currently holds for DVD medium type: */
+    QList<UIMediumItem*> mediumsToRemove;
+    QStringList nameList;
+    for (int i = 0; i < pTreeWidget->childCount(); ++i)
+    {
+        UIMediumItem *pMediumItem = qobject_cast<UIMediumItem*>(pTreeWidget->childItem(i));
+        if (!pMediumItem)
+            continue;
+        if (pMediumItem->state() == KMediumState_Inaccessible)
+        {
+            mediumsToRemove << pMediumItem;
+            nameList << pMediumItem->name();
+        }
+    }
+    if (!msgCenter().confirmDVDListClear(nameList, this))
+        return;
+
+    foreach (UIMediumItem *pMediumItem, mediumsToRemove)
+    {
+        pMediumItem->release(false /* no messag box */, false /* induced */);
+        pMediumItem->remove(false /* show no message box */);
+    }
 }
 
 void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
@@ -600,6 +628,11 @@ void UIMediumManagerWidget::sltHandleCurrentTabChanged()
     /* Raise the required information-container: */
     if (m_pDetailsWidget)
         m_pDetailsWidget->setCurrentType(currentMediumType());
+
+    /* Clear action is enabled only for DVD medium type: */
+    if (m_pActionPool && m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear))
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear)->setEnabled(currentMediumType() == UIMediumDeviceType_DVD);
+
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
     sltHandlePerformSearch();

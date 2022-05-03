@@ -90,7 +90,7 @@ bool UIMediumItem::move()
     return true;
 }
 
-bool UIMediumItem::release(bool fInduced /* = false */)
+bool UIMediumItem::release(bool fShowMessageBox, bool fInduced)
 {
     /* Refresh medium and item: */
     m_guiMedium.refresh();
@@ -101,8 +101,9 @@ bool UIMediumItem::release(bool fInduced /* = false */)
         return true;
 
     /* Confirm release: */
-    if (!msgCenter().confirmMediumRelease(medium(), fInduced, treeWidget()))
-        return false;
+    if (fShowMessageBox)
+        if (!msgCenter().confirmMediumRelease(medium(), fInduced, treeWidget()))
+            return false;
 
     /* Release: */
     foreach (const QUuid &uMachineId, medium().curStateMachineIds())
@@ -192,7 +193,7 @@ bool UIMediumItem::changeMediumType(KMediumType enmNewType)
     }
 
     /* Detach the medium from all the VMs it's attached to: */
-    if (!release(true))
+    if (!release(true, true))
         return false;
 
     /* Attempt to change medium type: */
@@ -401,11 +402,12 @@ UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, QITreeWidgetItem *pPar
 {
 }
 
-bool UIMediumItemHD::remove()
+bool UIMediumItemHD::remove(bool fShowMessageBox)
 {
     /* Confirm medium removal: */
-    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-        return false;
+    if (fShowMessageBox)
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
 
     /* Propose to remove medium storage: */
     if (!maybeRemoveStorage())
@@ -506,11 +508,12 @@ UIMediumItemCD::UIMediumItemCD(const UIMedium &guiMedium, QITreeWidgetItem *pPar
 {
 }
 
-bool UIMediumItemCD::remove()
+bool UIMediumItemCD::remove(bool fShowMessageBox)
 {
     /* Confirm medium removal: */
-    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-        return false;
+    if (fShowMessageBox)
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
 
     /* Close optical-disk: */
     sltHandleMediumRemoveRequest(medium().medium());
@@ -567,11 +570,12 @@ UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidgetItem *pPar
 {
 }
 
-bool UIMediumItemFD::remove()
+bool UIMediumItemFD::remove(bool fShowMessageBox)
 {
     /* Confirm medium removal: */
-    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-        return false;
+    if (fShowMessageBox)
+        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+            return false;
 
     /* Close floppy-disk: */
     sltHandleMediumRemoveRequest(medium().medium());

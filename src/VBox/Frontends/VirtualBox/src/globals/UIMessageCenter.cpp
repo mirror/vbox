@@ -1313,6 +1313,43 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                            tr("Keep", "hard disk storage"));
 }
 
+bool UIMessageCenter::confirmDVDListClear(const QStringList &DVDPathList, QWidget *pParent /* = 0 */)
+{
+    if (DVDPathList.isEmpty())
+        return false;
+
+    QString strDetails("<!--EOM-->");
+    QString strDetailMessage(tr("The list of inaccessible DVDs is as follows:"));
+
+    if (!strDetailMessage.isEmpty())
+        strDetails.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strDetailMessage)));
+
+    strDetails += QString("<table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>")
+                         .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb));
+    foreach (const QString &strDVD, DVDPathList)
+        strDetails += QString("<tr><td>%1</td></tr>").arg(strDVD);
+    strDetails += QString("</table>");
+
+    if (!strDetails.isEmpty())
+        strDetails = "<qt>" + strDetails + "</qt>";
+
+    return message(pParent,
+                   MessageType_Question,
+                   tr("<p>This will clear the optical disk list by releasing inaccessible DVDs"
+                      " from the virtual machines they are attached to"
+                      " and remove them from the list of registered media.<p>"
+                      "Are you sure?"),
+                   strDetails,
+                   0 /* auto-confirm id */,
+                   AlertButton_Ok,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                   0 /* third button */,
+                   tr("Clear") /* ok button text */,
+                   QString() /* cancel button text */,
+                   QString() /* 3rd button text */,
+                   QString() /* help keyword */);
+}
+
 bool UIMessageCenter::confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,
