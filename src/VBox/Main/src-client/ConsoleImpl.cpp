@@ -87,6 +87,8 @@
 # include "Recording.h"
 #endif
 
+#include "CryptoUtils.h"
+
 #include <VBox/com/array.h>
 #include "VBox/com/ErrorInfo.h"
 #include <VBox/com/listeners.h>
@@ -232,15 +234,19 @@ public:
         , mpfnConfigConstructor(NULL)
         , mStartPaused(false)
         , mTeleporterEnabled(FALSE)
+        , m_pKeyStore(NULL)
     {
         m_strTaskName = "VMPwrUp";
     }
 
     PFNCFGMCONSTRUCTOR mpfnConfigConstructor;
     Utf8Str mSavedStateFile;
+    Utf8Str mKeyStore;
+    Utf8Str mKeyId;
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
     BOOL mTeleporterEnabled;
+    SecretKeyStore *m_pKeyStore;
 
     /* array of progress objects for hard disk reset operations */
     typedef std::list<ComPtr<IProgress> > ProgressList;
@@ -575,6 +581,18 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
         rc = mptrNvramStore->init(this, strNonVolatilePath);
         AssertComRCReturnRC(rc);
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        Bstr bstrNvramKeyId;
+        Bstr bstrNvramKeyStore;
+        rc = pNvramStore->COMGETTER(KeyId)(bstrNvramKeyId.asOutParam());
+        AssertComRCReturnRC(rc);
+        rc = pNvramStore->COMGETTER(KeyStore)(bstrNvramKeyStore.asOutParam());
+        AssertComRCReturnRC(rc);
+        const Utf8Str strNvramKeyId(bstrNvramKeyId);
+        const Utf8Str strNvramKeyStore(bstrNvramKeyStore);
+        mptrNvramStore->i_updateEncryptionSettings(strNvramKeyId, strNvramKeyStore);
+#endif
+
         /* Grab global and machine shared folder lists */
 
         rc = i_fetchSharedFolders(true /* aGlobal */);
@@ -722,6 +740,9 @@ void Console::uninit()
         RTMemFree((void *)mpIfSecKeyHlp);
         mpIfSecKeyHlp = NULL;
     }
+
+    HRESULT rc = i_unloadCryptoIfModule();
+    AssertComRC(rc);
 
 #ifdef VBOX_WITH_USB_CARDREADER
     if (mUsbCardReader)
@@ -1609,47 +1630,58 @@ HRESULT Console::i_loadDataFromSavedState()
     HRESULT hrc = mMachine->COMGETTER(StateFilePath)(bstrSavedStateFile.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        Utf8Str const strSavedStateFile(bstrSavedStateFile);
-
-        PCVMMR3VTABLE pVMM = mpVMM;
-        AssertPtrReturn(pVMM, E_UNEXPECTED);
-
-        PSSMHANDLE pSSM;
-        int vrc = pVMM->pfnSSMR3Open(strSavedStateFile.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                                     0, &pSSM);
-        if (RT_SUCCESS(vrc))
+        Bstr bstrStateKeyId;
+        hrc = mMachine->COMGETTER(StateKeyId)(bstrStateKeyId.asOutParam());
+        if (SUCCEEDED(hrc))
         {
-            uint32_t uVersion = 0;
-            vrc = pVMM->pfnSSMR3Seek(pSSM, sSSMConsoleUnit, 0 /* iInstance */, &uVersion);
-            /** @todo r=bird: This version check is premature, so the logic here is
-             * buggered as we won't ignore VERR_SSM_UNIT_NOT_FOUND as seems to be
-             * intended. Sigh. */
-            if (SSM_VERSION_MAJOR(uVersion) == SSM_VERSION_MAJOR(CONSOLE_SAVED_STATE_VERSION))
+            Bstr bstrStateKeyStore;
+            hrc = mMachine->COMGETTER(StateKeyStore)(bstrStateKeyStore.asOutParam());
+            if (SUCCEEDED(hrc))
             {
+                Utf8Str const strSavedStateFile(bstrSavedStateFile);
+
+                PCVMMR3VTABLE pVMM = mpVMM;
+                AssertPtrReturn(pVMM, E_UNEXPECTED);
+
+                PSSMHANDLE pSSM;
+                SsmStream ssmStream(this, pVMM, m_pKeyStore, bstrStateKeyId, bstrStateKeyStore);
+
+                int vrc = ssmStream.open(strSavedStateFile.c_str(), false /*fWrite*/, &pSSM);
                 if (RT_SUCCESS(vrc))
-                    try
+                {
+                    uint32_t uVersion = 0;
+                    vrc = pVMM->pfnSSMR3Seek(pSSM, sSSMConsoleUnit, 0 /* iInstance */, &uVersion);
+                    /** @todo r=bird: This version check is premature, so the logic here is
+                     * buggered as we won't ignore VERR_SSM_UNIT_NOT_FOUND as seems to be
+                     * intended. Sigh. */
+                    if (SSM_VERSION_MAJOR(uVersion) == SSM_VERSION_MAJOR(CONSOLE_SAVED_STATE_VERSION))
                     {
-                        vrc = i_loadStateFileExecInternal(pSSM, pVMM, uVersion);
+                        if (RT_SUCCESS(vrc))
+                            try
+                            {
+                                vrc = i_loadStateFileExecInternal(pSSM, pVMM, uVersion);
+                            }
+                            catch (std::bad_alloc &)
+                            {
+                                vrc = VERR_NO_MEMORY;
+                            }
+                        else if (vrc == VERR_SSM_UNIT_NOT_FOUND)
+                            vrc = VINF_SUCCESS;
                     }
-                    catch (std::bad_alloc &)
-                    {
-                        vrc = VERR_NO_MEMORY;
-                    }
-                else if (vrc == VERR_SSM_UNIT_NOT_FOUND)
-                    vrc = VINF_SUCCESS;
+                    else
+                        vrc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+                    ssmStream.close();
+                }
+
+                if (RT_FAILURE(vrc))
+                    hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("The saved state file '%s' is invalid (%Rrc). Delete the saved state and try again"),
+                                       strSavedStateFile.c_str(), vrc);
+
+                mSavedStateDataLoaded = true;
             }
-            else
-                vrc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-
-            pVMM->pfnSSMR3Close(pSSM);
         }
-
-        if (RT_FAILURE(vrc))
-            hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                               tr("The saved state file '%s' is invalid (%Rrc). Delete the saved state and try again"),
-                               strSavedStateFile.c_str(), vrc);
-
-        mSavedStateDataLoaded = true;
     }
 
     return hrc;
@@ -3142,20 +3174,39 @@ HRESULT Console::addEncryptionPassword(const com::Utf8Str &aId, const com::Utf8S
     const uint8_t *pbKey = (const uint8_t *)aPassword.c_str();
 
     int vrc = m_pKeyStore->addSecretKey(aId, pbKey, cbKey);
-    if (RT_SUCCESS(vrc))
+    if (   RT_SUCCESS(vrc)
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        || vrc == VERR_ALREADY_EXISTS /* Allow setting an existing key for encrypted VMs. */
+#endif
+        )
     {
         unsigned cDisksConfigured = 0;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (mptrNvramStore.isNotNull())
+            mptrNvramStore->i_addPassword(aId, aPassword);
+
+        SecretKey *pKey = NULL;
+        vrc = m_pKeyStore->retainSecretKey(aId, &pKey);
+        AssertRCReturn(vrc, E_FAIL);
+        pKey->setRemoveOnSuspend(!!aClearOnSuspend);
+        pKey->release();
+#endif
 
         hrc = i_configureEncryptionForDisk(aId, &cDisksConfigured);
         if (SUCCEEDED(hrc))
         {
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
             SecretKey *pKey = NULL;
+#endif
             vrc = m_pKeyStore->retainSecretKey(aId, &pKey);
             AssertRCReturn(vrc, E_FAIL);
 
             pKey->setUsers(cDisksConfigured);
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
             pKey->setRemoveOnSuspend(!!aClearOnSuspend);
             m_pKeyStore->releaseSecretKey(aId);
+#endif
             m_cDisksPwProvided += cDisksConfigured;
 
             if (   m_cDisksPwProvided == m_cDisksEncrypted
@@ -3174,8 +3225,10 @@ HRESULT Console::addEncryptionPassword(const com::Utf8Str &aId, const com::Utf8S
             }
         }
     }
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
     else if (vrc == VERR_ALREADY_EXISTS)
         hrc = setErrorBoth(VBOX_E_OBJECT_IN_USE, vrc, tr("A password with the given ID already exists"));
+#endif
     else if (vrc == VERR_NO_MEMORY)
         hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to allocate enough secure memory for the key"));
     else
@@ -3198,6 +3251,7 @@ HRESULT Console::addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, c
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+#ifndef VBOX_WITH_FULL_VM_ENCRYPTION
     /* Check that the IDs do not exist already before changing anything. */
     for (unsigned i = 0; i < aIds.size(); i++)
     {
@@ -3211,6 +3265,13 @@ HRESULT Console::addEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, c
             return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
         }
     }
+#else
+    /*
+     * Passwords for the same ID can be added in different ways because
+     * of encrypted VMs now. Just add them instead of generating an error.
+     */
+    /** @todo Check that passwords with the same ID match. */
+#endif
 
     for (unsigned i = 0; i < aIds.size(); i++)
     {
@@ -3250,6 +3311,11 @@ HRESULT Console::removeEncryptionPassword(const com::Utf8Str &aId)
         m_pKeyStore->releaseSecretKey(aId);
         vrc = m_pKeyStore->deleteSecretKey(aId);
         AssertRCReturn(vrc, E_FAIL);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (mptrNvramStore.isNotNull())
+            mptrNvramStore->i_removePassword(aId);
+#endif
     }
     else if (vrc == VERR_NOT_FOUND)
         return setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("A password with the ID \"%s\" does not exist"), aId.c_str());
@@ -3262,6 +3328,11 @@ HRESULT Console::removeEncryptionPassword(const com::Utf8Str &aId)
 HRESULT Console::clearAllEncryptionPasswords()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    if (mptrNvramStore.isNotNull())
+        mptrNvramStore->i_removeAllPasswords();
+#endif
 
     int vrc = m_pKeyStore->deleteAllSecretKeys(false /* fSuspend */, false /* fForce */);
     if (vrc == VERR_RESOURCE_IN_USE)
@@ -4434,10 +4505,46 @@ HRESULT Console::i_initSecretKeyIfOnAllAttachments(void)
     hrc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
     AssertComRCReturnRC(hrc);
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    m_cDisksPwProvided = 0;
+#endif
+
     /* Find the correct attachment. */
     for (unsigned i = 0; i < sfaAttachments.size(); i++)
     {
         const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        ComPtr<IMedium> pMedium;
+        ComPtr<IMedium> pBase;
+
+        hrc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
+        AssertComRC(hrc);
+
+        bool fKeepSecIf = false;
+        /* Skip non hard disk attachments. */
+        if (pMedium.isNotNull())
+        {
+            /* Get the UUID of the base medium and compare. */
+            hrc = pMedium->COMGETTER(Base)(pBase.asOutParam());
+            AssertComRC(hrc);
+
+            Bstr bstrKeyId;
+            hrc = pBase->GetProperty(Bstr("CRYPT/KeyId").raw(), bstrKeyId.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                Utf8Str strKeyId(bstrKeyId);
+                SecretKey *pKey = NULL;
+                int vrc = m_pKeyStore->retainSecretKey(strKeyId, &pKey);
+                if (RT_SUCCESS(vrc))
+                {
+                    fKeepSecIf = true;
+                    m_pKeyStore->releaseSecretKey(strKeyId);
+                }
+            }
+        }
+#endif
+
         /*
          * Query storage controller, port and device
          * to identify the correct driver.
@@ -4485,8 +4592,15 @@ HRESULT Console::i_initSecretKeyIfOnAllAttachments(void)
                 pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
                 if (pIMedium)
                 {
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, fKeepSecIf ? mpIfSecKey : NULL, mpIfSecKeyHlp);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+                    if (fKeepSecIf)
+                        m_cDisksPwProvided++;
+#else
                     rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL, mpIfSecKeyHlp);
                     Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+#endif
                 }
             }
         }
@@ -6949,22 +7063,62 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
             else
                 hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not suspend the machine execution (%Rrc)"), vrc);
         }
+
+        Bstr bstrStateKeyId;
+        Bstr bstrStateKeyStore;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mMachine->COMGETTER(StateKeyId)(bstrStateKeyId.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                hrc = mMachine->COMGETTER(StateKeyStore)(bstrStateKeyStore.asOutParam());
+                if (FAILED(hrc))
+                    hrc = setError(hrc, tr("Could not get key store for state file(%Rhrc (0x%08X))"), hrc, hrc);
+            }
+            else
+                hrc = setError(hrc, tr("Could not get key id for state file(%Rhrc (0x%08X))"), hrc, hrc);
+        }
+#endif
+
         if (SUCCEEDED(hrc))
         {
             LogFlowFunc(("Saving the state to '%s'...\n", aStateFilePath.c_str()));
 
             mpVmm2UserMethods->pISnapshot = aSnapshot;
             mptrCancelableProgress = aProgress;
-            alock.release();
 
-            int vrc = ptrVM.vtable()->pfnVMR3Save(ptrVM.rawUVM(),
-                                                  aStateFilePath.c_str(),
-                                                  fContinueAfterwards,
-                                                  Console::i_stateProgressCallback,
-                                                  static_cast<IProgress *>(aProgress),
-                                                  &aLeftPaused);
+            SsmStream ssmStream(this, ptrVM.vtable(), m_pKeyStore, bstrStateKeyId, bstrStateKeyStore);
+            int vrc = ssmStream.create(aStateFilePath.c_str());
+            if (RT_SUCCESS(vrc))
+            {
+                PCSSMSTRMOPS pStreamOps = NULL;
+                void *pvStreamOpsUser = NULL;
+                vrc = ssmStream.querySsmStrmOps(&pStreamOps, &pvStreamOpsUser);
+                if (RT_SUCCESS(vrc))
+                {
+                    alock.release();
 
-            alock.acquire();
+                    vrc = ptrVM.vtable()->pfnVMR3Save(ptrVM.rawUVM(),
+                                                      NULL /*pszFilename*/,
+                                                      pStreamOps,
+                                                      pvStreamOpsUser,
+                                                      fContinueAfterwards,
+                                                      Console::i_stateProgressCallback,
+                                                      static_cast<IProgress *>(aProgress),
+                                                      &aLeftPaused);
+
+                    alock.acquire();
+                }
+
+                ssmStream.close();
+                if (RT_FAILURE(vrc))
+                {
+                    int vrc2 = RTFileDelete(aStateFilePath.c_str());
+                    AssertRC(vrc2);
+                }
+            }
+
             mpVmm2UserMethods->pISnapshot = NULL;
             mptrCancelableProgress.setNull();
             if (RT_SUCCESS(vrc))
@@ -7852,6 +8006,9 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
          * Saved VMs will have to prove that their saved states seem kosher.
          */
         Utf8Str strSavedStateFile;
+        Bstr bstrStateKeyId;
+        Bstr bstrStateKeyStore;
+
         if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
         {
             Bstr bstrSavedStateFile;
@@ -7860,9 +8017,29 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 throw rc;
             strSavedStateFile = bstrSavedStateFile;
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+            rc = mMachine->COMGETTER(StateKeyId)(bstrStateKeyId.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+            rc = mMachine->COMGETTER(StateKeyStore)(bstrStateKeyStore.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+#endif
+
             ComAssertRet(bstrSavedStateFile.isNotEmpty(), E_FAIL);
-            int vrc = pVMM->pfnSSMR3ValidateFile(strSavedStateFile.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                                                 false /* fChecksumIt */);
+            SsmStream ssmStream(this, pVMM, m_pKeyStore, bstrStateKeyId, bstrStateKeyStore);
+            int vrc = ssmStream.open(strSavedStateFile.c_str());
+            if (RT_SUCCESS(vrc))
+            {
+                PCSSMSTRMOPS pStreamOps;
+                void *pvStreamOpsUser;
+
+                vrc = ssmStream.querySsmStrmOps(&pStreamOps, &pvStreamOpsUser);
+                if (RT_SUCCESS(vrc))
+                    vrc = pVMM->pfnSSMR3ValidateFile(NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
+                                                     false /* fChecksumIt */);
+            }
+
             if (RT_FAILURE(vrc))
             {
                 Utf8Str errMsg;
@@ -7879,6 +8056,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 }
                 throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, errMsg.c_str());
             }
+
         }
 
         /* Read console data, including console shared folders, stored in the
@@ -8178,6 +8356,12 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             rc = pPowerupProgress.queryInterfaceTo(aProgress);
             AssertComRCReturnRC(rc);
         }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+        task->mKeyStore   = Utf8Str(bstrStateKeyStore);
+        task->mKeyId      = Utf8Str(bstrStateKeyId);
+        task->m_pKeyStore = m_pKeyStore;
+#endif
 
         rc = task->createThread();
         task = NULL;
@@ -8946,13 +9130,88 @@ int Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
 {
     AssertReturn(ppCryptoIf != NULL, VERR_INVALID_PARAMETER);
 
+    int vrc = VINF_SUCCESS;
     if (mhLdrModCrypto == NIL_RTLDRMOD)
-        return VERR_NOT_SUPPORTED;
+    {
+#ifdef VBOX_WITH_EXTPACK
+        /*
+         * Check that a crypto extension pack name is set and resolve it into a
+         * library path.
+         */
+        HRESULT hrc = S_OK;
+        Bstr bstrExtPack;
 
-    ASMAtomicIncU32(&mcRefsCrypto);
-    *ppCryptoIf = mpCryptoIf;
+        ComPtr<IVirtualBox> pVirtualBox;
+        mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+        ComPtr<ISystemProperties> pSystemProperties;
+        if (pVirtualBox)
+            pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        if (pSystemProperties)
+            pSystemProperties->COMGETTER(DefaultCryptoExtPack)(bstrExtPack.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
 
-    return VINF_SUCCESS;
+        Utf8Str strExtPack(bstrExtPack);
+        if (strExtPack.isEmpty())
+        {
+            setError(VBOX_E_OBJECT_NOT_FOUND,
+                     tr("Ńo extension pack providing a cryptographic support module could be found"));
+            return VERR_NOT_FOUND;
+        }
+
+        Utf8Str strCryptoLibrary;
+        vrc = mptrExtPackManager->i_getCryptoLibraryPathForExtPack(&strExtPack, &strCryptoLibrary);
+        if (RT_SUCCESS(vrc))
+        {
+            RTERRINFOSTATIC ErrInfo;
+            vrc = SUPR3HardenedLdrLoadPlugIn(strCryptoLibrary.c_str(), &mhLdrModCrypto, RTErrInfoInitStatic(&ErrInfo));
+            if (RT_SUCCESS(vrc))
+            {
+                /* Resolve the entry point and query the pointer to the cryptographic interface. */
+                PFNVBOXCRYPTOENTRY pfnCryptoEntry = NULL;
+                vrc = RTLdrGetSymbol(mhLdrModCrypto, VBOX_CRYPTO_MOD_ENTRY_POINT, (void **)&pfnCryptoEntry);
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = pfnCryptoEntry(&mpCryptoIf);
+                    if (RT_FAILURE(vrc))
+                        setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                     tr("Failed to query the interface callback table from the cryptographic support module '%s' from extension pack '%s'"),
+                                     strCryptoLibrary.c_str(), strExtPack.c_str());
+                }
+                else
+                    setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                 tr("Failed to resolve the entry point for the cryptographic support module '%s' from extension pack '%s'"),
+                                 strCryptoLibrary.c_str(), strExtPack.c_str());
+
+                if (RT_FAILURE(vrc))
+                {
+                    RTLdrClose(mhLdrModCrypto);
+                    mhLdrModCrypto = NIL_RTLDRMOD;
+                }
+            }
+            else
+                setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                             tr("Couldn't load the cryptographic support module '%s' from extension pack '%s' (error: '%s')"),
+                             strCryptoLibrary.c_str(), strExtPack.c_str(), ErrInfo.Core.pszMsg);
+        }
+        else
+            setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                         tr("Couldn't resolve the library path of the crpytographic support module for extension pack '%s'"),
+                         strExtPack.c_str());
+#else
+        setError(VBOX_E_NOT_SUPPORTED,
+                 tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
+        vrc = VERR_NOT_SUPPORTED;
+#endif
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        ASMAtomicIncU32(&mcRefsCrypto);
+        *ppCryptoIf = mpCryptoIf;
+    }
+
+    return vrc;
 }
 
 /**
@@ -8969,6 +9228,34 @@ int Console::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 
     ASMAtomicDecU32(&mcRefsCrypto);
     return VINF_SUCCESS;
+}
+
+/**
+ * Tries to unload any loaded cryptographic support module if it is not in use currently.
+ *
+ * @returns COM status code.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_unloadCryptoIfModule(void)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mcRefsCrypto)
+        return setError(E_ACCESSDENIED,
+                        tr("The cryptographic support module is in use and can't be unloaded"));
+
+    if (mhLdrModCrypto != NIL_RTLDRMOD)
+    {
+        int vrc = RTLdrClose(mhLdrModCrypto);
+        AssertRC(vrc);
+        mhLdrModCrypto = NIL_RTLDRMOD;
+    }
+
+    return S_OK;
 }
 
 /** @callback_method_impl{FNVMATSTATE}
@@ -10566,10 +10853,28 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                 {
                     LogFlowFunc(("Restoring saved state from '%s'...\n", pTask->mSavedStateFile.c_str()));
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                    SsmStream ssmStream(pConsole, pVMM, pTask->m_pKeyStore, pTask->mKeyId, pTask->mKeyStore);
+
+                    vrc = ssmStream.open(pTask->mSavedStateFile.c_str());
+                    if (RT_SUCCESS(vrc))
+                    {
+                        PCSSMSTRMOPS pStreamOps;
+                        void *pvStreamOpsUser;
+
+                        vrc = ssmStream.querySsmStrmOps(&pStreamOps, &pvStreamOpsUser);
+                        if (RT_SUCCESS(vrc))
+                            vrc = pVMM->pfnVMR3LoadFromStream(pConsole->mpUVM,
+                                                              pStreamOps, pvStreamOpsUser,
+                                                              Console::i_stateProgressCallback,
+                                                              static_cast<IProgress *>(pTask->mProgress));
+                    }
+#else
                     vrc = pVMM->pfnVMR3LoadFromFile(pConsole->mpUVM,
                                                     pTask->mSavedStateFile.c_str(),
                                                     Console::i_stateProgressCallback,
                                                     static_cast<IProgress *>(pTask->mProgress));
+#endif
                     if (RT_SUCCESS(vrc))
                     {
                         if (pTask->mStartPaused)

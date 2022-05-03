@@ -385,7 +385,7 @@ VMMR3DECL(VMRESUMEREASON) VMR3GetResumeReason(PUVM);
 VMMR3DECL(int)          VMR3Reset(PUVM pUVM);
 VMMR3_INT_DECL(VBOXSTRICTRC) VMR3ResetFF(PVM pVM);
 VMMR3_INT_DECL(VBOXSTRICTRC) VMR3ResetTripleFault(PVM pVM);
-VMMR3DECL(int)          VMR3Save(PUVM pUVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended);
+VMMR3DECL(int)          VMR3Save(PUVM pUVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended);
 VMMR3DECL(int)          VMR3Teleport(PUVM pUVM, uint32_t cMsDowntime, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended);
 VMMR3DECL(int)          VMR3LoadFromFile(PUVM pUVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 VMMR3DECL(int)          VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,

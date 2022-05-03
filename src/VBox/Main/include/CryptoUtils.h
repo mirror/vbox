@@ -27,7 +27,10 @@
 
 #include <VBox/VBoxCryptoIf.h>
 #include <VBox/com/string.h>
+
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/vmmr3vtable.h>
+#include <VBox/vmm/vmapi.h>
 
 #include "SecretKeyStore.h"
 #ifdef VBOX_COM_INPROC
@@ -45,7 +48,7 @@ class SsmStream
 {
     public:
 #ifdef VBOX_COM_INPROC
-        SsmStream(Console *pParent, SecretKeyStore *pKeyStore, const Utf8Str &strKeyId, const Utf8Str &strKeyStore);
+        SsmStream(Console *pParent, PCVMMR3VTABLE pVMM, SecretKeyStore *pKeyStore, const Utf8Str &strKeyId, const Utf8Str &strKeyStore);
 #else
         SsmStream(VirtualBox *pParent, SecretKeyStore *pKeyStore, const Utf8Str &strKeyId, const Utf8Str &strKeyStore);
 #endif
@@ -60,6 +63,31 @@ class SsmStream
          * @param   ppSsmHandle Where to store the SSM handle on success, don't call SSMR3Close() but the provided close() method.
          */
         int open(const Utf8Str &strFilename, bool fWrite, PSSMHANDLE *ppSsmHandle);
+
+        /**
+         * Opens the saved state file for reading, doesn't call SSMR3Open().
+         *
+         * @returns VBox status code.
+         * @param   strFilename The filename of the saved state to open.
+         */
+        int open(const Utf8Str &strFilename);
+
+        /**
+         * Creates a new saved state file under the given path.
+         *
+         * @returns VBox status code.
+         * @param   strFilename The filename of the saved state to create.
+         */
+        int create(const Utf8Str &strFilename);
+
+        /**
+         * Returns the pointer to the stream operations table after a succesful opening/creation.
+         *
+         * @return VBox status code.
+         * @param  ppStrmOps      Where to store the pointer to the stream operations table on success.
+         * @param  ppvStrmOpsUser Where to store the pointer to the opaque user data on success.
+         */
+        int querySsmStrmOps(PCSSMSTRMOPS *ppStrmOps, void **ppvStrmOpsUser);
 
         /**
          * Closes an previously opened stream.
@@ -80,6 +108,7 @@ class SsmStream
 
 #ifdef VBOX_COM_INPROC
         Console        *m_pParent;
+        PCVMMR3VTABLE  m_pVMM;
 #else
         VirtualBox     *m_pParent;
 #endif

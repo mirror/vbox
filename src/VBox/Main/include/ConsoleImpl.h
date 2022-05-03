@@ -324,6 +324,7 @@ public:
 
     int i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
     int i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
+    HRESULT i_unloadCryptoIfModule(void);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     // VMMDev needs:
