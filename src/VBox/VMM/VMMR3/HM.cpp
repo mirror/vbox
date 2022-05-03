@@ -308,7 +308,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 #else
     bool fFallbackToIEM = true;
 #endif
-    rc = CFGMR3QueryBoolDef(pCfgHm, "fFallbackToIEM", &fFallbackToIEM, fFallbackToIEM);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "FallbackToIEM", &fFallbackToIEM, fFallbackToIEM);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableNestedPaging, bool, false}
@@ -633,7 +633,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             if (RT_FAILURE(rc))
             {
                 if (   fFallbackToIEM
-                    && (!fFallbackToNEM || rc == VERR_NEM_NOT_AVAILABLE))
+                    && (!fFallbackToNEM || rc == VERR_NEM_NOT_AVAILABLE || rc == VERR_SUP_DRIVERLESS))
                 {
                     LogRel(("HM: HMR3Init: Falling back on IEM: %s\n", !fFallbackToNEM ? pszMsg : "NEM not available"));
                     VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_IEM);
