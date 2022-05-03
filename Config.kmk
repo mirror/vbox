@@ -3985,13 +3985,14 @@ ifdef VBOX_SIGNING_MODE
    VBOX_CERTIFICATE_SUBJECT_NAME ?= MyTestCertificate
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
   else # release
-   VBOX_CERTIFICATE_SUBJECT_NAME ?= Oracle Corporation
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= VirtualBox 2022
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" /a
    #VBOX_CERTIFICATE_FINGERPRINT ?= 7e 92 b6 6b e5 1b 79 d8 ce 3f f2 5c 15 c2 df 6a b8 c7 f2 f2
    #VBOX_CERTIFICATE_FINGERPRINT ?= 5b de fe 58 0a 81 66 61 cd b5 7a 57 10 7b f4 18 74 86 ef cc
-   VBOX_CERTIFICATE_FINGERPRINT ?= 6f 47 42 06 bc bb 39 1b b8 2b a9 e5 dc 03 02 de f3 7a eb be
+   #VBOX_CERTIFICATE_FINGERPRINT ?= 6f 47 42 06 bc bb 39 1b b8 2b a9 e5 dc 03 02 de f3 7a eb be
+   VBOX_CERTIFICATE_FINGERPRINT ?= 5f 0b fe c5 53 17 c1 25 5a a4 7f cd bc 49 a2 fb 61 09 03 cc
    #VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/VeriSign Class 3 Public Primary Certification Authority - G5.cer
-   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/DigiCert Assured ID Root CA.crt
+   #VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/DigiCert Assured ID Root CA.crt
    #VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timstamp.dll - Appears to be broken between 2020-12-25 and 2020-12-30 (bugref:9849).
    VBOX_TSA_URL ?= http://timestamp.digicert.com
   endif
