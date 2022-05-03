@@ -228,7 +228,7 @@ static void iemR3InfoTlbPrintSlot(PCDBGFINFOHLP pHlp, IEMTLB const *pTlb, IEMTLB
                                                                                : "expired",
                     (pTlbe->uTag & ~IEMTLB_REVISION_MASK) << X86_PAGE_SHIFT,
                     pTlbe->GCPhys, pTlbe->pbMappingR3,
-                    (uint32_t)pTlbe->fFlagsAndPhysRev & ~(uint32_t)IEMTLBE_F_PHYS_REV,
+                    (uint32_t)(pTlbe->fFlagsAndPhysRev & ~IEMTLBE_F_PHYS_REV),
                     pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_EXEC      ? "NX" : " X",
                     pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE     ? "RO" : "RW",
                     pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_ACCESSED  ? "-"  : "A",
