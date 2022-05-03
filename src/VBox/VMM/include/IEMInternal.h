@@ -87,7 +87,7 @@ RT_C_DECLS_BEGIN
 #endif
 
 //#define IEM_WITH_CODE_TLB // - work in progress
-//#define IEM_WITH_DATA_TLB // - incomplete in progress
+//#define IEM_WITH_DATA_TLB // - work in progress
 
 
 /** @def IEM_USE_UNALIGNED_DATA_ACCESS
@@ -286,7 +286,7 @@ typedef struct IEMTLBENTRY
      * - Bit  2 - page tables   - not user (complemented X86_PTE_US).
      * - Bit  3 - pgm phys/virt - not directly writable.
      * - Bit  4 - pgm phys page - not directly readable.
-     * - Bit  5 - currently unused.
+     * - Bit  5 - page tables   - not accessed (complemented X86_PTE_A).
      * - Bit  6 - page tables   - not dirty (complemented X86_PTE_D).
      * - Bit  7 - tlb entry     - pMappingR3 member not valid.
      * - Bits 63 thru 8 are used for the physical TLB revision number.
@@ -302,7 +302,7 @@ typedef struct IEMTLBENTRY
     uint64_t                fFlagsAndPhysRev;
     /** The guest physical page address. */
     uint64_t                GCPhys;
-    /** Pointer to the ring-3 mapping (possibly also valid in ring-0). */
+    /** Pointer to the ring-3 mapping. */
     R3PTRTYPE(uint8_t *)    pbMappingR3;
 #if HC_ARCH_BITS == 32
     uint32_t                u32Padding1;
@@ -319,9 +319,11 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
 #define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
 #define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
+#define IEMTLBE_F_PG_NO_ACCESSED    RT_BIT_64(5) /**< Phys tables: Not accessed (need to be marked accessed). */
 #define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
 #define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
-#define IEMTLBE_F_PHYS_REV          UINT64_C(0xffffffffffffff00) /**< Physical revision mask. */
+#define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(8) /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
+#define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffffe00) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
 /** @} */
 
 
@@ -382,8 +384,11 @@ typedef struct IEMTLB
 AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbRevision increment.  */
 #define IEMTLB_REVISION_INCR    RT_BIT_64(36)
-/** IEMTLB::uTlbPhysRev increment.  */
-#define IEMTLB_PHYS_REV_INCR    RT_BIT_64(8)
+/** IEMTLB::uTlbRevision mask.  */
+#define IEMTLB_REVISION_MASK    (~(RT_BIT_64(36) - 1))
+/** IEMTLB::uTlbPhysRev increment.
+ * @sa IEMTLBE_F_PHYS_REV */
+#define IEMTLB_PHYS_REV_INCR    RT_BIT_64(9)
 
 
 /**
@@ -797,8 +802,10 @@ typedef struct IEM
 #define IEM_ACCESS_PENDING_R3_WRITE_1ST UINT32_C(0x00000400)
 /** Bounce buffer with ring-3 write pending, second page. */
 #define IEM_ACCESS_PENDING_R3_WRITE_2ND UINT32_C(0x00000800)
+/** Not locked, accessed via the TLB. */
+#define IEM_ACCESS_NOT_LOCKED           UINT32_C(0x00001000)
 /** Valid bit mask. */
-#define IEM_ACCESS_VALID_MASK           UINT32_C(0x00000fff)
+#define IEM_ACCESS_VALID_MASK           UINT32_C(0x00001fff)
 /** Read+write data alias. */
 #define IEM_ACCESS_DATA_RW              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_DATA)
 /** Write data alias. */

@@ -24,6 +24,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/nem.h>
@@ -733,6 +734,7 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
         pVM->pgm.s.PhysTlbR3.aEntries[i].pv = 0;
     }
 
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
     PGM_UNLOCK(pVM);
 }
 
@@ -742,6 +744,9 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
  *
  * @param   pVM     The cross context VM structure.
  * @param   GCPhys  GCPhys entry to flush
+ *
+ * @note    Caller is responsible for calling IEMTlbInvalidateAllPhysicalAllCpus
+ *          when needed.
  */
 void pgmPhysInvalidatePageMapTLBEntry(PVMCC pVM, RTGCPHYS GCPhys)
 {
@@ -978,6 +983,7 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
     PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PT);
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
 
     /* Copy the shared page contents to the replacement page. */
     if (pvSharedPage)
@@ -3792,7 +3798,8 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
     }
     else
     {
-        *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE | PGMIEMGCPHYS2PTR_F_NO_READ | PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3;
+        *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE | PGMIEMGCPHYS2PTR_F_NO_READ
+               |  PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 | PGMIEMGCPHYS2PTR_F_UNASSIGNED;
         *ppb    = NULL;
         Log6(("PGMPhysIemGCPhys2PtrNoLock: GCPhys=%RGp *ppb=%p *pfTlb=%#RX64 (rc=%Rrc)\n", GCPhys, *ppb, *pfTlb, rc));
     }

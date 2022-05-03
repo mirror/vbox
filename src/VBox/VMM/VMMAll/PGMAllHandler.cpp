@@ -750,6 +750,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
 
     /* Flush its TLB entry. */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+    /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
 
     /*
      * Do accounting for pgmR3PhysRamReset.
@@ -1597,6 +1598,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
 
             /* Flush its TLB entry. */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+            /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the backing and protection change. */
@@ -1720,6 +1722,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
 
             /* Flush its TLB entry. */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+            /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the backing and protection change. */

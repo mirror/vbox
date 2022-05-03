@@ -1407,6 +1407,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
 
     /* Flush physical page map TLB entry. */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID); /// @todo move to the perform step.
 
 #ifdef VBOX_WITH_PGM_NEM_MODE
     /*
@@ -3920,6 +3921,10 @@ static int pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(PVM pVM, PPDMDEVINS pDev
 #ifdef VBOX_WITH_PGM_NEM_MODE
         if (pFirstRegMmio->pPhysHandlerR3 == NULL)
         {
+/** @todo This does not integrate at all with --execute-all-in-iem, leaving the
+ * screen blank when using it together with --driverless.  Fixing this won't be
+ * entirely easy as we take the PGM_PAGE_HNDL_PHYS_STATE_DISABLED page status to
+ * mean a dirty page. */
             AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_INTERNAL_ERROR_4);
             uint8_t *pbBitmap = (uint8_t *)pvBitmap;
             for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
@@ -4064,6 +4069,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, PPDMDEVINS p
     }
     return rc;
 }
+
 
 /**
  * Worker for PGMR3PhysMmio2ControlDirtyPageTracking
@@ -5968,7 +5974,11 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
         HMFlushTlb(pVCpu);
 #endif
+#if 0 /* PGMGetPage will apply the A20 mask to the GCPhys it returns, so we must invalid both sides of the TLB. */
         IEMTlbInvalidateAllPhysical(pVCpu);
+#else
+        IEMTlbInvalidateAll(pVCpu);
+#endif
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
 }

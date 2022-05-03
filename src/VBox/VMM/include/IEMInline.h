@@ -2341,7 +2341,7 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
         if (iSegReg >= X86_SREG_FS)
         {
             IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
-            PCPUMSELREGHID pSel = iemSRegGetHid(pVCpu, iSegReg);
+            PCPUMSELREGHID const pSel = iemSRegGetHid(pVCpu, iSegReg);
             GCPtrMem += pSel->u64Base;
         }
 
@@ -2353,31 +2353,33 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
      */
     else
     {
-        IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
-        PCPUMSELREGHID pSel = iemSRegGetHid(pVCpu, iSegReg);
-        if (      (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
-               == X86DESCATTR_P /* data, expand up */
-            ||    (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ))
-               == (X86DESCATTR_P | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ) /* code, read-only */ )
+        uint32_t const GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem - 1;
+        if (RT_LIKELY(GCPtrLast32 >= (uint32_t)GCPtrMem))
         {
-            /* expand up */
-            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
-            if (RT_LIKELY(   GCPtrLast32 > pSel->u32Limit
-                          && GCPtrLast32 > (uint32_t)GCPtrMem))
-                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+            IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
+            PCPUMSELREGHID const pSel = iemSRegGetHid(pVCpu, iSegReg);
+            switch (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
+            {
+                case X86DESCATTR_P:                                         /* data, expand up */
+                case X86DESCATTR_P | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ: /* code, read-only */
+                    /* expand up */
+                    if (RT_LIKELY(GCPtrLast32 <= pSel->u32Limit))
+                        return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+                    break;
+
+                case X86DESCATTR_P | X86_SEL_TYPE_DOWN:                     /* data, expand down */
+                    /* expand down */
+                    if (RT_LIKELY(   (uint32_t)GCPtrMem > pSel->u32Limit
+                                  && (   pSel->Attr.n.u1DefBig
+                                      || GCPtrLast32 <= UINT32_C(0xffff)) ))
+                        return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+                    break;
+
+                default:
+                    iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
+                    break;
+            }
         }
-        else if (   (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
-                 == (X86DESCATTR_P | X86_SEL_TYPE_DOWN) /* data, expand down */ )
-        {
-            /* expand down */
-            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
-            if (RT_LIKELY(   (uint32_t)GCPtrMem >  pSel->u32Limit
-                          && GCPtrLast32        <= (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff))
-                          && GCPtrLast32 > (uint32_t)GCPtrMem))
-                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
-        }
-        else
-            iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
         iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
     }
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);

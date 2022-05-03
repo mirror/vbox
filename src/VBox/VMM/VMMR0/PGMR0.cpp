@@ -23,6 +23,7 @@
 #define VBOX_WITHOUT_PAGING_BIT_FIELDS /* 64-bit bitfields are just asking for trouble. See @bugref{9841} and others. */
 #include <VBox/rawpci.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/gmm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/pdmdev.h>
@@ -630,6 +631,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
     /** @todo this is a little expensive (~3000 ticks) since we'll have to
      * invalidate everything.  Add a version to the TLB? */
     pgmPhysInvalidatePageMapTLB(pGVM);
+    IEMTlbInvalidateAllPhysicalAllCpus(pGVM, idCpu);
 
     STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, a);
 #if 0 /** @todo returning info statuses here might not be a great idea... */
