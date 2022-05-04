@@ -785,6 +785,15 @@ EXPORTS
     RTCritSectSetSubClass
     RTCritSectTryEnter
     RTCritSectTryEnterDebug
+    RTCrCipherCtxDecryptEx
+    RTCrCipherCtxDecryptFinish
+    RTCrCipherCtxDecryptInit
+    RTCrCipherCtxDecryptProcess
+    RTCrCipherCtxEncryptEx
+    RTCrCipherCtxEncryptFinish
+    RTCrCipherCtxEncryptInit
+    RTCrCipherCtxEncryptProcess
+    RTCrCipherCtxFree
     RTCrCipherDecrypt
     RTCrCipherEncrypt
     RTCrCipherGetBlockSize
