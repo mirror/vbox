@@ -873,7 +873,7 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
     /** @todo Only create when the machine is going to be encrypted. */
     /* Non-pageable memory is not accessible for non-VM process */
     mData->mpKeyStore = new SecretKeyStore(false /* fKeyBufNonPageable */);
-    AssertReturn(mData->mpKeyStore, VERR_NO_MEMORY);
+    AssertReturn(mData->mpKeyStore, E_OUTOFMEMORY);
 #endif
 
     LogFlowThisFuncLeave();
