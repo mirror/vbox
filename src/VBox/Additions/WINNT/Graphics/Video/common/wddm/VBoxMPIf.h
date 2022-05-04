@@ -77,6 +77,7 @@ AssertCompileSize(VBOXVIDEO_HWTYPE, 4);
 #pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga3d_reg.h>
 #pragma pack()
+#include <dxgiddi.h>
 
 /* D3DDDI_ALLOCATIONINFO::pPrivateDriverData */
 typedef enum VBOXDXALLOCATIONTYPE
@@ -106,6 +107,18 @@ typedef struct VBOXDXALLOCATIONDESC
         uint32 arraySize;
         uint32 bufferByteStride;
     } surfaceInfo;
+    bool                        fPrimary : 1;
+    DXGI_DDI_PRIMARY_DESC       PrimaryDesc;
+    D3DDDIFORMAT                enmDDIFormat;
+    struct
+    {
+        /* These will be needed by OpenResource */
+        UINT                    BindFlags;
+        UINT                    MapFlags;
+        UINT                    MiscFlags;
+        DXGI_FORMAT             Format;
+        UINT                    DecoderBufferType;          /* D3D11_1DDI_VIDEO_DECODER_BUFFER_TYPE */
+    } resourceInfo;
 } VBOXDXALLOCATIONDESC, *PVBOXDXALLOCATIONDESC;
 #endif /* VBOX_WITH_VMSVGA3D_DX */
 
