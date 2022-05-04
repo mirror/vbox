@@ -8197,11 +8197,11 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 switch (vrc)
                 {
                     case VERR_FILE_NOT_FOUND:
-                        errMsg.printf(tr("VM failed to start because the saved state file '%ls' does not exist."),
+                        errMsg.printf(tr("VM failed to start because the saved state file '%s' does not exist."),
                                       strSavedStateFile.c_str());
                         break;
                     default:
-                        errMsg.printf(tr("VM failed to start because the saved state file '%ls' is invalid (%Rrc). "
+                        errMsg.printf(tr("VM failed to start because the saved state file '%s' is invalid (%Rrc). "
                                          "Delete the saved state prior to starting the VM."), strSavedStateFile.c_str(), vrc);
                         break;
                 }
