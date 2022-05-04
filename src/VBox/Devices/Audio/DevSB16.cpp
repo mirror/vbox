@@ -2446,8 +2446,10 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
+    unsigned const idxStream = SB16_IDX_OUT; /* The one and only stream we have right now. */
+
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PSB16STREAM pStream = &pThis->aStreams[SB16_IDX_OUT]; /* The saved state only contains the one-and-only output stream. */
+    PSB16STREAM pStream = &pThis->aStreams[idxStream]; /* The saved state only contains the one-and-only output stream. */
     int rc;
 
     int32_t i32Tmp;
@@ -2464,18 +2466,21 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_in_idx);
     pHlp->pfnSSMGetS32(pSSM, &pThis->dsp_out_data_len);
 
-    rc = pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                     /* Output stream: Numer of channels. */
+    rc = pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                     /* Output stream: Number of channels. */
     AssertRCReturn(rc, rc);
-    PDMAudioPropsSetChannels(&pStream->Cfg.Props, i32Tmp);
+    AssertReturn((uint32_t)i32Tmp <= 1, VERR_INVALID_PARAMETER); /* Paranoia. */
+    if (i32Tmp) /* PDMAudioPropsSetChannels() will assert if channels are 0 (will be re-set on DMA run command). */
+        PDMAudioPropsSetChannels(&pStream->Cfg.Props, (uint8_t)i32Tmp);
     pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                          /* Output stream: Signed format bit. */
     pStream->Cfg.Props.fSigned = i32Tmp != 0;
     rc = pHlp->pfnSSMGetS32(pSSM, &i32Tmp);                     /* Output stream: Sample size in bits. */
     AssertRCReturn(rc, rc);
-    PDMAudioPropsSetSampleSize(&pStream->Cfg.Props, i32Tmp / 8);
+    if (i32Tmp) /* PDMAudioPropsSetSampleSize() will assert if sample size is 0 (will be re-set on DMA run command). */
+        PDMAudioPropsSetSampleSize(&pStream->Cfg.Props, (uint8_t)(i32Tmp / 8));
 
     pHlp->pfnSSMSkip  (pSSM, sizeof(int32_t));                  /* Legacy; was PDMAUDIOFMT, unused now. */
     pHlp->pfnSSMGetS32(pSSM, &pStream->dma_auto);
-    pHlp->pfnSSMGetS32(pSSM, &pThis->aStreams[SB16_IDX_OUT].cbDmaBlockSize);
+    pHlp->pfnSSMGetS32(pSSM, &pStream->cbDmaBlockSize);
     pHlp->pfnSSMGetS32(pSSM, &pStream->fifo);
     pHlp->pfnSSMGetS32(pSSM, &i32Tmp); pStream->Cfg.Props.uHz = i32Tmp;
     pHlp->pfnSSMGetS32(pSSM, &pStream->time_const);
@@ -2517,7 +2522,12 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     AssertRCReturn(rc, rc);
 
     if (fStreamEnabled)
+    {
+        /* Sanity: If stream is going be enabled, PCM props must be valid. Otherwise the saved state is borked somehow. */
+        AssertMsgReturn(AudioHlpPcmPropsAreValid(&pStream->Cfg.Props),
+                        ("PCM properties for stream #%RU8 are invalid\n", idxStream), VERR_INVALID_PARAMETER);
         sb16StreamControl(pDevIns, pThis, pStream, true /* fRun */);
+    }
 
     /* Update the master (mixer) and PCM out volumes. */
     sb16UpdateVolume(pThis);
