@@ -429,7 +429,7 @@ HRESULT Machine::init(VirtualBox *aParent,
             }
 
             HRESULT hrc2 = aParent->i_releaseCryptoIf(pCryptoIf);
-            Assert(hrc2 == S_OK);
+            Assert(hrc2 == S_OK); RT_NOREF(hrc2);
 
             if (FAILED(hrc))
                 return hrc; /* Error is set. */
@@ -732,7 +732,7 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
     if (pCryptoIf)
     {
         HRESULT hrc2 = aParent->i_releaseCryptoIf(pCryptoIf);
-        Assert(hrc2 == S_OK);
+        Assert(hrc2 == S_OK); RT_NOREF(hrc2);
     }
 #endif
 
