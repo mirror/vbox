@@ -1140,6 +1140,8 @@ void UIMediumManagerWidget::updateActionIcons()
         m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->setState((int)enmCurrentMediumType);
     }
 }
