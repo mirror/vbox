@@ -161,6 +161,23 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
                      uint32_t uHistoryFileTime, uint64_t uHistoryFileSize,
                      PRTERRINFO pErrInfo)
 {
+    return VBoxLogRelCreateEx(pcszEntity, pcszLogFile,
+                              fFlags, pcszGroupSettings,
+                              pcszEnvVarBase, fDestFlags,
+                              cMaxEntriesPerGroup, cHistory,
+                              uHistoryFileTime, uHistoryFileSize,
+                              NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
+                              pErrInfo);
+}
+
+int VBoxLogRelCreateEx(const char *pcszEntity, const char *pcszLogFile,
+                       uint32_t fFlags, const char *pcszGroupSettings,
+                       const char *pcszEnvVarBase, uint32_t fDestFlags,
+                       uint32_t cMaxEntriesPerGroup, uint32_t cHistory,
+                       uint32_t uHistoryFileTime, uint64_t uHistoryFileSize,
+                       const void *pOutputIf, void *pvOutputIfUser,
+                       PRTERRINFO pErrInfo)
+{
     /* create release logger */
     PRTLOGGER pReleaseLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
@@ -171,7 +188,7 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
     int vrc = RTLogCreateEx(&pReleaseLogger, pcszEnvVarBase, fFlags, pcszGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups,
                             cMaxEntriesPerGroup, 0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
                             vboxHeaderFooter, cHistory, uHistoryFileSize, uHistoryFileTime,
-                            NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
+                            (PCRTLOGOUTPUTIF)pOutputIf, pvOutputIfUser,
                             pErrInfo, pcszLogFile ? "%s" : NULL, pcszLogFile);
     if (RT_SUCCESS(vrc))
     {

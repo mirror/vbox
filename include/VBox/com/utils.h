@@ -84,6 +84,37 @@ int VBoxLogRelCreate(const char *pszEntity, const char *pszLogFile,
                      uint32_t uHistoryFileTime, uint64_t uHistoryFileSize,
                      PRTERRINFO pErrInfo);
 
+/**
+ * Creates a release log file, used both in VBoxSVC and in API clients.
+ *
+ * @param   pszEntity        Human readable name of the program.
+ * @param   pszLogFile       Name of the release log file.
+ * @param   fFlags           Logger instance flags.
+ * @param   pszGroupSettings Group logging settings.
+ * @param   pszEnvVarBase    Base environment variable name for the logger.
+ * @param   fDestFlags       Logger destination flags.
+ * @param   cMaxEntriesPerGroup Limit for log entries per group. UINT32_MAX for no limit.
+ * @param   cHistory         Number of old log files to keep.
+ * @param   uHistoryFileTime Maximum amount of time to put in a log file.
+ * @param   uHistoryFileSize Maximum size of a log file before rotating.
+ * @param   pOutputIf        The optional file output interface, can be NULL which will
+ *                           make use of the default one.
+ * @param   pvOutputIfUser   The opaque user data to pass to the callbacks in the output interface.
+ * @param   pErrInfo         Where to return extended error information.
+ *                           Optional.
+ *
+ * @returns VBox status code.
+ *
+ * @note Can't include log.h here because of precompiled header fun, hence pOutputIf is void *...
+ */
+int VBoxLogRelCreateEx(const char *pszEntity, const char *pszLogFile,
+                       uint32_t fFlags, const char *pszGroupSettings,
+                       const char *pszEnvVarBase, uint32_t fDestFlags,
+                       uint32_t cMaxEntriesPerGroup, uint32_t cHistory,
+                       uint32_t uHistoryFileTime, uint64_t uHistoryFileSize,
+                       const void *pOutputIf, void *pvOutputIfUser,
+                       PRTERRINFO pErrInfo);
+
 } /* namespace com */
 
 /** @} */
