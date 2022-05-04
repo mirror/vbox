@@ -328,6 +328,7 @@ void NvramStore::uninit()
     }
 
     m->bd->mapNvram.clear();
+    m->bd.free();
 
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
     if (m->mpKeyStore != NULL)
