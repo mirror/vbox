@@ -675,7 +675,7 @@ void NvramStore::i_releaseEncryptionOrDecryptionResources(RTVFSIOSTREAM hVfsIos,
     AssertPtr(pKey);
 
     i_releaseCryptoIf(pCryptoIf);
-    m->mpKeyStore->releaseSecretKey(m->bd->strKeyId);
+    pKey->release();
     RTVfsIoStrmRelease(hVfsIos);
 }
 #endif
