@@ -8021,7 +8021,9 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     Bstr bstrLogKeyStore;
     PCRTLOGOUTPUTIF pLogOutputIf = NULL;
     void *pvLogOutputUser = NULL;
-    int vrc = aMachine->COMGETTER(LogKeyId)(bstrLogKeyId.asOutParam());
+    int vrc = VINF_SUCCESS;
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    vrc = aMachine->COMGETTER(LogKeyId)(bstrLogKeyId.asOutParam());
     if (RT_SUCCESS(vrc))
     {
         vrc = aMachine->COMGETTER(LogKeyStore)(bstrLogKeyStore.asOutParam());
@@ -8048,6 +8050,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     if (RT_FAILURE(vrc))
         hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to set encryption for release log (%Rrc)"), vrc);
     else
+#endif
     {
         RTERRINFOSTATIC ErrInfo;
          vrc = com::VBoxLogRelCreateEx("VM", logFile.c_str(),
