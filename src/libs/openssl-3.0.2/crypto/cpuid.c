@@ -180,7 +180,9 @@ void OPENSSL_cpuid_setup(void)
  *
  * There are also assembler versions of this function.
  */
-# undef CRYPTO_memcmp
+# ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION /* VBox */
+#  undef CRYPTO_memcmp
+# endif                                          /* VBox */
 int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
 {
     size_t i;
