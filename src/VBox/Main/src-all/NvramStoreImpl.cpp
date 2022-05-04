@@ -1013,7 +1013,7 @@ HRESULT NvramStore::i_getEncryptionSettings(com::Utf8Str &strKeyId,
 int NvramStore::i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPassword)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
 
     /* keep only required password */
     if (strKeyId != m->bd->strKeyId)
@@ -1027,7 +1027,7 @@ int NvramStore::i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPasswor
 int NvramStore::i_removePassword(const Utf8Str &strKeyId)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->mpKeyStore->deleteSecretKey(strKeyId);
@@ -1037,7 +1037,7 @@ int NvramStore::i_removePassword(const Utf8Str &strKeyId)
 int NvramStore::i_removeAllPasswords()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->mpKeyStore->deleteAllSecretKeys(false, true);
