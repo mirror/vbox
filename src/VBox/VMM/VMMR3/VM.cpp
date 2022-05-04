@@ -1699,6 +1699,8 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  *
  * @param   pUVM                The VM which state should be saved.
  * @param   pszFilename         The name of the save state file.
+ * @param   pStreamOps          The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   fContinueAfterwards Whether continue execution afterwards or not.
  *                              When in doubt, set this to true.
  * @param   pfnProgress         Progress callback. Optional.
