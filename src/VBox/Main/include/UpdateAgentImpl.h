@@ -74,7 +74,8 @@ protected:
     /** @name Static helper methods.
      * @{ */
     static Utf8Str i_getPlatformInfo(void);
-    const char *i_proxyModeToStr(ProxyMode_T enmMode);
+    const char    *i_proxyModeToStr(ProxyMode_T enmMode);
+    bool           i_urlSchemeIsSupported(const Utf8Str &strUrl) const;
     /** @} */
 
 protected:

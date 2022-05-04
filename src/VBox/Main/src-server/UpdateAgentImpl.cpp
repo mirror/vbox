@@ -286,6 +286,21 @@ const char *UpdateAgentBase::i_proxyModeToStr(ProxyMode_T enmMode)
     return "<Invalid>";
 }
 
+/**
+ * Returns whether a given URL's scheme is supported or not.
+ *
+ * @returns \c true if scheme is supported, or \c false if not.
+ * @param   strUrl              URL to check scheme for.
+ *
+ * @note Empty URL are considered as being supported for convenience.
+ */
+bool UpdateAgentBase::i_urlSchemeIsSupported(const Utf8Str &strUrl) const
+{
+    if (strUrl.isEmpty())
+        return true;
+    return strUrl.startsWith("https://", com::Utf8Str::CaseInsensitive);
+}
+
 
 /*********************************************************************************************************************************
 *   Update agent class implementation                                                                                            *
@@ -533,8 +548,8 @@ HRESULT UpdateAgent::getRepositoryURL(com::Utf8Str &aRepo)
 
 HRESULT UpdateAgent::setRepositoryURL(const com::Utf8Str &aRepo)
 {
-    if (!aRepo.startsWith("https://", com::Utf8Str::CaseInsensitive))
-        return setError(E_INVALIDARG, tr("Invalid URL scheme specified; only https:// is supported."));
+    if (!i_urlSchemeIsSupported(aRepo))
+        return setError(E_INVALIDARG, tr("Invalid URL scheme specified!"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -663,6 +678,7 @@ HRESULT UpdateAgent::getSupportedChannels(std::vector<UpdateChannel_T> &aSupport
  * Loads the settings of the update agent base class.
  *
  * @returns HRESULT
+ * @retval  E_INVALIDARG if to-load settings are invalid / not supported.
  * @param   data                Where to load the settings from.
  */
 HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
@@ -678,9 +694,17 @@ HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
     if (data.strRepoUrl.isNotEmpty()) /* Prevent overwriting the agent's default URL when XML settings are empty. */
         m->strRepoUrl    = data.strRepoUrl;
     m->enmProxyMode      = data.enmProxyMode;
-    m->strProxyUrl       = data.strProxyUrl;
+    if (data.strProxyUrl.isNotEmpty()) /* Explicitly set (and mark) an own proxy? */
+    {
+        m->strProxyUrl   = data.strProxyUrl;
+        mData.m_fUseOwnProxy = true;
+    }
     m->strLastCheckDate  = data.strLastCheckDate;
     m->uCheckCount       = data.uCheckCount;
+
+    /* Sanity checks. */
+    if (!i_urlSchemeIsSupported(data.strRepoUrl))
+        return setError(E_INVALIDARG, tr("Invalid URL scheme specified!"));
 
     return S_OK;
 }
