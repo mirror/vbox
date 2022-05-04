@@ -147,15 +147,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  endif
 
  ifdef VBOX_WITH_DOCS_QHELP
+  INSTALLS += VBox-docs-usermanual-qhc
+  INSTALLS += VBox-docs-usermanual-qch
   ifdef VBOX_WITH_QT6
    USES += qt6
-   INSTALLS += VBox-docs-usermanual-qhc
-   INSTALLS += VBox-docs-usermanual-qch
    QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
   else # Qt5
    USES += qt5
-   INSTALLS += VBox-docs-usermanual-qhc
-   INSTALLS += VBox-docs-usermanual-qch
    QHELPGENERATOR_VERSION_MINOR = $(shell $(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$(PATH_SDK_QT5)/plugins -- $(PATH_TOOL_QT5_BIN)/qhelpgenerator -v 2>/dev/null | $(SED) -ne 's/.*(Qt [1-9][0-9]*\.\([1-9][0-9]*\)\.[1-9][0-9]*).*$$/\1/p')
    QHELPGENERATOR = $(PATH_TOOL_QT5_BIN)/$(if-expr $(QHELPGENERATOR_VERSION_MINOR) >= 12,qhelpgenerator,qcollectiongenerator)
   endif
