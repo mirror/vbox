@@ -9372,7 +9372,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, PCSSMSTRMOPS pStreamOps, void 
     /*
      * Validate input.
      */
-    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFilename || pStreamOps, VERR_INVALID_POINTER);
     AssertMsgReturn(!fFlags, ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppSSM, VERR_INVALID_POINTER);
 
