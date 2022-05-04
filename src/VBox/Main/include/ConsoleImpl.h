@@ -66,6 +66,7 @@ class VMPowerDownTask;
 class NvramStore;
 
 #include <iprt/uuid.h>
+#include <iprt/log.h>
 #include <iprt/memsafer.h>
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vmm/pdmdrv.h>
@@ -946,6 +947,21 @@ private:
     static DECLCALLBACK(int)    i_teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /** @name Encrypted log interface
+     * @{ */
+    static DECLCALLBACK(int)    i_logEncryptedOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags);
+    static DECLCALLBACK(int)    i_logEncryptedClose(PCRTLOGOUTPUTIF pIf, void *pvUser);
+    static DECLCALLBACK(int)    i_logEncryptedDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename);
+    static DECLCALLBACK(int)    i_logEncryptedRename(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
+                                                     const char *pszFilenameNew, uint32_t fFlags);
+    static DECLCALLBACK(int)    i_logEncryptedQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize);
+    static DECLCALLBACK(int)    i_logEncryptedWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
+                                                    size_t cbWrite, size_t *pcbWritten);
+    static DECLCALLBACK(int)    i_logEncryptedFlush(PCRTLOGOUTPUTIF pIf, void *pvUser);
+    /** @} */
+#endif
+
     bool mSavedStateDataLoaded : 1;
 
     const ComPtr<IMachine> mMachine;
@@ -1099,6 +1115,19 @@ private:
     /** Pointer to the cryptographic support interface. */
     PCVBOXCRYPTOIF                      mpCryptoIf;
     /** @} */
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /** Flag whether the log is encrypted. */
+    bool                                m_fEncryptedLog;
+    /** The file handle of the encrypted log. */
+    RTVFSFILE                           m_hVfsFileLog;
+    /** The logging output interface for encrypted logs. */
+    RTLOGOUTPUTIF                       m_LogOutputIf;
+    /** The log file key ID. */
+    Utf8Str                             m_strLogKeyId;
+    /** The log file key store. */
+    Utf8Str                             m_strLogKeyStore;
+#endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     HGCMSVCEXTHANDLE m_hHgcmSvcExtDragAndDrop;

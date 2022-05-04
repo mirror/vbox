@@ -741,9 +741,6 @@ void Console::uninit()
         mpIfSecKeyHlp = NULL;
     }
 
-    HRESULT rc = i_unloadCryptoIfModule();
-    AssertComRC(rc);
-
 #ifdef VBOX_WITH_USB_CARDREADER
     if (mUsbCardReader)
     {
@@ -880,6 +877,19 @@ void Console::uninit()
         maLedSets[idxSet].paSubTypes = NULL;
     }
     mcLedSets = 0;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    /* Close the release log before unloading the cryptographic module. */
+    if (m_fEncryptedLog)
+    {
+        PRTLOGGER pLogEnc = RTLogRelSetDefaultInstance(NULL);
+        int vrc = RTLogDestroy(pLogEnc);
+        AssertRC(vrc);
+    }
+#endif
+
+    HRESULT rc = i_unloadCryptoIfModule();
+    AssertComRC(rc);
 
     LogFlowThisFuncLeave();
 }
@@ -7847,6 +7857,109 @@ void Console::i_safeVMPtrReleaser(PUVM *a_ppUVM)
 }
 
 
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags)
+{
+    RT_NOREF(pIf);
+    Console *pConsole = static_cast<Console *>(pvUser);
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+
+    int vrc = RTVfsFileOpenNormal(pszFilename, fFlags, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        PCVBOXCRYPTOIF pCryptoIf = NULL;
+        vrc = pConsole->i_retainCryptoIf(&pCryptoIf);
+        if (RT_SUCCESS(vrc))
+        {
+            SecretKey *pKey = NULL;
+
+            vrc = pConsole->m_pKeyStore->retainSecretKey(pConsole->m_strLogKeyId, &pKey);
+            if (RT_SUCCESS(vrc))
+            {
+                const char *pszPassword = (const char *)pKey->getKeyBuffer();
+
+                vrc = pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFile, pConsole->m_strLogKeyStore.c_str(), pszPassword,
+                                                          &pConsole->m_hVfsFileLog);
+                pKey->release();
+            }
+
+            /* On success we keep the reference to keep the cryptographic module loaded. */
+            if (RT_FAILURE(vrc))
+                pConsole->i_releaseCryptoIf(pCryptoIf);
+        }
+
+        /* Always do this because the encrypted log has retained a reference to the underlying file. */
+        RTVfsFileRelease(hVfsFile);
+        if (RT_FAILURE(vrc))
+            RTFileDelete(pszFilename);
+    }
+
+    return vrc;
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedClose(PCRTLOGOUTPUTIF pIf, void *pvUser)
+{
+    RT_NOREF(pIf);
+    Console *pConsole = static_cast<Console *>(pvUser);
+
+    RTVfsFileRelease(pConsole->m_hVfsFileLog);
+    pConsole->m_hVfsFileLog = NIL_RTVFSFILE;
+    return VINF_SUCCESS;
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename)
+{
+    RT_NOREF(pIf, pvUser);
+    return RTFileDelete(pszFilename);
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedRename(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
+                                                const char *pszFilenameNew, uint32_t fFlags)
+{
+    RT_NOREF(pIf, pvUser);
+    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize)
+{
+    RT_NOREF(pIf);
+    Console *pConsole = static_cast<Console *>(pvUser);
+
+    return RTVfsFileQuerySize(pConsole->m_hVfsFileLog, pcbSize);
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
+                                               size_t cbWrite, size_t *pcbWritten)
+{
+    RT_NOREF(pIf);
+    Console *pConsole = static_cast<Console *>(pvUser);
+
+    return RTVfsFileWrite(pConsole->m_hVfsFileLog, pvBuf, cbWrite, pcbWritten);
+}
+
+
+/*static*/
+DECLCALLBACK(int) Console::i_logEncryptedFlush(PCRTLOGOUTPUTIF pIf, void *pvUser)
+{
+    RT_NOREF(pIf);
+    Console *pConsole = static_cast<Console *>(pvUser);
+
+    return RTVfsFileFlush(pConsole->m_hVfsFileLog);
+}
+#endif
+
+
 /**
  * Initialize the release logging facility. In case something
  * goes wrong, there will be no release logging. Maybe in the future
@@ -7904,16 +8017,51 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         }
     }
 
-    RTERRINFOSTATIC ErrInfo;
-    int vrc = com::VBoxLogRelCreate("VM", logFile.c_str(),
-                                    RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
-                                    "all all.restrict -default.restrict",
-                                    "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
-                                    32768 /* cMaxEntriesPerGroup */,
-                                    0 /* cHistory */, 0 /* uHistoryFileTime */,
-                                    0 /* uHistoryFileSize */, RTErrInfoInitStatic(&ErrInfo));
+    Bstr bstrLogKeyId;
+    Bstr bstrLogKeyStore;
+    PCRTLOGOUTPUTIF pLogOutputIf = NULL;
+    void *pvLogOutputUser = NULL;
+    int vrc = aMachine->COMGETTER(LogKeyId)(bstrLogKeyId.asOutParam());
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = aMachine->COMGETTER(LogKeyStore)(bstrLogKeyStore.asOutParam());
+        if (   RT_SUCCESS(vrc)
+            && bstrLogKeyId.isNotEmpty()
+            && bstrLogKeyStore.isNotEmpty())
+        {
+            m_LogOutputIf.pfnOpen      = Console::i_logEncryptedOpen;
+            m_LogOutputIf.pfnClose     = Console::i_logEncryptedClose;
+            m_LogOutputIf.pfnDelete    = Console::i_logEncryptedDelete;
+            m_LogOutputIf.pfnRename    = Console::i_logEncryptedRename;
+            m_LogOutputIf.pfnQuerySize = Console::i_logEncryptedQuerySize;
+            m_LogOutputIf.pfnWrite     = Console::i_logEncryptedWrite;
+            m_LogOutputIf.pfnFlush     = Console::i_logEncryptedFlush;
+
+            m_strLogKeyId    = Utf8Str(bstrLogKeyId);
+            m_strLogKeyStore = Utf8Str(bstrLogKeyStore);
+
+            pLogOutputIf    = &m_LogOutputIf;
+            pvLogOutputUser = this;
+        }
+    }
+
     if (RT_FAILURE(vrc))
-        hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to open release log (%s, %Rrc)"), ErrInfo.Core.pszMsg, vrc);
+        hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to set encryption for release log (%Rrc)"), vrc);
+    else
+    {
+        RTERRINFOSTATIC ErrInfo;
+         vrc = com::VBoxLogRelCreateEx("VM", logFile.c_str(),
+                                       RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
+                                       "all all.restrict -default.restrict",
+                                       "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
+                                       32768 /* cMaxEntriesPerGroup */,
+                                       0 /* cHistory */, 0 /* uHistoryFileTime */,
+                                       0 /* uHistoryFileSize */,
+                                       pLogOutputIf, pvLogOutputUser,
+                                       RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(vrc))
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to open release log (%s, %Rrc)"), ErrInfo.Core.pszMsg, vrc);
+    }
 
     /* If we've made any directory changes, flush the directory to increase
        the likelihood that the log file will be usable after a system panic.
