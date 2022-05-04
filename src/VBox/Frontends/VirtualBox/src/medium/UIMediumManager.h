@@ -299,6 +299,8 @@ private:
 
         /** Defines current item for passed @a pTreeWidget as @a pItem. */
         void setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
+
+    void enableClearAction();
     /** @} */
 
     /** @name Search stuff.

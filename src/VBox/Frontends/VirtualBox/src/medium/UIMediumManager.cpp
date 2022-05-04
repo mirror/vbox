@@ -527,12 +527,12 @@ void UIMediumManagerWidget::sltReleaseMedium()
 void UIMediumManagerWidget::sltClear()
 {
     /* Currently we clear only DVD medium type items: */
-    if (currentMediumType() != UIMediumDeviceType_DVD)
+    if (currentMediumType() != UIMediumDeviceType_DVD && currentMediumType() != UIMediumDeviceType_Floppy)
         return;
     QITreeWidget* pTreeWidget = currentTreeWidget();
     AssertReturnVoid(pTreeWidget);
     /* Iterate over the tree items assuming medium items are immediate children of the root and they dont have children
-    *  themselves which currently holds for DVD medium type: */
+    *  themselves which currently holds for DVD and floppy  medium types: */
     QList<UIMediumItem*> mediumsToRemove;
     QStringList nameList;
     for (int i = 0; i < pTreeWidget->childCount(); ++i)
@@ -546,7 +546,7 @@ void UIMediumManagerWidget::sltClear()
             nameList << pMediumItem->name();
         }
     }
-    if (!msgCenter().confirmDVDListClear(nameList, this))
+    if (!msgCenter().confirmDVDListClear(nameList, currentMediumType(), this))
         return;
 
     foreach (UIMediumItem *pMediumItem, mediumsToRemove)
@@ -629,9 +629,7 @@ void UIMediumManagerWidget::sltHandleCurrentTabChanged()
     if (m_pDetailsWidget)
         m_pDetailsWidget->setCurrentType(currentMediumType());
 
-    /* Clear action is enabled only for DVD medium type: */
-    if (m_pActionPool && m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear))
-        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear)->setEnabled(currentMediumType() == UIMediumDeviceType_DVD);
+    enableClearAction();
 
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
@@ -1316,6 +1314,9 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, Action_Add);
 
+    /* Toogle enable/disable of clear action: */
+    enableClearAction();
+
     /* Reperform the medium search (don't jump to the found element): */
     performSearch(false);
 
@@ -1404,6 +1405,9 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, Action_Edit);
 
+    /* Toogle enable/disable of clear action: */
+    enableClearAction();
+
     /* Re-fetch medium-item if it is current one updated: */
     if (pMediumItem == mediumItem(type))
         refetchCurrentMediumItem(type);
@@ -1441,6 +1445,9 @@ void UIMediumManagerWidget::deleteMediumItem(const QUuid &uMediumID)
 
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, Action_Remove);
+
+    /* Toogle enable/disable of clear action: */
+    enableClearAction();
 
     /* Delete medium-item: */
     delete pMediumItem;
@@ -1542,6 +1549,16 @@ void UIMediumManagerWidget::setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidge
 
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
+}
+
+void UIMediumManagerWidget::enableClearAction()
+{
+    if (!m_pActionPool || !m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear))
+        return;
+
+    bool fEnable = ((currentMediumType() == UIMediumDeviceType_DVD) && m_fInaccessibleCD) ||
+        ((currentMediumType() == UIMediumDeviceType_Floppy) && m_fInaccessibleFD);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear)->setEnabled(fEnable);
 }
 
 void UIMediumManagerWidget::performSearch(bool fSelectNext)
