@@ -98,7 +98,9 @@ ifdef VBOX_WITH_CRYPTO_ASM
  VBox-libcrypto_DEFS.amd64 += OPENSSL_CPUID_OBJ=x86_64cpuid.o
  VBox-libcrypto_SOURCES.amd64 += $(VBOX_PATH_CRYPTO_GENASM)/x86_64cpuid.S
 else
- VBox-libcrypto_SOURCES += mem_clr.c
+ VBox-libcrypto_SOURCES += \
+ 	mem_clr.c \
+ 	cpuid.c
 endif
 
 ifdef VBOX_WITH_OPENSSL_FIPS
