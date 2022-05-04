@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-encryptvm" lang="en">
   <refentryinfo>
-    <pubdate>May 2021</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage encryptvm</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-encryptvm</refname>
     <refpurpose>change encryption and passwords of the VM</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
