@@ -454,6 +454,8 @@ struct VirtualBox::Data
     volatile uint32_t                   cRefsCrypto;
     /** Pointer to the cryptographic support interface. */
     PCVBOXCRYPTOIF                      pCryptoIf;
+    /** Critical section protecting the module handle. */
+    RTCRITSECT                          CritSectModCrypto;
     /** @} */
 };
 
@@ -569,6 +571,16 @@ HRESULT VirtualBox::init()
         LogRel(("Home directory: '%s'\n", m->strHomeDir.c_str()));
 
         i_reportDriverVersions();
+
+        /* Create the critical section protecting the cryptographic module handle. */
+        {
+            int vrc = RTCritSectInit(&m->CritSectModCrypto);
+            if (RT_FAILURE(vrc))
+                throw setErrorBoth(E_FAIL, vrc,
+                                   tr("Could not create the cryptographic module critical section (%Rrc)"),
+                                   vrc);
+
+        }
 
         /* compose the VirtualBox.xml file name */
         unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
@@ -1094,6 +1106,8 @@ void VirtualBox::uninit()
         AssertRC(vrc);
         m->hLdrModCrypto = NIL_RTLDRMOD;
     }
+
+    RTCritSectDelete(&m->CritSectModCrypto);
 
 #ifdef VBOX_WITH_EXTPACK
     if (m->ptrExtPackManager)
@@ -6129,7 +6143,12 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+    /*
+     * No object lock due to some lock order fun with Machine objects.
+     * There is a dedicated critical section to protect against concurrency
+     * issues when loading the module.
+     */
+    RTCritSectEnter(&m->CritSectModCrypto);
 
     /* Try to load the extension pack module if it isn't currently. */
     HRESULT hrc = S_OK;
@@ -6193,6 +6212,8 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
         *ppCryptoIf = m->pCryptoIf;
     }
 
+    RTCritSectLeave(&m->CritSectModCrypto);
+
     return hrc;
 }
 
@@ -6209,8 +6230,6 @@ HRESULT VirtualBox::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(pCryptoIf == m->pCryptoIf, E_INVALIDARG);
 
@@ -6237,12 +6256,14 @@ HRESULT VirtualBox::i_unloadCryptoIfModule(void)
         return setError(E_ACCESSDENIED,
                         tr("The cryptographic support module is in use and can't be unloaded"));
 
+    RTCritSectEnter(&m->CritSectModCrypto);
     if (m->hLdrModCrypto != NIL_RTLDRMOD)
     {
         int vrc = RTLdrClose(m->hLdrModCrypto);
         AssertRC(vrc);
         m->hLdrModCrypto = NIL_RTLDRMOD;
     }
+    RTCritSectLeave(&m->CritSectModCrypto);
 
     return S_OK;
 }
