@@ -207,12 +207,16 @@ bool UIWizardNewVMUnattendedPage::isProductKeyWidgetEnabled() const
     return true;
 }
 
-void UIWizardNewVMUnattendedPage::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
+void UIWizardNewVMUnattendedPage::sltHostnameDomainNameChanged(const QString &strHostnameDomainName, bool fIsComplete)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
-    m_userModifiedParameters << "HostnameDomainName";
     emit completeChanged();
+
+    if (fIsComplete)
+    {
+        wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
+        m_userModifiedParameters << "HostnameDomainName";
+    }
 }
 
 void UIWizardNewVMUnattendedPage::sltProductKeyChanged(const QString &strProductKey)

@@ -831,12 +831,16 @@ void UIWizardNewVMExpertPage::sltUserNameChanged(const QString &strUserName)
     emit completeChanged();
 }
 
-void UIWizardNewVMExpertPage::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
+void UIWizardNewVMExpertPage::sltHostnameDomainNameChanged(const QString &strHostnameDomainName, bool fIsComplete)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
-    m_userModifiedParameters << "HostnameDomainName";
     emit completeChanged();
+
+    if (fIsComplete)
+    {
+        wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
+        m_userModifiedParameters << "HostnameDomainName";
+    }
 }
 
 void UIWizardNewVMExpertPage::sltProductKeyChanged(const QString &strProductKey)

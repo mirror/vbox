@@ -113,7 +113,7 @@ class UIAdditionalUnattendedOptions : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
-    void sigHostnameDomainNameChanged(const QString &strHostnameDomainName);
+    void sigHostnameDomainNameChanged(const QString &strHostnameDomainName, bool fIsComplete);
     void sigProductKeyChanged(const QString &strHostnameDomainName);
     void sigStartHeadlessChanged(bool fChecked);
 

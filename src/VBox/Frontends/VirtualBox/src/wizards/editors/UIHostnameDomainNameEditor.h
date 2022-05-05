@@ -41,7 +41,7 @@ class UIHostnameDomainNameEditor : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigHostnameDomainNameChanged(const QString &strHostNameDomain);
+    void sigHostnameDomainNameChanged(const QString &strHostNameDomain, bool fIsComplete);
 
 public:
 

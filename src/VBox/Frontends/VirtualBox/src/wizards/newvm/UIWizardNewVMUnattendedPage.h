@@ -51,7 +51,7 @@ private slots:
     void sltGAISOPathChanged(const QString &strPath);
     void sltPasswordChanged(const QString &strPassword);
     void sltUserNameChanged(const QString &strUserName);
-    void sltHostnameDomainNameChanged(const QString &strHostnameDomainName);
+    void sltHostnameDomainNameChanged(const QString &strHostnameDomainName, bool fIsComplete);
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
     void sltSelectedWindowsImageChanged(ulong uImageIndex);
