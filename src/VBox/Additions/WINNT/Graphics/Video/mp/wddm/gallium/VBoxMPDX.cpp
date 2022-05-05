@@ -873,3 +873,70 @@ NTSTATUS DxgkDdiDXBuildPagingBuffer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGB
     return Status;
 }
 
+
+NTSTATUS APIENTRY DxgkDdiDXPatch(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pPatch)
+{
+    GALOG(("pDmaBuffer = %p, cbDmaBuffer = %u, cPatches = %u\n",
+           pPatch->pDmaBuffer, pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset,
+           pPatch->PatchLocationListSubmissionLength));
+
+    DEBUG_BREAKPOINT_TEST();
+
+    for (UINT i = 0; i < pPatch->PatchLocationListSubmissionLength; ++i)
+    {
+        D3DDDI_PATCHLOCATIONLIST const *pPatchListEntry
+            = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart + i];
+        void * const pPatchAddress = (uint8_t *)pPatch->pDmaBuffer + pPatchListEntry->PatchOffset;
+        VBOXDXALLOCATIONTYPE const enmAllocationType = (VBOXDXALLOCATIONTYPE)pPatchListEntry->DriverId;
+
+        /* Ignore a dummy patch request. */
+        if (pPatchListEntry->PatchOffset == ~0UL)
+            continue;
+
+        AssertReturn(   pPatchListEntry->PatchOffset >= pPatch->DmaBufferSubmissionStartOffset
+                     && pPatchListEntry->PatchOffset < pPatch->DmaBufferSubmissionEndOffset, STATUS_INVALID_PARAMETER);
+        AssertReturn(pPatchListEntry->AllocationIndex < pPatch->AllocationListSize, STATUS_INVALID_PARAMETER);
+
+        DXGK_ALLOCATIONLIST const *pAllocationListEntry = &pPatch->pAllocationList[pPatchListEntry->AllocationIndex];
+        AssertContinue(pAllocationListEntry->SegmentId != 0);
+
+        PVBOXWDDM_OPENALLOCATION pOA = (PVBOXWDDM_OPENALLOCATION)pAllocationListEntry->hDeviceSpecificAllocation;
+        if (pOA)
+        {
+            PVBOXWDDM_ALLOCATION pAllocation = pOA->pAllocation;
+            /* Allocation type determines what the patch is about. */
+            Assert(pAllocation->dx.desc.enmAllocationType == enmAllocationType);
+            if (enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
+            {
+                Assert(pAllocation->dx.sid != SVGA3D_INVALID_ID);
+                *(uint32_t *)pPatchAddress = pAllocation->dx.sid;
+            }
+            else if (enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+            {
+                Assert(pAllocation->dx.mobid != SVGA3D_INVALID_ID);
+                *(uint32_t *)pPatchAddress = pAllocation->dx.mobid;
+            }
+            else
+            {
+                AssertFailed();
+                uint32_t *poffVRAM = (uint32_t *)pPatchAddress;
+                *poffVRAM = pAllocationListEntry->PhysicalAddress.LowPart + pPatchListEntry->AllocationOffset;
+            }
+        }
+        else
+            AssertFailed(); /* Render should have already filtered out such patches. */
+    }
+
+#ifdef DEBUG
+    if (!pPatch->Flags.Paging && !pPatch->Flags.Present)
+    {
+        SvgaDebugCommandsD3D(pDevExt->pGa->hw.pSvga,
+                             ((PVBOXWDDM_CONTEXT)pPatch->hContext)->pSvgaContext,
+                             (uint8_t *)pPatch->pDmaBuffer + pPatch->DmaBufferSubmissionStartOffset,
+                             pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset);
+    }
+#else
+    RT_NOREF(pDevExt);
+#endif
+    return STATUS_SUCCESS;
+}
