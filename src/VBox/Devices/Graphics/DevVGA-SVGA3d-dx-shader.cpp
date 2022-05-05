@@ -80,9 +80,16 @@ typedef struct DXBCBlobIOSGNElement
     uint32_t enmSystemValue;            /* SVGA3dDXSignatureSemanticName */
     uint32_t enmComponentType;          /* 1 - unsigned, 2 - integer, 3 - float. */
     uint32_t idxRegister;               /* Shader register index. Elements must be sorted by register index. */
-    uint32_t mask  : 8;                 /* Component mask. Lower 4 bits represent X, Y, Z, W channels. */
-    uint32_t mask2 : 8;                 /* Which components are used in the shader. */
-    uint32_t pad : 16;
+    union
+    {
+        struct
+        {
+            uint32_t mask  : 8;         /* Component mask. Lower 4 bits represent X, Y, Z, W channels. */
+            uint32_t mask2 : 8;         /* Which components are used in the shader. */
+            uint32_t pad : 16;
+        } m;
+        uint32_t mask;
+    } u;
 } DXBCBlobIOSGNElement;
 
 /* 'ISGN' and 'OSGN' blob data format. */
@@ -2171,29 +2178,6 @@ static VGPUSemanticInfo const *dxbcSemanticInfo(DXShaderInfo const *pInfo, SVGA3
 static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint32_t u32BlobType,
                                uint32_t cSignature, SVGA3dDXSignatureEntry const *paSignature, DXBCByteWriter *w)
 {
-    /* aIdxSignature contains signature indices. aIdxSignature[0] = signature index for register 0. */
-    uint32_t aIdxSignature[32];
-    memset(aIdxSignature, 0xFF, sizeof(aIdxSignature));
-    AssertReturn(cSignature <= RT_ELEMENTS(aIdxSignature), VERR_INTERNAL_ERROR);
-    for (uint32_t i = 0; i < cSignature; ++i)
-    {
-        SVGA3dDXSignatureEntry const *src = &paSignature[i];
-        if (src->registerIndex == 0xFFFFFFFF)
-        {
-            /* oDepth for PS output. */
-            ASSERT_GUEST_RETURN(pInfo->enmProgramType == VGPU10_PIXEL_SHADER, VERR_INVALID_PARAMETER);
-
-            /* Must be placed last in the signature. */
-            ASSERT_GUEST_RETURN(aIdxSignature[cSignature - 1] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
-            aIdxSignature[cSignature - 1] = i;
-            continue;
-        }
-
-        ASSERT_GUEST_RETURN(src->registerIndex < RT_ELEMENTS(aIdxSignature), VERR_INVALID_PARAMETER);
-        ASSERT_GUEST_RETURN(aIdxSignature[src->registerIndex] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
-        aIdxSignature[src->registerIndex] = i;
-    }
-
     uint32_t cbBlob = RT_UOFFSETOF_DYN(DXBCBlobIOSGN, aElement[cSignature])
                     + cSignature * RT_SIZEOFMEMB(DXBCBlobIOSGN, aElement[0]);
     if (!dxbcByteWriterCanWrite(w, sizeof(DXBCBlobHeader) + cbBlob))
@@ -2207,50 +2191,117 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
     pHdrISGN->cElement = cSignature;
     pHdrISGN->offElement = RT_UOFFSETOF(DXBCBlobIOSGN, aElement[0]);
 
-    uint32_t aSemanticIdx[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX];
-    RT_ZERO(aSemanticIdx);
-    uint32_t iSignature = 0;
-    for (uint32_t iReg = 0; iReg < RT_ELEMENTS(aIdxSignature); ++iReg)
+    if (pInfo->fGuestSignatures)
     {
-        if (aIdxSignature[iReg] == 0xFFFFFFFF) /* This register is unused. */
-            continue;
+        uint32_t aSemanticIdx[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX];
+        RT_ZERO(aSemanticIdx);
+        for (uint32_t iSignature = 0; iSignature < cSignature; ++iSignature)
+        {
+            SVGA3dDXSignatureEntry const *src = &paSignature[iSignature];
+            DXBCBlobIOSGNElement *dst = &pHdrISGN->aElement[iSignature];
 
-        AssertReturn(iSignature < cSignature, VERR_INTERNAL_ERROR);
+            ASSERT_GUEST_RETURN(src->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX, VERR_INVALID_PARAMETER);
+            VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
 
-        SVGA3dDXSignatureEntry const *src = &paSignature[aIdxSignature[iReg]];
-        DXBCBlobIOSGNElement *dst = &pHdrISGN->aElement[iSignature];
+            dst->offElementName   = cbBlob; /* Offset of the semantic's name relative to the start of the blob (without hdr). */
+            /* Use the register index as the semantic index for generic attributes in order to
+             * produce compatible semantic names between shaders.
+             */
+            dst->idxSemantic      = src->semanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED
+                                  ? src->registerIndex
+                                  : aSemanticIdx[src->semanticName]++;
+            dst->enmSystemValue   = src->semanticName;
+            dst->enmComponentType = src->componentType;
+            dst->idxRegister      = src->registerIndex;
+            dst->u.mask           = src->mask;
 
-        ASSERT_GUEST_RETURN(src->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX, VERR_INVALID_PARAMETER);
-        VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
+            /* Figure out the semantic name for this element. */
+            char const * const pszElementName = pSemanticInfo->pszName;
+            uint32_t const cbElementName = (uint32_t)strlen(pszElementName) + 1;
 
-        dst->offElementName   = cbBlob; /* Offset of the semantic's name relative to the start of the blob (without hdr). */
-        /* Use the register index as the semantic index for generic attributes in order to
-         * produce compatible semantic names between shaders.
+            if (!dxbcByteWriterCanWrite(w, cbBlob + cbElementName))
+                return VERR_NO_MEMORY;
+
+            char *pszElementNameDst = (char *)pHdrISGN + dst->offElementName;
+            memcpy(pszElementNameDst, pszElementName, cbElementName);
+
+            cbBlob += cbElementName;
+        }
+    }
+    else
+    {
+        /* If the signature has been created from the shader code, then sort the signature entries
+         * by the register index in order to write them into the blob sorted.
+         * This is necessary to match signatures between shader stages.
          */
-        dst->idxSemantic      = src->semanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED
-                              ? src->registerIndex
-                              : aSemanticIdx[src->semanticName]++;
-        dst->enmSystemValue   = src->semanticName;
-        dst->enmComponentType = src->componentType ? src->componentType : pSemanticInfo->u32Type;
-        dst->idxRegister      = src->registerIndex;
-        dst->mask             = src->mask;
-        if (u32BlobType == DXBC_BLOB_TYPE_OSGN)
-            dst->mask2            = 0;
-        else
-            dst->mask2            = src->mask;
+        /* aIdxSignature contains signature indices. aIdxSignature[0] = signature index for register 0. */
+        uint32_t aIdxSignature[32];
+        memset(aIdxSignature, 0xFF, sizeof(aIdxSignature));
+        AssertReturn(cSignature <= RT_ELEMENTS(aIdxSignature), VERR_INTERNAL_ERROR);
+        for (uint32_t i = 0; i < cSignature; ++i)
+        {
+            SVGA3dDXSignatureEntry const *src = &paSignature[i];
+            if (src->registerIndex == 0xFFFFFFFF)
+            {
+                /* oDepth for PS output. */
+                ASSERT_GUEST_RETURN(pInfo->enmProgramType == VGPU10_PIXEL_SHADER, VERR_INVALID_PARAMETER);
 
-        /* Figure out the semantic name for this element. */
-        char const * const pszElementName = pSemanticInfo->pszName;
-        uint32_t const cbElementName = (uint32_t)strlen(pszElementName) + 1;
+                /* Must be placed last in the signature. */
+                ASSERT_GUEST_RETURN(aIdxSignature[cSignature - 1] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
+                aIdxSignature[cSignature - 1] = i;
+                continue;
+            }
 
-        if (!dxbcByteWriterCanWrite(w, cbBlob + cbElementName))
-            return VERR_NO_MEMORY;
+            ASSERT_GUEST_RETURN(src->registerIndex < RT_ELEMENTS(aIdxSignature), VERR_INVALID_PARAMETER);
+            ASSERT_GUEST_RETURN(aIdxSignature[src->registerIndex] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
+            aIdxSignature[src->registerIndex] = i;
+        }
 
-        char *pszElementNameDst = (char *)pHdrISGN + dst->offElementName;
-        memcpy(pszElementNameDst, pszElementName, cbElementName);
+        uint32_t aSemanticIdx[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX];
+        RT_ZERO(aSemanticIdx);
+        uint32_t iSignature = 0;
+        for (uint32_t iReg = 0; iReg < RT_ELEMENTS(aIdxSignature); ++iReg)
+        {
+            if (aIdxSignature[iReg] == 0xFFFFFFFF) /* This register is unused. */
+                continue;
 
-        cbBlob += cbElementName;
-        ++iSignature;
+            AssertReturn(iSignature < cSignature, VERR_INTERNAL_ERROR);
+
+            SVGA3dDXSignatureEntry const *src = &paSignature[aIdxSignature[iReg]];
+            DXBCBlobIOSGNElement *dst = &pHdrISGN->aElement[iSignature];
+
+            ASSERT_GUEST_RETURN(src->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX, VERR_INVALID_PARAMETER);
+            VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
+
+            dst->offElementName   = cbBlob; /* Offset of the semantic's name relative to the start of the blob (without hdr). */
+            /* Use the register index as the semantic index for generic attributes in order to
+             * produce compatible semantic names between shaders.
+             */
+            dst->idxSemantic      = src->semanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED
+                                  ? src->registerIndex
+                                  : aSemanticIdx[src->semanticName]++;
+            dst->enmSystemValue   = src->semanticName;
+            dst->enmComponentType = src->componentType ? src->componentType : pSemanticInfo->u32Type;
+            dst->idxRegister      = src->registerIndex;
+            dst->u.m.mask         = src->mask;
+            if (u32BlobType == DXBC_BLOB_TYPE_OSGN)
+                dst->u.m.mask2    = 0;
+            else
+                dst->u.m.mask2    = src->mask;
+
+            /* Figure out the semantic name for this element. */
+            char const * const pszElementName = pSemanticInfo->pszName;
+            uint32_t const cbElementName = (uint32_t)strlen(pszElementName) + 1;
+
+            if (!dxbcByteWriterCanWrite(w, cbBlob + cbElementName))
+                return VERR_NO_MEMORY;
+
+            char *pszElementNameDst = (char *)pHdrISGN + dst->offElementName;
+            memcpy(pszElementNameDst, pszElementName, cbElementName);
+
+            cbBlob += cbElementName;
+            ++iSignature;
+        }
     }
 
     /* Blobs are 4 bytes aligned. Commit the blob data. */
