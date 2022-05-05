@@ -215,6 +215,15 @@ typedef enum RTLDRCPU
     RTLDRCPU_LAST_AMD64 = RTLDRCPU_CORE2,
     /** @} */
 
+    /** @name K_ARCH_ARM64
+     * @{ */
+    RTLDRCPU_ARM64_BLEND,
+    RTLDRCPU_ARM64_V8,
+    RTLDRCPU_ARM64E,
+    RTLDRCPU_FIRST_ARM64 = RTLDRCPU_ARM64_V8,
+    RTLDRCPU_LAST_ARM64 = RTLDRCPU_ARM64E,
+    /** @} */
+
     /** The end of the valid cpu values (exclusive). */
     RTLDRCPU_END,
     /** Hack to blow the type up to 32-bit. */

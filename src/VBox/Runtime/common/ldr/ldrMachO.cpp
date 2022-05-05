@@ -423,6 +423,10 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
             fMakeGot = s.Hdr32.filetype == MH_OBJECT || s.Hdr32.filetype == MH_KEXT_BUNDLE;
             cbJmpStub = fMakeGot ? 8 : 0;
             break;
+        case CPU_TYPE_ARM64:
+            fMakeGot = s.Hdr32.filetype == MH_OBJECT || s.Hdr32.filetype == MH_KEXT_BUNDLE;
+            cbJmpStub = fMakeGot ? 8 : 0; /** @todo Not sure if this is right. Need to expore ARM64/MachO a bit more... */
+            break;
         default:
             return VERR_LDRMACHO_UNSUPPORTED_MACHINE;
     }
@@ -534,6 +538,19 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
             switch (s.Hdr32.cpusubtype & ~CPU_SUBTYPE_MASK)
             {
                 case CPU_SUBTYPE_X86_64_ALL: pThis->enmCpu = RTLDRCPU_AMD64_BLEND; break;
+                default:
+                    return VERR_LDRMACHO_UNSUPPORTED_MACHINE;
+            }
+            break;
+
+        case CPU_TYPE_ARM64:
+            pThis->Core.enmArch   = RTLDRARCH_ARM64;
+            pThis->Core.enmEndian = RTLDRENDIAN_LITTLE;
+            switch (s.Hdr32.cpusubtype & ~CPU_SUBTYPE_MASK)
+            {
+                case CPU_SUBTYPE_ARM64_ALL: pThis->enmCpu = RTLDRCPU_ARM64_BLEND; break;
+                case CPU_SUBTYPE_ARM64_V8:  pThis->enmCpu = RTLDRCPU_ARM64_V8; break;
+                case CPU_SUBTYPE_ARM64E:    pThis->enmCpu = RTLDRCPU_ARM64E; break;
                 default:
                     return VERR_LDRMACHO_UNSUPPORTED_MACHINE;
             }
@@ -5680,7 +5697,13 @@ DECLHIDDEN(int) rtldrFatOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH en
                 break;
 
             case RTLDRARCH_ARM32:
+                fMatch = FatEntry.cputype == CPU_TYPE_ARM32;
+                break;
+
             case RTLDRARCH_ARM64:
+                fMatch = FatEntry.cputype == CPU_TYPE_ARM64;
+                break;
+
             case RTLDRARCH_X86_16:
                 fMatch = false;
                 break;
