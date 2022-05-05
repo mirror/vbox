@@ -66,6 +66,15 @@ EXPORTS
     ASMAtomicUoReadU64      ; not-some-systems...
     ASMAtomicXchgU16        ; not-some-systems...
     ASMAtomicXchgU64        ; not-some-systems...
+    ASMBitFirstClear            ; not-amd64 not-x86
+    ASMBitNextClear             ; not-amd64 not-x86
+    ASMBitFirstSet              ; not-amd64 not-x86
+    ASMBitNextSet               ; not-amd64 not-x86
+    ASMMemZeroPage              ; not-amd64 not-x86
+    ASMMemZero32                ; not-amd64 not-x86
+    ASMMemFill32                ; not-amd64 not-x86
+    ASMMemFirstMismatchingU8    ; not-amd64 not-x86
+    ASMMemFirstNonZero          ; not-amd64 not-x86
 
     RTAsn1BitString_AreContentBitsValid
     RTAsn1BitString_CheckSanity

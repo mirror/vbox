@@ -2614,6 +2614,10 @@ $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
        	$(if-expr "$(KBUILD_TARGET)" == "linux" ,, -e "/only-linux/d") \
        	$(if-expr "$(KBUILD_TARGET)" == "win"   ,, -e "/only-win/d") \
        	$(if-expr "$(KBUILD_TARGET)" == "darwin",, -e "/only-darwin/d") \
+       	$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
+       	$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e "/not-amd64/d",-e "/only-amd64/d") \
+       	$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
+       	$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.arm64",, -e "/only-darwin.arm64/d") \
 		-f "$<" $(filter %.def, $^)
 endif
 endif ## @todo bugref:9898
