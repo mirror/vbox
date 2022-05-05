@@ -3362,7 +3362,7 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
                         && !RTStrCmp(&pLeaf->szName[pLeaf->cchName - 4], "Size"))
                     || (   pLeaf->cchName >= 2
                         && !RTStrNCmp(pLeaf->szName, "cb", 2)) )
-                    pHlp->pfnPrintf(pHlp, ", %' Rhcb)", pLeaf->Value.Integer.u64);
+                    pHlp->pfnPrintf(pHlp, ", %' Rhcb)\n", pLeaf->Value.Integer.u64);
                 else
                     pHlp->pfnPrintf(pHlp, ")\n");
                 break;
