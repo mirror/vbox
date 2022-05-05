@@ -229,7 +229,7 @@ int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC,
     /*
      * DX contexts
      */
-    p3dState->papDXContexts = (PVMSVGA3DDXCONTEXT *)RTMemAlloc(p3dState->cDXContexts * sizeof(VMSVGA3DDXCONTEXT));
+    p3dState->papDXContexts = (PVMSVGA3DDXCONTEXT *)RTMemAlloc(p3dState->cDXContexts * sizeof(PVMSVGA3DDXCONTEXT));
     AssertReturn(p3dState->papDXContexts, VERR_NO_MEMORY);
     for (uint32_t i = 0; i < p3dState->cDXContexts; ++i)
     {
