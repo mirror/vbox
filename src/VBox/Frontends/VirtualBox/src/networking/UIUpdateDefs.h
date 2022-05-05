@@ -114,6 +114,9 @@ public:
     /** Returns version. */
     UIVersion version() const;
 
+    /** Returns supported update chennels. */
+    QVector<KUpdateChannel> supportedUpdateChannels() const;
+
     /** Returns whether this item equals to @a another one. */
     bool isEqual(const VBoxUpdateData &another) const;
     /** Returns whether this item equals to @a another one. */
@@ -147,13 +150,16 @@ private:
     bool  m_fCheckRequired;
 
     /** Holds the update period. */
-    UpdatePeriodType      m_enmUpdatePeriod;
+    UpdatePeriodType  m_enmUpdatePeriod;
     /** Holds the update date. */
-    QDate           m_date;
+    QDate             m_date;
     /** Holds the update channel. */
-    KUpdateChannel  m_enmUpdateChannel;
+    KUpdateChannel    m_enmUpdateChannel;
     /** Holds the update version. */
-    UIVersion       m_version;
+    UIVersion         m_version;
+
+    /** Holds the supported update chennels. */
+    QVector<KUpdateChannel>  m_supportedUpdateChannels;
 };
 
 

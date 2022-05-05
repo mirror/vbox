@@ -232,6 +232,15 @@ bool VBoxUpdateData::load(const CHost &comHost)
     }
     m_fCheckRequired = fNeedToCheck;
 
+    /* Optional stuff goes last; Fetch supported update channels: */
+    const QVector<KUpdateChannel> supportedUpdateChannels = comAgent.GetSupportedChannels();
+    if (!comAgent.isOk())
+    {
+        UINotificationMessage::cannotAcquireUpdateAgentParameter(comAgent);
+        return false;
+    }
+    m_supportedUpdateChannels = supportedUpdateChannels;
+
     /* Success finally: */
     return true;
 }
@@ -319,6 +328,11 @@ QString VBoxUpdateData::updateChannelName() const
 UIVersion VBoxUpdateData::version() const
 {
     return m_version;
+}
+
+QVector<KUpdateChannel> VBoxUpdateData::supportedUpdateChannels() const
+{
+    return m_supportedUpdateChannels;
 }
 
 bool VBoxUpdateData::isEqual(const VBoxUpdateData &another) const

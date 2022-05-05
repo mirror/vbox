@@ -57,6 +57,12 @@ void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
             {
                 if (m_pComboUpdatePeriod)
                     m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.updatePeriod());
+
+                foreach (const KUpdateChannel &enmUpdateChannel, m_mapRadioButtons.keys())
+                    if (m_mapRadioButtons.value(enmUpdateChannel))
+                        m_mapRadioButtons.value(enmUpdateChannel)->setVisible(
+                               m_guiValue.updateChannel() == enmUpdateChannel
+                            || m_guiValue.supportedUpdateChannels().contains(enmUpdateChannel));
                 if (m_mapRadioButtons.value(m_guiValue.updateChannel()))
                     m_mapRadioButtons.value(m_guiValue.updateChannel())->setChecked(true);
             }
@@ -117,6 +123,14 @@ void UIUpdateSettingsEditor::retranslateUi()
         m_mapRadioButtons.value(KUpdateChannel_WithBetas)->setToolTip(tr("When chosen, you will be notified "
                                                                          "about all new VirtualBox releases and "
                                                                          "pre-release versions of VirtualBox."));
+    }
+    if (m_mapRadioButtons.value(KUpdateChannel_WithTesting))
+    {
+        m_mapRadioButtons.value(KUpdateChannel_WithTesting)->setText(tr("All New Releases, &Pre-Releases and Testing Builds"));
+        m_mapRadioButtons.value(KUpdateChannel_WithTesting)->setToolTip(tr("When chosen, you will be notified "
+                                                                           "about all new VirtualBox releases, "
+                                                                           "pre-release versions and testing builds of "
+                                                                           "VirtualBox."));
     }
 }
 
@@ -230,6 +244,7 @@ void UIUpdateSettingsEditor::prepareWidgets()
                     m_mapRadioButtons[KUpdateChannel_Stable] = new QRadioButton(m_pWidgetUpdateSettings);
                     if (m_mapRadioButtons.value(KUpdateChannel_Stable))
                     {
+                        m_mapRadioButtons.value(KUpdateChannel_Stable)->setVisible(false);
                         m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_Stable));
                         pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_Stable), 2, 1);
                     }
@@ -237,6 +252,7 @@ void UIUpdateSettingsEditor::prepareWidgets()
                     m_mapRadioButtons[KUpdateChannel_All] = new QRadioButton(m_pWidgetUpdateSettings);
                     if (m_mapRadioButtons.value(KUpdateChannel_All))
                     {
+                        m_mapRadioButtons.value(KUpdateChannel_All)->setVisible(false);
                         m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_All));
                         pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_All), 3, 1);
                     }
@@ -244,8 +260,17 @@ void UIUpdateSettingsEditor::prepareWidgets()
                     m_mapRadioButtons[KUpdateChannel_WithBetas] = new QRadioButton(m_pWidgetUpdateSettings);
                     if (m_mapRadioButtons.value(KUpdateChannel_WithBetas))
                     {
+                        m_mapRadioButtons.value(KUpdateChannel_WithBetas)->setVisible(false);
                         m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_WithBetas));
                         pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_WithBetas), 4, 1);
+                    }
+                    /* Prepare 'update to "with testing"' radio-button: */
+                    m_mapRadioButtons[KUpdateChannel_WithTesting] = new QRadioButton(m_pWidgetUpdateSettings);
+                    if (m_mapRadioButtons.value(KUpdateChannel_WithTesting))
+                    {
+                        m_mapRadioButtons.value(KUpdateChannel_WithTesting)->setVisible(false);
+                        m_pRadioButtonGroup->addButton(m_mapRadioButtons.value(KUpdateChannel_WithTesting));
+                        pLayoutUpdateSettings->addWidget(m_mapRadioButtons.value(KUpdateChannel_WithTesting), 5, 1);
                     }
                 }
             }
