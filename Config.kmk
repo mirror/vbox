@@ -4770,7 +4770,7 @@ endif
 # openssl
 SDK_VBOX_OPENSSL                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
 if defined(VBOX_WITH_OPENSSL3)
- SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-3.0.1-headers/include
+ SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-3.0.2-headers/include
 else
  SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
 endif
@@ -4788,7 +4788,7 @@ SDK_VBOX_OPENSSL_LIBS                   ?= \
 
 SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
 if defined(VBOX_WITH_OPENSSL3)
- SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-3.0.1-headers/include
+ SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-3.0.2-headers/include
 else
  SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
 endif
