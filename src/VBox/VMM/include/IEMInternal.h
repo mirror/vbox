@@ -3033,7 +3033,6 @@ IEM_CIMPL_PROTO_3(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, RTGCPTR, GCPtrDst
 IEM_CIMPL_PROTO_3(iemCImpl_invvpid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvvpidDesc, uint64_t, uInvvpidType);
 IEM_CIMPL_PROTO_3(iemCImpl_invept, uint8_t, iEffSeg, RTGCPTR, GCPtrInveptDesc, uint64_t, uInveptType);
 IEM_CIMPL_PROTO_0(iemCImpl_vmx_pause);
-IEM_CIMPL_PROTO_0(iemCImpl_vmcall);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -3052,8 +3051,9 @@ IEM_CIMPL_PROTO_0(iemCImpl_skinit);
 IEM_CIMPL_PROTO_0(iemCImpl_svm_pause);
 #endif
 
-IEM_CIMPL_PROTO_0(iemCImpl_vmmcall);
-IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode);
+IEM_CIMPL_PROTO_0(iemCImpl_vmcall);  /* vmx */
+IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
+IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
 
 
 extern const PFNIEMOP g_apfnOneByteMap[256];
