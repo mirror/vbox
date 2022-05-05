@@ -43,7 +43,9 @@ VBOX_PATH_VALIDATIONKIT_SRC := $(PATH_ROOT)/src/VBox/ValidationKit
 #
 TEMPLATE_VBoxValidationKitR3Base = VBox Validation Kit ring-3 program base, both guest and host.
 TEMPLATE_VBoxValidationKitR3Base_EXTENDS = VBoxR3Static
-ifn1of ($(KBUILD_TARGET), darwin solaris win)
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -IntegrityCheck, $(TEMPLATE_VBoxR3Static_LDFLAGS))
+else ifn1of ($(KBUILD_TARGET), darwin solaris win)
  TEMPLATE_VBoxValidationKitR3Base_CFLAGS          = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CFLAGS))
  TEMPLATE_VBoxValidationKitR3Base_CXXFLAGS        = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CXXFLAGS))
  TEMPLATE_VBoxValidationKitR3Base_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
