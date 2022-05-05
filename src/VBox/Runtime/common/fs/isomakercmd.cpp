@@ -908,7 +908,7 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
                     Assert(iHit < (int32_t)cBlocks);
                     if (iHit < 0)
                     {
-                        iHit = ASMBitFirstClear(pvBitmap, iBlock);
+                        iHit = ASMBitFirstClear(pvBitmap, RT_ALIGN_32(iBlock, 64));
                         Assert(iHit < (int32_t)cBlocks);
                     }
                     if (iHit >= 0)
