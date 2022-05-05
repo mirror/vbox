@@ -254,7 +254,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   	$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
  endif
  qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
- 	Frameworks/$(qtmod).framework/Versions/Current=>5 \
+ 	Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
  	Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_FWRK_VER)/$(qtmod) \
  	Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_FWRK_VER)/Resources)
  qt5-bin_INSTALLER = $(INSTALL) $(if $(uid),-o $(uid)) $(if $(gid),-g $(gid)) $(if $(mode),-m $(mode)) $(4) -- \
