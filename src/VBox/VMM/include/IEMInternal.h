@@ -319,7 +319,7 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
 #define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
 #define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_PG_NO_ACCESSED    RT_BIT_64(5) /**< Phys tables: Not accessed (need to be marked accessed). */
+#define IEMTLBE_F_PT_NO_ACCESSED    RT_BIT_64(5) /**< Phys tables: Not accessed (need to be marked accessed). */
 #define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
 #define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
 #define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(8) /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
@@ -2546,6 +2546,9 @@ DECL_NO_RETURN(void)    iemRaisePageFaultJmp(PVMCPUCC pVCpu, RTGCPTR GCPtrWhere,
 #endif
 VBOXSTRICTRC            iemRaiseMathFault(PVMCPUCC pVCpu);
 VBOXSTRICTRC            iemRaiseAlignmentCheckException(PVMCPUCC pVCpu);
+#ifdef IEM_WITH_SETJMP
+DECL_NO_RETURN(void)    iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu)  RT_NOEXCEPT;
+#endif
 
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError);
 IEM_CIMPL_DEF_0(iemCImplRaiseInvalidLockPrefix);

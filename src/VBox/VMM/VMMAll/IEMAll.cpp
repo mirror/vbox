@@ -604,7 +604,7 @@ static void IEMTlbInvalidateAllPhysicalSlow(PVMCPUCC pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling
  *                      thread.
- * @note    Currently not used. 
+ * @note    Currently not used.
  */
 VMM_INT_DECL(void) IEMTlbInvalidateAllPhysical(PVMCPUCC pVCpu)
 {
@@ -4138,6 +4138,14 @@ VBOXSTRICTRC iemRaiseAlignmentCheckException(PVMCPUCC pVCpu)
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_AC, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 
+#ifdef IEM_WITH_SETJMP
+/** \#AC(0) - 11, longjmp.  */
+DECL_NO_RETURN(void) iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(iemRaiseAlignmentCheckException(pVCpu)));
+}
+#endif
+
 
 /** Accessed via IEMOP_RAISE_DIVIDE_ERROR.   */
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError)
@@ -5910,7 +5918,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
      * ASSUMES this is set when the address is translated rather than on commit...
      */
     /** @todo testcase: check when A and D bits are actually set by the CPU.  */
-    uint64_t const fTlbAccessedDirty = (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0) | IEMTLBE_F_PG_NO_ACCESSED;
+    uint64_t const fTlbAccessedDirty = (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0) | IEMTLBE_F_PT_NO_ACCESSED;
     if (pTlbe->fFlagsAndPhysRev & fTlbAccessedDirty)
     {
         uint32_t const fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
@@ -6174,7 +6182,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         if (   (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE)
             && (fAccess & IEM_ACCESS_TYPE_WRITE)
             && (   (    pVCpu->iem.s.uCpl == 3
-                    && !(fAccess & IEM_ACCESS_WHAT_SYS))
+                    && !(fAccess & IEM_ACCESS_WHAT_SYS)) /** @todo check this. Not sure WP applies to all SYS writes... */
                 || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
         {
             Log(("iemMemMapJmp: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
@@ -6204,7 +6212,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
      * ASSUMES this is set when the address is translated rather than on commit...
      */
     /** @todo testcase: check when A and D bits are actually set by the CPU.  */
-    uint64_t const fTlbAccessedDirty = (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0) | IEMTLBE_F_PG_NO_ACCESSED;
+    uint64_t const fTlbAccessedDirty = (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0) | IEMTLBE_F_PT_NO_ACCESSED;
     if (pTlbe->fFlagsAndPhysRev & fTlbAccessedDirty)
     {
         uint32_t const fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
@@ -6599,14 +6607,60 @@ uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPt
  */
 uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
-# if 0 //def IEM_WITH_DATA_TLB
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
     RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pVCpu, iSegReg, sizeof(uint32_t), GCPtrMem);
-    if (RT_LIKELY((GCPtrEff & X86_PAGE_OFFSET_MASK) <= X86_PAGE_SIZE - sizeof(uint32_t)))
+    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(uint32_t)))
     {
-        /// @todo more soon...
+        /*
+         * TLB lookup.
+         */
+        uint64_t uTag = ((GCPtrEff << 16) >> (X86_PAGE_SHIFT + 16));
+        Assert(!(uTag >> (48 - X86_PAGE_SHIFT)));
+        uTag         |= pVCpu->iem.s.DataTlb.uTlbRevision;
+        AssertCompile(RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries) == 256);
+        PIEMTLBENTRY const pTlbe = &pVCpu->iem.s.DataTlb.aEntries[(uint8_t)uTag];
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            uint64_t const fNoUser = pVCpu->iem.s.uCpl == 3 ? IEMTLBE_F_PT_NO_USER : 0;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                if (   !(GCPtrEff & (sizeof(uint32_t) - 1))
+                    || !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
+                    || !pVCpu->cpum.GstCtx.eflags.Bits.u1AC
+                    || pVCpu->iem.s.uCpl != 3)
+                {
+                    /*
+                     * Fetch and return the dword
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    return *(uint32_t const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                }
+                Log10(("iemMemFetchDataU32Jmp: Raising #AC for %RGv\n", GCPtrEff));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+            }
+        }
     }
 
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles. */
+    Log10(("iemMemFetchDataU32Jmp: %u:%RGv fallback\n", iSegReg, GCPtrMem));
     return iemMemFetchDataU32SafeJmp(pVCpu, iSegReg, GCPtrMem);
+
 # else
     /* The lazy approach. */
     uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);

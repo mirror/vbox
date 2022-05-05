@@ -2338,7 +2338,7 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
      */
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
     {
-        if (iSegReg >= X86_SREG_FS)
+        if (iSegReg >= X86_SREG_FS && iSegReg != UINT8_MAX)
         {
             IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
             PCPUMSELREGHID const pSel = iemSRegGetHid(pVCpu, iSegReg);
@@ -2347,42 +2347,60 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
 
         if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
             return GCPtrMem;
+        iemRaiseGeneralProtectionFault0Jmp(pVCpu);
     }
     /*
      * 16-bit and 32-bit segmentation.
      */
-    else
+    else if (iSegReg != UINT8_MAX)
     {
+        /** @todo Does this apply to segments with 4G-1 limit? */
         uint32_t const GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem - 1;
         if (RT_LIKELY(GCPtrLast32 >= (uint32_t)GCPtrMem))
         {
             IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
             PCPUMSELREGHID const pSel = iemSRegGetHid(pVCpu, iSegReg);
-            switch (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
+            switch (pSel->Attr.u & (  X86DESCATTR_P     | X86DESCATTR_UNUSABLE
+                                    | X86_SEL_TYPE_READ | X86_SEL_TYPE_WRITE /* same as read */
+                                    | X86_SEL_TYPE_DOWN | X86_SEL_TYPE_CONF  /* same as down */
+                                    | X86_SEL_TYPE_CODE))
             {
-                case X86DESCATTR_P:                                         /* data, expand up */
+                case X86DESCATTR_P:                                         /* readonly data, expand up */
+                case X86DESCATTR_P | X86_SEL_TYPE_WRITE:                    /* writable data, expand up */
                 case X86DESCATTR_P | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ: /* code, read-only */
+                case X86DESCATTR_P | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_CONF: /* conforming code, read-only */
                     /* expand up */
                     if (RT_LIKELY(GCPtrLast32 <= pSel->u32Limit))
                         return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+                    Log10(("iemMemApplySegmentToReadJmp: out of bounds %#x..%#x vs %#x\n",
+                           (uint32_t)GCPtrMem, GCPtrLast32, pSel->u32Limit));
                     break;
 
-                case X86DESCATTR_P | X86_SEL_TYPE_DOWN:                     /* data, expand down */
+                case X86DESCATTR_P | X86_SEL_TYPE_DOWN:                         /* readonly data, expand down */
+                case X86DESCATTR_P | X86_SEL_TYPE_DOWN | X86_SEL_TYPE_WRITE:    /* writable data, expand down */
                     /* expand down */
                     if (RT_LIKELY(   (uint32_t)GCPtrMem > pSel->u32Limit
                                   && (   pSel->Attr.n.u1DefBig
                                       || GCPtrLast32 <= UINT32_C(0xffff)) ))
                         return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+                    Log10(("iemMemApplySegmentToReadJmp: expand down out of bounds %#x..%#x vs %#x..%#x\n",
+                           (uint32_t)GCPtrMem, GCPtrLast32, pSel->u32Limit, pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT16_MAX));
                     break;
 
                 default:
+                    Log10(("iemMemApplySegmentToReadJmp: bad selector %#x\n", pSel->Attr.u));
                     iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
                     break;
             }
         }
+        Log10(("iemMemApplySegmentToReadJmp: out of bounds %#x..%#x\n",(uint32_t)GCPtrMem, GCPtrLast32));
         iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
     }
-    iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+    /*
+     * 32-bit flat address.
+     */
+    else
+        return GCPtrMem;
 }
 
 
