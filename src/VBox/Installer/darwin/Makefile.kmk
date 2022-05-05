@@ -36,7 +36,11 @@ else
 endif
 VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
-VBOX_QT_VERSION_MAJOR = 5
+ifdef VBOX_WITH_QT6
+ VBOX_QT_VERSION_MAJOR = 6
+else
+ VBOX_QT_VERSION_MAJOR = 5
+endif
 
 # Unset this to speed up things during makefile hacking.
 VBOX_DARWIN_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
