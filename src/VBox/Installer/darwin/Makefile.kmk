@@ -42,6 +42,14 @@ else
  VBOX_QT_VERSION_MAJOR = 5
 endif
 
+ifeq ($(KBUILD_TARGET_ARCH),arm64)
+ VBOX_DI_TARGET_ARCH = arm64
+ VBOX_DI_ARCH_LIST   = arm64
+else # Assume amd64 for now
+ VBOX_DI_TARGET_ARCH = x86-64
+ VBOX_DI_ARCH_LIST   = i386,arm64
+endif
+
 # Unset this to speed up things during makefile hacking.
 VBOX_DARWIN_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 
@@ -210,6 +218,12 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Welcome.rtf \
 		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Welcome.rtf
+	@# Do keyword replacement in the distribution script.
+	$(SED) \
+		-e 's/@VBOX_TARGET_ARCH@/$(VBOX_DI_TARGET_ARCH)/g' \
+		-e 's/@VBOX_ARCH_LIST@/$(VBOX_DI_ARCH_LIST)/g' \
+		--output $(VBOX_PATH_PACK_TMP)/distribution.dist \
+		$(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist, $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution-driverless.dist)
 	@# Copy the resources.
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Conclusion.rtf                   $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Conclusion.rtf
 	$(SED) \
@@ -239,7 +253,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 	)
 	@# Build the package.
 	$(VBOX_PRODUCTBUILD) \
-		--distribution $(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist, $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution-driverless.dist) \
+		--distribution $(VBOX_PATH_PACK_TMP)/distribution.dist \
 		--package-path $(VBOX_PATH_PACK_TMP)/Packages \
 		--resources $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res \
 		--identifier org.VirtualBox.mpkg.virtualbox \
