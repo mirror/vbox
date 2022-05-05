@@ -174,7 +174,7 @@ endif
 # The meta-package.
 #
 $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
-		$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg \
+		$(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg) \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
 		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
@@ -235,7 +235,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 	)
 	@# Build the package.
 	$(VBOX_PRODUCTBUILD) \
-		--distribution $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist \
+		--distribution $(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist, $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution-driverless.dist) \
 		--package-path $(VBOX_PATH_PACK_TMP)/Packages \
 		--resources $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res \
 		--identifier org.VirtualBox.mpkg.virtualbox \
@@ -255,6 +255,7 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res
 
 
+ifdef VBOX_WITH_VBOXDRV
 #
 # The VirtualBox Kernel extensions.
 #
@@ -347,6 +348,7 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res
+endif # !VBOX_WITH_VBOXDRV
 
 
 #
