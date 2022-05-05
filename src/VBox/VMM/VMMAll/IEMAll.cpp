@@ -528,21 +528,20 @@ VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure of the calling
  *                      thread.
  * @param   GCPtr       The address of the page to invalidate
+ * @thread EMT(pVCpu)
  */
 VMM_INT_DECL(void) IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
-    GCPtr = (GCPtr << 16) >> (X86_PAGE_SHIFT + 16);
+    GCPtr = IEMTLB_CALC_TAG_NO_REV(GCPtr);
     Assert(!(GCPtr >> (48 - X86_PAGE_SHIFT)));
-    AssertCompile(RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries) == 256);
-    AssertCompile(RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries) == 256);
-    uintptr_t idx = (uint8_t)GCPtr;
+    uintptr_t const idx = IEMTLB_TAG_TO_INDEX(GCPtr);
 
 # ifdef IEM_WITH_CODE_TLB
     if (pVCpu->iem.s.CodeTlb.aEntries[idx].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevision))
     {
         pVCpu->iem.s.CodeTlb.aEntries[idx].uTag = 0;
-        if (GCPtr == ((pVCpu->iem.s.uInstrBufPc << 16) >> (X86_PAGE_SHIFT + 16)))
+        if (GCPtr == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
             pVCpu->iem.s.cbInstrBufTotal = 0;
     }
 # endif
@@ -767,9 +766,8 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
         /*
          * Get the TLB entry for this piece of code.
          */
-        uint64_t     uTag  = (GCPtrFirst >> X86_PAGE_SHIFT) | pVCpu->iem.s.CodeTlb.uTlbRevision;
-        AssertCompile(RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries) == 256);
-        PIEMTLBENTRY pTlbe = &pVCpu->iem.s.CodeTlb.aEntries[(uint8_t)uTag];
+        uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.CodeTlb, GCPtrFirst);
+        PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.CodeTlb, uTag);
         if (pTlbe->uTag == uTag)
         {
             /* likely when executing lots of code, otherwise unlikely */
@@ -5844,11 +5842,8 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
     /*
      * Get the TLB entry for this page.
      */
-    uint64_t uTag = ((GCPtrMem << 16) >> (X86_PAGE_SHIFT + 16));
-    Assert(!(uTag >> (48 - X86_PAGE_SHIFT)));
-    uTag         |= pVCpu->iem.s.DataTlb.uTlbRevision;
-    AssertCompile(RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries) == 256);
-    PIEMTLBENTRY pTlbe = &pVCpu->iem.s.DataTlb.aEntries[(uint8_t)uTag];
+    uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+    PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
     if (pTlbe->uTag == uTag)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -6138,11 +6133,8 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     /*
      * Get the TLB entry for this page.
      */
-    uint64_t uTag = ((GCPtrMem << 16) >> (X86_PAGE_SHIFT + 16));
-    Assert(!(uTag >> (48 - X86_PAGE_SHIFT)));
-    uTag         |= pVCpu->iem.s.DataTlb.uTlbRevision;
-    AssertCompile(RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries) == 256);
-    PIEMTLBENTRY pTlbe = &pVCpu->iem.s.DataTlb.aEntries[(uint8_t)uTag];
+    uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+    PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
     if (pTlbe->uTag == uTag)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -6587,7 +6579,7 @@ VBOXSTRICTRC iemMemFetchDataU32_ZX_U64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
+static uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
     uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
     uint32_t const  u32Ret  = *pu32Src;
@@ -6617,11 +6609,8 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
         /*
          * TLB lookup.
          */
-        uint64_t uTag = ((GCPtrEff << 16) >> (X86_PAGE_SHIFT + 16));
-        Assert(!(uTag >> (48 - X86_PAGE_SHIFT)));
-        uTag         |= pVCpu->iem.s.DataTlb.uTlbRevision;
-        AssertCompile(RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries) == 256);
-        PIEMTLBENTRY const pTlbe = &pVCpu->iem.s.DataTlb.aEntries[(uint8_t)uTag];
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
         if (pTlbe->uTag == uTag)
         {
             /*
@@ -6659,15 +6648,8 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles. */
     Log10(("iemMemFetchDataU32Jmp: %u:%RGv fallback\n", iSegReg, GCPtrMem));
-    return iemMemFetchDataU32SafeJmp(pVCpu, iSegReg, GCPtrMem);
-
-# else
-    /* The lazy approach. */
-    uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
-    uint32_t const  u32Ret  = *pu32Src;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
-    return u32Ret;
 # endif
+    return iemMemFetchDataU32SafeJmp(pVCpu, iSegReg, GCPtrMem);
 }
 #endif
 

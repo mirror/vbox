@@ -389,6 +389,32 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbPhysRev increment.
  * @sa IEMTLBE_F_PHYS_REV */
 #define IEMTLB_PHYS_REV_INCR    RT_BIT_64(9)
+/**
+ * Calculates the TLB tag for a virtual address.
+ * @returns Tag value for indexing and comparing with IEMTLB::uTag.
+ * @param   a_pTlb      The TLB.
+ * @param   a_GCPtr     The virtual address.
+ */
+#define IEMTLB_CALC_TAG(a_pTlb, a_GCPtr)    ( IEMTLB_CALC_TAG_NO_REV(a_GCPtr) | (a_pTlb)->uTlbRevision )
+/**
+ * Calculates the TLB tag for a virtual address but without TLB revision.
+ * @returns Tag value for indexing and comparing with IEMTLB::uTag.
+ * @param   a_GCPtr     The virtual address.
+ */
+#define IEMTLB_CALC_TAG_NO_REV(a_GCPtr)     ( (((a_GCPtr) << 16) >> (GUEST_PAGE_SHIFT + 16)) )
+/**
+ * Converts a TLB tag value into a TLB index.
+ * @returns Index into IEMTLB::aEntries.
+ * @param   a_uTag      Value returned by IEMTLB_CALC_TAG.
+ */
+#define IEMTLB_TAG_TO_INDEX(a_uTag)         ( (uint8_t)(a_uTag) )
+/**
+ * Converts a TLB tag value into a TLB index.
+ * @returns Index into IEMTLB::aEntries.
+ * @param   a_pTlb      The TLB.
+ * @param   a_uTag      Value returned by IEMTLB_CALC_TAG.
+ */
+#define IEMTLB_TAG_TO_ENTRY(a_pTlb, a_uTag) ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_INDEX(a_uTag)] )
 
 
 /**
@@ -806,6 +832,9 @@ typedef struct IEM
 #define IEM_ACCESS_NOT_LOCKED           UINT32_C(0x00001000)
 /** Valid bit mask. */
 #define IEM_ACCESS_VALID_MASK           UINT32_C(0x00001fff)
+/** Shift count for the TLB flags (upper word). */
+#define IEM_ACCESS_SHIFT_TLB_FLAGS      16
+
 /** Read+write data alias. */
 #define IEM_ACCESS_DATA_RW              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_DATA)
 /** Write data alias. */
