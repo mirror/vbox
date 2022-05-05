@@ -31,6 +31,10 @@
         <file alias="cd_add_32px_x2.png">images/x2/cd_add_32px_x2.png</file>
         <file alias="cd_add_disabled_16px_x2.png">images/x2/cd_add_disabled_16px_x2.png</file>
         <file alias="cd_add_disabled_32px_x2.png">images/x2/cd_add_disabled_32px_x2.png</file>
+        <file alias="cd_clear_16px_x2.png">images/x2/cd_clear_16px_x2.png</file>
+        <file alias="cd_clear_32px_x2.png">images/x2/cd_clear_32px_x2.png</file>
+        <file alias="cd_clear_disabled_16px_x2.png">images/x2/cd_clear_disabled_16px_x2.png</file>
+        <file alias="cd_clear_disabled_32px_x2.png">images/x2/cd_clear_disabled_32px_x2.png</file>
         <file alias="cd_copy_16px_x2.png">images/x2/cd_copy_16px_x2.png</file>
         <file alias="cd_copy_32px_x2.png">images/x2/cd_copy_32px_x2.png</file>
         <file alias="cd_copy_disabled_16px_x2.png">images/x2/cd_copy_disabled_16px_x2.png</file>
@@ -214,6 +218,10 @@
         <file alias="fd_add_32px_x2.png">images/x2/fd_add_32px_x2.png</file>
         <file alias="fd_add_disabled_16px_x2.png">images/x2/fd_add_disabled_16px_x2.png</file>
         <file alias="fd_add_disabled_32px_x2.png">images/x2/fd_add_disabled_32px_x2.png</file>
+        <file alias="fd_clear_16px_x2.png">images/x2/fd_clear_16px_x2.png</file>
+        <file alias="fd_clear_32px_x2.png">images/x2/fd_clear_32px_x2.png</file>
+        <file alias="fd_clear_disabled_16px_x2.png">images/x2/fd_clear_disabled_16px_x2.png</file>
+        <file alias="fd_clear_disabled_32px_x2.png">images/x2/fd_clear_disabled_32px_x2.png</file>
         <file alias="fd_copy_16px_x2.png">images/x2/fd_copy_16px_x2.png</file>
         <file alias="fd_copy_32px_x2.png">images/x2/fd_copy_32px_x2.png</file>
         <file alias="fd_copy_disabled_16px_x2.png">images/x2/fd_copy_disabled_16px_x2.png</file>
@@ -352,6 +360,10 @@
         <file alias="hd_add_32px_x2.png">images/x2/hd_add_32px_x2.png</file>
         <file alias="hd_add_disabled_16px_x2.png">images/x2/hd_add_disabled_16px_x2.png</file>
         <file alias="hd_add_disabled_32px_x2.png">images/x2/hd_add_disabled_32px_x2.png</file>
+        <file alias="hd_clear_16px_x2.png">images/x2/hd_clear_16px_x2.png</file>
+        <file alias="hd_clear_32px_x2.png">images/x2/hd_clear_32px_x2.png</file>
+        <file alias="hd_clear_disabled_16px_x2.png">images/x2/hd_clear_disabled_16px_x2.png</file>
+        <file alias="hd_clear_disabled_32px_x2.png">images/x2/hd_clear_disabled_32px_x2.png</file>
         <file alias="hd_copy_16px_x2.png">images/x2/hd_copy_16px_x2.png</file>
         <file alias="hd_copy_32px_x2.png">images/x2/hd_copy_32px_x2.png</file>
         <file alias="hd_copy_disabled_16px_x2.png">images/x2/hd_copy_disabled_16px_x2.png</file>
@@ -479,8 +491,5 @@
         <file alias="log_viewer_bookmark_16px_x2.png">images/x2/log_viewer_bookmark_16px_x2.png</file>
         <file alias="log_viewer_bookmark_32px_x2.png">images/x2/log_viewer_bookmark_32px_x2.png</file>
         <file alias="log_viewer_bookmark_disabled_16px_x2.png">images/x2/log_viewer_bookmark_disabled_16px_x2.png</file>
-        <file alias="log_viewer_bookmark_disabled_32px_x2.png">images/x2/log_viewer_bookmark_disabled_32px_x2.png</file>
-        <file alias="log_viewer_bookmark_off_16px_x2.png">images/x2/log_viewer_bookmark_off_16px_x2.png</file>
-        <file alias="log_viewer_bookmark_on_16px_x2.png">images/x2/log_viewer_bookmark_on_16px_x2.png</file>
     </qresource>
 </RCC>

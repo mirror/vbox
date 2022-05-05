@@ -2763,12 +2763,12 @@ public:
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(0, UIIconPool::iconSetFull(":/hd_remove_32px.png",          ":/hd_remove_16px.png",
-                                           ":/hd_remove_disabled_32px.png", ":/hd_remove_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_remove_32px.png",          ":/cd_remove_16px.png",
-                                           ":/cd_remove_disabled_32px.png", ":/cd_remove_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_remove_32px.png",          ":/fd_remove_16px.png",
-                                           ":/fd_remove_disabled_32px.png", ":/fd_remove_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_clear_32px.png",          ":/hd_clear_16px.png",
+                                           ":/hd_clear_disabled_32px.png", ":/hd_clear_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_clear_32px.png",          ":/cd_clear_16px.png",
+                                           ":/cd_clear_disabled_32px.png", ":/cd_clear_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_clear_32px.png",          ":/fd_clear_16px.png",
+                                           ":/fd_clear_disabled_32px.png", ":/fd_clear_disabled_16px.png"));
     }
 
 protected:
