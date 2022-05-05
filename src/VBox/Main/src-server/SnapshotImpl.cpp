@@ -198,8 +198,12 @@ void Snapshot::uninit()
 
         Assert(pSnapshot->m->pMachine->isWriteLockOnCurrentThread());
 
+        /* Remove initial snapshot from parent snapshot's list of children. */
+        if (pSnapshot == this)
+            pSnapshot->i_deparent();
+
         /* Paranoia. Shouldn't be set any more at processing time. */
-        pSnapshot->m->pParent.setNull();
+        Assert(!pSnapshot->m || pSnapshot->m->pParent.isNull());
 
         /* Process all children */
         SnapshotsList::const_iterator itBegin = pSnapshot->m->llChildren.begin();
@@ -207,6 +211,10 @@ void Snapshot::uninit()
         for (SnapshotsList::const_iterator it = itBegin; it != itEnd; ++it)
         {
             Snapshot *pChild = *it;
+
+            if (!pChild || !pChild->m)
+                continue;
+
             pChild->m->pParent.setNull();
             llSnapshotsTodo.push_back(pChild);
         }
@@ -315,6 +323,11 @@ void Snapshot::i_beginSnapshotDelete()
 void Snapshot::i_deparent()
 {
     Assert(m->pMachine->isWriteLockOnCurrentThread());
+
+    if (m->pParent.isNull())
+        return;
+
+    Assert(m->pParent->m);
 
     SnapshotsList &llParent = m->pParent->m->llChildren;
     for (SnapshotsList::iterator it = llParent.begin();
@@ -552,6 +565,11 @@ ULONG Snapshot::i_getAllChildrenCount()
     {
         const Snapshot *pSnapshot = llSnapshotsTodo.front();
         llSnapshotsTodo.pop_front();
+
+        /* Check if snapshot is uninitialized already, can happen if an API
+         * client asks at an inconvenient time. */
+        if (!pSnapshot->m)
+            continue;
 
         cChildren += (ULONG)pSnapshot->m->llChildren.size();
 
@@ -890,6 +908,10 @@ HRESULT Snapshot::i_saveSnapshot(settings::Snapshot &data) const
         SnapshotsList::const_iterator itEnd = pSnapshot->m->llChildren.end();
         for (SnapshotsList::const_iterator it = itBegin; it != itEnd; ++it)
         {
+            AutoCaller autoCaller(*it);
+            if (FAILED(autoCaller.rc()))
+                continue;
+
             llSnapshotsTodo.push_back(*it);
             current->llChildSnapshots.push_back(settings::Snapshot::Empty);
             llSettingsTodo.push_back(&current->llChildSnapshots.back());
