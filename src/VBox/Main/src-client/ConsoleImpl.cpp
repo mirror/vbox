@@ -8023,11 +8023,11 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     void *pvLogOutputUser = NULL;
     int vrc = VINF_SUCCESS;
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
-    vrc = aMachine->COMGETTER(LogKeyId)(bstrLogKeyId.asOutParam());
-    if (RT_SUCCESS(vrc))
+    hrc = aMachine->COMGETTER(LogKeyId)(bstrLogKeyId.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        vrc = aMachine->COMGETTER(LogKeyStore)(bstrLogKeyStore.asOutParam());
-        if (   RT_SUCCESS(vrc)
+        hrc = aMachine->COMGETTER(LogKeyStore)(bstrLogKeyStore.asOutParam());
+        if (   SUCCEEDED(hrc)
             && bstrLogKeyId.isNotEmpty()
             && bstrLogKeyStore.isNotEmpty())
         {
