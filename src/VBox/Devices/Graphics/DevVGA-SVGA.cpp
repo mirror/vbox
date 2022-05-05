@@ -1543,7 +1543,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             break;
         }
     }
-    Log(("vmsvgaReadPort index=%s (%d) val=%#x rc=%x\n", vmsvgaIndexToString(pThis, idxReg), idxReg, *pu32, rc));
+    LogFlow(("vmsvgaReadPort index=%s (%d) val=%#x rc=%x\n", vmsvgaIndexToString(pThis, idxReg), idxReg, *pu32, rc));
     return rc;
 }
 
@@ -1798,9 +1798,9 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
     }
 #ifdef LOG_ENABLED
     if (idxReg != SVGA_REG_DEV_CAP)
-        Log(("vmsvgaWritePort index=%s (%d) val=%#x\n", vmsvgaIndexToString(pThis, idxReg), idxReg, u32));
+        LogFlow(("vmsvgaWritePort index=%s (%d) val=%#x\n", vmsvgaIndexToString(pThis, idxReg), idxReg, u32));
     else
-        Log(("vmsvgaWritePort index=%s (%d) val=%s (%d)\n", vmsvgaIndexToString(pThis, idxReg), idxReg, vmsvgaDevCapIndexToString((SVGA3dDevCapIndex)u32), u32));
+        LogFlow(("vmsvgaWritePort index=%s (%d) val=%s (%d)\n", vmsvgaIndexToString(pThis, idxReg), idxReg, vmsvgaDevCapIndexToString((SVGA3dDevCapIndex)u32), u32));
 #endif
     /* Check if the guest uses legacy registers. See vmsvgaR3ChangeMode */
     switch (idxReg)
@@ -2382,7 +2382,7 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 break;
 
             case SVGA_IRQSTATUS_PORT:
-                Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT %x: status %x -> %x\n", u32, pThis->svga.u32IrqStatus, pThis->svga.u32IrqStatus & ~u32));
+                LogFlow(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT %x: status %x -> %x\n", u32, pThis->svga.u32IrqStatus, pThis->svga.u32IrqStatus & ~u32));
                 ASMAtomicAndU32(&pThis->svga.u32IrqStatus, ~u32);
                 /* Clear the irq in case all events have been cleared. */
                 if (!(pThis->svga.u32IrqStatus & pThis->svga.u32IrqMask))
@@ -3484,7 +3484,7 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
         uint32_t const cmdId = *(uint32_t *)pu8Cmd;
         uint32_t cbCmd = sizeof(uint32_t);
 
-        LogFlowFunc(("[cid=%d] %s %d\n", (int32_t)idDXContext, vmsvgaR3FifoCmdToString(cmdId), cmdId));
+        LogFunc(("[cid=%d] %s %d\n", (int32_t)idDXContext, vmsvgaR3FifoCmdToString(cmdId), cmdId));
 # ifdef LOG_ENABLED
 #  ifdef VBOX_WITH_VMSVGA3D
         if (SVGA_3D_CMD_BASE <= cmdId && cmdId < SVGA_3D_CMD_MAX)
