@@ -211,7 +211,7 @@ int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC,
     /*
      * Surfaces
      */
-    p3dState->papSurfaces = (PVMSVGA3DSURFACE *)RTMemAlloc(p3dState->cSurfaces * sizeof(VMSVGA3DSURFACE));
+    p3dState->papSurfaces = (PVMSVGA3DSURFACE *)RTMemAlloc(p3dState->cSurfaces * sizeof(PVMSVGA3DSURFACE));
     AssertReturn(p3dState->papSurfaces, VERR_NO_MEMORY);
     for (uint32_t i = 0; i < p3dState->cSurfaces; ++i)
     {
