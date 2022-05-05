@@ -160,9 +160,11 @@ VBOX_VALIDATIONKIT_FILESPEC = \
 	valkit.txt=$(VBOX_PATH_VALIDATIONKIT_SRC)/docs/valkit.txt \
 	$(VBOX_PATH_VALIDATIONKIT)/vboxtxs-readme.txt
 ifneq ($(KBUILD_HOST),os2)
- VBOX_VALIDATIONKIT_FILESPEC += \
+ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+  VBOX_VALIDATIONKIT_FILESPEC += \
 	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-pae.img \
 	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-shutdown.img
+ endif
 endif
 
 VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS =
