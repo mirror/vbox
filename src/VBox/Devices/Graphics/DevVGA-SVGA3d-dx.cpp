@@ -557,7 +557,6 @@ int vmsvga3dDXSetShaderResources(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
     ASSERT_GUEST_RETURN(pCmd->startView < SVGA3D_DX_MAX_SRVIEWS, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(cShaderResourceViewId <= SVGA3D_DX_MAX_SRVIEWS - pCmd->startView, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(pCmd->type >= SVGA3D_SHADERTYPE_MIN && pCmd->type < SVGA3D_SHADERTYPE_MAX, VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_RETURN(pDXContext->cot.paSRView, VERR_INVALID_STATE);
     for (uint32_t i = 0; i < cShaderResourceViewId; ++i)
         ASSERT_GUEST_RETURN(   paShaderResourceViewId[i] < pDXContext->cot.cSRView
                             || paShaderResourceViewId[i] == SVGA3D_INVALID_ID, VERR_INVALID_PARAMETER);
@@ -776,7 +775,8 @@ int vmsvga3dDXSetInputLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dEl
     AssertRCReturn(rc, rc);
 
     ASSERT_GUEST_RETURN(pDXContext->cot.paElementLayout, VERR_INVALID_STATE);
-    ASSERT_GUEST_RETURN(elementLayoutId < pDXContext->cot.cElementLayout, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   elementLayoutId == SVGA3D_INVALID_ID
+                        || elementLayoutId < pDXContext->cot.cElementLayout, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.inputAssembly.layoutId = elementLayoutId;
