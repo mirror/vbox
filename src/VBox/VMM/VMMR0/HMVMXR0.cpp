@@ -4916,9 +4916,13 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
         {
-            vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
             fWhat &= ~HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
             pVmxExitAux->u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
+#else
+            pVmxExitAux->u64GuestPendingDbgXcpts = 0;
+#endif
         }
 
         AssertMsg(!fWhat, ("fWhat=%#RX32 fVmcsFieldsRead=%#RX32\n", fWhat, pVmxTransient->fVmcsFieldsRead));
