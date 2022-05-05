@@ -904,7 +904,7 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
                 if (fBitSet)
                 {
                     /* Look for the next clear bit after it (with wrap around). */
-                    int iHit = ASMBitNextClear(pvBitmap, cBlocks, iBlock);
+                    int iHit = ASMBitNextClear(pvBitmap, RT_ALIGN_32(cBlocks, 64), iBlock);
                     Assert(iHit < (int32_t)cBlocks);
                     if (iHit < 0)
                     {
