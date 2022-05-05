@@ -6136,11 +6136,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
     PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
     if (pTlbe->uTag == uTag)
-    {
-# ifdef VBOX_WITH_STATISTICS
-        pVCpu->iem.s.DataTlb.cTlbHits++;
-# endif
-    }
+        STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
     else
     {
         pVCpu->iem.s.DataTlb.cTlbMisses++;
@@ -6164,18 +6160,33 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     }
 
     /*
-     * Check TLB page table level access flags.
+     * Check the flags and physical revision.
      */
-    /* If the page is either supervisor only or non-writable, we need to do
-       more careful access checks. */
-    if (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_USER | IEMTLBE_F_PT_NO_WRITE))
+    /** @todo make the caller pass these in with fAccess. */
+    uint64_t const fNoUser          = (fAccess & IEM_ACCESS_WHAT_MASK) != IEM_ACCESS_WHAT_SYS && pVCpu->iem.s.uCpl == 3
+                                    ? IEMTLBE_F_PT_NO_USER : 0;
+    uint64_t const fNoWriteNoDirty  = fAccess & IEM_ACCESS_TYPE_WRITE
+                                    ? IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PT_NO_DIRTY
+                                      | (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)
+                                         || (pVCpu->iem.s.uCpl == 3 && (fAccess & IEM_ACCESS_WHAT_MASK) != IEM_ACCESS_WHAT_SYS)
+                                         ? IEMTLBE_F_PT_NO_WRITE : 0)
+                                    : 0;
+    uint64_t const fNoRead          = fAccess & IEM_ACCESS_TYPE_READ ? IEMTLBE_F_PG_NO_READ : 0;
+    uint8_t       *pbMem            = NULL;
+    if (   (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PHYS_REV | IEMTLBE_F_PT_NO_ACCESSED | fNoRead | fNoWriteNoDirty | fNoUser))
+        == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+# ifdef IN_RING3
+        pbMem = pTlbe->pbMappingR3;
+# else
+        pbMem = NULL;
+# endif
+    else
     {
+        /*
+         * Okay, something isn't quite right or needs refreshing.
+         */
         /* Write to read only memory? */
-        if (   (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE)
-            && (fAccess & IEM_ACCESS_TYPE_WRITE)
-            && (   (    pVCpu->iem.s.uCpl == 3
-                    && !(fAccess & IEM_ACCESS_WHAT_SYS)) /** @todo check this. Not sure WP applies to all SYS writes... */
-                || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
+        if (pTlbe->fFlagsAndPhysRev & fNoWriteNoDirty & IEMTLBE_F_PT_NO_WRITE)
         {
             Log(("iemMemMapJmp: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
@@ -6186,9 +6197,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         }
 
         /* Kernel memory accessed by userland? */
-        if (   (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_USER)
-            && pVCpu->iem.s.uCpl == 3
-            && !(fAccess & IEM_ACCESS_WHAT_SYS))
+        if (pTlbe->fFlagsAndPhysRev & fNoUser & IEMTLBE_F_PT_NO_USER)
         {
             Log(("iemMemMapJmp: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
@@ -6197,68 +6206,62 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
 # endif
             iemRaisePageFaultJmp(pVCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
         }
-    }
 
-    /*
-     * Set the dirty / access flags.
-     * ASSUMES this is set when the address is translated rather than on commit...
-     */
-    /** @todo testcase: check when A and D bits are actually set by the CPU.  */
-    uint64_t const fTlbAccessedDirty = (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0) | IEMTLBE_F_PT_NO_ACCESSED;
-    if (pTlbe->fFlagsAndPhysRev & fTlbAccessedDirty)
-    {
-        uint32_t const fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
-        int rc2 = PGMGstModifyPage(pVCpu, GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
-        AssertRC(rc2);
-        /** @todo Nested VMX: Accessed/dirty bit currently not supported, asserted below. */
-        Assert(!(CPUMGetGuestIa32VmxEptVpidCap(pVCpu) & VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_MASK));
-        pTlbe->fFlagsAndPhysRev &= ~fTlbAccessedDirty;
-    }
+        /* Set the dirty / access flags.
+           ASSUMES this is set when the address is translated rather than on commit... */
+        /** @todo testcase: check when A and D bits are actually set by the CPU.  */
+        if (pTlbe->fFlagsAndPhysRev & ((fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY) | IEMTLBE_F_PT_NO_ACCESSED))
+        {
+            uint32_t const fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
+            int rc2 = PGMGstModifyPage(pVCpu, GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
+            AssertRC(rc2);
+            /** @todo Nested VMX: Accessed/dirty bit currently not supported, asserted below. */
+            Assert(!(CPUMGetGuestIa32VmxEptVpidCap(pVCpu) & VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_MASK));
+            pTlbe->fFlagsAndPhysRev &= ~((fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY) | IEMTLBE_F_PT_NO_ACCESSED);
+        }
 
-    /*
-     * Look up the physical page info if necessary.
-     */
-    uint8_t *pbMem = NULL;
-    if ((pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PHYS_REV) == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+        /*
+         * Check if the physical page info needs updating.
+         */
+        if ((pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PHYS_REV) == pVCpu->iem.s.DataTlb.uTlbPhysRev)
 # ifdef IN_RING3
-        pbMem = pTlbe->pbMappingR3;
+            pbMem = pTlbe->pbMappingR3;
 # else
-        pbMem = NULL;
+            pbMem = NULL;
 # endif
-    else
-    {
-        AssertCompile(PGMIEMGCPHYS2PTR_F_NO_WRITE     == IEMTLBE_F_PG_NO_WRITE);
-        AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
-        AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
-        AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
-        pTlbe->pbMappingR3       = NULL;
-        pTlbe->fFlagsAndPhysRev &= ~(  IEMTLBE_F_PHYS_REV
-                                     | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
-        int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
-                                            &pbMem, &pTlbe->fFlagsAndPhysRev);
-        AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+        else
+        {
+            AssertCompile(PGMIEMGCPHYS2PTR_F_NO_WRITE     == IEMTLBE_F_PG_NO_WRITE);
+            AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
+            AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
+            AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
+            pTlbe->pbMappingR3       = NULL;
+            pTlbe->fFlagsAndPhysRev &= ~(  IEMTLBE_F_PHYS_REV
+                                         | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
+            int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
+                                                &pbMem, &pTlbe->fFlagsAndPhysRev);
+            AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
 # ifdef IN_RING3
-        pTlbe->pbMappingR3 = pbMem;
+            pTlbe->pbMappingR3 = pbMem;
 # endif
-    }
+        }
 
-    /*
-     * Check the physical page level access and mapping.
-     */
-    if (   !(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ))
-        || !(pTlbe->fFlagsAndPhysRev & (  (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PG_NO_WRITE : 0)
-                                        | (fAccess & IEM_ACCESS_TYPE_READ  ? IEMTLBE_F_PG_NO_READ  : 0))) )
-    { /* probably likely */ }
-    else
-    {
-        rcStrict = iemMemBounceBufferMapPhys(pVCpu, iMemMap, (void **)&pbMem, cbMem,
-                                             pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), fAccess,
-                                               pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_UNASSIGNED ? VERR_PGM_PHYS_TLB_UNASSIGNED
-                                             : pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_READ    ? VERR_PGM_PHYS_TLB_CATCH_ALL
-                                                                                                 : VERR_PGM_PHYS_TLB_CATCH_WRITE);
-        if (rcStrict == VINF_SUCCESS)
-            return pbMem;
-        longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+        /*
+         * Check the physical page level access and mapping.
+         */
+        if (!(pTlbe->fFlagsAndPhysRev & ((fNoWriteNoDirty | fNoRead) & (IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ))))
+        { /* probably likely */ }
+        else
+        {
+            rcStrict = iemMemBounceBufferMapPhys(pVCpu, iMemMap, (void **)&pbMem, cbMem,
+                                                 pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), fAccess,
+                                                   pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_UNASSIGNED ? VERR_PGM_PHYS_TLB_UNASSIGNED
+                                                 : pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_READ    ? VERR_PGM_PHYS_TLB_CATCH_ALL
+                                                                                                     : VERR_PGM_PHYS_TLB_CATCH_WRITE);
+            if (rcStrict == VINF_SUCCESS)
+                return pbMem;
+            longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+        }
     }
     Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_NO_MAPPINGR3)); /* ASSUMPTIONS about PGMPhysIemGCPhys2PtrNoLock behaviour. */
 
