@@ -38,35 +38,11 @@ VBOX_PATH_VALIDATIONKIT_SRC := $(PATH_ROOT)/src/VBox/ValidationKit
 
 
 #
-# Base template that drops the -static flag since we only want to use the
-# static version of our own libraries and not the system libs.
-#
-TEMPLATE_VBoxValidationKitR3Base = VBox Validation Kit ring-3 program base, both guest and host.
-TEMPLATE_VBoxValidationKitR3Base_EXTENDS = VBoxR3Static
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -IntegrityCheck, $(TEMPLATE_VBoxR3Static_LDFLAGS))
-else ifn1of ($(KBUILD_TARGET), darwin solaris win)
- TEMPLATE_VBoxValidationKitR3Base_CFLAGS          = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CFLAGS))
- TEMPLATE_VBoxValidationKitR3Base_CXXFLAGS        = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CXXFLAGS))
- TEMPLATE_VBoxValidationKitR3Base_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
- TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -static, $(TEMPLATE_VBoxR3Static_LDFLAGS))
-endif
-TEMPLATE_VBoxValidationKitR3Base_DEFS = $(filter-out VBOX_WITH_DTRACE,$(TEMPLATE_VBoxR3Static_DEFS))
-TEMPLATE_VBoxValidationKitR3Base_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
-if1of ($(KBUILD_TARGET), linux)
- if $(VBOX_GCC_VERSION_CXX) < 40800
-  TEMPLATE_VBoxValidationKitR3Base_LIBS += supc++
-  TEMPLATE_VBoxValidationKitR3Base_LDTOOL = $(subst GXX,GCC,$(TEMPLATE_VBoxR3Static_TOOL))
- endif
-endif
-TEMPLATE_VBoxValidationKitR3Base_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAGS.darwin) -framework IOKit
-
-#
-# Template for building ring-3 progams for the Validation Kit.
+# Template for building ring-3 programs for the Validation Kit.
 # These programs can run on any host or guest.
 #
 TEMPLATE_VBoxValidationKitR3 = VBox Validation Kit ring-3 program, both guest and host.
-TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxValidationKitR3Base
+TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXVALIDATIONKITR3BASE
 TEMPLATE_VBoxValidationKitR3_EXTENDS_BY = appending
 TEMPLATE_VBoxValidationKitR3_INST = $(INST_VALIDATIONKIT)$(KBUILD_TARGET)/$(KBUILD_TARGET_ARCH)/
 TEMPLATE_VBoxValidationKitR3_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
@@ -101,7 +77,7 @@ TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 = \
 	-Include:_vcc100_shell32_fakes_asm \
 	-Section:.bss,RW!K
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
- TEMPLATE_VBoxValidationKitR3_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS)$$(NLTAB)
+ TEMPLATE_VBoxValidationKitR3_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBOXVALIDATIONKITR3BASE_POST_CMDS)$$(NLTAB)
 endif
 TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
 
@@ -224,4 +200,3 @@ $(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0, \
 	$(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check))),)
 endef
 endif
-
