@@ -998,7 +998,7 @@ if1of ($(KBUILD_TARGET), darwin linux)
  VBOX_WITH_VBOXIMGMOUNT = 1
 endif
 # Set this to enable packaging the fuse related bits into our installer.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
  VBOX_WITH_FUSE_PACKING = 1
 endif
 # Enables updating checking through Main.
