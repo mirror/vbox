@@ -9847,15 +9847,16 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
  *
  * @remarks The @a uUser argument is currently unused.
  */
-PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, void *pvPhys,
-                                                           void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
-                                                           PGMACCESSORIGIN enmOrigin, uint64_t uUser)
+DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, void *pvPhys,
+                                                       void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
+                                                       PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
     RT_NOREF3(pvPhys, enmOrigin, uUser);
 
@@ -10009,4 +10010,6 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
     return VINF_SUCCESS;
 }
 # endif /* !IN_RING3 */
+
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 

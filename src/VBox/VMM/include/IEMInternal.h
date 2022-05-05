@@ -993,7 +993,7 @@ typedef enum IEMACCESSCRX
 # define IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE         RT_BIT_32(1)
 /** @} */
 
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iemVmxApicAccessPageHandler;
+DECLCALLBACK(FNPGMPHYSHANDLER)      iemVmxApicAccessPageHandler;
 # ifndef IN_RING3
 DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iemVmxApicAccessPagePfHandler;
 # endif
@@ -3050,9 +3050,9 @@ IEM_CIMPL_PROTO_0(iemCImpl_stgi);
 IEM_CIMPL_PROTO_0(iemCImpl_invlpga);
 IEM_CIMPL_PROTO_0(iemCImpl_skinit);
 IEM_CIMPL_PROTO_0(iemCImpl_svm_pause);
-IEM_CIMPL_PROTO_0(iemCImpl_vmmcall);
 #endif
 
+IEM_CIMPL_PROTO_0(iemCImpl_vmmcall);
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode);
 
 
