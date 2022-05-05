@@ -2446,10 +2446,8 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
-    unsigned const idxStream = SB16_IDX_OUT; /* The one and only stream we have right now. */
-
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PSB16STREAM pStream = &pThis->aStreams[idxStream]; /* The saved state only contains the one-and-only output stream. */
+    PSB16STREAM pStream = &pThis->aStreams[SB16_IDX_OUT]; /* The saved state only contains the one-and-only output stream. */
     int rc;
 
     int32_t i32Tmp;
@@ -2525,7 +2523,7 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     {
         /* Sanity: If stream is going be enabled, PCM props must be valid. Otherwise the saved state is borked somehow. */
         AssertMsgReturn(AudioHlpPcmPropsAreValid(&pStream->Cfg.Props),
-                        ("PCM properties for stream #%RU8 are invalid\n", idxStream), VERR_INVALID_PARAMETER);
+                        ("PCM properties for stream #%RU8 are invalid\n", pStream->uIdx), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         sb16StreamControl(pDevIns, pThis, pStream, true /* fRun */);
     }
 
