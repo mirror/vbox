@@ -8044,6 +8044,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 
             pLogOutputIf    = &m_LogOutputIf;
             pvLogOutputUser = this;
+            m_fEncryptedLog = true;
         }
     }
 
