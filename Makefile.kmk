@@ -1121,6 +1121,7 @@ VBOX_BLD_VM_SOLARIS_IP           := 192.168.27.4
 VBOX_BLD_VM_DARWIN_X86_IP        := 192.168.27.5
 VBOX_BLD_VM_DARWIN_AMD64_IP      := 192.168.27.15
 VBOX_BLD_VM_DARWIN_109_AMD64_IP  := 192.168.27.18
+VBOX_BLD_VM_DARWIN_ARM64_IP      := 192.168.27.25
 VBOX_BLD_VM_WIN_X86_IP           := 192.168.27.6
 VBOX_BLD_VM_WIN_AMD64_IP         := 192.168.27.16
 VBOX_BLD_VM_FBSD_X86_IP          := 192.168.27.7
@@ -1530,6 +1531,7 @@ extpacks-fetch:
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=arm64 KBUILD_TARGET=darwin  VBOX_ONLY_EXTPACKS=1
 if1of (x86, $(VBOX_SUPPORTED_HOST_ARCHS))
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  VBOX_ONLY_EXTPACKS=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd VBOX_ONLY_EXTPACKS=1
@@ -1546,11 +1548,15 @@ extpacks-build: \
 	extpacks-build-os2.x86 \
 	extpacks-build-linux \
 	extpacks-build-darwin.amd64 \
+	extpacks-build-darwin.arm64 \
 	extpacks-build-freebsd.amd64 \
 	extpacks-build-freebsd.x86
 
 VBOX_EXTPACKS_BUILD.amd64 = VBOX_ONLY_EXTPACKS=1 VBOX_WITH_MAIN_NLS= VBOX_WITH_PUEL_NLS_NO_QM=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=amd64 VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+VBOX_EXTPACKS_BUILD.arm64 = VBOX_ONLY_EXTPACKS=1 VBOX_WITH_MAIN_NLS= VBOX_WITH_PUEL_NLS_NO_QM=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=arm64 VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 VBOX_EXTPACKS_BUILD.x86   = VBOX_ONLY_EXTPACKS=1 VBOX_WITH_MAIN_NLS= VBOX_WITH_PUEL_NLS_NO_QM=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=x86 VBOX_SVN_REV=$(VBOX_SVN_REV)
@@ -1693,12 +1699,23 @@ else
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 extension packs)
 endif
 
+extpacks-build-darwin.arm64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.arm64)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.arm64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/arm64 extension packs)
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,arm64) . $(VBOX_BLD_VM_DARWIN_ARM64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_DARWIN_ARM64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && KBUILD_HOST_ARCH=arm64 tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.arm64) all '
+	$(TIME) -- $(VBOX_RSYNC) -am -v --delete $(VBOX_BLD_VM_DARWIN_ARM64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.arm64 out/
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/arm64 extension packs)
+endif
+
 extpacks-packing:
 if1of (x86, $(VBOX_SUPPORTED_HOST_ARCHS))
 	+ $(KMK) VBOX_WITH_EXTPACK_OS_ARCHS="darwin.amd64 linux.amd64 linux.x86 solaris.amd64 win.amd64 win.x86" \
 		VBOX_ONLY_EXTPACKS=1 packing
 else
-	+ $(KMK) VBOX_WITH_EXTPACK_OS_ARCHS="darwin.amd64 linux.amd64 solaris.amd64 win.amd64" \
+	+ $(KMK) VBOX_WITH_EXTPACK_OS_ARCHS="darwin.amd64 darwin.arm64 linux.amd64 solaris.amd64 win.amd64" \
 		VBOX_ONLY_EXTPACKS=1 packing
 endif
 # +++ freebsd.amd64 ^^^
