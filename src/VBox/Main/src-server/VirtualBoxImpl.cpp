@@ -5284,7 +5284,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
             AutoCaller medCaller(pMedium);
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoReadLock medlock(pMedium COMMA_LOCKVAL_SRC_POS);
-            LogRel(("Looking at medium %RTuuid\n", pMedium->i_getId().raw()));
+            Log(("Looking at medium %RTuuid\n", pMedium->i_getId().raw()));
 
             /* If the medium is still in the registry then either some code is
              * seriously buggy (unregistering a VM removes it automatically),
@@ -5307,7 +5307,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
                     llMediaTodo.pop_front();
 
                     /* Add to front, order must be children then parent. */
-                    LogRel(("Pushing medium %RTuuid (front)\n", pCurrent->i_getId().raw()));
+                    Log(("Pushing medium %RTuuid (front)\n", pCurrent->i_getId().raw()));
                     llMedia2Close.push_front(pCurrent);
 
                     /* process all children */
@@ -5325,7 +5325,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
          ++it)
     {
         ComObjPtr<Medium> pMedium = *it;
-        LogRel(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
+        Log(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
         AutoCaller mac(pMedium);
         pMedium->i_close(mac);
     }
