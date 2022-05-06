@@ -33,6 +33,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/dbgftrace.h>
+#include <VBox/vmm/gcm.h>
 #include "VMXInternal.h"
 #include "NEMInternal.h"
 #include <VBox/vmm/vmcc.h>
