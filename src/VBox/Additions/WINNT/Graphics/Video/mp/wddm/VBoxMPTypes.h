@@ -51,8 +51,12 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x4000
 #else
-#define VBOXWDDM_C_DMA_BUFFER_SIZE         0x10000
-#define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x8000
+/* A small buffer fills quickly by commands. A large buffer does not allow effective preemption.
+ * 16K is an aritrary value, which allows to batch enough commands, but not too many.
+ */
+#define VBOXWDDM_C_DMA_BUFFER_SIZE         0x4000
+/* Private data is rather small, so one page is more than enough. */
+#define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x1000
 #endif
 #define VBOXWDDM_C_ALLOC_LIST_SIZE         0xc00
 #define VBOXWDDM_C_PATH_LOCATION_LIST_SIZE 0xc00
