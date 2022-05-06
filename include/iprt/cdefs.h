@@ -1229,7 +1229,9 @@
  *          Do NOT use this for the actual throwing of exceptions!
  */
 #ifdef RT_EXCEPTIONS_ENABLED
-# if RT_MSC_PREREQ_EX(RT_MSC_VER_VC71, 0)
+# if (__cplusplus + 0) >= 201700
+#   define RT_THROW(a_Type)     noexcept(false)
+# elif RT_MSC_PREREQ_EX(RT_MSC_VER_VC71, 0)
 #   define RT_THROW(a_Type)
 # elif RT_GNUC_PREREQ(7, 0)
 #   define RT_THROW(a_Type)

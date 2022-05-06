@@ -61,8 +61,10 @@
 # else
 #  ifdef _GLIBCXX_THROW
 #   define RT_EF_THROWS_BAD_ALLOC     _GLIBCXX_THROW(std::bad_alloc)
-#  else
+#  elif defined(__cplusplus) && (__cplusplus + 0) < 201700
 #   define RT_EF_THROWS_BAD_ALLOC     throw(std::bad_alloc)
+#  else
+#   define RT_EF_THROWS_BAD_ALLOC     noexcept(false)
 #  endif
 #  define RT_EF_NOTHROW               throw()
 # endif
