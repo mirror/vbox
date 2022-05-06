@@ -1461,8 +1461,16 @@ typedef struct VM
         uint64_t    au64Padding[6];     /* probably more comming here... */
     } R0Stats;
 
+    union
+    {
+#ifdef VMM_INCLUDED_SRC_include_GCMInternal_h
+        struct GCM  s;
+#endif
+        uint8_t     padding[32];       /* multiple of 8 */
+    } gcm;
+
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[8912 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[8880 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 

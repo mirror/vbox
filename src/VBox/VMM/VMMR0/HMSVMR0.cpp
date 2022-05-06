@@ -30,6 +30,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/gcm.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/apic.h>
 #include "HMInternal.h"
@@ -356,6 +357,7 @@ static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
 static FNSVMEXITHANDLER hmR0SvmExitPause;
 static FNSVMEXITHANDLER hmR0SvmExitFerrFreeze;
 static FNSVMEXITHANDLER hmR0SvmExitIret;
+static FNSVMEXITHANDLER hmR0SvmExitXcptDE;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptUD;
 static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
@@ -1001,6 +1003,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     if (pVCpu0->hm.s.fGIMTrapXcptUD || pVCpu0->hm.s.svm.fEmulateLongModeSysEnterExit)
         pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
 
+    /* Apply the exceptions intercepts needed by the GCM fixers. */
+    if (pVCpu0->hm.s.fGCMTrapXcptDE)
+        pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_DE);
+
     /* The mesa 3d driver hack needs #GP. */
     if (pVCpu0->hm.s.fTrapXcptGpForLovelyMesaDrv)
         pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_GP);
@@ -1153,6 +1159,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 
         /* Verify our assumption that GIM providers trap #UD uniformly across VCPUs initially. */
         Assert(pVCpuCur->hm.s.fGIMTrapXcptUD == pVCpu0->hm.s.fGIMTrapXcptUD);
+        /* Same for GCM, #DE trapping should be uniform across VCPUs. */
+        Assert(pVCpuCur->hm.s.fGCMTrapXcptDE == pVCpu0->hm.s.fGCMTrapXcptDE);
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -2681,7 +2689,14 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
             pCtx->rip = pVmcbGuest->u64RIP;
 
         if (fWhat & CPUMCTX_EXTRN_RFLAGS)
+        {
             pCtx->eflags.u32 = pVmcbGuest->u64RFlags;
+            if (pVCpu->hmr0.s.fClearTrapFlag)
+            {
+                pVCpu->hmr0.s.fClearTrapFlag = false;
+                pCtx->eflags.Bits.u1TF = 0;
+            }
+        }
 
         if (fWhat & CPUMCTX_EXTRN_RSP)
             pCtx->rsp = pVmcbGuest->u64RSP;
@@ -3216,6 +3231,22 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPUCC pVCpu, PSVMEVENT pEvent, RTGCUI
 
     Log4Func(("u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u, pEvent->n.u8Vector,
               (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
+}
+
+
+/**
+ * Sets an divide error (\#DE) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptDE(PVMCPUCC pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_DE;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -5347,6 +5378,7 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
         case SVM_EXIT_INVD:         VMEXIT_CALL_RET(0, hmR0SvmExitInvd(pVCpu, pSvmTransient));
         case SVM_EXIT_RDPMC:        VMEXIT_CALL_RET(0, hmR0SvmExitRdpmc(pVCpu, pSvmTransient));
         case SVM_EXIT_IRET:         VMEXIT_CALL_RET(0, hmR0SvmExitIret(pVCpu, pSvmTransient));
+        case SVM_EXIT_XCPT_DE:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptDE(pVCpu, pSvmTransient));
         case SVM_EXIT_XCPT_UD:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptUD(pVCpu, pSvmTransient));
         case SVM_EXIT_XCPT_MF:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptMF(pVCpu, pSvmTransient));
         case SVM_EXIT_XCPT_DB:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptDB(pVCpu, pSvmTransient));
@@ -8345,6 +8377,47 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
     TRPMResetTrap(pVCpu);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
+    return rc;
+}
+
+
+
+/**
+ * \#VMEXIT handler for division overflow exceptions (SVM_EXIT_XCPT_1).
+ * Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptDE(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
+
+    /* Paranoia; Ensure we cannot be called as a result of event delivery. */
+    PSVMVMCB        pVmcb         = hmR0SvmGetCurrentVmcb(pVCpu);
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);  NOREF(pVmcb);
+
+    int rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
+    if (pVCpu->hm.s.fGCMTrapXcptDE)
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+        uint8_t cbInstr = 0;
+        VBOXSTRICTRC rcStrict = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
+        if (rcStrict == VINF_SUCCESS)
+            rc = VINF_SUCCESS;      /* Restart instruction with modified guest register context. */
+        else if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+            rc = VERR_NOT_FOUND;    /* Deliver the exception. */
+        else
+            Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
+    /* If the GCM #DE exception handler didn't succeed or wasn't needed, raise #DE. */
+    if (RT_FAILURE(rc))
+    {
+        hmR0SvmSetPendingXcptDE(pVCpu);
+        rc = VINF_SUCCESS;
+    }
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
     return rc;
 }
 

@@ -2145,6 +2145,8 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 #endif
             if (VCPU_2_VMXSTATE(pVCpu).fTrapXcptGpForLovelyMesaDrv)
                 uXcptBitmap |= RT_BIT(X86_XCPT_GP);
+            if (VCPU_2_VMXSTATE(pVCpu).fGCMTrapXcptDE)
+                uXcptBitmap |= RT_BIT(X86_XCPT_DE);
             Assert(VM_IS_VMX_NESTED_PAGING(pVM) || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
 
             /* Apply the hardware specified CR0 fixed bits and enable caching. */
@@ -6834,6 +6836,47 @@ static VBOXSTRICTRC vmxHCExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
+ * VM-exit exception handler for \#DE (Divide Error).
+ *
+ * @remarks Requires all fields in HMVMX_READ_XCPT_INFO to be read from the VMCS.
+ */
+static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestDE);
+
+    int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+    AssertRCReturn(rc, rc);
+
+    VBOXSTRICTRC rcStrict = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
+    if (pVCpu->hm.s.fGCMTrapXcptDE)
+    {
+        uint8_t cbInstr = 0;
+        rc = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
+        if (rc == VINF_SUCCESS)
+            rcStrict = VINF_SUCCESS;    /* Restart instruction with modified guest register context. */
+        else if (rc == VINF_EM_RAW_GUEST_TRAP)
+            rcStrict = VERR_NOT_FOUND;  /* Deliver the exception. */
+        else
+            Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+    }
+    else
+        rcStrict = VINF_SUCCESS;        /* Do nothing. */
+
+    /* If the GCM #DE exception handler didn't succeed or wasn't needed, raise #DE. */
+    if (RT_FAILURE(rc))
+    {
+        vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                               pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
+        rcStrict = VINF_SUCCESS;
+    }
+
+    Assert(rcStrict == VINF_SUCCESS || rcStrict == VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE);
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
  * VM-exit exception handler wrapper for all other exceptions that are not handled
  * by a specific handler.
  *
@@ -6942,6 +6985,7 @@ static VBOXSTRICTRC vmxHCExitXcpt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                 case X86_XCPT_DB: return vmxHCExitXcptDB(pVCpu, pVmxTransient);
                 case X86_XCPT_BP: return vmxHCExitXcptBP(pVCpu, pVmxTransient);
                 case X86_XCPT_AC: return vmxHCExitXcptAC(pVCpu, pVmxTransient);
+                case X86_XCPT_DE: return vmxHCExitXcptDE(pVCpu, pVmxTransient);
                 default:
                     return vmxHCExitXcptOthers(pVCpu, pVmxTransient);
             }

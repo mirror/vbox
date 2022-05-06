@@ -123,6 +123,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/EMR3Dbg.cpp \
 	VMMR3/EMHM.cpp \
 	VMMR3/EMR3Nem.cpp \
+	VMMR3/GCM.cpp \
 	VMMR3/GIM.cpp \
 	VMMR3/GIMHv.cpp \
 	VMMR3/GIMKvm.cpp \
@@ -199,6 +200,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PGMAllPool.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
+	VMMAll/GCMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \
 	VMMAll/GIMAllKvm.cpp \
@@ -520,6 +522,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/DBGFAllBp.cpp \
  	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
  	VMMAll/EMAll.cpp \
+ 	VMMAll/GCMAll.cpp \
  	VMMAll/GIMAll.cpp \
  	VMMAll/GIMAllHv.cpp \
  	VMMAll/GIMAllKvm.cpp \

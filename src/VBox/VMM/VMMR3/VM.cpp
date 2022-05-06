@@ -65,6 +65,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/gcm.h>
 #include "VMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
@@ -885,26 +886,32 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                             rc = GIMR3Init(pVM);
                                                             if (RT_SUCCESS(rc))
                                                             {
-                                                                rc = PDMR3Init(pVM);
+                                                                rc = GCMR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    rc = PGMR3InitFinalize(pVM);
-                                                                    if (RT_SUCCESS(rc))
-                                                                        rc = TMR3InitFinalize(pVM);
+                                                                    rc = PDMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        PGMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                        PDMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                    }
-                                                                    if (RT_SUCCESS(rc))
-                                                                        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
-                                                                    if (RT_SUCCESS(rc))
-                                                                    {
-                                                                        LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
-                                                                        return VINF_SUCCESS;
-                                                                    }
+                                                                        rc = PGMR3InitFinalize(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = TMR3InitFinalize(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                        {
+                                                                            PGMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                            PDMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                        }
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
+                                                                        if (RT_SUCCESS(rc))
+                                                                        {
+                                                                            LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
+                                                                            return VINF_SUCCESS;
+                                                                        }
 
-                                                                    int rc2 = PDMR3Term(pVM);
+                                                                        int rc2 = PDMR3Term(pVM);
+                                                                        AssertRC(rc2);
+                                                                    }
+                                                                    int rc2 = GCMR3Term(pVM);
                                                                     AssertRC(rc2);
                                                                 }
                                                                 int rc2 = GIMR3Term(pVM);
@@ -1059,6 +1066,7 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     DBGFR3Relocate(pVM, offDelta);
     PDMR3Relocate(pVM, offDelta);
     GIMR3Relocate(pVM, offDelta);
+    GCMR3Relocate(pVM, offDelta);
 }
 
 

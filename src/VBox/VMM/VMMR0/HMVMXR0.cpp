@@ -33,6 +33,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/gcm.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/apic.h>
 #include "HMInternal.h"

@@ -45,6 +45,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/gcm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iom.h>
@@ -722,6 +723,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->hm.s.fActive = false;
         pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);    /* Is safe to call now since GIMR3Init() has completed. */
+        pVCpu->hm.s.fGCMTrapXcptDE = GCMShouldTrapXcptDE(pVCpu);    /* Is safe to call now since GCMR3Init() has completed. */
     }
 
     /*
