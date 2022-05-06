@@ -712,16 +712,11 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
             GALOGG(GALOG_GROUP_PRESENT, ("   sub#%u = [%ld, %ld, %ld, %ld]\n",
                     i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
 
-    NTSTATUS Status;
-    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
-        Status = gaPresentGA3D(pContext, pPresent);
 #ifdef VBOX_WITH_VMSVGA3D_DX
-    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
-        Status = DxgkDdiDXPresent(pContext, pPresent);
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        return DxgkDdiDXPresent(pContext, pPresent);
 #endif
-    else
-        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
-    return Status;
+    return gaPresentGA3D(pContext, pPresent);
 }
 
 static NTSTATUS APIENTRY gaPresentGA3D(const HANDLE hContext,
@@ -965,16 +960,11 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
     SvgaFlush(pDevExt->pGa->hw.pSvga);
 
-    NTSTATUS Status;
-    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
-        Status = gaRenderGA3D(pContext, pRender);
 #ifdef VBOX_WITH_VMSVGA3D_DX
-    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
-        Status = DxgkDdiDXRender(pContext, pRender);
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        return DxgkDdiDXRender(pContext, pRender);
 #endif
-    else
-        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
-    return Status;
+    return gaRenderGA3D(pContext, pRender);
 }
 
 static NTSTATUS gaRenderGA3D(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pRender)
@@ -1136,15 +1126,12 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
            pBuildPagingBuffer->pDmaBuffer,
            pBuildPagingBuffer->DmaSize));
 
-    NTSTATUS Status;
 #ifdef VBOX_WITH_VMSVGA3D_DX
     /** @todo Old code did not generate any paging command actually. So probably one function is enough. */
     if (SvgaIsDXSupported(pDevExt))
-        Status = DxgkDdiDXBuildPagingBuffer(pDevExt, pBuildPagingBuffer);
-    else
+        return DxgkDdiDXBuildPagingBuffer(pDevExt, pBuildPagingBuffer);
 #endif
-        Status = gaBuildPagingBufferOld(pDevExt, pBuildPagingBuffer);
-    return Status;
+    return gaBuildPagingBufferOld(pDevExt, pBuildPagingBuffer);
 }
 
 static NTSTATUS gaBuildPagingBufferOld(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
@@ -1335,16 +1322,11 @@ NTSTATUS APIENTRY GaDxgkDdiPatch(const HANDLE hAdapter, const DXGKARG_PATCH *pPa
 
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pPatch->hContext;
 
-    NTSTATUS Status;
-    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
-        Status = gaPatchGA3D(pDevExt, pPatch);
 #ifdef VBOX_WITH_VMSVGA3D_DX
-    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
-        Status = DxgkDdiDXPatch(pDevExt, pPatch);
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        return DxgkDdiDXPatch(pDevExt, pPatch);
 #endif
-    else
-        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
-    return Status;
+    return gaPatchGA3D(pDevExt, pPatch);
 }
 
 static NTSTATUS gaPatchGA3D(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pPatch)
