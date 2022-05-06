@@ -5462,7 +5462,7 @@ int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const
     }
     else if (enmProxyMode == ProxyMode_System)
     {
-        hrc = RTHttpUseSystemProxySettings(hHttp);
+        rc = RTHttpUseSystemProxySettings(hHttp);
         if (RT_FAILURE(rc))
         {
             LogRel(("%s: RTHttpUseSystemProxySettings() failed: %Rrc", __FUNCTION__, rc));
