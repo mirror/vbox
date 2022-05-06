@@ -1069,9 +1069,7 @@ static void x11Connect()
     if (x11Context.pXRRGetScreenResources)
         x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #endif
-    /* Currently without the VMWARE_CTRL extension we cannot connect outputs and set outputs' preferred mode.
-     * So we set the output count to 1 to get the 1st output position correct. */
-    x11Context.hOutputCount = x11Context.fWmwareCtrlExtention ? determineOutputCount() : 1;
+    x11Context.hOutputCount = RT_VALID_PTR(x11Context.pScreenResources) ? determineOutputCount() : 0;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     XRRFreeScreenResources(x11Context.pScreenResources);
 #else
@@ -1377,8 +1375,8 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRGetScreenResources)
         x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #endif
-    x11Context.hOutputCount = x11Context.fWmwareCtrlExtention ? determineOutputCount() : 1;
 
+    x11Context.hOutputCount = RT_VALID_PTR(x11Context.pScreenResources) ? determineOutputCount() : 0;
     if (!x11Context.pScreenResources)
     {
         XUngrabServer(x11Context.pDisplay);
