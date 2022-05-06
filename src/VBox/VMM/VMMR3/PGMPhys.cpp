@@ -1628,7 +1628,8 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
 #ifdef VBOX_WITH_PGM_NEM_MODE
     else
     {
-        int rc = SUPR3PageAlloc(cPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pNew->pvR3);
+        int rc = SUPR3PageAlloc(RT_ALIGN_Z(pNew->cb, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT,
+                                pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pNew->pvR3);
         if (RT_FAILURE(rc))
             return rc;
 
