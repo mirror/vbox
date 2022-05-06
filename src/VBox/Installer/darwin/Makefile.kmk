@@ -46,7 +46,7 @@ ifeq ($(KBUILD_TARGET_ARCH),arm64)
  VBOX_DI_TARGET_ARCH = arm64
  VBOX_DI_ARCH_LIST   = arm64
 else # Assume amd64 for now
- VBOX_DI_TARGET_ARCH = x86-64
+ VBOX_DI_TARGET_ARCH = x86_64
  VBOX_DI_ARCH_LIST   = i386,arm64
 endif
 
