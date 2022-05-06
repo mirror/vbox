@@ -965,8 +965,15 @@ class tdUnitTest1(vbox.TestDriver):
                 self._wrapMkDir(sDstDir);
                 asDirsToRemove.append(sDstDir);
 
+            sSrc = sFullPath + self.sExeSuff;
+            # If the testcase source does not exist for whatever reason, just mark it as skipped
+            # instead of reporting an error.
+            if not self._wrapPathExists(sSrc):
+                fSkipped = True;
+                return fSkipped;
+
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath) + self.sExeSuff);
-            self._wrapCopyFile(sFullPath + self.sExeSuff, sDst, 0o755);
+            self._wrapCopyFile(sSrc, sDst, 0o755);
             asFilesToRemove.append(sDst);
 
             # Copy required dependencies to destination.
