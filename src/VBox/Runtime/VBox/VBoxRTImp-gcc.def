@@ -169,7 +169,8 @@ EXPORTS
     _ZN13RTCRestString13assignNoThrowEmc
     _ZN13RTCRestString13printfNoThrowEPKcz
     _ZN13RTCRestString14createInstanceEv
-    _ZN13RTCRestString14printfVNoThrowEPKcP13__va_list_tag
+    _ZN13RTCRestString14printfVNoThrowEPKcP13__va_list_tag ; not-arm64
+    _ZN13RTCRestString14printfVNoThrowEPKcPc               ; only-arm64
     _ZN13RTCRestString14resetToDefaultEv
     _ZN13RTCRestString19deserializeFromJsonERK17RTCRestJsonCursor
     _ZN13RTCRestString27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
@@ -179,7 +180,8 @@ EXPORTS
     _ZN13RTCRestString6assignERK9RTCStringmm
     _ZN13RTCRestString6assignEmc
     _ZN13RTCRestString6printfEPKcz
-    _ZN13RTCRestString7printfVEPKcP13__va_list_tag
+    _ZN13RTCRestString7printfVEPKcP13__va_list_tag ; not-arm64
+    _ZN13RTCRestString7printfVEPKcPc               ; only-arm64
     _ZN13RTCRestString7setNullEv
     _ZN13RTCRestStringC1EPKc
     _ZN13RTCRestStringC1ERK9RTCString
@@ -262,7 +264,8 @@ EXPORTS
     _ZN17RTCRestOutputBase14valueSeparatorEv
     _ZN17RTCRestOutputBase20printfOutputCallbackEPvPKcm
     _ZN17RTCRestOutputBase21valueSeparatorAndNameEPKcm
-    _ZN17RTCRestOutputBase7vprintfEPKcP13__va_list_tag
+    _ZN17RTCRestOutputBase7vprintfEPKcP13__va_list_tag ; not-arm64
+    _ZN17RTCRestOutputBase7vprintfEPKcPc               ; only-arm64
     _ZN17RTCRestOutputBase8endArrayEj
     _ZN17RTCRestOutputBase9endObjectEj
     _ZN17RTCRestOutputBase9nullValueEv
@@ -422,7 +425,8 @@ EXPORTS
     _ZN9RTCString13appendNoThrowERKS_
     _ZN9RTCString13appendNoThrowERKS_mm
     _ZN9RTCString13appendNoThrowEc
-    _ZN9RTCString13appendPrintfVEPKcP13__va_list_tag
+    _ZN9RTCString13appendPrintfVEPKcP13__va_list_tag ; not-arm64
+    _ZN9RTCString13appendPrintfVEPKcPc               ; only-arm64
     _ZN9RTCString13assignNoThrowEPKc
     _ZN9RTCString13assignNoThrowEPKcm
     _ZN9RTCString13assignNoThrowERKS_
@@ -430,7 +434,8 @@ EXPORTS
     _ZN9RTCString13assignNoThrowEmc
     _ZN9RTCString13printfNoThrowEPKcz
     _ZN9RTCString13replaceWorkerEmmPKcm
-    _ZN9RTCString14printfVNoThrowEPKcP13__va_list_tag
+    _ZN9RTCString14printfVNoThrowEPKcP13__va_list_tag ; not-arm64
+    _ZN9RTCString14printfVNoThrowEPKcPc               ; only-arm64
     _ZN9RTCString14replaceNoThrowEmmPKc
     _ZN9RTCString14replaceNoThrowEmmPKcm
     _ZN9RTCString14replaceNoThrowEmmRKS_
@@ -438,7 +443,8 @@ EXPORTS
     _ZN9RTCString15appendCodePointEj
     _ZN9RTCString19appendPrintfNoThrowEPKcz
     _ZN9RTCString19appendWorkerNoThrowEPKcm
-    _ZN9RTCString20appendPrintfVNoThrowEPKcP13__va_list_tag
+    _ZN9RTCString20appendPrintfVNoThrowEPKcP13__va_list_tag ; not-arm64
+    _ZN9RTCString20appendPrintfVNoThrowEPKcPc               ; only-arm64
     _ZN9RTCString20printfOutputCallbackEPvPKcm
     _ZN9RTCString20replaceWorkerNoThrowEmmPKcm
     _ZN9RTCString22appendCodePointNoThrowEj
@@ -459,7 +465,8 @@ EXPORTS
     _ZN9RTCString6assignEmc
     _ZN9RTCString6joinExERK7RTCListIS_PS_ERKS_S6_
     _ZN9RTCString6printfEPKcz
-    _ZN9RTCString7printfVEPKcP13__va_list_tag
+    _ZN9RTCString7printfVEPKcP13__va_list_tag ; not-arm64
+    _ZN9RTCString7printfVEPKcPc               ; only-arm64
     _ZN9RTCString7replaceEmmPKc
     _ZN9RTCString7replaceEmmPKcm
     _ZN9RTCString7replaceEmmRKS_
