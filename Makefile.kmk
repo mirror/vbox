@@ -1109,8 +1109,10 @@ VBOX_RSYNC_IN_FN = $(if-expr "$(3)" != "nossh",$(VBOX_RSYNC),$(VBOX_RSYNC_NOSSH)
 	--exclude=tools/common/plantuml/ \
 	$(if-expr "$1" == "solaris",--exclude=tools/common/openwatcom/,) \
 	$(foreach os,$(filter-out $(1), darwin freebsd linux solaris os2 win), \
+		--exclude=tools/$(os)/ \
 		--exclude=tools/$(os).x86/ \
-		--exclude=tools/$(os).amd64/ )
+		--exclude=tools/$(os).amd64/ \
+		--exclude=tools/$(os).arm64/ )
 
 #
 # VM IP addresses.
