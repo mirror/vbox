@@ -311,16 +311,11 @@ ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 TMP_UNITTESTS_WHITELIST := \
 	tstFile \
 	tstFileLock \
-	tstRTLocalIpc \
 	tstRTPathQueryInfo \
 	tstRTPipe \
 	tstRTProcCreateEx \
 	tstRTProcCreatePrf \
 	tstRTProcQueryUsername \
-	tstTime-2 \
-	tstTime-3 \
-	tstTime-4 \
-	tstTimer \
 	tstThread-1 \
 	tstUtf8
 
@@ -343,13 +338,12 @@ TMP_UNITTESTS_WHITELIST.win += \
 TMP_UNITTESTS_DEPS_LIB :=
 
 define def_vbox_validationkit_unittests
-  TMP_UNITTESTS_PATH_BIN = $$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../..
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
-    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/testcase/$(test_whitelist)$(TMP_SUFF_EXE)))
+    	$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../testcase/$(os)/$(arch)/$(test_whitelist)$(TMP_SUFF_EXE)))
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
-    	$$(wildcard $(TMP_UNITTESTS_PATH_BIN)/$(file_dep)$(TMP_SUFF_LIB)))
+    	$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/$(file_dep)$(TMP_SUFF_LIB)))
 endef
 
 TMP_SUFF_EXE=.exe
@@ -386,7 +380,7 @@ $(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
 			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS) \
-			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst $(PATH_OUT_BASE), testcase,$(spec))=$(spec))) ) \
+			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
 		$(foreach spec,$(filter-out %.txt %.dll %.xml %.reg %.img, $(VBOX_VALIDATIONKIT_FILESPEC)) \
 			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
 				        	   $(subst =, $(SP), $(spec)), \
@@ -394,7 +388,7 @@ $(VBOX_VALIDATIONKIT_ISO_RSP): | $$(dir $$@)
 		$(foreach spec,$(filter-out %.txt %.dll %.xml %.reg %.img, $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS)) \
 			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
 				        	   $(subst =, $(SP), $(spec)), \
-						   $(subst $(PATH_OUT_BASE), testcase,$(spec))))) \
+						   $(subst $(INST_VALIDATIONKIT), ,$(spec))))) \
 		'--volume-id="VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)"' \
 		'--name-setup=joliet' \
 		'--volume-id="VBoxValK $(VBOX_SVN_REV)"'
