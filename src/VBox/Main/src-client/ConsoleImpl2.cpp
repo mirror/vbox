@@ -149,7 +149,7 @@ static Utf8Str *GetExtraDataBoth(IVirtualBox *pVirtualBox, IMachine *pMachine, c
 /**
  * Translate IDE StorageControllerType_T to string representation.
  */
-const char* controllerString(StorageControllerType_T enmType)
+static const char* controllerString(StorageControllerType_T enmType)
 {
     switch (enmType)
     {
