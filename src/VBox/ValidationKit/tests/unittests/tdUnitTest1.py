@@ -969,6 +969,7 @@ class tdUnitTest1(vbox.TestDriver):
             # If the testcase source does not exist for whatever reason, just mark it as skipped
             # instead of reporting an error.
             if not self._wrapPathExists(sSrc):
+                self.cSkipped += 1;
                 fSkipped = True;
                 return fSkipped;
 
