@@ -29,6 +29,7 @@
 #include <iprt/param.h>
 #include <iprt/initterm.h>
 #include <iprt/utf16.h>
+#include <iprt/x86.h>
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VMMDev.h> /* for VMMDevVideoSetVisibleRegion */
@@ -1590,6 +1591,43 @@ VOID DxgkDdiControlEtwLogging(
     LOGF(("LEAVE"));
 }
 
+#ifdef VBOX_WITH_VMSVGA3D_DX
+typedef struct VBOXDXSEGMENTDESCRIPTOR
+{
+    DXGK_SEGMENTFLAGS Flags;
+    PHYSICAL_ADDRESS  CpuTranslatedAddress;
+    SIZE_T            Size;
+} VBOXDXSEGMENTDESCRIPTOR;
+
+#define VBOXDX_SEGMENTS_COUNT 3
+
+static void vmsvgaDXGetSegmentDescription(PVBOXMP_DEVEXT pDevExt, int idxSegment, VBOXDXSEGMENTDESCRIPTOR *pDesc)
+{
+    /* 3 segments:
+     * 1: The usual VRAM, CpuVisible;
+     * 2: Aperture segment for guest backed objects;
+     * 3: Host resources, CPU invisible.
+     */
+    RT_ZERO(*pDesc);
+    if (idxSegment == 0)
+    {
+        pDesc->CpuTranslatedAddress = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
+        pDesc->Size                 = pDevExt->cbVRAMCpuVisible & X86_PAGE_4K_BASE_MASK;
+        pDesc->Flags.CpuVisible     = 1;
+    }
+    else if (idxSegment == 1)
+    {
+        pDesc->Size                 = _2G; /** @todo */
+        pDesc->Flags.CpuVisible     = 1;
+        pDesc->Flags.Aperture       = 1;
+    }
+    else if (idxSegment == 2)
+    {
+        pDesc->Size                 = _2G; /** @todo */
+    }
+}
+#endif
+
 /**
  * DxgkDdiQueryAdapterInfo
  */
@@ -1693,6 +1731,37 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         {
             if (!g_VBoxDisplayOnly)
             {
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA && SvgaIsDXSupported(pDevExt))
+                {
+                    DXGK_QUERYSEGMENTOUT *pOut = (DXGK_QUERYSEGMENTOUT *)pQueryAdapterInfo->pOutputData;
+                    if (!pOut->pSegmentDescriptor)
+                        pOut->NbSegment = VBOXDX_SEGMENTS_COUNT; /* Return the number of segments. */
+                    else if (pOut->NbSegment == VBOXDX_SEGMENTS_COUNT)
+                    {
+                        DXGK_SEGMENTDESCRIPTOR *paDesc = pOut->pSegmentDescriptor;
+                        for (unsigned i = 0; i < VBOXDX_SEGMENTS_COUNT; ++i)
+                        {
+                            VBOXDXSEGMENTDESCRIPTOR desc;
+                            vmsvgaDXGetSegmentDescription(pDevExt, i, &desc);
+                            paDesc[i].CpuTranslatedAddress = desc.CpuTranslatedAddress;
+                            paDesc[i].Size                 = desc.Size;
+                            paDesc[i].CommitLimit          = desc.Size;
+                            paDesc[i].Flags                = desc.Flags;
+                        }
+
+                        pOut->PagingBufferSegmentId       = 0;
+                        pOut->PagingBufferSize            = PAGE_SIZE;
+                        pOut->PagingBufferPrivateDataSize = PAGE_SIZE;
+                    }
+                    else
+                    {
+                        WARN(("NbSegment %d", pOut->NbSegment));
+                        Status = STATUS_INVALID_PARAMETER;
+                    }
+                    break;
+                }
+#endif
                 /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
                  * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
                 DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
@@ -1803,6 +1872,37 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             break;
 
         case DXGKQAITYPE_QUERYSEGMENT3:
+#ifdef VBOX_WITH_VMSVGA3D_DX
+            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA && SvgaIsDXSupported(pDevExt))
+            {
+                DXGK_QUERYSEGMENTOUT3 *pOut = (DXGK_QUERYSEGMENTOUT3 *)pQueryAdapterInfo->pOutputData;
+                if (!pOut->pSegmentDescriptor)
+                    pOut->NbSegment = VBOXDX_SEGMENTS_COUNT; /* Return the number of segments. */
+                else if (pOut->NbSegment == VBOXDX_SEGMENTS_COUNT)
+                {
+                    DXGK_SEGMENTDESCRIPTOR3 *paDesc = pOut->pSegmentDescriptor;
+                    for (unsigned i = 0; i < VBOXDX_SEGMENTS_COUNT; ++i)
+                    {
+                        VBOXDXSEGMENTDESCRIPTOR desc;
+                        vmsvgaDXGetSegmentDescription(pDevExt, i, &desc);
+                        paDesc[i].Flags                = desc.Flags;
+                        paDesc[i].CpuTranslatedAddress = desc.CpuTranslatedAddress;
+                        paDesc[i].Size                 = desc.Size;
+                        paDesc[i].CommitLimit          = desc.Size;
+                    }
+
+                    pOut->PagingBufferSegmentId       = 0;
+                    pOut->PagingBufferSize            = PAGE_SIZE;
+                    pOut->PagingBufferPrivateDataSize = PAGE_SIZE;
+                }
+                else
+                {
+                    WARN(("NbSegment %d", pOut->NbSegment));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+                break;
+            }
+#endif
             LOGREL(("DXGKQAITYPE_QUERYSEGMENT3 treating as unsupported!"));
             Status = STATUS_NOT_SUPPORTED;
             break;
@@ -2194,6 +2294,17 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     vboxVDbgBreakFv();
 
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    /* The driver distinguished between the legacy and the new D3D(DX) requests by checking the size. */
+    AssertCompile(sizeof(VBOXDXALLOCATIONDESC) != sizeof(VBOXWDDM_ALLOCINFO));
+
+    /* Check if this is a request from the new D3D driver. */
+    if (   pCreateAllocation->PrivateDriverDataSize == 0
+        && pCreateAllocation->NumAllocations == 1
+        && pCreateAllocation->pAllocationInfo[0].PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC))
+        return DxgkDdiDXCreateAllocation(hAdapter, pCreateAllocation);
+#endif
+
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_RESOURCE pResource = NULL;
@@ -2282,6 +2393,16 @@ DxgkDdiDestroyAllocation(
 
     vboxVDbgBreakFv();
 
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    /* Check if this is a request from the D3D driver. */
+    if (pDestroyAllocation->NumAllocations >= 1)
+    {
+        PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[0];
+        if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+            return DxgkDdiDXDestroyAllocation(hAdapter, pDestroyAllocation);
+    }
+#endif
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     PVBOXWDDM_RESOURCE pRc = (PVBOXWDDM_RESOURCE)pDestroyAllocation->hResource;
@@ -2329,6 +2450,11 @@ DxgkDdiDescribeAllocation(
     vboxVDbgBreakFv();
 
     PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDescribeAllocation->hAllocation;
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    /* Check if this is a request from the D3D driver. */
+    if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+        return DxgkDdiDXDescribeAllocation(hAdapter, pDescribeAllocation);
+#endif
     pDescribeAllocation->Width = pAllocation->AllocData.SurfDesc.width;
     pDescribeAllocation->Height = pAllocation->AllocData.SurfDesc.height;
     pDescribeAllocation->Format = pAllocation->AllocData.SurfDesc.format;
@@ -4149,7 +4275,12 @@ DxgkDdiOpenAllocation(
         for (; i < pOpenAllocation->NumAllocations; ++i)
         {
             DXGK_OPENALLOCATIONINFO* pInfo = &pOpenAllocation->pOpenAllocation[i];
+#ifdef VBOX_WITH_VMSVGA3D_DX
+            Assert(   pInfo->PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC)
+                   || pInfo->PrivateDriverDataSize == sizeof(VBOXWDDM_ALLOCINFO));
+#else
             Assert(pInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_ALLOCINFO));
+#endif
             Assert(pInfo->pPrivateDriverData);
             PVBOXWDDM_ALLOCATION pAllocation = vboxWddmGetAllocationFromHandle(pDevExt, pInfo->hAllocation);
             if (!pAllocation)
@@ -4449,7 +4580,6 @@ DxgkDdiCreateContext(
                     }
 #endif
 #ifdef VBOX_WITH_VMSVGA3D_DX
-                    /** @todo Implement buffers submittion and memory menagement for this new type of context **/
                     case VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D:
                     {
                         /* VMSVGA_D3D context type shares some code with GA_3D, because both work with VMSVGA GPU. */

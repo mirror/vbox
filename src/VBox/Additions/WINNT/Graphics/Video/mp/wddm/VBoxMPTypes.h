@@ -34,6 +34,12 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPSa.h"
 #include "VBoxMPVModes.h"
 
+#ifdef DEBUG_sunlover
+#define DEBUG_BREAKPOINT_TEST() do { ASMBreakpoint(); } while (0)
+#else
+#define DEBUG_BREAKPOINT_TEST() do { } while (0)
+#endif
+
 #if 0
 #include <iprt/avl.h>
 #endif
@@ -191,6 +197,15 @@ typedef struct VBOXWDDM_ALLOCATION
     AVLPVNODECORE ShRcTreeEntry;
 #endif
     VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    /* Direct3D driver data for .enmType == VBOXWDDM_ALLOC_TYPE_D3D. */
+    struct
+    {
+        VBOXDXALLOCATIONDESC    desc;
+        uint32_t                sid;                        /* For surfaces. */
+        uint32_t                mobid;                      /* For surfaces and shaders. */
+    } dx;
+#endif /* VBOX_WITH_VMSVGA3D_DX */
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;
 
 typedef struct VBOXWDDM_RESOURCE
@@ -235,6 +250,10 @@ typedef enum
 
 #define VBOXWDDM_INVALID_COORD ((LONG)((~0UL) >> 1))
 
+#ifdef VBOX_WITH_VMSVGA
+struct VMSVGACONTEXT;
+#endif
+
 typedef struct VBOXWDDM_CONTEXT
 {
     struct VBOXWDDM_DEVICE * pDevice;
@@ -246,7 +265,7 @@ typedef struct VBOXWDDM_CONTEXT
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
 #ifdef VBOX_WITH_VMSVGA
-    uint32_t u32Cid;               /* SVGA context id of this context. */
+    struct VMSVGACONTEXT *pSvgaContext;
 #endif
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 

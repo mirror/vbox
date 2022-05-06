@@ -26,6 +26,7 @@
 #include "SvgaCmd.h"
 #include "SvgaHw.h"
 
+#include <iprt/memobj.h>
 #include <iprt/time.h>
 
 void GaAdapterStop(PVBOXMP_DEVEXT pDevExt)
@@ -162,41 +163,78 @@ NTSTATUS GaContextCreate(PVBOXWDDM_EXT_GA pGaDevExt,
 {
     AssertReturn(pContext->NodeOrdinal == 0, STATUS_NOT_SUPPORTED);
 
+    pContext->pSvgaContext = (PVMSVGACONTEXT)GaMemAllocZero(sizeof(VMSVGACONTEXT));
+    AssertReturn(pContext->pSvgaContext, STATUS_INSUFFICIENT_RESOURCES);
+
+    pContext->pSvgaContext->fDXContext = RT_BOOL(pInfo->u.vmsvga.u32Flags & VBOXWDDM_F_GA_CONTEXT_VGPU10);
+
     VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
     uint32_t u32Cid;
-    NTSTATUS Status = SvgaContextIdAlloc(pSvga, &u32Cid);
+    NTSTATUS Status;
+    if (pContext->pSvgaContext->fDXContext)
+        Status = SvgaDXContextIdAlloc(pSvga, &u32Cid);
+    else
+        Status = SvgaContextIdAlloc(pSvga, &u32Cid);
     if (NT_SUCCESS(Status))
     {
-        Status = SvgaContextCreate(pSvga, u32Cid);
+        if (pContext->pSvgaContext->fDXContext)
+            Status = SvgaDXContextCreate(pSvga, u32Cid);
+        else
+            Status = SvgaContextCreate(pSvga, u32Cid);
         if (Status == STATUS_SUCCESS)
         {
             /** @todo Save other pInfo fields. */
             RT_NOREF(pInfo);
 
-            /* Init pContext fields, which are relevant to the gallium context. */
-            pContext->u32Cid = u32Cid;
+            /* Init pContext fields, which are relevant to the VMSVGA context. */
+            pContext->pSvgaContext->u32Cid = u32Cid;
 
-            GALOG(("pGaDevExt = %p, cid = %d\n", pGaDevExt, u32Cid));
+            GALOG(("pGaDevExt = %p, cid = %d (%d)\n", pGaDevExt, u32Cid, pContext->pSvgaContext->fDXContext ? "DX" : "VGPU9"));
         }
         else
         {
-            SvgaContextIdFree(pSvga, u32Cid);
+            AssertFailed();
+            if (pContext->pSvgaContext->fDXContext)
+                SvgaDXContextIdFree(pSvga, u32Cid);
+            else
+                SvgaContextIdFree(pSvga, u32Cid);
         }
     }
 
+    if (!NT_SUCCESS(Status))
+    {
+        GaMemFree(pContext->pSvgaContext);
+        pContext->pSvgaContext = 0;
+    }
     return Status;
 }
 
 NTSTATUS GaContextDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
                           PVBOXWDDM_CONTEXT pContext)
 {
-    GALOG(("u32Cid = %d\n", pContext->u32Cid));
+    PVMSVGACONTEXT pSvgaContext = pContext->pSvgaContext;
+    if (!pSvgaContext)
+        return STATUS_SUCCESS;
+    pContext->pSvgaContext = 0;
+
+    GALOG(("u32Cid = %d\n", pSvgaContext->u32Cid));
 
     VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
 
-    SvgaContextDestroy(pSvga, pContext->u32Cid);
+    NTSTATUS Status;
+    if (pSvgaContext->fDXContext)
+    {
+        SvgaDXContextDestroy(pSvga, pSvgaContext->u32Cid);
+        Status = SvgaDXContextIdFree(pSvga, pSvgaContext->u32Cid);
+    }
+    else
+    {
+        SvgaContextDestroy(pSvga, pSvgaContext->u32Cid);
+        Status = SvgaContextIdFree(pSvga, pSvgaContext->u32Cid);
+    }
 
-    return SvgaContextIdFree(pSvga, pContext->u32Cid);
+    GaMemFree(pSvgaContext);
+    return Status;
 }
 
 NTSTATUS GaUpdate(PVBOXWDDM_EXT_GA pGaDevExt,
@@ -408,24 +446,6 @@ static void gaReportFence(PVBOXMP_DEVEXT pDevExt)
         }
     }
 }
-
-/*
- * Description of DMA buffer content.
- * These structures are stored in DmaBufferPrivateData.
- */
-typedef struct GARENDERDATA
-{
-    uint32_t      u32DataType;    /* GARENDERDATA_TYPE_* */
-    uint32_t      cbData;         /* How many bytes. */
-    GAFENCEOBJECT *pFenceObject;  /* User mode fence associated with this command buffer. */
-    void          *pvDmaBuffer;   /* Pointer to the DMA buffer. */
-    GAHWRENDERDATA *pHwRenderData; /* The hardware module private data. */
-} GARENDERDATA;
-
-#define GARENDERDATA_TYPE_RENDER   1
-#define GARENDERDATA_TYPE_PRESENT  2
-#define GARENDERDATA_TYPE_PAGING   3
-#define GARENDERDATA_TYPE_FENCE    4
 
 /* If there are no commands but we need to trigger fence submission anyway, then submit a buffer of this size. */
 #define GA_DMA_MIN_SUBMIT_SIZE 4
@@ -670,18 +690,17 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
     return Status;
 }
 
+static NTSTATUS APIENTRY gaPresentGA3D(const HANDLE hContext,
+                                       DXGKARG_PRESENT *pPresent);
+
 NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
                                    DXGKARG_PRESENT *pPresent)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
 
     SvgaFlush(pDevExt->pGa->hw.pSvga);
-
-    DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
-    DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
 
     GALOGG(GALOG_GROUP_PRESENT, ("%s: [%ld, %ld, %ld, %ld] -> [%ld, %ld, %ld, %ld] (SubRectCnt=%u)\n",
         pPresent->Flags.Blt ? "Blt" : (pPresent->Flags.Flip ? "Flip" : (pPresent->Flags.ColorFill ? "ColorFill" : "Unknown OP")),
@@ -692,6 +711,29 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
         for (unsigned int i = 0; i < pPresent->SubRectCnt; ++i)
             GALOGG(GALOG_GROUP_PRESENT, ("   sub#%u = [%ld, %ld, %ld, %ld]\n",
                     i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
+
+    NTSTATUS Status;
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
+        Status = gaPresentGA3D(pContext, pPresent);
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        Status = DxgkDdiDXPresent(pContext, pPresent);
+#endif
+    else
+        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
+    return Status;
+}
+
+static NTSTATUS APIENTRY gaPresentGA3D(const HANDLE hContext,
+                                       DXGKARG_PRESENT *pPresent)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
+    PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
+    PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
+
+    DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
+    DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
 
     if (pPresent->Flags.Blt)
     {
@@ -909,19 +951,37 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
     return Status;
 }
 
+static NTSTATUS gaRenderGA3D(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pRender);
+
 NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender)
 {
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
+    AssertReturn(   pContext
+                 && (   pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D
+                     || pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D), STATUS_INVALID_PARAMETER);
+    AssertReturn(pRender->CommandLength > pRender->MultipassOffset, STATUS_INVALID_PARAMETER);
+
+    PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
+    PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
+    SvgaFlush(pDevExt->pGa->hw.pSvga);
+
+    NTSTATUS Status;
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
+        Status = gaRenderGA3D(pContext, pRender);
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        Status = DxgkDdiDXRender(pContext, pRender);
+#endif
+    else
+        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
+    return Status;
+}
+
+static NTSTATUS gaRenderGA3D(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pRender)
+{
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
     VBOXWDDM_EXT_GA *pGaDevExt = pDevExt->pGa;
-
-    SvgaFlush(pDevExt->pGa->hw.pSvga);
-
-    AssertReturn(pContext && pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D, STATUS_INVALID_PARAMETER);
-    AssertReturn(pRender->CommandLength > pRender->MultipassOffset, STATUS_INVALID_PARAMETER);
-    /* Expect 32 bit handle at the start of the command buffer. */
-    AssertReturn(pRender->CommandLength >= sizeof(uint32_t), STATUS_INVALID_PARAMETER);
 
     GARENDERDATA *pRenderData = NULL;  /* Pointer to the DMA buffer description. */
     uint32_t cbPrivateData = 0;        /* Bytes to place into the private data buffer. */
@@ -929,7 +989,7 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
     uint32_t u32ProcessedLength = 0;   /* Bytes consumed from command buffer. */
 
     GALOG(("[%p] Command %p/%d, Dma %p/%d, Private %p/%d, MO %d, S %d, Phys 0x%RX64, AL %p/%d, PLLIn %p/%d, PLLOut %p/%d\n",
-           hContext,
+           pContext,
            pRender->pCommand, pRender->CommandLength,
            pRender->pDmaBuffer, pRender->DmaSize,
            pRender->pDmaBufferPrivateData, pRender->DmaBufferPrivateDataSize,
@@ -939,7 +999,10 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
            pRender->pPatchLocationListOut, pRender->PatchLocationListOutSize
          ));
 
-    /* 32 bit handle at the start of the command buffer. */
+    /* Expect 32 bit handle at the start of the command buffer. */
+    AssertReturn(pRender->CommandLength >= sizeof(uint32_t), STATUS_INVALID_PARAMETER);
+
+    /* Skip 32 bit handle. */
     if (pRender->MultipassOffset == 0)
         pRender->MultipassOffset += sizeof(uint32_t);
 
@@ -1031,12 +1094,10 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
             Assert(pRenderData);
             if (u32TargetLength == 0)
             {
-                /* Trigger command submission anyway by increasing pDmaBuffer */
-                u32TargetLength = GA_DMA_MIN_SUBMIT_SIZE;
-
+                /* Trigger command submission anyway by increasing pRender->pDmaBufferPrivateData */
                 /* Update the DMA buffer description. */
                 pRenderData->u32DataType  = GARENDERDATA_TYPE_FENCE;
-                pRenderData->cbData       = u32TargetLength;
+                pRenderData->cbData       = 0;
                 /* pRenderData->pFenceObject stays */
                 pRenderData->pvDmaBuffer  = NULL; /* Not used */
             }
@@ -1060,10 +1121,11 @@ static NTSTATUS gaSoftwarePagingTransfer(PVBOXMP_DEVEXT pDevExt,
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS gaBuildPagingBufferOld(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer);
+
 NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
                                              DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
     SvgaFlush(pDevExt->pGa->hw.pSvga);
@@ -1073,6 +1135,21 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
            pBuildPagingBuffer->DmaBufferPrivateDataSize,
            pBuildPagingBuffer->pDmaBuffer,
            pBuildPagingBuffer->DmaSize));
+
+    NTSTATUS Status;
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    /** @todo Old code did not generate any paging command actually. So probably one function is enough. */
+    if (SvgaIsDXSupported(pDevExt))
+        Status = DxgkDdiDXBuildPagingBuffer(pDevExt, pBuildPagingBuffer);
+    else
+#endif
+        Status = gaBuildPagingBufferOld(pDevExt, pBuildPagingBuffer);
+    return Status;
+}
+
+static NTSTATUS gaBuildPagingBufferOld(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
 
     /* Generate DMA buffer containing the commands.
      * Store the command buffer descriptor pointer to pDmaBufferPrivateData.
@@ -1240,13 +1317,39 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS gaPatchGA3D(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pPatch);
+
 NTSTATUS APIENTRY GaDxgkDdiPatch(const HANDLE hAdapter, const DXGKARG_PATCH *pPatch)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
     SvgaFlush(pDevExt->pGa->hw.pSvga);
 
-    GALOG(("\n"));
+    GALOG(("pDmaBuffer = %p, cbDmaBuffer = %u, cPatches = %u\n",
+           pPatch->pDmaBuffer, pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset,
+           pPatch->PatchLocationListSubmissionLength));
+
+    /* The driver does not need to modify paging and present commands here. */
+    if (pPatch->Flags.Paging || pPatch->Flags.Present)
+        return STATUS_SUCCESS;
+
+    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pPatch->hContext;
+
+    NTSTATUS Status;
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_GA_3D)
+        Status = gaPatchGA3D(pDevExt, pPatch);
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    else if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
+        Status = DxgkDdiDXPatch(pDevExt, pPatch);
+#endif
+    else
+        AssertFailedStmt(Status = STATUS_INVALID_PARAMETER);
+    return Status;
+}
+
+static NTSTATUS gaPatchGA3D(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pPatch)
+{
+    RT_NOREF(pDevExt);
 
     uint8_t *pu8DMABuffer = (uint8_t *)pPatch->pDmaBuffer + pPatch->DmaBufferSubmissionStartOffset;
     UINT const cbDMABuffer = pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset;
@@ -1305,7 +1408,7 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
            pSubmitCommand->SubmissionFenceId, pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
            pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset, cbPrivateData));
 
-    uint32_t cbDmaBufferSubmission = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
+    uint32_t const cbDmaBufferSubmission = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
     uint32_t cDataBlocks = cbPrivateData / sizeof(GARENDERDATA);
 
     if (cDataBlocks == 0)
@@ -1321,96 +1424,29 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
     }
 
     GARENDERDATA const *pRenderData = (GARENDERDATA *)pvPrivateData;
+    uint32_t cbData = 0;
     while (cDataBlocks--)
     {
         GALOG(("pRenderData %p: u32DataType %u, pvDmaBuffer %p, cbData %u\n",
                 pRenderData, pRenderData->u32DataType, pRenderData->pvDmaBuffer, pRenderData->cbData));
+
+        cbData += pRenderData->cbData;
         AssertReturn(cbDmaBufferSubmission >= pRenderData->cbData, STATUS_INVALID_PARAMETER);
-        cbDmaBufferSubmission -= pRenderData->cbData;
 
-        void *pvDmaBuffer = NULL;
-        if (   pRenderData->u32DataType == GARENDERDATA_TYPE_RENDER
-            || pRenderData->u32DataType == GARENDERDATA_TYPE_FENCE)
+        if (pRenderData->pFenceObject)
         {
-            if (pRenderData->u32DataType == GARENDERDATA_TYPE_RENDER)
-            {
-                pvDmaBuffer = pRenderData->pvDmaBuffer;
-                AssertPtrReturn(pvDmaBuffer, STATUS_INVALID_PARAMETER);
-            }
-
             GAFENCEOBJECT * const pFO = pRenderData->pFenceObject;
-            if (pFO) /* Can be NULL if the user mode driver does not need the fence for this buffer. */
-            {
-                GALOG(("pFO = %p, u32FenceHandle = %d, Fence = %d\n",
-                       pFO, pFO->u32FenceHandle, pSubmitCommand->SubmissionFenceId));
+            GALOG(("pFO = %p, u32FenceHandle = %d, Fence = %d\n",
+                   pFO, pFO->u32FenceHandle, pSubmitCommand->SubmissionFenceId));
 
-                gaFenceObjectsLock(pGaDevExt);
+            gaFenceObjectsLock(pGaDevExt);
 
-                Assert(pFO->u32FenceState == GAFENCE_STATE_IDLE);
-                pFO->u32SubmissionFenceId = pSubmitCommand->SubmissionFenceId;
-                pFO->u32FenceState = GAFENCE_STATE_SUBMITTED;
-                pFO->u64SubmittedTS = RTTimeNanoTS();
+            Assert(pFO->u32FenceState == GAFENCE_STATE_IDLE);
+            pFO->u32SubmissionFenceId = pSubmitCommand->SubmissionFenceId;
+            pFO->u32FenceState = GAFENCE_STATE_SUBMITTED;
+            pFO->u64SubmittedTS = RTTimeNanoTS();
 
-                gaFenceObjectsUnlock(pGaDevExt);
-            }
-        }
-        else if (pRenderData->u32DataType == GARENDERDATA_TYPE_PRESENT)
-        {
-            pvDmaBuffer = pRenderData->pvDmaBuffer;
-            AssertPtrReturn(pvDmaBuffer, STATUS_INVALID_PARAMETER);
-        }
-        else if (pRenderData->u32DataType == GARENDERDATA_TYPE_PAGING)
-        {
-            pvDmaBuffer = pRenderData->pvDmaBuffer;
-            AssertPtrReturn(pvDmaBuffer, STATUS_INVALID_PARAMETER);
-        }
-        else
-        {
-            AssertFailedReturn(STATUS_INVALID_PARAMETER);
-        }
-
-        if (pGaDevExt->hw.pSvga->pCBState)
-        {
-            if (pRenderData->cbData && pvDmaBuffer)
-            {
-                PVMSVGACB pCB;
-                NTSTATUS Status = SvgaCmdBufAllocUMD(pGaDevExt->hw.pSvga, pSubmitCommand->DmaBufferPhysicalAddress,
-                                                     pSubmitCommand->DmaBufferSize, pRenderData->cbData,
-                                                     SVGA3D_INVALID_ID, &pCB);
-                GALOG(("Allocated UMD buffer %p\n", pCB));
-                if (NT_SUCCESS(Status))
-                {
-                    Status = SvgaCmdBufSubmitUMD(pGaDevExt->hw.pSvga, pCB);
-                    Assert(NT_SUCCESS(Status)); RT_NOREF(Status);
-                }
-            }
-        }
-        else if (pvDmaBuffer)
-        {
-            Assert(pSubmitCommand->DmaBufferSegmentId == 0);
-
-            uint32_t const cbSubmit = pRenderData->cbData;
-            if (cbSubmit)
-            {
-                /* Copy DmaBuffer to Fifo. */
-                void *pvCmd = SvgaFifoReserve(pGaDevExt->hw.pSvga, cbSubmit);
-                AssertPtrReturn(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
-
-                /* pvDmaBuffer is the actual address of the current data block.
-                 * Therefore do not use pSubmitCommand->DmaBufferSubmissionStartOffset here.
-                 */
-                memcpy(pvCmd, pvDmaBuffer, cbSubmit);
-                SvgaFifoCommit(pGaDevExt->hw.pSvga, cbSubmit);
-            }
-            else
-            {
-                /* 'Paging' buffers can be empty, implementation is incomplete. See GaDxgkDdiBuildPagingBuffer. */
-                if (pSubmitCommand->Flags.Paging == 0)
-                {
-                    LogRelMax(16, ("WDDM: Zero sized command buffer. Flags 0x%x, type %d\n", pSubmitCommand->Flags.Value, pRenderData->u32DataType));
-                    AssertFailed();
-                }
-            }
+            gaFenceObjectsUnlock(pGaDevExt);
         }
 
         if (pRenderData->pHwRenderData)
@@ -1426,6 +1462,54 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
         }
 
         ++pRenderData;
+    }
+
+    if (cbDmaBufferSubmission)
+    {
+        if (pGaDevExt->hw.pSvga->pCBState)
+        {
+            PVMSVGACONTEXT pSvgaContext = pContext->pSvgaContext;
+            uint32_t const cid = (pSvgaContext && pSvgaContext->fDXContext) ? pSvgaContext->u32Cid : SVGA3D_INVALID_ID;
+
+            PHYSICAL_ADDRESS phys = pSubmitCommand->DmaBufferPhysicalAddress;
+            phys.QuadPart += pSubmitCommand->DmaBufferSubmissionStartOffset;
+
+            PVMSVGACB pCB;
+            NTSTATUS Status = SvgaCmdBufAllocUMD(pGaDevExt->hw.pSvga, phys,
+                                                 pSubmitCommand->DmaBufferSize - pSubmitCommand->DmaBufferSubmissionStartOffset,
+                                                 cbDmaBufferSubmission, cid, &pCB);
+            GALOG(("Allocated UMD buffer %p\n", pCB));
+            if (NT_SUCCESS(Status))
+            {
+                Status = SvgaCmdBufSubmitUMD(pGaDevExt->hw.pSvga, pCB);
+                Assert(NT_SUCCESS(Status)); RT_NOREF(Status);
+            }
+        }
+        else
+        {
+            Assert(pSubmitCommand->DmaBufferSegmentId == 0);
+
+            /* This requires the virtual address of the buffer, which is stored in RenderData. */
+            if (cbPrivateData >= sizeof(GARENDERDATA))
+            {
+                pRenderData = (GARENDERDATA *)pvPrivateData;
+                if (pRenderData->pvDmaBuffer)
+                {
+                    void *pvDmaBuffer = (uint8_t *)pRenderData->pvDmaBuffer + pSubmitCommand->DmaBufferSubmissionStartOffset;
+                    uint32_t const cbSubmit = cbDmaBufferSubmission;
+
+                    /* Copy DmaBuffer to Fifo. */
+                    void *pvCmd = SvgaFifoReserve(pGaDevExt->hw.pSvga, cbSubmit);
+                    AssertPtrReturn(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
+
+                    /* pvDmaBuffer is the actual address of the current data block.
+                     * Therefore do not use pSubmitCommand->DmaBufferSubmissionStartOffset here.
+                     */
+                    memcpy(pvCmd, pvDmaBuffer, cbSubmit);
+                    SvgaFifoCommit(pGaDevExt->hw.pSvga, cbSubmit);
+                }
+            }
+        }
     }
 
     ASMAtomicWriteU32(&pGaDevExt->u32LastSubmittedFenceId, pSubmitCommand->SubmissionFenceId);
@@ -1760,8 +1844,15 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
                 break;
             }
 
+            PVMSVGACONTEXT pSvgaContext = pContext->pSvgaContext;
+            if (!pSvgaContext)
+            {
+                Status = STATUS_NOT_SUPPORTED;
+                break;
+            }
+
             VBOXDISPIFESCAPE_GAGETCID *pGaGetCid = (VBOXDISPIFESCAPE_GAGETCID *)pEscapeHdr;
-            pGaGetCid->u32Cid = pContext->u32Cid;
+            pGaGetCid->u32Cid = pSvgaContext->u32Cid;
             Status = STATUS_SUCCESS;
             break;
         }

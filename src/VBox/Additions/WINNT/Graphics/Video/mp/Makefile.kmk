@@ -165,6 +165,9 @@ ifdef VBOX_WITH_WDDM
 
  ifdef VBOX_WITH_VMSVGA3D_DX
   VBoxWddm_DEFS           += VBOX_WITH_VMSVGA3D_DX
+  VBoxWddm_SOURCES        += \
+  	wddm/gallium/SvgaRender.cpp \
+  	wddm/gallium/VBoxMPDX.cpp
  endif
 
 endif # VBOX_WITH_WDDM

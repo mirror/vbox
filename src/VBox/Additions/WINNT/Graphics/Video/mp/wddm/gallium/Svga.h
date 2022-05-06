@@ -136,6 +136,22 @@ typedef struct VMSVGACBSTATE
     KSPIN_LOCK           SpinLock;                 /* Lock for aCBContexts. */
 } VMSVGACBSTATE, *PVMSVGACBSTATE;
 
+/* Contexts + One shaders mob per context + surfaces. */
+#define SVGA3D_MAX_MOBS (SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_SURFACE_IDS)
+
+typedef struct VMSVGAMOB
+{
+    AVLU32NODECORE              core;                       /* AVL entry. Key is mobid, allocated by the miniport. */
+    uint32_t                    cbMob;                      /* Size of mob in bytes. */
+    uint32_t                    cDescriptionPages;          /* How many pages are required to hold PPN64 page table. */
+    SVGAMobFormat               enmMobFormat;               /* Page table format. */
+    PPN64                       base;                       /* Page which contains the page table. */
+    RTR0MEMOBJ                  hMemObj;                    /* Page table pages. */
+    HANDLE                      hAllocation;                /* Allocation which is bound to the mob. */
+} VMSVGAMOB, *PVMSVGAMOB;
+
+#define VMSVGAMOB_ID(a_pMob) ((a_pMob)->core.Key)
+
 /* VMSVGA specific part of Gallium device extension. */
 typedef struct VBOXWDDM_EXT_VMSVGA
 {
@@ -187,6 +203,9 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     /** AVL tree for mapping sids to the surface objects. */
     AVLU32TREE SurfaceTree;
 
+    /** AVL tree for mapping mobid to the corresponding structure. */
+    AVLU32TREE MobTree;
+
     /** List of host objects, which must be deleted at PASSIVE_LEVEL. */
     RTLISTANCHOR DeletedHostObjectsList;
 
@@ -199,6 +218,12 @@ typedef struct VBOXWDDM_EXT_VMSVGA
         uint32_t u32BytesPerLine;
     } lastGMRFB;
 
+    struct
+    {
+        PVMSVGAMOB pMob;
+        RTR0MEMOBJ hMemObj;
+    } aOT[SVGA_OTABLE_DX_MAX];
+
     /** Bitmap of used GMR ids. Bit 0 - GMR id 0, etc. */
     uint32_t *pu32GMRBits; /* Number of GMRs is controlled by the host (u32GmrMaxIds), so allocate the bitmap. */
     uint32_t cbGMRBits;    /* Bytes allocated for pu32GMRBits */
@@ -208,8 +233,31 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** Bitmap of used surface ids. Bit 0 - surface id 0, etc. */
     uint32_t au32SurfaceBits[(SVGA3D_MAX_SURFACE_IDS + 31) / 32];
+
+    /** Bitmap of used DX context ids. Bit 0 - context id 0, etc. */
+    uint32_t au32DXContextBits[(SVGA3D_MAX_CONTEXT_IDS + 31) / 32];
+
+    /** Bitmap of used MOB ids. Bit 0 - context id 0, etc. */
+    uint32_t au32MobBits[(SVGA3D_MAX_MOBS + 31) / 32];
 } VBOXWDDM_EXT_VMSVGA;
 typedef struct VBOXWDDM_EXT_VMSVGA *PVBOXWDDM_EXT_VMSVGA;
+
+typedef struct VMSVGACOT
+{
+    PVMSVGAMOB              pMob;                       /* COTable mob. */
+    RTR0MEMOBJ              hMemObj;                    /* COTable pages. */
+    uint32_t                cEntries;                   /* How many objects can be stored in the COTable. */
+    uint32_t                cNewEntries;                /* New size of the COTable for rebind. */
+    bool                    fRebind : 1;                /* Mob must be reallocated and host must be informed. */
+} VMSVGACOT, *PVMSVGACOT;
+
+typedef struct VMSVGACONTEXT
+{
+    uint32_t                    u32Cid;                     /* SVGA context id of this context. */
+    bool                        fDXContext : 1;             /* Whether this context is a DX context or VGPU9. */
+    bool                        fDebugVerifyCommands : 1;
+    VMSVGACOT                   aCOT[SVGA_COTABLE_MAX];     /* Context Object Tables. */
+} VMSVGACONTEXT, *PVMSVGACONTEXT;
 
 typedef struct SVGAHOSTOBJECT SVGAHOSTOBJECT;
 typedef DECLCALLBACKTYPE(NTSTATUS, FNHostObjectDestroy,(SVGAHOSTOBJECT *pThis));
@@ -493,5 +541,60 @@ NTSTATUS SvgaRegionDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
                            uint32_t u32GmrId);
 void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
                         void *pvOwner);
+
+NTSTATUS SvgaDXContextIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
+                              uint32_t *pu32Cid);
+
+NTSTATUS SvgaDXContextIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
+                             uint32_t u32Cid);
+
+NTSTATUS SvgaMobIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
+                        uint32_t *pu32MobId);
+
+NTSTATUS SvgaMobIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
+                       uint32_t u32MobId);
+
+NTSTATUS SvgaDXContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
+                             uint32_t u32Cid);
+
+NTSTATUS SvgaDXContextDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
+                              uint32_t u32Cid);
+
+NTSTATUS SvgaRenderCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
+                               PVMSVGACONTEXT pSvgaContext,
+                               void *pvTarget,
+                               uint32_t cbTarget,
+                               const void *pvSource,
+                               uint32_t cbSource,
+                               uint32_t *pu32TargetLength,
+                               uint32_t *pu32ProcessedLength);
+
+#ifdef DEBUG
+NTSTATUS SvgaDebugCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
+                              PVMSVGACONTEXT pSvgaContext,
+                              const void *pvSource,
+                              uint32_t cbSource);
+#endif
+
+NTSTATUS SvgaMobAlloc(VBOXWDDM_EXT_VMSVGA *pSvga,
+                      PVMSVGAMOB *ppMob);
+void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
+                 PVMSVGAMOB pMob);
+NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
+                       PVMSVGAMOB *ppMob,
+                       uint32_t cMobPages,
+                       HANDLE hAllocation);
+NTSTATUS SvgaMobFillPageTableForMDL(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                    PVMSVGAMOB pMob,
+                                    PMDL pMdl,
+                                    uint32_t MdlOffset);
+NTSTATUS SvgaMobFillPageTableForMemObj(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                       PVMSVGAMOB pMob,
+                                       RTR0MEMOBJ hMemObj);
+
+NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
+                         PVMSVGACONTEXT pSvgaContext,
+                         SVGACOTableType enmType,
+                         uint32_t id);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_wddm_gallium_Svga_h */
