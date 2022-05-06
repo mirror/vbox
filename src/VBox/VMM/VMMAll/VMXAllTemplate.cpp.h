@@ -6852,10 +6852,10 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     if (pVCpu->hm.s.fGCMTrapXcptDE)
     {
         uint8_t cbInstr = 0;
-        rc = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
-        if (rc == VINF_SUCCESS)
+        VBOXSTRICTRC rc2 = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
+        if (rc2 == VINF_SUCCESS)
             rcStrict = VINF_SUCCESS;    /* Restart instruction with modified guest register context. */
-        else if (rc == VINF_EM_RAW_GUEST_TRAP)
+        else if (rc2 == VINF_EM_RAW_GUEST_TRAP)
             rcStrict = VERR_NOT_FOUND;  /* Deliver the exception. */
         else
             Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
