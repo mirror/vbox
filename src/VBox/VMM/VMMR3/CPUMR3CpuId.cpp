@@ -4582,6 +4582,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
                           "Info on guest CPU '%s' could not be found. Please, select a different CPU.", Config.szCpuName)
              : rc;
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (pCpum->GuestInfo.fMxCsrMask & ~pVM->cpum.s.fHostMxCsrMask)
     {
         LogRel(("Stripping unsupported MXCSR bits from guest mask: %#x -> %#x (host: %#x)\n", pCpum->GuestInfo.fMxCsrMask,
@@ -4589,6 +4590,9 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         pCpum->GuestInfo.fMxCsrMask &= pVM->cpum.s.fHostMxCsrMask;
     }
     LogRel(("CPUM: MXCSR_MASK=%#x (host: %#x)\n", pCpum->GuestInfo.fMxCsrMask, pVM->cpum.s.fHostMxCsrMask));
+#else
+    LogRel(("CPUM: MXCSR_MASK=%#x\n", pCpum->GuestInfo.fMxCsrMask));
+#endif
 
     /** @cfgm{/CPUM/MSRs/[Name]/[First|Last|Type|Value|...],}
      * Overrides the guest MSRs.

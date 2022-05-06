@@ -2021,9 +2021,9 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         LogRel(("The CPU doesn't support CPUID!\n"));
         return VERR_UNSUPPORTED_CPU;
     }
-#endif
 
     pVM->cpum.s.fHostMxCsrMask = CPUMR3DeterminHostMxCsrMask();
+#endif
 
     CPUMMSRS HostMsrs;
     RT_ZERO(HostMsrs);
