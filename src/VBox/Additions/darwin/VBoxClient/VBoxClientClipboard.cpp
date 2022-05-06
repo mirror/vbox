@@ -60,7 +60,7 @@ static RTCRITSECT       g_critsect;
 /*********************************************************************************************************************************
 *   Local Function Prototypes                                                                                                    *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int) vbclClipboardStop(void);
+static int vbclClipboardStop(void);
 
 
 /**
@@ -204,7 +204,7 @@ static DECLCALLBACK(int) vbclGuestPasteboardPoll(RTTHREAD hThreadSelf, void *pvU
  *
  * @return  IPRT status code.
  */
-static DECLCALLBACK(int) vbclClipboardStart(void)
+static int vbclClipboardStart(void)
 {
     int rc;
 
@@ -278,7 +278,7 @@ static DECLCALLBACK(int) vbclClipboardStart(void)
  *
  * @return  IPRT status code.
  */
-static DECLCALLBACK(int) vbclClipboardStop(void)
+static int vbclClipboardStop(void)
 {
     int rc;
 

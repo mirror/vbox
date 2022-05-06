@@ -3416,8 +3416,7 @@ endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
 #
 ## @todo consider maxing this out.
 ifndef VBOX_GCC_std
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64) # Go straight for c++17 here.
-VBOX_GCC_std := -std=c++17
+ if 0
 # else if "$(VBOX_CLANG_VERSION_CXX)" vge 60000 # Most language features complete by v6. Lib stuff was less complete in v6, but hopefully acceptable for out purposes.
 #VBOX_GCC_std := -std=c++17
  else if "$(VBOX_CLANG_VERSION_CXX)" vge 50000 # darwin Xcode 5 allegedly knows what C++11 is
@@ -7654,7 +7653,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  VBOX_PATH_QT            ?= /usr
  VBOX_PATH_QT_LIB        ?= $(VBOX_PATH_QT)/lib
 
- if defined(VBOX_WITH_ORACLE_QT) && (!defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin")
+ if defined(VBOX_WITH_ORACLE_QT) && (!defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin") 
   VBOX_QT_INFIX := VBox
  endif
 
