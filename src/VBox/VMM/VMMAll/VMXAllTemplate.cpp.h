@@ -6849,7 +6849,7 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
-    if (pVCpu->hm.s.fGCMTrapXcptDE)
+    if (VCPU_2_VMXSTATE(pVCpu).fGCMTrapXcptDE)
     {
         uint8_t cbInstr = 0;
         VBOXSTRICTRC rc2 = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
