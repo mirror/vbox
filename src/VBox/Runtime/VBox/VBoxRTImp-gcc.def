@@ -316,7 +316,8 @@ EXPORTS
     _ZN21RTCRestBinaryResponse15receiveCompleteEP14RTHTTPINTERNAL
     _ZN21RTCRestBinaryResponse18setMaxDownloadSizeEm
     _ZN21RTCRestBinaryResponse19receiveHttpCallbackEP14RTHTTPINTERNALPKvmjyyPv
-    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjyyEPv
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjyyEPv   ; before-noexcept
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPDoFiPS_PKvmjyyEPv ; after-noexcept
     _ZN21RTCRestBinaryResponseC1Ev
     _ZN21RTCRestBinaryResponseC2Ev
     _ZN21RTCRestOutputToString6outputEPKcm
@@ -358,7 +359,8 @@ EXPORTS
     _ZN22RTCRestBinaryParameter14setContentTypeEPKc
     _ZN22RTCRestBinaryParameter15assignWriteableEPvm
     _ZN22RTCRestBinaryParameter16xmitHttpCallbackEP14RTHTTPINTERNALPvmyPmS2_
-    _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmyPmES1_y
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmyPmES1_y   ; before-noexcept
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPDoFiPS_PvmyPmES1_y ; after-noexcept
     _ZN22RTCRestBinaryParameterC1Ev
     _ZN22RTCRestBinaryParameterC2Ev
     _ZN23RTCRestOutputPrettyBase10beginArrayEv
