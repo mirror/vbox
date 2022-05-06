@@ -754,7 +754,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
                 RTStrFree(pszMIMEHint);
                 pszMIMEHint = NULL;
             }
-            AssertRCReturn(rc, rc);
+            AssertRCBreak(rc);
 
             if (pClient->State.msKeepAlive)
             {

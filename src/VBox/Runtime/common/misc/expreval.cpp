@@ -2572,6 +2572,8 @@ RTDECL(int) RTExprEvalCreate(PRTEXPREVAL phEval, uint64_t fFlags, const char *ps
             return VINF_SUCCESS;
 
         }
+
+        RTStrFree(pszNameCopy);
         return VERR_NO_MEMORY;
     }
     return VERR_NO_STR_MEMORY;

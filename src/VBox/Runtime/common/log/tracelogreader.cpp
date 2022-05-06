@@ -815,7 +815,7 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtDescRecvd(PRTTRACELOGRDRINT pThis, RTTR
             /* Allocate new internal event descriptor state. */
             size_t cbEvtDesc = RT_UOFFSETOF_DYN(RTTRACELOGRDREVTDESC, aEvtItemDesc[pEvtDesc->cEvtItems]);
             PRTTRACELOGRDREVTDESC pEvtDescInt = (PRTTRACELOGRDREVTDESC)RTMemAllocZ(cbEvtDesc);
-            if (RT_LIKELY(pEvtDesc))
+            if (RT_LIKELY(pEvtDescInt))
             {
                 pEvtDescInt->cbStrId               = pEvtDesc->cbStrId;
                 pEvtDescInt->cbStrDesc             = pEvtDesc->cbStrDesc;

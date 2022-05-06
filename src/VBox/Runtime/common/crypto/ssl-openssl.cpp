@@ -134,6 +134,8 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
                 *phSsl = pThis;
                 return VINF_SUCCESS;
             }
+
+            RTMemFree(pThis);
         }
         return VERR_NO_MEMORY;
     }

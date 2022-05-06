@@ -541,8 +541,10 @@ static PRTFSNTFSMFTREC rtFsNtfsVol_NewMftRec(PRTFSNTFSVOL pVol, uint64_t idMft)
             pRec->cRefs        = 1;
             if (RTAvlU64Insert(&pVol->MftRoot, &pRec->TreeNode))
                 return pRec;
-            RTMemFree(pRec);
+            RTMemFree(pRec->pbRec);
         }
+
+        RTMemFree(pRec);
     }
     return NULL;
 }
