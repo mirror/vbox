@@ -166,13 +166,13 @@ HRESULT Progress::init(
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    HRESULT rc = unconst(pEventSource).createObject();
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = unconst(pEventSource).createObject();
+    if (FAILED(hrc))
+        return hrc;
 
-    rc = pEventSource->init();
-    if (FAILED(rc))
-        return rc;
+    hrc = pEventSource->init();
+    if (FAILED(hrc))
+        return hrc;
 
 #if !defined(VBOX_COM_INPROC)
     AssertReturn(aParent, E_INVALIDARG);
@@ -340,29 +340,29 @@ void Progress::uninit()
  */
 HRESULT Progress::i_notifyComplete(HRESULT aResultCode)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IVirtualBoxErrorInfo> errorInfo;
     if (FAILED(aResultCode))
     {
         /* try to import error info from the current thread */
 #if !defined(VBOX_WITH_XPCOM)
         ComPtr<IErrorInfo> err;
-        rc = ::GetErrorInfo(0, err.asOutParam());
-        if (rc == S_OK && err)
-            rc = err.queryInterfaceTo(errorInfo.asOutParam());
+        hrc = ::GetErrorInfo(0, err.asOutParam());
+        if (hrc == S_OK && err)
+            hrc = err.queryInterfaceTo(errorInfo.asOutParam());
 #else /* !defined(VBOX_WITH_XPCOM) */
         nsCOMPtr<nsIExceptionService> es;
-        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-        if (NS_SUCCEEDED(rc))
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+        if (NS_SUCCEEDED(hrc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-            if (NS_SUCCEEDED(rc))
+            hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+            if (NS_SUCCEEDED(hrc))
             {
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException(ex.asOutParam());
-                if (NS_SUCCEEDED(rc) && ex)
-                    rc = ex.queryInterfaceTo(errorInfo.asOutParam());
+                hrc = em->GetCurrentException(ex.asOutParam());
+                if (NS_SUCCEEDED(hrc) && ex)
+                    hrc = ex.queryInterfaceTo(errorInfo.asOutParam());
             }
         }
 #endif /* !defined(VBOX_WITH_XPCOM) */
@@ -408,8 +408,8 @@ HRESULT Progress::i_notifyCompleteV(HRESULT aResultCode,
 
     Utf8Str text(aText, va);
     ComObjPtr<VirtualBoxErrorInfo> errorInfo;
-    HRESULT rc = errorInfo.createObject();
-    AssertComRCReturnRC(rc);
+    HRESULT hrc = errorInfo.createObject();
+    AssertComRCReturnRC(hrc);
     errorInfo->init(aResultCode, aIID, pcszComponent, text);
 
     return i_notifyCompleteWorker(aResultCode, errorInfo);
@@ -455,8 +455,8 @@ HRESULT Progress::i_notifyCompleteBothV(HRESULT aResultCode,
 
     Utf8Str text(pszFormat, va);
     ComObjPtr<VirtualBoxErrorInfo> errorInfo;
-    HRESULT rc = errorInfo.createObject();
-    AssertComRCReturnRC(rc);
+    HRESULT hrc = errorInfo.createObject();
+    AssertComRCReturnRC(hrc);
     errorInfo->initEx(aResultCode, vrc, aIID, pszComponent, text);
 
     return i_notifyCompleteWorker(aResultCode, errorInfo);
@@ -476,7 +476,7 @@ HRESULT Progress::i_notifyCompleteBothV(HRESULT aResultCode,
 bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertReturn(autoCaller.isOk(), false);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -923,7 +923,6 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
 
     /* Note: no locking needed, because we just use public methods. */
 
-    HRESULT rc           = S_OK;
     BOOL fCancelable     = FALSE;
     BOOL fCompleted      = FALSE;
     BOOL fCanceled       = FALSE;
@@ -931,8 +930,8 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
     ULONG currentPercent = 0;
     ULONG cOp            = 0;
     /* Is the async process cancelable? */
-    rc = aProgressOther->COMGETTER(Cancelable)(&fCancelable);
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = aProgressOther->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(hrc)) return hrc;
 
     uint64_t u64StopTime = UINT64_MAX;
     if (aTimeoutMS > 0)
@@ -944,12 +943,12 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
          * it is cancelable. */
         if (fCancelable)
         {
-            rc = COMGETTER(Canceled)(&fCanceled);
-            if (FAILED(rc)) return rc;
+            hrc = COMGETTER(Canceled)(&fCanceled);
+            if (FAILED(hrc)) return hrc;
             if (fCanceled)
             {
-                rc = aProgressOther->Cancel();
-                if (FAILED(rc)) return rc;
+                hrc = aProgressOther->Cancel();
+                if (FAILED(hrc)) return hrc;
             }
         }
         /* Even if the user canceled the process, we have to wait until the
@@ -965,31 +964,31 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
             ULONG curOp;
             for (;;)
             {
-                rc = aProgressOther->COMGETTER(Operation(&curOp));
-                if (FAILED(rc)) return rc;
+                hrc = aProgressOther->COMGETTER(Operation(&curOp));
+                if (FAILED(hrc)) return hrc;
                 if (cOp != curOp)
                 {
                     Bstr bstr;
                     ULONG currentWeight;
-                    rc = aProgressOther->COMGETTER(OperationDescription(bstr.asOutParam()));
-                    if (FAILED(rc)) return rc;
-                    rc = aProgressOther->COMGETTER(OperationWeight(&currentWeight));
-                    if (FAILED(rc)) return rc;
-                    rc = SetNextOperation(bstr.raw(), currentWeight);
-                    if (FAILED(rc)) return rc;
+                    hrc = aProgressOther->COMGETTER(OperationDescription(bstr.asOutParam()));
+                    if (FAILED(hrc)) return hrc;
+                    hrc = aProgressOther->COMGETTER(OperationWeight(&currentWeight));
+                    if (FAILED(hrc)) return hrc;
+                    hrc = SetNextOperation(bstr.raw(), currentWeight);
+                    if (FAILED(hrc)) return hrc;
                     ++cOp;
                 }
                 else
                     break;
             }
 
-            rc = aProgressOther->COMGETTER(OperationPercent(&currentPercent));
-            if (FAILED(rc)) return rc;
+            hrc = aProgressOther->COMGETTER(OperationPercent(&currentPercent));
+            if (FAILED(hrc)) return hrc;
             if (currentPercent != prevPercent)
             {
                 prevPercent = currentPercent;
-                rc = SetCurrentOperationProgress(currentPercent);
-                if (FAILED(rc)) return rc;
+                hrc = SetCurrentOperationProgress(currentPercent);
+                if (FAILED(hrc)) return hrc;
             }
         }
         if (fCompleted)
@@ -1004,8 +1003,8 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
                 u64RemainingMS = 10;
             else if (u64RemainingMS > 200)
                 u64RemainingMS = 200;
-            rc = aProgressOther->WaitForCompletion((LONG)u64RemainingMS);
-            if (FAILED(rc)) return rc;
+            hrc = aProgressOther->WaitForCompletion((LONG)u64RemainingMS);
+            if (FAILED(hrc)) return hrc;
 
             if (RTTimeMilliTS() >= u64StopTime)
                 return VBOX_E_TIMEOUT;
@@ -1013,24 +1012,24 @@ HRESULT Progress::waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgr
         else
         {
             /* Make sure the loop is not too tight */
-            rc = aProgressOther->WaitForCompletion(200);
-            if (FAILED(rc)) return rc;
+            hrc = aProgressOther->WaitForCompletion(200);
+            if (FAILED(hrc)) return hrc;
         }
     }
 
     /* Transfer error information if applicable and report the error status
      * back to the caller to make this as easy as possible. */
     LONG iRc;
-    rc = aProgressOther->COMGETTER(ResultCode)(&iRc);
-    if (FAILED(rc)) return rc;
+    hrc = aProgressOther->COMGETTER(ResultCode)(&iRc);
+    if (FAILED(hrc)) return hrc;
     if (FAILED((HRESULT)iRc))
     {
         setError(ProgressErrorInfo(aProgressOther));
-        rc = (HRESULT)iRc;
+        hrc = (HRESULT)iRc;
     }
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 /**
