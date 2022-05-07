@@ -117,6 +117,12 @@ public:
     bool isOk() const { return SUCCEEDED(mRC); }
 
     /**
+     * Returns |true| if |FAILED(rc())| is |true|, for convenience.
+     * |true| means the number of callers was _not_ successfully increased.
+     */
+    bool isNotOk() const { return FAILED(mRC); }
+
+    /**
      * Temporarily decreases the number of callers of the managed object.
      * May only be called if #isOk() returns |true|. Note that #rc() will
      * return E_FAIL after this method succeeds.
