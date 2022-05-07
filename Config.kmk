@@ -1898,6 +1898,7 @@ DEFS.strict      = RT_STRICT VBOX_STRICT
 DEFS.asan        = RT_STRICT VBOX_STRICT
 DEFS.x86         = RT_ARCH_X86 __X86__
 DEFS.amd64       = RT_ARCH_AMD64 __AMD64__
+DEFS.arm64       = RT_ARCH_ARM64
 DEFS.sparc32     = RT_ARCH_SPARC
 DEFS.sparc64     = RT_ARCH_SPARC64
 DEFS.darwin      = RT_OS_DARWIN __DARWIN__

@@ -112,10 +112,10 @@ typedef struct LNXKAIOIOCB
     uint32_t  u32Padding1;
 #endif
     /** How many bytes to transfer. */
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
     uint32_t  cbTransfer;
     uint32_t  u32Padding2;
-#elif defined(RT_ARCH_AMD64)
+#elif ARCH_BITS == 64
     uint64_t  cbTransfer;
 #else
 # error "Unknown architecture"
@@ -138,28 +138,28 @@ typedef struct LNXKAIOIOEVENT
 {
     /** The pvUser field from the iocb. */
     void         *pvUser;
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
     uint32_t      u32Padding0;
 #endif
     /** The LNXKAIOIOCB object this event is for. */
     PLNXKAIOIOCB *pIoCB;
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
     uint32_t      u32Padding1;
 #endif
     /** The result code of the operation .*/
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
     int32_t       rc;
     uint32_t      u32Padding2;
-#elif defined(RT_ARCH_AMD64)
+#elif ARCH_BITS == 64
     int64_t       rc;
 #else
 # error "Unknown architecture"
 #endif
     /** Secondary result code. */
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
     int32_t       rc2;
     uint32_t      u32Padding3;
-#elif defined(RT_ARCH_AMD64)
+#elif ARCH_BITS == 64
     int64_t       rc2;
 #else
 # error "Unknown architecture"

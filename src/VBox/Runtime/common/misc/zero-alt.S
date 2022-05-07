@@ -30,11 +30,12 @@
         .section    __TEXT,__text,regular,pure_instructions
         .section    __TEXT,__const
 # define NAME(a) _##a
-#elif defined(ASM_FORMAT_ELF) && (defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64))
-! Putting it in the rodata segment/section for now.
+#elif defined(ASM_FORMAT_ELF) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64))
+/* Putting it in the rodata segment/section for now. */
         .file       "zero-alt.S"
         .section    ".rodata"
 # define NAME(a) a
+# define NEED_HIDDEN
 #else
 # error "PORT ME!"
 #endif
@@ -42,7 +43,7 @@
 /* 64KB of zero memory with various sized labels. */
         .globl      NAME(g_abRTZeroPage)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZeroPage)
 # endif
         .type       NAME(g_abRTZeroPage),#object
@@ -55,7 +56,7 @@
 NAME(g_abRTZeroPage):
         .globl      NAME(g_abRTZero4K)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZero4K)
 # endif
         .type       NAME(g_abRTZero4K),#object
@@ -64,7 +65,7 @@ NAME(g_abRTZeroPage):
 NAME(g_abRTZero4K):
         .globl      NAME(g_abRTZero8K)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZero8K)
 # endif
         .type       NAME(g_abRTZero8K),#object
@@ -73,7 +74,7 @@ NAME(g_abRTZero4K):
 NAME(g_abRTZero8K):
         .globl      NAME(g_abRTZero16K)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZero16K)
 # endif
         .type       NAME(g_abRTZero16K),#object
@@ -82,7 +83,7 @@ NAME(g_abRTZero8K):
 NAME(g_abRTZero16K):
         .globl      NAME(g_abRTZero32K)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZero32K)
 # endif
         .type       NAME(g_abRTZero32K),#object
@@ -91,7 +92,7 @@ NAME(g_abRTZero16K):
 NAME(g_abRTZero32K):
         .globl      NAME(g_abRTZero64K)
 #ifdef ASM_FORMAT_ELF
-# if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# ifdef NEED_HIDDEN
         .hidden     NAME(g_abRTZero64K)
 # endif
         .type       NAME(g_abRTZero64K),#object
@@ -101,7 +102,7 @@ NAME(g_abRTZero64K):
 
 #ifdef ASM_FORMAT_MACHO
         .space      65536
-#elif defined(ASM_FORMAT_ELF) && (defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64))
+#elif defined(ASM_FORMAT_ELF)
         .skip       65536
 #endif
 
