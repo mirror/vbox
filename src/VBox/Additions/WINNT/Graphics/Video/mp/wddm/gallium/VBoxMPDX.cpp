@@ -880,7 +880,7 @@ NTSTATUS APIENTRY DxgkDdiDXPatch(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pP
            pPatch->pDmaBuffer, pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset,
            pPatch->PatchLocationListSubmissionLength));
 
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
 
     for (UINT i = 0; i < pPatch->PatchLocationListSubmissionLength; ++i)
     {
