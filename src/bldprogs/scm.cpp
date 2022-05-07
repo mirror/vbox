@@ -92,6 +92,8 @@ typedef enum SCMOPT
     SCMOPT_NO_ASM_MEM_PAGE_USE,
     SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE,
     SCMOPT_NO_PAGE_RESTRICTIONS,
+    SCMOPT_NO_RC_USE,
+    SCMOPT_UNRESTRICTED_RC_USE,
     SCMOPT_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_EXTERNAL_COPYRIGHT,
@@ -201,6 +203,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fFixErrH = */                               true,
     /* .fOnlyGuestHostPage = */                     false,
     /* .fNoASMMemPageUse = */                       false,
+    /* .fOnlyHrcVrcInsteadOfRc */                   false,
     /* .fUpdateCopyrightYear = */                   false,
     /* .fExternalCopyright = */                     false,
     /* .fLgplDisclaimer = */                        false,
@@ -258,6 +261,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-page-restrictions",             SCMOPT_NO_PAGE_RESTRICTIONS,            RTGETOPT_REQ_NOTHING },
     { "--no-ASMMemPage-use",                SCMOPT_NO_ASM_MEM_PAGE_USE,             RTGETOPT_REQ_NOTHING },
     { "--unrestricted-ASMMemPage-use",      SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE,   RTGETOPT_REQ_NOTHING },
+    { "--no-rc-use",                        SCMOPT_NO_RC_USE,                       RTGETOPT_REQ_NOTHING },
+    { "--unrestricted-rc-use",              SCMOPT_UNRESTRICTED_RC_USE,             RTGETOPT_REQ_NOTHING },
     { "--update-copyright-year",            SCMOPT_UPDATE_COPYRIGHT_YEAR,           RTGETOPT_REQ_NOTHING },
     { "--no-update-copyright-year",         SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,        RTGETOPT_REQ_NOTHING },
     { "--external-copyright",               SCMOPT_EXTERNAL_COPYRIGHT,              RTGETOPT_REQ_NOTHING },
@@ -322,6 +327,7 @@ SCM_REWRITER_CFG(g_SvnKeywords,                     "svn-keywords",             
 SCM_REWRITER_CFG(g_SvnSyncProcess,                  "svn-sync-process",             rewrite_SvnSyncProcess);
 SCM_REWRITER_CFG(g_UnicodeChecks,                   "unicode-checks",               rewrite_UnicodeChecks);
 SCM_REWRITER_CFG(g_PageChecks,                      "page-checks",                  rewrite_PageChecks);
+SCM_REWRITER_CFG(g_ForceHrcVrcInsteadOfRc,          "force-hrc-vrc-no-rc",          rewrite_ForceHrcVrcInsteadOfRc);
 SCM_REWRITER_CFG(g_Copyright_CstyleComment,         "copyright-c-style",            rewrite_Copyright_CstyleComment);
 SCM_REWRITER_CFG(g_Copyright_HashComment,           "copyright-hash-style",         rewrite_Copyright_HashComment);
 SCM_REWRITER_CFG(g_Copyright_PythonComment,         "copyright-python-style",       rewrite_Copyright_PythonComment);
@@ -367,6 +373,7 @@ static PCSCMREWRITERCFG const g_papRewriterActions[] =
     &g_Fix_Err_H,
     &g_UnicodeChecks,
     &g_PageChecks,
+    &g_ForceHrcVrcInsteadOfRc,
     &g_C_and_CPP,
 };
 
@@ -415,6 +422,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_C_and_CPP[] =
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
     &g_PageChecks,
+    &g_ForceHrcVrcInsteadOfRc,
     &g_Copyright_CstyleComment,
     &g_FixFlowerBoxMarkers,
     &g_Fix_C_and_CPP_Todos,
@@ -433,6 +441,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
     &g_PageChecks,
+    &g_ForceHrcVrcInsteadOfRc,
     &g_Copyright_CstyleComment,
     /// @todo &g_FixFlowerBoxMarkers,
     &g_FixHeaderGuards,
@@ -1195,6 +1204,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE:
             pSettings->fNoASMMemPageUse = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_NO_RC_USE:
+            pSettings->fOnlyHrcVrcInsteadOfRc = true;
+            return VINF_SUCCESS;
+        case SCMOPT_UNRESTRICTED_RC_USE:
+            pSettings->fOnlyHrcVrcInsteadOfRc = false;
             return VINF_SUCCESS;
 
         case SCMOPT_UPDATE_COPYRIGHT_YEAR:
@@ -2926,6 +2942,11 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 RTPrintf("      No ASMMemIsZeroPage or ASMMemZeroPage allowed, must instead use\n"
                          "      ASMMemIsZero and RT_BZERO with appropriate page size.  Default: %RTbool\n",
                          g_Defaults.fNoASMMemPageUse);
+                break;
+            case SCMOPT_NO_RC_USE:
+                RTPrintf("      No rc declaration allowed, must instead use\n"
+                         "      vrc for IPRT status codes and hrc for COM status codes.  Default: %RTbool\n",
+                         g_Defaults.fOnlyHrcVrcInsteadOfRc);
                 break;
             case SCMOPT_UPDATE_COPYRIGHT_YEAR:
                 RTPrintf("      Update the copyright year.  Default: %RTbool\n", g_Defaults.fUpdateCopyrightYear);

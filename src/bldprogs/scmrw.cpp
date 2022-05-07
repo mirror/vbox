@@ -3333,6 +3333,94 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
 
 
 /**
+ * Checks for usage of rc in code instead of vrc for IPRT status codes (int) and hrc for COM
+ * status codes (HRESULT).
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ *
+ * @note Used in Main to avoid ambiguity when just using rc.
+ */
+bool rewrite_ForceHrcVrcInsteadOfRc(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF(pOut);
+    if (!pSettings->fOnlyHrcVrcInsteadOfRc)
+        return false;
+
+    static const SCMMATCHWORD s_aHresultVrc[] =
+    {
+        { RT_STR_TUPLE("HRESULT"),                  0, true, false },
+        { RT_STR_TUPLE("vrc"),                      1, true, false }
+    };
+
+    static const SCMMATCHWORD s_aIntHrc[] =
+    {
+        { RT_STR_TUPLE("int"),                      0, true, false },
+        { RT_STR_TUPLE("hrc"),                      1, true, false }
+    };
+
+    uint32_t        iLine = 0;
+    SCMEOL          enmEol;
+    size_t          cchLine;
+    const char      *pchLine;
+    RTERRINFOSTATIC ErrInfo;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        iLine++;
+
+        /* Look for forbidden declarations first. */
+        size_t offNext = 0;
+        int rc = ScmMatchWords(pchLine, cchLine, s_aHresultVrc, RT_ELEMENTS(s_aHresultVrc),
+                               &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            ScmFixManually(pState, "%u:%zu: 'HRESULT vrc' is not allowed! Use 'HRESULT hrc' instead.\n",
+                           iLine, offNext);
+            continue;
+        }
+
+        rc = ScmMatchWords(pchLine, cchLine, s_aIntHrc, RT_ELEMENTS(s_aIntHrc),
+                           &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            ScmFixManually(pState, "%u:%zu: 'int hrc' is not allowed! Use 'int vrc' instead.\n",
+                           iLine, offNext);
+            continue;
+        }
+
+        const RTSTRTUPLE RcTuple = { RT_STR_TUPLE("rc") };
+        size_t const cchWord = RcTuple.cch;
+        if (cchLine >= cchWord)
+        {
+            const char        *pchHit  = (const char *)memchr(pchLine, *RcTuple.psz, cchLine);
+            while (pchHit)
+            {
+                size_t cchLeft = (uintptr_t)&pchLine[cchLine] - (uintptr_t)pchHit;
+                if (   cchLeft >= cchWord
+                    && memcmp(pchHit, RcTuple.psz, cchWord) == 0
+                    && (   pchHit == pchLine
+                        || !ScmIsCIdentifierChar(pchHit[-1]))
+                    && (   cchLeft == cchWord
+                        || !ScmIsCIdentifierChar(pchHit[cchWord])) )
+                    ScmFixManually(pState, "%u:%zu: %s is not allowed! Use hrc or vrc instead.\n",
+                                   iLine, pchHit - pchLine + 1, RcTuple.psz);
+
+                /* next */
+                cchLeft -= 1;
+                if (cchLeft < cchWord)
+                    break;
+                pchHit = (const char *)memchr(pchHit + 1, *RcTuple.psz, cchLeft);
+            }
+        }
+    }
+
+    return false;
+}
+
+
+/**
  * Rewrite a C/C++ source or header file.
  *
  * @returns true if modifications were made, false if not.
