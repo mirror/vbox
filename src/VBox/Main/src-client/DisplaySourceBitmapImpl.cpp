@@ -60,9 +60,8 @@ HRESULT DisplaySourceBitmap::init(ComObjPtr<Display> pDisplay, unsigned uScreenI
     m.ulBytesPerLine = 0;
     m.bitmapFormat = BitmapFormat_Opaque;
 
-    int rc = initSourceBitmap(uScreenId, pFBInfo);
-
-    if (RT_FAILURE(rc))
+    int vrc = initSourceBitmap(uScreenId, pFBInfo);
+    if (RT_FAILURE(vrc))
         return E_FAIL;
 
     /* Confirm a successful initialization */
@@ -88,11 +87,11 @@ void DisplaySourceBitmap::uninit()
 
 HRESULT DisplaySourceBitmap::getScreenId(ULONG *aScreenId)
 {
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aScreenId = m.uScreenId;
-    return hr;
+    return hrc;
 }
 
 HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
@@ -102,7 +101,7 @@ HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
                                              ULONG *aBytesPerLine,
                                              BitmapFormat_T *aBitmapFormat)
 {
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAddress      = m.pu8Address;
@@ -112,14 +111,14 @@ HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
     *aBytesPerLine = m.ulBytesPerLine;
     *aBitmapFormat  = m.bitmapFormat;
 
-    return hr;
+    return hrc;
 }
 
 int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
                                           DISPLAYFBINFO *pFBInfo)
 {
     RT_NOREF(aScreenId);
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     if (pFBInfo->w == 0 || pFBInfo->h == 0)
     {
@@ -159,7 +158,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         m.pu8Allocated = (uint8_t *)RTMemAlloc(ulBytesPerLine * ulHeight);
         if (m.pu8Allocated == NULL)
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
         else
         {
@@ -167,7 +166,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         m.pu8Address = pAddress;
         m.ulWidth = ulWidth;
@@ -181,7 +180,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
