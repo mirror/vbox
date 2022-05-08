@@ -309,13 +309,13 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCreate(PPDMIHOSTAUDIO pInterface, 
     /*
      * Only create a stream if we have clients.
      */
-    int rc;
+    int vrc;
     NOREF(pThis);
 #if 0 /* later maybe */
     if (pThis->cClients == 0)
     {
         LogFunc(("No clients, failing with VERR_AUDIO_STREAM_COULD_NOT_CREATE.\n"));
-        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
+        vrc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
     }
     else
 #endif
@@ -342,7 +342,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCreate(PPDMIHOSTAUDIO pInterface, 
             pCfgAcq->Backend.cFramesPreBuffering    = pCfgReq->Backend.cFramesPreBuffering * cFramesVrdpServer
                                                     / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
 
-            rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
+            vrc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
         }
         else
         {
@@ -352,12 +352,12 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCreate(PPDMIHOSTAUDIO pInterface, 
             pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
             pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
             pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
 
         PDMAudioStrmCfgCopy(&pStreamVRDE->Cfg, pCfgAcq);
     }
-    return rc;
+    return vrc;
 }
 
 
@@ -397,30 +397,30 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamEnable(PPDMIHOSTAUDIO pInterface, 
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
-    int rc;
+    int vrc;
     if (!pDrv->pConsoleVRDPServer)
     {
         LogRelMax(32, ("Audio: VRDP console not ready (enable)\n"));
-        rc = VERR_AUDIO_STREAM_NOT_READY;
+        vrc = VERR_AUDIO_STREAM_NOT_READY;
     }
     else if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
     {
-        rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
-                                                           PDMAudioPropsMilliToFrames(&pStreamVRDE->Cfg.Props, 200 /*ms*/),
-                                                           PDMAudioPropsHz(&pStreamVRDE->Cfg.Props),
-                                                           PDMAudioPropsChannels(&pStreamVRDE->Cfg.Props),
-                                                           PDMAudioPropsSampleBits(&pStreamVRDE->Cfg.Props));
-        LogFlowFunc(("SendAudioInputBegin returns %Rrc\n", rc));
-        if (rc == VERR_NOT_SUPPORTED)
+        vrc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
+                                                            PDMAudioPropsMilliToFrames(&pStreamVRDE->Cfg.Props, 200 /*ms*/),
+                                                            PDMAudioPropsHz(&pStreamVRDE->Cfg.Props),
+                                                            PDMAudioPropsChannels(&pStreamVRDE->Cfg.Props),
+                                                            PDMAudioPropsSampleBits(&pStreamVRDE->Cfg.Props));
+        LogFlowFunc(("SendAudioInputBegin returns %Rrc\n", vrc));
+        if (vrc == VERR_NOT_SUPPORTED)
         {
             LogRelMax(64, ("Audio: No VRDE client connected, so no input recording available\n"));
-            rc = VERR_AUDIO_STREAM_NOT_READY;
+            vrc = VERR_AUDIO_STREAM_NOT_READY;
         }
     }
     else
-        rc = VINF_SUCCESS;
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
+        vrc = VINF_SUCCESS;
+    LogFlowFunc(("returns %Rrc\n", vrc));
+    return vrc;
 }
 
 
@@ -432,22 +432,22 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamDisable(PPDMIHOSTAUDIO pInterface,
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
-    int rc;
+    int vrc;
     if (!pDrv->pConsoleVRDPServer)
     {
         LogRelMax(32, ("Audio: VRDP console not ready (disable)\n"));
-        rc = VERR_AUDIO_STREAM_NOT_READY;
+        vrc = VERR_AUDIO_STREAM_NOT_READY;
     }
     else if (pStreamVRDE->Cfg.enmDir == PDMAUDIODIR_IN)
     {
         LogFlowFunc(("Calling SendAudioInputEnd\n"));
         pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
     }
     else
-        rc = VINF_SUCCESS;
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
+        vrc = VINF_SUCCESS;
+    LogFlowFunc(("returns %Rrc\n", vrc));
+    return vrc;
 }
 
 
