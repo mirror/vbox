@@ -140,9 +140,9 @@ VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
 /** @relates VirtualBoxClient::FinalConstruct() */
 HRESULT VirtualBoxClient::FinalConstruct()
 {
-    HRESULT rc = init();
+    HRESULT hrc = init();
     BaseFinalConstruct();
-    return rc;
+    return hrc;
 }
 
 void VirtualBoxClient::FinalRelease()
@@ -176,7 +176,7 @@ HRESULT VirtualBoxClient::init()
      * unsuccessful object creation to REGDB_E_CLASSNOTREG errors or similar
      * unhelpful ones which cause us a lot of grief with troubleshooting. */
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     try
     {
         if (ASMAtomicIncU32(&g_cInstances) != 1)
@@ -185,24 +185,24 @@ HRESULT VirtualBoxClient::init()
         mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
 
-        rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
-        if (FAILED(rc))
+        hrc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
+        if (FAILED(hrc))
 #ifdef RT_OS_WINDOWS
-            throw i_investigateVirtualBoxObjectCreationFailure(rc);
+            throw i_investigateVirtualBoxObjectCreationFailure(hrc);
 #else
-            throw rc;
+            throw hrc;
 #endif
 
         /* VirtualBox error return is postponed to method calls, fetch it. */
         ULONG rev;
-        rc = mData.m_pVirtualBox->COMGETTER(Revision)(&rev);
-        if (FAILED(rc))
-            throw rc;
+        hrc = mData.m_pVirtualBox->COMGETTER(Revision)(&rev);
+        if (FAILED(hrc))
+            throw hrc;
 
-        rc = unconst(mData.m_pEventSource).createObject();
-        AssertComRCThrow(rc, setError(rc, "Could not create EventSource for VirtualBoxClient"));
-        rc = mData.m_pEventSource->init();
-        AssertComRCThrow(rc, setError(rc, "Could not initialize EventSource for VirtualBoxClient"));
+        hrc = unconst(mData.m_pEventSource).createObject();
+        AssertComRCThrow(hrc, setError(hrc, "Could not create EventSource for VirtualBoxClient"));
+        hrc = mData.m_pEventSource->init();
+        AssertComRCThrow(hrc, setError(hrc, "Could not initialize EventSource for VirtualBoxClient"));
 
         /* HACK ALERT! This is for DllCanUnloadNow(). */
         s_cUnnecessaryAtlModuleLocks++;
@@ -225,11 +225,11 @@ HRESULT VirtualBoxClient::init()
             vrc = mData.m_pVBoxTranslator->registerTranslation(szNlsPath, true, &mData.m_pTrComponent);
             if (RT_SUCCESS(vrc))
             {
-                rc = i_reloadApiLanguage();
-                if (SUCCEEDED(rc))
+                hrc = i_reloadApiLanguage();
+                if (SUCCEEDED(hrc))
                     i_registerEventListener(); /* for updates */
                 else
-                    LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+                    LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", hrc));
             }
             else
                 LogRelFunc(("Register translation failed: %Rrc\n", vrc));
@@ -244,7 +244,7 @@ HRESULT VirtualBoxClient::init()
         if (RT_FAILURE(vrc))
         {
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to create semaphore (rc=%Rrc)"), vrc));
+            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to create semaphore (vrc=%Rrc)"), vrc));
         }
 
         vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread, this, 0,
@@ -253,27 +253,27 @@ HRESULT VirtualBoxClient::init()
         {
             RTSemEventDestroy(mData.m_SemEvWatcher);
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,  tr("Failed to create watcher thread (rc=%Rrc)"), vrc));
+            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,  tr("Failed to create watcher thread (vrc=%Rrc)"), vrc));
         }
     }
     catch (HRESULT err)
     {
         /* we assume that error info is set by the thrower */
-        rc = err;
+        hrc = err;
     }
     catch (...)
     {
-        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+        hrc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     /* Confirm a successful initialization when it's the case. Must be last,
      * as on failure it will uninitialize the object. */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
     else
-        autoInitSpan.setFailed(rc);
+        autoInitSpan.setFailed(hrc);
 
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
+    LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
     LogFlowThisFuncLeave();
     /* Unconditionally return success, because the error return is delayed to
      * the attribute/method calls through the InitFailed object state. */
@@ -640,10 +640,10 @@ HRESULT VirtualBoxClient::getSession(ComPtr<ISession> &aSession)
 {
     /* this is not stored in this object, no need to lock */
     ComPtr<ISession> pSession;
-    HRESULT rc = pSession.createInprocObject(CLSID_Session);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = pSession.createInprocObject(CLSID_Session);
+    if (SUCCEEDED(hrc))
         aSession = pSession;
-    return rc;
+    return hrc;
 }
 
 /**
@@ -671,15 +671,15 @@ HRESULT VirtualBoxClient::getEventSource(ComPtr<IEventSource> &aEventSource)
 HRESULT VirtualBoxClient::checkMachineError(const ComPtr<IMachine> &aMachine)
 {
     BOOL fAccessible = FALSE;
-    HRESULT rc = aMachine->COMGETTER(Accessible)(&fAccessible);
-    if (FAILED(rc))
-        return setError(rc, tr("Could not check the accessibility status of the VM"));
+    HRESULT hrc = aMachine->COMGETTER(Accessible)(&fAccessible);
+    if (FAILED(hrc))
+        return setError(hrc, tr("Could not check the accessibility status of the VM"));
     else if (!fAccessible)
     {
         ComPtr<IVirtualBoxErrorInfo> pAccessError;
-        rc = aMachine->COMGETTER(AccessError)(pAccessError.asOutParam());
-        if (FAILED(rc))
-            return setError(rc, tr("Could not get the access error message of the VM"));
+        hrc = aMachine->COMGETTER(AccessError)(pAccessError.asOutParam());
+        if (FAILED(hrc))
+            return setError(hrc, tr("Could not get the access error message of the VM"));
         else
         {
             ErrorInfo info(pAccessError);
@@ -704,16 +704,15 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
     VirtualBoxClient *pThis = (VirtualBoxClient *)pvUser;
     RTSEMEVENT sem = pThis->mData.m_SemEvWatcher;
     RTMSINTERVAL cMillies = VBOXCLIENT_DEFAULT_INTERVAL;
-    int vrc;
 
     /* The likelihood of early crashes are high, so start with a short wait. */
-    vrc = RTSemEventWait(sem, cMillies / 2);
+    int vrc = RTSemEventWait(sem, cMillies / 2);
 
     /* As long as the waiting times out keep retrying the wait. */
     while (RT_FAILURE(vrc))
     {
         {
-            HRESULT rc = S_OK;
+            HRESULT hrc = S_OK;
             ComPtr<IVirtualBox> pV;
             {
                 AutoReadLock alock(pThis COMMA_LOCKVAL_SRC_POS);
@@ -722,10 +721,10 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
             if (!pV.isNull())
             {
                 ULONG rev;
-                rc = pV->COMGETTER(Revision)(&rev);
-                if (FAILED_DEAD_INTERFACE(rc))
+                hrc = pV->COMGETTER(Revision)(&rev);
+                if (FAILED_DEAD_INTERFACE(hrc))
                 {
-                    LogRel(("VirtualBoxClient: detected unresponsive VBoxSVC (rc=%Rhrc)\n", rc));
+                    LogRel(("VirtualBoxClient: detected unresponsive VBoxSVC (hrc=%Rhrc)\n", hrc));
                     {
                         AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
                         /* Throw away the VirtualBox reference, it's no longer
@@ -743,12 +742,12 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                  * and disk load. */
                 ComPtr<IVirtualBox> pVirtualBox;
                 ComPtr<IToken> pToken;
-                rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
-                if (FAILED(rc))
+                hrc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
+                if (FAILED(hrc))
                     cMillies = 3 * VBOXCLIENT_DEFAULT_INTERVAL;
                 else
                 {
-                    LogRel(("VirtualBoxClient: detected working VBoxSVC (rc=%Rhrc)\n", rc));
+                    LogRel(("VirtualBoxClient: detected working VBoxSVC (hrc=%Rhrc)\n", hrc));
                     {
                         AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
                         /* Update the VirtualBox reference, there's a working
@@ -778,16 +777,16 @@ HRESULT VirtualBoxClient::i_reloadApiLanguage()
     if (mData.m_pVBoxTranslator == NULL)
         return S_OK;
 
-    HRESULT rc = mData.m_pVBoxTranslator->loadLanguage(mData.m_pVirtualBox);
-    if (FAILED(rc))
-        setError(rc, tr("Failed to load user language instance"));
-    return rc;
+    HRESULT hrc = mData.m_pVBoxTranslator->loadLanguage(mData.m_pVirtualBox);
+    if (FAILED(hrc))
+        setError(hrc, tr("Failed to load user language instance"));
+    return hrc;
 }
 
 HRESULT VirtualBoxClient::i_registerEventListener()
 {
-    HRESULT rc = mData.m_pVirtualBox->COMGETTER(EventSource)(mData.m_pVBoxEventSource.asOutParam());
-    if (SUCCEEDED(rc))
+    HRESULT hrc = mData.m_pVirtualBox->COMGETTER(EventSource)(mData.m_pVBoxEventSource.asOutParam());
+    if (SUCCEEDED(hrc))
     {
         ComObjPtr<VBoxEventListenerImpl> pVBoxListener;
         pVBoxListener.createObject();
@@ -795,17 +794,17 @@ HRESULT VirtualBoxClient::i_registerEventListener()
         mData.m_pVBoxEventListener = pVBoxListener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnLanguageChanged);
-        rc = mData.m_pVBoxEventSource->RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true);
-        if (FAILED(rc))
+        hrc = mData.m_pVBoxEventSource->RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true);
+        if (FAILED(hrc))
         {
-            rc = setError(rc, tr("Failed to register listener"));
+            hrc = setError(hrc, tr("Failed to register listener"));
             mData.m_pVBoxEventListener.setNull();
             mData.m_pVBoxEventSource.setNull();
         }
     }
     else
-        rc = setError(rc, tr("Failed to get event source from VirtualBox"));
-    return rc;
+        hrc = setError(hrc, tr("Failed to get event source from VirtualBox"));
+    return hrc;
 }
 
 void VirtualBoxClient::i_unregisterEventListener()
