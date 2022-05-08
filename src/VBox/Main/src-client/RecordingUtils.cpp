@@ -116,23 +116,23 @@ inline bool RecordingUtilsColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
                                               uint8_t *aDestBuf, uint8_t *aSrcBuf)
 {
     enum { PIX_SIZE = 3 };
-    bool rc = true;
+    bool fRc = true;
     AssertReturn(0 == (aWidth & 1), false);
     AssertReturn(0 == (aHeight & 1), false);
     T iter(aWidth, aHeight, aSrcBuf);
     unsigned cPixels = aWidth * aHeight;
-    for (unsigned i = 0; i < cPixels && rc; ++i)
+    for (unsigned i = 0; i < cPixels && fRc; ++i)
     {
         unsigned red, green, blue;
-        rc = iter.getRGB(&red, &green, &blue);
-        if (rc)
+        fRc = iter.getRGB(&red, &green, &blue);
+        if (fRc)
         {
             aDestBuf[i * PIX_SIZE    ] = red;
             aDestBuf[i * PIX_SIZE + 1] = green;
             aDestBuf[i * PIX_SIZE + 2] = blue;
         }
     }
-    return rc;
+    return fRc;
 }
 
 /**
