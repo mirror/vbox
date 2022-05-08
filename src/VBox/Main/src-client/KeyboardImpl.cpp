@@ -113,8 +113,8 @@ HRESULT Keyboard::init(Console *aParent)
     unconst(mParent) = aParent;
 
     unconst(mEventSource).createObject();
-    HRESULT rc = mEventSource->init();
-    AssertComRCReturnRC(rc);
+    HRESULT hrc = mEventSource->init();
+    AssertComRCReturnRC(hrc);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -313,9 +313,9 @@ HRESULT Keyboard::releaseKeys()
 
     if (pUpPort)
     {
-        int rc = pUpPort->pfnReleaseKeys(pUpPort);
-        if (RT_FAILURE(rc))
-            AssertMsgFailed(("Failed to release keys on all keyboards! rc=%Rrc\n", rc));
+        int vrc = pUpPort->pfnReleaseKeys(pUpPort);
+        if (RT_FAILURE(vrc))
+            AssertMsgFailed(("Failed to release keys on all keyboards! vrc=%Rrc\n", vrc));
     }
 
     return S_OK;
