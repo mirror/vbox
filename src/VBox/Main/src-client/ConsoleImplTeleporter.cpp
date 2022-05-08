@@ -204,11 +204,11 @@ static int teleporterTcpReadLine(TeleporterState *pState, char *pszBuf, size_t c
     for (;;)
     {
         char ch;
-        int rc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
-        if (RT_FAILURE(rc))
+        int vrc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
+        if (RT_FAILURE(vrc))
         {
-            LogRel(("Teleporter: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
-            return rc;
+            LogRel(("Teleporter: RTTcpRead -> %Rrc while reading string ('%s')\n", vrc, pszStart));
+            return vrc;
         }
         if (    ch == '\n'
             ||  ch == '\0')
@@ -327,11 +327,11 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
         TELEPORTERTCPHDR Hdr;
         Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         Hdr.cb       = RT_MIN((uint32_t)cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
-        int rc = RTTcpSgWriteL(pState->mhSocket, 2, &Hdr, sizeof(Hdr), pvBuf, (size_t)Hdr.cb);
-        if (RT_FAILURE(rc))
+        int vrc = RTTcpSgWriteL(pState->mhSocket, 2, &Hdr, sizeof(Hdr), pvBuf, (size_t)Hdr.cb);
+        if (RT_FAILURE(vrc))
         {
-            LogRel(("Teleporter/TCP: Write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
-            return rc;
+            LogRel(("Teleporter/TCP: Write error: %Rrc (cb=%#x)\n", vrc, Hdr.cb));
+            return vrc;
         }
         pState->moffStream += Hdr.cb;
         if (Hdr.cb == cbToWrite)
@@ -357,23 +357,23 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
  */
 static int teleporterTcpReadSelect(TeleporterState *pState)
 {
-    int rc;
+    int vrc;
     do
     {
-        rc = RTTcpSelectOne(pState->mhSocket, 1000);
-        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
+        vrc = RTTcpSelectOne(pState->mhSocket, 1000);
+        if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
         {
             pState->mfIOError = true;
-            LogRel(("Teleporter/TCP: Header select error: %Rrc\n", rc));
+            LogRel(("Teleporter/TCP: Header select error: %Rrc\n", vrc));
             break;
         }
         if (pState->mfStopReading)
         {
-            rc = VERR_EOF;
+            vrc = VERR_EOF;
             break;
         }
-    } while (rc == VERR_TIMEOUT);
-    return rc;
+    } while (vrc == VERR_TIMEOUT);
+    return vrc;
 }
 
 
@@ -388,7 +388,7 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
 
     for (;;)
     {
-        int rc;
+        int vrc;
 
         /*
          * Check for various conditions and may have been signalled.
@@ -406,16 +406,16 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
          */
         if (!pState->mcbReadBlock)
         {
-            rc = teleporterTcpReadSelect(pState);
-            if (RT_FAILURE(rc))
-                return rc;
+            vrc = teleporterTcpReadSelect(pState);
+            if (RT_FAILURE(vrc))
+                return vrc;
             TELEPORTERTCPHDR Hdr;
-            rc = RTTcpRead(pState->mhSocket, &Hdr, sizeof(Hdr), NULL);
-            if (RT_FAILURE(rc))
+            vrc = RTTcpRead(pState->mhSocket, &Hdr, sizeof(Hdr), NULL);
+            if (RT_FAILURE(vrc))
             {
                 pState->mfIOError = true;
-                LogRel(("Teleporter/TCP: Header read error: %Rrc\n", rc));
-                return rc;
+                LogRel(("Teleporter/TCP: Header read error: %Rrc\n", vrc));
+                return vrc;
             }
 
             if (RT_UNLIKELY(   Hdr.u32Magic != TELEPORTERTCPHDR_MAGIC
@@ -444,16 +444,16 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
         /*
          * Read more data.
          */
-        rc = teleporterTcpReadSelect(pState);
-        if (RT_FAILURE(rc))
-            return rc;
+        vrc = teleporterTcpReadSelect(pState);
+        if (RT_FAILURE(vrc))
+            return vrc;
         uint32_t cb = (uint32_t)RT_MIN(pState->mcbReadBlock, cbToRead);
-        rc = RTTcpRead(pState->mhSocket, pvBuf, cb, pcbRead);
-        if (RT_FAILURE(rc))
+        vrc = RTTcpRead(pState->mhSocket, pvBuf, cb, pcbRead);
+        if (RT_FAILURE(vrc))
         {
             pState->mfIOError = true;
-            LogRel(("Teleporter/TCP: Data read error: %Rrc (cb=%#x)\n", rc, cb));
-            return rc;
+            LogRel(("Teleporter/TCP: Data read error: %Rrc (cb=%#x)\n", vrc, cb));
+            return vrc;
         }
         if (pcbRead)
         {
@@ -514,17 +514,17 @@ static DECLCALLBACK(int) teleporterTcpOpIsOk(void *pvUser)
     if (pState->mfIsSource)
     {
         /* Poll for incoming NACKs and errors from the other side */
-        int rc = RTTcpSelectOne(pState->mhSocket, 0);
-        if (rc != VERR_TIMEOUT)
+        int vrc = RTTcpSelectOne(pState->mhSocket, 0);
+        if (vrc != VERR_TIMEOUT)
         {
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 LogRel(("Teleporter/TCP: Incoming data detect by IsOk, assuming it is a cancellation NACK.\n"));
-                rc = VERR_SSM_CANCELLED;
+                vrc = VERR_SSM_CANCELLED;
             }
             else
-                LogRel(("Teleporter/TCP: RTTcpSelectOne -> %Rrc (IsOk).\n", rc));
-            return rc;
+                LogRel(("Teleporter/TCP: RTTcpSelectOne -> %Rrc (IsOk).\n", vrc));
+            return vrc;
         }
     }
 
@@ -544,11 +544,11 @@ static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCancelled)
         TELEPORTERTCPHDR EofHdr;
         EofHdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         EofHdr.cb       = fCancelled ? UINT32_MAX : 0;
-        int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
-        if (RT_FAILURE(rc))
+        int vrc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
+        if (RT_FAILURE(vrc))
         {
-            LogRel(("Teleporter/TCP: EOF Header write error: %Rrc\n", rc));
-            return rc;
+            LogRel(("Teleporter/TCP: EOF Header write error: %Rrc\n", vrc));
+            return vrc;
         }
     }
     else
@@ -905,8 +905,8 @@ Console::i_teleporterSrcThreadWrapper(RTTHREAD hThreadSelf, void *pvUser)
                         if (pState->mfSuspendedByUs)
                         {
                             autoLock.release();
-                            int rc = pState->mpVMM->pfnVMR3Resume(pState->mpUVM, VMRESUMEREASON_TELEPORT_FAILED);
-                            AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
+                            int vrc = pState->mpVMM->pfnVMR3Resume(pState->mpUVM, VMRESUMEREASON_TELEPORT_FAILED);
+                            AssertLogRelMsgRC(vrc, ("VMR3Resume -> %Rrc\n", vrc));
                             autoLock.acquire();
                         }
                     }
@@ -1219,14 +1219,14 @@ static void teleporterTrgUnlockMedia(TeleporterStateTrg *pState)
 
 static int teleporterTcpWriteACK(TeleporterStateTrg *pState, bool fAutomaticUnlock = true)
 {
-    int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
-    if (RT_FAILURE(rc))
+    int vrc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("Teleporter: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
+        LogRel(("Teleporter: RTTcpWrite(,ACK,) -> %Rrc\n", vrc));
         if (fAutomaticUnlock)
             teleporterTrgUnlockMedia(pState);
     }
-    return rc;
+    return vrc;
 }
 
 
@@ -1249,10 +1249,10 @@ static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2, const
     }
     else
         cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
-    int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
-    if (RT_FAILURE(rc))
-        LogRel(("Teleporter: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
-    return rc;
+    int vrc = RTTcpWrite(pState->mhSocket, szMsg, cch);
+    if (RT_FAILURE(vrc))
+        LogRel(("Teleporter: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, vrc));
+    return vrc;
 }
 
 
