@@ -140,26 +140,26 @@ int SsmStream::open(const Utf8Str &strFilename, bool fWrite, PSSMHANDLE *ppSsmHa
         AssertReturn(!fWrite, VERR_NOT_SUPPORTED);
 
 #ifdef VBOX_COM_INPROC
-        int rc = m_pVMM->pfnSSMR3Open(strFilename.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                                      0 /*fFlags*/, &m_pSsm);
+        int vrc = m_pVMM->pfnSSMR3Open(strFilename.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
+                                       0 /*fFlags*/, &m_pSsm);
 #else
-        int rc = SSMR3Open(strFilename.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
-                           0 /*fFlags*/, &m_pSsm);
+        int vrc = SSMR3Open(strFilename.c_str(), NULL /*pStreamOps*/, NULL /*pvStreamOps*/,
+                            0 /*fFlags*/, &m_pSsm);
 #endif
-        if (   RT_SUCCESS(rc)
+        if (   RT_SUCCESS(vrc)
             && ppSsmHandle)
             *ppSsmHandle = m_pSsm;
 
-        return rc;
+        return vrc;
     }
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (!m_pCryptoIf)
     {
 #ifdef VBOX_COM_INPROC
-        rc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
-        if (RT_FAILURE(rc))
-            return rc;
+        vrc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
+        if (RT_FAILURE(vrc))
+            return vrc;
 #else
         HRESULT hrc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
         if (FAILED(hrc))
@@ -168,32 +168,32 @@ int SsmStream::open(const Utf8Str &strFilename, bool fWrite, PSSMHANDLE *ppSsmHa
     }
 
     SecretKey *pKey;
-    rc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
-    if (RT_SUCCESS(rc))
+    vrc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
+    if (RT_SUCCESS(vrc))
     {
         RTVFSFILE hVfsFileSsm = NIL_RTVFSFILE;
         uint32_t fOpen =   fWrite
                          ? RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE
                          : RTFILE_O_READ      | RTFILE_O_OPEN           | RTFILE_O_DENY_WRITE;
 
-        rc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
-        if (RT_SUCCESS(rc))
+        vrc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
+        if (RT_SUCCESS(vrc))
         {
             const char *pszPassword = (const char *)pKey->getKeyBuffer();
 
-            rc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
-            if (RT_SUCCESS(rc))
+            vrc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
+            if (RT_SUCCESS(vrc))
             {
 #ifdef VBOX_COM_INPROC
-                rc = m_pVMM->pfnSSMR3Open(NULL /*pszFilename*/, &m_StrmOps, this, 0 /*fFlags*/, &m_pSsm);
+                vrc = m_pVMM->pfnSSMR3Open(NULL /*pszFilename*/, &m_StrmOps, this, 0 /*fFlags*/, &m_pSsm);
 #else
-                rc = SSMR3Open(NULL /*pszFilename*/, &m_StrmOps, this, 0 /*fFlags*/, &m_pSsm);
+                vrc = SSMR3Open(NULL /*pszFilename*/, &m_StrmOps, this, 0 /*fFlags*/, &m_pSsm);
 #endif
-                if (   RT_SUCCESS(rc)
+                if (   RT_SUCCESS(vrc)
                     && ppSsmHandle)
                     *ppSsmHandle = m_pSsm;
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                 {
                     RTVfsFileRelease(m_hVfsFile);
                     m_hVfsFile = NIL_RTVFSFILE;
@@ -207,7 +207,7 @@ int SsmStream::open(const Utf8Str &strFilename, bool fWrite, PSSMHANDLE *ppSsmHa
         pKey->release();
     }
 
-    return rc;
+    return vrc;
 }
 
 
@@ -217,24 +217,24 @@ int SsmStream::open(const Utf8Str &strFilename)
     RTVFSFILE hVfsFileSsm = NIL_RTVFSFILE;
     uint32_t fOpen = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE;
 
-    int rc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
-    if (RT_SUCCESS(rc))
+    int vrc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
+    if (RT_SUCCESS(vrc))
     {
         if (m_strKeyId.isNotEmpty())
         {
             /* File is encrypted, set up machinery. */
             if (!m_pCryptoIf)
-                rc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
+                vrc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 SecretKey *pKey;
-                rc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
-                if (RT_SUCCESS(rc))
+                vrc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
+                if (RT_SUCCESS(vrc))
                 {
                     const char *pszPassword = (const char *)pKey->getKeyBuffer();
 
-                    rc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
+                    vrc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
                     pKey->release();
                 }
 
@@ -246,7 +246,7 @@ int SsmStream::open(const Utf8Str &strFilename)
             m_hVfsFile = hVfsFileSsm;
     }
 
-    return rc;
+    return vrc;
 #else
     RT_NOREF(strFilename);
     return VERR_NOT_SUPPORTED;
@@ -260,30 +260,30 @@ int SsmStream::create(const Utf8Str &strFilename)
     RTVFSFILE hVfsFileSsm = NIL_RTVFSFILE;
     uint32_t fOpen = RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE;
 
-    int rc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
-    if (RT_SUCCESS(rc))
+    int vrc = RTVfsFileOpenNormal(strFilename.c_str(), fOpen, &hVfsFileSsm);
+    if (RT_SUCCESS(vrc))
     {
         if (m_strKeyId.isNotEmpty())
         {
             /* File is encrypted, set up machinery. */
             if (!m_pCryptoIf)
-                rc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
+                vrc = m_pParent->i_retainCryptoIf(&m_pCryptoIf);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 SecretKey *pKey;
-                rc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
-                if (RT_SUCCESS(rc))
+                vrc = m_pKeyStore->retainSecretKey(m_strKeyId, &pKey);
+                if (RT_SUCCESS(vrc))
                 {
                     const char *pszPassword = (const char *)pKey->getKeyBuffer();
 
-                    rc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
+                    vrc = m_pCryptoIf->pfnCryptoFileFromVfsFile(hVfsFileSsm, m_strKeyStore.c_str(), pszPassword, &m_hVfsFile);
                     pKey->release();
                 }
 
                 /* Also release in success case because the encrypted file handle retained a new reference to it. */
                 RTVfsFileRelease(hVfsFileSsm);
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                     RTFileDelete(strFilename.c_str());
             }
         }
@@ -291,7 +291,7 @@ int SsmStream::create(const Utf8Str &strFilename)
             m_hVfsFile = hVfsFileSsm;
     }
 
-    return rc;
+    return vrc;
 #else
     RT_NOREF(strFilename);
     return VERR_NOT_SUPPORTED;
@@ -314,11 +314,11 @@ int SsmStream::close(void)
     if (m_pSsm)
     {
 #ifdef VBOX_COM_INPROC
-        int rc = m_pVMM->pfnSSMR3Close(m_pSsm);
+        int vrc = m_pVMM->pfnSSMR3Close(m_pSsm);
 #else
-        int rc = SSMR3Close(m_pSsm);
+        int vrc = SSMR3Close(m_pSsm);
 #endif
-        AssertRCReturn(rc, rc);
+        AssertRCReturn(vrc, vrc);
     }
 
     if (m_hVfsFile != NIL_RTVFSFILE)

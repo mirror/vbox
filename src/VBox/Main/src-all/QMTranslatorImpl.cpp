@@ -97,8 +97,8 @@ public:
         com::Utf8Str result;
         result.reserve(size * 2 + 1);
         char *pszStr = result.mutableRaw();
-        int rc = RTUtf16BigToUtf8Ex((PCRTUTF16)m_iter, size >> 1, &pszStr, result.capacity(), NULL);
-        if (RT_SUCCESS(rc))
+        int vrc = RTUtf16BigToUtf8Ex((PCRTUTF16)m_iter, size >> 1, &pszStr, result.capacity(), NULL);
+        if (RT_SUCCESS(vrc))
             result.jolt();
         else
             throw QMException("Translation from UTF-16 to UTF-8 failed");
@@ -624,10 +624,10 @@ int QMTranslator::load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEP
     {
         uint8_t *data;
         size_t cbSize;
-        int rc;
+        int vrc;
         FileLoader(const char *pszFname)
         {
-            rc = RTFileReadAll(pszFname, (void**) &data, &cbSize);
+            vrc = RTFileReadAll(pszFname, (void**) &data, &cbSize);
         }
 
         ~FileLoader()
@@ -635,7 +635,7 @@ int QMTranslator::load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEP
             if (isSuccess())
                 RTFileReadAllFree(data, cbSize);
         }
-        bool isSuccess() { return RT_SUCCESS(rc); }
+        bool isSuccess() { return RT_SUCCESS(vrc); }
     };
 
     try
@@ -646,7 +646,7 @@ int QMTranslator::load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEP
             QMBytesStream stream(loader.data, loader.cbSize);
             m_impl->load(stream, hStrCache);
         }
-        return loader.rc;
+        return loader.vrc;
     }
     catch(std::exception &e)
     {

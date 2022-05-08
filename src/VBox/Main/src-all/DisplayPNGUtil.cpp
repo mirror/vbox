@@ -29,7 +29,7 @@ typedef struct PNGWriteCtx
     uint8_t *pu8PNG;
     uint32_t cbPNG;
     uint32_t cbAllocated;
-    int rc;
+    int vrc;
 } PNGWriteCtx;
 
 static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_t cb) RT_NOTHROW_DEF
@@ -37,18 +37,18 @@ static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_
     PNGWriteCtx *pCtx = (PNGWriteCtx *)png_get_io_ptr(png_ptr);
     LogFlowFunc(("png_ptr %p, p %p, cb %d, pCtx %p\n", png_ptr, p, cb, pCtx));
 
-    if (pCtx && RT_SUCCESS(pCtx->rc))
+    if (pCtx && RT_SUCCESS(pCtx->vrc))
     {
         if (pCtx->cbAllocated - pCtx->cbPNG < cb)
         {
             uint32_t cbNew = pCtx->cbPNG + (uint32_t)cb;
-            AssertReturnVoidStmt(cbNew > pCtx->cbPNG && cbNew <= _1G, pCtx->rc = VERR_TOO_MUCH_DATA);
+            AssertReturnVoidStmt(cbNew > pCtx->cbPNG && cbNew <= _1G, pCtx->vrc = VERR_TOO_MUCH_DATA);
             cbNew = RT_ALIGN_32(cbNew, 4096) + 4096;
 
             void *pNew = RTMemRealloc(pCtx->pu8PNG, cbNew);
             if (!pNew)
             {
-                pCtx->rc = VERR_NO_MEMORY;
+                pCtx->vrc = VERR_NO_MEMORY;
                 return;
             }
 
@@ -71,7 +71,7 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                    uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG,
                    uint8_t fLimitSize)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     uint8_t * volatile pu8Bitmap = NULL; /* gcc setjmp  warning */
     uint32_t volatile cbBitmap = 0; /* gcc setjmp warning */
@@ -114,13 +114,13 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
         }
         else
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
     }
 
     LogFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxBitmap, cyBitmap));
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         png_bytep *row_pointers = (png_bytep *)RTMemAlloc(cyBitmap * sizeof(png_bytep));
         if (row_pointers)
@@ -147,7 +147,7 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                         ctx.pu8PNG = NULL;
                         ctx.cbPNG = 0;
                         ctx.cbAllocated = 0;
-                        ctx.rc = VINF_SUCCESS;
+                        ctx.vrc = VINF_SUCCESS;
 
                         png_set_write_fn(png_ptr,
                                          (png_voidp)&ctx,
@@ -176,9 +176,9 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
 
                         png_write_end(png_ptr, info_ptr);
 
-                        rc = ctx.rc;
+                        vrc = ctx.vrc;
 
-                        if (RT_SUCCESS(rc))
+                        if (RT_SUCCESS(vrc))
                         {
                             *ppu8PNG = ctx.pu8PNG;
                             *pcbPNG = ctx.cbPNG;
@@ -189,12 +189,12 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                     }
                     else
                     {
-                        rc = VERR_GENERAL_FAILURE; /* Something within libpng. */
+                        vrc = VERR_GENERAL_FAILURE; /* Something within libpng. */
                     }
                 }
                 else
                 {
-                    rc = VERR_NO_MEMORY;
+                    vrc = VERR_NO_MEMORY;
                 }
 
                 png_destroy_write_struct(&png_ptr, info_ptr ? &info_ptr
@@ -202,14 +202,14 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
             }
             else
             {
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
             }
 
             RTMemFree(row_pointers);
         }
         else
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
     }
 
@@ -218,6 +218,6 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
         RTMemFree(pu8Bitmap);
     }
 
-    return rc;
+    return vrc;
 
 }

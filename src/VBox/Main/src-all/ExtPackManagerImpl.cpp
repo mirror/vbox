@@ -814,9 +814,9 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
     /*
      * Make sure the SUPR3Hardened API works (ignoring errors for now).
      */
-    int rc = SUPR3HardenedVerifyInit();
-    if (RT_FAILURE(rc))
-        LogRel(("SUPR3HardenedVerifyInit failed: %Rrc\n", rc));
+    int vrc = SUPR3HardenedVerifyInit();
+    if (RT_FAILURE(vrc))
+        LogRel(("SUPR3HardenedVerifyInit failed: %Rrc\n", vrc));
 
     /*
      * Probe the extension pack (this code is shared with refresh()).
@@ -828,14 +828,14 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
     if (m->pReg != NULL && m->pReg->pszNlsBaseName != NULL)
     {
         char szPath[RTPATH_MAX];
-        rc = RTPathJoin(szPath, sizeof(szPath), a_pszDir, "nls");
-        if (RT_SUCCESS(rc))
+        vrc = RTPathJoin(szPath, sizeof(szPath), a_pszDir, "nls");
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTPathAppend(szPath, sizeof(szPath), m->pReg->pszNlsBaseName);
-            if (RT_SUCCESS(rc))
+            vrc = RTPathAppend(szPath, sizeof(szPath), m->pReg->pszNlsBaseName);
+            if (RT_SUCCESS(vrc))
             {
-                rc = VirtualBoxTranslator::registerTranslation(szPath, false, &m->pTrComponent);
-                if (RT_FAILURE(rc))
+                vrc = VirtualBoxTranslator::registerTranslation(szPath, false, &m->pTrComponent);
+                if (RT_FAILURE(vrc))
                     m->pTrComponent = NULL;
             }
         }
@@ -2340,16 +2340,16 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
      * Figure some stuff out before creating the instance data.
      */
     char szBaseDir[RTPATH_MAX];
-    int rc = RTPathAppPrivateArchTop(szBaseDir, sizeof(szBaseDir));
-    AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szBaseDir, sizeof(szBaseDir), VBOX_EXTPACK_INSTALL_DIR);
-    AssertLogRelRCReturn(rc, E_FAIL);
+    int vrc = RTPathAppPrivateArchTop(szBaseDir, sizeof(szBaseDir));
+    AssertLogRelRCReturn(vrc, E_FAIL);
+    vrc = RTPathAppend(szBaseDir, sizeof(szBaseDir), VBOX_EXTPACK_INSTALL_DIR);
+    AssertLogRelRCReturn(vrc, E_FAIL);
 
     char szCertificatDir[RTPATH_MAX];
-    rc = RTPathAppPrivateNoArch(szCertificatDir, sizeof(szCertificatDir));
-    AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szCertificatDir, sizeof(szCertificatDir), VBOX_EXTPACK_CERT_DIR);
-    AssertLogRelRCReturn(rc, E_FAIL);
+    vrc = RTPathAppPrivateNoArch(szCertificatDir, sizeof(szCertificatDir));
+    AssertLogRelRCReturn(vrc, E_FAIL);
+    vrc = RTPathAppend(szCertificatDir, sizeof(szCertificatDir), VBOX_EXTPACK_CERT_DIR);
+    AssertLogRelRCReturn(vrc, E_FAIL);
 
     /*
      * Allocate and initialize the instance data.
@@ -2373,7 +2373,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
      */
     HRESULT hrc = S_OK;
     RTDIR   hDir;
-    int vrc = RTDirOpen(&hDir, szBaseDir);
+    vrc = RTDirOpen(&hDir, szBaseDir);
     if (RT_SUCCESS(vrc))
     {
         for (;;)

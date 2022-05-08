@@ -113,13 +113,13 @@ HRESULT SharedFolder::init(Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
+    HRESULT hrc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -142,19 +142,19 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = i_protectedInit(aMachine,
-                                 aThat->m->strName,
-                                 aThat->m->strHostPath,
-                                 aThat->m->fWritable,
-                                 aThat->m->fAutoMount,
-                                 aThat->m->strAutoMountPoint,
-                                 false /* fFailOnError */ );
+    HRESULT hrc = i_protectedInit(aMachine,
+                                  aThat->m->strName,
+                                  aThat->m->strHostPath,
+                                  aThat->m->fWritable,
+                                  aThat->m->fAutoMount,
+                                  aThat->m->strAutoMountPoint,
+                                  false /* fFailOnError */ );
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 # if 0
@@ -187,13 +187,13 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
 
     unconst(mVirtualBox) = aVirtualBox;
 
-    HRESULT rc = protectedInit(aVirtualBox, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
+    HRESULT hrc = protectedInit(aVirtualBox, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 # endif
@@ -228,13 +228,13 @@ HRESULT SharedFolder::init(Console *aConsole,
 
     unconst(mConsole) = aConsole;
 
-    HRESULT rc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
+    HRESULT hrc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 #endif
 

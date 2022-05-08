@@ -106,8 +106,6 @@ void VBoxEvent::FinalRelease()
 
 HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable)
 {
-    HRESULT rc = S_OK;
-
     AssertReturn(aSource != NULL, E_INVALIDARG);
 
     AutoInitSpan autoInitSpan(this);
@@ -136,7 +134,7 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
-    return rc;
+    return S_OK;
 }
 
 void VBoxEvent::uninit()
@@ -258,9 +256,9 @@ struct VBoxVetoEvent::Data
 HRESULT VBoxVetoEvent::FinalConstruct()
 {
     m = new Data;
-    HRESULT rc = m->mEvent.createObject();
+    HRESULT hrc = m->mEvent.createObject();
     BaseFinalConstruct();
-    return rc;
+    return hrc;
 }
 
 void VBoxVetoEvent::FinalRelease()
@@ -278,11 +276,10 @@ DEFINE_EMPTY_CTOR_DTOR(VBoxVetoEvent)
 
 HRESULT VBoxVetoEvent::init(IEventSource *aSource, VBoxEventType_T aType)
 {
-    HRESULT rc = S_OK;
     // all veto events are waitable
-    rc = m->mEvent->init(aSource, aType, TRUE);
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = m->mEvent->init(aSource, aType, TRUE);
+    if (FAILED(hrc))
+        return hrc;
 
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -841,19 +838,19 @@ HRESULT ListenerRecord::process(IEvent *aEvent,
         /*
          * We release lock here to allow modifying ops on EventSource inside callback.
          */
-        HRESULT rc = S_OK;
+        HRESULT hrc = S_OK;
         if (mListener)
         {
             aAlock.release();
-            rc = mListener->HandleEvent(aEvent);
+            hrc = mListener->HandleEvent(aEvent);
 #ifdef RT_OS_WINDOWS
-            Assert(rc != RPC_E_WRONG_THREAD);
+            Assert(hrc != RPC_E_WRONG_THREAD);
 #endif
             aAlock.acquire();
         }
         if (aWaitable)
             eventProcessed(aEvent, pit);
-        return rc;
+        return hrc;
     }
     return enqueue(aEvent);
 }
@@ -1023,14 +1020,12 @@ void EventSource::FinalRelease()
 
 HRESULT EventSource::init()
 {
-    HRESULT rc = S_OK;
-
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
-    return rc;
+    return S_OK;
 }
 
 void EventSource::uninit()
@@ -1089,7 +1084,7 @@ HRESULT EventSource::registerListener(const ComPtr<IEventListener> &aListener,
 
 HRESULT EventSource::unregisterListener(const ComPtr<IEventListener> &aListener)
 {
-    HRESULT rc = S_OK;;
+    HRESULT hrc = S_OK;;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1101,13 +1096,13 @@ HRESULT EventSource::unregisterListener(const ComPtr<IEventListener> &aListener)
         m->mListeners.erase(it);
         // destructor removes refs from the event map
         ::FireEventSourceChangedEvent(this, (IEventListener *)aListener, FALSE /*add*/);
-        rc = S_OK;
+        hrc = S_OK;
     }
     else
-        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                      tr("Listener was never registered"));
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                       tr("Listener was never registered"));
 
-    return rc;
+    return hrc;
 }
 
 HRESULT EventSource::fireEvent(const ComPtr<IEvent> &aEvent,
@@ -1233,18 +1228,18 @@ HRESULT EventSource::getEvent(const ComPtr<IEventListener> &aListener,
                         tr("This event source is already shut down"));
 
     Listeners::iterator it = m->mListeners.find(aListener);
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (it != m->mListeners.end())
-        rc = it->second.obj()->dequeue(aEvent.asOutParam(), aTimeout, alock);
+        hrc = it->second.obj()->dequeue(aEvent.asOutParam(), aTimeout, alock);
     else
-        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                      tr("Listener was never registered"));
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                       tr("Listener was never registered"));
 
-    if (rc == VBOX_E_INVALID_OBJECT_STATE)
-        return setError(rc, tr("Listener must be passive"));
+    if (hrc == VBOX_E_INVALID_OBJECT_STATE)
+        return setError(hrc, tr("Listener must be passive"));
 
-    return rc;
+    return hrc;
 }
 
 HRESULT EventSource::eventProcessed(const ComPtr<IEventListener> &aListener,
@@ -1481,8 +1476,8 @@ HRESULT EventSource::createListener(ComPtr<IEventListener> &aListener)
 {
     ComObjPtr<PassiveEventListener> listener;
 
-    HRESULT rc = listener.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create wrapper object (%Rhrc)"), rc),
+    HRESULT hrc = listener.createObject();
+    ComAssertMsgRet(SUCCEEDED(hrc), (tr("Could not create wrapper object (%Rhrc)"), hrc),
                     E_FAIL);
     listener.queryInterfaceTo(aListener.asOutParam());
     return S_OK;
@@ -1493,13 +1488,13 @@ HRESULT EventSource::createAggregator(const std::vector<ComPtr<IEventSource> > &
 {
     ComObjPtr<EventSourceAggregator> agg;
 
-    HRESULT rc = agg.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create aggregator (%Rhrc)"), rc),
+    HRESULT hrc = agg.createObject();
+    ComAssertMsgRet(SUCCEEDED(hrc), (tr("Could not create aggregator (%Rhrc)"), hrc),
                     E_FAIL);
 
-    rc = agg->init(aSubordinates);
-    if (FAILED(rc))
-        return rc;
+    hrc = agg->init(aSubordinates);
+    if (FAILED(hrc))
+        return hrc;
 
     agg.queryInterfaceTo(aResult.asOutParam());
     return S_OK;
@@ -1507,16 +1502,14 @@ HRESULT EventSource::createAggregator(const std::vector<ComPtr<IEventSource> > &
 
 HRESULT EventSourceAggregator::init(const std::vector<ComPtr<IEventSource> >  aSourcesIn)
 {
-    HRESULT rc;
-
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    rc = mSource.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create source (%Rhrc)"), rc),
+    HRESULT hrc = mSource.createObject();
+    ComAssertMsgRet(SUCCEEDED(hrc), (tr("Could not create source (%Rhrc)"), hrc),
                     E_FAIL);
-    rc = mSource->init();
-    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not init source (%Rhrc)"), rc),
+    hrc = mSource->init();
+    ComAssertMsgRet(SUCCEEDED(hrc), (tr("Could not init source (%Rhrc)"), hrc),
                     E_FAIL);
 
     for (size_t i = 0; i < aSourcesIn.size(); i++)
@@ -1528,7 +1521,7 @@ HRESULT EventSourceAggregator::init(const std::vector<ComPtr<IEventSource> >  aS
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 STDMETHODIMP EventSourceAggregator::CreateListener(IEventListener **aListener)
@@ -1553,12 +1546,10 @@ STDMETHODIMP EventSourceAggregator::RegisterListener(IEventListener *aListener,
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
-    HRESULT rc;
-
     ComPtr<IEventListener> proxy;
-    rc = createProxyListener(aListener, proxy.asOutParam());
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = createProxyListener(aListener, proxy.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     for (EventSourceList::const_iterator it = mEventSources.begin(); it != mEventSources.end();
@@ -1566,14 +1557,12 @@ STDMETHODIMP EventSourceAggregator::RegisterListener(IEventListener *aListener,
     {
         ComPtr<IEventSource> es = *it;
         /* Register active proxy listener on real event source */
-        rc = es->RegisterListener(proxy, ComSafeArrayInArg(aInterested), TRUE);
+        hrc = es->RegisterListener(proxy, ComSafeArrayInArg(aInterested), TRUE);
     }
     /* And add real listener on our event source */
-    rc = mSource->RegisterListener(aListener, ComSafeArrayInArg(aInterested), aActive);
+    hrc = mSource->RegisterListener(aListener, ComSafeArrayInArg(aInterested), aActive);
 
-    rc = S_OK;
-
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP EventSourceAggregator::UnregisterListener(IEventListener *aListener)
@@ -1584,22 +1573,20 @@ STDMETHODIMP EventSourceAggregator::UnregisterListener(IEventListener *aListener
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
-    HRESULT rc = S_OK;
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComPtr<IEventListener> proxy;
-    rc = getProxyListener(aListener, proxy.asOutParam());
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = getProxyListener(aListener, proxy.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     for (EventSourceList::const_iterator it = mEventSources.begin(); it != mEventSources.end();
          ++it)
     {
         ComPtr<IEventSource> es = *it;
-        rc = es->UnregisterListener(proxy);
+        hrc = es->UnregisterListener(proxy);
     }
-    rc = mSource->UnregisterListener(aListener);
+    hrc = mSource->UnregisterListener(aListener);
 
     return removeProxyListener(aListener);
 
@@ -1616,7 +1603,6 @@ STDMETHODIMP EventSourceAggregator::FireEvent(IEvent *aEvent,
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
-    HRESULT rc = S_OK;
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     /* Aggregator event source shall not have direct event firing, but we may
        wish to support aggregation chains */
@@ -1624,10 +1610,10 @@ STDMETHODIMP EventSourceAggregator::FireEvent(IEvent *aEvent,
          ++it)
     {
         ComPtr<IEventSource> es = *it;
-        rc = es->FireEvent(aEvent, aTimeout, aProcessed);
+        HRESULT hrc = es->FireEvent(aEvent, aTimeout, aProcessed);
         /* Current behavior is that aggregator's FireEvent() always succeeds,
            so that multiple event sources don't affect each other. */
-        NOREF(rc);
+        NOREF(hrc);
     }
 
     return S_OK;
@@ -1651,13 +1637,13 @@ HRESULT EventSourceAggregator::createProxyListener(IEventListener *aListener,
 {
     ComObjPtr<ProxyEventListener> proxy;
 
-    HRESULT rc = proxy.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create proxy (%Rhrc)"), rc),
+    HRESULT hrc = proxy.createObject();
+    ComAssertMsgRet(SUCCEEDED(hrc), (tr("Could not create proxy (%Rhrc)"), hrc),
                     E_FAIL);
 
-    rc = proxy->init(mSource);
-    if (FAILED(rc))
-        return rc;
+    hrc = proxy->init(mSource);
+    if (FAILED(hrc))
+        return hrc;
 
     ProxyListenerMap::const_iterator it = mListenerProxies.find(aListener);
     if (it != mListenerProxies.end())

@@ -74,24 +74,24 @@ static AuthResult authCall(AuthCtx *pCtx)
 
     /* Use a separate thread because external modules might need a lot of stack space. */
     RTTHREAD thread = NIL_RTTHREAD;
-    int rc = RTThreadCreate(&thread, authThread, pCtx, 512*_1K,
-                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VRDEAuth");
-    LogFlowFunc(("RTThreadCreate %Rrc\n", rc));
+    int vrc = RTThreadCreate(&thread, authThread, pCtx, 512*_1K,
+                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VRDEAuth");
+    LogFlowFunc(("RTThreadCreate %Rrc\n", vrc));
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTThreadWait(thread, RT_INDEFINITE_WAIT, NULL);
-        LogFlowFunc(("RTThreadWait %Rrc\n", rc));
+        vrc = RTThreadWait(thread, RT_INDEFINITE_WAIT, NULL);
+        LogFlowFunc(("RTThreadWait %Rrc\n", vrc));
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* Only update the result if the thread finished without errors. */
         result = pCtx->result;
     }
     else
     {
-        LogRel(("AUTH: Unable to execute the auth thread %Rrc\n", rc));
+        LogRel(("AUTH: Unable to execute the auth thread %Rrc\n", vrc));
     }
 
     return result;
@@ -104,13 +104,13 @@ int AuthLibLoad(AUTHLIBRARYCONTEXT *pAuthLibCtx, const char *pszLibrary)
     /* Load the external authentication library. */
     LogRel(("AUTH: Loading external authentication library '%s'\n", pszLibrary));
 
-    int rc;
+    int vrc;
     if (RTPathHavePath(pszLibrary))
-        rc = RTLdrLoad(pszLibrary, &pAuthLibCtx->hAuthLibrary);
+        vrc = RTLdrLoad(pszLibrary, &pAuthLibCtx->hAuthLibrary);
     else
     {
-        rc = RTLdrLoadAppPriv(pszLibrary, &pAuthLibCtx->hAuthLibrary);
-        if (RT_FAILURE(rc))
+        vrc = RTLdrLoadAppPriv(pszLibrary, &pAuthLibCtx->hAuthLibrary);
+        if (RT_FAILURE(vrc))
         {
             /* Backward compatibility with old default 'VRDPAuth' name.
              * Try to load new default 'VBoxAuth' instead.
@@ -118,18 +118,18 @@ int AuthLibLoad(AUTHLIBRARYCONTEXT *pAuthLibCtx, const char *pszLibrary)
             if (RTStrICmp(pszLibrary, "VRDPAuth") == 0)
             {
                 LogRel(("AUTH: Loading external authentication library 'VBoxAuth'\n"));
-                rc = RTLdrLoadAppPriv("VBoxAuth", &pAuthLibCtx->hAuthLibrary);
+                vrc = RTLdrLoadAppPriv("VBoxAuth", &pAuthLibCtx->hAuthLibrary);
             }
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("AUTH: Failed to load external authentication library: %Rrc\n", rc));
+        LogRel(("AUTH: Failed to load external authentication library: %Rrc\n", vrc));
         pAuthLibCtx->hAuthLibrary = NIL_RTLDRMOD;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         typedef struct AuthEntryInfoStruct
         {
@@ -151,28 +151,28 @@ int AuthLibLoad(AUTHLIBRARYCONTEXT *pAuthLibCtx, const char *pszLibrary)
         {
             *pEntryInfo->ppvAddress = NULL;
 
-            int rc2 = RTLdrGetSymbol(pAuthLibCtx->hAuthLibrary, pEntryInfo->pszName, pEntryInfo->ppvAddress);
-            if (RT_SUCCESS(rc2))
+            int vrc2 = RTLdrGetSymbol(pAuthLibCtx->hAuthLibrary, pEntryInfo->pszName, pEntryInfo->ppvAddress);
+            if (RT_SUCCESS(vrc2))
             {
                 /* Found an entry point. */
                 LogRel(("AUTH: Using entry point '%s'\n", pEntryInfo->pszName));
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
                 break;
             }
 
-            if (rc2 != VERR_SYMBOL_NOT_FOUND)
-                LogRel(("AUTH: Could not resolve import '%s': %Rrc\n", pEntryInfo->pszName, rc2));
+            if (vrc2 != VERR_SYMBOL_NOT_FOUND)
+                LogRel(("AUTH: Could not resolve import '%s': %Rrc\n", pEntryInfo->pszName, vrc2));
 
-            rc = rc2;
+            vrc = vrc2;
 
             pEntryInfo++;
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         AuthLibUnload(pAuthLibCtx);
 
-    return rc;
+    return vrc;
 }
 
 void AuthLibUnload(AUTHLIBRARYCONTEXT *pAuthLibCtx)

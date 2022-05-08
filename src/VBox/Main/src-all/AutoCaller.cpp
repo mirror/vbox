@@ -133,13 +133,13 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
 {
     AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = E_ACCESSDENIED;
+    HRESULT hrc = E_ACCESSDENIED;
 
     if (mState == Ready || (aLimited && mState == Limited))
     {
         /* if Ready or allows Limited, increase the number of callers */
         ++mCallers;
-        rc = S_OK;
+        hrc = S_OK;
     }
     else
     if (mState == InInit || mState == InUninit)
@@ -148,7 +148,7 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
         {
             /* Called from the same thread that is doing AutoInitSpan or
              * AutoUninitSpan, just succeed */
-            rc = S_OK;
+            hrc = S_OK;
         }
         else if (mState == InInit)
         {
@@ -187,7 +187,7 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
             }
 
             if (mState == Ready || (aLimited && mState == Limited))
-                rc = S_OK;
+                hrc = S_OK;
             else
             {
                 Assert(mCallers != 0);
@@ -201,22 +201,22 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
         }
     }
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
         if (mState == Limited)
-            rc = mObj->setError(rc, AutoCallerCtx::tr("The object functionality is limited"));
+            hrc = mObj->setError(hrc, AutoCallerCtx::tr("The object functionality is limited"));
         else if (FAILED(mFailedRC) && mFailedRC != E_ACCESSDENIED)
         {
             /* replay recorded error information */
             if (mpFailedEI)
                 ErrorInfoKeeper eik(*mpFailedEI);
-            rc = mFailedRC;
+            hrc = mFailedRC;
         }
         else
-            rc = mObj->setError(rc, AutoCallerCtx::tr("The object is not ready"));
+            hrc = mObj->setError(hrc, AutoCallerCtx::tr("The object is not ready"));
     }
 
-    return rc;
+    return hrc;
 }
 
 /**

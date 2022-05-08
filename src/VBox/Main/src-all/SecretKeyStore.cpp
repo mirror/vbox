@@ -30,17 +30,17 @@ SecretKey::SecretKey(const uint8_t *pbKey, size_t cbKey, bool fKeyBufNonPageable
     m_cUsers           = 0;
     m_cbKey            = cbKey;
 
-    int rc = RTMemSaferAllocZEx((void **)&this->m_pbKey, cbKey,
-                                fKeyBufNonPageable ? RTMEMSAFER_F_REQUIRE_NOT_PAGABLE : 0);
-    if (RT_SUCCESS(rc))
+    int vrc = RTMemSaferAllocZEx((void **)&this->m_pbKey, cbKey,
+                                 fKeyBufNonPageable ? RTMEMSAFER_F_REQUIRE_NOT_PAGABLE : 0);
+    if (RT_SUCCESS(vrc))
     {
         memcpy(this->m_pbKey, pbKey, cbKey);
 
         /* Scramble content to make retrieving the key more difficult. */
-        rc = RTMemSaferScramble(this->m_pbKey, cbKey);
+        vrc = RTMemSaferScramble(this->m_pbKey, cbKey);
     }
     else
-        throw rc;
+        throw vrc;
 }
 
 SecretKey::~SecretKey()
@@ -60,8 +60,8 @@ uint32_t SecretKey::retain()
     uint32_t cRefs = ASMAtomicIncU32(&m_cRefs);
     if (cRefs == 1)
     {
-        int rc = RTMemSaferUnscramble(m_pbKey, m_cbKey);
-        AssertRC(rc);
+        int vrc = RTMemSaferUnscramble(m_pbKey, m_cbKey);
+        AssertRC(vrc);
     }
 
     return cRefs;
@@ -72,8 +72,8 @@ uint32_t SecretKey::release()
     uint32_t cRefs = ASMAtomicDecU32(&m_cRefs);
     if (!cRefs)
     {
-        int rc = RTMemSaferScramble(m_pbKey, m_cbKey);
-        AssertRC(rc);
+        int vrc = RTMemSaferScramble(m_pbKey, m_cbKey);
+        AssertRC(vrc);
     }
 
     return cRefs;
@@ -124,8 +124,8 @@ SecretKeyStore::SecretKeyStore(bool fKeyBufNonPageable)
 
 SecretKeyStore::~SecretKeyStore()
 {
-    int rc = deleteAllSecretKeys(false /* fSuspend */, true /* fForce */);
-    AssertRC(rc);
+    int vrc = deleteAllSecretKeys(false /* fSuspend */, true /* fForce */);
+    AssertRC(vrc);
 }
 
 int SecretKeyStore::addSecretKey(const com::Utf8Str &strKeyId, const uint8_t *pbKey, size_t cbKey)
@@ -142,9 +142,9 @@ int SecretKeyStore::addSecretKey(const com::Utf8Str &strKeyId, const uint8_t *pb
 
         m_mapSecretKeys.insert(std::make_pair(strKeyId, pKey));
     }
-    catch (int rc)
+    catch (int vrc)
     {
-        return rc;
+        return vrc;
     }
     catch (std::bad_alloc &)
     {

@@ -209,7 +209,7 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
         }
         catch (...)
         {
-            rc = VirtualBox::handleUnexpectedExceptions(this, RT_SRC_POS);
+            hrc = VirtualBox::handleUnexpectedExceptions(this, RT_SRC_POS);
         }
  * @endcode
  *
@@ -338,7 +338,7 @@ HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
     if (aWarning)
         aResultCode &= ~0x80000000;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (aText == NULL || aText[0] == '\0')
     {
@@ -381,8 +381,8 @@ HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
     do
     {
         ComObjPtr<VirtualBoxErrorInfo> info;
-        rc = info.createObject();
-        if (FAILED(rc)) break;
+        hrc = info.createObject();
+        if (FAILED(hrc)) break;
 
 #if !defined(VBOX_WITH_XPCOM)
 
@@ -391,80 +391,80 @@ HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
         {
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
-            rc = ::GetErrorInfo(0, err.asOutParam());
-            if (FAILED(rc)) break;
-            rc = err.queryInterfaceTo(curInfo.asOutParam());
-            if (FAILED(rc))
+            hrc = ::GetErrorInfo(0, err.asOutParam());
+            if (FAILED(hrc)) break;
+            hrc = err.queryInterfaceTo(curInfo.asOutParam());
+            if (FAILED(hrc))
             {
                 /* create a IVirtualBoxErrorInfo wrapper for the native
                  * IErrorInfo object */
                 ComObjPtr<VirtualBoxErrorInfo> wrapper;
-                rc = wrapper.createObject();
-                if (SUCCEEDED(rc))
+                hrc = wrapper.createObject();
+                if (SUCCEEDED(hrc))
                 {
-                    rc = wrapper->init(err);
-                    if (SUCCEEDED(rc))
+                    hrc = wrapper->init(err);
+                    if (SUCCEEDED(hrc))
                         curInfo = wrapper;
                 }
             }
         }
         /* On failure, curInfo will stay null */
-        Assert(SUCCEEDED(rc) || curInfo.isNull());
+        Assert(SUCCEEDED(hrc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
-        rc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, strText, curInfo);
-        if (FAILED(rc)) break;
+        hrc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, strText, curInfo);
+        if (FAILED(hrc)) break;
 
         ComPtr<IErrorInfo> err;
-        rc = info.queryInterfaceTo(err.asOutParam());
-        if (SUCCEEDED(rc))
-            rc = ::SetErrorInfo(0, err);
+        hrc = info.queryInterfaceTo(err.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = ::SetErrorInfo(0, err);
 
 #else // !defined(VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-        if (NS_SUCCEEDED(rc))
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+        if (NS_SUCCEEDED(hrc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-            if (FAILED(rc)) break;
+            hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+            if (FAILED(hrc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
             if (preserve)
             {
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException(ex.asOutParam());
-                if (FAILED(rc)) break;
-                rc = ex.queryInterfaceTo(curInfo.asOutParam());
-                if (FAILED(rc))
+                hrc = em->GetCurrentException(ex.asOutParam());
+                if (FAILED(hrc)) break;
+                hrc = ex.queryInterfaceTo(curInfo.asOutParam());
+                if (FAILED(hrc))
                 {
                     /* create a IVirtualBoxErrorInfo wrapper for the native
                      * nsIException object */
                     ComObjPtr<VirtualBoxErrorInfo> wrapper;
-                    rc = wrapper.createObject();
-                    if (SUCCEEDED(rc))
+                    hrc = wrapper.createObject();
+                    if (SUCCEEDED(hrc))
                     {
-                        rc = wrapper->init(ex);
-                        if (SUCCEEDED(rc))
+                        hrc = wrapper->init(ex);
+                        if (SUCCEEDED(hrc))
                             curInfo = wrapper;
                     }
                 }
             }
             /* On failure, curInfo will stay null */
-            Assert(SUCCEEDED(rc) || curInfo.isNull());
+            Assert(SUCCEEDED(hrc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
-            rc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, Bstr(strText), curInfo);
-            if (FAILED(rc)) break;
+            hrc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, Bstr(strText), curInfo);
+            if (FAILED(hrc)) break;
 
             ComPtr<nsIException> ex;
-            rc = info.queryInterfaceTo(ex.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = em->SetCurrentException(ex);
+            hrc = info.queryInterfaceTo(ex.asOutParam());
+            if (SUCCEEDED(hrc))
+                hrc = em->SetCurrentException(ex);
         }
-        else if (rc == NS_ERROR_UNEXPECTED)
+        else if (hrc == NS_ERROR_UNEXPECTED)
         {
             /*
              *  It is possible that setError() is being called by the object
@@ -476,16 +476,16 @@ HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
              *  set the exception (nobody will be able to read it).
              */
             Log1WarningFunc(("Will not set an exception because nsIExceptionService is not available (NS_ERROR_UNEXPECTED). XPCOM is being shutdown?\n"));
-            rc = NS_OK;
+            hrc = NS_OK;
         }
 
 #endif // !defined(VBOX_WITH_XPCOM)
     }
     while (0);
 
-    AssertComRC(rc);
+    AssertComRC(hrc);
 
-    return SUCCEEDED(rc) ? aResultCode : rc;
+    return SUCCEEDED(hrc) ? aResultCode : hrc;
 }
 
 /**
@@ -520,14 +520,14 @@ HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternalV(aResultCode,
-                                   this->getClassIID(),
-                                   this->getComponentName(),
-                                   pcsz, args,
-                                   false /* aWarning */,
-                                   true /* aLogIt */);
+    HRESULT hrc = setErrorInternalV(aResultCode,
+                                    this->getClassIID(),
+                                    this->getComponentName(),
+                                    pcsz, args,
+                                    false /* aWarning */,
+                                    true /* aLogIt */);
     va_end(args);
-    return rc;
+    return hrc;
 }
 
 /**
@@ -543,13 +543,13 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
     /* whether multi-error mode is turned on */
     bool preserve = MultiResult::isMultiEnabled();
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     do
     {
         ComObjPtr<VirtualBoxErrorInfo> info;
-        rc = info.createObject();
-        if (FAILED(rc)) break;
+        hrc = info.createObject();
+        if (FAILED(hrc)) break;
 
 #if !defined(VBOX_WITH_XPCOM)
 
@@ -558,80 +558,80 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
         {
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
-            rc = ::GetErrorInfo(0, err.asOutParam());
-            if (FAILED(rc)) break;
-            rc = err.queryInterfaceTo(curInfo.asOutParam());
-            if (FAILED(rc))
+            hrc = ::GetErrorInfo(0, err.asOutParam());
+            if (FAILED(hrc)) break;
+            hrc = err.queryInterfaceTo(curInfo.asOutParam());
+            if (FAILED(hrc))
             {
                 /* create a IVirtualBoxErrorInfo wrapper for the native
                  * IErrorInfo object */
                 ComObjPtr<VirtualBoxErrorInfo> wrapper;
-                rc = wrapper.createObject();
-                if (SUCCEEDED(rc))
+                hrc = wrapper.createObject();
+                if (SUCCEEDED(hrc))
                 {
-                    rc = wrapper->init(err);
-                    if (SUCCEEDED(rc))
+                    hrc = wrapper->init(err);
+                    if (SUCCEEDED(hrc))
                         curInfo = wrapper;
                 }
             }
         }
         /* On failure, curInfo will stay null */
-        Assert(SUCCEEDED(rc) || curInfo.isNull());
+        Assert(SUCCEEDED(hrc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
-        rc = info->init(ei, curInfo);
-        if (FAILED(rc)) break;
+        hrc = info->init(ei, curInfo);
+        if (FAILED(hrc)) break;
 
         ComPtr<IErrorInfo> err;
-        rc = info.queryInterfaceTo(err.asOutParam());
-        if (SUCCEEDED(rc))
-            rc = ::SetErrorInfo(0, err);
+        hrc = info.queryInterfaceTo(err.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = ::SetErrorInfo(0, err);
 
 #else // !defined(VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-        if (NS_SUCCEEDED(rc))
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+        if (NS_SUCCEEDED(hrc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-            if (FAILED(rc)) break;
+            hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+            if (FAILED(hrc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
             if (preserve)
             {
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException(ex.asOutParam());
-                if (FAILED(rc)) break;
-                rc = ex.queryInterfaceTo(curInfo.asOutParam());
-                if (FAILED(rc))
+                hrc = em->GetCurrentException(ex.asOutParam());
+                if (FAILED(hrc)) break;
+                hrc = ex.queryInterfaceTo(curInfo.asOutParam());
+                if (FAILED(hrc))
                 {
                     /* create a IVirtualBoxErrorInfo wrapper for the native
                      * nsIException object */
                     ComObjPtr<VirtualBoxErrorInfo> wrapper;
-                    rc = wrapper.createObject();
-                    if (SUCCEEDED(rc))
+                    hrc = wrapper.createObject();
+                    if (SUCCEEDED(hrc))
                     {
-                        rc = wrapper->init(ex);
-                        if (SUCCEEDED(rc))
+                        hrc = wrapper->init(ex);
+                        if (SUCCEEDED(hrc))
                             curInfo = wrapper;
                     }
                 }
             }
             /* On failure, curInfo will stay null */
-            Assert(SUCCEEDED(rc) || curInfo.isNull());
+            Assert(SUCCEEDED(hrc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
-            rc = info->init(ei, curInfo);
-            if (FAILED(rc)) break;
+            hrc = info->init(ei, curInfo);
+            if (FAILED(hrc)) break;
 
             ComPtr<nsIException> ex;
-            rc = info.queryInterfaceTo(ex.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = em->SetCurrentException(ex);
+            hrc = info.queryInterfaceTo(ex.asOutParam());
+            if (SUCCEEDED(hrc))
+                hrc = em->SetCurrentException(ex);
         }
-        else if (rc == NS_ERROR_UNEXPECTED)
+        else if (hrc == NS_ERROR_UNEXPECTED)
         {
             /*
              *  It is possible that setError() is being called by the object
@@ -643,16 +643,16 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
              *  set the exception (nobody will be able to read it).
              */
             Log1WarningFunc(("Will not set an exception because nsIExceptionService is not available (NS_ERROR_UNEXPECTED). XPCOM is being shutdown?\n"));
-            rc = NS_OK;
+            hrc = NS_OK;
         }
 
 #endif // !defined(VBOX_WITH_XPCOM)
     }
     while (0);
 
-    AssertComRC(rc);
+    AssertComRC(hrc);
 
-    return SUCCEEDED(rc) ? ei.getResultCode() : rc;
+    return SUCCEEDED(hrc) ? ei.getResultCode() : hrc;
 }
 
 /**
@@ -779,14 +779,14 @@ HRESULT VirtualBoxBase::setWarning(HRESULT aResultCode, const char *pcsz, ...)
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternalV(aResultCode,
-                                   this->getClassIID(),
-                                   this->getComponentName(),
-                                   pcsz, args,
-                                   true /* aWarning */,
-                                   true /* aLogIt */);
+    HRESULT hrc = setErrorInternalV(aResultCode,
+                                    this->getClassIID(),
+                                    this->getComponentName(),
+                                    pcsz, args,
+                                    true /* aWarning */,
+                                    true /* aLogIt */);
     va_end(args);
-    return rc;
+    return hrc;
 }
 
 /**
@@ -799,14 +799,14 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternalV(aResultCode,
-                                   this->getClassIID(),
-                                   this->getComponentName(),
-                                   pcsz, args,
-                                   false /* aWarning */,
-                                   false /* aLogIt */);
+    HRESULT hrc = setErrorInternalV(aResultCode,
+                                    this->getClassIID(),
+                                    this->getComponentName(),
+                                    pcsz, args,
+                                    false /* aWarning */,
+                                    false /* aLogIt */);
     va_end(args);
-    return rc;
+    return hrc;
 }
 
 /**
@@ -818,14 +818,14 @@ void VirtualBoxBase::clearError(void)
 #if !defined(VBOX_WITH_XPCOM)
     ::SetErrorInfo(0, NULL);
 #else
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-    if (NS_SUCCEEDED(rc))
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+    if (NS_SUCCEEDED(hrc))
     {
         nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-        if (SUCCEEDED(rc))
+        hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+        if (SUCCEEDED(hrc))
             em->SetCurrentException(NULL);
     }
 #endif
