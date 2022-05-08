@@ -127,12 +127,12 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
     uint32_t const idContext = pSvcCb->mpaParms[0].u.uint32;
 
     VBOXGUESTCTRLHOSTCBCTX CtxCb = { idMessage, idContext };
-    int rc = pGuest->i_dispatchToSession(&CtxCb, pSvcCb);
+    int vrc = pGuest->i_dispatchToSession(&CtxCb, pSvcCb);
 
-    Log2Func(("CID=%#x, idSession=%RU32, uObject=%RU32, uCount=%RU32, rc=%Rrc\n",
+    Log2Func(("CID=%#x, idSession=%RU32, uObject=%RU32, uCount=%RU32, vrc=%Rrc\n",
               idContext, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(idContext), VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(idContext),
-              VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(idContext), rc));
-    return rc;
+              VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(idContext), vrc));
+    return vrc;
 }
 
 // private methods
@@ -162,7 +162,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
     GuestSessions::const_iterator itSession = mData.mGuestSessions.find(uSessionID);
 
-    int rc;
+    int vrc;
     if (itSession != mData.mGuestSessions.end())
     {
         ComObjPtr<GuestSession> pSession(itSession->second);
@@ -179,7 +179,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
          *            this further because we don't have a valid context ID.
          */
         bool fDispatch = true;
-        rc = VERR_INVALID_FUNCTION;
+        vrc = VERR_INVALID_FUNCTION;
         if (   pCtxCb->uMessage == GUEST_MSG_EXEC_STATUS
             && pSvcCb->mParms    >= 5)
         {
@@ -204,7 +204,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
             switch (pCtxCb->uMessage)
             {
                 case GUEST_MSG_DISCONNECTED:
-                    rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
+                    vrc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 /* Process stuff. */
@@ -212,30 +212,30 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                 case GUEST_MSG_EXEC_OUTPUT:
                 case GUEST_MSG_EXEC_INPUT_STATUS:
                 case GUEST_MSG_EXEC_IO_NOTIFY:
-                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
+                    vrc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
                 /* File stuff. */
                 case GUEST_MSG_FILE_NOTIFY:
-                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
+                    vrc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
                 /* Session stuff. */
                 case GUEST_MSG_SESSION_NOTIFY:
-                    rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
+                    vrc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 default:
-                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
+                    vrc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
             }
         }
     }
     else
-        rc = VERR_INVALID_SESSION_ID;
+        vrc = VERR_INVALID_SESSION_ID;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -257,9 +257,9 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VERR_MAX_PROCS_REACHED;
+    int vrc = VERR_MAX_PROCS_REACHED;
     if (mData.mGuestSessions.size() >= VBOX_GUESTCTRL_MAX_SESSIONS)
-        return rc;
+        return vrc;
 
     try
     {
@@ -272,7 +272,7 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
             /* Is the context ID already used? */
             if (!i_sessionExists(uNewSessionID))
             {
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
                 break;
             }
             uNewSessionID++;
@@ -282,11 +282,11 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
             if (++uTries == VBOX_GUESTCTRL_MAX_SESSIONS)
                 break; /* Don't try too hard. */
         }
-        if (RT_FAILURE(rc)) throw rc;
+        if (RT_FAILURE(vrc)) throw vrc;
 
         /* Create the session object. */
-        HRESULT hr = pGuestSession.createObject();
-        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+        HRESULT hrc = pGuestSession.createObject();
+        if (FAILED(hrc)) throw VERR_COM_UNEXPECTED;
 
         /** @todo Use an overloaded copy operator. Later. */
         GuestSessionStartupInfo startupInfo;
@@ -309,8 +309,8 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
             startupInfo.mIsInternal = true;
         }
 
-        rc = pGuestSession->init(this, startupInfo, guestCredentials);
-        if (RT_FAILURE(rc)) throw rc;
+        vrc = pGuestSession->init(this, startupInfo, guestCredentials);
+        if (RT_FAILURE(vrc)) throw vrc;
 
         /*
          * Add session object to our session map. This is necessary
@@ -323,13 +323,13 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
 
         ::FireGuestSessionRegisteredEvent(mEventSource, pGuestSession, true /* Registered */);
     }
-    catch (int rc2)
+    catch (int vrc2)
     {
-        rc = rc2;
+        vrc = vrc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -346,7 +346,7 @@ int Guest::i_sessionDestroy(uint32_t uSessionID)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VERR_NOT_FOUND;
+    int vrc = VERR_NOT_FOUND;
 
     LogFlowThisFunc(("Destroying session (ID=%RU32) ...\n", uSessionID));
 
@@ -361,7 +361,7 @@ int Guest::i_sessionDestroy(uint32_t uSessionID)
     LogFlowThisFunc(("Removing session %RU32 (now total %ld sessions)\n",
                      uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
 
-    rc = pSession->i_onRemove();
+    vrc = pSession->i_onRemove();
     mData.mGuestSessions.erase(itSessions);
 
     alock.release(); /* Release lock before firing off event. */
@@ -369,8 +369,8 @@ int Guest::i_sessionDestroy(uint32_t uSessionID)
     ::FireGuestSessionRegisteredEvent(mEventSource, pSession, false /* Unregistered */);
     pSession.setNull();
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -537,11 +537,11 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
     {
         Assert(!pSession.isNull());
 
-        int rcGuest = VERR_GSTCTL_GUEST_ERROR;
-        vrc = pSession->i_startSession(&rcGuest);
+        int vrcGuest = VERR_GSTCTL_GUEST_ERROR;
+        vrc = pSession->i_startSession(&vrcGuest);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pSession->i_shutdown(fFlags, &rcGuest);
+            vrc = pSession->i_shutdown(fFlags, &vrcGuest);
             if (RT_FAILURE(vrc))
             {
                 switch (vrc)
@@ -554,7 +554,7 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
                     default:
                     {
                         if (vrc == VERR_GSTCTL_GUEST_ERROR)
-                            vrc = rcGuest;
+                            vrc = vrcGuest;
                         hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Error %s guest: %Rrc"), strAction.c_str(), vrc);
                         break;
                     }
@@ -564,7 +564,7 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
         else
         {
             if (vrc == VERR_GSTCTL_GUEST_ERROR)
-                vrc = rcGuest;
+                vrc = vrcGuest;
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
         }
     }
@@ -637,8 +637,8 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     {
         Assert(!pSession.isNull());
 
-        int rcGuest = VERR_GSTCTL_GUEST_ERROR;
-        vrc = pSession->i_startSession(&rcGuest);
+        int vrcGuest = VERR_GSTCTL_GUEST_ERROR;
+        vrc = pSession->i_startSession(&vrcGuest);
         if (RT_SUCCESS(vrc))
         {
             /*
@@ -688,7 +688,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
         else
         {
             if (vrc == VERR_GSTCTL_GUEST_ERROR)
-                vrc = rcGuest;
+                vrc = vrcGuest;
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
         }
     }
