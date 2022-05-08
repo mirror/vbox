@@ -4565,7 +4565,6 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
     RT_ZERO(Config);
 
     bool const fNestedPagingAndFullGuestExec = VM_IS_NEM_ENABLED(pVM)
-                                            || VM_IS_EXEC_ENGINE_IEM(pVM)
                                             || HMAreNestedPagingAndFullGuestExecEnabled(pVM);
     int rc = cpumR3CpuIdReadConfig(pVM, &Config, pCpumCfg, fNestedPagingAndFullGuestExec);
     AssertRCReturn(rc, rc);
