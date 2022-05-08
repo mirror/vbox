@@ -616,10 +616,10 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
                                                   PCIBusAddress HostAddress,
                                                   bool fGuestAddressRequired)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (!GuestAddress.valid())
-        rc = pState->autoAssign(pszDevName, GuestAddress);
+        hrc = pState->autoAssign(pszDevName, GuestAddress);
     else
     {
         bool fAvailable = pState->checkAvailable(GuestAddress);
@@ -627,33 +627,33 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
         if (!fAvailable)
         {
             if (fGuestAddressRequired)
-                rc = E_ACCESSDENIED;
+                hrc = E_ACCESSDENIED;
             else
-                rc = pState->autoAssign(pszDevName, GuestAddress);
+                hrc = pState->autoAssign(pszDevName, GuestAddress);
         }
     }
 
-    if (FAILED(rc))
-        return rc;
+    if (FAILED(hrc))
+        return hrc;
 
     Assert(GuestAddress.valid() && pState->checkAvailable(GuestAddress));
 
-    rc = pState->record(pszDevName, GuestAddress, HostAddress);
-    if (FAILED(rc))
-        return rc;
+    hrc = pState->record(pszDevName, GuestAddress, HostAddress);
+    if (FAILED(hrc))
+        return hrc;
 
     PCVMMR3VTABLE const pVMM = pState->mpVMM;
     if (pCfg)
     {
-        rc = InsertConfigInteger(pVMM, pCfg, "PCIBusNo",      GuestAddress.miBus);
-        if (FAILED(rc))
-            return rc;
-        rc = InsertConfigInteger(pVMM, pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
-        if (FAILED(rc))
-            return rc;
-        rc = InsertConfigInteger(pVMM, pCfg, "PCIFunctionNo", GuestAddress.miFn);
-        if (FAILED(rc))
-            return rc;
+        hrc = InsertConfigInteger(pVMM, pCfg, "PCIBusNo",      GuestAddress.miBus);
+        if (FAILED(hrc))
+            return hrc;
+        hrc = InsertConfigInteger(pVMM, pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
+        if (FAILED(hrc))
+            return hrc;
+        hrc = InsertConfigInteger(pVMM, pCfg, "PCIFunctionNo", GuestAddress.miFn);
+        if (FAILED(hrc))
+            return hrc;
     }
 
     /* Check if the bus is still unknown, i.e. the bridge to it is missing */
@@ -671,18 +671,18 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
             if (!hasPCIDevice(pState->mpszBridgeName, iBridge))
             {
                 PCIBusAddress BridgeGuestAddress;
-                rc = pState->autoAssign(pState->mpszBridgeName, BridgeGuestAddress);
-                if (FAILED(rc))
-                    return rc;
+                hrc = pState->autoAssign(pState->mpszBridgeName, BridgeGuestAddress);
+                if (FAILED(hrc))
+                    return hrc;
                 if (BridgeGuestAddress.miBus > iBridge)
                     AssertLogRelMsgFailedReturn(("BusAssignmentManager: cannot create bridge for bus %i because the possible parent bus positions are exhausted\n", iBridge + 1), E_UNEXPECTED);
 
                 PCFGMNODE pInst;
                 InsertConfigNode(pVMM, pBridges, Utf8StrFmt("%d", iBridge).c_str(), &pInst);
                 InsertConfigInteger(pVMM, pInst, "Trusted", 1);
-                rc = assignPCIDevice(pState->mpszBridgeName, pInst);
-                if (FAILED(rc))
-                    return rc;
+                hrc = assignPCIDevice(pState->mpszBridgeName, pInst);
+                if (FAILED(hrc))
+                    return hrc;
             }
         }
     }
