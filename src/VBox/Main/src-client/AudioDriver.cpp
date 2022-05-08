@@ -139,25 +139,25 @@ DECLCALLBACK(int) AudioDriver::attachDriverOnEmt(AudioDriver *pThis)
              pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
 
     /* Detach the driver chain from the audio device first. */
-    int rc = ptrVM.vtable()->pfnPDMR3DeviceDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */);
-    if (RT_SUCCESS(rc))
+    int vrc = ptrVM.vtable()->pfnPDMR3DeviceDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */);
+    if (RT_SUCCESS(vrc))
     {
-        rc = pThis->configure(pCfg->uLUN, true /* Attach */);
-        if (RT_SUCCESS(rc))
-            rc = ptrVM.vtable()->pfnPDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
-                                                      0 /* fFlags */, NULL /* ppBase */);
+        vrc = pThis->configure(pCfg->uLUN, true /* Attach */);
+        if (RT_SUCCESS(vrc))
+            vrc = ptrVM.vtable()->pfnPDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
+                                                       0 /* fFlags */, NULL /* ppBase */);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         pThis->mfAttached = true;
         LogRel2(("%s: Driver attached (LUN #%u)\n", pCfg->strName.c_str(), pCfg->uLUN));
     }
     else
-        LogRel(("%s: Failed to attach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), rc));
+        LogRel(("%s: Failed to attach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
 
-    LogFunc(("Returning %Rrc\n", rc));
-    return rc;
+    LogFunc(("Returning %Rrc\n", vrc));
+    return vrc;
 }
 
 
@@ -229,21 +229,21 @@ DECLCALLBACK(int) AudioDriver::detachDriverOnEmt(AudioDriver *pThis)
      *
      * Start with the "AUDIO" driver, as this driver serves as the audio connector between
      * the device emulation and the select backend(s). */
-    int rc = ptrVM.vtable()->pfnPDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
-                                                  "AUDIO", 0 /* iOccurrence */,  0 /* fFlags */);
-    if (RT_SUCCESS(rc))
-        rc = pThis->configure(pCfg->uLUN, false /* Detach */);/** @todo r=bird: Illogical and from what I can tell pointless! */
+    int vrc = ptrVM.vtable()->pfnPDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
+                                                   "AUDIO", 0 /* iOccurrence */,  0 /* fFlags */);
+    if (RT_SUCCESS(vrc))
+        vrc = pThis->configure(pCfg->uLUN, false /* Detach */);/** @todo r=bird: Illogical and from what I can tell pointless! */
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         pThis->mfAttached = false;
         LogRel2(("%s: Driver detached\n", pCfg->strName.c_str()));
     }
     else
-        LogRel(("%s: Failed to detach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), rc));
+        LogRel(("%s: Failed to detach audio driver, vrc=%Rrc\n", pCfg->strName.c_str(), vrc));
 
-    LogFunc(("Returning %Rrc\n", rc));
-    return rc;
+    LogFunc(("Returning %Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -270,7 +270,7 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
         return VINF_SUCCESS;
     }
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     PCFGMNODE pDevLun = ptrVM.vtable()->pfnCFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
 
@@ -278,31 +278,31 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
     {
         do  /* break "loop" */
         {
-            AssertMsgBreakStmt(pDevLun, ("%s: Device LUN #%u not found\n", mCfg.strName.c_str(), uLUN), rc = VERR_NOT_FOUND);
+            AssertMsgBreakStmt(pDevLun, ("%s: Device LUN #%u not found\n", mCfg.strName.c_str(), uLUN), vrc = VERR_NOT_FOUND);
 
             LogRel2(("%s: Configuring audio driver (to LUN #%u)\n", mCfg.strName.c_str(), uLUN));
 
             ptrVM.vtable()->pfnCFGMR3RemoveNode(pDevLun); /* Remove LUN completely first. */
 
             /* Insert new LUN configuration and build up the new driver chain. */
-            rc = ptrVM.vtable()->pfnCFGMR3InsertNodeF(pDev0, &pDevLun, "LUN#%u/", uLUN);                        AssertRCBreak(rc);
-            rc = ptrVM.vtable()->pfnCFGMR3InsertString(pDevLun, "Driver", "AUDIO");                             AssertRCBreak(rc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertNodeF(pDev0, &pDevLun, "LUN#%u/", uLUN);                        AssertRCBreak(vrc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertString(pDevLun, "Driver", "AUDIO");                             AssertRCBreak(vrc);
 
             PCFGMNODE pLunCfg;
-            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "Config", &pLunCfg);                              AssertRCBreak(rc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "Config", &pLunCfg);                              AssertRCBreak(vrc);
 
-            rc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pLunCfg, "DriverName",    "%s", mCfg.strName.c_str());  AssertRCBreak(rc);
-            rc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "InputEnabled",  mCfg.fEnabledIn);             AssertRCBreak(rc);
-            rc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "OutputEnabled", mCfg.fEnabledOut);            AssertRCBreak(rc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pLunCfg, "DriverName",    "%s", mCfg.strName.c_str());  AssertRCBreak(vrc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "InputEnabled",  mCfg.fEnabledIn);             AssertRCBreak(vrc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "OutputEnabled", mCfg.fEnabledOut);            AssertRCBreak(vrc);
 
             PCFGMNODE pAttachedDriver;
-            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "AttachedDriver", &pAttachedDriver);              AssertRCBreak(rc);
-            rc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pAttachedDriver, "Driver", "%s", mCfg.strName.c_str()); AssertRCBreak(rc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "AttachedDriver", &pAttachedDriver);              AssertRCBreak(vrc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pAttachedDriver, "Driver", "%s", mCfg.strName.c_str()); AssertRCBreak(vrc);
             PCFGMNODE pAttachedDriverCfg;
-            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pAttachedDriver, "Config", &pAttachedDriverCfg);           AssertRCBreak(rc);
+            vrc = ptrVM.vtable()->pfnCFGMR3InsertNode(pAttachedDriver, "Config", &pAttachedDriverCfg);           AssertRCBreak(vrc);
 
             /* Call the (virtual) method for driver-specific configuration. */
-            rc = configureDriver(pAttachedDriverCfg, ptrVM.vtable());                                           AssertRCBreak(rc);
+            vrc = configureDriver(pAttachedDriverCfg, ptrVM.vtable());                                           AssertRCBreak(vrc);
 
         } while (0);
     }
@@ -311,7 +311,7 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
         LogRel2(("%s: Unconfiguring audio driver\n", mCfg.strName.c_str()));
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
 #ifdef LOG_ENABLED
         LogFunc(("%s: fAttach=%RTbool\n", mCfg.strName.c_str(), fAttach));
@@ -319,9 +319,9 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
 #endif
     }
     else
-        LogRel(("%s: %s audio driver failed with rc=%Rrc\n", mCfg.strName.c_str(), fAttach ? "Configuring" : "Unconfiguring", rc));
+        LogRel(("%s: %s audio driver failed with vrc=%Rrc\n", mCfg.strName.c_str(), fAttach ? "Configuring" : "Unconfiguring", vrc));
 
-    LogFunc(("Returning %Rrc\n", rc));
-    return rc;
+    LogFunc(("Returning %Rrc\n", vrc));
+    return vrc;
 }
 
