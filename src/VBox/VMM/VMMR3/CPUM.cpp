@@ -2124,9 +2124,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                                  &cpumR3InfoHost, DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "cpumguestinstr",   "Displays the current guest instruction.",
                                  &cpumR3InfoGuestInstr, DBGFINFO_FLAGS_ALL_EMTS);
-    DBGFR3InfoRegisterInternal(  pVM, "cpuid",            "Displays the guest cpuid leaves.",         &cpumR3CpuIdInfo);
+    DBGFR3InfoRegisterInternal(  pVM, "cpuid",            "Displays the guest cpuid leaves.",
+                                 &cpumR3CpuIdInfo);
     DBGFR3InfoRegisterInternal(  pVM, "cpumvmxfeat",      "Displays the host and guest VMX hwvirt. features.",
-                               &cpumR3InfoVmxFeatures);
+                                 &cpumR3InfoVmxFeatures);
 
     rc = cpumR3DbgInit(pVM);
     if (RT_FAILURE(rc))
