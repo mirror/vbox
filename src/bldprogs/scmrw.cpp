@@ -3390,6 +3390,7 @@ bool rewrite_ForceHrcVrcInsteadOfRc(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
             continue;
         }
 
+#if 0 /* This is too broad and triggers on things we don't want to trigger on (like autoCaller.rc()). */
         const RTSTRTUPLE RcTuple = { RT_STR_TUPLE("rc") };
         size_t const cchWord = RcTuple.cch;
         if (cchLine >= cchWord)
@@ -3414,6 +3415,38 @@ bool rewrite_ForceHrcVrcInsteadOfRc(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                 pchHit = (const char *)memchr(pchHit + 1, *RcTuple.psz, cchLeft);
             }
         }
+#else
+        /* Trigger on declarations of 'HRESULT rc' and 'int rc'. */
+        static const SCMMATCHWORD s_aHresultRc[] =
+        {
+            { RT_STR_TUPLE("HRESULT"),                  0, true, false },
+            { RT_STR_TUPLE("rc"),                       1, true, false }
+        };
+
+        static const SCMMATCHWORD s_aIntRc[] =
+        {
+            { RT_STR_TUPLE("int"),                      0, true, false },
+            { RT_STR_TUPLE("rc"),                       1, true, false }
+        };
+
+        rc = ScmMatchWords(pchLine, cchLine, s_aHresultRc, RT_ELEMENTS(s_aHresultRc),
+                           &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            ScmFixManually(pState, "%u:%zu: 'HRESULT rc' is not allowed! Use 'HRESULT hrc' instead.\n",
+                           iLine, offNext);
+            continue;
+        }
+
+        rc = ScmMatchWords(pchLine, cchLine, s_aIntRc, RT_ELEMENTS(s_aIntRc),
+                           &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            ScmFixManually(pState, "%u:%zu: 'int rc' is not allowed! Use 'int vrc' instead.\n",
+                           iLine, offNext);
+            continue;
+        }
+#endif
     }
 
     return false;
