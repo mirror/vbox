@@ -1104,6 +1104,15 @@ typedef struct CPUMFEATURES
     uint32_t        fInvpcid : 1;
     /** Supports read/write FSGSBASE instructions. */
     uint32_t        fFsGsBase : 1;
+    /** Support BMI1 instructions (ANDN, BEXTR, BLSI, BLSMSK, BLSR, and TZCNT). */
+    uint32_t        fBmi1 : 1;
+    /** Support BMI2 instructions (BZHI, MULX, PDEP, PEXT, RORX, SARX, SHRX,
+     * and SHLX). */
+    uint32_t        fBmi2 : 1;
+    /** Support RDRAND instruction. */
+    uint32_t        fRdRand : 1;
+    /** Support RDSEED instruction. */
+    uint32_t        fRdSeed : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1124,6 +1133,11 @@ typedef struct CPUMFEATURES
     uint32_t        fMovCr8In32Bit : 1;
     /** AMD64: Supports XOP (similar to VEX3/AVX). */
     uint32_t        fXop : 1;
+    /** AMD64: Supports ABM, i.e. the LZCNT instruction. */
+    uint32_t        fAbm : 1;
+    /** AMD64: Supports TBM (BEXTR, BLCFILL, BLCI, BLCIC, BLCMSK, BLCS,
+     *  BLSFILL, BLSIC, T1MSKC, and TZMSK). */
+    uint32_t        fTbm : 1;
 
     /** Indicates that FPU instruction and data pointers may leak.
      * This generally applies to recent AMD CPUs, where the FPU IP and DP pointer
@@ -1157,9 +1171,14 @@ typedef struct CPUMFEATURES
      * @remarks Only safe use after CPUM ring-0 init! */
     uint32_t        fArchMdsNo : 1;
 
-    /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 7;
+    /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
+     *  prior to the bit fields -> total of 24 bytes) */
+    uint32_t        fPadding0 : 1;
+    uint32_t        fPadding1;
 
+
+    /** @name SVM
+     * @{ */
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;
     /** SVM: Support LBR (Last Branch Record) virtualization. */
@@ -1188,17 +1207,15 @@ typedef struct CPUMFEATURES
     uint32_t        fSvmVGif : 1;
     /** SVM: Supports GMET (Guest Mode Execute Trap Extension). */
     uint32_t        fSvmGmet : 1;
-    /** SVM: Padding / reserved for future features. */
+    /** SVM: Padding / reserved for future features (64 bits total w/ max ASID). */
     uint32_t        fSvmPadding0 : 18;
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
+    /** @} */
+
 
     /** VMX: Maximum physical address width. */
-    uint8_t         cVmxMaxPhysAddrWidth;
-    /** VMX: Padding / reserved for future. */
-    uint8_t         abVmxPadding[3];
-    /** VMX: Padding / reserved for future.  */
-    uint32_t        fVmxPadding0;
+    uint32_t        cVmxMaxPhysAddrWidth : 8;
 
     /** @name VMX basic controls.
      * @{ */
@@ -1377,7 +1394,9 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding1 : 25;
+    uint32_t        fVmxPadding0 : 17;
+    /** VMX: Padding / reserved for future, making it a total of 128 bits.  */
+    uint32_t        fVmxPadding1;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 48);
