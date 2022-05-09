@@ -726,6 +726,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
         pVCpu->hm.s.fGCMTrapXcptDE = GCMShouldTrapXcptDE(pVCpu);    /* Is safe to call now since GCMR3Init() has completed. */
     }
 
+#if defined(RT_ARCH_AMD64) ||defined(RT_ARCH_X86)
     /*
      * Check if L1D flush is needed/possible.
      */
@@ -755,6 +756,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
     else if (   g_CpumHostFeatures.s.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
              || g_CpumHostFeatures.s.enmMicroarch >= kCpumMicroarch_Intel_Core7_End)
         pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
+#endif
 
     /*
      * Statistics.
