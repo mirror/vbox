@@ -70,6 +70,40 @@ static int  cpumR0SaveHostDebugState(PVMCPUCC pVCpu);
 
 
 /**
+ * Check the CPUID features of this particular CPU and disable relevant features
+ * for the guest which do not exist on this CPU.
+ *
+ * We have seen systems where the X86_CPUID_FEATURE_ECX_MONITOR feature flag is
+ * only set on some host CPUs, see @bugref{5436}.
+ *
+ * @note This function might be called simultaneously on more than one CPU!
+ *
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     Leaf array.
+ * @param   pvUser2     Number of leaves.
+ */
+static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PCPUMCPUIDLEAF const paLeaves = (PCPUMCPUIDLEAF)pvUser1;
+    uint32_t const       cLeaves  = (uint32_t)(uintptr_t)pvUser2;
+    RT_NOREF(idCpu);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
+    {
+        PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafInt(paLeaves, cLeaves, g_aCpuidUnifyBits[i].uLeaf, 0);
+        if (pLeaf)
+        {
+            uint32_t uEax, uEbx, uEcx, uEdx;
+            ASMCpuIdExSlow(g_aCpuidUnifyBits[i].uLeaf, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
+
+            ASMAtomicAndU32(&pLeaf->uEcx, uEcx | ~g_aCpuidUnifyBits[i].uEcx);
+            ASMAtomicAndU32(&pLeaf->uEdx, uEdx | ~g_aCpuidUnifyBits[i].uEdx);
+        }
+    }
+}
+
+
+/**
  * Does the Ring-0 CPU initialization once during module load.
  * XXX Host-CPU hot-plugging?
  */
@@ -103,7 +137,12 @@ VMMR0_INT_DECL(int) CPUMR0ModuleInit(void)
     uint32_t        cLeaves;
     rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
     AssertLogRelRCReturn(rc, rc);
-    /** @todo check out the CPUID info with the other CPUs in the system. */
+
+    /*
+     * Unify/cross check some CPUID feature bits on all available CPU cores
+     * and threads.  We've seen CPUs where the monitor support differed.
+     */
+    RTMpOnAll(cpumR0CheckCpuid, paLeaves, (void *)(uintptr_t)cLeaves);
 
     /*
      * Populate the host CPU feature global variable.
@@ -111,6 +150,39 @@ VMMR0_INT_DECL(int) CPUMR0ModuleInit(void)
     rc = cpumCpuIdExplodeFeaturesX86(paLeaves, cLeaves, &g_CpumHostMsrs, &g_CpumHostFeatures.s);
     RTMemFree(paLeaves);
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Get MSR_IA32_ARCH_CAPABILITIES and expand it into the host feature structure.
+     */
+    if (ASMHasCpuId())
+    {
+        /** @todo Should add this MSR to CPUMMSRS and expose it via SUPDrv... */
+        g_CpumHostFeatures.s.fArchRdclNo             = 0;
+        g_CpumHostFeatures.s.fArchIbrsAll            = 0;
+        g_CpumHostFeatures.s.fArchRsbOverride        = 0;
+        g_CpumHostFeatures.s.fArchVmmNeedNotFlushL1d = 0;
+        g_CpumHostFeatures.s.fArchMdsNo              = 0;
+        uint32_t const cStdRange = ASMCpuId_EAX(0);
+        if (   RTX86IsValidStdRange(cStdRange)
+            && cStdRange >= 7)
+        {
+            uint32_t const fStdFeaturesEdx = ASMCpuId_EDX(1);
+            uint32_t fStdExtFeaturesEdx;
+            ASMCpuIdExSlow(7, 0, 0, 0, NULL, NULL, NULL, &fStdExtFeaturesEdx);
+            if (   (fStdExtFeaturesEdx & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP)
+                && (fStdFeaturesEdx    & X86_CPUID_FEATURE_EDX_MSR))
+            {
+                uint64_t fArchVal = ASMRdMsr(MSR_IA32_ARCH_CAPABILITIES);
+                g_CpumHostFeatures.s.fArchRdclNo             = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RDCL_NO);
+                g_CpumHostFeatures.s.fArchIbrsAll            = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_IBRS_ALL);
+                g_CpumHostFeatures.s.fArchRsbOverride        = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RSBO);
+                g_CpumHostFeatures.s.fArchVmmNeedNotFlushL1d = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D);
+                g_CpumHostFeatures.s.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
+            }
+            else
+                g_CpumHostFeatures.s.fArchCap = 0;
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -137,7 +209,7 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
  * @param   pvUser1     Pointer to the VM structure.
  * @param   pvUser2     Ignored.
  */
-static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) cpumR0CheckCpuidLegacy(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PVMCC     pVM   = (PVMCC)pvUser1;
 
@@ -313,7 +385,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
          * as temp ring-0 accessible memory instead, ASSUMING that they're all
          * up to date when we get here.
          */
-        RTMpOnAll(cpumR0CheckCpuid, pVM, NULL);
+        RTMpOnAll(cpumR0CheckCpuidLegacy, pVM, NULL);
 
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
         {
