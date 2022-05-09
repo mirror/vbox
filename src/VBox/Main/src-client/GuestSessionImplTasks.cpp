@@ -284,53 +284,53 @@ int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
                  strPath.c_str(), enmDirectoryCreateFlags, fMode, fFollowSymlinks, fCanExist));
 
     GuestFsObjData objData;
-    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
-    if (RT_SUCCESS(rc))
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &vrcGuest);
+    if (RT_SUCCESS(vrc))
     {
         if (!fCanExist)
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Guest directory \"%s\" already exists"), strPath.c_str()));
-            rc = VERR_ALREADY_EXISTS;
+            vrc = VERR_ALREADY_EXISTS;
         }
         else
-            rc = VWRN_ALREADY_EXISTS;
+            vrc = VWRN_ALREADY_EXISTS;
     }
     else
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
             {
-                switch (rcGuest)
+                switch (vrcGuest)
                 {
                     case VERR_FILE_NOT_FOUND:
                         RT_FALL_THROUGH();
                     case VERR_PATH_NOT_FOUND:
-                        rc = mSession->i_directoryCreate(strPath.c_str(), fMode, enmDirectoryCreateFlags, &rcGuest);
+                        vrc = mSession->i_directoryCreate(strPath.c_str(), fMode, enmDirectoryCreateFlags, &vrcGuest);
                         break;
                     default:
                         break;
                 }
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(tr("Guest error creating directory \"%s\" on the guest: %Rrc"),
-                                                   strPath.c_str(), rcGuest));
+                                                   strPath.c_str(), vrcGuest));
                 break;
             }
 
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host error creating directory \"%s\" on the guest: %Rrc"),
-                                               strPath.c_str(), rc));
+                                               strPath.c_str(), vrc));
                 break;
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -346,10 +346,10 @@ int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_
 {
     LogFlowFunc(("strPath=%s, fCreate=0x%x, fMode=%RU32, fCanExist=%RTbool\n", strPath.c_str(), fCreate, fMode, fCanExist));
 
-    int rc = RTDirCreate(strPath.c_str(), fMode, fCreate);
-    if (RT_FAILURE(rc))
+    int vrc = RTDirCreate(strPath.c_str(), fMode, fCreate);
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_ALREADY_EXISTS)
+        if (vrc == VERR_ALREADY_EXISTS)
         {
             if (!fCanExist)
             {
@@ -357,16 +357,16 @@ int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_
                                     Utf8StrFmt(tr("Host directory \"%s\" already exists"), strPath.c_str()));
             }
             else
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
         }
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Could not create host directory \"%s\": %Rrc"),
-                                           strPath.c_str(), rc));
+                                           strPath.c_str(), vrc));
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -393,18 +393,18 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
 
     uint32_t uTimeoutMs = 30 * 1000; /* 30s timeout. */
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     if (offCopy)
     {
         uint64_t offActual;
-        rc = srcFile->i_seekAt(offCopy, GUEST_FILE_SEEKTYPE_BEGIN, uTimeoutMs, &offActual);
-        if (RT_FAILURE(rc))
+        vrc = srcFile->i_seekAt(offCopy, GUEST_FILE_SEEKTYPE_BEGIN, uTimeoutMs, &offActual);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Seeking to offset %RU64 of guest file \"%s\" failed: %Rrc"),
-                                           offCopy, strSrcFile.c_str(), rc));
-            return rc;
+                                           offCopy, strSrcFile.c_str(), vrc));
+            return vrc;
         }
     }
 
@@ -413,21 +413,21 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
     {
         uint32_t cbRead;
         const uint32_t cbChunk = RT_MIN(cbToRead, sizeof(byBuf));
-        rc = srcFile->i_readData(cbChunk, uTimeoutMs, byBuf, sizeof(byBuf), &cbRead);
-        if (RT_FAILURE(rc))
+        vrc = srcFile->i_readData(cbChunk, uTimeoutMs, byBuf, sizeof(byBuf), &cbRead);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Reading %RU32 bytes @ %RU64 from guest \"%s\" failed: %Rrc", "", cbChunk),
-                                           cbChunk, cbWrittenTotal, strSrcFile.c_str(), rc));
+                                           cbChunk, cbWrittenTotal, strSrcFile.c_str(), vrc));
             break;
         }
 
-        rc = RTFileWrite(*phDstFile, byBuf, cbRead, NULL /* No partial writes */);
-        if (RT_FAILURE(rc))
+        vrc = RTFileWrite(*phDstFile, byBuf, cbRead, NULL /* No partial writes */);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Writing %RU32 bytes to host file \"%s\" failed: %Rrc", "", cbRead),
-                                           cbRead, strDstFile.c_str(), rc));
+                                           cbRead, strDstFile.c_str(), vrc));
             break;
         }
 
@@ -443,8 +443,8 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
             && fCanceled)
             break;
 
-        rc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
-        if (RT_FAILURE(rc))
+        vrc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
+        if (RT_FAILURE(vrc))
             break;
     }
 
@@ -452,8 +452,8 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
         && fCanceled)
         return VINF_SUCCESS;
 
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /*
      * Even if we succeeded until here make sure to check whether we really transfered
@@ -467,7 +467,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Writing guest file \"%s\" to host file \"%s\" failed: Access denied"),
                                        strSrcFile.c_str(), strDstFile.c_str()));
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
     }
     else if (cbWrittenTotal < cbSize)
     {
@@ -475,11 +475,11 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Copying guest file \"%s\" to host file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
                                        strSrcFile.c_str(), strDstFile.c_str(), cbWrittenTotal, cbSize));
-        rc = VERR_INTERRUPTED;
+        vrc = VERR_INTERRUPTED;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -503,16 +503,16 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
     ComObjPtr<GuestFile> srcFile;
 
     GuestFsObjData srcObjData;
-    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int rc = mSession->i_fsQueryInfo(strSrc, TRUE /* fFollowSymlinks */, srcObjData, &rcGuest);
-    if (RT_FAILURE(rc))
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = mSession->i_fsQueryInfo(strSrc, TRUE /* fFollowSymlinks */, srcObjData, &vrcGuest);
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_GSTCTL_GUEST_ERROR)
+        if (vrc == VERR_GSTCTL_GUEST_ERROR)
             setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file lookup failed"),
-                                GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, strSrc.c_str()));
+                                GuestErrorInfo(GuestErrorInfo::Type_ToolStat, vrcGuest, strSrc.c_str()));
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(tr("Guest file lookup for \"%s\" failed: %Rrc"), strSrc.c_str(), rc));
+                                Utf8StrFmt(tr("Guest file lookup for \"%s\" failed: %Rrc"), strSrc.c_str(), vrc));
     }
     else
     {
@@ -527,7 +527,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(tr("Guest file \"%s\" is a symbolic link"),
                                                    strSrc.c_str()));
-                    rc = VERR_IS_A_SYMLINK;
+                    vrc = VERR_IS_A_SYMLINK;
                 }
                 break;
 
@@ -535,43 +535,43 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Guest object \"%s\" is not a file (is type %#x)"),
                                                strSrc.c_str(), srcObjData.mType));
-                rc = VERR_NOT_A_FILE;
+                vrc = VERR_NOT_A_FILE;
                 break;
         }
     }
 
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    rc = mSession->i_fileOpen(srcOpenInfo, srcFile, &rcGuest);
-    if (RT_FAILURE(rc))
+    vrc = mSession->i_fileOpen(srcOpenInfo, srcFile, &vrcGuest);
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_GSTCTL_GUEST_ERROR)
+        if (vrc == VERR_GSTCTL_GUEST_ERROR)
             setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file could not be opened"),
-                                GuestErrorInfo(GuestErrorInfo::Type_File, rcGuest, strSrc.c_str()));
+                                GuestErrorInfo(GuestErrorInfo::Type_File, vrcGuest, strSrc.c_str()));
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"), strSrc.c_str(), rc));
+                                Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"), strSrc.c_str(), vrc));
     }
 
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     RTFSOBJINFO dstObjInfo;
     RT_ZERO(dstObjInfo);
 
     bool fSkip = false; /* Whether to skip handling the file. */
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTPathQueryInfo(strDst.c_str(), &dstObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(rc))
+        vrc = RTPathQueryInfo(strDst.c_str(), &dstObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(vrc))
         {
             if (fFileCopyFlags & FileCopyFlag_NoReplace)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host file \"%s\" already exists"), strDst.c_str()));
-                rc = VERR_ALREADY_EXISTS;
+                vrc = VERR_ALREADY_EXISTS;
             }
 
             if (fFileCopyFlags & FileCopyFlag_Update)
@@ -587,23 +587,23 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         }
         else
         {
-            if (rc != VERR_FILE_NOT_FOUND) /* Destination file does not exist (yet)? */
+            if (vrc != VERR_FILE_NOT_FOUND) /* Destination file does not exist (yet)? */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host file lookup for \"%s\" failed: %Rrc"),
-                                               strDst.c_str(), rc));
+                                               strDst.c_str(), vrc));
         }
     }
 
     if (fSkip)
     {
-        int rc2 = srcFile->i_closeFile(&rcGuest);
-        AssertRC(rc2);
+        int vrc2 = srcFile->i_closeFile(&vrcGuest);
+        AssertRC(vrc2);
         return VINF_SUCCESS;
     }
 
     char *pszDstFile = NULL;
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         if (RTFS_IS_FILE(dstObjInfo.Attr.fMode))
         {
@@ -611,7 +611,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host file \"%s\" already exists"), strDst.c_str()));
-                rc = VERR_ALREADY_EXISTS;
+                vrc = VERR_ALREADY_EXISTS;
             }
             else
                 pszDstFile = RTStrDup(strDst.c_str());
@@ -620,11 +620,11 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         {
             /* Build the final file name with destination path (on the host). */
             char szDstPath[RTPATH_MAX];
-            rc = RTStrCopy(szDstPath, sizeof(szDstPath), strDst.c_str());
-            if (RT_SUCCESS(rc))
+            vrc = RTStrCopy(szDstPath, sizeof(szDstPath), strDst.c_str());
+            if (RT_SUCCESS(vrc))
             {
-                rc = RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
-                if (RT_SUCCESS(rc))
+                vrc = RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
+                if (RT_SUCCESS(vrc))
                     pszDstFile = RTStrDup(szDstPath);
             }
         }
@@ -635,7 +635,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host file \"%s\" is a symbolic link"),
                                                strDst.c_str()));
-                rc = VERR_IS_A_SYMLINK;
+                vrc = VERR_IS_A_SYMLINK;
             }
             else
                 pszDstFile = RTStrDup(strDst.c_str());
@@ -643,50 +643,50 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         else
         {
             LogFlowThisFunc(("Object type %RU32 not implemented yet\n", dstObjInfo.Attr.fMode));
-            rc = VERR_NOT_IMPLEMENTED;
+            vrc = VERR_NOT_IMPLEMENTED;
         }
     }
-    else if (rc == VERR_FILE_NOT_FOUND)
+    else if (vrc == VERR_FILE_NOT_FOUND)
         pszDstFile = RTStrDup(strDst.c_str());
 
-    if (   RT_SUCCESS(rc)
-        || rc == VERR_FILE_NOT_FOUND)
+    if (   RT_SUCCESS(vrc)
+        || vrc == VERR_FILE_NOT_FOUND)
     {
         if (!pszDstFile)
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(tr("No memory to allocate host file path")));
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
         else
         {
             RTFILE hDstFile;
-            rc = RTFileOpen(&hDstFile, pszDstFile,
-                            RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE); /** @todo Use the correct open modes! */
-            if (RT_SUCCESS(rc))
+            vrc = RTFileOpen(&hDstFile, pszDstFile,
+                             RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE); /** @todo Use the correct open modes! */
+            if (RT_SUCCESS(vrc))
             {
                 LogFlowThisFunc(("Copying '%s' to '%s' (%RI64 bytes) ...\n",
                                  strSrc.c_str(), pszDstFile, srcObjData.mObjectSize));
 
-                rc = fileCopyFromGuestInner(strSrc, srcFile, pszDstFile, &hDstFile, fFileCopyFlags,
-                                            0 /* Offset, unused */, (uint64_t)srcObjData.mObjectSize);
+                vrc = fileCopyFromGuestInner(strSrc, srcFile, pszDstFile, &hDstFile, fFileCopyFlags,
+                                             0 /* Offset, unused */, (uint64_t)srcObjData.mObjectSize);
 
-                int rc2 = RTFileClose(hDstFile);
-                AssertRC(rc2);
+                int vrc2 = RTFileClose(hDstFile);
+                AssertRC(vrc2);
             }
             else
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Opening/creating host file \"%s\" failed: %Rrc"),
-                                               pszDstFile, rc));
+                                               pszDstFile, vrc));
         }
     }
 
     RTStrFree(pszDstFile);
 
-    int rc2 = srcFile->i_closeFile(&rcGuest);
-    AssertRC(rc2);
+    int vrc2 = srcFile->i_closeFile(&vrcGuest);
+    AssertRC(vrc2);
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -713,18 +713,18 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
 
     uint32_t uTimeoutMs = 30 * 1000; /* 30s timeout. */
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     if (offCopy)
     {
         uint64_t offActual;
-        rc = RTVfsFileSeek(hVfsFile, offCopy, RTFILE_SEEK_END, &offActual);
-        if (RT_FAILURE(rc))
+        vrc = RTVfsFileSeek(hVfsFile, offCopy, RTFILE_SEEK_END, &offActual);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Seeking to offset %RU64 of host file \"%s\" failed: %Rrc"),
-                                           offCopy, strSrcFile.c_str(), rc));
-            return rc;
+                                           offCopy, strSrcFile.c_str(), vrc));
+            return vrc;
         }
     }
 
@@ -733,21 +733,21 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
     {
         size_t cbRead;
         const uint32_t cbChunk = RT_MIN(cbToRead, sizeof(byBuf));
-        rc = RTVfsFileRead(hVfsFile, byBuf, cbChunk, &cbRead);
-        if (RT_FAILURE(rc))
+        vrc = RTVfsFileRead(hVfsFile, byBuf, cbChunk, &cbRead);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Reading %RU32 bytes @ %RU64 from host file \"%s\" failed: %Rrc", "", cbChunk),
-                                           cbChunk, cbWrittenTotal, strSrcFile.c_str(), rc));
+                                           cbChunk, cbWrittenTotal, strSrcFile.c_str(), vrc));
             break;
         }
 
-        rc = fileDst->i_writeData(uTimeoutMs, byBuf, (uint32_t)cbRead, NULL /* No partial writes */);
-        if (RT_FAILURE(rc))
+        vrc = fileDst->i_writeData(uTimeoutMs, byBuf, (uint32_t)cbRead, NULL /* No partial writes */);
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Writing %zu bytes to guest file \"%s\" failed: %Rrc", "", cbRead),
-                                           cbRead, strDstFile.c_str(), rc));
+                                           cbRead, strDstFile.c_str(), vrc));
             break;
         }
 
@@ -763,13 +763,13 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
             && fCanceled)
             break;
 
-        rc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
-        if (RT_FAILURE(rc))
+        vrc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
+        if (RT_FAILURE(vrc))
             break;
     }
 
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /*
      * Even if we succeeded until here make sure to check whether we really transfered
@@ -783,7 +783,7 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Writing to guest file \"%s\" failed: Access denied"),
                                        strDstFile.c_str()));
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
     }
     else if (cbWrittenTotal < cbSize)
     {
@@ -791,11 +791,11 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Copying to guest file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
                                        strDstFile.c_str(), cbWrittenTotal, cbSize));
-        rc = VERR_INTERRUPTED;
+        vrc = VERR_INTERRUPTED;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -822,17 +822,17 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
     dstOpenInfo.mSharingMode     = FileSharingMode_All; /** @todo Use _Read when implemented. */
 
     ComObjPtr<GuestFile> dstFile;
-    int rcGuest;
-    int rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
-    if (RT_FAILURE(rc))
+    int vrcGuest;
+    int vrc = mSession->i_fileOpen(dstOpenInfo, dstFile, &vrcGuest);
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_GSTCTL_GUEST_ERROR)
+        if (vrc == VERR_GSTCTL_GUEST_ERROR)
             setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file could not be opened"),
-                                GuestErrorInfo(GuestErrorInfo::Type_File, rcGuest, strSrc.c_str()));
+                                GuestErrorInfo(GuestErrorInfo::Type_File, vrcGuest, strSrc.c_str()));
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"), strSrc.c_str(), rc));
-        return rc;
+                                Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"), strSrc.c_str(), vrc));
+        return vrc;
     }
 
     char szSrcReal[RTPATH_MAX];
@@ -842,26 +842,26 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
 
     bool fSkip = false; /* Whether to skip handling the file. */
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTPathReal(strSrc.c_str(), szSrcReal, sizeof(szSrcReal));
-        if (RT_FAILURE(rc))
+        vrc = RTPathReal(strSrc.c_str(), szSrcReal, sizeof(szSrcReal));
+        if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Host path lookup for file \"%s\" failed: %Rrc"),
-                                           strSrc.c_str(), rc));
+                                           strSrc.c_str(), vrc));
         }
         else
         {
-            rc = RTPathQueryInfo(szSrcReal, &srcObjInfo, RTFSOBJATTRADD_NOTHING);
-            if (RT_SUCCESS(rc))
+            vrc = RTPathQueryInfo(szSrcReal, &srcObjInfo, RTFSOBJATTRADD_NOTHING);
+            if (RT_SUCCESS(vrc))
             {
                 if (fFileCopyFlags & FileCopyFlag_Update)
                 {
                     GuestFsObjData dstObjData;
-                    rc = mSession->i_fileQueryInfo(strDstFinal, RT_BOOL(fFileCopyFlags & FileCopyFlag_FollowLinks), dstObjData,
-                                                   &rcGuest);
-                    if (RT_SUCCESS(rc))
+                    vrc = mSession->i_fileQueryInfo(strDstFinal, RT_BOOL(fFileCopyFlags & FileCopyFlag_FollowLinks), dstObjData,
+                                                    &vrcGuest);
+                    if (RT_SUCCESS(vrc))
                     {
                         RTTIMESPEC dstModificationTimeTS;
                         RTTimeSpecSetSeconds(&dstModificationTimeTS, dstObjData.mModificationTime);
@@ -874,25 +874,25 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
                     }
                     else
                     {
-                        if (rc == VERR_GSTCTL_GUEST_ERROR)
+                        if (vrc == VERR_GSTCTL_GUEST_ERROR)
                         {
-                            switch (rcGuest)
+                            switch (vrcGuest)
                             {
                                 case VERR_FILE_NOT_FOUND:
-                                    rc = VINF_SUCCESS;
+                                    vrc = VINF_SUCCESS;
                                     break;
 
                                 default:
                                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                         Utf8StrFmt(tr("Guest error while determining object data for guest file \"%s\": %Rrc"),
-                                                           strDstFinal.c_str(), rcGuest));
+                                                           strDstFinal.c_str(), vrcGuest));
                                     break;
                             }
                         }
                         else
                             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                 Utf8StrFmt(tr("Host error while determining object data for guest file \"%s\": %Rrc"),
-                                                           strDstFinal.c_str(), rc));
+                                                           strDstFinal.c_str(), vrc));
                     }
                 }
             }
@@ -900,44 +900,44 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Host file lookup for \"%s\" failed: %Rrc"),
-                                               szSrcReal, rc));
+                                               szSrcReal, vrc));
             }
         }
     }
 
     if (fSkip)
     {
-        int rc2 = dstFile->i_closeFile(&rcGuest);
-        AssertRC(rc2);
+        int vrc2 = dstFile->i_closeFile(&vrcGuest);
+        AssertRC(vrc2);
         return VINF_SUCCESS;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         RTVFSFILE hSrcFile;
-        rc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hSrcFile);
-        if (RT_SUCCESS(rc))
+        vrc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hSrcFile);
+        if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("Copying '%s' to '%s' (%RI64 bytes) ...\n",
                              szSrcReal, strDstFinal.c_str(), srcObjInfo.cbObject));
 
-            rc = fileCopyToGuestInner(szSrcReal, hSrcFile, strDstFinal, dstFile,
-                                      fFileCopyFlags, 0 /* Offset, unused */, srcObjInfo.cbObject);
+            vrc = fileCopyToGuestInner(szSrcReal, hSrcFile, strDstFinal, dstFile,
+                                       fFileCopyFlags, 0 /* Offset, unused */, srcObjInfo.cbObject);
 
-            int rc2 = RTVfsFileRelease(hSrcFile);
-            AssertRC(rc2);
+            int vrc2 = RTVfsFileRelease(hSrcFile);
+            AssertRC(vrc2);
         }
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Opening host file \"%s\" failed: %Rrc"),
-                                           szSrcReal, rc));
+                                           szSrcReal, vrc));
     }
 
-    int rc2 = dstFile->i_closeFile(&rcGuest);
-    AssertRC(rc2);
+    int vrc2 = dstFile->i_closeFile(&vrcGuest);
+    AssertRC(vrc2);
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -1090,11 +1090,11 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
     const ComObjPtr<GuestSession> &pSession = mTask.GetSession();
 
     ComObjPtr <GuestDirectory> pDir;
-    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int rc = pSession->i_directoryOpen(dirOpenInfo, pDir, &rcGuest);
-    if (RT_FAILURE(rc))
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = pSession->i_directoryOpen(dirOpenInfo, pDir, &vrcGuest);
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_INVALID_PARAMETER:
                break;
@@ -1106,7 +1106,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                 break;
         }
 
-        return rc;
+        return vrc;
     }
 
     if (strPathSub.isNotEmpty())
@@ -1114,21 +1114,21 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
         GuestFsObjData fsObjData;
         fsObjData.mType = FsObjType_Directory;
 
-        rc = AddEntryFromGuest(strPathSub, fsObjData);
+        vrc = AddEntryFromGuest(strPathSub, fsObjData);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         ComObjPtr<GuestFsObjInfo> fsObjInfo;
-        while (RT_SUCCESS(rc = pDir->i_read(fsObjInfo, &rcGuest)))
+        while (RT_SUCCESS(vrc = pDir->i_read(fsObjInfo, &vrcGuest)))
         {
             FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC. */
-            HRESULT hr2 = fsObjInfo->COMGETTER(Type)(&enmObjType);
-            AssertComRC(hr2);
+            HRESULT hrc2 = fsObjInfo->COMGETTER(Type)(&enmObjType);
+            AssertComRC(hrc2);
 
             com::Bstr bstrName;
-            hr2 = fsObjInfo->COMGETTER(Name)(bstrName.asOutParam());
-            AssertComRC(hr2);
+            hrc2 = fsObjInfo->COMGETTER(Name)(bstrName.asOutParam());
+            AssertComRC(hrc2);
 
             Utf8Str strEntry = strPathSub + Utf8Str(bstrName);
 
@@ -1149,7 +1149,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                     if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                         break;
 
-                    rc = AddDirFromGuest(strPath, strEntry);
+                    vrc = AddDirFromGuest(strPath, strEntry);
                     break;
                 }
 
@@ -1169,7 +1169,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                 {
                     LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
 
-                    rc = AddEntryFromGuest(strEntry, fsObjInfo->i_getData());
+                    vrc = AddEntryFromGuest(strEntry, fsObjInfo->i_getData());
                     break;
                 }
 
@@ -1178,15 +1178,15 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
             }
         }
 
-        if (rc == VERR_NO_MORE_FILES) /* End of listing reached? */
-            rc = VINF_SUCCESS;
+        if (vrc == VERR_NO_MORE_FILES) /* End of listing reached? */
+            vrc = VINF_SUCCESS;
     }
 
-    int rc2 = pDir->i_closeInternal(&rcGuest);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    int vrc2 = pDir->i_closeInternal(&vrcGuest);
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -1217,29 +1217,29 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
     LogRel2(("Guest Control: Handling directory '%s' on host ...\n", strPathAbs.c_str()));
 
     RTFSOBJINFO objInfo;
-    int rc = RTPathQueryInfo(strPathAbs.c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_SUCCESS(rc))
+    int vrc = RTPathQueryInfo(strPathAbs.c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(vrc))
     {
         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
             if (strPathSub.isNotEmpty())
-                rc = AddEntryFromHost(strPathSub, &objInfo);
+                vrc = AddEntryFromHost(strPathSub, &objInfo);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 RTDIR hDir;
-                rc = RTDirOpen(&hDir, strPathAbs.c_str());
-                if (RT_SUCCESS(rc))
+                vrc = RTDirOpen(&hDir, strPathAbs.c_str());
+                if (RT_SUCCESS(vrc))
                 {
                     do
                     {
                         /* Retrieve the next directory entry. */
                         RTDIRENTRYEX Entry;
-                        rc = RTDirReadEx(hDir, &Entry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                        if (RT_FAILURE(rc))
+                        vrc = RTDirReadEx(hDir, &Entry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                        if (RT_FAILURE(vrc))
                         {
-                            if (rc == VERR_NO_MORE_FILES)
-                                rc = VINF_SUCCESS;
+                            if (vrc == VERR_NO_MORE_FILES)
+                                vrc = VINF_SUCCESS;
                             break;
                         }
 
@@ -1260,7 +1260,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                 if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                                     break;
 
-                                rc = AddDirFromHost(strPath, strEntry);
+                                vrc = AddDirFromHost(strPath, strEntry);
                                 break;
                             }
 
@@ -1268,7 +1268,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                             {
                                 LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
 
-                                rc = AddEntryFromHost(strEntry, &Entry.Info);
+                                vrc = AddEntryFromHost(strEntry, &Entry.Info);
                                 break;
                             }
 
@@ -1279,37 +1279,37 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                     Utf8Str strEntryAbs = strPathAbs + Utf8Str(Entry.szName);
 
                                     char szPathReal[RTPATH_MAX];
-                                    rc = RTPathReal(strEntryAbs.c_str(), szPathReal, sizeof(szPathReal));
-                                    if (RT_SUCCESS(rc))
+                                    vrc = RTPathReal(strEntryAbs.c_str(), szPathReal, sizeof(szPathReal));
+                                    if (RT_SUCCESS(vrc))
                                     {
-                                        rc = RTPathQueryInfo(szPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
-                                        if (RT_SUCCESS(rc))
+                                        vrc = RTPathQueryInfo(szPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
+                                        if (RT_SUCCESS(vrc))
                                         {
                                             if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                                             {
                                                 LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
                                                          strEntryAbs.c_str(), szPathReal));
-                                                rc = AddDirFromHost(strPath, strEntry);
+                                                vrc = AddDirFromHost(strPath, strEntry);
                                             }
                                             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                             {
                                                 LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
                                                          strEntryAbs.c_str(), szPathReal));
-                                                rc = AddEntryFromHost(strEntry, &objInfo);
+                                                vrc = AddEntryFromHost(strEntry, &objInfo);
                                             }
                                             else
-                                                rc = VERR_NOT_SUPPORTED;
+                                                vrc = VERR_NOT_SUPPORTED;
                                         }
 
-                                        if (RT_FAILURE(rc))
+                                        if (RT_FAILURE(vrc))
                                             LogRel2(("Guest Control: Unable to query symbolic link info for '%s', rc=%Rrc\n",
-                                                     szPathReal, rc));
+                                                     szPathReal, vrc));
                                     }
                                     else
                                     {
-                                        LogRel2(("Guest Control: Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), rc));
-                                        if (rc == VERR_FILE_NOT_FOUND) /* Broken symlink, skip. */
-                                            rc = VINF_SUCCESS;
+                                        LogRel2(("Guest Control: Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), vrc));
+                                        if (vrc == VERR_FILE_NOT_FOUND) /* Broken symlink, skip. */
+                                            vrc = VINF_SUCCESS;
                                     }
                                 }
                                 else
@@ -1321,7 +1321,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                 break;
                         }
 
-                    } while (RT_SUCCESS(rc));
+                    } while (RT_SUCCESS(vrc));
 
                     RTDirClose(hDir);
                 }
@@ -1329,20 +1329,20 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            rc = VERR_IS_A_FILE;
+            vrc = VERR_IS_A_FILE;
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
-            rc = VERR_IS_A_SYMLINK;
+            vrc = VERR_IS_A_SYMLINK;
         }
         else
-            rc = VERR_NOT_SUPPORTED;
+            vrc = VERR_NOT_SUPPORTED;
     }
     else
-        LogFlowFunc(("Unable to query '%s', rc=%Rrc\n", strPathAbs.c_str(), rc));
+        LogFlowFunc(("Unable to query '%s', rc=%Rrc\n", strPathAbs.c_str(), vrc));
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 GuestSessionTaskOpen::GuestSessionTaskOpen(GuestSession *pSession, uint32_t uFlags, uint32_t uTimeoutMS)
@@ -1483,13 +1483,13 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
 
             GuestFsObjData srcObjData;
-            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-            vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
+            int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+            vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &vrcGuest);
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_GSTCTL_GUEST_ERROR)
                     strErrorInfo = GuestBase::getErrorAsString(tr("Guest file lookup failed"),
-                                                               GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, strSrc.c_str()));
+                                                               GuestErrorInfo(GuestErrorInfo::Type_ToolStat, vrcGuest, strSrc.c_str()));
                 else
                     strErrorInfo = Utf8StrFmt(tr("Guest file lookup for \"%s\" failed: %Rrc"),
                                               strSrc.c_str(), vrc);
@@ -1583,7 +1583,7 @@ int GuestSessionTaskCopyFrom::Run(void)
     AutoCaller autoCaller(mSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     FsLists::const_iterator itList = mVecLists.begin();
     while (itList != mVecLists.end())
@@ -1605,8 +1605,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         if (   pList->mSourceSpec.enmType == FsObjType_Directory
             && pList->mSourceSpec.fDryRun == false)
         {
-            rc = directoryCreateOnHost(pList->mDstRootAbs, fDirCreate, fDirMode, fCopyIntoExisting);
-            if (RT_FAILURE(rc))
+            vrc = directoryCreateOnHost(pList->mDstRootAbs, fDirCreate, fDirMode, fCopyIntoExisting);
+            if (RT_FAILURE(vrc))
                 break;
         }
 
@@ -1626,20 +1626,20 @@ int GuestSessionTaskCopyFrom::Run(void)
             if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
                 /* Build the source path on the guest. */
-                rc = RTStrCopy(szPath, sizeof(szPath), pList->mSrcRootAbs.c_str());
-                if (RT_SUCCESS(rc))
+                vrc = RTStrCopy(szPath, sizeof(szPath), pList->mSrcRootAbs.c_str());
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(rc))
+                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
+                    if (RT_SUCCESS(vrc))
                         strSrcAbs = szPath;
                 }
 
                 /* Build the destination path on the host. */
-                rc = RTStrCopy(szPath, sizeof(szPath), pList->mDstRootAbs.c_str());
-                if (RT_SUCCESS(rc))
+                vrc = RTStrCopy(szPath, sizeof(szPath), pList->mDstRootAbs.c_str());
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(rc))
+                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
+                    if (RT_SUCCESS(vrc))
                         strDstAbs = szPath;
                 }
             }
@@ -1656,7 +1656,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                 case RTFS_TYPE_DIRECTORY:
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = directoryCreateOnHost(strDstAbs, fDirCreate, fDirMode, fCopyIntoExisting);
+                        vrc = directoryCreateOnHost(strDstAbs, fDirCreate, fDirMode, fCopyIntoExisting);
                     break;
 
                 case RTFS_TYPE_FILE:
@@ -1666,7 +1666,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                                  (pEntry->fMode & RTFS_TYPE_MASK) == RTFS_TYPE_SYMLINK ? "Symlink" : "File",
                                   strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = fileCopyFromGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
+                        vrc = fileCopyFromGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
                     break;
 
                 default:
@@ -1675,23 +1675,23 @@ int GuestSessionTaskCopyFrom::Run(void)
                     break;
             }
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
                 break;
 
             ++itEntry;
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
 
         ++itList;
     }
 
-    if (RT_SUCCESS(rc))
-        rc = setProgressSuccess();
+    if (RT_SUCCESS(vrc))
+        vrc = setProgressSuccess();
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 GuestSessionTaskCopyTo::GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc,
@@ -1722,13 +1722,13 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
     /* Create the progress object. */
     ComObjPtr<Progress> pProgress;
-    HRESULT hr = pProgress.createObject();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = pProgress.createObject();
+    if (FAILED(hrc))
+        return hrc;
 
     mProgress = pProgress;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     ULONG cOperations = 0;
     Utf8Str strErrorInfo;
@@ -1743,7 +1743,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     if (mDest.isEmpty())
     {
         strErrorInfo = Utf8StrFmt(tr("Guest destination must not be empty"));
-        rc = VERR_INVALID_PARAMETER;
+        vrc = VERR_INVALID_PARAMETER;
     }
     else
     {
@@ -1758,13 +1758,13 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             if (strSrc.isEmpty())
             {
                 strErrorInfo = Utf8StrFmt(tr("Host source entry must not be empty"));
-                rc = VERR_INVALID_PARAMETER;
+                vrc = VERR_INVALID_PARAMETER;
                 break;
             }
 
             RTFSOBJINFO srcFsObjInfo;
-            rc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
-            if (RT_FAILURE(rc))
+            vrc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
+            if (RT_FAILURE(vrc))
             {
                 strErrorInfo = Utf8StrFmt(tr("No such host file/directory: %s"), strSrc.c_str());
                 break;
@@ -1775,7 +1775,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (itSrc->enmType != FsObjType_Directory)
                 {
                     strErrorInfo = Utf8StrFmt(tr("Host source is not a file: %s"), strSrc.c_str());
-                    rc = VERR_NOT_A_FILE;
+                    vrc = VERR_NOT_A_FILE;
                     break;
                 }
             }
@@ -1784,7 +1784,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (itSrc->enmType == FsObjType_Directory)
                 {
                     strErrorInfo = Utf8StrFmt(tr("Host source is not a directory: %s"), strSrc.c_str());
-                    rc = VERR_NOT_A_DIRECTORY;
+                    vrc = VERR_NOT_A_DIRECTORY;
                     break;
                 }
             }
@@ -1793,22 +1793,22 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             try
             {
                 pFsList = new FsList(*this);
-                rc = pFsList->Init(strSrc, strDst, *itSrc);
-                if (RT_SUCCESS(rc))
+                vrc = pFsList->Init(strSrc, strDst, *itSrc);
+                if (RT_SUCCESS(vrc))
                 {
                     if (itSrc->enmType == FsObjType_Directory)
                     {
-                        rc = pFsList->AddDirFromHost(strSrc);
+                        vrc = pFsList->AddDirFromHost(strSrc);
                     }
                     else
-                        rc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
+                        vrc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
                 }
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                 {
                     delete pFsList;
                     strErrorInfo = Utf8StrFmt(tr("Error adding host source '%s' to list: %Rrc"),
-                                              strSrc.c_str(), rc);
+                                              strSrc.c_str(), vrc);
                     break;
                 }
 
@@ -1816,7 +1816,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             }
             catch (std::bad_alloc &)
             {
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
                 break;
             }
 
@@ -1832,23 +1832,23 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         Assert(mVecLists.size());
         Assert(mVecLists[0]->mVecEntries.size());
 
-        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
-                             Bstr(mDesc).raw());
+        hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                              TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
+                              Bstr(mDesc).raw());
     }
     else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
-        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
+        hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                              TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         if (strErrorInfo.isEmpty())
-            strErrorInfo = Utf8StrFmt(tr("Failed with %Rrc"), rc);
+            strErrorInfo = Utf8StrFmt(tr("Failed with %Rrc"), vrc);
         setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
-    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hr, rc));
-    return hr;
+    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
+    return hrc;
 }
 
 /** @copydoc GuestSessionTask::Run */
@@ -1859,7 +1859,7 @@ int GuestSessionTaskCopyTo::Run(void)
     AutoCaller autoCaller(mSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     FsLists::const_iterator itList = mVecLists.begin();
     while (itList != mVecLists.end())
@@ -1875,25 +1875,25 @@ int GuestSessionTaskCopyTo::Run(void)
         uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
 
         GuestFsObjData dstObjData;
-        int rcGuest;
-        rc = mSession->i_fsQueryInfo(strDstRootAbs, pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks,
-                                     dstObjData, &rcGuest);
-        if (RT_FAILURE(rc))
+        int vrcGuest;
+        vrc = mSession->i_fsQueryInfo(strDstRootAbs, pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks,
+                                      dstObjData, &vrcGuest);
+        if (RT_FAILURE(vrc))
         {
-            if (rc == VERR_GSTCTL_GUEST_ERROR)
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
             {
-                switch (rcGuest)
+                switch (vrcGuest)
                 {
                     case VERR_PATH_NOT_FOUND:
                         RT_FALL_THROUGH();
                     case VERR_FILE_NOT_FOUND:
                         /* We will deal with this down below. */
-                        rc = VINF_SUCCESS;
+                        vrc = VINF_SUCCESS;
                         break;
                     default:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Querying information on guest for '%s' failed: %Rrc"),
-                                            strDstRootAbs.c_str(), rcGuest));
+                                            strDstRootAbs.c_str(), vrcGuest));
                         break;
                 }
             }
@@ -1901,7 +1901,7 @@ int GuestSessionTaskCopyTo::Run(void)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Querying information on guest for '%s' failed: %Rrc"),
-                                               strDstRootAbs.c_str(), rc));
+                                               strDstRootAbs.c_str(), vrc));
                 break;
             }
         }
@@ -1909,7 +1909,7 @@ int GuestSessionTaskCopyTo::Run(void)
         char szPath[RTPATH_MAX];
 
         LogFlowFunc(("List inital: rc=%Rrc, srcRootAbs=%s, dstRootAbs=%s\n",
-                     rc, strSrcRootAbs.c_str(), strDstRootAbs.c_str()));
+                     vrc, strSrcRootAbs.c_str(), strDstRootAbs.c_str()));
 
         /* Calculated file copy flags for the current source spec. */
         FileCopyFlag_T fFileCopyFlags = FileCopyFlag_None;
@@ -1931,11 +1931,11 @@ int GuestSessionTaskCopyTo::Run(void)
                     if (fCopyIntoExisting)
                     {
                         /* Build the destination path on the guest. */
-                        rc = RTStrCopy(szPath, sizeof(szPath), strDstRootAbs.c_str());
-                        if (RT_SUCCESS(rc))
+                        vrc = RTStrCopy(szPath, sizeof(szPath), strDstRootAbs.c_str());
+                        if (RT_SUCCESS(vrc))
                         {
-                            rc = RTPathAppend(szPath, sizeof(szPath), RTPathFilenameEx(strSrcRootAbs.c_str(), mfPathStyle));
-                            if (RT_SUCCESS(rc))
+                            vrc = RTPathAppend(szPath, sizeof(szPath), RTPathFilenameEx(strSrcRootAbs.c_str(), mfPathStyle));
+                            if (RT_SUCCESS(vrc))
                                 strDstRootAbs = szPath;
                         }
                     }
@@ -1944,7 +1944,7 @@ int GuestSessionTaskCopyTo::Run(void)
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Guest directory \"%s\" already exists"),
                                                        strDstRootAbs.c_str()));
-                        rc = VERR_ALREADY_EXISTS;
+                        vrc = VERR_ALREADY_EXISTS;
                     }
                     break;
                 }
@@ -1959,16 +1959,16 @@ int GuestSessionTaskCopyTo::Run(void)
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(tr("Unknown object type (%#x) on guest for \"%s\""),
                                                    dstObjData.mType, strDstRootAbs.c_str()));
-                    rc = VERR_NOT_SUPPORTED;
+                    vrc = VERR_NOT_SUPPORTED;
                     break;
             }
 
             /* Make sure the destination root directory exists. */
-            if (   RT_SUCCESS(rc)
+            if (   RT_SUCCESS(vrc)
                 && pList->mSourceSpec.fDryRun == false)
             {
-                rc = directoryCreateOnGuest(strDstRootAbs, DirectoryCreateFlag_None, fDirMode,
-                                            fFollowSymlinks, true /* fCanExist */);
+                vrc = directoryCreateOnGuest(strDstRootAbs, DirectoryCreateFlag_None, fDirMode,
+                                             fFollowSymlinks, true /* fCanExist */);
             }
 
             /* No tweaking of fFileCopyFlags needed here. */
@@ -1984,18 +1984,18 @@ int GuestSessionTaskCopyTo::Run(void)
             fFileCopyFlags = pList->mSourceSpec.Type.File.fCopyFlags; /* Just use the flags directly from the spec. */
         }
         else
-            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
 
         LogFlowFunc(("List final: rc=%Rrc, srcRootAbs=%s, dstRootAbs=%s, fFileCopyFlags=%#x\n",
-                     rc, strSrcRootAbs.c_str(), strDstRootAbs.c_str(), fFileCopyFlags));
+                     vrc, strSrcRootAbs.c_str(), strDstRootAbs.c_str(), fFileCopyFlags));
 
         LogRel2(("Guest Control: Copying '%s' from host to '%s' on guest ...\n", strSrcRootAbs.c_str(), strDstRootAbs.c_str()));
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
 
         FsEntries::const_iterator itEntry = pList->mVecEntries.begin();
-        while (   RT_SUCCESS(rc)
+        while (   RT_SUCCESS(vrc)
                && itEntry != pList->mVecEntries.end())
         {
             FsEntry *pEntry = *itEntry;
@@ -2007,36 +2007,36 @@ int GuestSessionTaskCopyTo::Run(void)
             if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
                 /* Build the final (absolute) source path (on the host). */
-                rc = RTStrCopy(szPath, sizeof(szPath), strSrcAbs.c_str());
-                if (RT_SUCCESS(rc))
+                vrc = RTStrCopy(szPath, sizeof(szPath), strSrcAbs.c_str());
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(rc))
+                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
+                    if (RT_SUCCESS(vrc))
                         strSrcAbs = szPath;
                 }
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(tr("Building source host path for entry \"%s\" failed (%Rrc)"),
-                                                   pEntry->strPath.c_str(), rc));
+                                                   pEntry->strPath.c_str(), vrc));
             }
 
             /** @todo Handle stuff like "C:" for destination, where the destination will be the CWD for drive C. */
             if (dstObjData.mType == FsObjType_Directory)
             {
                 /* Build the final (absolute) destination path (on the guest). */
-                rc = RTStrCopy(szPath, sizeof(szPath), strDstAbs.c_str());
-                if (RT_SUCCESS(rc))
+                vrc = RTStrCopy(szPath, sizeof(szPath), strDstAbs.c_str());
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(rc))
+                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
+                    if (RT_SUCCESS(vrc))
                         strDstAbs = szPath;
                 }
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(tr("Building destination guest path for entry \"%s\" failed (%Rrc)"),
-                                                   pEntry->strPath.c_str(), rc));
+                                                   pEntry->strPath.c_str(), vrc));
             }
 
             mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
@@ -2048,15 +2048,15 @@ int GuestSessionTaskCopyTo::Run(void)
                 case RTFS_TYPE_DIRECTORY:
                 {
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = directoryCreateOnGuest(strDstAbs, DirectoryCreateFlag_None, fDirMode,
-                                                    fFollowSymlinks, fCopyIntoExisting);
+                        vrc = directoryCreateOnGuest(strDstAbs, DirectoryCreateFlag_None, fDirMode,
+                                                     fFollowSymlinks, fCopyIntoExisting);
                     break;
                 }
 
                 case RTFS_TYPE_FILE:
                 {
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = fileCopyToGuest(strSrcAbs, strDstAbs, fFileCopyFlags);
+                        vrc = fileCopyToGuest(strSrcAbs, strDstAbs, fFileCopyFlags);
                     break;
                 }
 
@@ -2066,23 +2066,23 @@ int GuestSessionTaskCopyTo::Run(void)
                     break;
             }
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
                 break;
 
             ++itEntry;
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
 
         ++itList;
     }
 
-    if (RT_SUCCESS(rc))
-        rc = setProgressSuccess();
+    if (RT_SUCCESS(vrc))
+        vrc = setProgressSuccess();
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 GuestSessionTaskUpdateAdditions::GuestSessionTaskUpdateAdditions(GuestSession *pSession,
@@ -2113,8 +2113,6 @@ GuestSessionTaskUpdateAdditions::~GuestSessionTaskUpdateAdditions(void)
  */
 int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource)
 {
-    int rc = VINF_SUCCESS;
-
     try
     {
         /* Filter out arguments which already are in the destination to
@@ -2146,7 +2144,7 @@ int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgu
         return VERR_NO_MEMORY;
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2167,12 +2165,12 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
     AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);
 
     RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-    int rc = RTVfsFileOpen(hVfsIso, strFileSrc.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFile);
-    if (RT_SUCCESS(rc))
+    int vrc = RTVfsFileOpen(hVfsIso, strFileSrc.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFile);
+    if (RT_SUCCESS(vrc))
     {
         uint64_t cbSrcSize = 0;
-        rc = RTVfsFileQuerySize(hVfsFile, &cbSrcSize);
-        if (RT_SUCCESS(rc))
+        vrc = RTVfsFileQuerySize(hVfsFile, &cbSrcSize);
+        if (RT_SUCCESS(vrc))
         {
             LogRel(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",
                     strFileSrc.c_str(), strFileDst.c_str()));
@@ -2184,38 +2182,38 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
             dstOpenInfo.mSharingMode = FileSharingMode_All; /** @todo Use _Read when implemented. */
 
             ComObjPtr<GuestFile> dstFile;
-            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-            rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
-            if (RT_FAILURE(rc))
+            int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+            vrc = mSession->i_fileOpen(dstOpenInfo, dstFile, &vrcGuest);
+            if (RT_FAILURE(vrc))
             {
-                switch (rc)
+                switch (vrc)
                 {
                     case VERR_GSTCTL_GUEST_ERROR:
-                        setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest, strFileDst.c_str()));
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(vrcGuest, strFileDst.c_str()));
                         break;
 
                     default:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"),
-                                                       strFileDst.c_str(), rc));
+                                                       strFileDst.c_str(), vrc));
                         break;
                 }
             }
             else
             {
-                rc = fileCopyToGuestInner(strFileSrc, hVfsFile, strFileDst, dstFile, FileCopyFlag_None, 0 /*offCopy*/, cbSrcSize);
+                vrc = fileCopyToGuestInner(strFileSrc, hVfsFile, strFileDst, dstFile, FileCopyFlag_None, 0 /*offCopy*/, cbSrcSize);
 
-                int rc2 = dstFile->i_closeFile(&rcGuest);
-                AssertRC(rc2);
+                int vrc2 = dstFile->i_closeFile(&vrcGuest);
+                AssertRC(vrc2);
             }
         }
 
         RTVfsFileRelease(hVfsFile);
     }
     else if (fOptional)
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -2232,12 +2230,12 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
     LogRel(("Running %s ...\n", procInfo.mName.c_str()));
 
     GuestProcessTool procTool;
-    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = procTool.init(pSession, procInfo, false /* Async */, &rcGuest);
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = procTool.init(pSession, procInfo, false /* Async */, &vrcGuest);
     if (RT_SUCCESS(vrc))
     {
-        if (RT_SUCCESS(rcGuest))
-            vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &rcGuest);
+        if (RT_SUCCESS(vrcGuest))
+            vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &vrcGuest);
         if (RT_SUCCESS(vrc))
             vrc = procTool.getTerminationStatus();
     }
@@ -2254,7 +2252,7 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 
             case VERR_GSTCTL_GUEST_ERROR:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Running update file on guest failed"),
-                                    GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, procInfo.mExecutable.c_str()));
+                                    GuestErrorInfo(GuestErrorInfo::Type_Process, vrcGuest, procInfo.mExecutable.c_str()));
                 break;
 
             case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
@@ -2285,11 +2283,11 @@ int GuestSessionTaskUpdateAdditions::Run(void)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = setProgress(10);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = setProgress(10);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
 
     LogRel(("Automatic update of Guest Additions started, using \"%s\"\n", mSource.c_str()));
 
@@ -2300,71 +2298,71 @@ int GuestSessionTaskUpdateAdditions::Run(void)
      */
     AdditionsRunLevelType_T addsRunLevel;
     uint64_t tsStart = RTTimeSystemMilliTS();
-    while (   SUCCEEDED(hr = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
+    while (   SUCCEEDED(hrc = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
            && (    addsRunLevel != AdditionsRunLevelType_Userland
                 && addsRunLevel != AdditionsRunLevelType_Desktop))
     {
         if ((RTTimeSystemMilliTS() - tsStart) > 30 * 1000)
         {
-            rc = VERR_TIMEOUT;
+            vrc = VERR_TIMEOUT;
             break;
         }
 
         RTThreadSleep(100); /* Wait a bit. */
     }
 
-    if (FAILED(hr)) rc = VERR_TIMEOUT;
-    if (rc == VERR_TIMEOUT)
-        hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                 Utf8StrFmt(tr("Guest Additions were not ready within time, giving up")));
+    if (FAILED(hrc)) vrc = VERR_TIMEOUT;
+    if (vrc == VERR_TIMEOUT)
+        hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                  Utf8StrFmt(tr("Guest Additions were not ready within time, giving up")));
 #else
     /*
      * For use with the GUI we don't want to wait, just return so that the manual .ISO mounting
      * can continue.
      */
     AdditionsRunLevelType_T addsRunLevel;
-    if (   FAILED(hr = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
+    if (   FAILED(hrc = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
         || (   addsRunLevel != AdditionsRunLevelType_Userland
             && addsRunLevel != AdditionsRunLevelType_Desktop))
     {
         if (addsRunLevel == AdditionsRunLevelType_System)
-            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                     Utf8StrFmt(tr("Guest Additions are installed but not fully loaded yet, aborting automatic update")));
+            hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                      Utf8StrFmt(tr("Guest Additions are installed but not fully loaded yet, aborting automatic update")));
         else
-            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                     Utf8StrFmt(tr("Guest Additions not installed or ready, aborting automatic update")));
-        rc = VERR_NOT_SUPPORTED;
+            hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                      Utf8StrFmt(tr("Guest Additions not installed or ready, aborting automatic update")));
+        vrc = VERR_NOT_SUPPORTED;
     }
 #endif
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Determine if we are able to update automatically. This only works
          * if there are recent Guest Additions installed already.
          */
         Utf8Str strAddsVer;
-        rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
-        if (   RT_SUCCESS(rc)
+        vrc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
+        if (   RT_SUCCESS(vrc)
             && RTStrVersionCompare(strAddsVer.c_str(), "4.1") < 0)
         {
-            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                     Utf8StrFmt(tr("Guest has too old Guest Additions (%s) installed for automatic updating, please update manually"),
-                                                strAddsVer.c_str()));
-            rc = VERR_NOT_SUPPORTED;
+            hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                      Utf8StrFmt(tr("Guest has too old Guest Additions (%s) installed for automatic updating, please update manually"),
+                                                 strAddsVer.c_str()));
+            vrc = VERR_NOT_SUPPORTED;
         }
     }
 
     Utf8Str strOSVer;
     eOSType osType = eOSType_Unknown;
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Determine guest OS type and the required installer image.
          */
         Utf8Str strOSType;
-        rc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Product", strOSType);
-        if (RT_SUCCESS(rc))
+        vrc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Product", strOSType);
+        if (RT_SUCCESS(vrc))
         {
             if (   strOSType.contains("Microsoft", Utf8Str::CaseInsensitive)
                 || strOSType.contains("Windows", Utf8Str::CaseInsensitive))
@@ -2374,18 +2372,18 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                 /*
                  * Determine guest OS version.
                  */
-                rc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Release", strOSVer);
-                if (RT_FAILURE(rc))
+                vrc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Release", strOSVer);
+                if (RT_FAILURE(vrc))
                 {
-                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                             Utf8StrFmt(tr("Unable to detected guest OS version, please update manually")));
-                    rc = VERR_NOT_SUPPORTED;
+                    hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                              Utf8StrFmt(tr("Unable to detected guest OS version, please update manually")));
+                    vrc = VERR_NOT_SUPPORTED;
                 }
 
                 /* Because Windows 2000 + XP and is bitching with WHQL popups even if we have signed drivers we
                  * can't do automated updates here. */
                 /* Windows XP 64-bit (5.2) is a Windows 2003 Server actually, so skip this here. */
-                if (   RT_SUCCESS(rc)
+                if (   RT_SUCCESS(vrc)
                     && RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0)
                 {
                     if (   strOSVer.startsWith("5.0") /* Exclude the build number. */
@@ -2397,18 +2395,18 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                          * (and the user has to deal with it in the guest). */
                         if (!(mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
                         {
-                            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                                     Utf8StrFmt(tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
-                            rc = VERR_NOT_SUPPORTED;
+                            hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                                      Utf8StrFmt(tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
+                            vrc = VERR_NOT_SUPPORTED;
                         }
                     }
                 }
                 else
                 {
-                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                             Utf8StrFmt(tr("%s (%s) not supported for automatic updating, please update manually"),
-                                                        strOSType.c_str(), strOSVer.c_str()));
-                    rc = VERR_NOT_SUPPORTED;
+                    hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                              Utf8StrFmt(tr("%s (%s) not supported for automatic updating, please update manually"),
+                                                         strOSType.c_str(), strOSVer.c_str()));
+                    vrc = VERR_NOT_SUPPORTED;
                 }
             }
             else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
@@ -2418,47 +2416,47 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             else /* Everything else hopefully means Linux :-). */
                 osType = eOSType_Linux;
 
-            if (   RT_SUCCESS(rc)
+            if (   RT_SUCCESS(vrc)
                 && (   osType != eOSType_Windows
                     && osType != eOSType_Linux))
                 /** @todo Support Solaris. */
             {
-                hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                         Utf8StrFmt(tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
-                                                    strOSType.c_str()));
-                rc = VERR_NOT_SUPPORTED;
+                hrc = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                          Utf8StrFmt(tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
+                                                     strOSType.c_str()));
+                vrc = VERR_NOT_SUPPORTED;
             }
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Try to open the .ISO file to extract all needed files.
          */
         RTVFSFILE hVfsFileIso;
-        rc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFileIso);
-        if (RT_FAILURE(rc))
+        vrc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFileIso);
+        if (RT_FAILURE(vrc))
         {
-            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                         Utf8StrFmt(tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
-                                         mSource.c_str(), rc));
+            hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                      Utf8StrFmt(tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
+                                                 mSource.c_str(), vrc));
         }
         else
         {
             RTVFS hVfsIso;
-            rc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, NULL);
-            if (RT_FAILURE(rc))
+            vrc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, NULL);
+            if (RT_FAILURE(vrc))
             {
-                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                         Utf8StrFmt(tr("Unable to open file as ISO 9660 file system volume: %Rrc"), rc));
+                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                          Utf8StrFmt(tr("Unable to open file as ISO 9660 file system volume: %Rrc"), vrc));
             }
             else
             {
                 Utf8Str strUpdateDir;
 
-                rc = setProgress(5);
-                if (RT_SUCCESS(rc))
+                vrc = setProgress(5);
+                if (RT_SUCCESS(vrc))
                 {
                     /* Try getting the installed Guest Additions version to know whether we
                      * can install our temporary Guest Addition data into the original installation
@@ -2470,8 +2468,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                     bool fUseInstallDir = false;
 
                     Utf8Str strAddsVer;
-                    rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
-                    if (   RT_SUCCESS(rc)
+                    vrc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
+                    if (   RT_SUCCESS(vrc)
                         && RTStrVersionCompare(strAddsVer.c_str(), "4.2r80329") > 0)
                     {
                         fUseInstallDir = true;
@@ -2479,8 +2477,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
                     if (fUseInstallDir)
                     {
-                        rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
-                        if (RT_SUCCESS(rc))
+                        vrc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
+                        if (RT_SUCCESS(vrc))
                         {
                             if (strUpdateDir.isNotEmpty())
                             {
@@ -2508,34 +2506,34 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                 }
 
                 /* Create the installation directory. */
-                int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-                if (RT_SUCCESS(rc))
+                int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+                if (RT_SUCCESS(vrc))
                 {
                     LogRel(("Guest Additions update directory is: %s\n", strUpdateDir.c_str()));
 
-                    rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
-                    if (RT_FAILURE(rc))
+                    vrc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &vrcGuest);
+                    if (RT_FAILURE(vrc))
                     {
-                        switch (rc)
+                        switch (vrc)
                         {
                             case VERR_GSTCTL_GUEST_ERROR:
-                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Creating installation directory on guest failed"),
-                                                         GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, strUpdateDir.c_str()));
+                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Creating installation directory on guest failed"),
+                                                          GuestErrorInfo(GuestErrorInfo::Type_Directory, vrcGuest, strUpdateDir.c_str()));
                                 break;
 
                             default:
-                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                         Utf8StrFmt(tr("Creating installation directory \"%s\" on guest failed: %Rrc"),
-                                                                    strUpdateDir.c_str(), rc));
+                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                          Utf8StrFmt(tr("Creating installation directory \"%s\" on guest failed: %Rrc"),
+                                                                     strUpdateDir.c_str(), vrc));
                                 break;
                         }
                     }
                 }
 
-                if (RT_SUCCESS(rc))
-                    rc = setProgress(10);
+                if (RT_SUCCESS(vrc))
+                    vrc = setProgress(10);
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     /* Prepare the file(s) we want to copy over to the guest and
                      * (maybe) want to run. */
@@ -2570,9 +2568,9 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                 {
                                     /* Skip if not present on the ISO. */
                                     RTFSOBJINFO ObjInfo;
-                                    rc = RTVfsQueryPathInfo(hVfsIso, s_aCertFiles[i].pszIso, &ObjInfo, RTFSOBJATTRADD_NOTHING,
-                                                            RTPATH_F_ON_LINK);
-                                    if (RT_FAILURE(rc))
+                                    vrc = RTVfsQueryPathInfo(hVfsIso, s_aCertFiles[i].pszIso, &ObjInfo, RTFSOBJATTRADD_NOTHING,
+                                                             RTPATH_F_ON_LINK);
+                                    if (RT_FAILURE(vrc))
                                         continue;
 
                                     /* Copy the certificate certificate. */
@@ -2641,8 +2639,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             siInstaller.mArguments.push_back(Utf8Str("/post_installstatus"));
                             /* Add optional installer command line arguments from the API to the
                              * installer's startup info. */
-                            rc = addProcessArguments(siInstaller.mArguments, mArguments);
-                            AssertRC(rc);
+                            vrc = addProcessArguments(siInstaller.mArguments, mArguments);
+                            AssertRC(vrc);
                             /* If the caller does not want to wait for out guest update process to end,
                              * complete the progress object now so that the caller can do other work. */
                             if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
@@ -2691,7 +2689,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                     }
                 }
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     /* We want to spend 40% total for all copying operations. So roughly
                      * calculate the specific percentage step of each copied file. */
@@ -2708,18 +2706,18 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             bool fOptional = false;
                             if (itFiles->fFlags & ISOFILE_FLAG_OPTIONAL)
                                 fOptional = true;
-                            rc = copyFileToGuest(pSession, hVfsIso, itFiles->strSource, itFiles->strDest, fOptional);
-                            if (RT_FAILURE(rc))
+                            vrc = copyFileToGuest(pSession, hVfsIso, itFiles->strSource, itFiles->strDest, fOptional);
+                            if (RT_FAILURE(vrc))
                             {
-                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                         Utf8StrFmt(tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
-                                                                    itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
+                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                          Utf8StrFmt(tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
+                                                                     itFiles->strSource.c_str(), itFiles->strDest.c_str(), vrc));
                                 break;
                             }
                         }
 
-                        rc = setProgress(uOffset);
-                        if (RT_FAILURE(rc))
+                        vrc = setProgress(uOffset);
+                        if (RT_FAILURE(vrc))
                             break;
                         uOffset += uStep;
 
@@ -2730,7 +2728,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                 /* Done copying, close .ISO file. */
                 RTVfsRelease(hVfsIso);
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     /* We want to spend 35% total for all copying operations. So roughly
                      * calculate the specific percentage step of each copied file. */
@@ -2744,13 +2742,13 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                     {
                         if (itFiles->fFlags & ISOFILE_FLAG_EXECUTE)
                         {
-                            rc = runFileOnGuest(pSession, itFiles->mProcInfo);
-                            if (RT_FAILURE(rc))
+                            vrc = runFileOnGuest(pSession, itFiles->mProcInfo);
+                            if (RT_FAILURE(vrc))
                                 break;
                         }
 
-                        rc = setProgress(uOffset);
-                        if (RT_FAILURE(rc))
+                        vrc = setProgress(uOffset);
+                        if (RT_FAILURE(vrc))
                             break;
                         uOffset += uStep;
 
@@ -2758,10 +2756,10 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                     }
                 }
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     LogRel(("Automatic update of Guest Additions succeeded\n"));
-                    rc = setProgressSuccess();
+                    vrc = setProgressSuccess();
                 }
             }
 
@@ -2769,18 +2767,18 @@ int GuestSessionTaskUpdateAdditions::Run(void)
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_CANCELLED)
+        if (vrc == VERR_CANCELLED)
         {
             LogRel(("Automatic update of Guest Additions was canceled\n"));
 
-            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                     Utf8StrFmt(tr("Installation was canceled")));
+            hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                      Utf8StrFmt(tr("Installation was canceled")));
         }
         else
         {
-            Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", rc);
+            Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", vrc);
             if (!mProgress.isNull()) /* Progress object is optional. */
             {
 #ifdef VBOX_STRICT
@@ -2788,7 +2786,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                 LONG rcProgress;
                 AssertMsg(   SUCCEEDED(mProgress->COMGETTER(ResultCode(&rcProgress)))
                           && FAILED(rcProgress), ("Task indicated an error (%Rrc), but progress did not indicate this (%Rhrc)\n",
-                                                  rc, rcProgress));
+                                                  vrc, rcProgress));
 #endif
                 com::ProgressErrorInfo errorInfo(mProgress);
                 if (   errorInfo.isFullAvailable()
@@ -2799,7 +2797,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             }
 
             LogRel(("Automatic update of Guest Additions failed: %s (%Rhrc)\n",
-                    strError.c_str(), hr));
+                    strError.c_str(), hrc));
         }
 
         LogRel(("Please install Guest Additions manually\n"));
@@ -2807,7 +2805,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
     /** @todo Clean up copied / left over installation files. */
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
