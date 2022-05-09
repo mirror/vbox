@@ -40,10 +40,10 @@ int videoAccelConstruct(VIDEOACCEL *pVideoAccel)
     pVideoAccel->cbVbvaPartial = 0;
 
     pVideoAccel->hXRoadsVideoAccel = NIL_RTSEMXROADS;
-    int rc = RTSemXRoadsCreate(&pVideoAccel->hXRoadsVideoAccel);
-    AssertRC(rc);
+    int vrc = RTSemXRoadsCreate(&pVideoAccel->hXRoadsVideoAccel);
+    AssertRC(vrc);
 
-    return rc;
+    return vrc;
 }
 
 void videoAccelDestroy(VIDEOACCEL *pVideoAccel)
@@ -255,19 +255,16 @@ void videoAccelLeaveVMMDev(VIDEOACCEL *pVideoAccel)
  */
 int Display::i_VideoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISPLAYPORT pUpPort)
 {
-    int rc;
     LogRelFlowFunc(("fEnable = %d\n", fEnable));
 
-    rc = i_videoAccelEnable(fEnable, pVbvaMemory, pUpPort);
+    int vrc = i_videoAccelEnable(fEnable, pVbvaMemory, pUpPort);
 
-    LogRelFlowFunc(("%Rrc.\n", rc));
-    return rc;
+    LogRelFlowFunc(("%Rrc.\n", vrc));
+    return vrc;
 }
 
 int Display::i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISPLAYPORT pUpPort)
 {
-    int rc = VINF_SUCCESS;
-
     VIDEOACCEL *pVideoAccel = &mVideoAccelLegacy;
 
     /* Called each time the guest wants to use acceleration,
@@ -291,7 +288,7 @@ int Display::i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISP
 
     /* Check that current status is not being changed */
     if (pVideoAccel->fVideoAccelEnabled == fEnable)
-        return rc;
+        return VINF_SUCCESS;
 
     if (pVideoAccel->fVideoAccelEnabled)
     {
@@ -354,8 +351,8 @@ int Display::i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISP
             pVMMDevPort->pfnVBVAChange(pVMMDevPort, fEnable);
     }
 
-    LogRelFlowFunc(("%Rrc.\n", rc));
-    return rc;
+    LogRelFlowFunc(("VINF_SUCCESS.\n"));
+    return VINF_SUCCESS;
 }
 
 static bool i_vbvaVerifyRingBuffer(VBVAMEMORY *pVbvaMemory)
@@ -635,8 +632,8 @@ static void i_vbvaReleaseCmd(VIDEOACCEL *pVideoAccel, VBVACMDHDR *pHdr, int32_t 
  */
 void Display::i_VideoAccelFlush(PPDMIDISPLAYPORT pUpPort)
 {
-    int rc = i_videoAccelFlush(pUpPort);
-    if (RT_FAILURE(rc))
+    int vrc = i_videoAccelFlush(pUpPort);
+    if (RT_FAILURE(vrc))
     {
         /* Disable on errors. */
         i_videoAccelEnable(false, NULL, pUpPort);
@@ -757,7 +754,7 @@ int Display::i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort)
 
 int Display::i_videoAccelRefreshProcess(PPDMIDISPLAYPORT pUpPort)
 {
-    int rc = VWRN_INVALID_STATE; /* Default is to do a display update in VGA device. */
+    int vrc = VWRN_INVALID_STATE; /* Default is to do a display update in VGA device. */
 
     VIDEOACCEL *pVideoAccel = &mVideoAccelLegacy;
 
@@ -766,22 +763,22 @@ int Display::i_videoAccelRefreshProcess(PPDMIDISPLAYPORT pUpPort)
     if (pVideoAccel->fVideoAccelEnabled)
     {
         Assert(pVideoAccel->pVbvaMemory);
-        rc = i_videoAccelFlush(pUpPort);
-        if (RT_FAILURE(rc))
+        vrc = i_videoAccelFlush(pUpPort);
+        if (RT_FAILURE(vrc))
         {
             /* Disable on errors. */
             i_videoAccelEnable(false, NULL, pUpPort);
-            rc = VWRN_INVALID_STATE; /* Do a display update in VGA device. */
+            vrc = VWRN_INVALID_STATE; /* Do a display update in VGA device. */
         }
         else
         {
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
     }
 
     videoAccelLeaveVGA(pVideoAccel);
 
-    return rc;
+    return vrc;
 }
 
 void Display::processAdapterData(void *pvVRAM, uint32_t u32VRAMSize)
