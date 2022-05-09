@@ -124,8 +124,8 @@ typedef struct _REMOTEUSBDEVICE
 
 static void requestDevice(REMOTEUSBDEVICE *pDevice)
 {
-    int rc = RTCritSectEnter(&pDevice->critsect);
-    AssertRC(rc);
+    int vrc = RTCritSectEnter(&pDevice->critsect);
+    AssertRC(vrc);
 }
 
 static void releaseDevice(REMOTEUSBDEVICE *pDevice)
@@ -157,7 +157,7 @@ static void qurbFree (REMOTEUSBQURB *pQURB)
 DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet)
 {
     RT_NOREF(u32ClientId);
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     LogFlow(("USBClientResponseCallback: id = %d, pv = %p, code = %d, pvRet = %p, cbRet = %d\n",
               u32ClientId, pv, code, pvRet, cbRet));
@@ -168,7 +168,7 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
     {
         case VRDE_USB_REQ_DEVICE_LIST:
         {
-            rc = pThis->saveDeviceList(pvRet, cbRet);
+            vrc = pThis->saveDeviceList(pvRet, cbRet);
         } break;
 
         case VRDE_USB_REQ_NEGOTIATE:
@@ -177,22 +177,22 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
             {
                 VRDEUSBREQNEGOTIATERET *pret = (VRDEUSBREQNEGOTIATERET *)pvRet;
 
-                rc = pThis->negotiateResponse(pret, cbRet);
+                vrc = pThis->negotiateResponse(pret, cbRet);
             }
             else
             {
                 Log(("USBClientResponseCallback: WARNING: not enough data in response: pv = %p, cb = %d, expected %d.\n",
                      pvRet, cbRet, sizeof(VRDEUSBREQNEGOTIATERET)));
 
-                rc = VERR_INVALID_PARAMETER;
+                vrc = VERR_INVALID_PARAMETER;
             }
         } break;
 
         case VRDE_USB_REQ_REAP_URB:
         {
-            rc = pThis->reapURB(pvRet, cbRet);
+            vrc = pThis->reapURB(pvRet, cbRet);
 
-            LogFlow(("USBClientResponseCallback: reap URB, rc = %Rrc.\n", rc));
+            LogFlow(("USBClientResponseCallback: reap URB, rc = %Rrc.\n", vrc));
         } break;
 
         case VRDE_USB_REQ_QUEUE_URB:
@@ -225,7 +225,7 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
                     if (!pDevice)
                     {
                         Log(("USBClientResponseCallback: WARNING: invalid device id %08X.\n", pret->id));
-                        rc = VERR_INVALID_PARAMETER;
+                        vrc = VERR_INVALID_PARAMETER;
                     }
                     else
                     {
@@ -247,7 +247,7 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
         } break;
     }
 
-    return rc;
+    return vrc;
 }
 
 /*
@@ -257,7 +257,7 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
                                     size_t cbAddress, PREMOTEUSBDEVICE *ppDevice)
 {
     RT_NOREF(cbAddress);
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     RemoteUSBBackend *pThis = (RemoteUSBBackend *)pInstance;
 
@@ -265,7 +265,7 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
 
     if (!pDevice)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
     else
     {
@@ -276,7 +276,7 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
         if (strncmp(pszAddress, REMOTE_USB_BACKEND_PREFIX_S, REMOTE_USB_BACKEND_PREFIX_LEN) != 0)
         {
             AssertFailed();
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
         }
         else
         {
@@ -284,10 +284,10 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
             pDevice->pOwner = pThis;
             pDevice->fWokenUp = false;
 
-            rc = RTCritSectInit(&pDevice->critsect);
-            AssertRC(rc);
+            vrc = RTCritSectInit(&pDevice->critsect);
+            AssertRC(vrc);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 pDevice->id = RTStrToUInt32(&pszAddress[REMOTE_USB_BACKEND_PREFIX_LEN]);
 
@@ -303,16 +303,16 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
                     else
                     {
                         AssertFailed();
-                        rc = VERR_INVALID_PARAMETER;
+                        vrc = VERR_INVALID_PARAMETER;
                     }
                 }
                 else
                 {
                     AssertFailed();
-                    rc = VERR_INVALID_PARAMETER;
+                    vrc = VERR_INVALID_PARAMETER;
                 }
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     VRDE_USB_REQ_OPEN_PARM parm;
 
@@ -325,7 +325,7 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         *ppDevice = pDevice;
 
@@ -336,7 +336,7 @@ static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *psz
         RTMemFree(pDevice);
     }
 
-    return rc;
+    return vrc;
 }
 
 static DECLCALLBACK(void) iface_Close(PREMOTEUSBDEVICE pDevice)
@@ -528,7 +528,7 @@ static DECLCALLBACK(void) iface_CancelURB(PREMOTEUSBDEVICE pDevice, PREMOTEUSBQU
 static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type, uint8_t u8Ep, uint8_t u8Direction,
                                         uint32_t u32Len, void *pvData, void *pvURB, PREMOTEUSBQURB *ppRemoteURB)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
 #ifdef DEBUG_sunlover
     LogFlow(("RemoteUSBBackend::iface_QueueURB: u8Type = %d, u8Ep = %d, u8Direction = %d, data\n%.*Rhxd\n",
@@ -550,7 +550,7 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
 
     if (qurb == NULL)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
         goto l_leave;
     }
 
@@ -576,7 +576,7 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
         default:
         {
             AssertFailed();
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             goto l_leave;
         }
     }
@@ -601,7 +601,7 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
         case VUSBXFERTYPE_BULK: parm.type = VRDE_USB_TRANSFER_TYPE_BULK; break;
         case VUSBXFERTYPE_INTR: parm.type = VRDE_USB_TRANSFER_TYPE_INTR; break;
         case VUSBXFERTYPE_MSG:  parm.type = VRDE_USB_TRANSFER_TYPE_MSG;  break;
-        default: AssertFailed(); rc = VERR_INVALID_PARAMETER; goto l_leave;
+        default: AssertFailed(); vrc = VERR_INVALID_PARAMETER; goto l_leave;
     }
 
     parm.ep = u8Ep;
@@ -611,7 +611,7 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
         case VUSB_DIRECTION_SETUP: AssertFailed(); parm.direction = VRDE_USB_DIRECTION_SETUP; break;
         case VUSB_DIRECTION_IN:    parm.direction = VRDE_USB_DIRECTION_IN;    break;
         case VUSB_DIRECTION_OUT:   parm.direction = VRDE_USB_DIRECTION_OUT;   break;
-        default: AssertFailed(); rc = VERR_INVALID_PARAMETER; goto l_leave;
+        default: AssertFailed(); vrc = VERR_INVALID_PARAMETER; goto l_leave;
     }
 
     parm.urblen = u32Len;
@@ -657,12 +657,12 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
     pThis->VRDPServer()->SendUSBRequest(pDevice->u32ClientId, &parm, sizeof(parm));
 
 l_leave:
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         qurbFree(qurb);
     }
 
-    return rc;
+    return vrc;
 }
 
 /* The function checks the URB queue for completed URBs. Also if the client
@@ -671,7 +671,7 @@ l_leave:
 static DECLCALLBACK(int) iface_ReapURB(PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB,
                                        uint32_t *pu32Len, uint32_t *pu32Err)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     LogFlow(("RemoteUSBBackend::iface_ReapURB %d ms\n", u32Millies));
 
@@ -793,7 +793,7 @@ static DECLCALLBACK(int) iface_ReapURB(PREMOTEUSBDEVICE pDevice, uint32_t u32Mil
         qurbFree(qurb);
     }
 
-    return rc;
+    return vrc;
 }
 
 static DECLCALLBACK(int) iface_Wakeup(PREMOTEUSBDEVICE pDevice)
@@ -975,9 +975,9 @@ RemoteUSBBackend::RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, 
     Assert(console);
     Assert(server);
 
-    int rc = RTCritSectInit(&mCritsect);
+    int vrc = RTCritSectInit(&mCritsect);
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         AssertFailed();
         RT_ZERO(mCritsect);
@@ -1014,7 +1014,7 @@ RemoteUSBBackend::~RemoteUSBBackend()
 
 int RemoteUSBBackend::negotiateResponse(const VRDEUSBREQNEGOTIATERET *pret, uint32_t cbRet)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     Log(("RemoteUSBBackend::negotiateResponse: flags = %02X.\n", pret->flags));
 
@@ -1047,13 +1047,13 @@ int RemoteUSBBackend::negotiateResponse(const VRDEUSBREQNEGOTIATERET *pret, uint
             else
             {
                 LogRel(("VRDP: ERROR: unsupported remote USB protocol client version %d.\n", pret2->u32Version));
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
             }
         }
         else
         {
             LogRel(("VRDP: ERROR: invalid remote USB negotiate request packet size %d.\n", cbRet));
-            rc = VERR_NOT_SUPPORTED;
+            vrc = VERR_NOT_SUPPORTED;
         }
     }
     else
@@ -1062,7 +1062,7 @@ int RemoteUSBBackend::negotiateResponse(const VRDEUSBREQNEGOTIATERET *pret, uint
         mClientVersion = VRDE_USB_VERSION_1;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         LogRel(("VRDP: remote USB protocol version %d.\n", mClientVersion));
 
@@ -1078,14 +1078,14 @@ int RemoteUSBBackend::negotiateResponse(const VRDEUSBREQNEGOTIATERET *pret, uint
             else
             {
                 LogRel(("VRDP: ERROR: invalid remote USB negotiate request packet size %d.\n", cbRet));
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
             }
         }
 
         menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_SendRequest;
     }
 
-    return rc;
+    return vrc;
 }
 
 int RemoteUSBBackend::saveDeviceList(const void *pvList, uint32_t cbList)
@@ -1113,8 +1113,8 @@ int RemoteUSBBackend::saveDeviceList(const void *pvList, uint32_t cbList)
 
 void RemoteUSBBackend::request(void)
 {
-    int rc = RTCritSectEnter(&mCritsect);
-    AssertRC(rc);
+    int vrc = RTCritSectEnter(&mCritsect);
+    AssertRC(vrc);
 }
 
 void RemoteUSBBackend::release(void)
@@ -1177,7 +1177,7 @@ void RemoteUSBBackend::removeDevice(PREMOTEUSBDEVICE pDevice)
 
 int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     LogFlow(("RemoteUSBBackend::reapURB: pvBody = %p, cbBody = %d\n", pvBody, cbBody));
 
@@ -1205,7 +1205,7 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
             || pBody->handle == 0)
         {
             LogFlow(("RemoteUSBBackend::reapURB: WARNING: invalid reply data. Skipping the reply.\n"));
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -1214,7 +1214,7 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
         if (!pDevice)
         {
             LogFlow(("RemoteUSBBackend::reapURB: WARNING: invalid device id. Skipping the reply.\n"));
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -1384,7 +1384,7 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
 
         if (cbBodySize > cbBody)
         {
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -1392,8 +1392,8 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
         cbBody -= cbBodySize;
     }
 
-    LogFlow(("RemoteUSBBackend::reapURB: returns %Rrc\n", rc));
+    LogFlow(("RemoteUSBBackend::reapURB: returns %Rrc\n", vrc));
 
-    return rc;
+    return vrc;
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
