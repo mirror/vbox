@@ -38,6 +38,32 @@ VBOX_PATH_VALIDATIONKIT_SRC := $(PATH_ROOT)/src/VBox/ValidationKit
 
 
 #
+# Base template for Validation Kit R3 programs that drops the -static flag since we only want to use the
+# static version of our own libraries and not the system libs.
+#
+#
+TEMPLATE_VBOXVALIDATIONKITR3BASE = VBox Validation Kit ring-3 program base, both guest and host.
+TEMPLATE_VBOXVALIDATIONKITR3BASE_EXTENDS = VBoxR3Static
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS         = $(filter-out -IntegrityCheck, $(TEMPLATE_VBoxR3Static_LDFLAGS))
+else ifn1of ($(KBUILD_TARGET), darwin solaris win)
+ TEMPLATE_VBOXVALIDATIONKITR3BASE_CFLAGS          = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CFLAGS))
+ TEMPLATE_VBOXVALIDATIONKITR3BASE_CXXFLAGS        = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CXXFLAGS))
+ TEMPLATE_VBOXVALIDATIONKITR3BASE_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
+ TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS         = $(filter-out -static, $(TEMPLATE_VBoxR3Static_LDFLAGS))
+endif
+TEMPLATE_VBOXVALIDATIONKITR3BASE_DEFS = $(filter-out VBOX_WITH_DTRACE,$(TEMPLATE_VBoxR3Static_DEFS))
+TEMPLATE_VBOXVALIDATIONKITR3BASE_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
+if1of ($(KBUILD_TARGET), linux)
+ if $(VBOX_GCC_VERSION_CXX) < 40800
+  TEMPLATE_VBOXVALIDATIONKITR3BASE_LIBS += supc++
+  TEMPLATE_VBOXVALIDATIONKITR3BASE_LDTOOL = $(subst GXX,GCC,$(TEMPLATE_VBoxR3Static_TOOL))
+ endif
+endif
+TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAGS.darwin) -framework IOKit
+
+
+#
 # Template for building ring-3 programs for the Validation Kit.
 # These programs can run on any host or guest.
 #
@@ -86,6 +112,18 @@ TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRA
 TEMPLATE_VBoxValidationKitR3_USES += vboximportchecker
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt31
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.amd64 = xp64
+
+
+#
+# Template for ring-3 testcases to be included on the Validation Kit .ISO.
+#
+# Needed for running the ring-3 testcases on older guests (like NT4 / XP).
+# Those testcases then run as part of the Validation Kit and are included on the Validation Kit .ISO.
+# See @bugref:10195.
+#
+TEMPLATE_VBoxValidationKitR3TstExe         = VBox Ring 3 Testcase Exe for Validation Kit .ISO
+TEMPLATE_VBoxValidationKitR3TstExe_EXTENDS = VBoxValidationKitR3
+TEMPLATE_VBoxValidationKitR3TstExe_INST    = $(INST_VALIDATIONKIT)/testcase/$(KBUILD_TARGET)/$(KBUILD_TARGET_ARCH)/testcase/
 
 
 #
