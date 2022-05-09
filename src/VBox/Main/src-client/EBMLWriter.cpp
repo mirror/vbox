@@ -69,19 +69,19 @@ int EBMLWriter::createEx(const char *a_pszFile, PRTFILE phFile)
 /** Creates an EBML output file using a file name. */
 int EBMLWriter::create(const char *a_pszFile, uint64_t fOpen)
 {
-    int rc = RTFileOpen(&m_hFile, a_pszFile, fOpen);
-    if (RT_SUCCESS(rc))
+    int vrc = RTFileOpen(&m_hFile, a_pszFile, fOpen);
+    if (RT_SUCCESS(vrc))
         m_strFile = a_pszFile;
 
-    return rc;
+    return vrc;
 }
 
 /** Returns available space on storage. */
 uint64_t EBMLWriter::getAvailableSpace(void)
 {
     RTFOFF pcbFree;
-    int rc = RTFileQueryFsSizes(m_hFile, NULL, &pcbFree, 0, 0);
-    return (RT_SUCCESS(rc)? (uint64_t)pcbFree : UINT64_MAX);
+    int vrc = RTFileQueryFsSizes(m_hFile, NULL, &pcbFree, 0, 0);
+    return (RT_SUCCESS(vrc)? (uint64_t)pcbFree : UINT64_MAX);
 }
 
 /** Closes the file. */
