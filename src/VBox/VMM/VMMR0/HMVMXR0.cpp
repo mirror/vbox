@@ -2151,8 +2151,8 @@ static int hmR0VmxSetupLbrMsrRange(PVMCC pVM)
      * See Intel spec. 17.4.8 "LBR Stack".
      * See Intel "Model-Specific Registers" spec.
      */
-    uint32_t const uFamilyModel = (pVM->cpum.ro.HostFeatures.uFamily << 8)
-                                | pVM->cpum.ro.HostFeatures.uModel;
+    uint32_t const uFamilyModel = (g_CpumHostFeatures.s.uFamily << 8)
+                                | g_CpumHostFeatures.s.uModel;
     switch (uFamilyModel)
     {
         case 0x0f01: case 0x0f02:
@@ -3647,7 +3647,7 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
         if ((u64GuestEfer & MSR_K6_EFER_NXE) != (u64HostEfer & MSR_K6_EFER_NXE))
         {
             /* Verify that the host is NX capable. */
-            Assert(pVCpu->CTX_SUFF(pVM)->cpum.ro.HostFeatures.fNoExecute);
+            Assert(g_CpumHostFeatures.s.fNoExecute);
             return true;
         }
     }

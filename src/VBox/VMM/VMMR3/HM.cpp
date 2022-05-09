@@ -729,31 +729,31 @@ static int hmR3InitFinalizeR3(PVM pVM)
     /*
      * Check if L1D flush is needed/possible.
      */
-    if (   !pVM->cpum.ro.HostFeatures.fFlushCmd
-        || pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
-        || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End
-        || pVM->cpum.ro.HostFeatures.fArchVmmNeedNotFlushL1d
-        || pVM->cpum.ro.HostFeatures.fArchRdclNo)
+    if (   !g_CpumHostFeatures.s.fFlushCmd
+        || g_CpumHostFeatures.s.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
+        || g_CpumHostFeatures.s.enmMicroarch >= kCpumMicroarch_Intel_Core7_End
+        || g_CpumHostFeatures.s.fArchVmmNeedNotFlushL1d
+        || g_CpumHostFeatures.s.fArchRdclNo)
         pVM->hm.s.fL1dFlushOnSched = pVM->hm.s.fL1dFlushOnVmEntry = false;
 
     /*
      * Check if MDS flush is needed/possible.
      * On atoms and knight family CPUs, we will only allow clearing on scheduling.
      */
-    if (   !pVM->cpum.ro.HostFeatures.fMdsClear
-        || pVM->cpum.ro.HostFeatures.fArchMdsNo)
+    if (   !g_CpumHostFeatures.s.fMdsClear
+        || g_CpumHostFeatures.s.fArchMdsNo)
         pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
-    else if (   (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Atom_Airmount
-                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Atom_End)
-             || (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Phi_KnightsLanding
-                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Phi_End))
+    else if (   (   g_CpumHostFeatures.s.enmMicroarch >=  kCpumMicroarch_Intel_Atom_Airmount
+                 && g_CpumHostFeatures.s.enmMicroarch <   kCpumMicroarch_Intel_Atom_End)
+             || (   g_CpumHostFeatures.s.enmMicroarch >=  kCpumMicroarch_Intel_Phi_KnightsLanding
+                 && g_CpumHostFeatures.s.enmMicroarch <   kCpumMicroarch_Intel_Phi_End))
     {
         if (!pVM->hm.s.fMdsClearOnSched)
              pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry;
         pVM->hm.s.fMdsClearOnVmEntry = false;
     }
-    else if (   pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
-             || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End)
+    else if (   g_CpumHostFeatures.s.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
+             || g_CpumHostFeatures.s.enmMicroarch >= kCpumMicroarch_Intel_Core7_End)
         pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
 
     /*

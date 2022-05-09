@@ -791,17 +791,17 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
      * using hardware-assisted VMX.
      */
     PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    bool const fFsGsBase    = pVM->cpum.ro.GuestFeatures.fFsGsBase;
-    bool const fXSaveRstor  = pVM->cpum.ro.GuestFeatures.fXSaveRstor;
-    bool const fFxSaveRstor = pVM->cpum.ro.GuestFeatures.fFxSaveRstor;
+    bool fFsGsBase    = pVM->cpum.ro.GuestFeatures.fFsGsBase;
+    bool fXSaveRstor  = pVM->cpum.ro.GuestFeatures.fXSaveRstor;
+    bool fFxSaveRstor = pVM->cpum.ro.GuestFeatures.fFxSaveRstor;
 
     /*
      * Paranoia.
      * Ensure features exposed to the guest are present on the host.
      */
-    Assert(!fFsGsBase    || pVM->cpum.ro.HostFeatures.fFsGsBase);
-    Assert(!fXSaveRstor  || pVM->cpum.ro.HostFeatures.fXSaveRstor);
-    Assert(!fFxSaveRstor || pVM->cpum.ro.HostFeatures.fFxSaveRstor);
+    AssertStmt(!fFsGsBase    || g_CpumHostFeatures.s.fFsGsBase,    fFsGsBase = 0);
+    AssertStmt(!fXSaveRstor  || g_CpumHostFeatures.s.fXSaveRstor,  fXSaveRstor = 0);
+    AssertStmt(!fFxSaveRstor || g_CpumHostFeatures.s.fFxSaveRstor, fFxSaveRstor = 0);
 
     uint64_t const fGstMask = (  X86_CR4_PVI
                                | X86_CR4_TSD
