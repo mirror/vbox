@@ -27,6 +27,12 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ # Include the Validation Kit configuration to make use of build templates needed for testcases to be included
+ # on the Validation Kit .ISO.
+ include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
+endif
+
 ifdef VBOX_WITH_TESTCASES
 
 #
@@ -995,7 +1001,7 @@ if defined(VBOX_ONLY_VALIDATIONKIT)
  if defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
   ## @todo There might be a more elegant want of copying a target's stuff. Works for now.
   define def_unittest_valkit
-   $(unittest)_ValKit_TEMPLATE       := VBOXR3TSTEXE_VALKIT
+   $(unittest)_ValKit_TEMPLATE       := VBoxValidationKitR3TstExe
    $(unittest)_ValKit_SOURCES        += $$($(unittest)_SOURCES)
    $(unittest)_ValKit_SOURCES.x86    += $$($(unittest)_SOURCES.x86)
    $(unittest)_ValKit_SOURCES.amd64  += $$($(unittest)_SOURCES.amd64)
