@@ -111,21 +111,21 @@ static int emulatedWebcamInsertSettings(PCFGMNODE pConfig, PCVMMR3VTABLE pVMM, E
     for (EUSBSettingsMap::const_iterator it = pSettings->begin(); it != pSettings->end(); ++it)
     {
         /* Convert some well known settings for backward compatibility. */
-        int rc;
+        int vrc;
         if (   RTStrCmp(it->first.c_str(), "MaxPayloadTransferSize") == 0
             || RTStrCmp(it->first.c_str(), "MaxFramerate") == 0)
         {
             uint32_t u32 = 0;
-            rc = RTStrToUInt32Full(it->second.c_str(), 10, &u32);
-            if (rc == VINF_SUCCESS)
-                rc = pVMM->pfnCFGMR3InsertInteger(pConfig, it->first.c_str(), u32);
-            else if (RT_SUCCESS(rc)) /* VWRN_* */
-                rc = VERR_INVALID_PARAMETER;
+            vrc = RTStrToUInt32Full(it->second.c_str(), 10, &u32);
+            if (vrc == VINF_SUCCESS)
+                vrc = pVMM->pfnCFGMR3InsertInteger(pConfig, it->first.c_str(), u32);
+            else if (RT_SUCCESS(vrc)) /* VWRN_* */
+                vrc = VERR_INVALID_PARAMETER;
         }
         else
-            rc = pVMM->pfnCFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
-        if (RT_FAILURE(rc))
-            return rc;
+            vrc = pVMM->pfnCFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
 
     return VINF_SUCCESS;
@@ -136,35 +136,35 @@ EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, PCVMMR3VTABLE pVMM, EUSBWEBCAM *pThi
 {
     PCFGMNODE pInstance = pVMM->pfnCFGMR3CreateTree(pUVM);
     PCFGMNODE pConfig;
-    int rc = pVMM->pfnCFGMR3InsertNode(pInstance,   "Config", &pConfig);
-    AssertRCReturn(rc, rc);
-    rc = emulatedWebcamInsertSettings(pConfig, pVMM, &pThis->mDevSettings);
-    AssertRCReturn(rc, rc);
+    int vrc = pVMM->pfnCFGMR3InsertNode(pInstance,   "Config", &pConfig);
+    AssertRCReturn(vrc, vrc);
+    vrc = emulatedWebcamInsertSettings(pConfig, pVMM, &pThis->mDevSettings);
+    AssertRCReturn(vrc, vrc);
 
     PCFGMNODE pEUSB;
-    rc = pVMM->pfnCFGMR3InsertNode(pConfig,       "EmulatedUSB", &pEUSB);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
-    AssertRCReturn(rc, rc);
+    vrc = pVMM->pfnCFGMR3InsertNode(pConfig,       "EmulatedUSB", &pEUSB);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
+    AssertRCReturn(vrc, vrc);
 
     PCFGMNODE pLunL0;
-    rc = pVMM->pfnCFGMR3InsertNode(pInstance,   "LUN#0", &pLunL0);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertString(pLunL0,      "Driver", pszDriver);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,        "Config", &pConfig);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertString(pConfig,       "DevicePath", pThis->mPath.c_str());
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertString(pConfig,       "Id", pThis->mszUuid);
-    AssertRCReturn(rc, rc);
-    rc = emulatedWebcamInsertSettings(pConfig, pVMM, &pThis->mDrvSettings);
-    AssertRCReturn(rc, rc);
+    vrc = pVMM->pfnCFGMR3InsertNode(pInstance,   "LUN#0", &pLunL0);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertString(pLunL0,      "Driver", pszDriver);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertNode(pLunL0,        "Config", &pConfig);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertString(pConfig,       "DevicePath", pThis->mPath.c_str());
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertString(pConfig,       "Id", pThis->mszUuid);
+    AssertRCReturn(vrc, vrc);
+    vrc = emulatedWebcamInsertSettings(pConfig, pVMM, &pThis->mDrvSettings);
+    AssertRCReturn(vrc, vrc);
 
     /* pInstance will be used by PDM and deallocated on error. */
-    rc = pVMM->pfnPDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid, NULL);
-    LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
-    return rc;
+    vrc = pVMM->pfnPDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid, NULL);
+    LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", vrc));
+    return vrc;
 }
 
 /*static*/ DECLCALLBACK(int)
@@ -534,76 +534,76 @@ EmulatedUSB::eusbCallbackEMT(EmulatedUSB *pThis, char *pszId, uint32_t iEvent, v
 
     NOREF(cbData);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (iEvent == 0)
     {
         com::Utf8Str path;
-        HRESULT hr = pThis->webcamPathFromId(&path, pszId);
-        if (SUCCEEDED(hr))
+        HRESULT hrc = pThis->webcamPathFromId(&path, pszId);
+        if (SUCCEEDED(hrc))
         {
-            hr = pThis->webcamDetach(path);
-            if (FAILED(hr))
+            hrc = pThis->webcamDetach(path);
+            if (FAILED(hrc))
             {
-                rc = VERR_INVALID_STATE;
+                vrc = VERR_INVALID_STATE;
             }
         }
         else
         {
-            rc = VERR_NOT_FOUND;
+            vrc = VERR_NOT_FOUND;
         }
     }
     else
     {
-        rc = VERR_INVALID_PARAMETER;
+        vrc = VERR_INVALID_PARAMETER;
     }
 
     RTMemFree(pszId);
     RTMemFree(pvData);
 
-    LogRelFlowFunc(("rc %Rrc\n", rc));
-    return rc;
+    LogRelFlowFunc(("rc %Rrc\n", vrc));
+    return vrc;
 }
 
 /* static */ DECLCALLBACK(int)
 EmulatedUSB::i_eusbCallback(void *pv, const char *pszId, uint32_t iEvent, const void *pvData, uint32_t cbData)
 {
     /* Make a copy of parameters, forward to EMT and leave the callback to not hold any lock in the device. */
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     void *pvDataCopy = NULL;
     if (cbData > 0)
     {
        pvDataCopy = RTMemDup(pvData, cbData);
        if (!pvDataCopy)
-           rc = VERR_NO_MEMORY;
+           vrc = VERR_NO_MEMORY;
     }
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         void *pvIdCopy = RTMemDup(pszId, strlen(pszId) + 1);
         if (pvIdCopy)
         {
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 EmulatedUSB *pThis = (EmulatedUSB *)pv;
                 Console::SafeVMPtr ptrVM(pThis->m.pConsole);
                 if (ptrVM.isOk())
                 {
                     /* No wait. */
-                    rc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), 0 /* idDstCpu */,
-                                                               (PFNRT)EmulatedUSB::eusbCallbackEMT, 5,
-                                                               pThis, pvIdCopy, iEvent, pvDataCopy, cbData);
-                    if (RT_SUCCESS(rc))
-                        return rc;
+                    vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), 0 /* idDstCpu */,
+                                                                (PFNRT)EmulatedUSB::eusbCallbackEMT, 5,
+                                                                pThis, pvIdCopy, iEvent, pvDataCopy, cbData);
+                    if (RT_SUCCESS(vrc))
+                        return vrc;
                 }
                 else
-                    rc = VERR_INVALID_STATE;
+                    vrc = VERR_INVALID_STATE;
             }
             RTMemFree(pvIdCopy);
         }
         else
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         RTMemFree(pvDataCopy);
     }
-    return rc;
+    return vrc;
 }
 
 /*static*/
@@ -634,7 +634,7 @@ DECLCALLBACK(int) EmulatedUSB::i_QueryEmulatedUsbDataById(void *pvUser, const ch
 
 HRESULT EmulatedUSB::webcamPathFromId(com::Utf8Str *pPath, const char *pszId)
 {
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
 
     Console::SafeVMPtr ptrVM(m.pConsole);
     if (ptrVM.isOk())
@@ -653,16 +653,16 @@ HRESULT EmulatedUSB::webcamPathFromId(com::Utf8Str *pPath, const char *pszId)
 
         if (it == m.webcams.end())
         {
-            hr = E_FAIL;
+            hrc = E_FAIL;
         }
         alock.release();
     }
     else
     {
-        hr = VBOX_E_INVALID_VM_STATE;
+        hrc = VBOX_E_INVALID_VM_STATE;
     }
 
-    return hr;
+    return hrc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
