@@ -906,6 +906,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         rc = GMMR0InitPerVMData(pGVM);
                         int rc2 = PGMR0InitPerVMData(pGVM, hVMMemObj);
                         int rc3 = VMMR0InitPerVMData(pGVM);
+                        CPUMR0InitPerVMData(pGVM);
                         DBGFR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
                         IOMR0InitPerVMData(pGVM);

@@ -2037,14 +2037,20 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertLogRelRCReturn(rc, rc);
 
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-    PCPUMCPUIDLEAF  paLeaves;
-    uint32_t        cLeaves;
-    rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
-    AssertLogRelRCReturn(rc, rc);
+    /* Use the host features detected by CPUMR0ModuleInit if available. */
+    if (pVM->cpum.s.HostFeatures.enmCpuVendor != CPUMCPUVENDOR_INVALID)
+        g_CpumHostFeatures.s = pVM->cpum.s.HostFeatures;
+    else
+    {
+        PCPUMCPUIDLEAF  paLeaves;
+        uint32_t        cLeaves;
+        rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
+        AssertLogRelRCReturn(rc, rc);
 
-    rc = cpumCpuIdExplodeFeaturesX86(paLeaves, cLeaves, &HostMsrs, &g_CpumHostFeatures.s);
-    RTMemFree(paLeaves);
-    AssertLogRelRCReturn(rc, rc);
+        rc = cpumCpuIdExplodeFeaturesX86(paLeaves, cLeaves, &HostMsrs, &g_CpumHostFeatures.s);
+        RTMemFree(paLeaves);
+        AssertLogRelRCReturn(rc, rc);
+    }
     pVM->cpum.s.HostFeatures               = g_CpumHostFeatures.s;
     pVM->cpum.s.GuestFeatures.enmCpuVendor = pVM->cpum.s.HostFeatures.enmCpuVendor;
 #endif

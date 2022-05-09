@@ -198,6 +198,18 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
 
 
 /**
+ * Initializes the CPUM data in the VM structure.
+ *
+ * @param   pGVM        The global VM structure.
+ */
+VMMR0_INT_DECL(void) CPUMR0InitPerVMData(PGVM pGVM)
+{
+    /* Copy the ring-0 host feature set to the shared part so ring-3 can pick it up. */
+    pGVM->cpum.s.HostFeatures = g_CpumHostFeatures.s;
+}
+
+
+/**
  * Check the CPUID features of this particular CPU and disable relevant features
  * for the guest which do not exist on this CPU. We have seen systems where the
  * X86_CPUID_FEATURE_ECX_MONITOR feature flag is only set on some host CPUs, see

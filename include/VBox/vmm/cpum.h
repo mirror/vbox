@@ -2787,6 +2787,7 @@ VMMR3_INT_DECL(void)    CPUMR3NemActivateHyperDebugState(PVMCPUCC pVCpu);
  */
 VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
 VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
+VMMR0_INT_DECL(void)    CPUMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(int)     CPUMR0InitVM(PVMCC pVM);
 DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPUCC pVCpu);
 DECLASM(void)           CPUMR0TouchHostFpu(void);
