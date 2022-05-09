@@ -1175,7 +1175,7 @@ int  virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  * @returns A descriptor chain object.
  *
  * @retval  NULL if out of memory.
- * 
+ *
  * NOTE: VIRTQBUF_T objects allocated on the stack will have garbage in the u32Magic field,
  * triggering an assertion if virtioCoreR3VirtqBufRelease is called on them.
  */
