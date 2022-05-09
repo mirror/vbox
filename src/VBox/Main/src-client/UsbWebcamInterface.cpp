@@ -141,7 +141,7 @@ void EmWebcam::EmWebcamDestruct(EMWEBCAMDRV *pDrv)
 
 void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbData)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     switch (u32Id)
     {
@@ -167,14 +167,14 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             if (mpRemote)
             {
                 AssertFailed();
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
                 break;
             }
 
             EMWEBCAMREMOTE *pRemote = (EMWEBCAMREMOTE *)RTMemAllocZ(sizeof(EMWEBCAMREMOTE));
             if (pRemote == NULL)
             {
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
                 break;
             }
 
@@ -189,8 +189,8 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             mpRemote = pRemote;
 
             /* Tell the server that this webcam will be used. */
-            rc = mParent->VideoInDeviceAttach(&mpRemote->deviceHandle, mpRemote);
-            if (RT_FAILURE(rc))
+            vrc = mParent->VideoInDeviceAttach(&mpRemote->deviceHandle, mpRemote);
+            if (RT_FAILURE(vrc))
             {
                 RTMemFree(mpRemote);
                 mpRemote = NULL;
@@ -198,9 +198,9 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             }
 
             /* Get the device description. */
-            rc = mParent->VideoInGetDeviceDesc(NULL, &mpRemote->deviceHandle);
+            vrc = mParent->VideoInGetDeviceDesc(NULL, &mpRemote->deviceHandle);
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
             {
                 mParent->VideoInDeviceDetach(&mpRemote->deviceHandle);
                 RTMemFree(mpRemote);
@@ -228,7 +228,7 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
         } break;
 
         default:
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             AssertFailed();
             break;
     }
@@ -320,7 +320,7 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
 {
     AssertReturn(pDrv == mpDrv, VERR_NOT_SUPPORTED);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     EMWEBCAMREQCTX *pCtx = NULL;
 
@@ -328,32 +328,32 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     if (   !mpRemote
         || mpRemote->u64DeviceId != u64DeviceId)
     {
-        rc = VERR_NOT_SUPPORTED;
+        vrc = VERR_NOT_SUPPORTED;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         pCtx = (EMWEBCAMREQCTX *)RTMemAlloc(sizeof(EMWEBCAMREQCTX));
         if (!pCtx)
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         pCtx->pRemote = mpRemote;
         pCtx->pvUser = pvUser;
 
-        rc = mParent->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
+        vrc = mParent->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             RTMemFree(pCtx);
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 /* static */ DECLCALLBACK(void *) EmWebcam::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -404,22 +404,22 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     }
 
     char *pszId = NULL;
-    int rc = pDrvIns->pHlpR3->pfnCFGMQueryStringAlloc(pCfg, "Id", &pszId);
-    if (RT_SUCCESS(rc))
+    int vrc = pDrvIns->pHlpR3->pfnCFGMQueryStringAlloc(pCfg, "Id", &pszId);
+    if (RT_SUCCESS(vrc))
     {
         RTUUID UuidEmulatedUsbIf;
-        rc = RTUuidFromStr(&UuidEmulatedUsbIf, EMULATEDUSBIF_OID); AssertRC(rc);
+        vrc = RTUuidFromStr(&UuidEmulatedUsbIf, EMULATEDUSBIF_OID); AssertRC(vrc);
 
         PEMULATEDUSBIF pEmulatedUsbIf = (PEMULATEDUSBIF)PDMDrvHlpQueryGenericUserObject(pDrvIns, &UuidEmulatedUsbIf);
         AssertPtrReturn(pEmulatedUsbIf, VERR_INVALID_PARAMETER);
 
-        rc = pEmulatedUsbIf->pfnQueryEmulatedUsbDataById(pEmulatedUsbIf->pvUser, pszId,
-                                                         NULL /*ppvEmUsbCb*/, NULL /*ppvEmUsbCbData*/, (void **)&pThis->pRemote);
+        vrc = pEmulatedUsbIf->pfnQueryEmulatedUsbDataById(pEmulatedUsbIf->pvUser, pszId,
+                                                          NULL /*ppvEmUsbCb*/, NULL /*ppvEmUsbCbData*/, (void **)&pThis->pRemote);
         pDrvIns->pHlpR3->pfnMMHeapFree(pDrvIns, pszId);
-        AssertRCReturn(rc, rc);
+        AssertRCReturn(vrc, vrc);
     }
     else
-        return rc;
+        return vrc;
 
     /* Everything ok. Initialize. */
     pThis->pRemote->pEmWebcam->EmWebcamConstruct(pThis);
