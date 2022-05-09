@@ -65,17 +65,17 @@ int WebMWriter::OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
 
         LogFunc(("Creating '%s'\n", a_pszFilename));
 
-        int rc = createEx(a_pszFilename, a_phFile);
-        if (RT_SUCCESS(rc))
+        int vrc = createEx(a_pszFilename, a_phFile);
+        if (RT_SUCCESS(vrc))
         {
-            rc = init();
-            if (RT_SUCCESS(rc))
-                rc = writeHeader();
+            vrc = init();
+            if (RT_SUCCESS(vrc))
+                vrc = writeHeader();
         }
     }
-    catch(int rc)
+    catch(int vrc)
     {
-        return rc;
+        return vrc;
     }
     return VINF_SUCCESS;
 }
@@ -99,17 +99,17 @@ int WebMWriter::Open(const char *a_pszFilename, uint64_t a_fOpen,
 
         LogFunc(("Creating '%s'\n", a_pszFilename));
 
-        int rc = create(a_pszFilename, a_fOpen);
-        if (RT_SUCCESS(rc))
+        int vrc = create(a_pszFilename, a_fOpen);
+        if (RT_SUCCESS(vrc))
         {
-            rc = init();
-            if (RT_SUCCESS(rc))
-                rc = writeHeader();
+            vrc = init();
+            if (RT_SUCCESS(vrc))
+                vrc = writeHeader();
         }
     }
-    catch(int rc)
+    catch(int vrc)
     {
-        return rc;
+        return vrc;
     }
     return VINF_SUCCESS;
 }
@@ -150,14 +150,14 @@ int WebMWriter::Close(void)
 
     close();
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /* If no clusters (= data) was written, delete the file again. */
     if (!CurSeg.cClusters)
-        rc = RTFileDelete(strFileName.c_str());
+        vrc = RTFileDelete(strFileName.c_str());
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -419,7 +419,7 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
 {
     RT_NOREF(a_pTrack);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     try
     {
@@ -440,17 +440,17 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
             CurSeg.queueBlocks.Map[tcAbsPTS] = Blocks;
         }
 
-        rc = processQueue(&CurSeg.queueBlocks, false /* fForce */);
+        vrc = processQueue(&CurSeg.queueBlocks, false /* fForce */);
     }
     catch(...)
     {
         delete a_pBlock;
         a_pBlock = NULL;
 
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
 
-    return rc;
+    return vrc;
 }
 
 #ifdef VBOX_WITH_LIBVPX
@@ -528,8 +528,8 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
 {
     RT_NOREF(cbData); /* Only needed for assertions for now. */
 
-    int rc = RTCritSectEnter(&CurSeg.CritSect);
-    AssertRC(rc);
+    int vrc = RTCritSectEnter(&CurSeg.CritSect);
+    AssertRC(vrc);
 
     WebMTracks::iterator itTrack = CurSeg.mapTracks.find(uTrack);
     if (itTrack == CurSeg.mapTracks.end())
@@ -557,11 +557,11 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
             {
                 Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
                 WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                rc = writeSimpleBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
+                vrc = writeSimpleBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
             }
             else
 #endif /* VBOX_WITH_LIBOPUS */
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -572,23 +572,23 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
             {
                 Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
                 WebMWriter::BlockData_VP8 *pData = (WebMWriter::BlockData_VP8 *)pvData;
-                rc = writeSimpleBlockVP8(pTrack, pData->pCfg, pData->pPkt);
+                vrc = writeSimpleBlockVP8(pTrack, pData->pCfg, pData->pPkt);
             }
             else
 #endif /* VBOX_WITH_LIBVPX */
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
             break;
         }
 
         default:
-            rc = VERR_NOT_SUPPORTED;
+            vrc = VERR_NOT_SUPPORTED;
             break;
     }
 
-    int rc2 = RTCritSectLeave(&CurSeg.CritSect);
-    AssertRC(rc2);
+    int vrc2 = RTCritSectLeave(&CurSeg.CritSect);
+    AssertRC(vrc2);
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -717,8 +717,8 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
             Assert(pBlock->Data.tcAbsPTSMs >= Cluster.tcAbsStartMs);
             pBlock->Data.tcRelToClusterMs = pBlock->Data.tcAbsPTSMs - Cluster.tcAbsStartMs;
 
-            int rc2 = writeSimpleBlockEBML(pTrack, pBlock);
-            AssertRC(rc2);
+            int vrc2 = writeSimpleBlockEBML(pTrack, pBlock);
+            AssertRC(vrc2);
 
             Cluster.cBlocks++;
             Cluster.tcAbsLastWrittenMs = pBlock->Data.tcAbsPTSMs;
@@ -888,10 +888,11 @@ void WebMWriter::writeSeekHeader(void)
     char szMux[64];
     RTStrPrintf(szMux, sizeof(szMux),
 #ifdef VBOX_WITH_LIBVPX
-                 "vpxenc%s", vpx_codec_version_str());
+                 "vpxenc%s", vpx_codec_version_str()
 #else
-                 "unknown");
+                 "unknown"
 #endif
+                );
     char szApp[64];
     RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
