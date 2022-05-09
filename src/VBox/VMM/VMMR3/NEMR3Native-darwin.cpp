@@ -2209,8 +2209,8 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
      * See Intel spec. 17.4.8 "LBR Stack".
      * See Intel "Model-Specific Registers" spec.
      */
-    uint32_t const uFamilyModel = (g_CpumHostFeatures.uFamily << 8)
-                                | g_CpumHostFeatures.uModel;
+    uint32_t const uFamilyModel = (g_CpumHostFeatures.s.uFamily << 8)
+                                | g_CpumHostFeatures.s.uModel;
     switch (uFamilyModel)
     {
         case 0x0f01: case 0x0f02:
