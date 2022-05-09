@@ -8550,7 +8550,7 @@ HMVMX_EXIT_DECL vmxHCExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
             rcStrict = IOMR0MmioPhysHandler(pVCpu->CTX_SUFF(pVM), pVCpu,
                                             uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW, GCPhys);
-            Log4Func(("IOMMMIOPhysHandler returned %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            Log4Func(("IOMR0MmioPhysHandler returned %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             if (   rcStrict == VINF_SUCCESS
                 || rcStrict == VERR_PAGE_TABLE_NOT_PRESENT
                 || rcStrict == VERR_PAGE_NOT_PRESENT)
