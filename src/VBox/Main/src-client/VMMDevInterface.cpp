@@ -85,11 +85,11 @@ VMMDev::VMMDev(Console *console)
     : mpDrv(NULL)
     , mParent(console)
 {
-    int rc = RTSemEventCreate(&mCredentialsEvent);
-    AssertRC(rc);
+    int vrc = RTSemEventCreate(&mCredentialsEvent);
+    AssertRC(vrc);
 #ifdef VBOX_WITH_HGCM
-    rc = HGCMHostInit();
-    AssertRC(rc);
+    vrc = HGCMHostInit();
+    AssertRC(vrc);
     m_fHGCMActive = true;
 #endif /* VBOX_WITH_HGCM */
     mu32CredentialsFlags = 0;
@@ -130,24 +130,24 @@ int VMMDev::WaitCredentialsJudgement(uint32_t u32Timeout, uint32_t *pu32Credenti
         u32Timeout = 5000;
     }
 
-    int rc = RTSemEventWait(mCredentialsEvent, u32Timeout);
+    int vrc = RTSemEventWait(mCredentialsEvent, u32Timeout);
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         *pu32CredentialsFlags = mu32CredentialsFlags;
     }
 
-    return rc;
+    return vrc;
 }
 
 int VMMDev::SetCredentialsJudgementResult(uint32_t u32Flags)
 {
     mu32CredentialsFlags = u32Flags;
 
-    int rc = RTSemEventSignal(mCredentialsEvent);
-    AssertRC(rc);
+    int vrc = RTSemEventSignal(mCredentialsEvent);
+    AssertRC(vrc);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -940,8 +940,8 @@ int VMMDev::i_guestPropSetGlobalPropertyFlags(uint32_t fFlags)
 {
     VBOXHGCMSVCPARM parm;
     HGCMSvcSetU32(&parm, fFlags);
-    int rc = hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &parm);
-    if (RT_FAILURE(rc))
+    int vrc = hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &parm);
+    if (RT_FAILURE(vrc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
         if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
@@ -949,7 +949,7 @@ int VMMDev::i_guestPropSetGlobalPropertyFlags(uint32_t fFlags)
         else
             Log(("Failed to set the global flags \"%s\".\n", szFlags));
     }
-    return rc;
+    return vrc;
 }
 
 
@@ -966,10 +966,10 @@ int VMMDev::i_guestPropLoadAndConfigure()
     /*
      * Load the service
      */
-    int rc = hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
-    if (RT_FAILURE(rc))
+    int vrc = hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("VBoxGuestPropSvc is not available. rc = %Rrc\n", rc));
+        LogRel(("VBoxGuestPropSvc is not available. vrc = %Rrc\n", vrc));
         return VINF_SUCCESS; /* That is not a fatal failure. */
     }
 
@@ -998,25 +998,25 @@ int VMMDev::i_guestPropLoadAndConfigure()
     char  **papszFlags      = (char  **)RTMemTmpAllocZ(sizeof(char *) * cAlloc);
     if (papszNames && papszValues && pai64Timestamps && papszFlags)
     {
-        for (unsigned i = 0; RT_SUCCESS(rc) && i < cProps; ++i)
+        for (unsigned i = 0; RT_SUCCESS(vrc) && i < cProps; ++i)
         {
-            AssertPtrBreakStmt(namesOut[i], rc = VERR_INVALID_PARAMETER);
-            rc = RTUtf16ToUtf8(namesOut[i], &papszNames[i]);
-            if (RT_FAILURE(rc))
+            AssertPtrBreakStmt(namesOut[i], vrc = VERR_INVALID_PARAMETER);
+            vrc = RTUtf16ToUtf8(namesOut[i], &papszNames[i]);
+            if (RT_FAILURE(vrc))
                 break;
             if (valuesOut[i])
-                rc = RTUtf16ToUtf8(valuesOut[i], &papszValues[i]);
+                vrc = RTUtf16ToUtf8(valuesOut[i], &papszValues[i]);
             else
                 papszValues[i] = szEmpty;
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
                 break;
             pai64Timestamps[i] = timestampsOut[i];
             if (flagsOut[i])
-                rc = RTUtf16ToUtf8(flagsOut[i], &papszFlags[i]);
+                vrc = RTUtf16ToUtf8(flagsOut[i], &papszFlags[i]);
             else
                 papszFlags[i] = szEmpty;
         }
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
             i_guestPropSetMultiple((void *)papszNames, (void *)papszValues, (void *)pai64Timestamps, (void *)papszFlags);
         for (unsigned i = 0; i < cProps; ++i)
         {
@@ -1028,12 +1028,12 @@ int VMMDev::i_guestPropLoadAndConfigure()
         }
     }
     else
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     RTMemTmpFree(papszNames);
     RTMemTmpFree(papszValues);
     RTMemTmpFree(pai64Timestamps);
     RTMemTmpFree(papszFlags);
-    AssertRCReturn(rc, rc);
+    AssertRCReturn(vrc, vrc);
 
     /*
      * Register the host notification callback
@@ -1041,8 +1041,8 @@ int VMMDev::i_guestPropLoadAndConfigure()
     HGCMHostRegisterServiceExtension(&mpDrv->hHgcmSvcExtGstProps, "VBoxGuestPropSvc", Console::i_doGuestPropNotification, ptrConsole.m_p);
 
 # ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
-    rc = i_guestPropSetGlobalPropertyFlags(GUEST_PROP_F_RDONLYGUEST);
-    AssertRCReturn(rc, rc);
+    vrc = i_guestPropSetGlobalPropertyFlags(GUEST_PROP_F_RDONLYGUEST);
+    AssertRCReturn(vrc, vrc);
 # endif
 
     Log(("Set VBoxGuestPropSvc property store\n"));
@@ -1124,14 +1124,14 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
     }
     pThis->pVMMDev->mpDrv = pThis;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 #ifdef VBOX_WITH_HGCM
     /*
      * Load & configure the shared folders service.
      */
-    rc = pThis->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
-    pThis->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
-    if (RT_SUCCESS(rc))
+    vrc = pThis->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
+    pThis->pVMMDev->fSharedFolderActive = RT_SUCCESS(vrc);
+    if (RT_SUCCESS(vrc))
     {
         PPDMLED       pLed;
         PPDMILEDPORTS pLedPort;
@@ -1139,8 +1139,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
         LogRel(("Shared Folders service loaded\n"));
         pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
         AssertMsgReturn(pLedPort, ("Configuration error: No LED port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
-        rc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
-        if (RT_SUCCESS(rc) && pLed)
+        vrc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
+        if (RT_SUCCESS(vrc) && pLed)
         {
             VBOXHGCMSVCPARM  parm;
 
@@ -1148,32 +1148,32 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
             parm.u.pointer.addr = pLed;
             parm.u.pointer.size = sizeof(*pLed);
 
-            rc = HGCMHostCall("VBoxSharedFolders", SHFL_FN_SET_STATUS_LED, 1, &parm);
+            vrc = HGCMHostCall("VBoxSharedFolders", SHFL_FN_SET_STATUS_LED, 1, &parm);
         }
         else
-            AssertMsgFailed(("pfnQueryStatusLed failed with %Rrc (pLed=%x)\n", rc, pLed));
+            AssertMsgFailed(("pfnQueryStatusLed failed with %Rrc (pLed=%x)\n", vrc, pLed));
     }
     else
-        LogRel(("Failed to load Shared Folders service %Rrc\n", rc));
+        LogRel(("Failed to load Shared Folders service %Rrc\n", vrc));
 
 
     /*
      * Load and configure the guest control service.
      */
 # ifdef VBOX_WITH_GUEST_CONTROL
-    rc = pThis->pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
-    if (RT_SUCCESS(rc))
+    vrc = pThis->pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
+    if (RT_SUCCESS(vrc))
     {
-        rc = HGCMHostRegisterServiceExtension(&pThis->hHgcmSvcExtGstCtrl, "VBoxGuestControlSvc",
-                                              &Guest::i_notifyCtrlDispatcher,
-                                              pThis->pVMMDev->mParent->i_getGuest());
-        if (RT_SUCCESS(rc))
+        vrc = HGCMHostRegisterServiceExtension(&pThis->hHgcmSvcExtGstCtrl, "VBoxGuestControlSvc",
+                                               &Guest::i_notifyCtrlDispatcher,
+                                               pThis->pVMMDev->mParent->i_getGuest());
+        if (RT_SUCCESS(vrc))
             LogRel(("Guest Control service loaded\n"));
         else
-            LogRel(("Warning: Cannot register VBoxGuestControlSvc extension! rc=%Rrc\n", rc));
+            LogRel(("Warning: Cannot register VBoxGuestControlSvc extension! vrc=%Rrc\n", vrc));
     }
     else
-        LogRel(("Warning!: Failed to load the Guest Control Service! %Rrc\n", rc));
+        LogRel(("Warning!: Failed to load the Guest Control Service! %Rrc\n", vrc));
 # endif /* VBOX_WITH_GUEST_CONTROL */
 
 
@@ -1181,20 +1181,20 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
      * Load and configure the guest properties service.
      */
 # ifdef VBOX_WITH_GUEST_PROPS
-    rc = pThis->pVMMDev->i_guestPropLoadAndConfigure();
-    AssertLogRelRCReturn(rc, rc);
+    vrc = pThis->pVMMDev->i_guestPropLoadAndConfigure();
+    AssertLogRelRCReturn(vrc, vrc);
 # endif
 
 
     /*
      * The HGCM saved state.
      */
-    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SAVED_STATE_VERSION, 4096 /* bad guess */,
-                                NULL, NULL, NULL,
-                                NULL, VMMDev::hgcmSave, NULL,
-                                NULL, VMMDev::hgcmLoad, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SAVED_STATE_VERSION, 4096 /* bad guess */,
+                                 NULL, NULL, NULL,
+                                 NULL, VMMDev::hgcmSave, NULL,
+                                 NULL, VMMDev::hgcmLoad, NULL);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
 #endif /* VBOX_WITH_HGCM */
 
