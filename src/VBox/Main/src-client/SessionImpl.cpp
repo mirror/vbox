@@ -57,11 +57,11 @@ HRESULT Session::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    HRESULT rc = init();
+    HRESULT hrc = init();
 
     BaseFinalConstruct();
 
-    return rc;
+    return hrc;
 }
 
 void Session::FinalRelease()
@@ -126,8 +126,8 @@ void Session::uninit()
         Assert(mState == SessionState_Locked ||
                mState == SessionState_Spawning);
 
-        HRESULT rc = i_unlockMachine(true /* aFinalRelease */, false /* aFromServer */, alock);
-        AssertComRC(rc);
+        HRESULT hrc = i_unlockMachine(true /* aFinalRelease */, false /* aFromServer */, alock);
+        AssertComRC(hrc);
     }
 
     LogFlowThisFuncLeave();
@@ -180,27 +180,27 @@ HRESULT Session::getMachine(ComPtr<IMachine> &aMachine)
 
     CHECK_OPEN();
 
-    HRESULT rc;
+    HRESULT hrc;
 #ifndef VBOX_COM_INPROC_API_CLIENT
     if (mConsole)
-        rc = mConsole->i_machine().queryInterfaceTo(aMachine.asOutParam());
+        hrc = mConsole->i_machine().queryInterfaceTo(aMachine.asOutParam());
     else
 #endif
-        rc = mRemoteMachine.queryInterfaceTo(aMachine.asOutParam());
-    if (FAILED(rc))
+        hrc = mRemoteMachine.queryInterfaceTo(aMachine.asOutParam());
+    if (FAILED(hrc))
     {
 #ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
-            setError(rc, tr("Failed to query the session machine"));
+            setError(hrc, tr("Failed to query the session machine"));
         else
 #endif
-        if (FAILED_DEAD_INTERFACE(rc))
-            setError(rc, tr("Peer process crashed"));
+        if (FAILED_DEAD_INTERFACE(hrc))
+            setError(hrc, tr("Peer process crashed"));
         else
-            setError(rc, tr("Failed to query the remote session machine"));
+            setError(hrc, tr("Failed to query the remote session machine"));
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Session::getConsole(ComPtr<IConsole> &aConsole)
@@ -209,28 +209,28 @@ HRESULT Session::getConsole(ComPtr<IConsole> &aConsole)
 
     CHECK_OPEN();
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 #ifndef VBOX_COM_INPROC_API_CLIENT
     if (mConsole)
-        rc = mConsole.queryInterfaceTo(aConsole.asOutParam());
+        hrc = mConsole.queryInterfaceTo(aConsole.asOutParam());
     else
 #endif
-        rc = mRemoteConsole.queryInterfaceTo(aConsole.asOutParam());
+        hrc = mRemoteConsole.queryInterfaceTo(aConsole.asOutParam());
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
 #ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
-            setError(rc, tr("Failed to query the console"));
+            setError(hrc, tr("Failed to query the console"));
         else
 #endif
-        if (FAILED_DEAD_INTERFACE(rc))
-            setError(rc, tr("Peer process crashed"));
+        if (FAILED_DEAD_INTERFACE(hrc))
+            setError(hrc, tr("Peer process crashed"));
         else
-            setError(rc, tr("Failed to query the remote console"));
+            setError(hrc, tr("Failed to query the remote console"));
     }
 
-    return rc;
+    return hrc;
 }
 
 // ISession methods
@@ -335,17 +335,17 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
     mControl = aMachine;
     AssertReturn(!!mControl, E_FAIL);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 #ifndef VBOX_COM_INPROC_API_CLIENT
     if (aLockType == LockType_VM)
     {
         /* This is what is special about VM processes: they have a Console
          * object which is the root of all VM related activity. */
-        rc = mConsole.createObject();
-        AssertComRCReturn(rc, rc);
+        hrc = mConsole.createObject();
+        AssertComRCReturn(hrc, hrc);
 
-        rc = mConsole->initWithMachine(aMachine, mControl, aLockType);
-        AssertComRCReturn(rc, rc);
+        hrc = mConsole->initWithMachine(aMachine, mControl, aLockType);
+        AssertComRCReturn(hrc, hrc);
     }
     else
         mRemoteMachine = aMachine;
@@ -372,22 +372,22 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
         {
             delete mClientTokenHolder;
             mClientTokenHolder = NULL;
-            rc = E_FAIL;
+            hrc = E_FAIL;
         }
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
 
     /*
      *  Reference the VirtualBox object to ensure the server is up
      *  until the session is closed
      */
-    if (SUCCEEDED(rc))
-       rc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
+    if (SUCCEEDED(hrc))
+       hrc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         mType = SessionType_WriteLock;
         mState = SessionState_Locked;
@@ -405,7 +405,7 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
 #endif
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Session::assignRemoteMachine(const ComPtr<IMachine> &aMachine,
@@ -419,7 +419,7 @@ HRESULT Session::assignRemoteMachine(const ComPtr<IMachine> &aMachine,
     AssertReturn(mState == SessionState_Unlocked ||
                  mState == SessionState_Spawning, VBOX_E_INVALID_VM_STATE);
 
-    HRESULT rc = E_FAIL;
+    HRESULT hrc = E_FAIL;
 
     /* query IInternalMachineControl interface */
     mControl = aMachine;
@@ -448,9 +448,9 @@ HRESULT Session::assignRemoteMachine(const ComPtr<IMachine> &aMachine,
      *  Reference the VirtualBox object to ensure the server is up
      *  until the session is closed
      */
-    rc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
+    hrc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         /*
          *  RemoteSession type can be already set by AssignMachine() when its
@@ -471,10 +471,10 @@ HRESULT Session::assignRemoteMachine(const ComPtr<IMachine> &aMachine,
         mRemoteConsole.setNull();
     }
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("hrc=%08X\n", hrc));
     LogFlowThisFuncLeave();
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Session::updateMachineState(MachineState_T aMachineState)
@@ -518,7 +518,7 @@ HRESULT Session::uninitialize()
 
     AutoCaller autoCaller(this);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (getObjectState().getState() == ObjectState::Ready)
     {
@@ -546,7 +546,7 @@ HRESULT Session::uninitialize()
         }
 
         /* close ourselves */
-        rc = i_unlockMachine(false /* aFinalRelease */, true /* aFromServer */, alock);
+        hrc = i_unlockMachine(false /* aFinalRelease */, true /* aFromServer */, alock);
     }
     else if (getObjectState().getState() == ObjectState::InUninit)
     {
@@ -559,13 +559,13 @@ HRESULT Session::uninitialize()
     else
     {
         Log1WarningThisFunc(("UNEXPECTED uninitialization!\n"));
-        rc = autoCaller.rc();
+        hrc = autoCaller.rc();
     }
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("hrc=%08X\n", hrc));
     LogFlowThisFuncLeave();
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Session::onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkAdapter,
@@ -1116,10 +1116,10 @@ HRESULT Session::saveStateWithReason(Reason_T aReason,
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     bool fLeftPaused = false;
-    HRESULT rc = mConsole->i_saveState(aReason, aProgress, aSnapshot, aStateFilePath, !!aPauseVM, fLeftPaused);
+    HRESULT hrc = mConsole->i_saveState(aReason, aProgress, aSnapshot, aStateFilePath, !!aPauseVM, fLeftPaused);
     if (aLeftPaused)
         *aLeftPaused = fLeftPaused;
-    return rc;
+    return hrc;
 #else
     RT_NOREF(aReason, aProgress, aSnapshot, aStateFilePath, aPauseVM, aLeftPaused);
     AssertFailed();
@@ -1237,8 +1237,8 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWrite
         Assert(!aLockW.isWriteLockOnCurrentThread());
 
         LogFlowThisFunc(("Calling mControl->OnSessionEnd()...\n"));
-        HRESULT rc = mControl->OnSessionEnd(this, progress.asOutParam());
-        LogFlowThisFunc(("mControl->OnSessionEnd()=%08X\n", rc));
+        HRESULT hrc = mControl->OnSessionEnd(this, progress.asOutParam());
+        LogFlowThisFunc(("mControl->OnSessionEnd()=%08X\n", hrc));
 
         aLockW.acquire();
 
@@ -1249,11 +1249,11 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWrite
          *  bird: Seems E_ACCESSDENIED is what gets returned these days; see
          *        ObjectState::addCaller.
          */
-        if (mType != SessionType_WriteLock && (rc == E_UNEXPECTED || rc == E_ACCESSDENIED))
-            rc = S_OK;
+        if (mType != SessionType_WriteLock && (hrc == E_UNEXPECTED || hrc == E_ACCESSDENIED))
+            hrc = S_OK;
 
 #if !defined(DEBUG_bird) && !defined(DEBUG_andy) /* I don't want clients crashing on me just because VBoxSVC went belly up. */
-        AssertComRC(rc);
+        AssertComRC(hrc);
 #endif
     }
 
