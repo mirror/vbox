@@ -177,7 +177,7 @@ echo **************************************************************************
 echo * Unpacking signed drivers...
 echo **************************************************************************
 cd /d "%_MY_REPACK_DIR%" || goto end_failed
-call "%_MY_REPACK_DIR%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR%" -i "%_MY_OPT_SIGNED%" || goto end_failed
+call "%_MY_REPACK_DIR%\UnpackBlessedDrivers.cmd" -n -b "%_MY_BINDIR%" -i "%_MY_OPT_SIGNED%" || goto end_failed
 echo .
 
 
