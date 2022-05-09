@@ -432,24 +432,18 @@ typedef CPUM *PCPUM;
  */
 typedef struct CPUMCPU
 {
-    /**
-     * Guest context.
-     * Aligned on a 64-byte boundary.
-     */
+    /** Guest context.
+     * Aligned on a 64-byte boundary. */
     CPUMCTX                 Guest;
-
-    /**
-     * Guest context - misc MSRs
-     * Aligned on a 64-byte boundary.
-     */
+    /** Guest context - misc MSRs
+     * Aligned on a 64-byte boundary. */
     CPUMCTXMSRS             GuestMsrs;
 
     /** Nested VMX: VMX-preemption timer. */
     TMTIMERHANDLE           hNestedVmxPreemptTimer;
 
     /** Use flags.
-     * These flags indicates both what is to be used and what has been used.
-     */
+     * These flags indicates both what is to be used and what has been used. */
     uint32_t                fUseFlags;
 
     /** Changed flags.
@@ -457,26 +451,12 @@ typedef struct CPUMCPU
      * registers which has been changed since last time the flags were cleared.
      * See the CPUM_CHANGED_* defines for what we keep track of.
      *
-     * @todo Obsolete, but will probably refactored so keep it for reference. */
+     * @todo Obsolete, but will probably be refactored so keep it for reference. */
     uint32_t                fChanged;
 
     /** Temporary storage for the return code of the function called in the
      * 32-64 switcher. */
     uint32_t                u32RetCode;
-
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    /** Used by the world switcher code to store which vectors needs restoring on
-     * the way back. */
-    uint32_t                fApicDisVectors;
-    /** The address of the APIC mapping, NULL if no APIC.
-     * Call CPUMR0SetLApic to update this before doing a world switch. */
-    RTHCPTR                 pvApicBase;
-    /** Set if the CPU has the X2APIC mode enabled.
-     * Call CPUMR0SetLApic to update this before doing a world switch. */
-    bool                    fX2Apic;
-#else
-    uint8_t                 abPadding3[4 + sizeof(RTHCPTR) + 1];
-#endif
 
     /** Whether the X86_CPUID_FEATURE_EDX_APIC and X86_CPUID_AMD_FEATURE_EDX_APIC
      *  (?) bits are visible or not.  (The APIC is responsible for setting this
@@ -484,7 +464,7 @@ typedef struct CPUMCPU
     bool                    fCpuIdApicFeatureVisible;
 
     /** Align the next member on a 64-byte boundary. */
-    uint8_t                 abPadding2[64 - (8 + 12 + 4 + 8 + 1 + 1)];
+    uint8_t                 abPadding2[64 - 8 - 4*3 - 1];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */

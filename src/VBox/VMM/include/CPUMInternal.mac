@@ -295,15 +295,6 @@ struc CPUMCPU
     .fUseFlags                  resd    1
     .fChanged                   resd    1
     .u32RetCode                 resd    1
-
-%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    .fApicDisVectors            resd    1
-    .pvApicBase                 RTR0PTR_RES 1
-    .fX2Apic                    resb    1
-%else
-    .abPadding3                 resb    (4 + RTR0PTR_CB + 1)
-%endif
-
     .fCpuIdApicFeatureVisible   resb    1
 
     ;
