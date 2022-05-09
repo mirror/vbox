@@ -1964,6 +1964,7 @@ NTSTATUS SvgaMobAlloc(VBOXWDDM_EXT_VMSVGA *pSvga,
     GALOG(("[%p]\n", pSvga));
 
     NTSTATUS Status;
+    AssertCompile(NIL_RTR0MEMOBJ == 0);
 
     *ppMob = (PVMSVGAMOB)GaMemAllocZero(sizeof(VMSVGAMOB));
     AssertReturn(*ppMob, STATUS_INSUFFICIENT_RESOURCES);
@@ -1985,10 +1986,11 @@ void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
         RTAvlU32Remove(&pSvga->MobTree, pMob->core.Key);
         ExReleaseFastMutex(&pSvga->SvgaMutex);
 
-        if (pMob->hMemObj)
+        if (pMob->hMemObjPT != NIL_RTR0MEMOBJ)
         {
-            int rc = RTR0MemObjFree(pMob->hMemObj, true);
+            int rc = RTR0MemObjFree(pMob->hMemObjPT, true);
             AssertRC(rc);
+            pMob->hMemObjPT = NIL_RTR0MEMOBJ;
         }
 
         NTSTATUS Status = SvgaMobIdFree(pSvga, VMSVGAMOB_ID(pMob));
@@ -2034,7 +2036,7 @@ NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     if (pMob->cDescriptionPages)
     {
-        int rc = RTR0MemObjAllocPageTag(&pMob->hMemObj, pMob->cDescriptionPages * PAGE_SIZE,
+        int rc = RTR0MemObjAllocPageTag(&pMob->hMemObjPT, pMob->cDescriptionPages * PAGE_SIZE,
                                         false /* executable R0 mapping */, "VMSVGAMOB");
         AssertRCReturnStmt(rc, SvgaMobFree(pSvga, pMob), STATUS_INSUFFICIENT_RESOURCES);
 
@@ -2043,9 +2045,9 @@ NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
             /* Store the page numbers of level 1 pages into the level 2 page.
              * Skip the level 2 page at index 0.
              */
-            PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObj);
+            PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObjPT);
             for (unsigned i = 1; i < pMob->cDescriptionPages; ++i)
-                paPpn[i - 1] = RTR0MemObjGetPagePhysAddr(pMob->hMemObj, i) >> PAGE_SHIFT;
+                paPpn[i - 1] = RTR0MemObjGetPagePhysAddr(pMob->hMemObjPT, i) >> PAGE_SHIFT;
         }
     }
 
@@ -2071,9 +2073,9 @@ NTSTATUS SvgaMobFillPageTableForMDL(VBOXWDDM_EXT_VMSVGA *pSvga,
     else
     {
         /* The first of pages is alway the base. It is either the level 2 page or the single level 1 page */
-        pMob->base = RTR0MemObjGetPagePhysAddr(pMob->hMemObj, 0) >> PAGE_SHIFT;
+        pMob->base = RTR0MemObjGetPagePhysAddr(pMob->hMemObjPT, 0) >> PAGE_SHIFT;
 
-        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObj);
+        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObjPT);
         PPN64 *paPpnMdlPfn;
         if (pMob->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_2)
             paPpnMdlPfn = &paPpn[PAGE_SIZE / sizeof(PPN64)]; /* Level 1 pages follow the level 2 page. */
@@ -2101,9 +2103,9 @@ NTSTATUS SvgaMobFillPageTableForMemObj(VBOXWDDM_EXT_VMSVGA *pSvga,
     else
     {
         /* The first of pages is alway the base. It is either the level 2 page or the single level 1 page */
-        pMob->base = RTR0MemObjGetPagePhysAddr(pMob->hMemObj, 0) >> PAGE_SHIFT;
+        pMob->base = RTR0MemObjGetPagePhysAddr(pMob->hMemObjPT, 0) >> PAGE_SHIFT;
 
-        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObj);
+        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pMob->hMemObjPT);
         PPN64 *paPpnMob;
         if (pMob->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_2)
             paPpnMob = &paPpn[PAGE_SIZE / sizeof(PPN64)]; /* Level 1 pages follow the level 2 page. */

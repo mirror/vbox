@@ -146,7 +146,7 @@ typedef struct VMSVGAMOB
     uint32_t                    cDescriptionPages;          /* How many pages are required to hold PPN64 page table. */
     SVGAMobFormat               enmMobFormat;               /* Page table format. */
     PPN64                       base;                       /* Page which contains the page table. */
-    RTR0MEMOBJ                  hMemObj;                    /* Page table pages. */
+    RTR0MEMOBJ                  hMemObjPT;                  /* Page table pages. */
     HANDLE                      hAllocation;                /* Allocation which is bound to the mob. */
 } VMSVGAMOB, *PVMSVGAMOB;
 

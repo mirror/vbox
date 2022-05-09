@@ -1812,8 +1812,8 @@ static NTSTATUS procCmdDXSetMinLOD(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pS
 static NTSTATUS procCmdDXDefineDepthStencilView_v2(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
     SVGA3dCmdDXDefineDepthStencilView_v2 *pCmd = (SVGA3dCmdDXDefineDepthStencilView_v2 *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, SVGA_COTABLE_DSVIEW, pCmd->depthStencilViewId);
 }
 
 

@@ -1603,6 +1603,7 @@ typedef struct VBOXDXSEGMENTDESCRIPTOR
 
 static void vmsvgaDXGetSegmentDescription(PVBOXMP_DEVEXT pDevExt, int idxSegment, VBOXDXSEGMENTDESCRIPTOR *pDesc)
 {
+    /** @todo 2 segments for pDevExt->fLegacy flag. */
     /* 3 segments:
      * 1: The usual VRAM, CpuVisible;
      * 2: Aperture segment for guest backed objects;
