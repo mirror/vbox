@@ -49,7 +49,6 @@
 # pragma optimize("y", off)
 #endif
 
-AssertCompile2MemberOffsets(VM, cpum.s.HostFeatures,  cpum.ro.HostFeatures);
 AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 
 
