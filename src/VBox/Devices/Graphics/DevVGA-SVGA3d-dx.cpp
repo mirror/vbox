@@ -901,8 +901,8 @@ int vmsvga3dDXSetBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
 
     SVGA3dBlendStateId const blendId = pCmd->blendId;
 
-    ASSERT_GUEST_RETURN(pDXContext->cot.paBlendState, VERR_INVALID_STATE);
-    ASSERT_GUEST_RETURN(blendId < pDXContext->cot.cBlendState, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   blendId == SVGA3D_INVALID_ID
+                        || blendId < pDXContext->cot.cBlendState, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.renderState.blendStateId = blendId;
@@ -929,8 +929,8 @@ int vmsvga3dDXSetDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SV
 
     SVGA3dDepthStencilStateId const depthStencilId = pCmd->depthStencilId;
 
-    ASSERT_GUEST_RETURN(pDXContext->cot.paDepthStencil, VERR_INVALID_STATE);
-    ASSERT_GUEST_RETURN(depthStencilId < pDXContext->cot.cDepthStencil, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   depthStencilId == SVGA3D_INVALID_ID
+                        || depthStencilId < pDXContext->cot.cDepthStencil, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.renderState.depthStencilStateId = depthStencilId;
@@ -953,7 +953,8 @@ int vmsvga3dDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(rasterizerId < pDXContext->cot.cRasterizerState, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   rasterizerId == SVGA3D_INVALID_ID
+                        || rasterizerId < pDXContext->cot.cRasterizerState, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.renderState.rasterizerStateId = rasterizerId;

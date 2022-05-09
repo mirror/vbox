@@ -30,6 +30,7 @@
 
 #include "DevVGA-SVGA3d-dx-shader.h"
 
+#include <d3d11TokenizedProgramFormat.hpp>
 
 /*
  *
@@ -1514,9 +1515,9 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
         ASSERT_GUEST_RETURN(cOperand < RT_ELEMENTS(pOpcode->aIdxOperand), VERR_INVALID_PARAMETER);
 
         pOpcode->cOpcodeToken = opcode.instructionLength;
+        uint32_t cOpcode = 1; /* Opcode token + extended opcode tokens. */
         if (opcode.extended)
         {
-            ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
             if (   pOpcode->opcodeType == VGPU10_OPCODE_DCL_FUNCTION_BODY
                 || pOpcode->opcodeType == VGPU10_OPCODE_DCL_FUNCTION_TABLE
                 || pOpcode->opcodeType == VGPU10_OPCODE_DCL_INTERFACE
@@ -1524,18 +1525,27 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
                 || pOpcode->opcodeType == VGPU10_OPCODE_DCL_THREAD_GROUP)
             {
                 /* "next DWORD contains ... the actual instruction length in DWORD since it may not fit into 7 bits" */
+                ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
                 pOpcode->cOpcodeToken = dxbcTokenReaderRead32(r);
+                ++cOpcode;
             }
             else
             {
                 VGPU10OpcodeToken1 opcode1;
-                opcode1.value = dxbcTokenReaderRead32(r);
-                ASSERT_GUEST(opcode1.opcodeType == VGPU10_EXTENDED_OPCODE_SAMPLE_CONTROLS);
+                do
+                {
+                    ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
+                    opcode1.value = dxbcTokenReaderRead32(r);
+                    ++cOpcode;
+                    ASSERT_GUEST(   opcode1.opcodeType == VGPU10_EXTENDED_OPCODE_SAMPLE_CONTROLS
+                                 || opcode1.opcodeType == D3D11_SB_EXTENDED_OPCODE_RESOURCE_DIM
+                                 || opcode1.opcodeType == D3D11_SB_EXTENDED_OPCODE_RESOURCE_RETURN_TYPE);
+                } while(opcode1.extended);
             }
         }
 
         ASSERT_GUEST_RETURN(pOpcode->cOpcodeToken >= 1 && pOpcode->cOpcodeToken < 256, VERR_INVALID_PARAMETER);
-        ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, pOpcode->cOpcodeToken - 1), VERR_INVALID_PARAMETER);
+        ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, pOpcode->cOpcodeToken - cOpcode), VERR_INVALID_PARAMETER);
 
 #ifdef LOG_ENABLED
         Log6(("  %08X", opcode.value));
@@ -2423,6 +2433,9 @@ char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t id
 
 int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType)
 {
+    if (pInfo->fGuestSignatures)
+        return VINF_SUCCESS;
+
     for (uint32_t i = 0; i < pInfo->cDclResource; ++i)
     {
         VGPU10_RESOURCE_DIMENSION const resourceType = i < cResourceType ? paResourceType[i] : VGPU10_RESOURCE_DIMENSION_TEXTURE2D;

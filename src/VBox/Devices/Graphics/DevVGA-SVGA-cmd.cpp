@@ -2916,7 +2916,7 @@ static int vmsvga3dCmdDXDefineBlendState(PVGASTATECC pThisCC, uint32_t idDXConte
 static int vmsvga3dCmdDXDestroyBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyBlendState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyBlendState(pThisCC, idDXContext, pCmd);
 #else
@@ -2944,7 +2944,7 @@ static int vmsvga3dCmdDXDefineDepthStencilState(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXDestroyDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyDepthStencilState(pThisCC, idDXContext, pCmd);
 #else
@@ -2972,7 +2972,7 @@ static int vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDX
 static int vmsvga3dCmdDXDestroyRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRasterizerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyRasterizerState(pThisCC, idDXContext, pCmd);
 #else
@@ -3000,7 +3000,7 @@ static int vmsvga3dCmdDXDefineSamplerState(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXDestroySamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroySamplerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroySamplerState(pThisCC, idDXContext, pCmd);
 #else
