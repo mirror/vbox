@@ -246,9 +246,9 @@ DECLCALLBACK(int)  Guest::i_staticEnumStatsCallback(const char *pszName, STAMTYP
     pszLastSlash++;
 
     uint8_t uInstance;
-    int rc = RTStrToUInt8Ex(pszLastSlash, NULL, 10, &uInstance);
-    AssertLogRelMsgReturn(RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG && rc != VWRN_NEGATIVE_UNSIGNED,
-                          ("%Rrc '%s'\n", rc, pszName), VINF_SUCCESS)
+    int vrc = RTStrToUInt8Ex(pszLastSlash, NULL, 10, &uInstance);
+    AssertLogRelMsgReturn(RT_SUCCESS(vrc) && vrc != VWRN_NUMBER_TOO_BIG && vrc != VWRN_NEGATIVE_UNSIGNED,
+                          ("%Rrc '%s'\n", vrc, pszName), VINF_SUCCESS)
 #endif
 
     /* Add the bytes to our counters. */
@@ -301,7 +301,7 @@ void Guest::i_updateStats(uint64_t iTick)
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
     {
-        int rc;
+        int vrc;
 
         /*
          * There is no point in collecting VM shared memory if other memory
@@ -311,18 +311,18 @@ void Guest::i_updateStats(uint64_t iTick)
         {
             /* Query the missing per-VM memory statistics. */
             uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbZeroMemIgn;
-            rc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn,
-                                                          &cbSharedMem, &cbZeroMemIgn);
-            if (rc == VINF_SUCCESS)
+            vrc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn,
+                                                           &cbSharedMem, &cbZeroMemIgn);
+            if (vrc == VINF_SUCCESS)
                 validStats |= pm::VMSTATMASK_GUEST_MEMSHARED;
         }
 
         if (mCollectVMMStats)
         {
-            rc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
-                                                                &cbBalloonedTotal, &cbSharedTotal);
-            AssertRC(rc);
-            if (rc == VINF_SUCCESS)
+            vrc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
+                                                                 &cbBalloonedTotal, &cbSharedTotal);
+            AssertRC(vrc);
+            if (vrc == VINF_SUCCESS)
                 validStats |= pm::VMSTATMASK_VMM_ALLOC  | pm::VMSTATMASK_VMM_FREE
                            |  pm::VMSTATMASK_VMM_BALOON | pm::VMSTATMASK_VMM_SHARED;
         }
@@ -330,8 +330,8 @@ void Guest::i_updateStats(uint64_t iTick)
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
-        rc = ptrVM.vtable()->pfnSTAMR3Enum(ptrVM.rawUVM(), "/Public/Net/*/Bytes*", i_staticEnumStatsCallback, this);
-        AssertRC(rc);
+        vrc = ptrVM.vtable()->pfnSTAMR3Enum(ptrVM.rawUVM(), "/Public/Net/*/Bytes*", i_staticEnumStatsCallback, this);
+        AssertRC(vrc);
 
         uint64_t uTsNow = RTTimeNanoTS();
         uint64_t cNsPassed = uTsNow - mNetStatLastTs;
@@ -708,9 +708,9 @@ HRESULT Guest::internalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *
         return E_FAIL;
 
     uint64_t cbFreeTotal, cbAllocTotal, cbBalloonedTotal, cbSharedTotal;
-    int rc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
-                                                            &cbBalloonedTotal, &cbSharedTotal);
-    AssertRCReturn(rc, E_FAIL);
+    int vrc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
+                                                             &cbBalloonedTotal, &cbSharedTotal);
+    AssertRCReturn(vrc, E_FAIL);
 
     *aMemAllocTotal   = (ULONG)(cbAllocTotal / _1K);  /* bytes -> KB */
     *aMemFreeTotal    = (ULONG)(cbFreeTotal / _1K);
@@ -719,8 +719,8 @@ HRESULT Guest::internalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *
 
     /* Query the missing per-VM memory statistics. */
     uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbSharedMem, cbZeroMemIgn;
-    rc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
-    AssertRCReturn(rc, E_FAIL);
+    vrc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
+    AssertRCReturn(vrc, E_FAIL);
     *aMemShared = (ULONG)(cbSharedMem / _1K);
 
     return S_OK;
@@ -812,7 +812,7 @@ HRESULT Guest::getAdditionsStatus(AdditionsRunLevelType_T aLevel, BOOL *aActive)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     switch (aLevel)
     {
         case AdditionsRunLevelType_System:
@@ -828,13 +828,14 @@ HRESULT Guest::getAdditionsStatus(AdditionsRunLevelType_T aLevel, BOOL *aActive)
             break;
 
         default:
-            rc = setError(VBOX_E_NOT_SUPPORTED,
-                          tr("Invalid status level defined: %u"), aLevel);
+            hrc = setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Invalid status level defined: %u"), aLevel);
             break;
     }
 
-    return rc;
+    return hrc;
 }
+
 HRESULT Guest::setCredentials(const com::Utf8Str &aUserName, const com::Utf8Str &aPassword,
                               const com::Utf8Str &aDomain, BOOL aAllowInteractiveLogon)
 {
