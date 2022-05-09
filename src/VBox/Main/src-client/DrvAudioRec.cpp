@@ -327,21 +327,21 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
     Assert(mVideoRecCfg.mapScreens.size() >= 1);
     const settings::RecordingScreenSettings &Screen0Settings = mVideoRecCfg.mapScreens[0];
 
-    int rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
-    AssertRCReturn(rc, rc);
+    int vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
+    AssertRCReturn(vrc, vrc);
     if (Screen0Settings.enmDest == RecordingDestination_File)
     {
-        rc = pVMM->pfnCFGMR3InsertString(pLunCfg, "ContainerFileName", Utf8Str(Screen0Settings.File.strName).c_str());
-        AssertRCReturn(rc, rc);
+        vrc = pVMM->pfnCFGMR3InsertString(pLunCfg, "ContainerFileName", Utf8Str(Screen0Settings.File.strName).c_str());
+        AssertRCReturn(vrc, vrc);
     }
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecHz", Screen0Settings.Audio.uHz);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecBits", Screen0Settings.Audio.cBits);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecChannels", Screen0Settings.Audio.cChannels);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecBitrate", 0); /* Let Opus decide for now. */
-    AssertRCReturn(rc, rc);
+    vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecHz", Screen0Settings.Audio.uHz);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecBits", Screen0Settings.Audio.cBits);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecChannels", Screen0Settings.Audio.cChannels);
+    AssertRCReturn(vrc, vrc);
+    vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "CodecBitrate", 0); /* Let Opus decide for now. */
+    AssertRCReturn(vrc, vrc);
 
     return AudioDriver::configureDriver(pLunCfg, pVMM);
 }
@@ -409,8 +409,8 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
     }
 
 #ifdef VBOX_WITH_LIBOPUS
-    int rc = RTCircBufCreate(&pStreamAV->pCircBuf, pSink->Codec.Opus.cbFrame * 2 /* Use "double buffering" */);
-    if (RT_SUCCESS(rc))
+    int vrc = RTCircBufCreate(&pStreamAV->pCircBuf, pSink->Codec.Opus.cbFrame * 2 /* Use "double buffering" */);
+    if (RT_SUCCESS(vrc))
     {
         size_t cbScratchBuf = pSink->Codec.Opus.cbFrame;
         pStreamAV->pvSrcBuf = RTMemAlloc(cbScratchBuf);
@@ -437,18 +437,18 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
                 pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
             }
             else
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
         }
         else
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
     }
 #else
     RT_NOREF(pThis, pSink, pStreamAV, pCfgReq, pCfgAcq);
-    int rc = VERR_NOT_SUPPORTED;
+    int vrc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 
@@ -471,10 +471,10 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
      * Later each stream could have its own one, to e.g. router different stream to different sinks .*/
     PAVRECSINK pSink = &pThis->Sink;
 
-    int rc = avRecCreateStreamOut(pThis, pStreamAV, pSink, pCfgReq, pCfgAcq);
+    int vrc = avRecCreateStreamOut(pThis, pStreamAV, pSink, pCfgReq, pCfgAcq);
     PDMAudioStrmCfgCopy(&pStreamAV->Cfg, pCfgAcq);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -526,11 +526,11 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     RT_NOREF(fImmediate);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (pStreamAV->Cfg.enmDir == PDMAUDIODIR_OUT)
-        rc = avRecDestroyStreamOut(pThis, pStreamAV);
+        vrc = avRecDestroyStreamOut(pThis, pStreamAV);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -619,7 +619,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     uint32_t cbWrittenTotal = 0;
 
@@ -735,32 +735,32 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_recordingSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
-                    Assert(hr == S_OK);
-                    RT_NOREF(hr);
+                    HRESULT hrc = pSink->Con.Main.pConsole->i_recordingSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
+                    Assert(hrc == S_OK);
+                    RT_NOREF(hrc);
                     break;
                 }
 
                 case AVRECCONTAINERTYPE_WEBM:
                 {
                     WebMWriter::BlockData_Opus blockData = { pStreamAV->pvDstBuf, cbDst, uPTSMs };
-                    rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
-                    AssertRC(rc);
+                    vrc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
+                    AssertRC(vrc);
                     break;
                 }
 
                 default:
-                    AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+                    AssertFailedStmt(vrc = VERR_NOT_IMPLEMENTED);
                     break;
             }
         }
         else if (cbWritten < 0)
         {
             AssertMsgFailed(("Encoding failed: %s\n", opus_strerror(cbWritten)));
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
     }
 
@@ -769,11 +769,11 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     /* Report back all data as being processed. */
     *pcbWritten = cbBuf;
 
-    rc = VERR_NOT_SUPPORTED;
+    vrc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
-    LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
-    return rc;
+    LogFlowFunc(("csReadTotal=%RU32, vrc=%Rrc\n", cbWrittenTotal, vrc));
+    return vrc;
 }
 
 
@@ -847,8 +847,8 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
                 LogRel2(("Recording: Finished recording audio to file '%s' (%zu bytes)\n",
                          pSink->Con.WebM.pWebM->GetFileName().c_str(), pSink->Con.WebM.pWebM->GetFileSize()));
 
-                int rc2 = pSink->Con.WebM.pWebM->Close();
-                AssertRC(rc2);
+                int vrc2 = pSink->Con.WebM.pWebM->Close();
+                AssertRC(vrc2);
 
                 delete pSink->Con.WebM.pWebM;
                 pSink->Con.WebM.pWebM = NULL;
@@ -976,7 +976,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     try
     {
@@ -989,7 +989,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
                     pSink->Con.Main.pConsole = pThis->pConsole;
                 }
                 else
-                    rc = VERR_NOT_SUPPORTED;
+                    vrc = VERR_NOT_SUPPORTED;
                 break;
             }
 
@@ -1003,38 +1003,38 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
                     AssertPtr(pszFile);
 
                     pSink->Con.WebM.pWebM = new WebMWriter();
-                    rc = pSink->Con.WebM.pWebM->Open(pszFile,
-                                                     /** @todo Add option to add some suffix if file exists instead of overwriting? */
-                                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
-                                                     WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
-                    if (RT_SUCCESS(rc))
+                    vrc = pSink->Con.WebM.pWebM->Open(pszFile,
+                                                      /** @todo Add option to add some suffix if file exists instead of overwriting? */
+                                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
+                                                      WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
+                    if (RT_SUCCESS(vrc))
                     {
-                        rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cbSample * 8 /* Bits */,
-                                                                  &pSink->Con.WebM.uTrack);
-                        if (RT_SUCCESS(rc))
+                        vrc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cbSample * 8 /* Bits */,
+                                                                   &pSink->Con.WebM.uTrack);
+                        if (RT_SUCCESS(vrc))
                         {
                             LogRel(("Recording: Recording audio to audio file '%s'\n", pszFile));
                         }
                         else
-                            LogRel(("Recording: Error creating audio track for audio file '%s' (%Rrc)\n", pszFile, rc));
+                            LogRel(("Recording: Error creating audio track for audio file '%s' (%Rrc)\n", pszFile, vrc));
                     }
                     else
-                        LogRel(("Recording: Error creating audio file '%s' (%Rrc)\n", pszFile, rc));
+                        LogRel(("Recording: Error creating audio file '%s' (%Rrc)\n", pszFile, vrc));
                 }
                 break;
             }
 
             default:
-                rc = VERR_NOT_SUPPORTED;
+                vrc = VERR_NOT_SUPPORTED;
                 break;
         }
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         pSink->Con.Parms.enmType     = pConParms->enmType;
 
@@ -1065,10 +1065,10 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
             pEnc = NULL;
         }
 
-        LogRel(("Recording: Error creating sink (%Rrc)\n", rc));
+        LogRel(("Recording: Error creating sink (%Rrc)\n", vrc));
     }
 
-    return rc;
+    return vrc;
 }
 
 
@@ -1151,14 +1151,14 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     RT_ZERO(pThis->ContainerParms);
     RT_ZERO(pThis->CodecParms);
 
-    int rc = pHlp->pfnCFGMQueryU32(pCfg, "ContainerType", (uint32_t *)&pConParams->enmType);
-    AssertRCReturn(rc, rc);
+    int vrc = pHlp->pfnCFGMQueryU32(pCfg, "ContainerType", (uint32_t *)&pConParams->enmType);
+    AssertRCReturn(vrc, vrc);
 
     switch (pConParams->enmType)
     {
         case AVRECCONTAINERTYPE_WEBM:
-            rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "ContainerFileName", &pConParams->WebM.pszFile);
-            AssertRCReturn(rc, rc);
+            vrc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "ContainerFileName", &pConParams->WebM.pszFile);
+            AssertRCReturn(vrc, vrc);
             break;
 
         default:
@@ -1166,23 +1166,23 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     }
 
     uint32_t uHz = 0;
-    rc = pHlp->pfnCFGMQueryU32(pCfg, "CodecHz", &uHz);
-    AssertRCReturn(rc, rc);
+    vrc = pHlp->pfnCFGMQueryU32(pCfg, "CodecHz", &uHz);
+    AssertRCReturn(vrc, vrc);
 
     uint8_t cSampleBits = 0;
-    rc = pHlp->pfnCFGMQueryU8(pCfg,  "CodecBits", &cSampleBits); /** @todo CodecBits != CodecBytes */
-    AssertRCReturn(rc, rc);
+    vrc = pHlp->pfnCFGMQueryU8(pCfg,  "CodecBits", &cSampleBits); /** @todo CodecBits != CodecBytes */
+    AssertRCReturn(vrc, vrc);
 
     uint8_t cChannels = 0;
-    rc = pHlp->pfnCFGMQueryU8(pCfg,  "CodecChannels", &cChannels);
-    AssertRCReturn(rc, rc);
+    vrc = pHlp->pfnCFGMQueryU8(pCfg,  "CodecChannels", &cChannels);
+    AssertRCReturn(vrc, vrc);
 
     PDMAudioPropsInit(&pCodecParms->PCMProps, cSampleBits / 8, true /*fSigned*/, cChannels, uHz);
     AssertMsgReturn(PDMAudioPropsAreValid(&pCodecParms->PCMProps),
                     ("Configuration error: Audio configuration is invalid!\n"), VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES); /** @todo wrong status code. */
 
-    rc = pHlp->pfnCFGMQueryU32(pCfg, "CodecBitrate", &pCodecParms->uBitrate);
-    AssertRCReturn(rc, rc);
+    vrc = pHlp->pfnCFGMQueryU32(pCfg, "CodecBitrate", &pCodecParms->uBitrate);
+    AssertRCReturn(vrc, vrc);
 
     /*
      * Get the interface for the above driver (DrvAudio) to make mixer/conversion calls.
@@ -1205,13 +1205,13 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
             PDMAudioPropsHz(&pThis->CodecParms.PCMProps), PDMAudioPropsSampleBits(&pThis->CodecParms.PCMProps),
             PDMAudioPropsChannels(&pThis->CodecParms.PCMProps), PDMAudioPropsChannels(&pThis->CodecParms.PCMProps) == 1 ? "" : "s"));
 
-    rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
-    if (RT_SUCCESS(rc))
+    vrc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
+    if (RT_SUCCESS(vrc))
         LogRel2(("Recording: Audio recording driver initialized\n"));
     else
-        LogRel(("Recording: Audio recording driver initialization failed: %Rrc\n", rc));
+        LogRel(("Recording: Audio recording driver initialization failed: %Rrc\n", vrc));
 
-    return rc;
+    return vrc;
 }
 
 
