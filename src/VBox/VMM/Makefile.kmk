@@ -818,3 +818,10 @@ IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj: IEMAllCImpl.o
 # Alias the NEM template to the objects where it is used:
 NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o
 
+# Alias the VMX template onto HMVMXR0 or darwin specific NEM object:
+ifeq ($(KBUILD_TARGET),darwin)
+VMXAllTemplate.cpp.o:    NEMR3Native-darwin.o
+else
+VMXAllTemplate.cpp.o:    HMVMXR0.o
+endif
+
