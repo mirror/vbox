@@ -155,7 +155,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                 case kCpumMicroarch_NEC_V30:        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_V20; break;
                 default:                            pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_CURRENT; break;
             }
-            LogRel(("IEM: TargetCpu=%s, Microarch=%s\n", iemGetTargetCpuName(pVCpu->iem.s.uTargetCpu), CPUMR3MicroarchName(pVM->cpum.ro.GuestFeatures.enmMicroarch)));
+            LogRel(("IEM: TargetCpu=%s, Microarch=%s\n", iemGetTargetCpuName(pVCpu->iem.s.uTargetCpu), CPUMMicroarchName(pVM->cpum.ro.GuestFeatures.enmMicroarch)));
 #endif
         }
         else
