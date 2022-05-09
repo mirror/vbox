@@ -4494,8 +4494,8 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
          */
 
         char szOsRelease[128];
-        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOsRelease, sizeof(szOsRelease));
-        bool fKernelHasODirectBug =    RT_FAILURE(rc)
+        int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOsRelease, sizeof(szOsRelease));
+        bool fKernelHasODirectBug =    RT_FAILURE(vrc)
                                     || (RTStrVersionCompare(szOsRelease, "2.6.36-rc4") < 0);
 
         if (   (uCaps & MediumFormatCapabilities_Asynchronous)
@@ -4545,7 +4545,7 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
          *             kernel oopses on Linux 2.6.18-416.el5. We don't know when this
          *             was fixed but we _know_ that 2.6.18 EL5 kernels are affected.
          */
-        bool fKernelAsyncUnreliable =    RT_FAILURE(rc)
+        bool fKernelAsyncUnreliable =    RT_FAILURE(vrc)
                                       || (RTStrVersionCompare(szOsRelease, "2.6.19") < 0);
         if (   (uCaps & MediumFormatCapabilities_Asynchronous)
             && !*pfUseHostIOCache
