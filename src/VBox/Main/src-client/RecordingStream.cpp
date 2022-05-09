@@ -48,15 +48,15 @@ RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, con
     File.pWEBM = NULL;
     File.hFile = NIL_RTFILE;
 
-    int rc2 = initInternal(a_pCtx, uScreen, Settings);
-    if (RT_FAILURE(rc2))
-        throw rc2;
+    int vrc2 = initInternal(a_pCtx, uScreen, Settings);
+    if (RT_FAILURE(vrc2))
+        throw vrc2;
 }
 
 RecordingStream::~RecordingStream(void)
 {
-    int rc2 = uninitInternal();
-    AssertRC(rc2);
+    int vrc2 = uninitInternal();
+    AssertRC(vrc2);
 }
 
 /**
@@ -69,7 +69,7 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
     /* Sanity. */
     Assert(Settings.enmDest != RecordingDestination_None);
 
-    int rc;
+    int vrc;
 
     switch (Settings.enmDest)
     {
@@ -86,18 +86,18 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
             if (!pszSuff)
             {
                 RTStrFree(pszAbsPath);
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
                 break;
             }
 
             char *pszFile = NULL;
 
             if (this->uScreenID > 0)
-                rc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, this->uScreenID + 1, pszSuff);
+                vrc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, this->uScreenID + 1, pszSuff);
             else
-                rc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
+                vrc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
 
@@ -107,8 +107,8 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
                 fOpen |= RTFILE_O_CREATE;
 
                 RTFILE hFile;
-                rc = RTFileOpen(&hFile, pszFile, fOpen);
-                if (rc == VERR_ALREADY_EXISTS)
+                vrc = RTFileOpen(&hFile, pszFile, fOpen);
+                if (vrc == VERR_ALREADY_EXISTS)
                 {
                     RTStrFree(pszFile);
                     pszFile = NULL;
@@ -119,18 +119,18 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
                     RTTimeExplode(&time, &ts);
 
                     if (this->uScreenID > 0)
-                        rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
-                                          pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                          time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                          this->uScreenID + 1, pszSuff);
+                        vrc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
+                                           pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                           time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                           this->uScreenID + 1, pszSuff);
                     else
-                        rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
-                                          pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                          time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                          pszSuff);
+                        vrc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
+                                           pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                           time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                           pszSuff);
 
-                    if (RT_SUCCESS(rc))
-                        rc = RTFileOpen(&hFile, pszFile, fOpen);
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTFileOpen(&hFile, pszFile, fOpen);
                 }
 
                 try
@@ -140,10 +140,10 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
                 }
                 catch (std::bad_alloc &)
                {
-                    rc = VERR_NO_MEMORY;
+                    vrc = VERR_NO_MEMORY;
                 }
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     this->File.hFile = hFile;
                     this->ScreenSettings.File.strName = pszFile;
@@ -153,10 +153,10 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
             RTStrFree(pszSuff);
             RTStrFree(pszAbsPath);
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
             {
-                LogRel(("Recording: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
-                        pszFile ? pszFile : "<Unnamed>", this->uScreenID, rc));
+                LogRel(("Recording: Failed to open file '%s' for screen %RU32, vrc=%Rrc\n",
+                        pszFile ? pszFile : "<Unnamed>", this->uScreenID, vrc));
             }
 
             RTStrFree(pszFile);
@@ -164,12 +164,12 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
         }
 
         default:
-            rc = VERR_NOT_IMPLEMENTED;
+            vrc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -308,25 +308,25 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
     if (!this->fEnabled)
         return VINF_SUCCESS;
 
-    int rc;
+    int vrc;
 
     if (isLimitReachedInternal(msTimestamp))
     {
-        rc = VINF_RECORDING_LIMIT_REACHED;
+        vrc = VINF_RECORDING_LIMIT_REACHED;
     }
     else
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
 
     AssertPtr(this->pCtx);
 
-    switch (rc)
+    switch (vrc)
     {
         case VINF_RECORDING_LIMIT_REACHED:
         {
             this->fEnabled = false;
 
-            int rc2 = this->pCtx->OnLimitReached(this->uScreenID, VINF_SUCCESS /* rc */);
-            AssertRC(rc2);
+            int vrc2 = this->pCtx->OnLimitReached(this->uScreenID, VINF_SUCCESS /* rc */);
+            AssertRC(vrc2);
             break;
         }
 
@@ -334,8 +334,8 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
             break;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -382,7 +382,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
         return VINF_SUCCESS;
     }
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     RecordingBlockMap::iterator itStreamBlocks = Blocks.Map.begin();
     while (itStreamBlocks != Blocks.Map.end())
@@ -402,17 +402,17 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
             {
                 PRECORDINGVIDEOFRAME pVideoFrame  = (PRECORDINGVIDEOFRAME)pBlock->pvData;
 
-                int rc2 = RecordingUtilsRGBToYUV(pVideoFrame->uPixelFormat,
-                                                 /* Destination */
-                                                 this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                                 /* Source */
-                                                 pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
-                if (RT_SUCCESS(rc2))
+                int vrc2 = RecordingUtilsRGBToYUV(pVideoFrame->uPixelFormat,
+                                                  /* Destination */
+                                                  this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                                  /* Source */
+                                                  pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
+                if (RT_SUCCESS(vrc2))
                 {
-                    rc2 = writeVideoVPX(msTimestamp, pVideoFrame);
-                    AssertRC(rc2);
-                    if (RT_SUCCESS(rc))
-                        rc = rc2;
+                    vrc2 = writeVideoVPX(msTimestamp, pVideoFrame);
+                    AssertRC(vrc2);
+                    if (RT_SUCCESS(vrc))
+                        vrc = vrc2;
                 }
             }
 #endif
@@ -451,10 +451,10 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
                     WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
                                                              pBlockCommon->msTimestamp };
                     AssertPtr(this->File.pWEBM);
-                    int rc2 = this->File.pWEBM->WriteBlock(this->uTrackAudio, &blockData, sizeof(blockData));
-                    AssertRC(rc2);
-                    if (RT_SUCCESS(rc))
-                        rc = rc2;
+                    int vrc2 = this->File.pWEBM->WriteBlock(this->uTrackAudio, &blockData, sizeof(blockData));
+                    AssertRC(vrc2);
+                    if (RT_SUCCESS(vrc))
+                        vrc = vrc2;
                     break;
                 }
 
@@ -491,8 +491,8 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 
     unlock();
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -520,18 +520,18 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     PRECORDINGVIDEOFRAME pFrame = NULL;
 
-    int rc = iterateInternal(msTimestamp);
-    if (rc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
+    int vrc = iterateInternal(msTimestamp);
+    if (vrc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
     {
         unlock();
-        return rc;
+        return vrc;
     }
 
     do
     {
         if (msTimestamp < this->Video.uLastTimeStampMs + this->Video.uDelayMs)
         {
-            rc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
+            vrc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
             break;
         }
 
@@ -541,7 +541,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* Nothing visible. */
         {
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -559,7 +559,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         int yDiff = ((int)this->ScreenSettings.Video.ulHeight - (int)uSrcHeight) / 2;
         if ((int)h + yDiff + (int)y <= 0)  /* Nothing visible. */
         {
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
@@ -576,7 +576,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         if (   destX > this->ScreenSettings.Video.ulWidth
             || destY > this->ScreenSettings.Video.ulHeight)
         {
-            rc = VERR_INVALID_PARAMETER;  /* Nothing visible. */
+            vrc = VERR_INVALID_PARAMETER;  /* Nothing visible. */
             break;
         }
 
@@ -587,7 +587,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
             h = this->ScreenSettings.Video.ulHeight - destY;
 
         pFrame = (PRECORDINGVIDEOFRAME)RTMemAllocZ(sizeof(RECORDINGVIDEOFRAME));
-        AssertBreakStmt(pFrame, rc = VERR_NO_MEMORY);
+        AssertBreakStmt(pFrame, vrc = VERR_NO_MEMORY);
 
         /* Calculate bytes per pixel and set pixel format. */
         const unsigned uBytesPerPixel = uBPP / 8;
@@ -605,20 +605,20 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
                     pFrame->uPixelFormat = RECORDINGPIXELFMT_RGB565;
                     break;
                 default:
-                    AssertMsgFailedBreakStmt(("Unknown color depth (%RU32)\n", uBPP), rc = VERR_NOT_SUPPORTED);
+                    AssertMsgFailedBreakStmt(("Unknown color depth (%RU32)\n", uBPP), vrc = VERR_NOT_SUPPORTED);
                     break;
             }
         }
         else
-            AssertMsgFailedBreakStmt(("Unknown pixel format (%RU32)\n", uPixelFormat), rc = VERR_NOT_SUPPORTED);
+            AssertMsgFailedBreakStmt(("Unknown pixel format (%RU32)\n", uPixelFormat), vrc = VERR_NOT_SUPPORTED);
 
         const size_t cbRGBBuf =   this->ScreenSettings.Video.ulWidth
                                 * this->ScreenSettings.Video.ulHeight
                                 * uBytesPerPixel;
-        AssertBreakStmt(cbRGBBuf, rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(cbRGBBuf, vrc = VERR_INVALID_PARAMETER);
 
         pFrame->pu8RGBBuf = (uint8_t *)RTMemAlloc(cbRGBBuf);
-        AssertBreakStmt(pFrame->pu8RGBBuf, rc = VERR_NO_MEMORY);
+        AssertBreakStmt(pFrame->pu8RGBBuf, vrc = VERR_NO_MEMORY);
         pFrame->cbRGBBuf  = cbRGBBuf;
         pFrame->uWidth    = uSrcWidth;
         pFrame->uHeight   = uSrcHeight;
@@ -658,9 +658,9 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         RTStrPrintf2(szFileName, sizeof(szFileName), "/tmp/VideoRecFrame-%RU32.bmp", this->uScreenID);
 
         RTFILE fh;
-        int rc2 = RTFileOpen(&fh, szFileName,
-                             RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc2))
+        int vrc2 = RTFileOpen(&fh, szFileName,
+                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(vrc2))
         {
             RTFileWrite(fh, &fileHdr,    sizeof(fileHdr),    NULL);
             RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
@@ -686,13 +686,13 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         }
 
 #ifdef VBOX_RECORDING_DUMP
-        if (RT_SUCCESS(rc2))
+        if (RT_SUCCESS(vrc2))
             RTFileClose(fh);
 #endif
 
     } while (0);
 
-    if (rc == VINF_SUCCESS) /* Note: Also could be VINF_TRY_AGAIN. */
+    if (vrc == VINF_SUCCESS) /* Note: Also could be VINF_TRY_AGAIN. */
     {
         RecordingBlock *pBlock = new RecordingBlock();
         if (pBlock)
@@ -716,19 +716,19 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
                 RT_NOREF(ex);
 
                 delete pBlock;
-                rc = VERR_NO_MEMORY;
+                vrc = VERR_NO_MEMORY;
             }
         }
         else
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         RecordingVideoFrameFree(pFrame);
 
     unlock();
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -758,35 +758,35 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     this->uScreenID      = uScreen;
     this->ScreenSettings = Settings;
 
-    int rc = parseOptionsString(this->ScreenSettings.strOptions);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = parseOptionsString(this->ScreenSettings.strOptions);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     settings::RecordingScreenSettings *pSettings = &this->ScreenSettings;
 
-    rc = RTCritSectInit(&this->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = RTCritSectInit(&this->CritSect);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    rc = open(this->ScreenSettings);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = open(this->ScreenSettings);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     const bool fVideoEnabled = pSettings->isFeatureEnabled(RecordingFeature_Video);
     const bool fAudioEnabled = pSettings->isFeatureEnabled(RecordingFeature_Audio);
 
     if (fVideoEnabled)
     {
-        rc = initVideo();
-        if (RT_FAILURE(rc))
-            return rc;
+        vrc = initVideo();
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
 
     if (fAudioEnabled)
     {
-        rc = initAudio();
-        if (RT_FAILURE(rc))
-            return rc;
+        vrc = initAudio();
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
 
     switch (this->ScreenSettings.enmDest)
@@ -797,26 +797,26 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
             const char *pszFile = pSettings->File.strName.c_str();
 
             AssertPtr(File.pWEBM);
-            rc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
+            vrc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                                   fAudioEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
+                                    fAudioEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
-                                   WebMWriter::AudioCodec_None,
+                                    WebMWriter::AudioCodec_None,
 #endif
-                                   fVideoEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
-            if (RT_FAILURE(rc))
+                                    fVideoEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+            if (RT_FAILURE(vrc))
             {
-                LogRel(("Recording: Failed to create output file '%s' (%Rrc)\n", pszFile, rc));
+                LogRel(("Recording: Failed to create output file '%s' (%Rrc)\n", pszFile, vrc));
                 break;
             }
 
             if (fVideoEnabled)
             {
-                rc = this->File.pWEBM->AddVideoTrack(pSettings->Video.ulWidth, pSettings->Video.ulHeight, pSettings->Video.ulFPS,
-                                                     &this->uTrackVideo);
-                if (RT_FAILURE(rc))
+                vrc = this->File.pWEBM->AddVideoTrack(pSettings->Video.ulWidth, pSettings->Video.ulHeight, pSettings->Video.ulFPS,
+                                                      &this->uTrackVideo);
+                if (RT_FAILURE(vrc))
                 {
-                    LogRel(("Recording: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    LogRel(("Recording: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, vrc));
                     break;
                 }
 
@@ -828,11 +828,11 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 #ifdef VBOX_WITH_AUDIO_RECORDING
             if (fAudioEnabled)
             {
-                rc = this->File.pWEBM->AddAudioTrack(pSettings->Audio.uHz, pSettings->Audio.cChannels, pSettings->Audio.cBits,
-                                                     &this->uTrackAudio);
-                if (RT_FAILURE(rc))
+                vrc = this->File.pWEBM->AddAudioTrack(pSettings->Audio.uHz, pSettings->Audio.cChannels, pSettings->Audio.cBits,
+                                                      &this->uTrackAudio);
+                if (RT_FAILURE(vrc))
                 {
-                    LogRel(("Recording: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    LogRel(("Recording: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, vrc));
                     break;
                 }
 
@@ -867,11 +867,11 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 
         default:
             AssertFailed(); /* Should never happen. */
-            rc = VERR_NOT_IMPLEMENTED;
+            vrc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         this->enmState  = RECORDINGSTREAMSTATE_INITIALIZED;
         this->fEnabled  = true;
@@ -879,9 +879,9 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     }
     else
     {
-        int rc2 = uninitInternal();
-        AssertRC(rc2);
-        return rc;
+        int vrc2 = uninitInternal();
+        AssertRC(vrc2);
+        return vrc;
     }
 
     return VINF_SUCCESS;
@@ -896,14 +896,14 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
  */
 int RecordingStream::close(void)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     switch (this->ScreenSettings.enmDest)
     {
         case RecordingDestination_File:
         {
             if (this->File.pWEBM)
-                rc = this->File.pWEBM->Close();
+                vrc = this->File.pWEBM->Close();
             break;
         }
 
@@ -916,10 +916,10 @@ int RecordingStream::close(void)
 
     LogRel(("Recording: Recording screen #%u stopped\n", this->uScreenID));
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("Recording: Error stopping recording screen #%u, rc=%Rrc\n", this->uScreenID, rc));
-        return rc;
+        LogRel(("Recording: Error stopping recording screen #%u, vrc=%Rrc\n", this->uScreenID, vrc));
+        return vrc;
     }
 
     switch (this->ScreenSettings.enmDest)
@@ -928,14 +928,14 @@ int RecordingStream::close(void)
         {
             if (RTFileIsValid(this->File.hFile))
             {
-                rc = RTFileClose(this->File.hFile);
-                if (RT_SUCCESS(rc))
+                vrc = RTFileClose(this->File.hFile);
+                if (RT_SUCCESS(vrc))
                 {
                     LogRel(("Recording: Closed file '%s'\n", this->ScreenSettings.File.strName.c_str()));
                 }
                 else
                 {
-                    LogRel(("Recording: Error closing file '%s', rc=%Rrc\n", this->ScreenSettings.File.strName.c_str(), rc));
+                    LogRel(("Recording: Error closing file '%s', rc=%Rrc\n", this->ScreenSettings.File.strName.c_str(), vrc));
                     break;
                 }
             }
@@ -949,12 +949,12 @@ int RecordingStream::close(void)
         }
 
         default:
-            rc = VERR_NOT_IMPLEMENTED;
+            vrc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -977,15 +977,15 @@ int RecordingStream::uninitInternal(void)
     if (this->enmState != RECORDINGSTREAMSTATE_INITIALIZED)
         return VINF_SUCCESS;
 
-    int rc = close();
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = close();
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     if (this->ScreenSettings.isFeatureEnabled(RecordingFeature_Video))
     {
-        int rc2 = unitVideo();
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        int vrc2 = unitVideo();
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
     }
 
     RTCritSectDelete(&this->CritSect);
@@ -993,7 +993,7 @@ int RecordingStream::uninitInternal(void)
     this->enmState = RECORDINGSTREAMSTATE_UNINITIALIZED;
     this->fEnabled = false;
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -1047,19 +1047,19 @@ int RecordingStream::initVideo(void)
     this->Video.uLastTimeStampMs      = 0;
     this->Video.uDelayMs              = RT_MS_1SEC / this->ScreenSettings.Video.ulFPS;
 
-    int rc;
+    int vrc;
 
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
-    rc = initVideoVPX();
+    vrc = initVideoVPX();
 #else
-    rc = VERR_NOT_SUPPORTED;
+    vrc = VERR_NOT_SUPPORTED;
 #endif
 
-    if (RT_FAILURE(rc))
-        LogRel(("Recording: Failed to initialize video encoding (%Rrc)\n", rc));
+    if (RT_FAILURE(vrc))
+        LogRel(("Recording: Failed to initialize video encoding (%Rrc)\n", vrc));
 
-    return rc;
+    return vrc;
 }
 
 #ifdef VBOX_WITH_LIBVPX
@@ -1152,7 +1152,7 @@ int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pF
 {
     AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
 
-    int rc;
+    int vrc;
 
     PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
 
@@ -1176,7 +1176,7 @@ int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pF
     this->Video.cFailedEncodingFrames = 0;
 
     vpx_codec_iter_t iter = NULL;
-    rc = VERR_NO_DATA;
+    vrc = VERR_NO_DATA;
     for (;;)
     {
         const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pCodec->VPX.Ctx, &iter);
@@ -1188,7 +1188,7 @@ int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pF
             case VPX_CODEC_CX_FRAME_PKT:
             {
                 WebMWriter::BlockData_VP8 blockData = { &pCodec->VPX.Cfg, pPacket };
-                rc = this->File.pWEBM->WriteBlock(this->uTrackVideo, &blockData, sizeof(blockData));
+                vrc = this->File.pWEBM->WriteBlock(this->uTrackVideo, &blockData, sizeof(blockData));
                 break;
             }
 
@@ -1199,7 +1199,7 @@ int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pF
         }
     }
 
-    return rc;
+    return vrc;
 }
 #endif /* VBOX_WITH_LIBVPX */
 
@@ -1208,8 +1208,8 @@ int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pF
  */
 void RecordingStream::lock(void)
 {
-    int rc = RTCritSectEnter(&CritSect);
-    AssertRC(rc);
+    int vrc = RTCritSectEnter(&CritSect);
+    AssertRC(vrc);
 }
 
 /**
@@ -1217,7 +1217,7 @@ void RecordingStream::lock(void)
  */
 void RecordingStream::unlock(void)
 {
-    int rc = RTCritSectLeave(&CritSect);
-    AssertRC(rc);
+    int vrc = RTCritSectLeave(&CritSect);
+    AssertRC(vrc);
 }
 
