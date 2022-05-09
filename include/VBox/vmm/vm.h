@@ -1247,7 +1247,7 @@ typedef struct VM
             /** Padding for hidden fields. */
             uint8_t                 abHidden0[64];
             /** Host CPU feature information. */
-            CPUMFEATURES            HostFeaturesX;
+            CPUMFEATURES            HostFeatures;
             /** Guest CPU feature information. */
             CPUMFEATURES            GuestFeatures;
         } const ro;
