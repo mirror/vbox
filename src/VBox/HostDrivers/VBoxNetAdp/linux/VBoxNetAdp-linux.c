@@ -282,7 +282,12 @@ static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
     pNetDev->get_stats = vboxNetAdpLinuxGetStats;
 #endif /* RTLNX_VER_MAX(2,6,29) */
 #if RTLNX_VER_MIN(4,10,0)
-    pNetDev->max_mtu = 16110;
+    pNetDev->max_mtu = 65536;
+    pNetDev->features =   NETIF_F_TSO
+                        | NETIF_F_TSO6
+                        | NETIF_F_TSO_ECN
+                        | NETIF_F_SG
+                        | NETIF_F_HW_CSUM;
 #endif /* RTLNX_VER_MIN(4,10,0) */
 
     pNetDev->ethtool_ops = &gEthToolOpsVBoxNetAdp;

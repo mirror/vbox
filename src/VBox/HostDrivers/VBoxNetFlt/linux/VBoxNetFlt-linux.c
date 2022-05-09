@@ -1531,7 +1531,7 @@ static void vboxNetFltLinuxForwardToIntNetInner(PVBOXNETFLTINS pThis, struct sk_
               skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size,
               skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type,
               skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, pBuf->ip_summed));
-#ifndef VBOXNETFLT_SG_SUPPORT
+
         if (RT_LIKELY(fSrc & INTNETTRUNKDIR_HOST))
         {
             /*
@@ -1545,7 +1545,7 @@ static void vboxNetFltLinuxForwardToIntNetInner(PVBOXNETFLTINS pThis, struct sk_
             pBuf->mac_len = pBuf->nh.raw - pBuf->data;
 # endif
         }
-#endif /* !VBOXNETFLT_SG_SUPPORT */
+
 # ifdef VBOXNETFLT_WITH_GSO_RECV
         if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
             && vboxNetFltLinuxCanForwardAsGso(pThis, pBuf, fSrc, &GsoCtx) )
@@ -1698,7 +1698,7 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
  */
 static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
 {
-#ifdef VBOXNETFLT_WITH_GSO_XMIT_WIRE
+#if defined(VBOXNETFLT_WITH_GSO_XMIT_WIRE) || defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
     if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
     {
         struct net_device  *pDev;
@@ -1732,7 +1732,7 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
 
         vboxNetFltRelease(pThis, true /*fBusy*/);
     }
-#endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE */
+#endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE || VBOXNETFLT_WITH_GSO_XMIT_HOST */
 }
 
 /**
