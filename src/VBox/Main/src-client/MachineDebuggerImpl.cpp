@@ -419,8 +419,8 @@ HRESULT MachineDebugger::getExecutionEngine(VMExecutionEngine_T *apenmEngine)
     if (ptrVM.isOk())
     {
         uint8_t bEngine = UINT8_MAX;
-        int rc = ptrVM.vtable()->pfnEMR3QueryMainExecutionEngine(ptrVM.rawUVM(), &bEngine);
-        if (RT_SUCCESS(rc))
+        int vrc = ptrVM.vtable()->pfnEMR3QueryMainExecutionEngine(ptrVM.rawUVM(), &bEngine);
+        if (RT_SUCCESS(vrc))
             switch (bEngine)
             {
                 case VM_EXEC_ENGINE_NOT_SET:    *apenmEngine = VMExecutionEngine_NotSet; break;
@@ -549,7 +549,7 @@ HRESULT MachineDebugger::getPAEEnabled(BOOL *aPAEEnabled)
     if (ptrVM.isOk())
     {
         uint32_t cr4;
-        int rc = ptrVM.vtable()->pfnDBGFR3RegCpuQueryU32(ptrVM.rawUVM(), 0 /*idCpu*/,  DBGFREG_CR4, &cr4); AssertRC(rc);
+        int vrc = ptrVM.vtable()->pfnDBGFR3RegCpuQueryU32(ptrVM.rawUVM(), 0 /*idCpu*/,  DBGFREG_CR4, &cr4); AssertRC(vrc);
         *aPAEEnabled = RT_BOOL(cr4 & X86_CR4_PAE);
     }
     else
