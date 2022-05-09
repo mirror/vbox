@@ -174,6 +174,7 @@ VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS =
 # Generate VBOX_PATH_VALIDATIONKIT.os.arch variables.
 $(foreach os, darwin freebsd linux os2 solaris win,$(foreach arch, x86 amd64, \
 	$(eval VBOX_PATH_VALIDATIONKIT.$(os).$(arch) = $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/$(INST_VALIDATIONKIT)$(os)/$(arch)) \
+	$(eval VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch) = $(abspath $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../testcase/$(os)/$(arch)/testcase)) \
 ))
 
 # Common files first.
@@ -340,10 +341,10 @@ TMP_UNITTESTS_DEPS_LIB :=
 define def_vbox_validationkit_unittests
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
-    	$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/../../testcase/$(os)/$(arch)/$(test_whitelist)$(TMP_SUFF_EXE)))
+		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(test_whitelist)$(TMP_SUFF_EXE)))
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
-    	$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/$(file_dep)$(TMP_SUFF_LIB)))
+		$$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/$(file_dep)$(TMP_SUFF_LIB)))
 endef
 
 TMP_SUFF_EXE=.exe
@@ -408,7 +409,10 @@ ifneq ($(KBUILD_TARGET),os2)
 	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
 endif
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
-	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS)
+	$(foreach os, darwin linux solaris win,$(foreach arch, x86 amd64, \
+		$(call MSG_L1, VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch): $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))) \
+	))
+	$(call MSG_L1, VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS))
 endif
 	$(VBOX_RTISOMAKER) \
 		@$(VBOX_VALIDATIONKIT_ISO_RSP) \
