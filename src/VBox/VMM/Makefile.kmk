@@ -169,6 +169,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/VMMTests.cpp \
 	VMMR3/HM.cpp \
 	VMMAll/APICAll.cpp \
+	VMMAll/CPUMAllCpuId.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
@@ -516,6 +517,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRZ/CPUMRZA.asm \
  	VMMRZ/VMMRZ.cpp \
  	VMMAll/APICAll.cpp \
+	VMMAll/CPUMAllCpuId.cpp \
  	VMMAll/CPUMAllRegs.cpp \
  	VMMAll/CPUMAllMsrs.cpp \
  	VMMAll/DBGFAll.cpp \

@@ -151,6 +151,16 @@ typedef uint64_t STAMCOUNTER;
 /** @} */
 
 
+/** @name XSAVE limits.
+ * @{ */
+/** Max size we accept for the XSAVE area.
+ * @see CPUMCTX::abXSave */
+#define CPUM_MAX_XSAVE_AREA_SIZE    (0x4000 - 0x300)
+/* Min size we accept for the XSAVE area. */
+#define CPUM_MIN_XSAVE_AREA_SIZE    0x240
+/** @} */
+
+
 /**
  * CPU info
  */
@@ -499,10 +509,16 @@ RT_C_DECLS_BEGIN
 
 PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf);
 PCPUMCPUIDLEAF      cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit);
+PCPUMCPUIDLEAF      cpumCpuIdGetLeafInt(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf);
+PCPUMCPUIDLEAF      cpumCpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t cLeaves);
+# ifdef VBOX_STRICT
+void                cpumCpuIdAssertOrder(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves);
+# endif
+int                 cpumCpuIdExplodeFeaturesX86(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPUMMSRS pMsrs,
+                                                PCPUMFEATURES pFeatures);
 
 # ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);
-int                 cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPUMMSRS pMsrs, PCPUMFEATURES pFeatures);
 int                 cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs);
 void                cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS pGuestVmxMsrs);
 void                cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);

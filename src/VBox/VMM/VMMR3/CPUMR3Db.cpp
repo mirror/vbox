@@ -887,21 +887,21 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         rc = CPUMR3CpuIdDetectUnknownLeafMethod(&pInfo->enmUnknownCpuIdMethod, &pInfo->DefCpuId);
         if (RT_FAILURE(rc))
             return rc;
-        rc = CPUMR3CpuIdCollectLeaves(&pInfo->paCpuIdLeavesR3, &pInfo->cCpuIdLeaves);
+        rc = CPUMCpuIdCollectLeavesX86(&pInfo->paCpuIdLeavesR3, &pInfo->cCpuIdLeaves);
         if (RT_FAILURE(rc))
             return rc;
         pInfo->fMxCsrMask = CPUMR3DeterminHostMxCsrMask();
 
         /* Lookup database entry for MSRs. */
-        CPUMCPUVENDOR const enmVendor    = CPUMR3CpuIdDetectVendorEx(pInfo->paCpuIdLeavesR3[0].uEax,
-                                                                     pInfo->paCpuIdLeavesR3[0].uEbx,
-                                                                     pInfo->paCpuIdLeavesR3[0].uEcx,
-                                                                     pInfo->paCpuIdLeavesR3[0].uEdx);
+        CPUMCPUVENDOR const enmVendor    = CPUMCpuIdDetectX86VendorEx(pInfo->paCpuIdLeavesR3[0].uEax,
+                                                                      pInfo->paCpuIdLeavesR3[0].uEbx,
+                                                                      pInfo->paCpuIdLeavesR3[0].uEcx,
+                                                                      pInfo->paCpuIdLeavesR3[0].uEdx);
         uint32_t      const uStd1Eax     = pInfo->paCpuIdLeavesR3[1].uEax;
         uint8_t       const uFamily      = RTX86GetCpuFamily(uStd1Eax);
         uint8_t       const uModel       = RTX86GetCpuModel(uStd1Eax, enmVendor == CPUMCPUVENDOR_INTEL);
         uint8_t       const uStepping    = RTX86GetCpuStepping(uStd1Eax);
-        CPUMMICROARCH const enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(enmVendor, uFamily, uModel, uStepping);
+        CPUMMICROARCH const enmMicroarch = CPUMCpuIdDetermineX86MicroarchEx(enmVendor, uFamily, uModel, uStepping);
 
         for (unsigned i = 0; i < RT_ELEMENTS(g_apCpumDbEntries); i++)
         {
@@ -962,14 +962,14 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
 
         if (pEntry)
             LogRel(("CPUM: Matched host CPU %s %#x/%#x/%#x %s with CPU DB entry '%s' (%s %#x/%#x/%#x %s)\n",
-                    CPUMR3CpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMR3MicroarchName(enmMicroarch),
-                    pEntry->pszName,  CPUMR3CpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor), pEntry->uFamily, pEntry->uModel,
-                    pEntry->uStepping, CPUMR3MicroarchName(pEntry->enmMicroarch) ));
+                    CPUMCpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMMicroarchName(enmMicroarch),
+                    pEntry->pszName,  CPUMCpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor), pEntry->uFamily, pEntry->uModel,
+                    pEntry->uStepping, CPUMMicroarchName(pEntry->enmMicroarch) ));
         else
         {
             pEntry = g_apCpumDbEntries[0];
             LogRel(("CPUM: No matching processor database entry %s %#x/%#x/%#x %s, falling back on '%s'\n",
-                    CPUMR3CpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMR3MicroarchName(enmMicroarch),
+                    CPUMCpuVendorName(enmVendor), uFamily, uModel, uStepping, CPUMMicroarchName(enmMicroarch),
                     pEntry->pszName));
         }
     }
@@ -1015,8 +1015,8 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         pInfo->fMxCsrMask            = pEntry->fMxCsrMask;
 
         LogRel(("CPUM: Using CPU DB entry '%s' (%s %#x/%#x/%#x %s)\n",
-                pEntry->pszName, CPUMR3CpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor),
-                pEntry->uFamily, pEntry->uModel, pEntry->uStepping, CPUMR3MicroarchName(pEntry->enmMicroarch) ));
+                pEntry->pszName, CPUMCpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor),
+                pEntry->uFamily, pEntry->uModel, pEntry->uStepping, CPUMMicroarchName(pEntry->enmMicroarch) ));
     }
 
     pInfo->fMsrMask             = pEntry->fMsrMask;

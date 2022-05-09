@@ -106,6 +106,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
+#define CPUM_WITH_NONCONST_HOST_FEATURES
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/vmm/cpumctx-v1_6.h>
@@ -184,6 +185,11 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+/** Host CPU features. */
+DECL_HIDDEN_DATA(CPUHOSTFEATURES) g_CpumHostFeatures;
+#endif
+
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
 {
@@ -2033,12 +2039,13 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     PCPUMCPUIDLEAF  paLeaves;
     uint32_t        cLeaves;
-    rc = CPUMR3CpuIdCollectLeaves(&paLeaves, &cLeaves);
+    rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = cpumR3CpuIdExplodeFeatures(paLeaves, cLeaves, &HostMsrs, &pVM->cpum.s.HostFeatures);
+    rc = cpumCpuIdExplodeFeaturesX86(paLeaves, cLeaves, &HostMsrs, &g_CpumHostFeatures.s);
     RTMemFree(paLeaves);
     AssertLogRelRCReturn(rc, rc);
+    pVM->cpum.s.HostFeatures               = g_CpumHostFeatures.s;
     pVM->cpum.s.GuestFeatures.enmCpuVendor = pVM->cpum.s.HostFeatures.enmCpuVendor;
 #endif
 

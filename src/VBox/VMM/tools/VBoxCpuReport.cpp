@@ -4459,13 +4459,13 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
     ASMCpuIdExSlow(0, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
     if (!RTX86IsValidStdRange(uEax))
         return RTMsgErrorRc(VERR_NOT_SUPPORTED, "Invalid std CPUID range: %#x\n", uEax);
-    g_enmVendor = CPUMR3CpuIdDetectVendorEx(uEax, uEbx, uEcx, uEdx);
+    g_enmVendor = CPUMCpuIdDetectX86VendorEx(uEax, uEbx, uEcx, uEdx);
 
     ASMCpuIdExSlow(1, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    g_enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(g_enmVendor,
-                                                     RTX86GetCpuFamily(uEax),
-                                                     RTX86GetCpuModel(uEax, g_enmVendor == CPUMCPUVENDOR_INTEL),
-                                                     RTX86GetCpuStepping(uEax));
+    g_enmMicroarch = CPUMCpuIdDetermineX86MicroarchEx(g_enmVendor,
+                                                      RTX86GetCpuFamily(uEax),
+                                                      RTX86GetCpuModel(uEax, g_enmVendor == CPUMCPUVENDOR_INTEL),
+                                                      RTX86GetCpuStepping(uEax));
     g_fIntelNetBurst = CPUMMICROARCH_IS_INTEL_NETBURST(g_enmMicroarch);
 
     /*
@@ -4521,7 +4521,7 @@ static int produceCpuIdArray(const char *pszNameC, const char *pszCpuDesc)
      */
     PCPUMCPUIDLEAF  paLeaves;
     uint32_t        cLeaves;
-    int rc = CPUMR3CpuIdCollectLeaves(&paLeaves, &cLeaves);
+    int rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "CPUMR3CollectCpuIdInfo failed: %Rrc\n", rc);
 
@@ -4639,19 +4639,19 @@ static int produceCpuReport(void)
     if (!RTX86IsValidStdRange(uEax))
         return RTMsgErrorRc(VERR_NOT_SUPPORTED, "Invalid std CPUID range: %#x\n", uEax);
 
-    CPUMCPUVENDOR enmVendor = CPUMR3CpuIdDetectVendorEx(uEax, uEbx, uEcx, uEdx);
+    CPUMCPUVENDOR enmVendor = CPUMCpuIdDetectX86VendorEx(uEax, uEbx, uEcx, uEdx);
     if (enmVendor == CPUMCPUVENDOR_UNKNOWN)
         return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "Unknown CPU vendor: %.4s%.4s%.4s\n", &uEbx, &uEdx, &uEcx);
-    vbCpuRepDebug("CPU Vendor: %s - %.4s%.4s%.4s\n", CPUMR3CpuVendorName(enmVendor), &uEbx, &uEdx, &uEcx);
+    vbCpuRepDebug("CPU Vendor: %s - %.4s%.4s%.4s\n", CPUMCpuVendorName(enmVendor), &uEbx, &uEdx, &uEcx);
 
     /*
      * Determine the micro arch.
      */
     ASMCpuIdExSlow(1, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    CPUMMICROARCH enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(enmVendor,
-                                                                 RTX86GetCpuFamily(uEax),
-                                                                 RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
-                                                                 RTX86GetCpuStepping(uEax));
+    CPUMMICROARCH enmMicroarch = CPUMCpuIdDetermineX86MicroarchEx(enmVendor,
+                                                                  RTX86GetCpuFamily(uEax),
+                                                                  RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
+                                                                  RTX86GetCpuStepping(uEax));
 
     /*
      * Generate a name.
@@ -4793,7 +4793,7 @@ static int produceCpuReport(void)
         return rc;
 
     CPUMUNKNOWNCPUID enmUnknownMethod;
-    CPUMCPUID       DefUnknown;
+    CPUMCPUID        DefUnknown;
     rc = CPUMR3CpuIdDetectUnknownLeafMethod(&enmUnknownMethod, &DefUnknown);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "CPUMR3DetectCpuIdUnknownMethod failed: %Rrc\n", rc);
@@ -4841,11 +4841,11 @@ static int produceCpuReport(void)
                    szNameC,
                    pszName,
                    pszCpuDesc,
-                   CPUMR3CpuVendorName(enmVendor),
+                   CPUMCpuVendorName(enmVendor),
                    RTX86GetCpuFamily(uEax),
                    RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
                    RTX86GetCpuStepping(uEax),
-                   CPUMR3MicroarchName(enmMicroarch),
+                   CPUMMicroarchName(enmMicroarch),
                    vbCpuRepGuessScalableBusFrequencyName(),
                    vbCpuRepGetPhysAddrWidth(),
                    CPUMR3DeterminHostMxCsrMask(),

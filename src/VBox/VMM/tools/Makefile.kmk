@@ -61,7 +61,8 @@ VBoxCpuReport_INCS      = ../include
 VBoxCpuReport_SOURCES   = \
 	VBoxCpuReport.cpp \
 	VBoxCpuReportMsrSup.cpp \
-	../VMMR3/CPUMR3CpuId.cpp
+	../VMMR3/CPUMR3CpuId.cpp \
+	../VMMAll/CPUMAllCpuId.cpp
 VBoxCpuReport_SOURCES.linux = \
 	VBoxCpuReportMsrLinux.cpp
 VBoxCpuReport_DEFS.linux    = VBCR_HAVE_PLATFORM_MSR_PROBER

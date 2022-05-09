@@ -1406,6 +1406,31 @@ typedef CPUMFEATURES *PCPUMFEATURES;
 /** Pointer to a const CPU feature structure. */
 typedef CPUMFEATURES const *PCCPUMFEATURES;
 
+/**
+ * Chameleon wrapper structure for the host CPU features.
+ *
+ * This is used for the globally readable g_CpumHostFeatures variable, which is
+ * initialized once during VMMR0 load for ring-0 and during CPUMR3Init in
+ * ring-3.  To reflect this immutability after load/init, we use this wrapper
+ * structure to switch it between const and non-const depending on the context.
+ * Only two files sees it as non-const (CPUMR0.cpp and CPUM.cpp).
+ */
+typedef struct CPUHOSTFEATURES
+{
+    CPUMFEATURES
+#ifndef CPUM_WITH_NONCONST_HOST_FEATURES
+    const
+#endif
+                    s;
+} CPUHOSTFEATURES;
+/** Pointer to a const host CPU feature structure. */
+typedef CPUHOSTFEATURES const *PCCPUHOSTFEATURES;
+
+/** Host CPU features.
+ * @note In ring-3, only valid after CPUMR3Init.  In ring-0, valid after
+ *       module init. */
+extern CPUHOSTFEATURES g_CpumHostFeatures;
+
 
 /**
  * CPU database entry.
@@ -1466,6 +1491,11 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
+
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+VMMDECL(int)                CPUMCpuIdCollectLeavesX86(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
+VMMDECL(CPUMCPUVENDOR)      CPUMCpuIdDetectX86VendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
+#endif
 
 /** @name Guest Register Getters.
  * @{ */
@@ -2724,15 +2754,15 @@ VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTRE
 VMMR3DECL(int)              CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf);
 VMMR3DECL(int)              CPUMR3CpuIdGetLeaf(PVM pVM, PCPUMCPUIDLEAF pLeaf, uint32_t uLeaf, uint32_t uSubLeaf);
 VMMR3_INT_DECL(PCCPUMCPUIDLEAF) CPUMR3CpuIdGetPtr(PVM pVM, uint32_t *pcLeaves);
-VMMR3DECL(CPUMMICROARCH)    CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor, uint8_t bFamily,
-                                                            uint8_t bModel, uint8_t bStepping);
-VMMR3DECL(const char *)     CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch);
-VMMR3DECL(int)              CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
+VMMDECL(CPUMMICROARCH)      CPUMCpuIdDetermineX86MicroarchEx(CPUMCPUVENDOR enmVendor, uint8_t bFamily,
+                                                             uint8_t bModel, uint8_t bStepping);
+VMMDECL(const char *)       CPUMMicroarchName(CPUMMICROARCH enmMicroarch);
 VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUNKNOWNCPUID penmUnknownMethod, PCPUMCPUID pDefUnknown);
 VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnknownMethod);
-VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
-VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
+VMMR3DECL(const char *)     CPUMCpuVendorName(CPUMCPUVENDOR enmVendor);
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 VMMR3DECL(uint32_t)         CPUMR3DeterminHostMxCsrMask(void);
+#endif
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 

@@ -20,7 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
+#define CPUM_WITH_NONCONST_HOST_FEATURES
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/hm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
@@ -70,6 +72,11 @@ typedef struct CPUMHOSTLAPIC
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** Host CPU features. */
+DECL_HIDDEN_DATA(CPUHOSTFEATURES)  g_CpumHostFeatures;
+/** Static storage for host MSRs. */
+static CPUMMSRS     g_CpumHostMsrs;
+
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
 #endif
@@ -110,11 +117,48 @@ static int  cpumR0SaveHostDebugState(PVMCPUCC pVCpu);
  */
 VMMR0_INT_DECL(int) CPUMR0ModuleInit(void)
 {
-    int rc = VINF_SUCCESS;
+    /*
+     * Query the hardware virtualization capabilities of the host CPU first.
+     */
+    uint32_t fHwCaps = 0;
+    int rc = SUPR0GetVTSupport(&fHwCaps);
+    AssertLogRelMsg(RT_SUCCESS(rc) || rc == VERR_UNSUPPORTED_CPU || rc == VERR_SVM_NO_SVM || rc == VERR_VMX_NO_VMX,
+                    ("SUPR0GetHwvirtMsrs -> %Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+    {
+        SUPHWVIRTMSRS HwvirtMsrs;
+        rc = SUPR0GetHwvirtMsrs(&HwvirtMsrs, fHwCaps, false /*fIgnored*/);
+        AssertLogRelRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            if (fHwCaps & SUPVTCAPS_VT_X)
+                HMGetVmxMsrsFromHwvirtMsrs(&HwvirtMsrs, &g_CpumHostMsrs.hwvirt.vmx);
+            else
+                HMGetSvmMsrsFromHwvirtMsrs(&HwvirtMsrs, &g_CpumHostMsrs.hwvirt.svm);
+        }
+    }
+
+    /*
+     * Collect CPUID leaves.
+     */
+    PCPUMCPUIDLEAF  paLeaves;
+    uint32_t        cLeaves;
+    rc = CPUMCpuIdCollectLeavesX86(&paLeaves, &cLeaves);
+    AssertLogRelRCReturn(rc, rc);
+    /** @todo check out the CPUID info with the other CPUs in the system. */
+
+    /*
+     * Populate the host CPU feature global variable.
+     */
+    rc = cpumCpuIdExplodeFeaturesX86(paLeaves, cLeaves, &g_CpumHostMsrs, &g_CpumHostFeatures.s);
+    RTMemFree(paLeaves);
+    AssertLogRelRCReturn(rc, rc);
+
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    rc = cpumR0MapLocalApics();
+    return cpumR0MapLocalApics();
+#else
+    return VINF_SUCCESS;
 #endif
-    return rc;
 }
 
 
