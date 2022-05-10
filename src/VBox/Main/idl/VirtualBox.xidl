@@ -11344,7 +11344,7 @@
 
   <interface
     name="IUpdateAgent" extends="$unknown"
-    uuid="4c3788aa-747f-4a3c-a159-fb6df7a00532"
+    uuid="c4b1b5f4-8cdf-4923-9ef6-b92476a84109"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="4"
     >
@@ -11505,18 +11505,6 @@
       <note>
         Only repositories with the https:// URL scheme are allowed.
       </note>
-    </attribute>
-
-    <attribute name="proxyMode" type="ProxyMode" readonly="no">
-      <desc>
-        Proxy mode to use.
-      </desc>
-    </attribute>
-
-    <attribute name="proxyURL" type="wstring" readonly="no">
-      <desc>
-        Proxy URL to use.
-      </desc>
     </attribute>
 
     <attribute name="lastCheckDate" type="wstring" readonly="yes">

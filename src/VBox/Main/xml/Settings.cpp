@@ -1648,7 +1648,6 @@ UpdateAgent::UpdateAgent()
    : fEnabled(false)
    , enmChannel(UpdateChannel_Stable)
    , uCheckFreqSeconds(RT_SEC_1DAY)
-   , enmProxyMode(ProxyMode_NoProxy)
    , uCheckCount(0)
 {
 }
@@ -2358,8 +2357,6 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                                 pelmLevel4Child->getAttributeValue("channel", (uint32_t&)updateHost.enmChannel);
                                 pelmLevel4Child->getAttributeValue("checkFreqSec", updateHost.uCheckFreqSeconds);
                                 pelmLevel4Child->getAttributeValue("repoUrl", updateHost.strRepoUrl);
-                                pelmLevel4Child->getAttributeValue("proxyMode", (uint32_t&)updateHost.enmProxyMode);
-                                pelmLevel4Child->getAttributeValue("proxyUrl", updateHost.strProxyUrl);
                                 pelmLevel4Child->getAttributeValue("lastCheckDate", updateHost.strLastCheckDate);
                                 pelmLevel4Child->getAttributeValue("checkCount", updateHost.uCheckCount);
                             }
@@ -2606,9 +2603,6 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     pelmUpdateHost->setAttribute("checkFreqSec", updateHost.uCheckFreqSeconds);
     if (updateHost.strRepoUrl.length())
         pelmUpdateHost->setAttribute("repoUrl", updateHost.strRepoUrl);
-    pelmUpdateHost->setAttribute("proxyMode", (int32_t)updateHost.enmProxyMode);
-    if (updateHost.strProxyUrl.length())
-        pelmUpdateHost->setAttribute("proxyUrl", updateHost.strProxyUrl);
     if (updateHost.strLastCheckDate.length())
         pelmUpdateHost->setAttribute("lastCheckDate", updateHost.strLastCheckDate);
     pelmUpdateHost->setAttribute("checkCount", updateHost.uCheckCount);

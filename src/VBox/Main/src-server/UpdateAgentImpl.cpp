@@ -332,11 +332,7 @@ HRESULT UpdateAgent::init(VirtualBox *aVirtualBox)
 
     HRESULT hr = unconst(m_EventSource).createObject();
     if (SUCCEEDED(hr))
-    {
         hr = m_EventSource->init();
-        if (SUCCEEDED(hr))
-            mData.m_fUseOwnProxy = false;
-    }
 
     return hr;
 }
@@ -558,40 +554,6 @@ HRESULT UpdateAgent::setRepositoryURL(const com::Utf8Str &aRepo)
     return i_commitSettings(alock);
 }
 
-HRESULT UpdateAgent::getProxyMode(ProxyMode_T *aMode)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return i_getProxyMode(aMode);
-}
-
-HRESULT UpdateAgent::setProxyMode(ProxyMode_T aMode)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m->enmProxyMode = aMode;
-    mData.m_fUseOwnProxy = true;
-
-    return i_commitSettings(alock);
-}
-
-HRESULT UpdateAgent::getProxyURL(com::Utf8Str &aAddress)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return i_getProxyURL(aAddress);
-}
-
-HRESULT UpdateAgent::setProxyURL(const com::Utf8Str &aAddress)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m->strProxyUrl = aAddress;
-    mData.m_fUseOwnProxy = true;
-
-    return i_commitSettings(alock);
-}
-
 HRESULT UpdateAgent::getLastCheckDate(com::Utf8Str &aDate)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -693,12 +655,6 @@ HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
     m->uCheckFreqSeconds = data.uCheckFreqSeconds;
     if (data.strRepoUrl.isNotEmpty()) /* Prevent overwriting the agent's default URL when XML settings are empty. */
         m->strRepoUrl    = data.strRepoUrl;
-    m->enmProxyMode      = data.enmProxyMode;
-    if (data.strProxyUrl.isNotEmpty()) /* Explicitly set (and mark) an own proxy? */
-    {
-        m->strProxyUrl   = data.strProxyUrl;
-        mData.m_fUseOwnProxy = true;
-    }
     m->strLastCheckDate  = data.strLastCheckDate;
     m->uCheckCount       = data.uCheckCount;
 
@@ -723,14 +679,6 @@ HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data = *m;
-
-    /* Cancel out eventually set proxy settings if those were not explicitly set.
-     * This way the ISystemProperties proxy settings will be used then. */
-    if (!mData.m_fUseOwnProxy)
-    {
-        data.strProxyUrl  = "";
-        data.enmProxyMode = ProxyMode_System;
-    }
 
     return S_OK;
 }
@@ -796,20 +744,10 @@ HRESULT UpdateAgent::i_commitSettings(AutoWriteLock &aLock)
  */
 HRESULT UpdateAgent::i_getProxyMode(ProxyMode_T *aMode)
 {
-    HRESULT hrc;
-
-    if (!mData.m_fUseOwnProxy) /* If not explicitly set, use the ISystemProperties proxy settings. */
-    {
-        ComPtr<ISystemProperties> pSystemProperties;
-        hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-        if (SUCCEEDED(hrc))
-            hrc = pSystemProperties->COMGETTER(ProxyMode)(aMode);
-    }
-    else
-    {
-        *aMode = m->enmProxyMode;
-        hrc = S_OK;
-    }
+    ComPtr<ISystemProperties> pSystemProperties;
+    HRESULT hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    if (SUCCEEDED(hrc))
+        hrc = pSystemProperties->COMGETTER(ProxyMode)(aMode);
 
     return hrc;
 }
@@ -822,24 +760,14 @@ HRESULT UpdateAgent::i_getProxyMode(ProxyMode_T *aMode)
  */
 HRESULT UpdateAgent::i_getProxyURL(com::Utf8Str &aUrl)
 {
-    HRESULT hrc;
-
-    if (!mData.m_fUseOwnProxy) /* If not explicitly set, use the ISystemProperties proxy settings. */
+    ComPtr<ISystemProperties> pSystemProperties;
+    HRESULT hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        ComPtr<ISystemProperties> pSystemProperties;
-        hrc = m_VirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        com::Bstr bstrVal;
+        hrc = pSystemProperties->COMGETTER(ProxyURL)(bstrVal.asOutParam());
         if (SUCCEEDED(hrc))
-        {
-            com::Bstr bstrVal;
-            hrc = pSystemProperties->COMGETTER(ProxyURL)(bstrVal.asOutParam());
-            if (SUCCEEDED(hrc))
-                aUrl = bstrVal;
-        }
-    }
-    else
-    {
-        aUrl = m->strProxyUrl;
-        hrc = S_OK;
+            aUrl = bstrVal;
     }
 
     return hrc;

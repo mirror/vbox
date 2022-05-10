@@ -96,9 +96,6 @@ protected:
         bool                               m_fHidden;
         UpdateState_T                      m_enmState;
         uint32_t                           m_uOrder;
-        /** Whether to use the own (dedicated) proxy settings or
-         *  use the ones of ISystemProperties. */
-        bool                               m_fUseOwnProxy;
 
         Data(void)
         {
@@ -173,10 +170,6 @@ protected:
     HRESULT setChannel(UpdateChannel_T aChannel);
     HRESULT getRepositoryURL(com::Utf8Str &aRepo);
     HRESULT setRepositoryURL(const com::Utf8Str &aRepo);
-    HRESULT getProxyMode(ProxyMode_T *aMode);
-    HRESULT setProxyMode(ProxyMode_T aMode);
-    HRESULT getProxyURL(com::Utf8Str &aAddress);
-    HRESULT setProxyURL(const com::Utf8Str &aAddress);
     HRESULT getLastCheckDate(com::Utf8Str &aData);
     HRESULT getIsCheckNeeded(BOOL *aCheckNeeded);
     HRESULT getSupportedChannels(std::vector<UpdateChannel_T> &aSupportedChannels);

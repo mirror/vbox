@@ -311,8 +311,6 @@ struct UpdateAgent
     UpdateChannel_T         enmChannel;
     uint32_t                uCheckFreqSeconds;
     com::Utf8Str            strRepoUrl;
-    ProxyMode_T             enmProxyMode;
-    com::Utf8Str            strProxyUrl;
     com::Utf8Str            strLastCheckDate;
     uint32_t                uCheckCount;
 };
