@@ -186,6 +186,8 @@ struct X11CONTEXT
     XRRCrtcInfo* (*pXRRGetCrtcInfo) (Display *, XRRScreenResources *, RRCrtc crtc);
     void (*pXRRFreeCrtcInfo)(XRRCrtcInfo *);
     void (*pXRRAddOutputMode)(Display *, RROutput, RRMode);
+    void (*pXRRDeleteOutputMode)(Display *, RROutput, RRMode);
+    void (*pXRRDestroyMode)(Display *, RRMode);
     void (*pXRRSetOutputPrimary)(Display *, Window, RROutput);
 };
 
@@ -956,6 +958,12 @@ static int openLibRandR()
     *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
     checkFunctionPtr(x11Context.pXRRAddOutputMode);
 
+    *(void **)(&x11Context.pXRRDeleteOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRDeleteOutputMode");
+    checkFunctionPtr(x11Context.pXRRDeleteOutputMode);
+
+    *(void **)(&x11Context.pXRRDestroyMode) = dlsym(x11Context.pRandLibraryHandle, "XRRDestroyMode");
+    checkFunctionPtr(x11Context.pXRRDestroyMode);
+
     *(void **)(&x11Context.pXRRSetOutputPrimary) = dlsym(x11Context.pRandLibraryHandle, "XRRSetOutputPrimary");
     checkFunctionPtr(x11Context.pXRRSetOutputPrimary);
 
@@ -985,6 +993,8 @@ static void x11Connect()
     x11Context.pXRRGetCrtcInfo = NULL;
     x11Context.pXRRFreeCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
+    x11Context.pXRRDeleteOutputMode = NULL;
+    x11Context.pXRRDestroyMode = NULL;
     x11Context.pXRRSetOutputPrimary = NULL;
     x11Context.fWmwareCtrlExtention = false;
     x11Context.fMonitorInfoAvailable = false;
@@ -1273,6 +1283,14 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
         VBClLogError("Output index %d is greater than # of oputputs %d\n", iOutputIndex, x11Context.hOutputCount);
         return false;
     }
+
+    AssertReturn(iOutputIndex >= 0, false);
+    AssertReturn(iOutputIndex < VMW_MAX_HEADS, false);
+
+    /* Remember the last instantiated display mode ID here. This mode will be replaced with the
+     * new one on the next guest screen resize event. */
+    static RRMode aPrevMode[VMW_MAX_HEADS];
+
     RROutput outputId = x11Context.pScreenResources->outputs[iOutputIndex];
     XRROutputInfo *pOutputInfo = NULL;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
@@ -1308,6 +1326,24 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRAddOutputMode)
         x11Context.pXRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
 #endif
+
+    /* Destroy and forget mode created on previous guest screen resize event. */
+    if (   aPrevMode[outputId] > 0
+        && pModeInfo->id != aPrevMode[outputId])
+    {
+        VBClLogInfo("removing unused mode %u\n", aPrevMode[outputId]);
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[outputId]);
+        XRRDestroyMode(x11Context.pDisplay, aPrevMode[outputId]);
+#else
+        if (x11Context.pXRRDeleteOutputMode)
+            x11Context.pXRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[outputId]);
+        if (x11Context.pXRRDestroyMode)
+            x11Context.pXRRDestroyMode(x11Context.pDisplay, aPrevMode[outputId]);
+#endif
+    }
+
+    aPrevMode[outputId] = pModeInfo->id;
 
     if (paOutputs[iOutputIndex].fPrimary)
     {
