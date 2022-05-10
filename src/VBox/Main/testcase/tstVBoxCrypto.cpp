@@ -127,30 +127,35 @@ int main(int argc, char *argv[])
     {
         /* Try find it in the extension pack. */
         /** @todo */
+        RTTestSkipped(g_hTest, "Getting the module from the extension pack is not implemented yet, skipping testcase");
     }
 
-    RTLDRMOD hLdrModCrypto = NIL_RTLDRMOD;
-    int rc = RTLdrLoad(pszModCrypto, &hLdrModCrypto);
-    if (RT_SUCCESS(rc))
+    if (pszModCrypto)
     {
-        PFNVBOXCRYPTOENTRY pfnCryptoEntry = NULL;
-        rc = RTLdrGetSymbol(hLdrModCrypto, VBOX_CRYPTO_MOD_ENTRY_POINT, (void **)&pfnCryptoEntry);
+        RTLDRMOD hLdrModCrypto = NIL_RTLDRMOD;
+        int rc = RTLdrLoad(pszModCrypto, &hLdrModCrypto);
         if (RT_SUCCESS(rc))
         {
-            PCVBOXCRYPTOIF pCryptoIf = NULL;
-            rc = pfnCryptoEntry(&pCryptoIf);
+            PFNVBOXCRYPTOENTRY pfnCryptoEntry = NULL;
+            rc = RTLdrGetSymbol(hLdrModCrypto, VBOX_CRYPTO_MOD_ENTRY_POINT, (void **)&pfnCryptoEntry);
             if (RT_SUCCESS(rc))
             {
-                /* Loading succeeded, now we can start real testing. */
-                tstCryptoKeyStoreBasics(pCryptoIf);
+                PCVBOXCRYPTOIF pCryptoIf = NULL;
+                rc = pfnCryptoEntry(&pCryptoIf);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Loading succeeded, now we can start real testing. */
+                    tstCryptoKeyStoreBasics(pCryptoIf);
+                }
+                else
+                    RTTestIFailed("Calling '%s' failed with %Rrc", VBOX_CRYPTO_MOD_ENTRY_POINT, rc);
             }
             else
-                RTTestIFailed("Calling '%s' failed with %Rrc", VBOX_CRYPTO_MOD_ENTRY_POINT, rc);
+                RTTestIFailed("Failed to resolve entry point '%s' with %Rrc", VBOX_CRYPTO_MOD_ENTRY_POINT, rc);
         }
         else
-            RTTestIFailed("Failed to resolve entry point '%s' with %Rrc", VBOX_CRYPTO_MOD_ENTRY_POINT, rc);
+            RTTestIFailed("Failed to load the crypto module '%s' with %Rrc", pszModCrypto, rc);
     }
-    else
-        RTTestIFailed("Failed to load the crypto module '%s' with %Rrc", pszModCrypto, rc);
+
     return RTTestSummaryAndDestroy(g_hTest);
 }
