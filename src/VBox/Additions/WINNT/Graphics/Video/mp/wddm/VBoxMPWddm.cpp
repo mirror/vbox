@@ -5069,7 +5069,7 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
         DriverInitializationData.DxgkDdiBuildPagingBuffer = GaDxgkDdiBuildPagingBuffer;
         DriverInitializationData.DxgkDdiQueryCurrentFence = GaDxgkDdiQueryCurrentFence;
         DriverInitializationData.DxgkDdiRender            = GaDxgkDdiRender;
-        DriverInitializationData.DxgkDdiPresent           = GaDxgkDdiPresent;
+        DriverInitializationData.DxgkDdiPresent           = SvgaDxgkDdiPresent;
     }
     else
 #endif

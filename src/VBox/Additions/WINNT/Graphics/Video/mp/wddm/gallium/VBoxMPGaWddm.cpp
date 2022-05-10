@@ -451,23 +451,30 @@ static void gaReportFence(PVBOXMP_DEVEXT pDevExt)
 #define GA_DMA_MIN_SUBMIT_SIZE 4
 AssertCompile(GA_DMA_MIN_SUBMIT_SIZE < sizeof(SVGA3dCmdHeader));
 
-DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmGetAllocationFromAllocList(DXGK_ALLOCATIONLIST *pAllocList)
+DECLINLINE(PVBOXWDDM_ALLOCATION) getAllocationFromAllocationListEntry(DXGK_ALLOCATIONLIST *pAllocationListEntry)
 {
-    PVBOXWDDM_OPENALLOCATION pOa = (PVBOXWDDM_OPENALLOCATION)pAllocList->hDeviceSpecificAllocation;
-    return pOa? pOa->pAllocation: NULL;
+    PVBOXWDDM_OPENALLOCATION pOA = (PVBOXWDDM_OPENALLOCATION)pAllocationListEntry->hDeviceSpecificAllocation;
+    return pOA? pOA->pAllocation: NULL;
 }
 
 static NTSTATUS gaGMRFBToVRAMSurface(DXGKARG_PRESENT *pPresent,
                                      PVBOXWDDM_EXT_VMSVGA pSvga,
                                      uint32_t idxAllocation,
-                                     DXGK_ALLOCATIONLIST *pAllocationList,
+                                     DXGK_ALLOCATIONLIST *pAllocationListEntry,
                                      PVBOXWDDM_ALLOCATION pAllocation,
                                      uint8_t *pu8Target, uint32_t cbTarget, uint32_t *pu32TargetOut)
 {
+    uint32_t Pitch;
+    if (   pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
+        || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE)
+        Pitch = pAllocation->AllocData.SurfDesc.pitch;
+    else
+        AssertFailedReturn(STATUS_INVALID_PARAMETER);
+
     NTSTATUS Status = SvgaGenDefineGMRFB(pSvga,
-                                         pAllocationList->SegmentId != 0 ?
-                                             pAllocationList->PhysicalAddress.LowPart : 0,
-                                         pAllocation->AllocData.SurfDesc.pitch,
+                                         pAllocationListEntry->SegmentId != 0 ?
+                                             pAllocationListEntry->PhysicalAddress.LowPart : 0,
+                                         Pitch,
                                          pu8Target, cbTarget, pu32TargetOut);
     if (Status == STATUS_SUCCESS)
     {
@@ -573,11 +580,23 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                                                   &pPresent->pDstSubRects[iSubRect],
                                                   pu8Target, cbTarget, &cbCmd);
             }
-            else if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+            else if (   pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                     || pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D
+#endif
+                    )
             {
                 /* From a surface. */
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                uint32_t const sid = pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D
+                                   ? pSrcAlloc->dx.sid
+                                   : pSrcAlloc->AllocData.hostID;
+#else
+                uint32_t const sid = pSrcAlloc->AllocData.hostID;
+#endif
+
                 GALOGG(GALOG_GROUP_PRESENT, ("Blt: surface sid=%u -> SHAREDPRIMARYSURFACE 0x%08X\n",
-                    pSrcAlloc->AllocData.hostID, pDst->PhysicalAddress.LowPart));
+                    sid, pDst->PhysicalAddress.LowPart));
 
                 RECT const dstRect = pPresent->pDstSubRects[iSubRect];
                 RECT srcRect;
@@ -587,7 +606,7 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                 srcRect.bottom = dstRect.bottom + dy;
                 RECT clipRect = dstRect;
                 Status = SvgaGenBlitSurfaceToScreen(pSvga,
-                                                    pSrcAlloc->AllocData.hostID,
+                                                    sid,
                                                     &srcRect,
                                                     pDstAlloc->AllocData.SurfDesc.VidPnSourceId,
                                                     &dstRect,
@@ -620,11 +639,23 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                                                   &pPresent->pDstSubRects[iSubRect],
                                                   pu8Target, cbTarget, &cbCmd);
             }
-            else if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+            else if (   pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                     || pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D
+#endif
+                    )
             {
                 /* From a surface. */
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                uint32_t const sid = pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D
+                                   ? pSrcAlloc->dx.sid
+                                   : pSrcAlloc->AllocData.hostID;
+#else
+                uint32_t const sid = pSrcAlloc->AllocData.hostID;
+#endif
+
                 GALOGG(GALOG_GROUP_PRESENT, ("Blt: surface sid=%u -> %s(%d) %d:0x%08X\n",
-                    pSrcAlloc->AllocData.hostID,
+                    sid,
                     vboxWddmAllocTypeString(pDstAlloc),
                     pDstAlloc->enmType, pDst->SegmentId, pDst->PhysicalAddress.LowPart));
 
@@ -634,7 +665,7 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                 guestImage.pitch      = pDstAlloc->AllocData.SurfDesc.pitch;
 
                 SVGA3dSurfaceImageId surfId;
-                surfId.sid    = pSrcAlloc->AllocData.hostID;
+                surfId.sid    = sid;
                 surfId.face   = 0;
                 surfId.mipmap = 0;
 
@@ -690,11 +721,104 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
     return Status;
 }
 
-static NTSTATUS APIENTRY gaPresentGA3D(const HANDLE hContext,
-                                       DXGKARG_PRESENT *pPresent);
+static NTSTATUS svgaPresentBlt(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, DXGKARG_PRESENT *pPresent, uint32_t *pcbCommands)
+{
+    RT_NOREF(pContext);
 
-NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
-                                   DXGKARG_PRESENT *pPresent)
+    DXGK_ALLOCATIONLIST *pSrcAllocationListEntry = &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
+    DXGK_ALLOCATIONLIST *pDstAllocationListEntry = &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
+
+    PVBOXWDDM_ALLOCATION pSrcAllocation = getAllocationFromAllocationListEntry(pSrcAllocationListEntry);
+    PVBOXWDDM_ALLOCATION pDstAllocation = getAllocationFromAllocationListEntry(pDstAllocationListEntry);
+
+    NTSTATUS Status;
+    Status = gaPresentBlt(pPresent, pDevExt->pGa->hw.pSvga, pSrcAllocationListEntry, pSrcAllocation,
+                          pDstAllocationListEntry, pDstAllocation,
+                          (uint8_t *)pPresent->pDmaBuffer, pPresent->DmaSize, pcbCommands);
+    return Status;
+}
+
+
+static NTSTATUS svgaPresentFlip(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, DXGKARG_PRESENT *pPresent, uint32_t *pcbCommands)
+{
+    RT_NOREF(pContext);
+
+    NTSTATUS Status;
+
+    uint32_t sid;
+    uint32_t width;
+    uint32_t height;
+    uint32_t VidPnSourceId;
+
+    DXGK_ALLOCATIONLIST *pSrc = &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
+    PVBOXWDDM_ALLOCATION pSrcAllocation = getAllocationFromAllocationListEntry(pSrc);
+    if (pSrcAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+    {
+        sid           = pSrcAllocation->AllocData.hostID;
+        width         = pSrcAllocation->AllocData.SurfDesc.width;
+        height        = pSrcAllocation->AllocData.SurfDesc.height;
+        VidPnSourceId = pSrcAllocation->AllocData.SurfDesc.VidPnSourceId;
+    }
+#ifdef VBOX_WITH_VMSVGA3D_DX
+    else if (pSrcAllocation->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+    {
+        Assert(pSrcAllocation->dx.desc.fPrimary);
+        sid           = pSrcAllocation->dx.sid;
+        width         = pSrcAllocation->dx.desc.surfaceInfo.size.width;
+        height        = pSrcAllocation->dx.desc.surfaceInfo.size.height;
+        VidPnSourceId = pSrcAllocation->dx.desc.PrimaryDesc.VidPnSourceId;
+    }
+#endif
+    else
+        AssertFailedReturn(STATUS_INVALID_PARAMETER);
+
+    GALOGG(GALOG_GROUP_PRESENT, ("Flip: sid=%u %dx%d\n", sid, width, height));
+
+    /*
+     * Generate DMA buffer containing the present commands.
+     */
+    /* SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN */
+    RECT rect;
+    rect.left   = 0;
+    rect.top    = 0;
+    rect.right  = width;
+    rect.bottom = height;
+    uint32_t const cInClipRects = pPresent->SubRectCnt - pPresent->MultipassOffset;
+    uint32_t cOutClipRects = 0;
+    Status = SvgaGenBlitSurfaceToScreen(pDevExt->pGa->hw.pSvga,
+                                        sid,
+                                        &rect,
+                                        VidPnSourceId,
+                                        &rect,
+                                        cInClipRects,
+                                        pPresent->pDstSubRects + pPresent->MultipassOffset,
+                                        pPresent->pDmaBuffer, pPresent->DmaSize, pcbCommands, &cOutClipRects);
+    if (Status == STATUS_SUCCESS)
+    {
+        pPresent->MultipassOffset += cOutClipRects; /* Advance the current rectangle index. */
+        if (cOutClipRects < cInClipRects)
+            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER; /* Not all rectangles were copied. */
+    }
+    else if (Status == STATUS_BUFFER_OVERFLOW)
+        Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
+
+    return Status;
+}
+
+
+static NTSTATUS svgaPresentColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, DXGKARG_PRESENT *pPresent, uint32_t *pcbCommands)
+{
+    RT_NOREF(pDevExt, pContext, pPresent, pcbCommands);
+
+    LogRelMax(16, ("ColorFill is not implemented\n"));
+
+    DEBUG_BREAKPOINT_TEST();
+    return STATUS_SUCCESS;
+}
+
+
+NTSTATUS APIENTRY SvgaDxgkDdiPresent(const HANDLE hContext,
+                                     DXGKARG_PRESENT *pPresent)
 {
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
@@ -712,239 +836,43 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
             GALOGG(GALOG_GROUP_PRESENT, ("   sub#%u = [%ld, %ld, %ld, %ld]\n",
                     i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
 
-#ifdef VBOX_WITH_VMSVGA3D_DX
-    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
-        return DxgkDdiDXPresent(pContext, pPresent);
-#endif
-    return gaPresentGA3D(pContext, pPresent);
-}
+    AssertReturn(pPresent->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA), STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
 
-static NTSTATUS APIENTRY gaPresentGA3D(const HANDLE hContext,
-                                       DXGKARG_PRESENT *pPresent)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
-    PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
-    PVBOXMP_DEVEXT pDevExt = pDevice->pAdapter;
-
-    DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
-    DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
-
+    uint32_t cbCommands = 0;
+    NTSTATUS Status;
     if (pPresent->Flags.Blt)
-    {
-        PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
-        PVBOXWDDM_ALLOCATION pDstAlloc = vboxWddmGetAllocationFromAllocList(pDst);
-
-        GALOGG(GALOG_GROUP_PRESENT, ("Blt: sid=%x -> sid=%x\n", pSrcAlloc->AllocData.hostID, pDstAlloc->AllocData.hostID));
-
-        /** @todo Review standard allocations (DxgkDdiGetStandardAllocationDriverData, etc).
-         *        Probably can be used more naturally with VMSVGA.
-         */
-
-        /** @todo Merge common code for all branches (Blt, Flip, ColorFill) */
-
-        /* Generate DMA buffer containing the SVGA_CMD_BLIT_GMRFB_TO_SCREEN commands.
-         * Store the command buffer descriptor to pDmaBufferPrivateData.
-         */
-        GARENDERDATA *pRenderData = NULL;
-        uint32_t u32TargetLength = 0;
-        uint32_t cbPrivateData = 0;
-
-        if (pPresent->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA))
-        {
-            uint8_t *pu8Target = (uint8_t *)pPresent->pDmaBuffer;
-            uint32_t cbTarget = pPresent->DmaSize;
-
-            Status = gaPresentBlt(pPresent, pDevExt->pGa->hw.pSvga, pSrc, pSrcAlloc, pDst, pDstAlloc,
-                                  pu8Target, cbTarget, &u32TargetLength);
-
-            /* Fill RenderData description in any case, it will be ignored if the above code failed. */
-            pRenderData = (GARENDERDATA *)pPresent->pDmaBufferPrivateData;
-            pRenderData->u32DataType  = GARENDERDATA_TYPE_PRESENT;
-            pRenderData->cbData       = u32TargetLength;
-            pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
-            pRenderData->pvDmaBuffer  = pPresent->pDmaBuffer;
-            pRenderData->pHwRenderData = NULL;
-            cbPrivateData = sizeof(GARENDERDATA);
-        }
-        else
-        {
-            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-        }
-
-        switch (Status)
-        {
-            case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
-                if (pRenderData == NULL)
-                {
-                    /* Not enough space in pDmaBufferPrivateData. */
-                    break;
-                }
-                RT_FALL_THRU();
-            case STATUS_SUCCESS:
-            {
-                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
-                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
-            } break;
-            default: break;
-        }
-    }
+        Status = svgaPresentBlt(pDevExt, pContext, pPresent, &cbCommands);
     else if (pPresent->Flags.Flip)
-    {
-        PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
-
-        GALOGG(GALOG_GROUP_PRESENT, ("Flip: %s sid=%u %dx%d\n",
-            vboxWddmAllocTypeString(pSrcAlloc),
-            pSrcAlloc->AllocData.hostID, pSrcAlloc->AllocData.SurfDesc.width, pSrcAlloc->AllocData.SurfDesc.height));
-
-        /* Generate DMA buffer containing the present commands.
-         * Store the command buffer descriptor to pDmaBufferPrivateData.
-         */
-        GARENDERDATA *pRenderData = NULL;
-        uint32_t u32TargetLength = 0;
-        uint32_t cbPrivateData = 0;
-
-        if (pPresent->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA))
-        {
-            void *pvTarget          = pPresent->pDmaBuffer;
-            const uint32_t cbTarget = pPresent->DmaSize;
-            if (cbTarget > GA_DMA_MIN_SUBMIT_SIZE)
-            {
-#if 1
-                /* SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN */
-                RECT rect;
-                rect.left   = 0;
-                rect.top    = 0;
-                rect.right  = pSrcAlloc->AllocData.SurfDesc.width;
-                rect.bottom = pSrcAlloc->AllocData.SurfDesc.height;
-                uint32_t const cInClipRects = pPresent->SubRectCnt - pPresent->MultipassOffset;
-                uint32_t cOutClipRects = 0;
-                Status = SvgaGenBlitSurfaceToScreen(pDevExt->pGa->hw.pSvga,
-                                                    pSrcAlloc->AllocData.hostID,
-                                                    &rect,
-                                                    pSrcAlloc->AllocData.SurfDesc.VidPnSourceId,
-                                                    &rect,
-                                                    cInClipRects,
-                                                    pPresent->pDstSubRects + pPresent->MultipassOffset,
-                                                    pvTarget, cbTarget, &u32TargetLength, &cOutClipRects);
-                if (Status == STATUS_BUFFER_OVERFLOW)
-                {
-                    Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-                }
-
-                if (Status == STATUS_SUCCESS)
-                {
-                    if (cOutClipRects < cInClipRects)
-                    {
-                        /* Not all rectangles were copied. */
-                        Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-                    }
-
-                    /* Advance the current rectangle index. */
-                    pPresent->MultipassOffset += cOutClipRects;
-                }
-#else
-                /* This tests the SVGA_3D_CMD_PRESENT command. */
-                RT_NOREF(pDevExt);
-                Status = SvgaGenPresent(pSrcAlloc->AllocData.hostID,
-                                        pSrcAlloc->AllocData.SurfDesc.width,
-                                        pSrcAlloc->AllocData.SurfDesc.height,
-                                        pvTarget, cbTarget, &u32TargetLength);
-                if (Status == STATUS_BUFFER_OVERFLOW)
-                {
-                    Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-                }
-#endif
-            }
-            else
-            {
-                Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-            }
-
-            /* Fill RenderData description in any case, it will be ignored if the above code failed. */
-            pRenderData = (GARENDERDATA *)pPresent->pDmaBufferPrivateData;
-            pRenderData->u32DataType  = GARENDERDATA_TYPE_PRESENT;
-            pRenderData->cbData       = u32TargetLength;
-            pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
-            pRenderData->pvDmaBuffer = pPresent->pDmaBuffer;
-            pRenderData->pHwRenderData = NULL;
-            cbPrivateData = sizeof(GARENDERDATA);
-        }
-        else
-        {
-            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-        }
-
-        switch (Status)
-        {
-            case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
-                if (pRenderData == NULL)
-                {
-                    /* Not enough space in pDmaBufferPrivateData. */
-                    break;
-                }
-                RT_FALL_THRU();
-            case STATUS_SUCCESS:
-            {
-                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
-                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
-            } break;
-            default: break;
-        }
-    }
+        Status = svgaPresentFlip(pDevExt, pContext, pPresent, &cbCommands);
     else if (pPresent->Flags.ColorFill)
-    {
-        LogRelMax(16, ("ColorFill is not implemented\n"));
-        AssertFailed();
-
-        /* Generate empty DMA buffer.
-         * Store the command buffer descriptor to pDmaBufferPrivateData.
-         */
-        GARENDERDATA *pRenderData = NULL;
-        uint32_t u32TargetLength = 0;
-        uint32_t cbPrivateData = 0;
-
-        if (pPresent->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA))
-        {
-            /* Fill RenderData description in any case, it will be ignored if the above code failed. */
-            pRenderData = (GARENDERDATA *)pPresent->pDmaBufferPrivateData;
-            pRenderData->u32DataType  = GARENDERDATA_TYPE_PRESENT;
-            pRenderData->cbData       = u32TargetLength;
-            pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
-            pRenderData->pvDmaBuffer  = pPresent->pDmaBuffer;
-            pRenderData->pHwRenderData = NULL;
-            cbPrivateData = sizeof(GARENDERDATA);
-        }
-        else
-        {
-            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-        }
-
-        switch (Status)
-        {
-            case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
-                if (pRenderData == NULL)
-                {
-                    /* Not enough space in pDmaBufferPrivateData. */
-                    break;
-                }
-                RT_FALL_THRU();
-            case STATUS_SUCCESS:
-            {
-                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
-                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
-            } break;
-            default: break;
-        }
-    }
+        Status = svgaPresentColorFill(pDevExt, pContext, pPresent, &cbCommands);
     else
+        AssertFailedStmt(Status = STATUS_NOT_IMPLEMENTED);
+
+    /* Fill RenderData description in any case, it will be ignored if the above code failed. */
+    GARENDERDATA *pRenderData = (GARENDERDATA *)pPresent->pDmaBufferPrivateData;
+    pRenderData->u32DataType   = GARENDERDATA_TYPE_PRESENT;
+    pRenderData->cbData        = cbCommands;
+    pRenderData->pFenceObject  = NULL; /* Not a user request, so no user accessible fence object. */
+    pRenderData->pvDmaBuffer   = pPresent->pDmaBuffer;
+    pRenderData->pHwRenderData = NULL;
+
+    switch (Status)
     {
-        WARN(("cmd NOT IMPLEMENTED!! Flags(0x%x)", pPresent->Flags.Value));
-        Status = STATUS_NOT_SUPPORTED;
+        case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
+            DEBUG_BREAKPOINT_TEST();
+            RT_FALL_THRU();
+        case STATUS_SUCCESS:
+        {
+            pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + cbCommands;
+            pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + sizeof(GARENDERDATA);
+        } break;
+        default: break;
     }
 
     return Status;
 }
+
 
 static NTSTATUS gaRenderGA3D(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pRender);
 
@@ -1320,9 +1248,8 @@ NTSTATUS APIENTRY GaDxgkDdiPatch(const HANDLE hAdapter, const DXGKARG_PATCH *pPa
     if (pPatch->Flags.Paging || pPatch->Flags.Present)
         return STATUS_SUCCESS;
 
-    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pPatch->hContext;
-
 #ifdef VBOX_WITH_VMSVGA3D_DX
+    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pPatch->hContext;
     if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_VMSVGA_D3D)
         return DxgkDdiDXPatch(pDevExt, pPatch);
 #endif
