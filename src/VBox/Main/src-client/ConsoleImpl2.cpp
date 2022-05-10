@@ -78,6 +78,7 @@
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
 #include <VBox/vmm/pdmdev.h> /* For PDMAPICMODE enum. */
 #include <VBox/vmm/pdmstorageifs.h>
+#include <VBox/vmm/gcm.h>
 #include <VBox/version.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
 # include <VBox/HostServices/VBoxClipboardSvc.h>
@@ -972,12 +973,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
     BOOL fOsXGuest = FALSE;
     BOOL fWinGuest = FALSE;
+    BOOL fOs2Guest = FALSE;
+    BOOL fW9xGuest = FALSE;
+    BOOL fDosGuest = FALSE;
     if (!pGuestOSType.isNull())
     {
         Bstr guestTypeFamilyId;
         hrc = pGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());            H();
         fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
         fWinGuest = guestTypeFamilyId == Bstr("Windows");
+        fOs2Guest = osTypeId.startsWith("OS2");
+        fW9xGuest = osTypeId.startsWith("Windows9");    /* Does not include Windows Me. */
+        fDosGuest = osTypeId.startsWith("DOS");
     }
 
     ULONG maxNetworkAdapters;
@@ -1426,6 +1433,24 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                 }
             }
         }
+
+        /*
+         * Guest Compatibility Manager.
+         */
+        PCFGMNODE   pGcmNode;
+        uint32_t    u32FixerSet = 0;
+        InsertConfigNode(pRoot, "GCM", &pGcmNode);
+        /* OS/2 and Win9x guests can run DOS apps so they get
+         * the DOS specific fixes as well.
+         */
+        if (fOs2Guest)
+            u32FixerSet = GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2;
+        else if (fW9xGuest)
+            u32FixerSet = GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_WIN9X;
+        else if (fDosGuest)
+            u32FixerSet = GCMFIXER_DBZ_DOS;
+        InsertConfigInteger(pGcmNode, "FixerSet", u32FixerSet);
+
 
         /*
          * MM values.
