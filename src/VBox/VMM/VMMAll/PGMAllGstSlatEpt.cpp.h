@@ -173,11 +173,13 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         uint64_t const fEptAttrs     = Pml4e.u & EPT_PML4E_ATTR_MASK;
         uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
         uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+        uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
         uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
         uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
-        fEffective = RT_BF_MAKE(PGM_PTATTRS_R, fRead)
-                   | RT_BF_MAKE(PGM_PTATTRS_W, fWrite)
-                   | RT_BF_MAKE(PGM_PTATTRS_A, fAccessed)
+        fEffective = RT_BF_MAKE(PGM_PTATTRS_R,   fRead)
+                   | RT_BF_MAKE(PGM_PTATTRS_W,   fWrite)
+                   | RT_BF_MAKE(PGM_PTATTRS_NX, !fExecute)
+                   | RT_BF_MAKE(PGM_PTATTRS_A,   fAccessed)
                    | fEffectiveEpt;
         pWalk->fEffective = fEffective;
 
@@ -204,11 +206,13 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             uint64_t const fEptAttrs     = Pdpte.u & EPT_PDPTE_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
             uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
             uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
             uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
-            fEffective &= RT_BF_MAKE(PGM_PTATTRS_R, fRead)
-                        | RT_BF_MAKE(PGM_PTATTRS_W, fWrite)
-                        | RT_BF_MAKE(PGM_PTATTRS_A, fAccessed)
+            fEffective &= RT_BF_MAKE(PGM_PTATTRS_R,   fRead)
+                        | RT_BF_MAKE(PGM_PTATTRS_W,   fWrite)
+                        | RT_BF_MAKE(PGM_PTATTRS_NX, !fExecute)
+                        | RT_BF_MAKE(PGM_PTATTRS_A,   fAccessed)
                         | (fEffectiveEpt & fCumulativeEpt);
             pWalk->fEffective = fEffective;
         }
@@ -219,12 +223,14 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             uint64_t const fEptAttrs     = Pdpte.u & EPT_PDPTE1G_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
             uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
             uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
             uint8_t const fDirty         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_DIRTY);
             uint8_t const fMemType       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_MEMTYPE);
             uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
             fEffective &= RT_BF_MAKE(PGM_PTATTRS_R,           fRead)
                         | RT_BF_MAKE(PGM_PTATTRS_W,           fWrite)
+                        | RT_BF_MAKE(PGM_PTATTRS_NX,         !fExecute)
                         | RT_BF_MAKE(PGM_PTATTRS_A,           fAccessed)
                         | (fEffectiveEpt & fCumulativeEpt);
             fEffective |= RT_BF_MAKE(PGM_PTATTRS_D,           fDirty)
@@ -234,7 +240,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             pWalk->fGigantPage  = true;
             pWalk->fSucceeded   = true;
             pWalk->GCPhys       = GST_GET_BIG_PDPE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pdpte)
-                                     | (GCPhysNested & GST_GIGANT_PAGE_OFFSET_MASK);
+                                | (GCPhysNested & GST_GIGANT_PAGE_OFFSET_MASK);
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->GCPhys);
             return VINF_SUCCESS;
         }
@@ -263,14 +269,15 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             uint64_t const fEptAttrs     = Pde.u & EPT_PDE_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
             uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
             uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
             uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
-            fEffective &= RT_BF_MAKE(PGM_PTATTRS_R, fRead)
-                        | RT_BF_MAKE(PGM_PTATTRS_W, fWrite)
-                        | RT_BF_MAKE(PGM_PTATTRS_A, fAccessed)
+            fEffective &= RT_BF_MAKE(PGM_PTATTRS_R,   fRead)
+                        | RT_BF_MAKE(PGM_PTATTRS_W,   fWrite)
+                        | RT_BF_MAKE(PGM_PTATTRS_NX, !fExecute)
+                        | RT_BF_MAKE(PGM_PTATTRS_A,   fAccessed)
                         | (fEffectiveEpt & fCumulativeEpt);
             pWalk->fEffective = fEffective;
-
         }
         else if (   GST_IS_BIG_PDE_VALID(pVCpu, Pde)
                  && PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(pVCpu, Pde.u)
@@ -279,12 +286,14 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             uint64_t const fEptAttrs     = Pde.u & EPT_PDE2M_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
             uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
             uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
             uint8_t const fDirty         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_DIRTY);
             uint8_t const fMemType       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_MEMTYPE);
             uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
             fEffective &= RT_BF_MAKE(PGM_PTATTRS_R,           fRead)
                         | RT_BF_MAKE(PGM_PTATTRS_W,           fWrite)
+                        | RT_BF_MAKE(PGM_PTATTRS_NX,         !fExecute)
                         | RT_BF_MAKE(PGM_PTATTRS_A,           fAccessed)
                         | (fEffectiveEpt & fCumulativeEpt);
             fEffective |= RT_BF_MAKE(PGM_PTATTRS_D,           fDirty)
@@ -326,12 +335,14 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         uint64_t const fEptAttrs     = Pte.u & EPT_PTE_ATTR_MASK;
         uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
         uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+        uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
         uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
         uint8_t const fDirty         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_DIRTY);
         uint8_t const fMemType       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_MEMTYPE);
         uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
         fEffective &= RT_BF_MAKE(PGM_PTATTRS_R,           fRead)
                     | RT_BF_MAKE(PGM_PTATTRS_W,           fWrite)
+                    | RT_BF_MAKE(PGM_PTATTRS_NX,         !fExecute)
                     | RT_BF_MAKE(PGM_PTATTRS_A,           fAccessed)
                     | (fEffectiveEpt & fCumulativeEpt);
         fEffective |= RT_BF_MAKE(PGM_PTATTRS_D,           fDirty)
