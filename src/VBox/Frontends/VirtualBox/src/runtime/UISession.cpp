@@ -273,7 +273,11 @@ bool UISession::powerUp()
     }
     else
     {
+#ifdef VBOX_IS_QT6_OR_LATER
+        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png", 0, 0);
+#else
         msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
+#endif
         /* After VM start, machine-window(s) size-hint(s) should be sent: */
         machineLogic()->sendMachineWindowsSizeHints();
     }
