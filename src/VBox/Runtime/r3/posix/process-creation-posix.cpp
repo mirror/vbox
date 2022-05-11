@@ -365,48 +365,62 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
         rc = pam_set_item(hPam, PAM_RUSER, pszUser);
         if (rc == PAM_SUCCESS)
         {
-            if (pfMayFallBack)
-                *pfMayFallBack = false;
-            rc = pam_authenticate(hPam, 0);
+            /* We also need to set PAM_TTY (if available) to make PAM stacks work which
+             * require a secure TTY via pam_securetty (Debian 10 + 11, for example). See @bugref{10225}. */
+            char const *pszTTY = RTEnvGet("DISPLAY");
+            if (!pszTTY) /* No display set or available? Try the TTY's name instead. */
+                pszTTY = ttyname(0);
+            if (pszTTY) /* Only try using PAM_TTY if we have something to set. */
+                rc = pam_set_item(hPam, PAM_TTY, pszTTY);
             if (rc == PAM_SUCCESS)
             {
-                rc = pam_acct_mgmt(hPam, 0);
-                if (   rc == PAM_SUCCESS
-                    || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
+                /* From this point on we don't allow falling back to other auth methods. */
+                if (pfMayFallBack)
+                    *pfMayFallBack = false;
+
+                rc = pam_authenticate(hPam, 0);
+                if (rc == PAM_SUCCESS)
                 {
-                    if (   ppapszEnv
-                        && s_pfnPamGetEnvList
-                        && s_pfnPamSetCred)
+                    rc = pam_acct_mgmt(hPam, 0);
+                    if (   rc == PAM_SUCCESS
+                        || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
                     {
-                        /* pam_env.so creates the environment when pam_setcred is called,. */
-                        int rcSetCred = pam_setcred(hPam, PAM_ESTABLISH_CRED | PAM_SILENT);
-                        /** @todo check pam_setcred status code? */
+                        if (   ppapszEnv
+                            && s_pfnPamGetEnvList
+                            && s_pfnPamSetCred)
+                        {
+                            /* pam_env.so creates the environment when pam_setcred is called,. */
+                            int rcSetCred = pam_setcred(hPam, PAM_ESTABLISH_CRED | PAM_SILENT);
+                            /** @todo check pam_setcred status code? */
 
-                        /* Unless it does it during session opening (Ubuntu 21.10).  This
-                           unfortunately means we might mount user dir and other crap: */
-                        /** @todo do session handling properly   */
-                        int rcOpenSession = PAM_ABORT;
-                        if (   s_pfnPamOpenSession
-                            && s_pfnPamCloseSession)
-                            rcOpenSession = pam_open_session(hPam, PAM_SILENT);
+                            /* Unless it does it during session opening (Ubuntu 21.10).  This
+                               unfortunately means we might mount user dir and other crap: */
+                            /** @todo do session handling properly   */
+                            int rcOpenSession = PAM_ABORT;
+                            if (   s_pfnPamOpenSession
+                                && s_pfnPamCloseSession)
+                                rcOpenSession = pam_open_session(hPam, PAM_SILENT);
 
-                        *ppapszEnv = pam_getenvlist(hPam);
-                        LogFlowFunc(("pam_getenvlist -> %p ([0]=%p); rcSetCred=%d rcOpenSession=%d\n",
-                                     *ppapszEnv, *ppapszEnv ? **ppapszEnv : NULL, rcSetCred, rcOpenSession)); RT_NOREF(rcSetCred);
+                            *ppapszEnv = pam_getenvlist(hPam);
+                            LogFlowFunc(("pam_getenvlist -> %p ([0]=%p); rcSetCred=%d rcOpenSession=%d\n",
+                                         *ppapszEnv, *ppapszEnv ? **ppapszEnv : NULL, rcSetCred, rcOpenSession)); RT_NOREF(rcSetCred);
 
-                        if (rcOpenSession == PAM_SUCCESS)
-                            pam_close_session(hPam, PAM_SILENT);
-                        pam_setcred(hPam, PAM_DELETE_CRED);
+                            if (rcOpenSession == PAM_SUCCESS)
+                                pam_close_session(hPam, PAM_SILENT);
+                            pam_setcred(hPam, PAM_DELETE_CRED);
+                        }
+
+                        pam_end(hPam, PAM_SUCCESS);
+                        LogFlowFunc(("pam auth (for %s) successful\n", pszPamService));
+                        return VINF_SUCCESS;
                     }
-
-                    pam_end(hPam, PAM_SUCCESS);
-                    LogFlowFunc(("pam auth (for %s) successful\n", pszPamService));
-                    return VINF_SUCCESS;
+                    LogFunc(("pam_acct_mgmt -> %d\n", rc));
                 }
-                LogFunc(("pam_acct_mgmt -> %d\n", rc));
+                else
+                    LogFunc(("pam_authenticate -> %d\n", rc));
             }
             else
-                LogFunc(("pam_authenticate -> %d\n", rc));
+                LogFunc(("pam_setitem/PAM_TTY -> %d\n", rc));
         }
         else
             LogFunc(("pam_set_item/PAM_RUSER -> %d\n", rc));
