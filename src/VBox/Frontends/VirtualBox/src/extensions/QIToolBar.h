@@ -84,7 +84,7 @@ private:
     QMainWindow *m_pMainWindow;
 
 #ifdef VBOX_WS_MAC
-    /** Holds whether unified tool-bar should be emulated. */
+    /** Mac OS X: Holds whether unified tool-bar should be emulated. */
     bool  m_fEmulateUnifiedToolbar;
 #endif
 };

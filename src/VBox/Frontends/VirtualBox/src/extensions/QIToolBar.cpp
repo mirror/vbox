@@ -107,8 +107,12 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
     /* If we have request to emulate unified tool-bar: */
     if (m_fEmulateUnifiedToolbar)
     {
-        /* Acquire rectangle: */
-        const QRect rectangle = pEvent->rect();
+        /* Limit painting with incoming rectangle: */
+        QPainter painter(this);
+        painter.setClipRect(pEvent->rect());
+
+        /* Acquire full rectangle: */
+        const QRect rectangle = rect();
 
         /* Prepare gradient: */
         const QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
@@ -117,7 +121,6 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
         gradient.setColorAt(1, backgroundColor.darker(115));
 
         /* Fill background: */
-        QPainter painter(this);
         painter.fillRect(rectangle, gradient);
     }
 }
