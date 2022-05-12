@@ -348,7 +348,8 @@ NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(
 
     if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
         Status = svgaCreateAllocationSurface(pDevExt, pAllocation, pAllocationInfo);
-    else if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+    else if (   pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
+             || pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
         Status = svgaCreateAllocationShaders(pAllocation, pAllocationInfo);
     else
         Status = STATUS_INVALID_PARAMETER;
@@ -372,7 +373,8 @@ NTSTATUS APIENTRY DxgkDdiDXDestroyAllocation(
 
     if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
         Status = svgaDestroyAllocationSurface(pDevExt->pGa->hw.pSvga, pAllocation);
-    else if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+    else if (   pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
+             || pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
         Status = svgaDestroyAllocationShaders(pDevExt->pGa->hw.pSvga, pAllocation);
     else
         AssertFailedReturn(STATUS_INVALID_PARAMETER);
@@ -461,7 +463,8 @@ static NTSTATUS svgaRenderPatches(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
                     }
                 }
             }
-            else if (enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+            else if (   enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
+                     || enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
             {
                 if (pAllocation->dx.mobid != SVGA3D_INVALID_ID)
                 {
@@ -473,7 +476,8 @@ static NTSTATUS svgaRenderPatches(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
         else
         {
             if (   enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE
-                || enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+                || enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
+                || enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
             {
                 *(uint32_t *)pPatchAddress = SVGA3D_INVALID_ID;
                 continue;
@@ -720,8 +724,6 @@ static NTSTATUS svgaPagingMapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUI
                                         pBuildPagingBuffer->MapApertureSegment.MdlOffset);
     AssertReturnStmt(NT_SUCCESS(Status), SvgaMobFree(pSvga, pMob), Status);
 
-    pAllocation->dx.mobid = VMSVGAMOB_ID(pMob);
-
     uint32_t cbRequired = sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdDefineGBMob64);
     if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
     {
@@ -739,6 +741,8 @@ static NTSTATUS svgaPagingMapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUI
     ExAcquireFastMutex(&pSvga->SvgaMutex);
     RTAvlU32Insert(&pSvga->MobTree, &pMob->core);
     ExReleaseFastMutex(&pSvga->SvgaMutex);
+
+    pAllocation->dx.mobid = VMSVGAMOB_ID(pMob);
 
     uint8_t *pu8Cmd = (uint8_t *)pBuildPagingBuffer->pDmaBuffer;
 
@@ -819,7 +823,6 @@ static NTSTATUS svgaPagingUnmapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_B
 
     if (pBuildPagingBuffer->DmaSize < cbRequired)
     {
-        SvgaMobFree(pSvga, pMob);
         return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
     }
 
@@ -849,7 +852,7 @@ static NTSTATUS svgaPagingUnmapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_B
 
     {
     SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pu8Cmd;
-    pCmd->mobid = VMSVGAMOB_ID(pMob);
+    pCmd->mobid = pAllocation->dx.mobid;
     pu8Cmd += sizeof(*pCmd);
     }
 
@@ -961,7 +964,8 @@ NTSTATUS APIENTRY DxgkDdiDXPatch(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pP
                 Assert(pAllocation->dx.sid != SVGA3D_INVALID_ID);
                 *(uint32_t *)pPatchAddress = pAllocation->dx.sid;
             }
-            else if (enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS)
+            else if (   enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
+                     || enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
             {
                 Assert(pAllocation->dx.mobid != SVGA3D_INVALID_ID);
                 *(uint32_t *)pPatchAddress = pAllocation->dx.mobid;
