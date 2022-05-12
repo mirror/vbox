@@ -41,6 +41,11 @@
 #ifndef VBOX_WS_MAC
 # include "UIMenuBar.h"
 #endif
+#ifdef VBOX_WS_MAC
+# ifdef VBOX_IS_QT6_OR_LATER
+#  include "UIIconPool.h"
+# endif
+#endif
 
 
 UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent)
@@ -629,7 +634,15 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #ifdef VBOX_WS_MAC
                         m_pToolBar->emulateMacToolbar();
-#endif
+# ifdef VBOX_IS_QT6_OR_LATER
+                        /* Branding stuff for Qt6 beta: */
+                        if (uiCommon().isBeta())
+                            m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
+                                                       "Tech Preview", // do we need to make it NLS?
+                                                       QColor(246, 179, 0),
+                                                       74 /* width of BETA label */);
+# endif /* VBOX_IS_QT6_OR_LATER */
+#endif /* VBOX_WS_MAC */
 
                         /* Add toolbar into layout: */
                         pLayoutRight->addWidget(m_pToolBar);
