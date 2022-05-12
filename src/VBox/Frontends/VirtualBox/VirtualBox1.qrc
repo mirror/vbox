@@ -360,10 +360,6 @@
         <file alias="hd_add_32px.png">images/hd_add_32px.png</file>
         <file alias="hd_add_disabled_16px.png">images/hd_add_disabled_16px.png</file>
         <file alias="hd_add_disabled_32px.png">images/hd_add_disabled_32px.png</file>
-        <file alias="hd_clear_16px.png">images/hd_clear_16px.png</file>
-        <file alias="hd_clear_32px.png">images/hd_clear_32px.png</file>
-        <file alias="hd_clear_disabled_16px.png">images/hd_clear_disabled_16px.png</file>
-        <file alias="hd_clear_disabled_32px.png">images/hd_clear_disabled_32px.png</file>
         <file alias="hd_copy_16px.png">images/hd_copy_16px.png</file>
         <file alias="hd_copy_32px.png">images/hd_copy_32px.png</file>
         <file alias="hd_copy_disabled_16px.png">images/hd_copy_disabled_16px.png</file>
@@ -496,5 +492,7 @@
         <file alias="log_viewer_bookmark_on_16px.png">images/log_viewer_bookmark_on_16px.png</file>
         <file alias="log_viewer_choose_font_16px.png">images/log_viewer_choose_font_16px.png</file>
         <file alias="log_viewer_delete_all_bookmarks_16px.png">images/log_viewer_delete_all_bookmarks_16px.png</file>
+        <file alias="log_viewer_delete_all_filters_16px.png">images/log_viewer_delete_all_filters_16px.png</file>
+        <file alias="log_viewer_delete_current_bookmark_16px.png">images/log_viewer_delete_current_bookmark_16px.png</file>
     </qresource>
 </RCC>

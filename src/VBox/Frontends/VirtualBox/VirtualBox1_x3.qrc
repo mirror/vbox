@@ -360,10 +360,6 @@
         <file alias="hd_add_32px_x3.png">images/x3/hd_add_32px_x3.png</file>
         <file alias="hd_add_disabled_16px_x3.png">images/x3/hd_add_disabled_16px_x3.png</file>
         <file alias="hd_add_disabled_32px_x3.png">images/x3/hd_add_disabled_32px_x3.png</file>
-        <file alias="hd_clear_16px_x3.png">images/x3/hd_clear_16px_x3.png</file>
-        <file alias="hd_clear_32px_x3.png">images/x3/hd_clear_32px_x3.png</file>
-        <file alias="hd_clear_disabled_16px_x3.png">images/x3/hd_clear_disabled_16px_x3.png</file>
-        <file alias="hd_clear_disabled_32px_x3.png">images/x3/hd_clear_disabled_32px_x3.png</file>
         <file alias="hd_copy_16px_x3.png">images/x3/hd_copy_16px_x3.png</file>
         <file alias="hd_copy_32px_x3.png">images/x3/hd_copy_32px_x3.png</file>
         <file alias="hd_copy_disabled_16px_x3.png">images/x3/hd_copy_disabled_16px_x3.png</file>
@@ -491,5 +487,7 @@
         <file alias="log_viewer_bookmark_16px_x3.png">images/x3/log_viewer_bookmark_16px_x3.png</file>
         <file alias="log_viewer_bookmark_32px_x3.png">images/x3/log_viewer_bookmark_32px_x3.png</file>
         <file alias="log_viewer_bookmark_disabled_16px_x3.png">images/x3/log_viewer_bookmark_disabled_16px_x3.png</file>
+        <file alias="log_viewer_bookmark_disabled_32px_x3.png">images/x3/log_viewer_bookmark_disabled_32px_x3.png</file>
+        <file alias="log_viewer_bookmark_off_16px_x3.png">images/x3/log_viewer_bookmark_off_16px_x3.png</file>
     </qresource>
 </RCC>

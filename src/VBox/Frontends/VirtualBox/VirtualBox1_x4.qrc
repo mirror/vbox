@@ -31,6 +31,10 @@
         <file alias="cd_add_32px_x4.png">images/x4/cd_add_32px_x4.png</file>
         <file alias="cd_add_disabled_16px_x4.png">images/x4/cd_add_disabled_16px_x4.png</file>
         <file alias="cd_add_disabled_32px_x4.png">images/x4/cd_add_disabled_32px_x4.png</file>
+        <file alias="cd_clear_16px_x4.png">images/x4/cd_clear_16px_x4.png</file>
+        <file alias="cd_clear_32px_x4.png">images/x4/cd_clear_32px_x4.png</file>
+        <file alias="cd_clear_disabled_16px_x4.png">images/x4/cd_clear_disabled_16px_x4.png</file>
+        <file alias="cd_clear_disabled_32px_x4.png">images/x4/cd_clear_disabled_32px_x4.png</file>
         <file alias="cd_copy_16px_x4.png">images/x4/cd_copy_16px_x4.png</file>
         <file alias="cd_copy_32px_x4.png">images/x4/cd_copy_32px_x4.png</file>
         <file alias="cd_copy_disabled_16px_x4.png">images/x4/cd_copy_disabled_16px_x4.png</file>
@@ -214,6 +218,10 @@
         <file alias="fd_add_32px_x4.png">images/x4/fd_add_32px_x4.png</file>
         <file alias="fd_add_disabled_16px_x4.png">images/x4/fd_add_disabled_16px_x4.png</file>
         <file alias="fd_add_disabled_32px_x4.png">images/x4/fd_add_disabled_32px_x4.png</file>
+        <file alias="fd_clear_16px_x4.png">images/x4/fd_clear_16px_x4.png</file>
+        <file alias="fd_clear_32px_x4.png">images/x4/fd_clear_32px_x4.png</file>
+        <file alias="fd_clear_disabled_16px_x4.png">images/x4/fd_clear_disabled_16px_x4.png</file>
+        <file alias="fd_clear_disabled_32px_x4.png">images/x4/fd_clear_disabled_32px_x4.png</file>
         <file alias="fd_copy_16px_x4.png">images/x4/fd_copy_16px_x4.png</file>
         <file alias="fd_copy_32px_x4.png">images/x4/fd_copy_32px_x4.png</file>
         <file alias="fd_copy_disabled_16px_x4.png">images/x4/fd_copy_disabled_16px_x4.png</file>
@@ -481,6 +489,5 @@
         <file alias="log_viewer_bookmark_disabled_16px_x4.png">images/x4/log_viewer_bookmark_disabled_16px_x4.png</file>
         <file alias="log_viewer_bookmark_disabled_32px_x4.png">images/x4/log_viewer_bookmark_disabled_32px_x4.png</file>
         <file alias="log_viewer_bookmark_off_16px_x4.png">images/x4/log_viewer_bookmark_off_16px_x4.png</file>
-        <file alias="log_viewer_bookmark_on_16px_x4.png">images/x4/log_viewer_bookmark_on_16px_x4.png</file>
     </qresource>
 </RCC>
