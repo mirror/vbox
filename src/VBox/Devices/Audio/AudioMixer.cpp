@@ -957,7 +957,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps, uint32
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertReturn(pSink->uMagic == AUDMIXSINK_MAGIC, VERR_INVALID_MAGIC);
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
-    AssertReturn(AudioHlpPcmPropsAreValid(pProps), VERR_INVALID_PARAMETER);
+    AssertReturn(AudioHlpPcmPropsAreValidAndSupported(pProps), VERR_INVALID_PARAMETER);
 
     /*
      * Calculate the mixer buffer size so we can force a recreation if it changes.
@@ -2286,8 +2286,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConn, PCP
                  *        passed in, but that became unnecessary with DrvAudio stoppping
                  *        mixing.  The mixing is done here and we bridge guest & host configs.)
                  */
-                AssertMsg(AudioHlpPcmPropsAreValid(&pSink->PCMProps),
-                          ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
+                AssertMsg(AudioHlpPcmPropsAreValidAndSupported(&pSink->PCMProps),
+                          ("%s: Does not (yet) have a (valid and supported) format set when it must\n", pSink->pszName));
 
                 PDMAUDIOSTREAMCFG CfgHost;
                 rc = PDMAudioStrmCfgInitWithProps(&CfgHost, &pSink->PCMProps);

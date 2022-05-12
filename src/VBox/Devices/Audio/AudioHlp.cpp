@@ -127,7 +127,7 @@ bool AudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
         {
             if (   pCfg->enmDir == PDMAUDIODIR_IN
                 || pCfg->enmDir == PDMAUDIODIR_OUT)
-                return AudioHlpPcmPropsAreValid(&pCfg->Props);
+                return AudioHlpPcmPropsAreValidAndSupported(&pCfg->Props);
         }
     }
     return false;
@@ -151,37 +151,32 @@ uint32_t AudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
 
 
 /**
- * Checks whether given PCM properties are valid or not.
+ * Checks whether given PCM properties are valid *and* supported by the audio stack or not.
  *
- * @note  This is more of a supported than valid check.  There is code for
- *        unsigned samples elsewhere (like DrvAudioHlpClearBuf()), but this
- *        function will flag such properties as not valid.
- *
- * @todo  r=bird: See note and explain properly. Perhaps rename to
- *        AudioHlpPcmPropsAreValidAndSupported?
- *
- * @returns @c true if the properties are valid, @c false if not.
+ * @returns @c true if the properties are valid and supported, @c false if not.
  * @param   pProps      The PCM properties to check.
+ *
+ * @note    Use PDMAudioPropsAreValid() to just check the validation bits.
  */
-bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
+bool AudioHlpPcmPropsAreValidAndSupported(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
-    AssertReturn(PDMAudioPropsAreValid(pProps), false);
 
+    if (!PDMAudioPropsAreValid(pProps))
+        return false;
+
+    /* Properties seem valid, now check if we actually support those. */
     switch (PDMAudioPropsSampleSize(pProps))
     {
         case 1: /* 8 bit */
-           if (PDMAudioPropsIsSigned(pProps))
-               return false;
-           break;
+            /* Signed / unsigned. */
+            break;
         case 2: /* 16 bit */
-            if (!PDMAudioPropsIsSigned(pProps))
-                return false;
+            /* Signed / unsigned. */
             break;
         /** @todo Do we need support for 24 bit samples? */
         case 4: /* 32 bit */
-            if (!PDMAudioPropsIsSigned(pProps))
-                return false;
+            /* Signed / unsigned. */
             break;
         case 8: /* 64-bit raw */
             if (   !PDMAudioPropsIsSigned(pProps)

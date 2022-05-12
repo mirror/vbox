@@ -1149,8 +1149,7 @@ DECLINLINE(bool) PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCM
  * @returns true/false accordingly.
  * @param   pProps  The PCM properties to check.
  *
- * @remarks This just performs a generic check of value ranges.  Further, it
- *          will assert if the input is invalid.
+ * @remarks This just performs a generic check of value ranges.
  *
  * @sa      PDMAudioStrmCfgIsValid
  */
@@ -1158,19 +1157,34 @@ DECLINLINE(bool) PDMAudioPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
 
-    AssertReturn(pProps->cChannelsX != 0, false);
-    AssertReturn(pProps->cChannelsX <= PDMAUDIO_MAX_CHANNELS, false);
-    AssertMsgReturn(   pProps->cbSampleX == 1 || pProps->cbSampleX == 2 || pProps->cbSampleX == 4  || (pProps->cbSampleX == 8 && pProps->fRaw),
-                    ("%u\n", pProps->cbSampleX), false);
-    AssertMsgReturn(pProps->cbFrame == pProps->cbSampleX * pProps->cChannelsX,
-                    ("cbFrame=%u cbSample=%u cChannels=%u\n", pProps->cbFrame, pProps->cbSampleX, pProps->cChannelsX),
-                    false);
-    AssertMsgReturn(pProps->uHz >= 1000 && pProps->uHz < 1000000, ("%u\n", pProps->uHz), false);
-    AssertMsgReturn(pProps->cShiftX == PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps),
-                    ("cShift=%u cbSample=%u cChannels=%u\n", pProps->cShiftX, pProps->cbSampleX, pProps->cChannelsX),
-                    false);
-    AssertReturn(!pProps->fRaw || (pProps->fSigned && pProps->cbSampleX == sizeof(int64_t)), false);
-    return true;
+        /* Channels. */
+    if (   pProps->cChannelsX != 0
+        && pProps->cChannelsX <= PDMAUDIO_MAX_CHANNELS
+        /* Sample size. */
+        && (   pProps->cbSampleX == 1
+            || pProps->cbSampleX == 2
+            || pProps->cbSampleX == 4
+            || (pProps->cbSampleX == 8 && pProps->fRaw))
+        /* Hertz rate. */
+        && pProps->uHz >= 1000
+        && pProps->uHz < 1000000
+        /* Raw format: Here we only support int64_t as sample size currently, if enabled. */
+        && (   !pProps->fRaw
+            || (pProps->fSigned && pProps->cbSampleX == sizeof(int64_t)))
+       )
+    {
+        /* A few more sanity checks to see if the structure has been properly initialized (via PDMAudioPropsInit[Ex]). */
+        AssertMsgReturn(pProps->cShiftX == PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps),
+                        ("cShift=%u cbSample=%u cChannels=%u\n", pProps->cShiftX, pProps->cbSampleX, pProps->cChannelsX),
+                        false);
+        AssertMsgReturn(pProps->cbFrame == pProps->cbSampleX * pProps->cChannelsX,
+                        ("cbFrame=%u cbSample=%u cChannels=%u\n", pProps->cbFrame, pProps->cbSampleX, pProps->cChannelsX),
+                        false);
+
+        return true;
+    }
+
+    return false;
 }
 
 /**

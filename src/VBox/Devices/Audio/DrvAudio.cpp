@@ -1080,7 +1080,7 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
     }
 
     /* Validate PCM properties. */
-    if (!AudioHlpPcmPropsAreValid(&pCfg->Props))
+    if (!AudioHlpPcmPropsAreValidAndSupported(&pCfg->Props))
     {
         LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pszName));
         return VERR_INVALID_PARAMETER;

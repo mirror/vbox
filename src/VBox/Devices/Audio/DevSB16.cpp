@@ -2522,7 +2522,7 @@ static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
     if (fStreamEnabled)
     {
         /* Sanity: If stream is going be enabled, PCM props must be valid. Otherwise the saved state is borked somehow. */
-        AssertMsgReturn(AudioHlpPcmPropsAreValid(&pStream->Cfg.Props),
+        AssertMsgReturn(AudioHlpPcmPropsAreValidAndSupported(&pStream->Cfg.Props),
                         ("PCM properties for stream #%RU8 are invalid\n", pStream->uIdx), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         sb16StreamControl(pDevIns, pThis, pStream, true /* fRun */);
     }

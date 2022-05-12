@@ -1055,7 +1055,7 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
         && fEnable
         && pStreamR3->Dbg.Runtime.fEnabled)
     {
-        Assert(AudioHlpPcmPropsAreValid(&pStreamShared->State.Cfg.Props));
+        Assert(AudioHlpPcmPropsAreValidAndSupported(&pStreamShared->State.Cfg.Props));
 
         if (fEnable)
         {

@@ -77,9 +77,9 @@ static void tstBasics(RTTEST hTest)
     RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU16) == 44100*4*8);
     RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU32) == 44100*8*8);
 
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoS16));
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoU16) == false); /* go figure */
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoU32) == false); /* go figure */
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&Cfg441StereoS16));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&Cfg441StereoU16) == false); /* go figure */
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&Cfg441StereoU32) == false); /* go figure */
 
 
     RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&Cfg441StereoS16, 1) == 4,
@@ -209,7 +209,7 @@ static void tstSimple(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&config));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&config));
 
     uint32_t cBufSize = _1K;
 
@@ -657,7 +657,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
     /* Mix buffer is uFromHz 2ch S16 */
     uint32_t const         cFrames = RTRandU32Ex(16, RT_ELEMENTS(aSrcFrames));
     PDMAUDIOPCMPROPS const CfgSrc  = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uFromHz, false /*fSwap*/);
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgSrc));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&CfgSrc));
     AUDIOMIXBUF MixBuf;
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInit(&MixBuf, "NewPeekMixBuf", &CfgSrc, cFrames));
 
@@ -667,7 +667,7 @@ static void tstNewPeek(RTTEST hTest, uint32_t uFromHz, uint32_t uToHz)
 
     /* Peek state (destination) is uToHz 2ch S16 */
     PDMAUDIOPCMPROPS const CfgDst = PDMAUDIOPCMPROPS_INITIALIZER(2 /*cbSample*/, true /*fSigned*/, 2 /*ch*/, uToHz, false /*fSwap*/);
-    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&CfgDst));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValidAndSupported(&CfgDst));
     AUDIOMIXBUFPEEKSTATE PeekState;
     RTTESTI_CHECK_RC_OK_RETV(AudioMixBufInitPeekState(&MixBuf, &PeekState, &CfgDst));
 
