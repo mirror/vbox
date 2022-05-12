@@ -190,6 +190,7 @@
         <file alias="exit_16px.png">images/exit_16px.png</file>
         <file alias="expand_all_16px.png">images/expand_all_16px.png</file>
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
+        <file alias="explosion_hazard_32px.png">images/explosion_hazard_32px.png</file>
         <file alias="export_16px.png">images/export_16px.png</file>
         <file alias="export_32px.png">images/export_32px.png</file>
         <file alias="export_disabled_16px.png">images/export_disabled_16px.png</file>

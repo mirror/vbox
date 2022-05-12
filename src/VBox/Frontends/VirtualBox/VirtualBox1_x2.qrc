@@ -190,6 +190,7 @@
         <file alias="exit_16px_x2.png">images/x2/exit_16px_x2.png</file>
         <file alias="expand_all_16px_x2.png">images/x2/expand_all_16px_x2.png</file>
         <file alias="expanding_collapsing_16px_x2.png">images/x2/expanding_collapsing_16px_x2.png</file>
+        <file alias="explosion_hazard_32px_x2.png">images/x2/explosion_hazard_32px_x2.png</file>
         <file alias="export_16px_x2.png">images/x2/export_16px_x2.png</file>
         <file alias="export_32px_x2.png">images/x2/export_32px_x2.png</file>
         <file alias="export_disabled_16px_x2.png">images/x2/export_disabled_16px_x2.png</file>
