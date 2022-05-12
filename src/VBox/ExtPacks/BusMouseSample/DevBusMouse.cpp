@@ -216,7 +216,8 @@ static void bmsR3UpdateDownstreamStatus(PBMSSTATE pThis, PBMSSTATER3 pThisCC)
 {
     PPDMIMOUSECONNECTOR pDrv = pThisCC->Mouse.pDrv;
     bool fEnabled = !!pThis->mouse_enabled;
-    pDrv->pfnReportModes(pDrv, fEnabled, false, false);
+    if (pDrv)   /* pDrv may be NULL if no mouse interface attached. */
+        pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
 /**
@@ -239,9 +240,9 @@ static void bmsR3MouseEvent(PBMSSTATE pThis, int dx, int dy, int dz, int dw, int
 static DECLCALLBACK(void) bmsR3TimerCallback(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
-    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA(pDevIns, PBMSSTATER3);
+    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBMSSTATER3);
     uint8_t     irq_bit;
-    RT_NOREF(pvUser, hTimer);
+    RT_NOREF(pvUser);
     Assert(hTimer == pThis->hMouseTimer);
 
     /* Toggle the IRQ line if interrupts are enabled. */
@@ -519,7 +520,7 @@ static DECLCALLBACK(int) bmsR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 static DECLCALLBACK(void) bmsR3Reset(PPDMDEVINS pDevIns)
 {
     PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
-    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA(pDevIns, PBMSSTATER3);
+    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBMSSTATER3);
 
     /* Reinitialize the timer. */
     pThis->cTimerPeriodMs = BMS_IRQ_PERIOD_MS / 2;
@@ -632,7 +633,7 @@ static DECLCALLBACK(int) bmsR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
+                LogRel(("%s/%d: Warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
