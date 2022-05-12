@@ -22,6 +22,7 @@
 #ifdef VBOX_WS_MAC
 # include <QApplication>
 # include <QPainter>
+# include <QPainterPath>
 #endif
 
 /* GUI includes: */
@@ -36,9 +37,9 @@ QIToolBar::QIToolBar(QWidget *pParent /* = 0 */)
     , m_pMainWindow(qobject_cast<QMainWindow*>(pParent))
 #ifdef VBOX_WS_MAC
     , m_fEmulateUnifiedToolbar(false)
+    , m_iBrandingWidth(0)
 #endif
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -87,6 +88,18 @@ void QIToolBar::updateLayout()
     layout()->invalidate();
     layout()->activate();
 }
+
+void QIToolBar::enableBranding(const QIcon &icnBranding,
+                               const QString &strBranding,
+                               const QColor &clrBranding,
+                               int iBrandingWidth)
+{
+    m_icnBranding = icnBranding;
+    m_strBranding = strBranding;
+    m_clrBranding = clrBranding;
+    m_iBrandingWidth = iBrandingWidth;
+    update();
+}
 #endif /* VBOX_WS_MAC */
 
 void QIToolBar::resizeEvent(QResizeEvent *pEvent)
@@ -122,6 +135,47 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
 
         /* Fill background: */
         painter.fillRect(rectangle, gradient);
+
+        /* Do we have branding stuff? */
+        if (!m_icnBranding.isNull())
+        {
+            /* Configure font to fit width (m_iBrandingWidth - 2 * 4): */
+            QFont fnt = font();
+            int iTextWidth = 0;
+            for (int i = 0; i <= 10; ++i) // no more than 10 tries ..
+            {
+                if (fnt.pixelSize() == -1)
+                    fnt.setPointSize(fnt.pointSize() - i);
+                else
+                    fnt.setPixelSize(fnt.pixelSize() - i);
+                iTextWidth = QFontMetrics(fnt).size(0, m_strBranding).width();
+                if (iTextWidth <= m_iBrandingWidth - 2 * 4)
+                    break;
+            }
+            const int iFontHeight = QFontMetrics(fnt).height();
+
+            /* Draw pixmap: */
+            const int iIconSize = qMin(rectangle.height(), 32 /* default */);
+            const int iIconMarginH = (m_iBrandingWidth - iIconSize) / 2;
+            const int iIconMarginV = (rectangle.height() - iIconSize - iFontHeight) / 2;
+            const int iIconX = rectangle.width() - iIconSize - iIconMarginH;
+            const int iIconY = iIconMarginV;
+            painter.drawPixmap(iIconX, iIconY, m_icnBranding.pixmap(QSize(iIconSize, iIconSize)));
+
+            /* Draw text path: */
+            const int iTextMargingH = (m_iBrandingWidth - iTextWidth) / 2;
+            const int iTextX = rectangle.width() - iTextWidth - iTextMargingH;
+            const int iTextY = iIconY + iIconSize + iFontHeight;
+            QPainterPath textPath;
+            textPath.addText(0, 0, fnt, m_strBranding);
+            textPath.translate(iTextX, iTextY);
+            painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+            painter.setPen(QPen(m_clrBranding.darker(80), 2, Qt::SolidLine, Qt::RoundCap));
+            painter.drawPath(QPainterPathStroker().createStroke(textPath));
+            painter.setBrush(Qt::black);
+            painter.setPen(Qt::NoPen);
+            painter.drawPath(textPath);
+        }
     }
 }
 #endif /* VBOX_WS_MAC */

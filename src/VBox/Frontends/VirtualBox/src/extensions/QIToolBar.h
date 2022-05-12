@@ -23,6 +23,10 @@
 
 /* Qt includes: */
 #include <QToolBar>
+#ifdef VBOX_WS_MAC
+# include <QColor>
+# include <QIcon>
+#endif
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -63,7 +67,17 @@ public:
     void setShowToolBarButton(bool fShow);
     /** Mac OS X: Updates native tool-bar layout. */
     void updateLayout();
-#endif
+
+    /** Mac OS X: Defines branding stuff to be shown.
+      * @param  icnBranding     Brings branding icon to be shown.
+      * @param  strBranding     Brings branding text to be shown.
+      * @param  clrBranding     Brings branding color to be used.
+      * @param  iBrandingWidth  Holds the branding stuff width. */
+    void enableBranding(const QIcon &icnBranding,
+                        const QString &strBranding,
+                        const QColor &clrBranding,
+                        int iBrandingWidth);
+#endif /* VBOX_WS_MAC */
 
 protected:
 
@@ -86,7 +100,16 @@ private:
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Holds whether unified tool-bar should be emulated. */
     bool  m_fEmulateUnifiedToolbar;
-#endif
+
+    /** Mac OS X: Holds branding icon to be shown. */
+    QIcon    m_icnBranding;
+    /** Mac OS X: Holds branding text to be shown. */
+    QString  m_strBranding;
+    /** Mac OS X: Holds branding color to be used. */
+    QColor   m_clrBranding;
+    /** Mac OS X: Holds the branding stuff width. */
+    int      m_iBrandingWidth;
+#endif /* VBOX_WS_MAC */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIToolBar_h */
