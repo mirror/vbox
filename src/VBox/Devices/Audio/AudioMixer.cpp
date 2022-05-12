@@ -671,6 +671,9 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
     Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
     pSink->uMagic = AUDMIXSINK_MAGIC_DEAD;
 
+    int rc = RTCritSectEnter(&pSink->CritSect);
+    AssertRCReturnVoid(rc);
+
     /*
      * Destroy all streams.
      */
@@ -680,6 +683,9 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
         audioMixerSinkRemoveStreamInternal(pSink, pStream);
         audioMixerStreamDestroyInternal(pStream, pDevIns, true /*fImmediate*/);
     }
+
+    rc = RTCritSectLeave(&pSink->CritSect);
+    AssertRCReturnVoid(rc);
 
     /*
      * Destroy debug file and statistics.
