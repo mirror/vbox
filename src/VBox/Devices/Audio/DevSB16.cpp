@@ -445,7 +445,7 @@ static void sb16DmaCmd8(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStrea
     /** @todo Check if stream's DMA block size is properly aligned to the set PCM props. */
 
     sb16DmaCmdContinue8(pDevIns, pThis, pStream);
-    sb16SpeakerControl(pThis, 1);
+    sb16SpeakerControl(pThis, true /* fOn */);
 }
 
 static void sb16DmaCmd(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream,
@@ -505,7 +505,7 @@ static void sb16DmaCmd(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream
     /** @todo Check if stream's DMA block size is properly aligned to the set PCM props. */
 
     sb16StreamControl(pDevIns, pThis, pStream, true /* fRun */);
-    sb16SpeakerControl(pThis, 1);
+    sb16SpeakerControl(pThis, true /* fOn */);
 }
 
 static inline void sb16DspSeData(PSB16STATE pThis, uint8_t val)
@@ -1611,7 +1611,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *pvUser, unsi
         if (0 == pStream->dma_auto) /** @todo r=andy BUGBUG Why do we first assert the IRQ if dma_auto is 0? Revisit this. */
         {
             sb16StreamControl(pDevIns, pThis, pStream, false /* fRun */);
-            sb16SpeakerControl(pThis, 0);
+            sb16SpeakerControl(pThis, false /* fOn */);
         }
     }
 
@@ -2745,7 +2745,7 @@ static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
     pThis->cmd = -1;
 
     sb16MixerReset(pThis);
-    sb16SpeakerControl(pThis, 0);
+    sb16SpeakerControl(pThis, false /* fOn */);
     sb16DspCmdResetLegacy(pThis);
 }
 
