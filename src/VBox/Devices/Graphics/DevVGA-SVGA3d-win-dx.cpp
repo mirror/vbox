@@ -176,14 +176,8 @@ typedef struct VMSVGA3DBACKENDSURFACE
     /** AVL tree containing DXSHAREDTEXTURE structures. */
     AVLU32TREE SharedTextureTree;
 
-    union
-    {
-       struct
-       {
-           /* Render target views, depth stencil views and shader resource views created for this texture. */
-           RTLISTANCHOR listView;                 /* DXVIEW */
-       } Texture;
-    } u2;
+    /* Render target views, depth stencil views and shader resource views created for this texture or buffer. */
+    RTLISTANCHOR listView;                        /* DXVIEW */
 
 } VMSVGA3DBACKENDSURFACE;
 
@@ -236,7 +230,11 @@ typedef struct DXSHADER
 
 typedef struct DXQUERY
 {
-    ID3D11Query                *pQuery;
+    union
+    {
+        ID3D11Query            *pQuery;
+        ID3D11Predicate        *pPredicate;
+    };
 } DXQUERY;
 
 typedef struct DXSTREAMOUTPUT
@@ -970,7 +968,7 @@ static void dxViewAddToList(PVGASTATECC pThisCC, DXVIEW *pDXView)
     int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pDXView->sid, &pSurface);
     AssertRCReturnVoid(rc);
 
-    RTListAppend(&pSurface->pBackendSurface->u2.Texture.listView, &pDXView->nodeSurfaceView);
+    RTListAppend(&pSurface->pBackendSurface->listView, &pDXView->nodeSurfaceView);
 }
 
 
@@ -1009,13 +1007,13 @@ static int dxViewInit(DXVIEW *pDXView, PVMSVGA3DSURFACE pSurface, VMSVGA3DDXCONT
     pDXView->viewId      = viewId;
     pDXView->enmViewType = enmViewType;
     pDXView->u.pView     = pView;
-    RTListAppend(&pSurface->pBackendSurface->u2.Texture.listView, &pDXView->nodeSurfaceView);
+    RTListAppend(&pSurface->pBackendSurface->listView, &pDXView->nodeSurfaceView);
 
     LogFunc(("cid = %u, sid = %u, viewId = %u, type = %u\n",
               pDXView->cid, pDXView->sid, pDXView->viewId, pDXView->enmViewType));
 
 DXVIEW *pIter, *pNext;
-RTListForEachSafe(&pSurface->pBackendSurface->u2.Texture.listView, pIter, pNext, DXVIEW, nodeSurfaceView)
+RTListForEachSafe(&pSurface->pBackendSurface->listView, pIter, pNext, DXVIEW, nodeSurfaceView)
 {
     AssertPtr(pNext);
     LogFunc(("pIter=%p, pNext=%p\n", pIter, pNext));
@@ -1837,7 +1835,7 @@ static int dxBackendSurfaceAlloc(PVMSVGA3DBACKENDSURFACE *ppBackendSurface)
     PVMSVGA3DBACKENDSURFACE pBackendSurface = (PVMSVGA3DBACKENDSURFACE)RTMemAllocZ(sizeof(VMSVGA3DBACKENDSURFACE));
     AssertPtrReturn(pBackendSurface, VERR_NO_MEMORY);
     pBackendSurface->cidDrawing = SVGA_ID_INVALID;
-    RTListInit(&pBackendSurface->u2.Texture.listView);
+    RTListInit(&pBackendSurface->listView);
     *ppBackendSurface = pBackendSurface;
     return VINF_SUCCESS;
 }
@@ -4457,7 +4455,7 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVG
 
     /* If any views have been created for this resource, then also release them. */
     DXVIEW *pIter, *pNext;
-    RTListForEachSafe(&pBackendSurface->u2.Texture.listView, pIter, pNext, DXVIEW, nodeSurfaceView)
+    RTListForEachSafe(&pBackendSurface->listView, pIter, pNext, DXVIEW, nodeSurfaceView)
     {
         LogFunc(("pIter=%p, pNext=%p\n", pIter, pNext));
         dxViewDestroy(pIter);
@@ -4514,7 +4512,7 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceInvalidateImage(PVGASTATECC pThisCC
          */
         ASSERT_GUEST_FAILED();
         DXVIEW *pIter, *pNext;
-        RTListForEachSafe(&pBackendSurface->u2.Texture.listView, pIter, pNext, DXVIEW, nodeSurfaceView)
+        RTListForEachSafe(&pBackendSurface->listView, pIter, pNext, DXVIEW, nodeSurfaceView)
         {
             dxViewDestroy(pIter);
         }
@@ -5269,9 +5267,11 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 /* Apply resource types to a pixel shader. */
                 if (shaderType == SVGA3D_SHADERTYPE_PS)
                 {
-                    VGPU10_RESOURCE_DIMENSION aResourceType[SVGA3D_DX_MAX_SRVIEWS];
-                    RT_ZERO(aResourceType);
-                    uint32_t cResourceType = 0;
+                    VGPU10_RESOURCE_DIMENSION aResourceDimension[SVGA3D_DX_MAX_SRVIEWS];
+                    RT_ZERO(aResourceDimension);
+                    VGPU10_RESOURCE_RETURN_TYPE aResourceReturnType[SVGA3D_DX_MAX_SRVIEWS];
+                    RT_ZERO(aResourceReturnType);
+                    uint32_t cResources = 0;
 
                     for (uint32_t idxSR = 0; idxSR < SVGA3D_DX_MAX_SRVIEWS; ++idxSR)
                     {
@@ -5285,43 +5285,45 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                             rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pSRViewEntry->sid, &pSurface);
                             AssertRCReturnVoid(rc);
 
+                            aResourceReturnType[idxSR] = DXShaderResourceReturnTypeFromFormat(pSRViewEntry->format);
+
                             switch (pSRViewEntry->resourceDimension)
                             {
                                 case SVGA3D_RESOURCE_BUFFEREX:
                                 case SVGA3D_RESOURCE_BUFFER:
-                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_BUFFER;
+                                    aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_BUFFER;
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURE1D:
                                     if (pSurface->surfaceDesc.numArrayElements <= 1)
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1D;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1D;
                                     else
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1DARRAY;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1DARRAY;
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURE2D:
                                     if (pSurface->surfaceDesc.numArrayElements <= 1)
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
                                     else
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY;
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURE3D:
-                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
+                                    aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURECUBE:
                                     if (pSurface->surfaceDesc.numArrayElements <= 6)
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBE;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBE;
                                     else
-                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY;
+                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY;
                                     break;
                                 default:
                                     ASSERT_GUEST_FAILED();
-                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                                    aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
                             }
 
-                            cResourceType = idxSR + 1;
+                            cResources = idxSR + 1;
                         }
                     }
 
-                    rc = DXShaderUpdateResourceTypes(&pDXShader->shaderInfo, aResourceType, cResourceType);
+                    rc = DXShaderUpdateResources(&pDXShader->shaderInfo, aResourceDimension, aResourceReturnType, cResources);
                     AssertRC(rc); /* Ignore rc because the shader will most likely work anyway. */
                 }
 
@@ -6248,13 +6250,41 @@ static DECLCALLBACK(int) vmsvga3dBackDXEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDX
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXSetPredication(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXSetPredication(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, uint32_t predicateValue)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    if (queryId != SVGA3D_INVALID_ID)
+    {
+        DEBUG_BREAKPOINT_TEST();
+        DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
+        SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+
+        VGPU10QUERYINFO const *pQueryInfo = dxQueryInfo((SVGA3dQueryType)pEntry->type);
+        if (!pQueryInfo)
+            return VERR_INVALID_PARAMETER;
+
+        D3D_RELEASE(pDXQuery->pQuery);
+
+        D3D11_QUERY_DESC desc;
+        desc.Query     = pQueryInfo->dxQueryType;
+        desc.MiscFlags = 0;
+        if (pEntry->flags & SVGA3D_DXQUERY_FLAG_PREDICATEHINT)
+            desc.MiscFlags |= (UINT)D3D11_QUERY_MISC_PREDICATEHINT;
+
+        HRESULT hr = pDXDevice->pDevice->CreatePredicate(&desc, &pDXQuery->pPredicate);
+        AssertReturn(SUCCEEDED(hr), VERR_INVALID_STATE);
+
+        pDXDevice->pImmediateContext->SetPredication(pDXQuery->pPredicate, RT_BOOL(predicateValue));
+    }
+    else
+        pDXDevice->pImmediateContext->SetPredication(NULL, FALSE);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -6406,14 +6436,20 @@ static DECLCALLBACK(int) vmsvga3dBackDXPredCopyRegion(PVGASTATECC pThisCC, PVMSV
     if (pSrcSurface->pBackendSurface == NULL)
     {
         /* Create the resource. */
-        rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSrcSurface);
+        if (pSrcSurface->format != SVGA3D_BUFFER)
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSrcSurface);
+        else
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSrcSurface);
         AssertRCReturn(rc, rc);
     }
 
     if (pDstSurface->pBackendSurface == NULL)
     {
         /* Create the resource. */
-        rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pDstSurface);
+        if (pSrcSurface->format != SVGA3D_BUFFER)
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pDstSurface);
+        else
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pDstSurface);
         AssertRCReturn(rc, rc);
     }
 
@@ -7335,16 +7371,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXMoveQuery(PVGASTATECC pThisCC, PVMSVGA3DD
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXMobFence64(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
 static DECLCALLBACK(int) vmsvga3dBackDXBindAllShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
@@ -8016,7 +8042,6 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXBufferCopy                = vmsvga3dBackDXBufferCopy;
                 p->pfnDXSurfaceCopyAndReadback    = vmsvga3dBackDXSurfaceCopyAndReadback;
                 p->pfnDXMoveQuery                 = vmsvga3dBackDXMoveQuery;
-                p->pfnDXMobFence64                = vmsvga3dBackDXMobFence64;
                 p->pfnDXBindAllShader             = vmsvga3dBackDXBindAllShader;
                 p->pfnDXHint                      = vmsvga3dBackDXHint;
                 p->pfnDXBufferUpdate              = vmsvga3dBackDXBufferUpdate;

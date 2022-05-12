@@ -2026,6 +2026,11 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                         pSignatureEntry->registerIndex = 0xFFFFFFFF;
                         pSignatureEntry->semanticName  = SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED;
                     }
+                    else if (opcode.aValOperand[0].operandType <= VGPU10_OPERAND_TYPE_SM50_MAX)
+                    {
+                        pSignatureEntry->registerIndex = 0;
+                        pSignatureEntry->semanticName  = opcode.semanticName;
+                    }
                     else
                         ASSERT_GUEST_FAILED_STMT_BREAK(rc = VERR_NOT_SUPPORTED);
                 }
@@ -2436,25 +2441,115 @@ char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t id
     return dxbcGetOutputSemanticName(pInfo, idxRegister, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0], pSemanticName);
 }
 
-int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType)
+VGPU10_RESOURCE_RETURN_TYPE DXShaderResourceReturnTypeFromFormat(SVGA3dSurfaceFormat format)
 {
-    if (pInfo->fGuestSignatures)
-        return VINF_SUCCESS;
+    /** @todo This is auto-generated from format names and needs a review. */
+    switch (format)
+    {
+        case SVGA3D_R32G32B32A32_UINT:             return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R32G32B32A32_SINT:             return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R32G32B32_FLOAT:               return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R32G32B32_UINT:                return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R32G32B32_SINT:                return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R16G16B16A16_UINT:             return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R16G16B16A16_SNORM:            return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R16G16B16A16_SINT:             return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R32G32_UINT:                   return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R32G32_SINT:                   return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_D32_FLOAT_S8X24_UINT:          return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R32_FLOAT_X8X24:               return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_X32_G8X24_UINT:                return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R10G10B10A2_UINT:              return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R11G11B10_FLOAT:               return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R8G8B8A8_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R8G8B8A8_UNORM_SRGB:           return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R8G8B8A8_UINT:                 return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R8G8B8A8_SINT:                 return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R16G16_UINT:                   return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R16G16_SINT:                   return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_D32_FLOAT:                     return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R32_UINT:                      return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R32_SINT:                      return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_D24_UNORM_S8_UINT:             return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R24_UNORM_X8:                  return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_X24_G8_UINT:                   return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R8G8_UNORM:                    return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R8G8_UINT:                     return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R8G8_SINT:                     return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R16_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R16_UINT:                      return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R16_SNORM:                     return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R16_SINT:                      return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R8_UNORM:                      return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R8_UINT:                       return VGPU10_RETURN_TYPE_UINT;
+        case SVGA3D_R8_SNORM:                      return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R8_SINT:                       return VGPU10_RETURN_TYPE_SINT;
+        case SVGA3D_R8G8_B8G8_UNORM:               return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_G8R8_G8B8_UNORM:               return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC1_UNORM_SRGB:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC2_UNORM_SRGB:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC3_UNORM_SRGB:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC4_SNORM:                     return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_BC5_SNORM:                     return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R10G10B10_XR_BIAS_A2_UNORM:    return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B8G8R8A8_UNORM_SRGB:           return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B8G8R8X8_UNORM_SRGB:           return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R32G32B32A32_FLOAT:            return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R16G16B16A16_FLOAT:            return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R16G16B16A16_UNORM:            return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R32G32_FLOAT:                  return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R10G10B10A2_UNORM:             return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R8G8B8A8_SNORM:                return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R16G16_FLOAT:                  return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R16G16_UNORM:                  return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R16G16_SNORM:                  return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R32_FLOAT:                     return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_R8G8_SNORM:                    return VGPU10_RETURN_TYPE_SNORM;
+        case SVGA3D_R16_FLOAT:                     return VGPU10_RETURN_TYPE_FLOAT;
+        case SVGA3D_D16_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_A8_UNORM:                      return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC1_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC2_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC3_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B5G6R5_UNORM:                  return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B5G5R5A1_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B8G8R8A8_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B8G8R8X8_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC4_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC5_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_B4G4R4A4_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC7_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_BC7_UNORM_SRGB:                return VGPU10_RETURN_TYPE_UNORM;
+        default:
+            break;
+    }
+    return VGPU10_RETURN_TYPE_UNORM;
+}
 
+int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceDimension,
+                            VGPU10_RESOURCE_RETURN_TYPE *paResourceReturnType, uint32_t cResources)
+{
     for (uint32_t i = 0; i < pInfo->cDclResource; ++i)
     {
-        VGPU10_RESOURCE_DIMENSION const resourceType = i < cResourceType ? paResourceType[i] : VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
-        AssertContinue(resourceType <= VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY);
+        VGPU10_RESOURCE_DIMENSION const resourceDimension = i < cResources ? paResourceDimension[i] : VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+        AssertContinue(resourceDimension <= VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY);
+
+        VGPU10_RESOURCE_RETURN_TYPE const resourceReturnType = i < cResources ? paResourceReturnType[i] : VGPU10_RETURN_TYPE_FLOAT;
+        AssertContinue(resourceReturnType <= VGPU10_RETURN_TYPE_MIXED);
 
         uint32_t const offToken = pInfo->aOffDclResource[i];
         AssertContinue(offToken < pInfo->cbBytecode);
         uint32_t *paToken = (uint32_t *)((uintptr_t)pInfo->pvBytecode + offToken);
 
         VGPU10OpcodeToken0 *pOpcode = (VGPU10OpcodeToken0 *)&paToken[0];
-        pOpcode->resourceDimension = resourceType;
+        pOpcode->resourceDimension = resourceDimension;
         // paToken[1] unmodified
         // paToken[2] unmodified
-        paToken[3] = 0x5555; /** @todo VGPU10ResourceReturnTypeToken float */
+        VGPU10ResourceReturnTypeToken *pReturnTypeToken = (VGPU10ResourceReturnTypeToken *)&paToken[3];
+        pReturnTypeToken->component0 = (uint8_t)resourceReturnType;
+        pReturnTypeToken->component1 = (uint8_t)resourceReturnType;
+        pReturnTypeToken->component2 = (uint8_t)resourceReturnType;
+        pReturnTypeToken->component3 = (uint8_t)resourceReturnType;
     }
 
     return VINF_SUCCESS;

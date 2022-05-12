@@ -52,7 +52,9 @@ typedef struct DXShaderInfo
 
 int DXShaderParse(void const *pvCode, uint32_t cbCode, DXShaderInfo *pInfo);
 void DXShaderFree(DXShaderInfo *pInfo);
-int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType);
+int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceDimension,
+                            VGPU10_RESOURCE_RETURN_TYPE *paResourceReturnType, uint32_t cResources);
+VGPU10_RESOURCE_RETURN_TYPE DXShaderResourceReturnTypeFromFormat(SVGA3dSurfaceFormat format);
 int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbDXBC);
 char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister, SVGA3dDXSignatureSemanticName *pSemanticName);
 

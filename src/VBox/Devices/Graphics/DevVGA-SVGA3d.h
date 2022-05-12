@@ -448,7 +448,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXDestroyQuery,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId));
     DECLCALLBACKMEMBER(int, pfnDXBeginQuery,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId));
     DECLCALLBACKMEMBER(int, pfnDXEndQuery,                  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, SVGADXQueryResultUnion *pQueryResult, uint32_t *pcbOut));
-    DECLCALLBACKMEMBER(int, pfnDXSetPredication,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnDXSetPredication,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, uint32_t predicateValue));
     DECLCALLBACKMEMBER(int, pfnDXSetSOTargets,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t cSoTarget, SVGA3dSoTarget const *paSoTarget));
     DECLCALLBACKMEMBER(int, pfnDXSetViewports,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t cViewport, SVGA3dViewport const *paViewport));
     DECLCALLBACKMEMBER(int, pfnDXSetScissorRects,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t cRect, SVGASignedRect const *paRect));
@@ -484,7 +484,6 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXBufferCopy,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSurfaceCopyAndReadback,    (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXMoveQuery,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnDXMobFence64,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBindAllShader,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXHint,                      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBufferUpdate,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -576,7 +575,7 @@ int vmsvga3dDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
 int vmsvga3dDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBeginQuery const *pCmd);
 int vmsvga3dDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEndQuery const *pCmd);
 int vmsvga3dDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackQuery const *pCmd);
-int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPredication const *pCmd);
 int vmsvga3dDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t cSoTarget, SVGA3dSoTarget const *paSoTarget);
 int vmsvga3dDXSetViewports(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t cViewport, SVGA3dViewport const *paViewport);
 int vmsvga3dDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t cRect, SVGASignedRect const *paRect);
@@ -615,7 +614,6 @@ int vmsvga3dDXSurfaceCopyAndReadback(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXMoveQuery(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBindAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindAllQuery const *pCmd);
 int vmsvga3dDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackAllQuery const *pCmd);
-int vmsvga3dDXMobFence64(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXHint(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBufferUpdate(PVGASTATECC pThisCC, uint32_t idDXContext);

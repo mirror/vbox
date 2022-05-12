@@ -1383,7 +1383,7 @@ float float16ToFloat(uint16_t f16)
 
 static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
 {
-    if (pMap->cbBlock != 4 && pMap->format != SVGA3D_R16G16B16A16_FLOAT)
+    if (pMap->cbBlock != 4 && pMap->cbBlock != 1 && pMap->format != SVGA3D_R16G16B16A16_FLOAT)
         return VERR_NOT_SUPPORTED;
 
     int const w = pMap->cbRow / pMap->cbBlock;
@@ -1421,6 +1421,20 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
         for (uint32_t iRow = 0; iRow < pMap->cRows; ++iRow)
         {
             fwrite(s, 1, pMap->cbRow, f);
+
+            s += pMap->cbRowPitch;
+        }
+    }
+    else if (pMap->cbBlock == 1)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (uint32_t iRow = 0; iRow < pMap->cRows; ++iRow)
+        {
+            for (int32_t x = 0; x < w; ++x)
+            {
+                uint32_t u32Pixel = s[x];
+                fwrite(&u32Pixel, 1, 4, f);
+            }
 
             s += pMap->cbRowPitch;
         }
@@ -2518,10 +2532,9 @@ static int vmsvga3dCmdDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext,
 static int vmsvga3dCmdDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPredication const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetPredication(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetPredication(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3378,13 +3391,20 @@ static int vmsvga3dCmdDXPredTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idD
 
 
 /* SVGA_3D_CMD_DX_MOB_FENCE_64 1216 */
-static int vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXMobFence64 const *pCmd, uint32_t cbCmd)
+static int vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, SVGA3dCmdDXMobFence64 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXMobFence64(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobId);
+    ASSERT_GUEST_RETURN(pMob, VERR_INVALID_PARAMETER);
+
+    int rc = vmsvgaR3MobWrite(pSvgaR3State, pMob, pCmd->mobOffset, &pCmd->value, sizeof(pCmd->value));
+    ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+
+    return VINF_SUCCESS;
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -5602,7 +5622,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdDXMobFence64 *pCmd = (SVGA3dCmdDXMobFence64 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        rcParse = vmsvga3dCmdDXMobFence64(pThisCC, idDXContext, pCmd, cbCmd);
+        rcParse = vmsvga3dCmdDXMobFence64(pThisCC, pCmd, cbCmd);
         break;
     }
 

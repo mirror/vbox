@@ -1205,7 +1205,7 @@ int vmsvga3dDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
 }
 
 
-int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPredication const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1217,7 +1217,13 @@ int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXSetPredication(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(   queryId == SVGA3D_INVALID_ID
+                        || queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXSetPredication(pThisCC, pDXContext, queryId, pCmd->predicateValue);
     return rc;
 }
 
@@ -2447,23 +2453,6 @@ int vmsvga3dDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
      */
     RT_NOREF(pDXContext);
 
-    return rc;
-}
-
-
-int vmsvga3dDXMobFence64(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXMobFence64, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXMobFence64(pThisCC, pDXContext);
     return rc;
 }
 
