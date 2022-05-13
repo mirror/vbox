@@ -182,7 +182,7 @@ BOOLEAN vboxVidPnMatchVideoSignal(const D3DKMDT_VIDEO_SIGNAL_INFO *pVsi1, const 
     return TRUE;
 }
 
-static void vboxVidPnPopulateSourceModeInfo(D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, const RTRECTSIZE *pSize)
+static void vboxVidPnPopulateSourceModeInfo(D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, const RTRECTSIZE *pSize, D3DDDIFORMAT PixelFormat = D3DDDIFMT_A8R8G8B8)
 {
     /* this is a graphics mode */
     pNewVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
@@ -190,7 +190,7 @@ static void vboxVidPnPopulateSourceModeInfo(D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPn
     pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy = pSize->cy;
     pNewVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
     pNewVidPnSourceModeInfo->Format.Graphics.Stride = pSize->cx * 4;
-    pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat = D3DDDIFMT_A8R8G8B8;
+    pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat = PixelFormat;
     Assert(pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat != D3DDDIFMT_UNKNOWN);
     pNewVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
     if (pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat == D3DDDIFMT_P8)
@@ -541,25 +541,28 @@ static NTSTATUS vboxVidPnSourceModeSetFromArray(D3DKMDT_HVIDPNSOURCEMODESET hVid
     {
         RTRECTSIZE size = CR_U642RSIZE(CrSaGetVal(pArray, i));
 
-        D3DKMDT_VIDPN_SOURCE_MODE *pVidPnModeInfo;
-        NTSTATUS Status = pVidPnModeSetInterface->pfnCreateNewModeInfo(hVidPnModeSet, &pVidPnModeInfo);
-        if (!NT_SUCCESS(Status))
+        for (uint32_t m = 0; m < 2; ++m)
         {
-            WARN(("pfnCreateNewModeInfo failed, Status 0x%x", Status));
-            return Status;
-        }
+            D3DKMDT_VIDPN_SOURCE_MODE *pVidPnModeInfo;
+            NTSTATUS Status = pVidPnModeSetInterface->pfnCreateNewModeInfo(hVidPnModeSet, &pVidPnModeInfo);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("pfnCreateNewModeInfo failed, Status 0x%x", Status));
+                return Status;
+            }
 
-        vboxVidPnPopulateSourceModeInfo(pVidPnModeInfo, &size);
+            vboxVidPnPopulateSourceModeInfo(pVidPnModeInfo, &size, m == 0 ? D3DDDIFMT_A8R8G8B8 : D3DDDIFMT_A8B8G8R8);
 
-        Status = pVidPnModeSetInterface->pfnAddMode(hVidPnModeSet, pVidPnModeInfo);
-        if (!NT_SUCCESS(Status))
-        {
-            WARN(("pfnAddMode (%d x %d) failed, Status 0x%x", size.cx, size.cy, Status));
-            VBoxVidPnDumpSourceMode("SourceMode: ", pVidPnModeInfo, "\n");
-            NTSTATUS rcNt2 = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
-            AssertNtStatusSuccess(rcNt2);
-            // Continue adding modes into modeset even if a mode was rejected
-            continue;
+            Status = pVidPnModeSetInterface->pfnAddMode(hVidPnModeSet, pVidPnModeInfo);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("pfnAddMode (%d x %d) failed, Status 0x%x", size.cx, size.cy, Status));
+                VBoxVidPnDumpSourceMode("SourceMode: ", pVidPnModeInfo, "\n");
+                NTSTATUS rcNt2 = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
+                AssertNtStatusSuccess(rcNt2);
+                // Continue adding modes into modeset even if a mode was rejected
+                continue;
+            }
         }
     }
 

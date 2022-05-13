@@ -109,6 +109,7 @@ static const RTRECTSIZE g_VBoxBuiltinResolutions[] =
     { 800,   600 },
     { 1024,  768 },
     { 1152,  864 },
+    { 1280,  720 },
     { 1280,  960 },
     { 1280, 1024 },
     { 1400, 1050 },
