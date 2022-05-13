@@ -55,6 +55,15 @@ void QIToolBar::setUseTextLabels(bool fEnable)
         setToolButtonStyle(tbs);
 }
 
+bool QIToolBar::useTextLabels() const
+{
+    /* Depending on parent, return the style: */
+    if (m_pMainWindow)
+        return m_pMainWindow->toolButtonStyle() == Qt::ToolButtonTextUnderIcon;
+    else
+        return toolButtonStyle() == Qt::ToolButtonTextUnderIcon;
+}
+
 #ifdef VBOX_WS_MAC
 void QIToolBar::enableMacToolbar()
 {
@@ -139,42 +148,51 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
         /* Do we have branding stuff? */
         if (!m_icnBranding.isNull())
         {
-            /* Configure font to fit width (m_iBrandingWidth - 2 * 4): */
+            /* A bit of common stuff: */
             QFont fnt = font();
             int iTextWidth = 0;
-            for (int i = 0; i <= 10; ++i) // no more than 10 tries ..
+            int iTextHeight = 0;
+
+            /* Configure font to fit width (m_iBrandingWidth - 2 * 4): */
+            if (useTextLabels())
             {
-                if (fnt.pixelSize() == -1)
-                    fnt.setPointSize(fnt.pointSize() - i);
-                else
-                    fnt.setPixelSize(fnt.pixelSize() - i);
-                iTextWidth = QFontMetrics(fnt).size(0, m_strBranding).width();
-                if (iTextWidth <= m_iBrandingWidth - 2 * 4)
-                    break;
+                for (int i = 0; i <= 10; ++i) // no more than 10 tries ..
+                {
+                    if (fnt.pixelSize() == -1)
+                        fnt.setPointSize(fnt.pointSize() - i);
+                    else
+                        fnt.setPixelSize(fnt.pixelSize() - i);
+                    iTextWidth = QFontMetrics(fnt).size(0, m_strBranding).width();
+                    if (iTextWidth <= m_iBrandingWidth - 2 * 4)
+                        break;
+                }
+                iTextHeight = QFontMetrics(fnt).height();
             }
-            const int iFontHeight = QFontMetrics(fnt).height();
 
             /* Draw pixmap: */
             const int iIconSize = qMin(rectangle.height(), 32 /* default */);
             const int iIconMarginH = (m_iBrandingWidth - iIconSize) / 2;
-            const int iIconMarginV = (rectangle.height() - iIconSize - iFontHeight) / 2;
+            const int iIconMarginV = (rectangle.height() - iIconSize - iTextHeight) / 2;
             const int iIconX = rectangle.width() - iIconSize - iIconMarginH;
             const int iIconY = iIconMarginV;
             painter.drawPixmap(iIconX, iIconY, m_icnBranding.pixmap(QSize(iIconSize, iIconSize)));
 
             /* Draw text path: */
-            const int iTextMargingH = (m_iBrandingWidth - iTextWidth) / 2;
-            const int iTextX = rectangle.width() - iTextWidth - iTextMargingH;
-            const int iTextY = iIconY + iIconSize + iFontHeight;
-            QPainterPath textPath;
-            textPath.addText(0, 0, fnt, m_strBranding);
-            textPath.translate(iTextX, iTextY);
-            painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-            painter.setPen(QPen(m_clrBranding.darker(80), 2, Qt::SolidLine, Qt::RoundCap));
-            painter.drawPath(QPainterPathStroker().createStroke(textPath));
-            painter.setBrush(Qt::black);
-            painter.setPen(Qt::NoPen);
-            painter.drawPath(textPath);
+            if (useTextLabels())
+            {
+                const int iTextMargingH = (m_iBrandingWidth - iTextWidth) / 2;
+                const int iTextX = rectangle.width() - iTextWidth - iTextMargingH;
+                const int iTextY = iIconY + iIconSize + iTextHeight;
+                QPainterPath textPath;
+                textPath.addText(0, 0, fnt, m_strBranding);
+                textPath.translate(iTextX, iTextY);
+                painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+                painter.setPen(QPen(m_clrBranding.darker(80), 2, Qt::SolidLine, Qt::RoundCap));
+                painter.drawPath(QPainterPathStroker().createStroke(textPath));
+                painter.setBrush(Qt::black);
+                painter.setPen(Qt::NoPen);
+                painter.drawPath(textPath);
+            }
         }
     }
 }

@@ -56,6 +56,8 @@ public:
 
     /** Defines whether tool-bar should use text-labels. */
     void setUseTextLabels(bool fEnable);
+    /** Returns whether tool-bar should use text-labels. */
+    bool useTextLabels() const;
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Defines whether native tool-bar should be enabled. */
