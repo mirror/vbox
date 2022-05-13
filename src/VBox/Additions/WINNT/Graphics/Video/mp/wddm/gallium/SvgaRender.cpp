@@ -392,15 +392,6 @@ static NTSTATUS procCmdUpdateGBMobMapping(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACON
 }
 
 
-/* SVGA_3D_CMD_DEFINE_GB_SURFACE 1097 */
-static NTSTATUS procCmdDefineGBSurface(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
-{
-    SVGA3dCmdDefineGBSurface *pCmd = (SVGA3dCmdDefineGBSurface *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
-}
-
-
 /* SVGA_3D_CMD_DESTROY_GB_SURFACE 1098 */
 static NTSTATUS procCmdDestroyGBSurface(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
@@ -675,15 +666,6 @@ static NTSTATUS procCmdBindGBSurfaceWithPitch(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVG
 static NTSTATUS procCmdGBMobFence(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
     SVGA3dCmdGBMobFence *pCmd = (SVGA3dCmdGBMobFence *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
-}
-
-
-/* SVGA_3D_CMD_DEFINE_GB_SURFACE_V2 1134 */
-static NTSTATUS procCmdDefineGBSurface_v2(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
-{
-    SVGA3dCmdDefineGBSurface_v2 *pCmd = (SVGA3dCmdDefineGBSurface_v2 *)&pHeader[1];
     RT_NOREF(pSvga, pSvgaContext, pCmd);
     return STATUS_SUCCESS;
 }
@@ -1547,15 +1529,6 @@ static NTSTATUS procCmdIntraSurfaceCopy(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTE
 }
 
 
-/* SVGA_3D_CMD_DEFINE_GB_SURFACE_V3 1239 */
-static NTSTATUS procCmdDefineGBSurface_v3(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
-{
-    SVGA3dCmdDefineGBSurface_v3 *pCmd = (SVGA3dCmdDefineGBSurface_v3 *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
-}
-
-
 /* SVGA_3D_CMD_DX_RESOLVE_COPY 1240 */
 static NTSTATUS procCmdDXResolveCopy(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
@@ -1781,15 +1754,6 @@ static NTSTATUS procCmdLogicOpsClearTypeBlend(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVG
 }
 
 
-/* SVGA_3D_CMD_DEFINE_GB_SURFACE_V4 1267 */
-static NTSTATUS procCmdDefineGBSurface_v4(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
-{
-    SVGA3dCmdDefineGBSurface_v4 *pCmd = (SVGA3dCmdDefineGBSurface_v4 *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
-}
-
-
 /* SVGA_3D_CMD_DX_SET_CS_UA_VIEWS 1268 */
 static NTSTATUS procCmdDXSetCSUAViews(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
@@ -1942,7 +1906,7 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdDestroyGBMob },                        // SVGA_3D_CMD_DESTROY_GB_MOB
     { procCmdInvalid },                             // SVGA_3D_CMD_DEAD3
     { procCmdUpdateGBMobMapping },                  // SVGA_3D_CMD_UPDATE_GB_MOB_MAPPING
-    { procCmdDefineGBSurface },                     // SVGA_3D_CMD_DEFINE_GB_SURFACE
+    { procCmdInvalid },                             // SVGA_3D_CMD_DEFINE_GB_SURFACE
     { procCmdDestroyGBSurface },                    // SVGA_3D_CMD_DESTROY_GB_SURFACE
     { procCmdBindGBSurface },                       // SVGA_3D_CMD_BIND_GB_SURFACE
     { procCmdCondBindGBSurface },                   // SVGA_3D_CMD_COND_BIND_GB_SURFACE
@@ -1979,7 +1943,7 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdGBScreenDMA },                         // SVGA_3D_CMD_GB_SCREEN_DMA
     { procCmdBindGBSurfaceWithPitch },              // SVGA_3D_CMD_BIND_GB_SURFACE_WITH_PITCH
     { procCmdGBMobFence },                          // SVGA_3D_CMD_GB_MOB_FENCE
-    { procCmdDefineGBSurface_v2 },                  // SVGA_3D_CMD_DEFINE_GB_SURFACE_V2
+    { procCmdInvalid },                             // SVGA_3D_CMD_DEFINE_GB_SURFACE_V2
     { procCmdDefineGBMob64 },                       // SVGA_3D_CMD_DEFINE_GB_MOB64
     { procCmdRedefineGBMob64 },                     // SVGA_3D_CMD_REDEFINE_GB_MOB64
     { procCmdInvalid },                             // SVGA_3D_CMD_NOP_ERROR
@@ -2084,7 +2048,7 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdGrowOTable },                          // SVGA_3D_CMD_GROW_OTABLE
     { procCmdDXGrowCOTable },                       // SVGA_3D_CMD_DX_GROW_COTABLE
     { procCmdIntraSurfaceCopy },                    // SVGA_3D_CMD_INTRA_SURFACE_COPY
-    { procCmdDefineGBSurface_v3 },                  // SVGA_3D_CMD_DEFINE_GB_SURFACE_V3
+    { procCmdInvalid },                             // SVGA_3D_CMD_DEFINE_GB_SURFACE_V3
     { procCmdDXResolveCopy },                       // SVGA_3D_CMD_DX_RESOLVE_COPY
     { procCmdDXPredResolveCopy },                   // SVGA_3D_CMD_DX_PRED_RESOLVE_COPY
     { procCmdDXPredConvertRegion },                 // SVGA_3D_CMD_DX_PRED_CONVERT_REGION
@@ -2112,7 +2076,7 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdLogicOpsClearTypeBlend },              // SVGA_3D_CMD_LOGICOPS_CLEARTYPEBLEND
     { procCmdInvalid },                             // SVGA_3D_CMD_RESERVED2_1
     { procCmdInvalid },                             // SVGA_3D_CMD_RESERVED2_2
-    { procCmdDefineGBSurface_v4 },                  // SVGA_3D_CMD_DEFINE_GB_SURFACE_V4
+    { procCmdInvalid },                             // SVGA_3D_CMD_DEFINE_GB_SURFACE_V4
     { procCmdDXSetCSUAViews },                      // SVGA_3D_CMD_DX_SET_CS_UA_VIEWS
     { procCmdDXSetMinLOD },                         // SVGA_3D_CMD_DX_SET_MIN_LOD
     { procCmdInvalid },                             // SVGA_3D_CMD_RESERVED2_3

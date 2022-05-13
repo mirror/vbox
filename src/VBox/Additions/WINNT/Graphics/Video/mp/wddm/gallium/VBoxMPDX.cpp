@@ -42,20 +42,20 @@ static NTSTATUS svgaCreateSurfaceForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOX
     Assert(NT_SUCCESS(Status));
     if (NT_SUCCESS(Status))
     {
-        void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_SURFACE_V2, sizeof(SVGA3dCmdDefineGBSurface_v2), SVGA3D_INVALID_ID);
+        void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_SURFACE_V4, sizeof(SVGA3dCmdDefineGBSurface_v4), SVGA3D_INVALID_ID);
         if (pvCmd)
         {
-            SVGA3dCmdDefineGBSurface_v2 *pCmd = (SVGA3dCmdDefineGBSurface_v2 *)pvCmd;
+            SVGA3dCmdDefineGBSurface_v4 *pCmd = (SVGA3dCmdDefineGBSurface_v4 *)pvCmd;
             pCmd->sid              = pAllocation->dx.sid;
-            pCmd->surfaceFlags     = (uint32_t)pAllocation->dx.desc.surfaceInfo.surfaceFlags;
+            pCmd->surfaceFlags     = pAllocation->dx.desc.surfaceInfo.surfaceFlags;
             pCmd->format           = pAllocation->dx.desc.surfaceInfo.format;
             pCmd->numMipLevels     = pAllocation->dx.desc.surfaceInfo.numMipLevels;
             pCmd->multisampleCount = pAllocation->dx.desc.surfaceInfo.multisampleCount;
             pCmd->autogenFilter    = pAllocation->dx.desc.surfaceInfo.autogenFilter;
             pCmd->size             = pAllocation->dx.desc.surfaceInfo.size;
             pCmd->arraySize        = pAllocation->dx.desc.surfaceInfo.arraySize;
-            pCmd->pad              = 0;
-            SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBSurface_v2));
+            pCmd->bufferByteStride = pAllocation->dx.desc.surfaceInfo.bufferByteStride;
+            SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBSurface_v4));
         }
         else
             AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
