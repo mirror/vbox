@@ -363,15 +363,49 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
     if (rc == PAM_SUCCESS)
     {
         rc = pam_set_item(hPam, PAM_RUSER, pszUser);
+        LogRel2(("rtProcPosixAuthenticateUsingPam(%s): pam_setitem/PAM_RUSER: %s\n", pszPamService, pszUser));
         if (rc == PAM_SUCCESS)
         {
-            /* We also need to set PAM_TTY (if available) to make PAM stacks work which
-             * require a secure TTY via pam_securetty (Debian 10 + 11, for example). See @bugref{10225}. */
-            char const *pszTTY = RTEnvGet("DISPLAY");
-            if (!pszTTY) /* No display set or available? Try the TTY's name instead. */
-                pszTTY = ttyname(0);
-            if (pszTTY) /* Only try using PAM_TTY if we have something to set. */
-                rc = pam_set_item(hPam, PAM_TTY, pszTTY);
+            RTENV hEnv = RTENV_DEFAULT;
+
+            /*
+             * Secure TTY fun ahead (for pam_securetty).
+             *
+             * We also need to set PAM_TTY (if available) to make PAM stacks work which
+             * require a secure TTY via pam_securetty (Debian 10 + 11, for example). See @bugref{10225}.
+             *
+             * Note! We only can try (or better: guess) to a certain amount, as it really depends on the
+             *       distribution or Administrator which has set up the system which (and how) things are allowed
+             *       (see /etc/securetty).
+             */
+            char szTTY[64] = { 0 };
+            int rc2 = RTEnvGetEx(hEnv, "DISPLAY", szTTY, sizeof(szTTY), NULL);
+            if (RT_FAILURE(rc2))
+            {
+                char szTTYNr[4];
+                rc2 = RTEnvGetEx(hEnv, "XDG_VTNR", szTTYNr, sizeof(szTTYNr), NULL); /* Virtual terminal hint given? */
+                if (RT_SUCCESS(rc2))
+                {
+                    if (RTStrPrintf2(szTTY, sizeof(szTTY), "tty%s", szTTYNr) <= 0)
+                        rc2 = VERR_BUFFER_OVERFLOW;
+                }
+            }
+
+            /* As a last resort, try the TTY's name instead. */
+            if (RT_FAILURE(rc2))
+            {
+                if (RTStrPrintf2(szTTY, sizeof(szTTY), "%s", ttyname(0)) <= 0)
+                    rc2 = VERR_BUFFER_OVERFLOW;
+            }
+
+            LogRel2(("rtProcPosixAuthenticateUsingPam(%s): pam_setitem/PAM_TTY: %s\n", pszPamService, szTTY));
+
+            if (   RT_SUCCESS(rc2)
+                && strlen(szTTY)) /* Only try using PAM_TTY if we have something to set. */
+            {
+                rc = pam_set_item(hPam, PAM_TTY, szTTY);
+            }
+
             if (rc == PAM_SUCCESS)
             {
                 /* From this point on we don't allow falling back to other auth methods. */
@@ -428,6 +462,8 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
     }
     else
         LogFunc(("pam_start(%s) -> %d\n", pszPamService, rc));
+
+    LogRel2(("rtProcPosixAuthenticateUsingPam(%s): Failed authenticating user '%s' with %d\n", pszPamService, pszUser, rc));
     return VERR_AUTHENTICATION_FAILURE;
 }
 
