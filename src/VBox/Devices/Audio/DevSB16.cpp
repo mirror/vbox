@@ -2944,7 +2944,20 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->mixer_regs[0x81] = (1 << pStream->HwCfgRuntime.uDmaChanLow) | (1 << pStream->HwCfgRuntime.uDmaChanHigh);
     pThis->mixer_regs[0x82] = 2 << 5;
 
-    sb16MixerReset(pThis);
+    /*
+     * Perform a device reset before we set up the mixer below,
+     * to have a defined state. This includes the mixer reset + legacy reset.
+     */
+    sb16DevReset(pThis->pDevInsR3);
+
+    /*
+     * Make sure that the mixer sink(s) have a valid format set.
+     *
+     * This is needed in order to make the driver attaching logic working done by Main
+     * for machine construction. Must come after sb16DevReset().
+     */
+    PSB16STREAM const pStreamOut = &pThis->aStreams[SB16_IDX_OUT];
+    AudioMixerSinkSetFormat(pThis->pSinkOut, &pStreamOut->Cfg.Props, pStreamOut->Cfg.Device.cMsSchedulingHint);
 
     /*
      * Create timers.
@@ -3033,8 +3046,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
         AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
-
-    sb16DspCmdResetLegacy(pThis);
 
     /*
      * Register statistics.
