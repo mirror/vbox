@@ -546,7 +546,7 @@ void UIMediumManagerWidget::sltClear()
             nameList << pMediumItem->name();
         }
     }
-    if (!msgCenter().confirmDVDListClear(nameList, currentMediumType(), this))
+    if (!msgCenter().confirmInaccesibleMediaClear(nameList, currentMediumType(), this))
         return;
 
     foreach (UIMediumItem *pMediumItem, mediumsToRemove)

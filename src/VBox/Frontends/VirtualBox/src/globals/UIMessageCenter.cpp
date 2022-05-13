@@ -1313,7 +1313,7 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                            tr("Keep", "hard disk storage"));
 }
 
-bool UIMessageCenter::confirmDVDListClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent /* = 0 */)
+bool UIMessageCenter::confirmInaccesibleMediaClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent /* = 0 */)
 {
     if (mediaNameList.isEmpty())
         return false;
@@ -1347,7 +1347,7 @@ bool UIMessageCenter::confirmDVDListClear(const QStringList &mediaNameList, UIMe
                        MessageType_Question,
                        tr("<p>This will clear the optical disk list by releasing inaccessible DVDs"
                           " from the virtual machines they are attached to"
-                          " and remove them from the list of registered media.<p>"
+                          " and removing them from the list of registered media.<p>"
                           "Are you sure?"),
                        strDetails,
                        0 /* auto-confirm id */,
@@ -1363,7 +1363,7 @@ bool UIMessageCenter::confirmDVDListClear(const QStringList &mediaNameList, UIMe
                        MessageType_Question,
                        tr("<p>This will clear the floppy disk list by releasing inaccessible disks"
                           " from the virtual machines they are attached to"
-                          " and remove them from the list of registered media.<p>"
+                          " and removing them from the list of registered media.<p>"
                           "Are you sure?"),
                        strDetails,
                        0 /* auto-confirm id */,

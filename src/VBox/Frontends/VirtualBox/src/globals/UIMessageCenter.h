@@ -352,7 +352,7 @@ public:
         bool confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent = 0) const;
         bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0) const;
         int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
-        bool confirmDVDListClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent = 0);
+        bool confirmInaccesibleMediaClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent = 0);
     /** @} */
 
     /** @name VirtualBox Manager / Network Manager warnings.
