@@ -37,6 +37,7 @@ QIToolBar::QIToolBar(QWidget *pParent /* = 0 */)
     , m_pMainWindow(qobject_cast<QMainWindow*>(pParent))
 #ifdef VBOX_WS_MAC
     , m_fEmulateUnifiedToolbar(false)
+    , m_iOverallContentsWidth(0)
     , m_iBrandingWidth(0)
 #endif
 {
@@ -111,6 +112,33 @@ void QIToolBar::enableBranding(const QIcon &icnBranding,
 }
 #endif /* VBOX_WS_MAC */
 
+bool QIToolBar::event(QEvent *pEvent)
+{
+    /* Sanity check: */
+    if (!pEvent)
+        return QToolBar::event(pEvent);
+
+    /* Handle required event types: */
+    switch (pEvent->type())
+    {
+#ifdef VBOX_WS_MAC
+        case QEvent::LayoutRequest:
+        {
+            /* Recalculate overall contents width on layout
+             * request if we have branding stuff: */
+            if (!m_icnBranding.isNull())
+                recalculateOverallContentsWidth();
+            break;
+        }
+#endif /* VBOX_WS_MAC */
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QToolBar::event(pEvent);
+}
+
 void QIToolBar::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
@@ -145,8 +173,9 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
         /* Fill background: */
         painter.fillRect(rectangle, gradient);
 
-        /* Do we have branding stuff? */
-        if (!m_icnBranding.isNull())
+        /* Do we have branding stuff and a place for it? */
+        if (   !m_icnBranding.isNull()
+            && width() >= m_iOverallContentsWidth + m_iBrandingWidth)
         {
             /* A bit of common stuff: */
             QFont fnt = font();
@@ -215,3 +244,33 @@ void QIToolBar::prepare()
     /* Configure tool-bar' context-menu policy: */
     setContextMenuPolicy(Qt::NoContextMenu);
 }
+
+#ifdef VBOX_WS_MAC
+void QIToolBar::recalculateOverallContentsWidth()
+{
+    /* Reset contents width: */
+    m_iOverallContentsWidth = 0;
+
+    /* Caclulate new value: */
+    if (!layout())
+        return;
+    int iResult = 0;
+    const int iSpacing = layout()->spacing();
+    foreach (QAction *pAction, actions())
+    {
+        if (!pAction || !pAction->isVisible())
+            continue;
+        QWidget *pWidget = widgetForAction(pAction);
+        if (!pWidget)
+            continue;
+        /* Add each widget width and spacing: */
+        const int iWidth = pWidget->width() + iSpacing;
+        iResult += iWidth;
+    }
+    /* Subtract last spacing: */
+    iResult -= iSpacing;
+
+    /* Update result: */
+    m_iOverallContentsWidth = qMax(m_iOverallContentsWidth, iResult);
+}
+#endif /* VBOX_WS_MAC */

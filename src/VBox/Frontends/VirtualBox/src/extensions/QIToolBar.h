@@ -83,6 +83,9 @@ public:
 
 protected:
 
+    /** Handles @a pEvent. */
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+
     /** Handles resize @a pEvent. */
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
@@ -96,12 +99,20 @@ private:
     /** Prepares all. */
     void prepare();
 
+#ifdef VBOX_WS_MAC
+    /** Recalculates overall contents width. */
+    void recalculateOverallContentsWidth();
+#endif /* VBOX_WS_MAC */
+
     /** Holds the parent main-window isntance. */
     QMainWindow *m_pMainWindow;
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Holds whether unified tool-bar should be emulated. */
     bool  m_fEmulateUnifiedToolbar;
+
+    /** Holds overall contents width. */
+    int  m_iOverallContentsWidth;
 
     /** Mac OS X: Holds branding icon to be shown. */
     QIcon    m_icnBranding;
