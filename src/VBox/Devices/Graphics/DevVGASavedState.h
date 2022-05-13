@@ -46,7 +46,8 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION                   25
+#define VGA_SAVEDSTATE_VERSION                   26
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_DX_SFLAGS  26 /* SVGA3dSurfaceAllFlags. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_DX_CMDBUF  25 /* Command buffers capability is not tied to VGPU10 setting. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_DX         24 /* VGPU10. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS  23 /* Surface struct with number of miplevels. */

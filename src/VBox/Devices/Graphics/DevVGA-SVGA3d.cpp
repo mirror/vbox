@@ -82,7 +82,7 @@ static void vmsvga3dSurfaceFreeMipLevels(PVMSVGA3DSURFACE pSurface)
  * @param   arraySize           Number of elements in a texture array.
  * @param   fAllocMipLevels     .
  */
-int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags surfaceFlags, SVGA3dSurfaceFormat format,
+int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFlags surfaceFlags, SVGA3dSurfaceFormat format,
                           uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
                           uint32_t numMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, bool fAllocMipLevels)
 {
@@ -213,7 +213,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
         break;
     }
 
-    pSurface->surfaceFlags      = surfaceFlags;
+    pSurface->f.surfaceFlags    = surfaceFlags;
     pSurface->format            = format;
     /* cFaces is 6 for a cubemaps and 1 otherwise. */
     pSurface->cFaces            = (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1);
@@ -517,7 +517,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dSurfac
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSrcSurface))
     {
         /* Unknown surface type; turn it into a texture, which can be used for other purposes too. */
-        LogFunc(("unknown src sid=%u type=%d format=%d -> create texture\n", sidSrc, pSrcSurface->surfaceFlags, pSrcSurface->format));
+        LogFunc(("unknown src sid=%u type=%d format=%d -> create texture\n", sidSrc, pSrcSurface->f.s.surface1Flags, pSrcSurface->format));
         rc = pSvgaR3State->pFuncs3D->pfnCreateTexture(pThisCC, pContext, pContext->id, pSrcSurface);
         AssertRCReturn(rc, rc);
     }
@@ -525,7 +525,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dSurfac
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pDstSurface))
     {
         /* Unknown surface type; turn it into a texture, which can be used for other purposes too. */
-        LogFunc(("unknown dest sid=%u type=%d format=%d -> create texture\n", sidDst, pDstSurface->surfaceFlags, pDstSurface->format));
+        LogFunc(("unknown dest sid=%u type=%d format=%d -> create texture\n", sidDst, pDstSurface->f.s.surface1Flags, pDstSurface->format));
         rc = pSvgaR3State->pFuncs3D->pfnCreateTexture(pThisCC, pContext, pContext->id, pDstSurface);
         AssertRCReturn(rc, rc);
     }
@@ -572,7 +572,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGuestImage gues
     AssertRCReturn(rc, rc);
 
     LogFunc(("%sguestptr gmr=%x offset=%x pitch=%x host sid=%u face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n",
-             (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE) ? "TEXTURE " : "",
+             (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE) ? "TEXTURE " : "",
              guest.ptr.gmrId, guest.ptr.offset, guest.pitch,
              host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
 

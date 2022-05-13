@@ -555,7 +555,15 @@ typedef struct VMSVGA3DSURFACE
     /** @todo Only numArrayElements field is used currently. The code uses old fields cLevels, etc for anything else. */
     VMSVGA3D_SURFACE_DESC   surfaceDesc;
 
-    SVGA3dSurface1Flags     surfaceFlags; /** @todo SVGA3dSurfaceAllFlags as an union. */
+    union
+    {
+        struct
+        {
+            SVGA3dSurface1Flags surface1Flags;
+            SVGA3dSurface2Flags surface2Flags;
+        } s;
+        SVGA3dSurfaceAllFlags surfaceFlags;
+    } f;
     SVGA3dSurfaceFormat     format;
 #ifdef VMSVGA3D_OPENGL
     GLint                   internalFormatGL;
@@ -643,7 +651,8 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 {
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, id),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContext),
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, surfaceFlags),
+    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, f.s.surface1Flags),
+    SSMFIELD_ENTRY_VER(             VMSVGA3DSURFACE, f.s.surface2Flags, VGA_SAVEDSTATE_VERSION_VMSVGA_DX_SFLAGS),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, format),
 # ifdef VMSVGA3D_OPENGL
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, internalFormatGL),
@@ -966,6 +975,8 @@ typedef struct VMSVGA3DDXCONTEXT
     uint32_t                  cid;
     /** . */
     uint32_t                  u32Reserved;
+    /** . */
+    uint32_t                  cRenderTargets;
     /** Backend specific data. */
     PVMSVGA3DBACKENDDXCONTEXT pBackendDXContext;
     /** Copy of the guest memory for this context. The guest will be updated on unbind. */

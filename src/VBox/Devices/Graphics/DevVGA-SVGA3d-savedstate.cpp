@@ -194,7 +194,8 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
     {
         pSurface->id                       = surfacePreMipLevels.id;
         pSurface->idAssociatedContext      = surfacePreMipLevels.idAssociatedContext;
-        pSurface->surfaceFlags             = surfacePreMipLevels.surfaceFlags;
+        pSurface->f.s.surface1Flags        = surfacePreMipLevels.surfaceFlags;
+        pSurface->f.s.surface2Flags        = 0;
         pSurface->format                   = surfacePreMipLevels.format;
 #ifdef VMSVGA3D_OPENGL
         pSurface->internalFormatGL         = surfacePreMipLevels.internalFormatGL;
@@ -672,7 +673,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                     }
                 }
 
-                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.surfaceFlags, surface.format, surface.multiSampleCount,
+                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.f.surfaceFlags, surface.format, surface.multiSampleCount,
                                            surface.autogenFilter, surface.cLevels, &pMipmapLevelSize[0], /* arraySize = */ 0, /* fAllocMipLevels = */ true);
                 AssertRCReturn(rc, rc);
 
@@ -990,7 +991,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                         case VMSVGA3D_D3DRESTYPE_SURFACE:
                         case VMSVGA3D_D3DRESTYPE_TEXTURE:
                         {
-                            if (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)
+                            if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)
                             {
                                /** @todo unable to easily fetch depth surface data in d3d 9 */
                                fSkipSave = true;
@@ -998,7 +999,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                             }
 
                             fTexture = (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE);
-                            fRenderTargetTexture = fTexture && (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET);
+                            fRenderTargetTexture = fTexture && (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET);
 
                             D3DLOCKED_RECT LockedRect;
 

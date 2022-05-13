@@ -1950,7 +1950,12 @@ static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGB
     entry.mobid = SVGA_ID_INVALID;
     entry.arraySize = pCmd->arraySize;
     // entry.mobPitch = 0;
-    // ...
+    // entry.mobPitch = 0;
+    // entry.surface2Flags = 0;
+    // entry.multisamplePattern = 0;
+    // entry.qualityLevel = 0;
+    // entry.bufferByteStride = 0;
+    // entry.minLOD = 0;
 
     int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                  pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
@@ -3623,13 +3628,42 @@ static int vmsvga3dCmdIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext
 
 
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V3 1239 */
-static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v3 const *pCmd, uint32_t cbCmd)
+static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v3 const *pCmd)
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDefineGBSurface_v3(pThisCC, idDXContext);
+
+    /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
+    SVGAOTableSurfaceEntry entry;
+    RT_ZERO(entry);
+    entry.format = pCmd->format;
+    entry.surface1Flags = (uint32_t)(pCmd->surfaceFlags);
+    entry.numMipLevels = pCmd->numMipLevels;
+    entry.multisampleCount = pCmd->multisampleCount;
+    entry.autogenFilter = pCmd->autogenFilter;
+    entry.size = pCmd->size;
+    entry.mobid = SVGA_ID_INVALID;
+    entry.arraySize = pCmd->arraySize;
+    // entry.mobPitch = 0;
+    // entry.mobPitch = 0;
+    entry.surface2Flags = (uint32_t)(pCmd->surfaceFlags >> UINT64_C(32));
+    // entry.multisamplePattern = 0;
+    // entry.qualityLevel = 0;
+    // entry.bufferByteStride = 0;
+    // entry.minLOD = 0;
+
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                                 pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Create the host surface. */
+        /** @todo SVGAOTableSurfaceEntry as input parameter? */
+        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
+                              pCmd->multisampleCount, pCmd->autogenFilter,
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* fAllocMipLevels = */ false);
+    }
+    return rc;
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3716,10 +3750,9 @@ static int vmsvga3dCmdWholeSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXDefineUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineUAView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineUAView(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineUAView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3732,9 +3765,8 @@ static int vmsvga3dCmdDXDestroyUAView(PVGASTATECC pThisCC, uint32_t idDXContext,
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyUAView(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyUAView(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3747,9 +3779,8 @@ static int vmsvga3dCmdDXClearUAViewUint(PVGASTATECC pThisCC, uint32_t idDXContex
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXClearUAViewUint(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXClearUAViewUint(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3762,9 +3793,8 @@ static int vmsvga3dCmdDXClearUAViewFloat(PVGASTATECC pThisCC, uint32_t idDXConte
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXClearUAViewFloat(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXClearUAViewFloat(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3791,10 +3821,10 @@ static int vmsvga3dCmdDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetUAViews const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetUAViews(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    SVGA3dUAViewId const *paUAViewId = (SVGA3dUAViewId *)&pCmd[1];
+    uint32_t const cUAViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dUAViewId);
+    return vmsvga3dDXSetUAViews(pThisCC, idDXContext, pCmd, cUAViewId, paUAViewId);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3836,10 +3866,9 @@ static int vmsvga3dCmdDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDX
 static int vmsvga3dCmdDXDispatch(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDispatch const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDispatch(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDispatch(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4013,13 +4042,42 @@ static int vmsvga3dCmdLogicOpsClearTypeBlend(PVGASTATECC pThisCC, uint32_t idDXC
 
 
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V4 1267 */
-static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v4 const *pCmd, uint32_t cbCmd)
+static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v4 const *pCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDefineGBSurface_v4(pThisCC, idDXContext);
+
+    /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
+    SVGAOTableSurfaceEntry entry;
+    RT_ZERO(entry);
+    entry.format = pCmd->format;
+    entry.surface1Flags = (uint32_t)(pCmd->surfaceFlags);
+    entry.numMipLevels = pCmd->numMipLevels;
+    entry.multisampleCount = pCmd->multisampleCount;
+    entry.autogenFilter = pCmd->autogenFilter;
+    entry.size = pCmd->size;
+    entry.mobid = SVGA_ID_INVALID;
+    entry.arraySize = pCmd->arraySize;
+    // entry.mobPitch = 0;
+    // entry.mobPitch = 0;
+    entry.surface2Flags = (uint32_t)(pCmd->surfaceFlags >> UINT64_C(32));
+    // entry.multisamplePattern = 0;
+    // entry.qualityLevel = 0;
+    entry.bufferByteStride = pCmd->bufferByteStride;
+    // entry.minLOD = 0;
+
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                                 pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Create the host surface. */
+        /** @todo SVGAOTableSurfaceEntry as input parameter? */
+        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
+                              pCmd->multisampleCount, pCmd->autogenFilter,
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* fAllocMipLevels = */ false);
+    }
+    return rc;
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4031,10 +4089,10 @@ static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, uint32_t idDXConte
 static int vmsvga3dCmdDXSetCSUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSUAViews const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetCSUAViews(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    SVGA3dUAViewId const *paUAViewId = (SVGA3dUAViewId *)&pCmd[1];
+    uint32_t const cUAViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dUAViewId);
+    return vmsvga3dDXSetCSUAViews(pThisCC, idDXContext, pCmd, cUAViewId, paUAViewId);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -5790,7 +5848,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdDefineGBSurface_v3 *pCmd = (SVGA3dCmdDefineGBSurface_v3 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        rcParse = vmsvga3dCmdDefineGBSurface_v3(pThisCC, idDXContext, pCmd, cbCmd);
+        rcParse = vmsvga3dCmdDefineGBSurface_v3(pThisCC, pCmd);
         break;
     }
 
@@ -6010,7 +6068,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdDefineGBSurface_v4 *pCmd = (SVGA3dCmdDefineGBSurface_v4 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        rcParse = vmsvga3dCmdDefineGBSurface_v4(pThisCC, idDXContext, pCmd, cbCmd);
+        rcParse = vmsvga3dCmdDefineGBSurface_v4(pThisCC, pCmd);
         break;
     }
 
