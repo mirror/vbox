@@ -2644,7 +2644,7 @@ static int vmsvga3dBackSurfaceCreateConstantBuffer(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
-static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface, UINT MiscFlags = 0)
+static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface)
 {
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
@@ -2702,7 +2702,23 @@ static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCON
         else if (bd.Usage == D3D11_USAGE_DYNAMIC)
             bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        bd.MiscFlags |= MiscFlags;
+        if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_DRAWINDIRECT_ARGS)
+            bd.MiscFlags |= D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+        if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_BIND_RAW_VIEWS)
+            bd.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+        if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_BUFFER_STRUCTURED)
+            bd.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_RESOURCE_CLAMP)
+            bd.MiscFlags |= D3D11_RESOURCE_MISC_RESOURCE_CLAMP;
+
+        if (bd.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+        {
+            SVGAOTableSurfaceEntry entrySurface;
+            rc = vmsvgaR3OTableReadSurface(pThisCC->svga.pSvgaR3State, pSurface->id, &entrySurface);
+            AssertRCReturn(rc, rc);
+
+            bd.StructureByteStride = entrySurface.bufferByteStride;
+        }
 
         hr = pDevice->pDevice->CreateBuffer(&bd, pInitialData, &pBackendSurface->u.pBuffer);
         Assert(SUCCEEDED(hr));
@@ -5220,6 +5236,51 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSamplers(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
+static void dxCreateInputLayout(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dElementLayoutId elementLayoutId, DXSHADER *pDXShader)
+{
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturnVoid(pDevice->pDevice);
+
+    SVGACOTableDXElementLayoutEntry const *pEntry = &pDXContext->cot.paElementLayout[elementLayoutId];
+    DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
+
+    if (pDXElementLayout->cElementDesc == 0)
+    {
+        /* Semantic name is not interpreted by D3D, therefore arbitrary names can be used
+         * if they are consistent between the element layout and shader input signature.
+         * "In general, data passed between pipeline stages is completely generic and is not uniquely
+         * interpreted by the system; arbitrary semantics are allowed ..."
+         *
+         * However D3D runtime insists that "SemanticName string ("POSITIO1") cannot end with a number."
+         *
+         * System-Value semantics ("SV_*") between shaders require proper names of course.
+         * But they are irrelevant for input attributes.
+         */
+        pDXElementLayout->cElementDesc = pEntry->numDescs;
+        for (uint32_t i = 0; i < pEntry->numDescs; ++i)
+        {
+            D3D11_INPUT_ELEMENT_DESC *pDst = &pDXElementLayout->aElementDesc[i];
+            SVGA3dInputElementDesc const *pSrc = &pEntry->descs[i];
+            pDst->SemanticName         = "ATTRIB";
+            pDst->SemanticIndex        = pSrc->inputRegister;
+            pDst->Format               = vmsvgaDXSurfaceFormat2Dxgi(pSrc->format);
+            Assert(pDst->Format != DXGI_FORMAT_UNKNOWN);
+            pDst->InputSlot            = pSrc->inputSlot;
+            pDst->AlignedByteOffset    = pSrc->alignedByteOffset;
+            pDst->InputSlotClass       = (D3D11_INPUT_CLASSIFICATION)pSrc->inputSlotClass;
+            pDst->InstanceDataStepRate = pSrc->instanceDataStepRate;
+        }
+    }
+
+    HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
+                                                     pDXElementLayout->cElementDesc,
+                                                     pDXShader->pvDXBC,
+                                                     pDXShader->cbDXBC,
+                                                     &pDXElementLayout->pElementLayout);
+    Assert(SUCCEEDED(hr)); RT_NOREF(hr);
+}
+
+
 static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     /* Make sure that any draw operations on shader resource views have finished. */
@@ -5571,14 +5632,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
             {
                 DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shid];
                 if (pDXShader->pvDXBC)
-                {
-                    HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
-                                                                     pDXElementLayout->cElementDesc,
-                                                                     pDXShader->pvDXBC,
-                                                                     pDXShader->cbDXBC,
-                                                                     &pDXElementLayout->pElementLayout);
-                    Assert(SUCCEEDED(hr)); RT_NOREF(hr);
-                }
+                    dxCreateInputLayout(pThisCC, pDXContext, elementLayoutId, pDXShader);
                 else
                     LogRelMax(16, ("VMSVGA: DX shader bytecode is not available in DXSetInputLayout: shid = %u\n", shid));
             }
@@ -6124,12 +6178,15 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
                 UAVStartSlot = idxUA;
             NumUAVs = idxUA - UAVStartSlot + 1;
             apUnorderedAccessViews[idxUA] = pDXContext->pBackendDXContext->paUnorderedAccessView[uaViewId].u.pUnorderedAccessView;
+
+            SVGACOTableDXUAViewEntry const *pEntry = dxGetUnorderedAccessViewEntry(pDXContext, uaViewId);
+            aUAVInitialCounts[idxUA] = pEntry->structureCount;
         }
         else
+        {
             apUnorderedAccessViews[idxUA] =  NULL;
-
-        /** @todo */
-        aUAVInitialCounts[idxUA] = (UINT)-1;
+            aUAVInitialCounts[idxUA] = (UINT)-1;
+        }
     }
 
     ID3D11RenderTargetView *apRenderTargetViews[SVGA3D_MAX_RENDER_TARGETS];
@@ -6934,31 +6991,10 @@ static int dxDefineElementLayout(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dElementLay
 {
     DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
     D3D_RELEASE(pDXElementLayout->pElementLayout);
+    pDXElementLayout->cElementDesc = 0;
+    RT_ZERO(pDXElementLayout->aElementDesc);
 
-    /* Semantic name is not interpreted by D3D, therefore arbitrary names can be used
-     * if they are consistent between the element layout and shader input signature.
-     * "In general, data passed between pipeline stages is completely generic and is not uniquely
-     * interpreted by the system; arbitrary semantics are allowed ..."
-     *
-     * However D3D runtime insists that "SemanticName string ("POSITIO1") cannot end with a number."
-     *
-     * System-Value semantics ("SV_*") between shaders require proper names of course.
-     * But they are irrelevant for input attributes.
-     */
-    pDXElementLayout->cElementDesc = pEntry->numDescs;
-    for (uint32_t i = 0; i < pEntry->numDescs; ++i)
-    {
-        D3D11_INPUT_ELEMENT_DESC *pDst = &pDXElementLayout->aElementDesc[i];
-        SVGA3dInputElementDesc const *pSrc = &pEntry->descs[i];
-        pDst->SemanticName         = "ATTRIB";
-        pDst->SemanticIndex        = i; /// @todo 'pSrc->inputRegister' is unused, maybe it should somehow.
-        pDst->Format               = vmsvgaDXSurfaceFormat2Dxgi(pSrc->format);
-        AssertReturn(pDst->Format != DXGI_FORMAT_UNKNOWN, VERR_NOT_IMPLEMENTED);
-        pDst->InputSlot            = pSrc->inputSlot;
-        pDst->AlignedByteOffset    = pSrc->alignedByteOffset;
-        pDst->InputSlotClass       = (D3D11_INPUT_CLASSIFICATION)pSrc->inputSlotClass;
-        pDst->InstanceDataStepRate = pSrc->instanceDataStepRate;
-    }
+    RT_NOREF(pEntry);
 
     return VINF_SUCCESS;
 }
@@ -7832,14 +7868,7 @@ static int dxDefineUnorderedAccessView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT p
         if (pSurface->format != SVGA3D_BUFFER)
             rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSurface);
         else
-        {
-            UINT MiscFlags = 0;
-            if (   pEntry->resourceDimension == SVGA3D_RESOURCE_BUFFER
-                && (pEntry->desc.buffer.flags & (SVGA3D_UABUFFER_APPEND | SVGA3D_UABUFFER_COUNTER)))
-                MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-
-            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface, MiscFlags);
-        }
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
 
         AssertRCReturn(rc, rc);
     }
@@ -7885,7 +7914,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXClearUAViewUint(PVGASTATECC pThisCC, PVMS
     if (!pDXView->u.pUnorderedAccessView)
     {
         /* (Re-)create the view, because a creation of a view is deferred until a draw or a clear call. */
-        SVGACOTableDXUAViewEntry const *pEntry = &pDXContext->cot.paUAView[uaViewId];
+        SVGACOTableDXUAViewEntry const *pEntry = dxGetUnorderedAccessViewEntry(pDXContext, uaViewId);
         int rc = dxDefineUnorderedAccessView(pThisCC, pDXContext, uaViewId, pEntry);
         AssertRCReturn(rc, rc);
     }
@@ -7915,13 +7944,47 @@ static DECLCALLBACK(int) vmsvga3dBackDXClearUAViewFloat(PVGASTATECC pThisCC, PVM
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXCopyStructureCount(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXCopyStructureCount(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dUAViewId srcUAViewId, SVGA3dSurfaceId destSid, uint32_t destByteOffset)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    /* Get corresponding resource. Create the buffer if does not yet exist. */
+    ID3D11Buffer *pDstBuffer;
+    if (destSid != SVGA3D_INVALID_ID)
+    {
+        PVMSVGA3DSURFACE pSurface;
+        int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, destSid, &pSurface);
+        AssertRCReturn(rc, rc);
+
+        if (pSurface->pBackendSurface == NULL)
+        {
+            /* Create the resource and initialize it with the current surface data. */
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
+            AssertRCReturn(rc, rc);
+        }
+
+        pDstBuffer = pSurface->pBackendSurface->u.pBuffer;
+    }
+    else
+        pDstBuffer = NULL;
+
+    ID3D11UnorderedAccessView *pSrcView;
+    if (srcUAViewId != SVGA3D_INVALID_ID)
+    {
+        DXVIEW *pDXView = &pDXContext->pBackendDXContext->paUnorderedAccessView[srcUAViewId];
+        AssertReturn(pDXView->u.pUnorderedAccessView, VERR_INVALID_STATE);
+        pSrcView = pDXView->u.pUnorderedAccessView;
+    }
+    else
+        pSrcView = NULL;
+
+    pDevice->pImmediateContext->CopyStructureCount(pDstBuffer, destByteOffset, pSrcView);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -7939,23 +8002,85 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetUAViews(PVGASTATECC pThisCC, PVMSVGA3D
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceId argsBufferSid, uint32_t byteOffsetForArgs)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    /* Get corresponding resource. Create the buffer if does not yet exist. */
+    ID3D11Buffer *pBufferForArgs;
+    if (argsBufferSid != SVGA_ID_INVALID)
+    {
+        PVMSVGA3DSURFACE pSurface;
+        int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, argsBufferSid, &pSurface);
+        AssertRCReturn(rc, rc);
+
+        if (pSurface->pBackendSurface == NULL)
+        {
+            /* Create the resource and initialize it with the current surface data. */
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
+            AssertRCReturn(rc, rc);
+        }
+
+        pBufferForArgs = pSurface->pBackendSurface->u.pBuffer;
+    }
+    else
+        pBufferForArgs = NULL;
+
+    dxSetupPipeline(pThisCC, pDXContext);
+
+    Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
+
+    pDevice->pImmediateContext->DrawIndexedInstancedIndirect(pBufferForArgs, byteOffsetForArgs);
+
+    /* Note which surfaces are being drawn. */
+    dxTrackRenderTargets(pThisCC, pDXContext);
+
+    return VINF_SUCCESS;
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDrawInstancedIndirect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDrawInstancedIndirect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceId argsBufferSid, uint32_t byteOffsetForArgs)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    /* Get corresponding resource. Create the buffer if does not yet exist. */
+    ID3D11Buffer *pBufferForArgs;
+    if (argsBufferSid != SVGA_ID_INVALID)
+    {
+        PVMSVGA3DSURFACE pSurface;
+        int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, argsBufferSid, &pSurface);
+        AssertRCReturn(rc, rc);
+
+        if (pSurface->pBackendSurface == NULL)
+        {
+            /* Create the resource and initialize it with the current surface data. */
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
+            AssertRCReturn(rc, rc);
+        }
+
+        pBufferForArgs = pSurface->pBackendSurface->u.pBuffer;
+    }
+    else
+        pBufferForArgs = NULL;
+
+    dxSetupPipeline(pThisCC, pDXContext);
+
+    Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
+
+    pDevice->pImmediateContext->DrawInstancedIndirect(pBufferForArgs, byteOffsetForArgs);
+
+    /* Note which surfaces are being drawn. */
+    dxTrackRenderTargets(pThisCC, pDXContext);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -8004,16 +8129,6 @@ static DECLCALLBACK(int) vmsvga3dBackHintZeroSurface(PVGASTATECC pThisCC, PVMSVG
 
 
 static DECLCALLBACK(int) vmsvga3dBackDXTransferToBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetStructureCount(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
 
@@ -8102,11 +8217,15 @@ static int dxSetCSUnorderedAccessViews(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT p
             DXVIEW *pDXView = &pDXContext->pBackendDXContext->paUnorderedAccessView[uaViewId];
             Assert(pDXView->u.pUnorderedAccessView);
             papUnorderedAccessView[i] = pDXView->u.pUnorderedAccessView;
+
+            SVGACOTableDXUAViewEntry const *pEntry = dxGetUnorderedAccessViewEntry(pDXContext, uaViewId);
+            aUAVInitialCounts[i] = pEntry->structureCount;
         }
         else
+        {
             papUnorderedAccessView[i] = NULL;
-
-        aUAVInitialCounts[i] = (UINT)-1; /** @todo */
+            aUAVInitialCounts[i] = (UINT)-1;
+        }
     }
 
     dxCSUnorderedAccessViewSet(pDevice, 0, SVGA3D_DX11_1_MAX_UAVIEWS, papUnorderedAccessView, aUAVInitialCounts);
@@ -8411,7 +8530,6 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnWriteZeroSurface            = vmsvga3dBackWriteZeroSurface;
                 p->pfnHintZeroSurface             = vmsvga3dBackHintZeroSurface;
                 p->pfnDXTransferToBuffer          = vmsvga3dBackDXTransferToBuffer;
-                p->pfnDXSetStructureCount         = vmsvga3dBackDXSetStructureCount;
                 p->pfnLogicOpsBitBlt              = vmsvga3dBackLogicOpsBitBlt;
                 p->pfnLogicOpsTransBlt            = vmsvga3dBackLogicOpsTransBlt;
                 p->pfnLogicOpsStretchBlt          = vmsvga3dBackLogicOpsStretchBlt;

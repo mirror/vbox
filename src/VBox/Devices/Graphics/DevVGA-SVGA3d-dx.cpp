@@ -2885,7 +2885,7 @@ int vmsvga3dDXClearUAViewFloat(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
 }
 
 
-int vmsvga3dDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXCopyStructureCount const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2897,7 +2897,13 @@ int vmsvga3dDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXCopyStructureCount(pThisCC, pDXContext);
+    SVGA3dUAViewId const uaViewId = pCmd->srcUAViewId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paUAView, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(uaViewId < pDXContext->cot.cUAView, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXCopyStructureCount(pThisCC, pDXContext, uaViewId, pCmd->destSid, pCmd->destByteOffset);
     return rc;
 }
 
@@ -2933,7 +2939,7 @@ int vmsvga3dDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXS
 }
 
 
-int vmsvga3dDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstancedIndirect const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2945,12 +2951,12 @@ int vmsvga3dDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXCon
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstancedIndirect(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstancedIndirect(pThisCC, pDXContext, pCmd->argsBufferSid, pCmd->byteOffsetForArgs);
     return rc;
 }
 
 
-int vmsvga3dDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstancedIndirect const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2962,7 +2968,7 @@ int vmsvga3dDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDrawInstancedIndirect(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXDrawInstancedIndirect(pThisCC, pDXContext, pCmd->argsBufferSid, pCmd->byteOffsetForArgs);
     return rc;
 }
 
@@ -3052,11 +3058,11 @@ int vmsvga3dDXTransferToBuffer(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dDXSetStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXSetStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetStructureCount const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXSetStructureCount, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -3064,8 +3070,16 @@ int vmsvga3dDXSetStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXSetStructureCount(pThisCC, pDXContext);
-    return rc;
+    SVGA3dUAViewId const uaViewId = pCmd->uaViewId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paUAView, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(uaViewId < pDXContext->cot.cUAView, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXUAViewEntry *pEntry = &pDXContext->cot.paUAView[uaViewId];
+    pEntry->structureCount = pCmd->structureCount;
+
+    return VINF_SUCCESS;
 }
 
 
