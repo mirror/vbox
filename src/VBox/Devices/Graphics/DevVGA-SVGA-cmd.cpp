@@ -3764,7 +3764,7 @@ static int vmsvga3dCmdDXDefineUAView(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXDestroyUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyUAView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyUAView(pThisCC, idDXContext, pCmd);
 #else

@@ -5278,6 +5278,47 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSamplers(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
+static void vboxDXMatchGuestShaderSignatures(PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
+{
+    if (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_GS)
+    {
+        /* Output signature of a GS shader is the input of the pixel shader. */
+        SVGA3dShaderId const shaderIdPS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_PS - SVGA3D_SHADERTYPE_MIN].shaderId;
+        SVGA3dShaderId const shaderIdDS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_DS - SVGA3D_SHADERTYPE_MIN].shaderId;
+        SVGA3dShaderId const shaderIdVS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN].shaderId;
+
+        if (shaderIdPS != SVGA3D_INVALID_ID)
+        {
+            DXSHADER const *pDXShaderPS = &pDXContext->pBackendDXContext->paShader[shaderIdPS];
+            pDXShader->shaderInfo.cOutputSignature = pDXShaderPS->shaderInfo.cInputSignature;
+            memcpy(pDXShader->shaderInfo.aOutputSignature,
+                   pDXShaderPS->shaderInfo.aInputSignature,
+                   pDXShaderPS->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+        }
+
+        /* Input signature of a GS shader is the output of DS or VS. */
+        if (shaderIdDS != SVGA3D_INVALID_ID)
+        {
+            DXSHADER *pDXShaderDS = &pDXContext->pBackendDXContext->paShader[shaderIdDS];
+            pDXShader->shaderInfo.cInputSignature = pDXShaderDS->shaderInfo.cOutputSignature;
+            memcpy(pDXShader->shaderInfo.aInputSignature,
+                   pDXShaderDS->shaderInfo.aOutputSignature,
+                   pDXShaderDS->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+        }
+        else if (shaderIdVS != SVGA3D_INVALID_ID)
+        {
+            DXSHADER *pDXShaderVS = &pDXContext->pBackendDXContext->paShader[shaderIdVS];
+            pDXShader->shaderInfo.cInputSignature = pDXShaderVS->shaderInfo.cOutputSignature;
+            memcpy(pDXShader->shaderInfo.aInputSignature,
+                   pDXShaderVS->shaderInfo.aOutputSignature,
+                   pDXShaderVS->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+        }
+    }
+    Assert(   (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_VS || pDXShader->enmShaderType == SVGA3D_SHADERTYPE_PS)
+           || (pDXShader->shaderInfo.cInputSignature && pDXShader->shaderInfo.cOutputSignature));
+}
+
+
 static void dxCreateInputLayout(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dElementLayoutId elementLayoutId, DXSHADER *pDXShader)
 {
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
@@ -5623,6 +5664,9 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     rc = DXShaderUpdateResources(&pDXShader->shaderInfo, aResourceDimension, aResourceReturnType, cResources);
                     AssertRC(rc); /* Ignore rc because the shader will most likely work anyway. */
                 }
+
+                if (pDXShader->shaderInfo.fGuestSignatures)
+                    vboxDXMatchGuestShaderSignatures(pDXContext, pDXShader);
 
                 rc = DXShaderCreateDXBC(&pDXShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
                 if (RT_SUCCESS(rc))
