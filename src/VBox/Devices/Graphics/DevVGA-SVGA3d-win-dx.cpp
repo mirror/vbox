@@ -6875,13 +6875,55 @@ static DECLCALLBACK(int) vmsvga3dBackDXPredCopyRegion(PVGASTATECC pThisCC, PVMSV
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXPredCopy(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXPredCopy(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceId dstSid, SVGA3dSurfaceId srcSid)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSrcSurface;
+    int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, srcSid, &pSrcSurface);
+    AssertRCReturn(rc, rc);
+
+    PVMSVGA3DSURFACE pDstSurface;
+    rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, dstSid, &pDstSurface);
+    AssertRCReturn(rc, rc);
+
+    if (pSrcSurface->pBackendSurface == NULL)
+    {
+        /* Create the resource. */
+        if (pSrcSurface->format != SVGA3D_BUFFER)
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSrcSurface);
+        else
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSrcSurface);
+        AssertRCReturn(rc, rc);
+    }
+
+    if (pDstSurface->pBackendSurface == NULL)
+    {
+        /* Create the resource. */
+        if (pSrcSurface->format != SVGA3D_BUFFER)
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pDstSurface);
+        else
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pDstSurface);
+        AssertRCReturn(rc, rc);
+    }
+
+    LogFunc(("cid %d: src cid %d%s -> dst cid %d%s\n",
+             pDXContext->cid, pSrcSurface->idAssociatedContext,
+             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "",
+             pDstSurface->idAssociatedContext,
+             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : ""));
+
+    ID3D11Resource *pDstResource = dxResource(pThisCC->svga.p3dState, pDstSurface, pDXContext);
+    ID3D11Resource *pSrcResource = dxResource(pThisCC->svga.p3dState, pSrcSurface, pDXContext);
+
+    pDevice->pImmediateContext->CopyResource(pDstResource, pSrcResource);
+
+    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
+    return VINF_SUCCESS;
 }
 
 

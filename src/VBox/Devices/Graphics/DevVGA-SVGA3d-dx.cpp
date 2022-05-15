@@ -1368,7 +1368,7 @@ int vmsvga3dDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
 }
 
 
-int vmsvga3dDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopy const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1380,7 +1380,7 @@ int vmsvga3dDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXPredCopy(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXPredCopy(pThisCC, pDXContext, pCmd->dstSid, pCmd->srcSid);
     return rc;
 }
 
