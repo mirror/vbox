@@ -5159,7 +5159,37 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
         AssertRCReturn(rc, rc);
     }
 
-    dxConstantBufferSet(pDevice, slot, type, pSurface->pBackendSurface->u.pBuffer);
+    /* Create the actual constane buffer taking into account offsetInBytes and sizeInBytes. */
+    D3D11_BUFFER_DESC bd;
+    RT_ZERO(bd);
+    bd.ByteWidth           = sizeInBytes;
+    bd.Usage               = D3D11_USAGE_DEFAULT;
+    bd.BindFlags           = D3D11_BIND_CONSTANT_BUFFER;
+
+    ID3D11Buffer *pBuffer = 0;
+    HRESULT hr = pDevice->pDevice->CreateBuffer(&bd, NULL, &pBuffer);
+    if (SUCCEEDED(hr))
+    {
+       ID3D11Resource *pDstResource = pBuffer;
+       UINT DstSubresource = 0;
+       UINT DstX = 0;
+       UINT DstY = 0;
+       UINT DstZ = 0;
+       ID3D11Resource *pSrcResource = pSurface->pBackendSurface->u.pResource;
+       UINT SrcSubresource = 0;
+       D3D11_BOX SrcBox;
+       SrcBox.left   = offsetInBytes;
+       SrcBox.top    = 0;
+       SrcBox.front  = 0;
+       SrcBox.right  = offsetInBytes + sizeInBytes;
+       SrcBox.bottom = 1;
+       SrcBox.back   = 1;
+       pDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
+                                                         pSrcResource, SrcSubresource, &SrcBox);
+
+       dxConstantBufferSet(pDevice, slot, type, pBuffer);
+       D3D_RELEASE(pBuffer); /* xSSetConstantBuffers "will hold a reference to the interfaces passed in." */
+    }
 
     return VINF_SUCCESS;
 }
