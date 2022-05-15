@@ -71,8 +71,8 @@
 
 typedef struct DXDEVICE
 {
-    ID3D11Device               *pDevice;               /* Device. */
-    ID3D11DeviceContext        *pImmediateContext;     /* Corresponding context. */
+    ID3D11Device1              *pDevice;               /* Device. */
+    ID3D11DeviceContext1       *pImmediateContext;     /* Corresponding context. */
     IDXGIFactory               *pDxgiFactory;          /* DXGI Factory. */
     D3D_FEATURE_LEVEL           FeatureLevel;
 
@@ -820,25 +820,25 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
 }
 
 
-static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
+static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
 {
     int rc = VINF_SUCCESS;
 
     if (pBackend->fSingleDevice && pBackend->dxDevice.pDevice)
     {
-        pDevice->pDevice = pBackend->dxDevice.pDevice;
-        pDevice->pDevice->AddRef();
+        pDXDevice->pDevice = pBackend->dxDevice.pDevice;
+        pDXDevice->pDevice->AddRef();
 
-        pDevice->pImmediateContext = pBackend->dxDevice.pImmediateContext;
-        pDevice->pImmediateContext->AddRef();
+        pDXDevice->pImmediateContext = pBackend->dxDevice.pImmediateContext;
+        pDXDevice->pImmediateContext->AddRef();
 
-        pDevice->pDxgiFactory = pBackend->dxDevice.pDxgiFactory;
-        pDevice->pDxgiFactory->AddRef();
+        pDXDevice->pDxgiFactory = pBackend->dxDevice.pDxgiFactory;
+        pDXDevice->pDxgiFactory->AddRef();
 
-        pDevice->FeatureLevel = pBackend->dxDevice.FeatureLevel;
+        pDXDevice->FeatureLevel = pBackend->dxDevice.FeatureLevel;
 
-        pDevice->pStagingBuffer = 0;
-        pDevice->cbStagingBuffer = 0;
+        pDXDevice->pStagingBuffer = 0;
+        pDXDevice->cbStagingBuffer = 0;
 
         return rc;
     }
@@ -854,6 +854,8 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
     Flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
+    ID3D11Device *pDevice = 0;
+    ID3D11DeviceContext *pImmediateContext = 0;
     HRESULT hr = pBackend->pfnD3D11CreateDevice(pAdapter,
                                                 D3D_DRIVER_TYPE_HARDWARE,
                                                 NULL,
@@ -861,18 +863,28 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
                                                 s_aFeatureLevels,
                                                 RT_ELEMENTS(s_aFeatureLevels),
                                                 D3D11_SDK_VERSION,
-                                                &pDevice->pDevice,
-                                                &pDevice->FeatureLevel,
-                                                &pDevice->pImmediateContext);
+                                                &pDevice,
+                                                &pDXDevice->FeatureLevel,
+                                                &pImmediateContext);
     if (SUCCEEDED(hr))
     {
-        LogRel(("VMSVGA: Feature level %#x\n", pDevice->FeatureLevel));
+        LogRel(("VMSVGA: Feature level %#x\n", pDXDevice->FeatureLevel));
+
+        hr = pDevice->QueryInterface(__uuidof(ID3D11Device1), (void**)&pDXDevice->pDevice);
+        AssertReturnStmt(SUCCEEDED(hr),
+                         D3D_RELEASE(pImmediateContext); D3D_RELEASE(pDevice),
+                         VERR_NOT_SUPPORTED);
+
+        hr = pImmediateContext->QueryInterface(__uuidof(ID3D11DeviceContext1), (void**)&pDXDevice->pImmediateContext);
+        AssertReturnStmt(SUCCEEDED(hr),
+                         D3D_RELEASE(pImmediateContext); D3D_RELEASE(pDXDevice->pDevice); D3D_RELEASE(pDevice),
+                         VERR_NOT_SUPPORTED);
 
 #ifdef DEBUG
         /* Break into debugger when DX runtime detects anything unusual. */
         HRESULT hr2;
         ID3D11Debug *pDebug = 0;
-        hr2 = pDevice->pDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&pDebug);
+        hr2 = pDXDevice->pDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&pDebug);
         if (SUCCEEDED(hr2))
         {
             ID3D11InfoQueue *pInfoQueue = 0;
@@ -908,14 +920,14 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
 #endif
 
         IDXGIDevice *pDxgiDevice = 0;
-        hr = pDevice->pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDxgiDevice);
+        hr = pDXDevice->pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDxgiDevice);
         if (SUCCEEDED(hr))
         {
             IDXGIAdapter *pDxgiAdapter = 0;
             hr = pDxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&pDxgiAdapter);
             if (SUCCEEDED(hr))
             {
-                hr = pDxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&pDevice->pDxgiFactory);
+                hr = pDxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&pDXDevice->pDxgiFactory);
                 D3D_RELEASE(pDxgiAdapter);
             }
 
