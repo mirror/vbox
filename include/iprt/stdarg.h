@@ -45,7 +45,7 @@
 #  endif
 # elif defined(RT_OS_LINUX) && defined(IN_RING0)
 #  include "linux/version.h"
-#  if RTLNX_VER_MIN(5,15,0)
+#  if RTLNX_VER_MIN(5,15,0) || RTLNX_RHEL_MAJ_PREREQ(9,1)
 #   include <linux/stdarg.h>
 #  else
 #   include <stdarg.h>
