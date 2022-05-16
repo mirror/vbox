@@ -658,6 +658,9 @@ static RTEXITCODE ProcessMsiPackage(const char *pszMsi, const char *pszMsiArgs, 
         RTUtf16Free(pwszLogFile);
         if (uLogLevel != ERROR_SUCCESS)
             return ShowError("MsiEnableLogW failed");
+
+        if (g_iVerbosity)
+            RTPrintf("Logging to file          : %s\n",      szLogFile);
     }
 
     /*
@@ -1325,11 +1328,11 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     {
         RTPrintf("Extraction path          : %s\n",      szExtractPath);
         RTPrintf("Silent installation      : %RTbool\n", g_fSilent);
-        RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
 #ifdef VBOX_WITH_CODE_SIGNING
         RTPrintf("Certificate installation : %RTbool\n", fEnableSilentCert);
 #endif
         RTPrintf("Additional MSI parameters: %s\n", szMSIArgs[0] ? szMSIArgs : "<None>");
+        RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
     }
 
     /*
@@ -1415,4 +1418,3 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     return rcExit != (RTEXITCODE)ERROR_SUCCESS_REBOOT_REQUIRED || !fIgnoreReboot ? rcExit : RTEXITCODE_SUCCESS;
 }
-
