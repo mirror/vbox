@@ -56,8 +56,8 @@ static const char *g_aCiphers[] =
 
 
 /**
- * Creates a new cryptographic context and returns the encoded string version on success. 
- *  
+ * Creates a new cryptographic context and returns the encoded string version on success.
+ *
  * @returns VBox status code.
  * @param   pCryptoIf           Pointer to the cryptographic interface.
  * @param   pszCipher           The cipher to use.
@@ -69,7 +69,7 @@ static int tstCryptoCtxCreate(PCVBOXCRYPTOIF pCryptoIf, const char *pszCipher, c
     VBOXCRYPTOCTX hCryptoCtx;
 
     int rc = pCryptoIf->pfnCryptoCtxCreate(pszCipher, pszPassword, &hCryptoCtx);
-    if ((RT_SUCCESS(rc))) 
+    if (RT_SUCCESS(rc))
     {
         rc = pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, ppszCtx);
         int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
@@ -81,10 +81,10 @@ static int tstCryptoCtxCreate(PCVBOXCRYPTOIF pCryptoIf, const char *pszCipher, c
 
 
 /**
- * Writes data to the given file until the given size is reached. 
- *  
- * @returns VBox status code. 
- * @param   hVfsFile            The file handle to write to. 
+ * Writes data to the given file until the given size is reached.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFile            The file handle to write to.
  * @param   cbWrite             Number of bytes to write.
  */
 static int tstCryptoVfsWrite(RTVFSFILE hVfsFile, size_t cbWrite)
@@ -149,10 +149,10 @@ static int tstCryptoVfsWrite(RTVFSFILE hVfsFile, size_t cbWrite)
 
 
 /**
- * Writes data to the given file until the given size is reached. 
- *  
- * @returns VBox status code. 
- * @param   hVfsFile            The file handle to write to. 
+ * Writes data to the given file until the given size is reached.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFile            The file handle to write to.
  * @param   cbFile              Size of the file payload in bytes.
  */
 static int tstCryptoVfsReadAndVerify(RTVFSFILE hVfsFile, size_t cbFile)
