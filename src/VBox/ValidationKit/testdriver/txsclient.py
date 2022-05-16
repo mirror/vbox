@@ -1753,6 +1753,10 @@ class Session(TdTaskBase):
         return self.startTask(cMsTimeout, fIgnoreErrors, "cpfile",
                               self.taskCopyFile, (sSrcFile, sDstFile, fMode, fFallbackOkay));
 
+    def syncCopyFile(self, sSrcFile, sDstFile, fMode = 0, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncCopyFile, sSrcFile, sDstFile, fMode, cMsTimeout, fIgnoreErrors);
+
     def asyncUploadFile(self, sLocalFile, sRemoteFile,
                         fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """
