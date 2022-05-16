@@ -2588,6 +2588,7 @@ static int vmsvga3dBackSurfaceCreateSoBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCON
     return VERR_NO_MEMORY;
 }
 
+#if 0
 static int vmsvga3dBackSurfaceCreateConstantBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface, uint32_t offsetInBytes, uint32_t sizeInBytes)
 {
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
@@ -2654,7 +2655,7 @@ static int vmsvga3dBackSurfaceCreateConstantBuffer(PVGASTATECC pThisCC, PVMSVGA3
     RTMemFree(pBackendSurface);
     return VERR_NO_MEMORY;
 }
-
+#endif
 
 static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface)
 {
@@ -5152,41 +5153,44 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
     int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
     AssertRCReturn(rc, rc);
 
-    if (pSurface->pBackendSurface == NULL)
+    PVMSVGA3DMIPMAPLEVEL pMipLevel;
+    rc = vmsvga3dMipmapLevel(pSurface, 0, 0, &pMipLevel);
+    AssertRCReturn(rc, rc);
+
+    uint32_t const cbSurface = pMipLevel->cbSurface;
+    ASSERT_GUEST_RETURN(   offsetInBytes < cbSurface
+                        && sizeInBytes <= cbSurface - offsetInBytes, VERR_INVALID_PARAMETER);
+
+    /* Constant buffers are created on demand. */
+    Assert(pSurface->pBackendSurface == NULL);
+
+    /* Upload the current data, if any. */
+    D3D11_SUBRESOURCE_DATA *pInitialData = NULL;
+    D3D11_SUBRESOURCE_DATA initialData;
+    if (pMipLevel->pSurfaceData)
     {
-        /* Create the resource and initialize it with the current surface data. */
-        rc = vmsvga3dBackSurfaceCreateConstantBuffer(pThisCC, pDXContext, pSurface, offsetInBytes, sizeInBytes);
-        AssertRCReturn(rc, rc);
+        initialData.pSysMem          = (uint8_t *)pMipLevel->pSurfaceData + offsetInBytes;
+        initialData.SysMemPitch      = sizeInBytes;
+        initialData.SysMemSlicePitch = sizeInBytes;
+
+        pInitialData = &initialData;
+
+        // Log(("%.*Rhxd\n", sizeInBytes, initialData.pSysMem));
     }
 
-    /* Create the actual constane buffer taking into account offsetInBytes and sizeInBytes. */
     D3D11_BUFFER_DESC bd;
     RT_ZERO(bd);
     bd.ByteWidth           = sizeInBytes;
     bd.Usage               = D3D11_USAGE_DEFAULT;
     bd.BindFlags           = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags      = 0;
+    bd.MiscFlags           = 0;
+    bd.StructureByteStride = 0;
 
     ID3D11Buffer *pBuffer = 0;
-    HRESULT hr = pDevice->pDevice->CreateBuffer(&bd, NULL, &pBuffer);
+    HRESULT hr = pDevice->pDevice->CreateBuffer(&bd, pInitialData, &pBuffer);
     if (SUCCEEDED(hr))
     {
-       ID3D11Resource *pDstResource = pBuffer;
-       UINT DstSubresource = 0;
-       UINT DstX = 0;
-       UINT DstY = 0;
-       UINT DstZ = 0;
-       ID3D11Resource *pSrcResource = pSurface->pBackendSurface->u.pResource;
-       UINT SrcSubresource = 0;
-       D3D11_BOX SrcBox;
-       SrcBox.left   = offsetInBytes;
-       SrcBox.top    = 0;
-       SrcBox.front  = 0;
-       SrcBox.right  = offsetInBytes + sizeInBytes;
-       SrcBox.bottom = 1;
-       SrcBox.back   = 1;
-       pDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
-                                                         pSrcResource, SrcSubresource, &SrcBox);
-
        dxConstantBufferSet(pDevice, slot, type, pBuffer);
        D3D_RELEASE(pBuffer); /* xSSetConstantBuffers "will hold a reference to the interfaces passed in." */
     }
