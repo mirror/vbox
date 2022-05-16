@@ -67,6 +67,7 @@ typedef struct DXBCBlobHeader
 /* DXBC blob types. */
 #define DXBC_BLOB_TYPE_ISGN RT_MAKE_U32_FROM_U8('I', 'S', 'G', 'N')
 #define DXBC_BLOB_TYPE_OSGN RT_MAKE_U32_FROM_U8('O', 'S', 'G', 'N')
+#define DXBC_BLOB_TYPE_PCSG RT_MAKE_U32_FROM_U8('P', 'C', 'S', 'G')
 #define DXBC_BLOB_TYPE_SHDR RT_MAKE_U32_FROM_U8('S', 'H', 'D', 'R')
 /** @todo More... */
 
@@ -2380,7 +2381,11 @@ static int dxbcCreateFromInfo(DXShaderInfo const *pInfo, void const *pvShader, u
     int rc;
 
     /* Create a DXBC container with ISGN, OSGN and SHDR blobs. */
-    uint32_t const cBlob = 3;
+    uint32_t cBlob = 3;
+    if (   pInfo->enmProgramType == VGPU10_HULL_SHADER
+        || pInfo->enmProgramType == VGPU10_DOMAIN_SHADER)
+        ++cBlob;
+
     uint32_t const cbHdr = RT_UOFFSETOF(DXBCHeader, aBlobOffset[cBlob]); /* Header with blob offsets. */
     if (!dxbcByteWriterCanWrite(w, cbHdr))
         return VERR_NO_MEMORY;
@@ -2395,6 +2400,27 @@ static int dxbcCreateFromInfo(DXShaderInfo const *pInfo, void const *pvShader, u
     //RT_ZERO(pHdr->aBlobOffset);
     dxbcByteWriterCommit(w, cbHdr);
 
+#ifdef LOG_ENABLED
+    if (pInfo->cInputSignature)
+    {
+        Log6(("Input signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cInputSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aInputSignature[i].registerIndex, pInfo->aInputSignature[i].semanticName, pInfo->aInputSignature[i].mask));
+    }
+    if (pInfo->cOutputSignature)
+    {
+        Log6(("Output signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cOutputSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aOutputSignature[i].registerIndex, pInfo->aOutputSignature[i].semanticName, pInfo->aOutputSignature[i].mask));
+    }
+    if (pInfo->cPatchConstantSignature)
+    {
+        Log6(("Patch constant signatures:\n"));
+        for (uint32_t i = 0; i < pInfo->cPatchConstantSignature; ++i)
+            Log6(("  [%u]: %u %u 0x%X\n", i, pInfo->aPatchConstantSignature[i].registerIndex, pInfo->aPatchConstantSignature[i].semanticName, pInfo->aPatchConstantSignature[i].mask));
+    }
+#endif
+
     /* Blobs. */
     uint32_t iBlob = 0;
 
@@ -2406,9 +2432,19 @@ static int dxbcCreateFromInfo(DXShaderInfo const *pInfo, void const *pvShader, u
     rc = dxbcCreateIOSGNBlob(pInfo, pHdr, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0], w);
     AssertRCReturn(rc, rc);
 
+    if (   pInfo->enmProgramType == VGPU10_HULL_SHADER
+        || pInfo->enmProgramType == VGPU10_DOMAIN_SHADER)
+    {
+        pHdr->aBlobOffset[iBlob++] = dxbcByteWriterSize(w);
+        rc = dxbcCreateIOSGNBlob(pInfo, pHdr, DXBC_BLOB_TYPE_PCSG, pInfo->cPatchConstantSignature, &pInfo->aPatchConstantSignature[0], w);
+        AssertRCReturn(rc, rc);
+    }
+
     pHdr->aBlobOffset[iBlob++] = dxbcByteWriterSize(w);
     rc = dxbcCreateSHDRBlob(pHdr, DXBC_BLOB_TYPE_SHDR, pvShader, cbShader, w);
     AssertRCReturn(rc, rc);
+
+    Assert(iBlob == cBlob);
 
     AssertCompile(RT_UOFFSETOF(DXBCHeader, u32Version) == 0x14);
     dxbcHash(&pHdr->u32Version, pHdr->cbTotal - RT_UOFFSETOF(DXBCHeader, u32Version), pHdr->au8Hash);
@@ -2537,6 +2573,7 @@ VGPU10_RESOURCE_RETURN_TYPE DXShaderResourceReturnTypeFromFormat(SVGA3dSurfaceFo
         case SVGA3D_B4G4R4A4_UNORM:                return VGPU10_RETURN_TYPE_UNORM;
         case SVGA3D_BC7_UNORM:                     return VGPU10_RETURN_TYPE_UNORM;
         case SVGA3D_BC7_UNORM_SRGB:                return VGPU10_RETURN_TYPE_UNORM;
+        case SVGA3D_R9G9B9E5_SHAREDEXP:            return VGPU10_RETURN_TYPE_FLOAT;
         default:
             break;
     }

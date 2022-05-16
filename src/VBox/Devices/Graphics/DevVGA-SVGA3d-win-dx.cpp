@@ -946,12 +946,6 @@ static void dxDeviceDestroy(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
 {
     RT_NOREF(pBackend);
 
-    if (pDevice->pImmediateContext)
-    {
-        dxDeviceFlush(pDevice); /* Make sure that any pending draw calls are finished. */
-        pDevice->pImmediateContext->ClearState();
-    }
-
     D3D_RELEASE(pDevice->pStagingBuffer);
 
     D3D_RELEASE(pDevice->pDxgiFactory);
@@ -5001,6 +4995,9 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         /* Clean up context resources. */
         VMSVGA3DBACKENDDXCONTEXT *pBackendDXContext = pDXContext->pBackendDXContext;
 
+        if (pBackendDXContext->dxDevice.pImmediateContext)
+            dxDeviceFlush(&pBackendDXContext->dxDevice); /* Make sure that any pending draw calls are finished. */
+
         if (pBackendDXContext->paRenderTargetView)
         {
             for (uint32_t i = 0; i < pBackendDXContext->cRenderTargetView; ++i)
@@ -5385,7 +5382,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
      */
 
     /* Make sure that the shader resource views exist. */
-    for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE_DX10 /** @todo SVGA3D_NUM_SHADERTYPE*/; ++idxShaderState)
+    for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE; ++idxShaderState)
     {
         for (uint32_t idxSR = 0; idxSR < SVGA3D_DX_MAX_SRVIEWS; ++idxSR)
         {
@@ -5592,7 +5589,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
      * Shaders
      */
 
-    for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE_DX10 /** @todo SVGA3D_NUM_SHADERTYPE*/; ++idxShaderState)
+    for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE; ++idxShaderState)
     {
         DXSHADER *pDXShader;
         SVGA3dShaderType const shaderType = (SVGA3dShaderType)(idxShaderState + SVGA3D_SHADERTYPE_MIN);
@@ -5604,7 +5601,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
             if (pDXShader->pShader == NULL)
             {
                 /* Create a new shader. */
-                Log(("Shader: cid=%u shid=%u type=%d\n", pDXContext->cid, shaderId, pDXShader->enmShaderType));
+                Log(("Shader: cid=%u shid=%u type=%d, GuestSignatures %d\n", pDXContext->cid, shaderId, pDXShader->enmShaderType, pDXShader->shaderInfo.fGuestSignatures));
 
                 /* Apply resource types to a pixel shader. */
                 if (shaderType == SVGA3D_SHADERTYPE_PS)
@@ -6279,6 +6276,7 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
         }
     }
 
+    UINT NumRTVs = 0;
     ID3D11RenderTargetView *apRenderTargetViews[SVGA3D_MAX_RENDER_TARGETS];
     RT_ZERO(apRenderTargetViews);
     for (uint32_t i = 0; i < pDXContext->cRenderTargets; ++i)
@@ -6288,6 +6286,7 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
         {
             ASSERT_GUEST_RETURN(renderTargetViewId < pDXContext->pBackendDXContext->cRenderTargetView, VERR_INVALID_PARAMETER);
             apRenderTargetViews[i] = pDXContext->pBackendDXContext->paRenderTargetView[renderTargetViewId].u.pRenderTargetView;
+            ++NumRTVs;
         }
     }
 
@@ -6296,18 +6295,13 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
     if (depthStencilViewId != SVGA_ID_INVALID)
         pDepthStencilView = pDXContext->pBackendDXContext->paDepthStencilView[depthStencilViewId].u.pDepthStencilView;
 
-    pDevice->pImmediateContext->OMSetRenderTargets(pDXContext->cRenderTargets,
+    pDevice->pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(NumRTVs,
                                                    apRenderTargetViews,
-                                                   pDepthStencilView);
-//    Assert(NumUAVs == 0);
-    if (NumUAVs != 0)
-        pDevice->pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL,
-                                                       NULL,
-                                                       NULL,
-                                                       pDXContext->svgaDXContext.uavSpliceIndex,
-                                                       NumUAVs,
-                                                       apUnorderedAccessViews,
-                                                       aUAVInitialCounts);
+                                                   pDepthStencilView,
+                                                   NumRTVs /*pDXContext->svgaDXContext.uavSpliceIndex*/,
+                                                   NumUAVs,
+                                                   apUnorderedAccessViews,
+                                                   aUAVInitialCounts);
     return VINF_SUCCESS;
 }
 

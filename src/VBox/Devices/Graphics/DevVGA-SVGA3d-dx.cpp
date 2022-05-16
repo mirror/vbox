@@ -181,7 +181,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
     {
         u32TrackedState &= ~DX_STATE_SAMPLERS;
 
-        for (int i = SVGA3D_SHADERTYPE_MIN; i < SVGA3D_SHADERTYPE_DX10_MAX; ++i) /** @todo SVGA3D_SHADERTYPE_MAX */
+        for (int i = SVGA3D_SHADERTYPE_MIN; i < SVGA3D_SHADERTYPE_MAX; ++i)
         {
             SVGA3dShaderType const shaderType = (SVGA3dShaderType)i;
             uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;

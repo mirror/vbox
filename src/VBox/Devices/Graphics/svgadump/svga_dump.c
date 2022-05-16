@@ -230,6 +230,12 @@ shader_name(unsigned type)
       return "SVGA3D_SHADERTYPE_PS";
    case SVGA3D_SHADERTYPE_GS:
       return "SVGA3D_SHADERTYPE_GS";
+   case SVGA3D_SHADERTYPE_HS:
+      return "SVGA3D_SHADERTYPE_HS";
+   case SVGA3D_SHADERTYPE_DS:
+      return "SVGA3D_SHADERTYPE_DS";
+   case SVGA3D_SHADERTYPE_CS:
+      return "SVGA3D_SHADERTYPE_CS";
    default:
       return "unknown shader type!";
    }
