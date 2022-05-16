@@ -593,6 +593,10 @@ class tdUnitTest1(vbox.TestDriver):
         return True;
 
     def actionExecute(self):
+        # Make sure vboxapi has been imported so we can execute the driver without going thru
+        # a former configuring step.
+        if not self.importVBoxApi():
+            return False;
         if not self._detectPaths():
             return False;
         reporter.log2('Unit test source path is "%s"\n' % self.sUnitTestsPathSrc);
@@ -633,8 +637,8 @@ class tdUnitTest1(vbox.TestDriver):
         else:
             self.sExeSuff = '.exe' if utils.getHostOs() in [ 'win', 'dos', 'os2' ] else '';
 
-        self._testRunUnitTestsSet(r'^tst*', 'testcase');
-        self._testRunUnitTestsSet(r'^tst*', '.');
+        self._testRunUnitTestsSet(oTestVm, r'^tst*', 'testcase');
+        self._testRunUnitTestsSet(oTestVm, r'^tst*', '.');
 
         fRc = self.cFailed == 0;
 
@@ -805,7 +809,7 @@ class tdUnitTest1(vbox.TestDriver):
         if reporter.getVerbosity() < cVerbosity \
         or self.oTxsSession is None:
             return;
-        sStringExp = self.txsExpandString(self.oSession, self.oTxsSession, sString);
+        sStringExp = self.oTxsSession.syncExpandString(sString);
         if not sStringExp:
             return;
         reporter.log2('_logExpandString: "%s" -> "%s"' % (sString, sStringExp));
@@ -820,9 +824,9 @@ class tdUnitTest1(vbox.TestDriver):
         fRc = False;
         if self.sMode.startswith('remote'):
             self._logExpandString(sPath);
-            fRc = self.txsIsDir(self.oSession, self.oTxsSession, sPath, fIgnoreErrors = True);
+            fRc = self.oTxsSession.syncIsDir(sPath, fIgnoreErrors = True);
             if not fRc:
-                fRc = self.txsIsFile(self.oSession, self.oTxsSession, sPath, fIgnoreErrors = True);
+                fRc = self.oTxsSession.syncIsFile(sPath, fIgnoreErrors = True);
         else:
             fRc = os.path.exists(sPath);
         return fRc;
@@ -836,15 +840,15 @@ class tdUnitTest1(vbox.TestDriver):
             return True;
         fRc = True;
         if self.sMode.startswith('remote'):
-            fRc = self.txsMkDirPath(self.oSession, self.oTxsSession, sPath, fMode = 0o755);
+            fRc = self.oTxsSession.syncMkDirPath(sPath, fMode = 0o755);
         else:
             if utils.getHostOs() in [ 'win', 'os2' ]:
                 os.makedirs(sPath, 0o755);
             else:
                 fRc = self._sudoExecuteSync(['/bin/mkdir', '-p', '-m', '0755', sPath]);
-        if fRc is not True:
-            raise Exception('Failed to create dir "%s".' % (sPath,));
-        return True;
+        if not fRc:
+            reporter.log('Failed to create dir "%s".' % (sPath,));
+        return fRc;
 
     def _wrapCopyFile(self, sSrc, sDst, iMode):
         """
@@ -858,11 +862,11 @@ class tdUnitTest1(vbox.TestDriver):
             self._logExpandString(sSrc);
             self._logExpandString(sDst);
             if self.sMode == 'remote-exec':
-                self.txsCopyFile(self.oSession, self.oTxsSession, sSrc, sDst, iMode);
+                self.oTxsSession.syncCopyFile(sSrc, sDst, iMode);
             else:
-                fRc = self.txsUploadFile(self.oSession, self.oTxsSession, sSrc, sDst);
+                fRc = self.oTxsSession.syncUploadFile(sSrc, sDst);
                 if fRc:
-                    self.oTxsSession.syncChMod(sDst, iMode);
+                    fRc = self.oTxsSession.syncChMod(sDst, iMode);
         else:
             if utils.getHostOs() in [ 'win', 'os2' ]:
                 utils.copyFileSimple(sSrc, sDst);
@@ -873,9 +877,9 @@ class tdUnitTest1(vbox.TestDriver):
                     fRc = self._sudoExecuteSync(['/bin/chmod', '%o' % (iMode,), sDst]);
                     if fRc is not True:
                         raise Exception('Failed to chmod "%s".' % (sDst,));
-        if fRc is not True:
-            raise Exception('Failed to copy "%s" to "%s".' % (sSrc, sDst,));
-        return True;
+        if not fRc:
+            reporter.log('Failed to copy "%s" to "%s".' % (sSrc, sDst,));
+        return fRc;
 
     def _wrapDeleteFile(self, sPath):
         """
@@ -886,17 +890,17 @@ class tdUnitTest1(vbox.TestDriver):
             return True;
         fRc = True;
         if self.sMode.startswith('remote'):
-            if self.txsIsFile(self.oSession, self.oTxsSession, sPath):
-                fRc = self.txsRmFile(self.oSession, self.oTxsSession, sPath);
+            if self.oTxsSession.syncIsFile(sPath):
+                fRc = self.oTxsSession.syncRmFile(sPath, fIgnoreErrors = True);
         else:
             if os.path.exists(sPath):
                 if utils.getHostOs() in [ 'win', 'os2' ]:
                     os.remove(sPath);
                 else:
                     fRc = self._sudoExecuteSync(['/bin/rm', sPath]);
-        if fRc is not True:
-            raise Exception('Failed to remove "%s".' % (sPath,));
-        return True;
+        if not fRc:
+            reporter.log('Failed to remove "%s".' % (sPath,));
+        return fRc;
 
     def _wrapRemoveDir(self, sPath):
         """
@@ -907,17 +911,17 @@ class tdUnitTest1(vbox.TestDriver):
             return True;
         fRc = True;
         if self.sMode.startswith('remote'):
-            if self.txsIsDir(self.oSession, self.oTxsSession, sPath):
-                fRc = self.txsRmDir(self.oSession, self.oTxsSession, sPath);
+            if self.oTxsSession.syncIsDir(sPath):
+                fRc = self.oTxsSession.syncRmDir(sPath, fIgnoreErrors = True);
         else:
             if os.path.exists(sPath):
                 if utils.getHostOs() in [ 'win', 'os2' ]:
                     os.rmdir(sPath);
                 else:
                     fRc = self._sudoExecuteSync(['/bin/rmdir', sPath]);
-        if fRc is not True:
-            raise Exception('Failed to remove "%s".' % (sPath,));
-        return True;
+        if not fRc:
+            reporter.log('Failed to remove "%s".' % (sPath,));
+        return fRc;
 
     def _envSet(self, sName, sValue):
         if self.sMode.startswith('remote'):
@@ -928,7 +932,7 @@ class tdUnitTest1(vbox.TestDriver):
             os.environ[sName] = sValue;
         return True;
 
-    def _executeTestCase(self, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
+    def _executeTestCase(self, oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
         """
         Executes a test case.
         """
@@ -974,7 +978,12 @@ class tdUnitTest1(vbox.TestDriver):
                 return fSkipped;
 
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath) + self.sExeSuff);
-            self._wrapCopyFile(sSrc, sDst, 0o755);
+            fModeExe  = 0;
+            fModeDeps = 0;
+            if not oTestVm.isWindows(): ## @todo NT4 does not like the chmod. Investigate this!
+                fModeExe  = 0o755;
+                fModeDeps = 0o644;
+            self._wrapCopyFile(sSrc, sDst, fModeExe);
             asFilesToRemove.append(sDst);
 
             # Copy required dependencies to destination.
@@ -985,7 +994,7 @@ class tdUnitTest1(vbox.TestDriver):
                         sSrc = os.path.join(self.sVBoxInstallRoot, sLib + sSuff);
                         if self._wrapPathExists(sSrc):
                             sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                            self._wrapCopyFile(sSrc, sDst, 0o644);
+                            self._wrapCopyFile(sSrc, sDst, fModeDeps);
                             asFilesToRemove.append(sDst);
 
             # Copy any associated .dll/.so/.dylib.
@@ -993,7 +1002,7 @@ class tdUnitTest1(vbox.TestDriver):
                 sSrc = os.path.splitext(sFullPath)[0] + sSuff;
                 if os.path.exists(sSrc):
                     sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                    self._wrapCopyFile(sSrc, sDst, 0o644);
+                    self._wrapCopyFile(sSrc, sDst, fModeDeps);
                     asFilesToRemove.append(sDst);
 
             # Copy any associated .r0, .rc and .gc modules.
@@ -1003,7 +1012,7 @@ class tdUnitTest1(vbox.TestDriver):
                     sSrc = sFullPath[:offDriver] + sSuff;
                     if os.path.exists(sSrc):
                         sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                        self._wrapCopyFile(sSrc, sDst, 0o644);
+                        self._wrapCopyFile(sSrc, sDst, fModeDeps);
                         asFilesToRemove.append(sDst);
 
             sFullPath = os.path.join(sDstDir, os.path.basename(sFullPath));
@@ -1042,8 +1051,8 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             if fCopyToRemote:
-                fRc = self.txsRunTest(self.oTxsSession, sName, 30 * 60 * 1000, asArgs[0], asArgs, self.asEnv, \
-                                        fCheckSessionStatus = True);
+                fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0], \
+                                      asArgs = asArgs, asAddEnv = self.asEnv, fCheckSessionStatus = True);
                 if fRc:
                     iRc = 0;
                 else:
@@ -1122,7 +1131,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         return fSkipped;
 
-    def _testRunUnitTestsSet(self, sTestCasePattern, sTestCaseSubDir):
+    def _testRunUnitTestsSet(self, oTestVm, sTestCasePattern, sTestCaseSubDir):
         """
         Run subset of the unit tests set.
         """
@@ -1202,7 +1211,7 @@ class tdUnitTest1(vbox.TestDriver):
                 sFullPath = os.path.normpath(os.path.join(self.sUnitTestsPathSrc, os.path.join(sTestCaseSubDir, sFilename)));
                 reporter.testStart(sName);
                 try:
-                    fSkipped = self._executeTestCase(sName, sFullPath, sTestCaseSubDir, oDevNull);
+                    fSkipped = self._executeTestCase(oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull);
                 except:
                     reporter.errorXcpt('!*!');
                     self.cFailed += 1;
