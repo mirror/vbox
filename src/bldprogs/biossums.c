@@ -212,6 +212,22 @@ int main(int argc, char **argv)
                 pbHeader[4] = u8Checksum;
                 break;
         }
+
+        /* If there is a VPD table, adjust its checksum. */
+        switch (searchHeader(abBios, cbIn, "\xAA\x55VPD", &pbHeader))
+        {
+            case 0:
+                break;  /* VPD is optional */
+            case 2:
+                return fatal("More than one VPD header found!\n");
+            case 1:
+                cbChecksum = (size_t)pbHeader[5];
+                if (cbChecksum < 0x30)
+                    return fatal("VPD size too small!\n");
+                u8Checksum = calculateChecksum(pbHeader, cbChecksum, cbChecksum - 1);
+                pbHeader[cbChecksum - 1] = u8Checksum;
+                break;
+        }
     }
 
     /* set the BIOS checksum */
