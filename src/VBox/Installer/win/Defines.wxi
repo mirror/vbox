@@ -13,7 +13,7 @@
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wix"
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
   <!-- TODO: Add "VBox" prefix! -->
