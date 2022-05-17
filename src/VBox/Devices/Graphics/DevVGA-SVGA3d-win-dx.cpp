@@ -2092,6 +2092,27 @@ static DXDEVICE *dxSurfaceDevice(PVMSVGA3DSTATE p3dState, PVMSVGA3DSURFACE pSurf
     return &pDXContext->pBackendDXContext->dxDevice;
 }
 
+
+static DXGI_FORMAT dxGetDxgiTypelessFormat(DXGI_FORMAT dxgiFormat)
+{
+    switch (dxgiFormat)
+    {
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_B8G8R8X8_UNORM :
+        case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+        case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+        case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+            return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+        /** @todo Other _TYPELESS formats. */
+        default:
+            break;
+    }
+
+    return dxgiFormat;
+}
+
+
 static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface)
 {
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
@@ -2114,13 +2135,15 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
     int rc = dxBackendSurfaceAlloc(&pBackendSurface);
     AssertRCReturn(rc, rc);
 
-    uint32_t const cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
-    uint32_t const cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
+    uint32_t const cWidth = pSurface->paMipmapLevels[0].cBlocksX * pSurface->cxBlock;
+    uint32_t const cHeight = pSurface->paMipmapLevels[0].cBlocksY * pSurface->cyBlock;
     uint32_t const cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
     uint32_t const numMipLevels = pSurface->cLevels;
 
     DXGI_FORMAT dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(pSurface->format);
     AssertReturn(dxgiFormat != DXGI_FORMAT_UNKNOWN, E_FAIL);
+
+    dxgiFormat = dxGetDxgiTypelessFormat(dxgiFormat);
 
     /*
      * Create D3D11 texture object.
@@ -2687,7 +2710,7 @@ static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCON
         else if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_DYNAMIC)
             bd.Usage = D3D11_USAGE_DYNAMIC;
         else if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_STATIC)
-            bd.Usage = D3D11_USAGE_IMMUTABLE;
+            bd.Usage = pInitialData ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT; /* Guest will update later. */
         else if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_HINT_INDIRECT_UPDATE)
             bd.Usage = D3D11_USAGE_DEFAULT;
 
