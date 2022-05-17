@@ -905,6 +905,7 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
                     D3D11_MESSAGE_ID_DEVICE_DRAW_SAMPLER_NOT_SET,     /* U. */
                     D3D11_MESSAGE_ID_DEVICE_DRAW_SAMPLER_MISMATCH,    /* U. */
                     D3D11_MESSAGE_ID_CREATEINPUTLAYOUT_EMPTY_LAYOUT,  /* P. */
+                    D3D11_MESSAGE_ID_DEVICE_SHADER_LINKAGE_REGISTERMASK, /* S. */
                 };
 
                 D3D11_INFO_QUEUE_FILTER filter;
@@ -1780,18 +1781,6 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
 
                 SVGACOTableDXStreamOutputEntry const *pEntry = &pDXContext->cot.paStreamOutput[soid];
                 DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
-
-                for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
-                {
-                    D3D11_SO_DECLARATION_ENTRY *p = &pDXStreamOutput->aDeclarationEntry[i];
-                    SVGA3dStreamOutputDeclarationEntry const *decl = &pEntry->decl[i];
-                    SVGA3dDXSignatureSemanticName enmSemanticName;
-                    p->SemanticName = DXShaderGetOutputSemanticName(&pDXShader->shaderInfo, decl->registerIndex, &enmSemanticName);
-                    if (enmSemanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED)
-                        p->SemanticIndex = decl->registerIndex;
-                    else
-                        p->SemanticIndex = 0;
-                }
 
                 hr = pDevice->pDevice->CreateGeometryShaderWithStreamOutput(pDXShader->pvDXBC, pDXShader->cbDXBC,
                     pDXStreamOutput->aDeclarationEntry, pDXStreamOutput->cDeclarationEntry,
@@ -5279,42 +5268,214 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSamplers(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
-static void vboxDXMatchGuestShaderSignatures(PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
+static void vboxDXMatchShaderInput(DXSHADER *pDXShader, DXSHADER *pDXShaderPrior)
 {
-    if (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_GS)
+    /* For each input generic attribute of the shader find corresponding entry in the prior shader. */
+    for (uint32_t i = 0; i < pDXShader->shaderInfo.cInputSignature; ++i)
     {
-        /* Output signature of a GS shader is the input of the pixel shader. */
-        SVGA3dShaderId const shaderIdPS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_PS - SVGA3D_SHADERTYPE_MIN].shaderId;
-        SVGA3dShaderId const shaderIdDS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_DS - SVGA3D_SHADERTYPE_MIN].shaderId;
-        SVGA3dShaderId const shaderIdVS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN].shaderId;
+        SVGA3dDXSignatureEntry const *pSignatureEntry = &pDXShader->shaderInfo.aInputSignature[i];
+        DXShaderAttributeSemantic *pSemantic = &pDXShader->shaderInfo.aInputSemantic[i];
 
-        if (shaderIdPS != SVGA3D_INVALID_ID)
+        if (pSignatureEntry->semanticName != SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED)
+            continue;
+
+        int iMatch = -1;
+        for (uint32_t iPrior = 0; iPrior < pDXShaderPrior->shaderInfo.cOutputSignature; ++iPrior)
         {
-            DXSHADER const *pDXShaderPS = &pDXContext->pBackendDXContext->paShader[shaderIdPS];
-            pDXShader->shaderInfo.cOutputSignature = pDXShaderPS->shaderInfo.cInputSignature;
-            memcpy(pDXShader->shaderInfo.aOutputSignature,
-                   pDXShaderPS->shaderInfo.aInputSignature,
-                   pDXShaderPS->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+            SVGA3dDXSignatureEntry const *pPriorSignatureEntry = &pDXShaderPrior->shaderInfo.aOutputSignature[iPrior];
+
+            if (pPriorSignatureEntry->semanticName != SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED)
+                continue;
+
+            if (pPriorSignatureEntry->registerIndex == pSignatureEntry->registerIndex)
+            {
+                iMatch = iPrior;
+                if (pPriorSignatureEntry->mask == pSignatureEntry->mask)
+                    break; /* Exact match, no need to continue search. */
+            }
         }
 
-        /* Input signature of a GS shader is the output of DS or VS. */
-        if (shaderIdDS != SVGA3D_INVALID_ID)
+        if (iMatch >= 0)
         {
-            DXSHADER *pDXShaderDS = &pDXContext->pBackendDXContext->paShader[shaderIdDS];
-            pDXShader->shaderInfo.cInputSignature = pDXShaderDS->shaderInfo.cOutputSignature;
-            memcpy(pDXShader->shaderInfo.aInputSignature,
-                   pDXShaderDS->shaderInfo.aOutputSignature,
-                   pDXShaderDS->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
-        }
-        else if (shaderIdVS != SVGA3D_INVALID_ID)
-        {
-            DXSHADER *pDXShaderVS = &pDXContext->pBackendDXContext->paShader[shaderIdVS];
-            pDXShader->shaderInfo.cInputSignature = pDXShaderVS->shaderInfo.cOutputSignature;
-            memcpy(pDXShader->shaderInfo.aInputSignature,
-                   pDXShaderVS->shaderInfo.aOutputSignature,
-                   pDXShaderVS->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+            SVGA3dDXSignatureEntry const *pPriorSignatureEntry = &pDXShaderPrior->shaderInfo.aOutputSignature[iMatch];
+            DXShaderAttributeSemantic const *pPriorSemantic = &pDXShaderPrior->shaderInfo.aOutputSemantic[iMatch];
+
+            Assert(pPriorSignatureEntry->registerIndex == pSignatureEntry->registerIndex);
+            Assert(pPriorSignatureEntry->mask == pSignatureEntry->mask);
+            RT_NOREF(pPriorSignatureEntry);
+
+            pSemantic->SemanticIndex = pPriorSemantic->SemanticIndex;
         }
     }
+}
+
+
+static void vboxDXMatchShaderSignatures(PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
+{
+    SVGA3dShaderId const shaderIdVS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN].shaderId;
+    SVGA3dShaderId const shaderIdHS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_HS - SVGA3D_SHADERTYPE_MIN].shaderId;
+    SVGA3dShaderId const shaderIdDS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_DS - SVGA3D_SHADERTYPE_MIN].shaderId;
+    SVGA3dShaderId const shaderIdGS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_GS - SVGA3D_SHADERTYPE_MIN].shaderId;
+    SVGA3dShaderId const shaderIdPS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_PS - SVGA3D_SHADERTYPE_MIN].shaderId;
+
+    /* Try to fix the input semantic indices. Output is usually not changed. */
+    switch (pDXShader->enmShaderType)
+    {
+        case SVGA3D_SHADERTYPE_VS:
+        {
+            /* Match input to input layout, which sets generic semantic indices to the source registerIndex (dxCreateInputLayout). */
+            for (uint32_t i = 0; i < pDXShader->shaderInfo.cInputSignature; ++i)
+            {
+                SVGA3dDXSignatureEntry const *pSignatureEntry = &pDXShader->shaderInfo.aInputSignature[i];
+                DXShaderAttributeSemantic *pSemantic = &pDXShader->shaderInfo.aInputSemantic[i];
+
+                if (pSignatureEntry->semanticName != SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED)
+                    continue;
+
+                pSemantic->SemanticIndex = pSignatureEntry->registerIndex;
+            }
+            break;
+        }
+        case SVGA3D_SHADERTYPE_HS:
+        {
+            /* Input of a HS shader is the output of VS. */
+            DXSHADER *pDXShaderPrior;
+            if (shaderIdVS != SVGA3D_INVALID_ID)
+                pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdVS];
+            else
+                pDXShaderPrior = NULL;
+
+            if (pDXShaderPrior)
+                vboxDXMatchShaderInput(pDXShader, pDXShaderPrior);
+
+            break;
+        }
+        case SVGA3D_SHADERTYPE_DS:
+        {
+            /* Input of a DS shader is the output of HS. */
+            DXSHADER *pDXShaderPrior;
+            if (shaderIdHS != SVGA3D_INVALID_ID)
+                pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdHS];
+            else
+                pDXShaderPrior = NULL;
+
+            if (pDXShaderPrior)
+                vboxDXMatchShaderInput(pDXShader, pDXShaderPrior);
+
+            break;
+        }
+        case SVGA3D_SHADERTYPE_GS:
+        {
+            /* Input signature of a GS shader is the output of DS or VS. */
+            DXSHADER *pDXShaderPrior;
+            if (shaderIdDS != SVGA3D_INVALID_ID)
+                 pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdDS];
+            else if (shaderIdVS != SVGA3D_INVALID_ID)
+                pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdVS];
+            else
+                pDXShaderPrior = NULL;
+
+            if (pDXShaderPrior)
+            {
+                /* If GS shader does not have input signature (Windows guest can do that),
+                 * then assign the prior shader signature as GS input.
+                 */
+                if (pDXShader->shaderInfo.cInputSignature == 0)
+                {
+                    pDXShader->shaderInfo.cInputSignature = pDXShaderPrior->shaderInfo.cOutputSignature;
+                    memcpy(pDXShader->shaderInfo.aInputSignature,
+                           pDXShaderPrior->shaderInfo.aOutputSignature,
+                           pDXShaderPrior->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+                    memcpy(pDXShader->shaderInfo.aInputSemantic,
+                           pDXShaderPrior->shaderInfo.aOutputSemantic,
+                           pDXShaderPrior->shaderInfo.cOutputSignature * sizeof(DXShaderAttributeSemantic));
+                }
+                else
+                    vboxDXMatchShaderInput(pDXShader, pDXShaderPrior);
+            }
+
+            /* Output signature of a GS shader is the input of the pixel shader. */
+            if (shaderIdPS != SVGA3D_INVALID_ID)
+            {
+                /* If GS shader does not have output signature (Windows guest can do that),
+                 * then assign the PS shader signature as GS output.
+                 */
+                if (pDXShader->shaderInfo.cOutputSignature == 0)
+                {
+                    DXSHADER const *pDXShaderPosterior = &pDXContext->pBackendDXContext->paShader[shaderIdPS];
+                    pDXShader->shaderInfo.cOutputSignature = pDXShaderPosterior->shaderInfo.cInputSignature;
+                    memcpy(pDXShader->shaderInfo.aOutputSignature,
+                           pDXShaderPosterior->shaderInfo.aInputSignature,
+                           pDXShaderPosterior->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+                    memcpy(pDXShader->shaderInfo.aOutputSemantic,
+                           pDXShaderPosterior->shaderInfo.aInputSemantic,
+                           pDXShaderPosterior->shaderInfo.cInputSignature * sizeof(DXShaderAttributeSemantic));
+                }
+            }
+
+            SVGA3dStreamOutputId const soid = pDXContext->svgaDXContext.streamOut.soid;
+            if (soid != SVGA3D_INVALID_ID)
+            {
+                ASSERT_GUEST_RETURN_VOID(soid < pDXContext->pBackendDXContext->cStreamOutput);
+
+                /* Set semantic names and indices for SO declaration entries according to the shader output. */
+                SVGACOTableDXStreamOutputEntry const *pStreamOutputEntry = &pDXContext->cot.paStreamOutput[soid];
+                DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
+
+                for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
+                {
+                    D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
+                    SVGA3dStreamOutputDeclarationEntry const *decl = &pStreamOutputEntry->decl[i];
+
+                    /* Find the corresponding register and mask in the GS shader output. */
+                    int idxFound = -1;
+                    for (uint32_t iOutputEntry = 0; iOutputEntry < pDXShader->shaderInfo.cOutputSignature; ++iOutputEntry)
+                    {
+                        SVGA3dDXSignatureEntry const *pOutputEntry = &pDXShader->shaderInfo.aOutputSignature[iOutputEntry];
+                        if (   pOutputEntry->registerIndex == decl->registerIndex
+                            && (decl->registerMask & ~pOutputEntry->mask) == 0) /* SO decl mask is a subset of shader output mask. */
+                        {
+                            idxFound = iOutputEntry;
+                            break;
+                        }
+                    }
+
+                    if (idxFound >= 0)
+                    {
+                        DXShaderAttributeSemantic const *pOutputSemantic = &pDXShader->shaderInfo.aOutputSemantic[idxFound];
+                        pDeclarationEntry->SemanticName = pOutputSemantic->pcszSemanticName;
+                        pDeclarationEntry->SemanticIndex = pOutputSemantic->SemanticIndex;
+                    }
+                    else
+                        AssertFailed();
+                }
+            }
+            break;
+        }
+        case SVGA3D_SHADERTYPE_PS:
+        {
+            /* Input of a PS shader is the output of GS, DS or VS. */
+            DXSHADER *pDXShaderPrior;
+            if (shaderIdGS != SVGA3D_INVALID_ID)
+                pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdGS];
+            else if (shaderIdDS != SVGA3D_INVALID_ID)
+                 pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdDS];
+            else if (shaderIdVS != SVGA3D_INVALID_ID)
+                pDXShaderPrior = &pDXContext->pBackendDXContext->paShader[shaderIdVS];
+            else
+                pDXShaderPrior = NULL;
+
+            if (pDXShaderPrior)
+                vboxDXMatchShaderInput(pDXShader, pDXShaderPrior);
+            break;
+        }
+        default:
+           break;
+    }
+
+    /* Intermediate shaders normally have both input and output signatures. However it is ok if they do not.
+     * Just catch this unusual case in order to see if everything is fine.
+     */
     Assert(   (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_VS || pDXShader->enmShaderType == SVGA3D_SHADERTYPE_PS)
            || (pDXShader->shaderInfo.cInputSignature && pDXShader->shaderInfo.cOutputSignature));
 }
@@ -5604,7 +5765,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 Log(("Shader: cid=%u shid=%u type=%d, GuestSignatures %d\n", pDXContext->cid, shaderId, pDXShader->enmShaderType, pDXShader->shaderInfo.fGuestSignatures));
 
                 /* Apply resource types to a pixel shader. */
-                if (shaderType == SVGA3D_SHADERTYPE_PS)
+                if (shaderType == SVGA3D_SHADERTYPE_PS) /* Others too? */
                 {
                     VGPU10_RESOURCE_DIMENSION aResourceDimension[SVGA3D_DX_MAX_SRVIEWS];
                     RT_ZERO(aResourceDimension);
@@ -5666,8 +5827,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     AssertRC(rc); /* Ignore rc because the shader will most likely work anyway. */
                 }
 
-                if (pDXShader->shaderInfo.fGuestSignatures)
-                    vboxDXMatchGuestShaderSignatures(pDXContext, pDXShader);
+                vboxDXMatchShaderSignatures(pDXContext, pDXShader);
 
                 rc = DXShaderCreateDXBC(&pDXShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
                 if (RT_SUCCESS(rc))
@@ -5707,6 +5867,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
      * InputLayout
      */
     SVGA3dElementLayoutId const elementLayoutId = pDXContext->svgaDXContext.inputAssembly.layoutId;
+    LogFunc(("Input layout id %u\n", elementLayoutId));
     ID3D11InputLayout *pInputLayout = NULL;
     if (elementLayoutId != SVGA3D_INVALID_ID)
     {

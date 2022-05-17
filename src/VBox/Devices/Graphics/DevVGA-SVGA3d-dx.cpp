@@ -1243,7 +1243,7 @@ int vmsvga3dDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t c
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(cSoTarget < SVGA3D_DX_MAX_SOTARGETS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cSoTarget <= SVGA3D_DX_MAX_SOTARGETS, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     /** @todo Offset is not stored in svgaDXContext. Should it be stored elsewhere? */
@@ -2044,6 +2044,8 @@ static int dxBindShader(DXShaderInfo *pShaderInfo, PVMSVGAMOB pMob, SVGACOTableD
                 pu8Signatures += pSignatureHeader->numOutputSignatures * sizeof(SVGA3dDXSignatureEntry);
                 pShaderInfo->cPatchConstantSignature = pSignatureHeader->numPatchConstantSignatures;
                 memcpy(pShaderInfo->aPatchConstantSignature, pu8Signatures, pSignatureHeader->numPatchConstantSignatures * sizeof(SVGA3dDXSignatureEntry));
+
+                DXShaderGenerateSemantics(pShaderInfo);
             }
         }
     }

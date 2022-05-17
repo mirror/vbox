@@ -34,6 +34,12 @@
 #pragma pack()
 #include "vmsvga_headers_end.h"
 
+typedef struct DXShaderAttributeSemantic
+{
+    const char *pcszSemanticName;
+    uint32_t SemanticIndex;
+} DXShaderAttributeSemantic;
+
 typedef struct DXShaderInfo
 {
     VGPU10_PROGRAM_TYPE enmProgramType;
@@ -47,10 +53,14 @@ typedef struct DXShaderInfo
     SVGA3dDXSignatureEntry aInputSignature[32];
     SVGA3dDXSignatureEntry aOutputSignature[32];
     SVGA3dDXSignatureEntry aPatchConstantSignature[32];
+    DXShaderAttributeSemantic aInputSemantic[32];
+    DXShaderAttributeSemantic aOutputSemantic[32];
+    DXShaderAttributeSemantic aPatchConstantSemantic[32];
     uint32_t aOffDclResource[SVGA3D_DX_MAX_SRVIEWS];
 } DXShaderInfo;
 
 int DXShaderParse(void const *pvCode, uint32_t cbCode, DXShaderInfo *pInfo);
+void DXShaderGenerateSemantics(DXShaderInfo *pInfo);
 void DXShaderFree(DXShaderInfo *pInfo);
 int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceDimension,
                             VGPU10_RESOURCE_RETURN_TYPE *paResourceReturnType, uint32_t cResources);
