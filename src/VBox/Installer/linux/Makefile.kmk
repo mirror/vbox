@@ -290,8 +290,6 @@ ifdef VBOX_WITH_DOCS_PACKING
   	UserManual.qch UserManual.qhc \
 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),UserManual_$(f).qch ,UserManual_$(f).qhc)
  endif
- VBOX_LNX_STRIP_BIN += \
-	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
 endif
 
 # auth stuff

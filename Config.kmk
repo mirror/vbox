@@ -805,9 +805,6 @@ VBOX_WITH_JAVA_SUPPORT_IN_XPIDL ?=
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Only build the limited Python extension API version for 3.3 and later.
 VBOX_WITH_ONLY_PYTHON_LIMITED_API = 1
-# Enable the kchmviewer.
-## @todo CHM docs are on the way out...
-VBOX_WITH_KCHMVIEWER =
 # Build the Validation Kit.
 VBOX_WITH_VALIDATIONKIT = 1
 # Include unit tests (testcases) on the Validation Kit .ISO
@@ -1213,8 +1210,6 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
  # Don't bother with SDL ttf for now.
  VBOX_WITH_SECURELABEL=
- # We'll use the native html/help viewer.
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
@@ -1244,8 +1239,6 @@ endif
 ifeq ($(KBUILD_TARGET),haiku)
  # Don't bother with SDL ttf for now.
  VBOX_WITH_SECURELABEL=
- # We'll use the native html/help viewer.
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
@@ -1261,7 +1254,6 @@ ifeq ($(KBUILD_TARGET),haiku)
  VBOX_WITH_INIP=
  VBOX_WITH_INTERNAL_NETWORKING=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_HARDENING=
 endif
 
@@ -1278,7 +1270,6 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_EHCI=
  VBOX_WITH_DOCS=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_HARDENING=
 endif
 
@@ -1288,7 +1279,6 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_KCHMVIEWER=
 endif
 
 ifn1of ($(KBUILD_TARGET_ARCH), x86 amd64 arm64)
@@ -1304,7 +1294,6 @@ ifn1of ($(KBUILD_TARGET_ARCH), x86 amd64 arm64)
  VBOX_WITH_INSTALLER=
  VBOX_WITH_INTERNAL_NETWORKING=
  VBOX_WITH_ISCSI=
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_MAIN=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_QTGUI=
@@ -1417,7 +1406,6 @@ ifdef VBOX_OSE
  VBOX_WITH_LIBSSH=
  # not yet
  VBOX_WITH_SECURELABEL=
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_PLUGIN_CRYPT=
  VBOX_WITH_DRAG_AND_DROP_PROMISES=
  ifn1of ($(KBUILD_TARGET), linux)
@@ -1551,7 +1539,6 @@ endif
 ifdef VBOX_HEADLESS
  VBOX_WITH_QTGUI=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_VRDP_RDESKTOP=
 endif
 
@@ -1567,10 +1554,6 @@ ifndef VBOX_WITH_MAIN
   $(error Oh, does VBOX_ONLY_DOCS actually end up here. sweet.)
  endif
  VBOX_WITH_DOCS=
-endif
-
-ifndef VBOX_WITH_QTGUI
- VBOX_WITH_KCHMVIEWER=
 endif
 
 ifdef VBOX_WITH_EXTPACK_PUEL_BUILD
