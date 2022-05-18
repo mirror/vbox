@@ -5559,7 +5559,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 
     /* Unbind render target views because they mught be (re-)used as shader resource views. */
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    pDXDevice->pImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+    pDXDevice->pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 0, 0, NULL, NULL);
 
     /*
      * Shader resources
@@ -6474,6 +6474,9 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
         }
     }
 
+    /* RTVs are followed by UAVs. */
+    Assert(NumRTVs <= pDXContext->svgaDXContext.uavSpliceIndex);
+
     ID3D11DepthStencilView *pDepthStencilView = NULL;
     SVGA3dDepthStencilViewId const depthStencilViewId = pDXContext->svgaDXContext.renderState.depthStencilViewId;
     if (depthStencilViewId != SVGA_ID_INVALID)
@@ -6482,7 +6485,7 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
     pDevice->pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(NumRTVs,
                                                    apRenderTargetViews,
                                                    pDepthStencilView,
-                                                   NumRTVs /*pDXContext->svgaDXContext.uavSpliceIndex*/,
+                                                   pDXContext->svgaDXContext.uavSpliceIndex,
                                                    NumUAVs,
                                                    apUnorderedAccessViews,
                                                    aUAVInitialCounts);

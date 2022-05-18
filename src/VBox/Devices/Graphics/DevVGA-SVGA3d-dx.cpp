@@ -2922,8 +2922,8 @@ int vmsvga3dDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXS
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(pCmd->uavSpliceIndex < SVGA3D_DX11_1_MAX_UAVIEWS, VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_RETURN(cUAViewId <= SVGA3D_DX11_1_MAX_UAVIEWS - pCmd->uavSpliceIndex, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->uavSpliceIndex <= SVGA3D_MAX_SIMULTANEOUS_RENDER_TARGETS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cUAViewId <= SVGA3D_DX11_1_MAX_UAVIEWS, VERR_INVALID_PARAMETER);
     for (uint32_t i = 0; i < cUAViewId; ++i)
         ASSERT_GUEST_RETURN(   paUAViewId[i] < pDXContext->cot.cUAView
                             || paUAViewId[i] == SVGA3D_INVALID_ID, VERR_INVALID_PARAMETER);
@@ -2932,7 +2932,7 @@ int vmsvga3dDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXS
     for (uint32_t i = 0; i < cUAViewId; ++i)
     {
         SVGA3dUAViewId const uaViewId = paUAViewId[i];
-        pDXContext->svgaDXContext.uaViewIds[pCmd->uavSpliceIndex + i] = uaViewId;
+        pDXContext->svgaDXContext.uaViewIds[i] = uaViewId;
     }
     pDXContext->svgaDXContext.uavSpliceIndex = pCmd->uavSpliceIndex;
 
