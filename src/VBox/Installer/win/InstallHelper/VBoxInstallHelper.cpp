@@ -434,6 +434,48 @@ UINT __stdcall ArePythonAPIDepsInstalled(MSIHANDLE hModule)
 }
 
 /**
+ * Checks if the running OS is (at least) Windows 10 (e.g. >= build 10000).
+ *
+ * Called from the MSI installer as custom action.
+ *
+ * @returns Always ERROR_SUCCESS.
+ *          Sets public property VBOX_IS_WINDOWS_10 to "" (empty / false) or "1" (success).
+ *
+ * @param   hModule             Windows installer module handle.
+ */
+UINT __stdcall IsWindows10(MSIHANDLE hModule)
+{
+    /*
+     * Note: We cannot use RtlGetVersion() / GetVersionExW() here, as the Windows Installer service
+     *       all shims this, unfortunately. So we have to go another route by querying the major version
+     *       number from the registry.
+     */
+    HKEY hKeyCurVer = NULL;
+    LSTATUS dwErr = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKeyCurVer);
+    if (dwErr == ERROR_SUCCESS)
+    {
+        DWORD dwVal = 0;
+        DWORD cbVal = sizeof(dwVal);
+        DWORD dwValueType = REG_DWORD;
+        dwErr = RegQueryValueExW(hKeyCurVer, L"CurrentMajorVersionNumber", NULL, &dwValueType, (LPBYTE)&dwVal, &cbVal);
+        if (dwErr == ERROR_SUCCESS)
+        {
+            logStringF(hModule, L"IsWindows10/CurrentMajorVersionNumber: %ld", dwVal);
+
+            VBoxSetMsiProp(hModule, L"VBOX_IS_WINDOWS_10", dwVal >= 10 ? L"1" : L"");
+        }
+        else
+            logStringF(hModule, L"IsWindows10/RegOpenKeyExW: Error reading CurrentMajorVersionNumber (%ld)", dwErr);
+
+        RegCloseKey(hKeyCurVer);
+    }
+    else
+        logStringF(hModule, L"IsWindows10/RegOpenKeyExW: Error opening CurrentVersion key (%ld)", dwErr);
+
+    return ERROR_SUCCESS; /* Never return failure. */
+}
+
+/**
  * Installs and compiles the VBox Python bindings.
  *
  * Called from the MSI installer as custom action.

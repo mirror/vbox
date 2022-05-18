@@ -20,6 +20,7 @@ EXPORTS
     IsSerialCheckNeeded
     CheckSerial
     IsPythonInstalled
+    IsWindows10
     ArePythonAPIDepsInstalled
     InstallPythonAPI
     InstallBranding
