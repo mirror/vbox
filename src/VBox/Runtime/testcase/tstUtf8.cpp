@@ -43,6 +43,9 @@
 #include <iprt/uni.h>
 #include <iprt/uuid.h>
 
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h> /* For GetACP(). */
+#endif
 
 
 /**
@@ -1472,12 +1475,26 @@ static void testNoTranslation(RTTEST hTest)
     /*
      * Try trigger a VERR_NO_TRANSLATION error in convert to
      * current CP to latin-1.
+     *
+     * On Windows / DOS OSes this is codepage 850.
+     *
+     * Note! On Windows-y systems there ALWAYS are two codepages active:
+     *       the OEM codepage for legacy (console) applications, and the ACP (ANSI CodePage).
+     *       'chcp' only will tell you the OEM codepage, however.
      */
+
+    /* Unicode code points (some of it on 2300-23FF -> misc. technical) to try. */
     const RTUTF16 s_swzTest1[] = { 0x2358, 0x2242, 0x2357, 0x2359,  0x22f9, 0x2c4e, 0x0030, 0x0060,
                                    0x0092, 0x00c1, 0x00f2, 0x1f80,  0x0088, 0x2c38, 0x2c30, 0x0000 };
     char *pszTest1;
     int rc = RTUtf16ToUtf8(s_swzTest1, &pszTest1);
     RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+
+#ifdef RT_OS_WINDOWS
+    UINT const uACP = GetACP();
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Current Windows ANSI codepage is: %u%s\n",
+                  uACP, uACP == 65001 /* UTF-8 */ ? " (UTF-8)" : "");
+#endif
 
     RTTestSub(hTest, "VERR_NO_TRANSLATION/RTStrUtf8ToCurrentCP");
     char *pszOut;
