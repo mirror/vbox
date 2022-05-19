@@ -26,6 +26,7 @@
 #include <QMutex>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QRegularExpression>
 #include <QSessionManager>
 #include <QSettings>
 #include <QSpinBox>
@@ -897,7 +898,7 @@ QString UICommon::vboxVersionStringNormalized() const
 
 bool UICommon::isBeta() const
 {
-    return vboxVersionString().contains("BETA", Qt::CaseInsensitive);
+    return vboxVersionString().contains(QRegularExpression("BETA|ALPHA", QRegularExpression::CaseInsensitiveOption));
 }
 
 bool UICommon::brandingIsActive(bool fForce /* = false */)
