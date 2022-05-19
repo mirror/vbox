@@ -980,7 +980,8 @@ class tdUnitTest1(vbox.TestDriver):
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath) + self.sExeSuff);
             fModeExe  = 0;
             fModeDeps = 0;
-            if not oTestVm.isWindows(): ## @todo NT4 does not like the chmod. Investigate this!
+            if  not oTestVm \
+            or (oTestVm and not oTestVm.isWindows()): ## @todo NT4 does not like the chmod. Investigate this!
                 fModeExe  = 0o755;
                 fModeDeps = 0o644;
             self._wrapCopyFile(sSrc, sDst, fModeExe);
