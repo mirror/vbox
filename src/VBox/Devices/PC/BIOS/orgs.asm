@@ -727,12 +727,51 @@ int13_handler:
                 jmp     int13_relocated
 
 
+;; Fixed disk table entry
+fd_entry	struc
+	cyls	dw	?		; Cylinders
+	heads	db	?		; Heads
+	res_1	dw	?
+	wpcomp	dw	?		; Write pre-compensation start cylinder
+	res_2	db	?
+	ctrl	db	?		; Control byte
+	res_3	db	3 dup(?)
+	lzone	dw	?		; Landing zone cylinder
+	spt	db	?		; Sectors per track
+	res_4	db	?
+fd_entry	ends
+
 ;; --------------------------------------------------------
 ;; Fixed Disk Parameter Table
 ;; --------------------------------------------------------
                 BIOSORG_CHECK   0E401h  ; fixed wrt preceding
 
 rom_fdpt:
+	fd_entry	< 306,  4, 0, 128, 0, 0, 0, 0, 0, 305, 17, 0>	; Type  1,  10 MB
+	fd_entry	< 615,  4, 0, 300, 0, 0, 0, 0, 0, 615, 17, 0>	; Type  2,  20 MB
+	fd_entry	< 615,  6, 0, 300, 0, 0, 0, 0, 0, 615, 17, 0>	; Type  3,  30 MB
+	fd_entry	< 940,  8, 0, 512, 0, 0, 0, 0, 0, 940, 17, 0>	; Type  4,  62 MB
+	fd_entry	< 940,  6, 0, 512, 0, 0, 0, 0, 0, 940, 17, 0>	; Type  5,  46 MB
+	fd_entry	< 615,  4, 0,  -1, 0, 0, 0, 0, 0, 615, 17, 0>	; Type  6,  20 MB
+	fd_entry	< 462,  8, 0, 256, 0, 0, 0, 0, 0, 511, 17, 0>	; Type  7,  31 MB
+	fd_entry	< 733,  5, 0,  -1, 0, 0, 0, 0, 0, 733, 17, 0>	; Type  8,  30 MB
+	fd_entry	< 900, 15, 0,  -1, 0, 8, 0, 0, 0, 901, 17, 0>	; Type  9, 112 MB
+	fd_entry	< 820,  3, 0,  -1, 0, 0, 0, 0, 0, 820, 17, 0>	; Type 10,  20 MB
+
+	fd_entry	< 855,  5, 0,  -1, 0, 0, 0, 0, 0, 855, 17, 0>	; Type 11,  35 MB
+	fd_entry	< 855,  7, 0,  -1, 0, 0, 0, 0, 0, 855, 17, 0>	; Type 12,  49 MB
+	fd_entry	< 306,  8, 0, 128, 0, 0, 0, 0, 0, 319, 17, 0>	; Type 13,  20 MB
+	fd_entry	< 733,  7, 0,  -1, 0, 0, 0, 0, 0, 733, 17, 0>	; Type 14,  42 MB
+	fd_entry	<   0,  0, 0,   0, 0, 0, 0, 0, 0,   0,  0, 0>	; Reserved
+	fd_entry	< 612,  4, 0,  -1, 0, 0, 0, 0, 0, 633, 17, 0>	; Type 16,  20 MB
+	fd_entry	< 977,  5, 0, 300, 0, 0, 0, 0, 0, 977, 17, 0>	; Type 17,  40 MB
+	fd_entry	< 977,  7, 0,  -1, 0, 0, 0, 0, 0, 977, 17, 0>	; Type 18,  56 MB
+	fd_entry	<1024,  7, 0, 512, 0, 0, 0, 0, 0,1023, 17, 0>	; Type 19,  59 MB
+	fd_entry	< 733,  5, 0, 300, 0, 0, 0, 0, 0, 732, 17, 0>	; Type 20,  30 MB
+
+	fd_entry	< 733,  7, 0, 300, 0, 0, 0, 0, 0, 732, 17, 0>	; Type 21,  42 MB
+	fd_entry	< 733,  5, 0, 300, 0, 0, 0, 0, 0, 733, 17, 0>	; Type 22,  30 MB
+	fd_entry	< 306,  4, 0,   0, 0, 0, 0, 0, 0, 336, 17, 0>	; Type 23,  10 MB
 
 ;; --------------------------------------------------------
 ;; INT 19h handler - Boot load service
