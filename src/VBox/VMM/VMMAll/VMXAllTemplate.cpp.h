@@ -6855,7 +6855,7 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         VBOXSTRICTRC rc2 = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
         if (rc2 == VINF_SUCCESS)
             rcStrict = VINF_SUCCESS;    /* Restart instruction with modified guest register context. */
-        else if (rc2 == VINF_EM_RAW_GUEST_TRAP)
+        else if (rc2 == VERR_NOT_FOUND)
             rcStrict = VERR_NOT_FOUND;  /* Deliver the exception. */
         else
             Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
@@ -6864,7 +6864,7 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;        /* Do nothing. */
 
     /* If the GCM #DE exception handler didn't succeed or wasn't needed, raise #DE. */
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rcStrict))
     {
         vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
