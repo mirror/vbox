@@ -2003,10 +2003,22 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
             if (   outctx.programToken.programType == VGPU10_PIXEL_SHADER
                 && opcode.opcodeType == VGPU10_OPCODE_DCL_RESOURCE)
             {
-                ASSERT_GUEST_STMT_BREAK(pInfo->cDclResource <= SVGA3D_DX_MAX_SRVIEWS,
-                                        rc = VERR_NOT_SUPPORTED);
-
-                pInfo->aOffDclResource[pInfo->cDclResource++] = offOpcode;
+                if (   opcode.cOperand == 1
+                    && opcode.aValOperand[0].indexDimension == VGPU10_OPERAND_INDEX_1D
+                    && opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE32)
+                {
+                    uint32_t const indexResource = opcode.aValOperand[0].aOperandIndex[0].iOperandImmediate;
+                    if (indexResource < SVGA3D_DX_MAX_SRVIEWS)
+                    {
+                        ASSERT_GUEST(pInfo->aOffDclResource[indexResource] == 0);
+                        pInfo->aOffDclResource[indexResource] = offOpcode;
+                        pInfo->cDclResource = RT_MAX(pInfo->cDclResource, indexResource + 1);
+                    }
+                    else
+                        ASSERT_GUEST_FAILED();
+                }
+                else
+                    ASSERT_GUEST_FAILED();
             }
 
             /* Fetch signatures. */
