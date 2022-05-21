@@ -524,11 +524,10 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnLogicOpsClearTypeBlend,      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetCSUAViews,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startIndex, uint32_t cUAViewId, SVGA3dUAViewId const *paUAViewId));
     DECLCALLBACKMEMBER(int, pfnDXSetMinLOD,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnDXDefineStreamOutputWithMob, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetShaderIface,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnDXBindStreamOutput,          (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnSurfaceStretchBltNonMSToMS,  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBindShaderIface,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnVBDXClearRenderTargetViewRegion, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dRenderTargetViewId renderTargetViewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
 } VMSVGA3DBACKENDFUNCSDX;
 
 typedef struct VMSVGA3DBACKENDDESC
@@ -652,13 +651,15 @@ int vmsvga3dLogicOpsAlphaBlend(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dLogicOpsClearTypeBlend(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXSetCSUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSUAViews const *pCmd, uint32_t cUAViewId, SVGA3dUAViewId const *paUAViewId);
 int vmsvga3dDXSetMinLOD(PVGASTATECC pThisCC, uint32_t idDXContext);
-int vmsvga3dDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd);
 int vmsvga3dDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext);
-int vmsvga3dDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindStreamOutput const *pCmd);
 int vmsvga3dSurfaceStretchBltNonMSToMS(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 int vmsvga3dDXSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
+
+int vmsvga3dVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdVBDXClearRenderTargetViewRegion const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
 #endif /* VMSVGA3D_DX */
 
 

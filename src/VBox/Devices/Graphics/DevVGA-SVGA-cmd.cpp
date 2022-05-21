@@ -90,7 +90,7 @@ static const char *vmsvgaFifo3dCmdToString(SVGAFifo3dCmdId enmCmdId)
         SVGA_CASE_ID2STR(SVGA_3D_CMD_ACTIVATE_SURFACE);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DEACTIVATE_SURFACE);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_SCREEN_DMA);
-        SVGA_CASE_ID2STR(SVGA_3D_CMD_DEAD1);
+        SVGA_CASE_ID2STR(SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION); /* SVGA_3D_CMD_DEAD1 */
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DEAD2);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DEAD12); /* Old SVGA_3D_CMD_LOGICOPS_BITBLT */
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DEAD13); /* Old SVGA_3D_CMD_LOGICOPS_TRANSBLT */
@@ -4128,10 +4128,9 @@ static int vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineStreamOutputWithMob(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineStreamOutputWithMob(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4158,10 +4157,9 @@ static int vmsvga3dCmdDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindStreamOutput const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXBindStreamOutput(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXBindStreamOutput(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4192,6 +4190,21 @@ static int vmsvga3dCmdDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContex
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindShaderIface(pThisCC, idDXContext);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION  1083 */
+static int vmsvga3dCmdVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdVBDXClearRenderTargetViewRegion *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearRenderTargetViewRegion(pThisCC, idDXContext, pCmd, cRect, paRect);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4667,7 +4680,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         break;
     }
 
-    case SVGA_3D_CMD_DEAD1:
+    /* case SVGA_3D_CMD_DEAD1: New SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION */
     case SVGA_3D_CMD_DEAD2:
     case SVGA_3D_CMD_DEAD12: /* Old SVGA_3D_CMD_LOGICOPS_BITBLT */
     case SVGA_3D_CMD_DEAD13: /* Old SVGA_3D_CMD_LOGICOPS_TRANSBLT */
@@ -6140,6 +6153,14 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         SVGA3dCmdDXBindShaderIface *pCmd = (SVGA3dCmdDXBindShaderIface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         rcParse = vmsvga3dCmdDXBindShaderIface(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION:
+    {
+        SVGA3dCmdVBDXClearRenderTargetViewRegion *pCmd = (SVGA3dCmdVBDXClearRenderTargetViewRegion *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dCmdVBDXClearRenderTargetViewRegion(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 

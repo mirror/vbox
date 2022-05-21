@@ -1269,16 +1269,36 @@ static int dxTrackRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
 }
 
 
-static int dxDefineStreamOutput(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry)
+static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry)
 {
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
 
     /* Make D3D11_SO_DECLARATION_ENTRY array from SVGA3dStreamOutputDeclarationEntry. */
+    SVGA3dStreamOutputDeclarationEntry const *paDecls;
+    PVMSVGAMOB pMob = NULL;
+    if (pEntry->usesMob)
+    {
+        DEBUG_BREAKPOINT_TEST();
+        pMob = vmsvgaR3MobGet(pSvgaR3State, pEntry->mobid);
+        ASSERT_GUEST_RETURN(pMob, VERR_INVALID_PARAMETER);
+
+        /* Create a memory pointer for the MOB, which is accessible by host. */
+        int rc = vmsvgaR3MobBackingStoreCreate(pSvgaR3State, pMob, vmsvgaR3MobSize(pMob));
+        ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+
+        /* Get pointer to the shader bytecode. This will also verify the offset. */
+        paDecls = (SVGA3dStreamOutputDeclarationEntry const *)vmsvgaR3MobBackingStorePtr(pMob, pEntry->offsetInBytes);
+        AssertReturnStmt(paDecls, vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob), VERR_INTERNAL_ERROR);
+    }
+    else
+        paDecls = &pEntry->decl[0];
+
     pDXStreamOutput->cDeclarationEntry = pEntry->numOutputStreamEntries;
     for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
     {
         D3D11_SO_DECLARATION_ENTRY *pDst = &pDXStreamOutput->aDeclarationEntry[i];
-        SVGA3dStreamOutputDeclarationEntry const *pSrc = &pEntry->decl[i];
+        SVGA3dStreamOutputDeclarationEntry const *pSrc = &paDecls[i];
 
         uint32_t const registerMask = pSrc->registerMask & 0xF;
         unsigned const iFirstBit = ASMBitFirstSetU32(registerMask);
@@ -1291,6 +1311,9 @@ static int dxDefineStreamOutput(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutpu
         pDst->ComponentCount = iFirstBit > 0 ? iLastBit - (iFirstBit - 1) : 0;
         pDst->OutputSlot     = pSrc->outputSlot;
     }
+
+    if (pMob)
+        vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob);
 
     return VINF_SUCCESS;
 }
@@ -1787,9 +1810,9 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
                     pEntry->numOutputStreamStrides ? pEntry->streamOutputStrideInBytes : NULL, pEntry->numOutputStreamStrides,
                     pEntry->rasterizedStream,
                     /*pClassLinkage=*/ NULL, &pDXShader->pGeometryShader);
-                Assert(SUCCEEDED(hr));
-                if (SUCCEEDED(hr))
-                    pDXShader->soid = soid;
+                AssertBreak(SUCCEEDED(hr));
+
+                pDXShader->soid = soid;
             }
             break;
         }
@@ -2097,19 +2120,43 @@ static DXGI_FORMAT dxGetDxgiTypelessFormat(DXGI_FORMAT dxgiFormat)
 {
     switch (dxgiFormat)
     {
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R32_FLOAT:
+        case DXGI_FORMAT_R32_UINT:
+        case DXGI_FORMAT_R32_SINT:
+            return DXGI_FORMAT_R32_TYPELESS;                /* 39 */
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+            return DXGI_FORMAT_R24G8_TYPELESS;              /* 44 */
         case DXGI_FORMAT_B8G8R8A8_UNORM:
         case DXGI_FORMAT_B8G8R8X8_UNORM :
         case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
         case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
         case DXGI_FORMAT_B8G8R8X8_TYPELESS:
         case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
-            return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+            return DXGI_FORMAT_B8G8R8A8_TYPELESS;           /* 90 */
         /** @todo Other _TYPELESS formats. */
         default:
             break;
     }
 
     return dxgiFormat;
+}
+
+
+static bool dxIsDepthStencilFormat(DXGI_FORMAT dxgiFormat)
+{
+    switch (dxgiFormat)
+    {
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+            return true;
+        /** @todo Other Depth Stencil formats. */
+        default:
+            break;
+    }
+
+    return false;
 }
 
 
@@ -2143,7 +2190,13 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
     DXGI_FORMAT dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(pSurface->format);
     AssertReturn(dxgiFormat != DXGI_FORMAT_UNKNOWN, E_FAIL);
 
-    dxgiFormat = dxGetDxgiTypelessFormat(dxgiFormat);
+    /* Create typeless textures, unless it is a depth/stencil resource,
+     * because D3D11_BIND_DEPTH_STENCIL requires a depth/stencil format.
+     * Always use typeless format for staging/dynamic resources.
+     */
+    DXGI_FORMAT const dxgiFormatTypeless = dxGetDxgiTypelessFormat(dxgiFormat);
+    if (!dxIsDepthStencilFormat(dxgiFormat))
+        dxgiFormat = dxgiFormatTypeless;
 
     /*
      * Create D3D11 texture object.
@@ -2192,6 +2245,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         if (SUCCEEDED(hr))
         {
             /* Map-able texture. */
+            td.Format         = dxgiFormatTypeless;
             td.Usage          = D3D11_USAGE_DYNAMIC;
             td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
             td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -2247,6 +2301,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         if (SUCCEEDED(hr))
         {
             /* Map-able texture. */
+            td.Format         = dxgiFormatTypeless;
             td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
             td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
             td.Usage          = D3D11_USAGE_DYNAMIC;
@@ -2302,6 +2357,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         if (SUCCEEDED(hr))
         {
             /* Map-able texture. */
+            td.Format         = dxgiFormatTypeless;
             td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
             td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
             td.Usage          = D3D11_USAGE_DYNAMIC;
@@ -2361,6 +2417,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             if (SUCCEEDED(hr))
             {
                 /* Map-able texture. */
+                td.Format         = dxgiFormatTypeless;
                 td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.Usage          = D3D11_USAGE_DYNAMIC;
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
@@ -2419,6 +2476,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             if (SUCCEEDED(hr))
             {
                 /* Map-able texture. */
+                td.Format         = dxgiFormatTypeless;
                 td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.Usage          = D3D11_USAGE_DYNAMIC;
@@ -5333,7 +5391,7 @@ static void vboxDXMatchShaderInput(DXSHADER *pDXShader, DXSHADER *pDXShaderPrior
 }
 
 
-static void vboxDXMatchShaderSignatures(PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
+static void vboxDXMatchShaderSignatures(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
 {
     SVGA3dShaderId const shaderIdVS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN].shaderId;
     SVGA3dShaderId const shaderIdHS = pDXContext->svgaDXContext.shaderState[SVGA3D_SHADERTYPE_HS - SVGA3D_SHADERTYPE_MIN].shaderId;
@@ -5444,6 +5502,12 @@ static void vboxDXMatchShaderSignatures(PVMSVGA3DDXCONTEXT pDXContext, DXSHADER 
                 /* Set semantic names and indices for SO declaration entries according to the shader output. */
                 SVGACOTableDXStreamOutputEntry const *pStreamOutputEntry = &pDXContext->cot.paStreamOutput[soid];
                 DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
+
+                if (pDXStreamOutput->cDeclarationEntry == 0)
+                {
+                    int rc = dxDefineStreamOutput(pThisCC, pDXContext, soid, pStreamOutputEntry);
+                    AssertRCReturnVoid(rc);
+                }
 
                 for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
                 {
@@ -5850,7 +5914,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     AssertRC(rc); /* Ignore rc because the shader will most likely work anyway. */
                 }
 
-                vboxDXMatchShaderSignatures(pDXContext, pDXShader);
+                vboxDXMatchShaderSignatures(pThisCC, pDXContext, pDXShader);
 
                 rc = DXShaderCreateDXBC(&pDXShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
                 if (RT_SUCCESS(rc))
@@ -6947,6 +7011,28 @@ static DECLCALLBACK(int) vmsvga3dBackDXClearRenderTargetView(PVGASTATECC pThisCC
 }
 
 
+static DECLCALLBACK(int) vmsvga3dBackVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dRenderTargetViewId renderTargetViewId,
+                                                                     SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paRenderTargetView[renderTargetViewId];
+    if (!pDXView->u.pRenderTargetView)
+    {
+        /* (Re-)create the render target view, because a creation of a view is deferred until a draw or a clear call. */
+        SVGACOTableDXRTViewEntry const *pEntry = &pDXContext->cot.paRTView[renderTargetViewId];
+        int rc = dxDefineRenderTargetView(pThisCC, pDXContext, renderTargetViewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    pDevice->pImmediateContext->ClearView(pDXView->u.pRenderTargetView, pColor->value, (D3D11_RECT *)paRect, cRect);
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) vmsvga3dBackDXClearDepthStencilView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t flags, SVGA3dDepthStencilViewId depthStencilViewId, float depth, uint8_t stencil)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
@@ -7559,7 +7645,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineStreamOutput(PVGASTATECC pThisCC, P
     DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
     dxDestroyStreamOutput(pDXStreamOutput);
 
-    return dxDefineStreamOutput(pDXContext, soid, pEntry);
+    RT_NOREF(pEntry);
+    return VINF_SUCCESS;
 }
 
 
@@ -7846,7 +7933,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
                 if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
                     continue; /* Skip uninitialized entry. */
 
-                dxDefineStreamOutput(pDXContext, i, pEntry);
+                /* Reset the stream output backend data. It will be re-created when a GS shader with this streamoutput
+                 * will be set in setupPipeline.
+                 */
+                DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[i];
+                dxDestroyStreamOutput(pDXStreamOutput);
             }
             break;
         case SVGA_COTABLE_DXQUERY:
@@ -8570,27 +8661,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetMinLOD(PVGASTATECC pThisCC, PVMSVGA3DD
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
 static DECLCALLBACK(int) vmsvga3dBackDXSetShaderIface(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXBindStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
 
@@ -8851,11 +8922,10 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnLogicOpsClearTypeBlend      = vmsvga3dBackLogicOpsClearTypeBlend;
                 p->pfnDXSetCSUAViews              = vmsvga3dBackDXSetCSUAViews;
                 p->pfnDXSetMinLOD                 = vmsvga3dBackDXSetMinLOD;
-                p->pfnDXDefineStreamOutputWithMob = vmsvga3dBackDXDefineStreamOutputWithMob;
                 p->pfnDXSetShaderIface            = vmsvga3dBackDXSetShaderIface;
-                p->pfnDXBindStreamOutput          = vmsvga3dBackDXBindStreamOutput;
                 p->pfnSurfaceStretchBltNonMSToMS  = vmsvga3dBackSurfaceStretchBltNonMSToMS;
                 p->pfnDXBindShaderIface           = vmsvga3dBackDXBindShaderIface;
+                p->pfnVBDXClearRenderTargetViewRegion = vmsvga3dBackVBDXClearRenderTargetViewRegion;
             }
         }
         else

@@ -338,7 +338,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
     {
         u32TrackedState &= ~DX_STATE_RENDERTARGETS;
 
-        SVGA3dDepthStencilViewId const depthStencilViewId = (SVGA3dRenderTargetViewId)pDXContext->svgaDXContext.renderState.depthStencilViewId;
+        SVGA3dDepthStencilViewId const depthStencilViewId = (SVGA3dDepthStencilViewId)pDXContext->svgaDXContext.renderState.depthStencilViewId;
         uint32_t const cRenderTargetViewId = SVGA3D_MAX_SIMULTANEOUS_RENDER_TARGETS;
         SVGA3dRenderTargetViewId const *paRenderTargetViewId = (SVGA3dRenderTargetViewId *)&pDXContext->svgaDXContext.renderState.renderTargetViewIds[0];
 
@@ -3234,11 +3234,11 @@ int vmsvga3dDXSetMinLOD(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutputWithMob, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -3246,7 +3246,27 @@ int vmsvga3dDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContex
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutputWithMob(pThisCC, pDXContext);
+    SVGA3dStreamOutputId const soid = pCmd->soid;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paStreamOutput, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(soid < pDXContext->cot.cStreamOutput, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->numOutputStreamEntries < SVGA3D_MAX_STREAMOUT_DECLS, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXStreamOutputEntry *pEntry = &pDXContext->cot.paStreamOutput[soid];
+    pEntry->numOutputStreamEntries = pCmd->numOutputStreamEntries;
+    RT_ZERO(pEntry->decl);
+    memcpy(pEntry->streamOutputStrideInBytes, pCmd->streamOutputStrideInBytes, sizeof(pEntry->streamOutputStrideInBytes));
+    pEntry->rasterizedStream = pCmd->rasterizedStream;
+    pEntry->numOutputStreamStrides = pCmd->numOutputStreamStrides;
+    pEntry->mobid = SVGA_ID_INVALID;
+    pEntry->offsetInBytes = 0;
+    pEntry->usesMob = 1;
+    pEntry->pad0 = 0;
+    pEntry->pad1 = 0;
+    RT_ZERO(pEntry->pad2);
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutput(pThisCC, pDXContext, soid, pEntry);
     return rc;
 }
 
@@ -3268,20 +3288,33 @@ int vmsvga3dDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindStreamOutput const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXBindStreamOutput, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
     PVMSVGA3DDXCONTEXT pDXContext;
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
+    SVGA3dStreamOutputId const soid = pCmd->soid;
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXBindStreamOutput(pThisCC, pDXContext);
-    return rc;
+    ASSERT_GUEST_RETURN(pDXContext->cot.paStreamOutput, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(soid < pDXContext->cot.cStreamOutput, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXStreamOutputEntry *pEntry = &pDXContext->cot.paStreamOutput[soid];
+
+    ASSERT_GUEST_RETURN(pCmd->sizeInBytes >= pEntry->numOutputStreamEntries * sizeof(SVGA3dStreamOutputDeclarationEntry), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST(pEntry->usesMob);
+
+    pEntry->mobid = pCmd->mobid;
+    pEntry->offsetInBytes = pCmd->offsetInBytes;
+    pEntry->usesMob = 1;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -3315,6 +3348,30 @@ int vmsvga3dDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext)
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXBindShaderIface(pThisCC, pDXContext);
+    return rc;
+}
+
+
+int vmsvga3dVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdVBDXClearRenderTargetViewRegion const *pCmd, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    int rc;
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnVBDXClearRenderTargetViewRegion, VERR_INVALID_STATE);
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    AssertReturn(p3dState, VERR_INVALID_STATE);
+
+    PVMSVGA3DDXCONTEXT pDXContext;
+    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
+    AssertRCReturn(rc, rc);
+
+    SVGA3dRenderTargetViewId const renderTargetViewId = pCmd->viewId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paRTView, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(renderTargetViewId < pDXContext->cot.cRTView, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cRect <= 65536, VERR_INVALID_PARAMETER); /* Arbitrary limit. */
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    rc = pSvgaR3State->pFuncsDX->pfnVBDXClearRenderTargetViewRegion(pThisCC, pDXContext, renderTargetViewId, &pCmd->color, cRect, paRect);
     return rc;
 }
 
