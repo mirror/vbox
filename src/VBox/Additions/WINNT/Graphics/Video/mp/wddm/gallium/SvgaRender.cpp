@@ -1785,8 +1785,8 @@ static NTSTATUS procCmdDXDefineDepthStencilView_v2(PVBOXWDDM_EXT_VMSVGA pSvga, P
 static NTSTATUS procCmdDXDefineStreamOutputWithMob(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
     SVGA3dCmdDXDefineStreamOutputWithMob *pCmd = (SVGA3dCmdDXDefineStreamOutputWithMob *)&pHeader[1];
-    RT_NOREF(pSvga, pSvgaContext, pCmd);
-    return STATUS_SUCCESS;
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, SVGA_COTABLE_STREAMOUTPUT, pCmd->soid);
 }
 
 
@@ -1824,6 +1824,16 @@ static NTSTATUS procCmdDXBindShaderIface(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONT
     RT_NOREF(pSvga, pSvgaContext, pCmd);
     return STATUS_SUCCESS;
 }
+
+
+/* SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION 1083 */
+static NTSTATUS procCmdVBDXClearRenderTargetViewRegion(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    SVGA3dCmdDXClearRenderTargetView *pCmd = (SVGA3dCmdDXClearRenderTargetView *)&pHeader[1];
+    RT_NOREF(pSvga, pSvgaContext, pCmd);
+    return STATUS_SUCCESS;
+}
+
 
 /* Command ok. */
 static NTSTATUS procCmdNop(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
@@ -1892,7 +1902,7 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdActivateSurface },                     // SVGA_3D_CMD_ACTIVATE_SURFACE
     { procCmdDeactivateSurface },                   // SVGA_3D_CMD_DEACTIVATE_SURFACE
     { procCmdScreenDMA },                           // SVGA_3D_CMD_SCREEN_DMA
-    { procCmdInvalid },                             // SVGA_3D_CMD_DEAD1
+    { procCmdVBDXClearRenderTargetViewRegion },     // SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION (SVGA_3D_CMD_DEAD1)
     { procCmdInvalid },                             // SVGA_3D_CMD_DEAD2
     { procCmdInvalid },                             // SVGA_3D_CMD_DEAD12
     { procCmdInvalid },                             // SVGA_3D_CMD_DEAD13
