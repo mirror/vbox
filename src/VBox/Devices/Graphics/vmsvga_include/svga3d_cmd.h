@@ -101,7 +101,11 @@ typedef enum {
    SVGA_3D_CMD_ACTIVATE_SURFACE                           = 1080,
    SVGA_3D_CMD_DEACTIVATE_SURFACE                         = 1081,
    SVGA_3D_CMD_SCREEN_DMA                                 = 1082,
+#ifndef VBOX
    SVGA_3D_CMD_DEAD1                                      = 1083,
+#else
+   SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION       = 1083,
+#endif
    SVGA_3D_CMD_DEAD2                                      = 1084,
 
    SVGA_3D_CMD_DEAD12                                     = 1085,

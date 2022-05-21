@@ -2064,4 +2064,14 @@ struct SVGA3dCmdDXTempSetContext {
 #include "vmware_pack_end.h"
 SVGA3dCmdDXTempSetContext; /* SVGA_3D_CMD_DX_TEMP_SET_CONTEXT */
 
+#ifdef VBOX
+typedef struct SVGA3dCmdVBDXClearRenderTargetViewRegion
+{
+   uint32 viewId;
+   uint32 reserved;
+   SVGA3dRGBAFloat color;
+   /* followed by SVGASignedRect array */
+} SVGA3dCmdVBDXClearRenderTargetViewRegion; /* SVGA_3D_CMD_VB_DX_CLEAR_RENDERTARGET_VIEW_REGION */
+#endif /* VBOX */
+
 #endif /* _SVGA3D_DX_H_ */
