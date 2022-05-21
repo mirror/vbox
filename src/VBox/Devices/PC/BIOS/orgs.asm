@@ -66,10 +66,11 @@ BIOS_FIX_BASE   equ     0E000h
 
 if VBOX_BIOS_CPU ge 80286
 SYS_MODEL_ID    equ     0FCh            ; PC/AT
+SYS_SUBMODEL_ID equ     1
 else
 SYS_MODEL_ID    equ     0FBh            ; PC/XT
-endif
 SYS_SUBMODEL_ID equ     0
+endif
 BIOS_REVISION   equ     1
 
 BIOS_BUILD_DATE equ     '06/23/99'
@@ -1702,6 +1703,22 @@ endif
 include pcibios.inc
 include pirq.inc
 
+if 0    ; Sample VPD table
+
+;; IBM style VPD (Vital Product Data) information. Most IBM systems
+;; had a VPD table since about 1992, later the same information was
+;; also reported through DMI.
+
+align 16
+        db      0AAh, 055h, 'VPD'
+        db      48                      ; VPD size
+        db      'RESERVE'               ; reserved... for what?
+        db      'INET35WW '             ; BIOS build ID
+        db      '5238NXU'               ; system serial number
+        db      'J1Y3581338D'           ; unique ID
+        db      '8643MD0'               ; IBM machine type
+        db      0                       ; checksum (to be calculated)
+endif
 
 ;; --------------------------------------------------------
 ;; INT 12h handler - Memory size
@@ -2088,7 +2105,7 @@ cpu_reset:
 
                 ;; BIOS build date
                 db      BIOS_BUILD_DATE
-                db      0                       ; padding
+                db      0                       ; null terminator
                 ;; System model ID
                 db      SYS_MODEL_ID
                 ;; Checksum byte
