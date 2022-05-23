@@ -71,29 +71,31 @@ typedef DYLDINTERPOSE *PDYLDINTERPOSE;
 typedef const DYLDINTERPOSE *PCDYLDINTERPOSE;
 
 /** @sa dyld_dynamic_interpose(). */
-typedef const mach_header * FNDYLDDYNAMICINTERPOSE(const struct mach_header* mh, PCDYLDINTERPOSE paSym, size_t cSyms);
+typedef const mach_header *FNDYLDDYNAMICINTERPOSE(const struct mach_header *mh, PCDYLDINTERPOSE paSym, size_t cSyms);
+/** Pointer to dyld_dynamic_interpose. */
 typedef FNDYLDDYNAMICINTERPOSE *PFNDYLDDYNAMICINTERPOSE;
 
 /** @sa dlopen(). */
 typedef void *FNDLOPEN(const char *path, int mode);
+/** Pointer to dlopen. */
 typedef FNDLOPEN *PFNDLOPEN;
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+extern "C" void _dyld_register_func_for_add_image(void (*func)(const struct mach_header *mh, intptr_t vmaddr_slide));
 
-extern "C" void _dyld_register_func_for_add_image(void (*func)(const struct mach_header* mh, intptr_t vmaddr_slide));
-
-static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode);
+static void *supR3HardenedDarwinDlopenInterpose(const char *path, int mode);
 static int supR3HardenedDarwinIssetugidInterpose(void);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** Flag whether macOS 11.x (BigSur) was detected. */
-static bool                    g_fMacOs11 = false;
+/** Flag whether macOS 11.x (BigSur) or later was detected.
+ * See comments in supR3HardenedDarwinDlopenInterpose for details. */
+static bool                    g_fMacOs11Plus = false;
 /** Resolved dyld_dynamic_interpose() value. */
 static PFNDYLDDYNAMICINTERPOSE g_pfnDyldDynamicInterpose = NULL;
 /** Pointer to the real dlopen() function used from the interposer when verification succeeded. */
@@ -113,7 +115,7 @@ static const DYLDINTERPOSE     g_aInterposers[] =
  *
  * @sa dlopen() man page.
  */
-static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode)
+static void *supR3HardenedDarwinDlopenInterpose(const char *path, int mode)
 {
     /*
      * Giving NULL as the filename indicates opening the main program which is fine
@@ -136,7 +138,7 @@ static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode)
          * The obvious solution is to exclude paths starting with /System/Libraries
          * when we run on BigSur. Other paths are still subject to verification.
          */
-        if (   !g_fMacOs11
+        if (   !g_fMacOs11Plus
             || strncmp(path, RT_STR_TUPLE("/System/Library")))
             rc = supR3HardenedVerifyFileFollowSymlinks(path, RTHCUINTPTR_MAX, true /* fMaybe3rdParty */,
                                                        NULL /* pErrInfo */);
@@ -186,11 +188,11 @@ static int supR3HardenedDarwinIssetugidInterpose(void)
  * @param   mh              Pointer to the mach header of the loaded image.
  * @param   vmaddr_slide    The slide value for ASLR.
  */
-static DECLCALLBACK(void) supR3HardenedDarwinAddImage(const struct mach_header* mh, intptr_t vmaddr_slide)
+static DECLCALLBACK(void) supR3HardenedDarwinAddImage(const struct mach_header *mh, intptr_t vmaddr_slide)
 {
     RT_NOREF(vmaddr_slide);
 
-    g_pfnDyldDynamicInterpose((const struct mach_header*)mh, &g_aInterposers[0], RT_ELEMENTS(g_aInterposers));
+    g_pfnDyldDynamicInterpose(mh, &g_aInterposers[0], RT_ELEMENTS(g_aInterposers));
 }
 
 
@@ -211,8 +213,8 @@ DECLHIDDEN(void) supR3HardenedDarwinInit(void)
     size_t cbVers = sizeof(szVers);
     int rc = sysctlbyname("kern.osproductversion", &szVers[0], &cbVers, NULL, 0);
     if (   !rc
-        && !memcmp(&szVers[0], RT_STR_TUPLE("10.16")))
-        g_fMacOs11 = true;
+        && memcmp(&szVers[0], RT_STR_TUPLE("10.16")) >= 0)
+        g_fMacOs11Plus = true;
 
     /* Saved to call real dlopen() later on, as we will interpose dlopen() from the main binary in the next step as well. */
     g_pfnDlopenReal = (PFNDLOPEN)dlsym(RTLD_DEFAULT, "dlopen");
