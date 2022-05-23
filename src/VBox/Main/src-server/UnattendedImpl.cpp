@@ -3637,6 +3637,15 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
             return S_OK;
         }
     }
+    /* Old Debians fail since package repos have been move to some other mirror location. */
+    if (mEnmOsType == VBOXOSTYPE_Debian || mEnmOsType == VBOXOSTYPE_Debian_x64)
+    {
+        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "9.0") < 0)
+        {
+            *aIsUnattendedInstallSupported = false;
+            return S_OK;
+        }
+    }
 
     *aIsUnattendedInstallSupported = true;
     return S_OK;
