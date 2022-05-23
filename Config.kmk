@@ -4374,7 +4374,7 @@ ifdef VBOX_SIGNING_MODE
   ## Notarize a file (usually DMG, can also be PKG). Used with corp code signing only.
   # @param 1  The file to notarize.
   # @param 2  Identifier, mandatory.
-  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+  if $(intersects darwin darwin_notarize all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    VBOX_NOTARIZE_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_NOTARIZE_CMD,$(1),$(2))
   endif
 
