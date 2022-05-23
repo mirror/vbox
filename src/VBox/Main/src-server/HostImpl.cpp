@@ -1197,15 +1197,20 @@ void Host::i_updateProcessorFeatures()
     {
         uint32_t fVTCaps;
         rc = SUPR3QueryVTCaps(&fVTCaps);
-        AssertMsgRC(rc, ("SUPR3QueryVTCaps failed rc=%Rrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_SUP_DRIVERLESS, ("SUPR3QueryVTCaps failed rc=%Rrc\n", rc));
 
         SUPR3Term(false);
 
         AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
         if (RT_FAILURE(rc))
         {
-            LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
             fVTCaps = 0;
+            if (rc != VERR_SUP_DRIVERLESS)
+                LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /* Preserve detected VT-x/AMD-V support for show. */
+            else
+                fVTCaps = m->fVTSupported ? SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X : 0;
+# endif
         }
         m->fVTSupported                = (fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X)) != 0;
         m->fNestedPagingSupported      = (fVTCaps & SUPVTCAPS_NESTED_PAGING) != 0;
