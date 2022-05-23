@@ -1169,26 +1169,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /*
          * Hardware virtualization extensions.
          */
-        BOOL fSupportsHwVirtEx;
-        hrc = host->GetProcessorFeature(ProcessorFeature_HWVirtEx, &fSupportsHwVirtEx);     H();
-
         BOOL fIsGuest64Bit;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_LongMode, &fIsGuest64Bit);           H();
-        if (fIsGuest64Bit)
-        {
-            BOOL fSupportsLongMode;
-            hrc = host->GetProcessorFeature(ProcessorFeature_LongMode, &fSupportsLongMode); H();
-            if (!fSupportsLongMode)
-            {
-                LogRel(("WARNING! 64-bit guest type selected but the host CPU does NOT support 64-bit.\n"));
-                fIsGuest64Bit = FALSE;
-            }
-            if (!fSupportsHwVirtEx)
-            {
-                LogRel(("WARNING! 64-bit guest type selected but the host CPU does NOT support HW virtualization.\n"));
-                fIsGuest64Bit = FALSE;
-            }
-        }
 
         /* Sanitize valid/useful APIC combinations, see @bugref{8868}. */
         if (!fEnableAPIC)
@@ -3636,13 +3618,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             {
                 InsertConfigInteger(pCfg,  "McfgBase",   uMcfgBase);
                 InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
-                /* 64-bit prefetch window root resource:
-                 * Only for ICH9 and if PAE or Long Mode is enabled.
-                 * And only with hardware virtualization (@bugref{5454}). */
-                if (   (fEnablePAE || fIsGuest64Bit)
-                    && fSupportsHwVirtEx /* HwVirt needs to be supported by the host
-                                            otherwise VMM falls back to raw mode */
-                    && fHMEnabled        /* HwVirt needs to be enabled in VM config */)
+                /* 64-bit prefetch window root resource: Only for ICH9 and if PAE or Long Mode is enabled (@bugref{5454}). */
+                if (fIsGuest64Bit || fEnablePAE)
                     InsertConfigInteger(pCfg,  "PciPref64Enabled", 1);
             }
             InsertConfigInteger(pCfg,  "HostBusPciAddress", uHbcPCIAddress);
