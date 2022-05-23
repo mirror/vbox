@@ -4380,7 +4380,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             {
                 Log2(("%s: set multi sector count to %d\n", __FUNCTION__, s->uATARegNSector));
                 s->cMultSectors = s->uATARegNSector;
-                ataR3CmdOK(pCtl, s, 0);
+                ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
             }
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
             break;
@@ -4464,18 +4464,18 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
                 goto abort_cmd;
             s->fLBA48 = true;
             ataR3SetSector(s, s->cTotalSectors - 1);
-            ataR3CmdOK(pCtl, s, 0);
+            ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_SEEK: /* Used by the SCO OpenServer. Command is marked as obsolete */
-            ataR3CmdOK(pCtl, s, 0);
+            ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_READ_NATIVE_MAX_ADDRESS:
             if (!pDevR3->pDrvMedia || s->fATAPI)
                 goto abort_cmd;
             ataR3SetSector(s, RT_MIN(s->cTotalSectors, 1 << 28) - 1);
-            ataR3CmdOK(pCtl, s, 0);
+            ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_CHECK_POWER_MODE:
@@ -5988,7 +5988,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                     else
                     {
                         Assert(iSourceSink == ATAFN_SS_NULL);
-                        ataR3CmdOK(pCtl, s, 0);
+                        ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
                     }
                     s->iIOBufferEnd = s->cbElementaryTransfer;
 
