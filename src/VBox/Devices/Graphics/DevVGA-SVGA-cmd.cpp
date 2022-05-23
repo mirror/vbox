@@ -3410,7 +3410,7 @@ static int vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, SVGA3dCmdDXMobFence64 co
 
     return VINF_SUCCESS;
 #else
-    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    RT_NOREF(pThisCC, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -3664,7 +3664,7 @@ static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, SVGA3dCmdDefineGBS
     }
     return rc;
 #else
-    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    RT_NOREF(pThisCC, pCmd);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -4074,7 +4074,7 @@ static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, SVGA3dCmdDefineGBS
     }
     return rc;
 #else
-    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    RT_NOREF(pThisCC, pCmd);
     return VERR_NOT_SUPPORTED;
 #endif
 }
