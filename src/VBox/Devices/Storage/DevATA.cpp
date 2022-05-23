@@ -5322,11 +5322,11 @@ ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
         else
             Log2(("%s: DUMMY data\n", __FUNCTION__));
 
-        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cb, &u32, VBOXSTRICTRC_VAL(rc)));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort, cb, &u32, VBOXSTRICTRC_VAL(rc)));
         PDMDevHlpCritSectLeave(pDevIns, &pCtl->lock);
     }
     else
-        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, VBOXSTRICTRC_VAL(rc)));
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -5472,8 +5472,7 @@ ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_
                      */
                     uint8_t const *pbSrc = &s->abIOBuffer[offStart];
                     memcpy(pbDst, pbSrc, cbTransfer);
-                    Log3(("%s: addr=%#x cb=%#x cbTransfer=%#x val=%.*Rhxd\n",
-                          __FUNCTION__, offPort, cb, cbTransfer, cbTransfer, pbSrc));
+                    Log3(("%s: addr=%#x cb=%#x cbTransfer=%#x val=%.*Rhxd\n", __FUNCTION__, offPort, cb, cbTransfer, cbTransfer, pbSrc));
                     s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
                     if (offEndThisXfer >= offEnd)
@@ -5536,6 +5535,7 @@ ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
             uint32_t const offEnd   = s->iIOBufferPIODataEnd;
+            Log3Func(("offStart=%#x offEnd=%#x *pcTransfers=%d cb=%d\n", offStart, offEnd, *pcTransfers, cb));
             if (offStart < offEnd)
             {
                 /*
@@ -5563,7 +5563,7 @@ ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8
                      */
                     void *pvDst = &s->abIOBuffer[offStart];
                     memcpy(pvDst, pbSrc, cbTransfer);
-                    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cbTransfer, pvDst));
+                    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, offPort, cbTransfer, pvDst));
                     s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
                     if (offEndThisXfer >= offEnd)
