@@ -2082,17 +2082,22 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
 #  if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Ret;
 #   if defined(PIC) || defined(__PIC__)
-    /* NB: this code uses a memory clobber description, because the clean
-     * solution with an output value for *pu64 makes gcc run out of registers.
-     * This will cause suboptimal code, and anyone with a better solution is
-     * welcome to improve this. */
+    /* Note #1: This code uses a memory clobber description, because the clean
+                solution with an output value for *pu64 makes gcc run out of
+                registers.  This will cause suboptimal code, and anyone with a
+                better solution is welcome to improve this.
+
+       Note #2: We must prevent gcc from encoding the memory access, as it
+                may go via the GOT if we're working on a global variable (like
+                in the testcase).  Thus we request a register (%3) and
+                dereference it ourselves. */
     __asm__ __volatile__("xchgl %%ebx, %1\n\t"
-                         "lock; cmpxchg8b %3\n\t"
+                         "lock; cmpxchg8b (%3)\n\t"
                          "xchgl %%ebx, %1\n\t"
                          : "=A" (u64Ret)
                          : "DS" ((uint32_t)u64New)
                          , "c" ((uint32_t)(u64New >> 32))
-                         , "m" (*pu64)
+                         , "r" (pu64) /* Do not use "m" here*/
                          , "0" (u64Old)
                          : "memory"
                          , "cc" );
