@@ -42,6 +42,7 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UICursor.h"
+#include "UICommon.h"
 #include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
