@@ -875,6 +875,14 @@ enum MachineSettingsPageType
 Q_DECLARE_METATYPE(MachineSettingsPageType);
 
 
+/** Common UI: Shared Folder types. */
+enum UISharedFolderType
+{
+    UISharedFolderType_Machine,
+    UISharedFolderType_Console
+};
+
+
 /** Common UI: Wizard types. */
 enum WizardType
 {

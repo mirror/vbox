@@ -28,16 +28,10 @@
 #include "CSharedFolder.h"
 
 /* Forward declarations: */
-class QHBoxLayout;
-class QTreeWidgetItem;
-class QITreeWidget;
-class QILabelSeparator;
-class SFTreeViewItem;
-class QIToolBar;
+class UISharedFoldersEditor;
 
 struct UIDataSettingsSharedFolder;
 struct UIDataSettingsSharedFolders;
-enum UISharedFolderType { MachineType, ConsoleType };
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
 
@@ -79,62 +73,19 @@ protected:
     /** Performs final page polishing. */
     virtual void polishPage() RT_OVERRIDE;
 
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *aEvent) RT_OVERRIDE;
-
-    /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
-
-private slots:
-
-    /** Handles command to add shared folder. */
-    void sltAddFolder();
-    /** Handles command to edit shared folder. */
-    void sltEditFolder();
-    /** Handles command to remove shared folder. */
-    void sltRemoveFolder();
-
-    /** Handles @a pCurrentItem change. */
-    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
-    /** Handles @a pItem double-click. */
-    void sltHandleDoubleClick(QTreeWidgetItem *pItem);
-    /** Handles context menu request for @a position. */
-    void sltHandleContextMenuRequest(const QPoint &position);
-
-    /** Performs request to adjust tree. */
-    void sltAdjustTree();
-    /** Performs request to adjust tree fields. */
-    void sltAdjustTreeFields();
-
 private:
 
     /** Prepares all. */
     void prepare();
     /** Prepares Widgets. */
     void prepareWidgets();
-    /** Prepares shared folders tree-wdget. */
-    void prepareTreeWidget();
-    /** Prepares shared folders toolbar. */
-    void prepareToolbar();
     /** Prepares connections. */
     void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
-    /** Returns the tree-view root item for corresponding shared folder @a type. */
-    SFTreeViewItem *root(UISharedFolderType type);
-    /** Returns a list of used shared folder names. */
-    QStringList usedList(bool fIncludeSelected);
-
     /** Returns whether the corresponding @a enmFoldersType supported. */
     bool isSharedFolderTypeSupported(UISharedFolderType enmFoldersType) const;
-    /** Updates root item visibility. */
-    void updateRootItemsVisibility();
-    /** Defines whether the root item of @a enmFoldersType is @a fVisible. */
-    void setRootItemVisible(UISharedFolderType enmFoldersType, bool fVisible);
-
-    /** Creates shared folder item based on passed @a data. */
-    void addSharedFolderItem(const UIDataSettingsSharedFolder &sharedFolderData, bool fChoose);
 
     /** Gathers a vector of shared folders of the passed @a enmFoldersType. */
     CSharedFolderVector getSharedFolders(UISharedFolderType enmFoldersType);
@@ -155,20 +106,8 @@ private:
 
     /** @name Widgets
       * @{ */
-        /** Holds the widget separator instance. */
-        QILabelSeparator *m_pLabelSeparator;
-        /** Holds the tree layout instance. */
-        QHBoxLayout      *m_pLayoutTree;
-        /** Holds the tree-widget instance. */
-        QITreeWidget     *m_pTreeWidget;
-        /** Holds the toolbar instance. */
-        QIToolBar        *m_pToolbar;
-        /** Holds the 'add shared folder' action instance. */
-        QAction          *m_pActionAdd;
-        /** Holds the 'edit shared folder' action instance. */
-        QAction          *m_pActionEdit;
-        /** Holds the 'remove shared folder' action instance. */
-        QAction          *m_pActionRemove;
+        /** Holds the shared folders editor instance. */
+        UISharedFoldersEditor *m_pEditorSharedFolders;
     /** @} */
 };
 
