@@ -1212,14 +1212,14 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
          * Kludge!
          *
          * Prior to XP SP1 (?), the returned cbAvailable value was not adjusted
-         * by read position in the current message/buffer, so it could
-         * potentially be too high.  This could cause the caller to try read
-         * more data than what's actually available, which may cause the read
-         * to block when the caller thought it wouldn't.
+         * by the read position in the current message/buffer, so it could
+         * potentially be too high.  This may cause the caller to try read more
+         * data than what's actually available, which may cause the read to
+         * block when the caller thought it wouldn't.
          *
-         * To get the accurate size, we have to provide and output buffer
-         * and see how much we actually get back in it, as the data peeking
-         * works correctly (as you would expect).
+         * To get an accurate readable size, we have to provide an output
+         * buffer and see how much we actually get back in it, as the data
+         * peeking works correctly (as you would expect).
          */
         if (cbAvailable == 0 || g_enmWinVer >= kRTWinOSType_XP64)
         { /* No data available or kernel shouldn't be affected. */ }
