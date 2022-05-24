@@ -79,6 +79,14 @@ public:
     void setBackwardAvailable(bool fAvailable);
     void setForwardAvailable(bool fAvailable);
 
+private slots:
+
+    void sltGoBackward();
+    void sltGoForward();
+    void sltGoHome();
+    void sltReloadPage();
+    void sltAddBookmark();
+
 private:
 
     void prepare();
@@ -155,6 +163,36 @@ void UIContextMenuNavigationAction::setForwardAvailable(bool fAvailable)
         m_pForwardButton->setEnabled(fAvailable);
 }
 
+void UIContextMenuNavigationAction::sltGoBackward()
+{
+    emit sigGoBackward();
+    emit triggered();
+}
+
+void UIContextMenuNavigationAction::sltGoForward()
+{
+    emit sigGoForward();
+    emit triggered();
+}
+
+void UIContextMenuNavigationAction::sltGoHome()
+{
+    emit sigGoHome();
+    emit triggered();
+}
+
+void UIContextMenuNavigationAction::sltReloadPage()
+{
+    emit sigReloadPage();
+    emit triggered();
+}
+
+void UIContextMenuNavigationAction::sltAddBookmark()
+{
+    emit sigAddBookmark();
+    emit triggered();
+}
+
 void UIContextMenuNavigationAction::prepare()
 {
     QWidget *pWidget = new QWidget;
@@ -181,6 +219,12 @@ void UIContextMenuNavigationAction::prepare()
     m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_16px.png", ":/help_browser_backward_disabled_16px.png"));
     m_pAddBookmarkButton->setIcon(UIIconPool::iconSet(":/help_browser_add_bookmark_16px.png", ":/help_browser_add_bookmark_disabled_16px.png"));
 
+    m_pHomeButton->setToolTip(tr("Return to Start Page"));
+    m_pReloadPageButton->setToolTip(tr("Reload the Current Page"));
+    m_pForwardButton->setToolTip(tr("Go Forward to Next Page"));
+    m_pBackwardButton->setToolTip(tr("Go Back to Previous Page"));
+    m_pAddBookmarkButton->setToolTip(tr("Add a New Bookmark"));
+
     pMainLayout->addWidget(m_pBackwardButton);
     pMainLayout->addWidget(m_pForwardButton);
     pMainLayout->addWidget(m_pHomeButton);
@@ -189,17 +233,17 @@ void UIContextMenuNavigationAction::prepare()
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     connect(m_pBackwardButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigGoBackward);
+            this, &UIContextMenuNavigationAction::sltGoBackward);
     connect(m_pForwardButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigGoForward);
+            this, &UIContextMenuNavigationAction::sltGoForward);
     connect(m_pHomeButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigGoHome);
+            this, &UIContextMenuNavigationAction::sltGoHome);
     connect(m_pReloadPageButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigReloadPage);
+            this, &UIContextMenuNavigationAction::sltReloadPage);
     connect(m_pAddBookmarkButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigAddBookmark);
+            this, &UIContextMenuNavigationAction::sltAddBookmark);
     connect(m_pReloadPageButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sigAddBookmark);
+            this, &UIContextMenuNavigationAction::sltAddBookmark);
 }
 
 
