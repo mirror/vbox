@@ -3253,7 +3253,6 @@ void tstASMBench(void)
     BENCH(ASMCountTrailingZerosU32(s_u32),       "ASMCountTrailingZerosU32");
     BENCH(ASMCountTrailingZerosU64(s_u64),       "ASMCountTrailingZerosU64");
 
-s_u32 = 0; if (s_u32) { /// remove me
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
