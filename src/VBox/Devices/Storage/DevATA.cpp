@@ -3742,7 +3742,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 break;
             }
             atapiR3CmdOK(pCtl, s);
-            ataSetStatus(pCtl, s, ATA_STAT_SEEK); /* Linux expects this. */
+            ataSetStatus(pCtl, s, ATA_STAT_SEEK); /* Linux expects this. Required by ATAPI 2.x when seek completes. */
             break;
         }
         case SCSI_START_STOP_UNIT:
@@ -3779,7 +3779,10 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                     break;
             }
             if (RT_SUCCESS(rc))
+            {
                 atapiR3CmdOK(pCtl, s);
+                ataSetStatus(pCtl, s, ATA_STAT_SEEK);   /* Needed by NT 3.51/4.0, see @bugref{5869}. */
+            }
             else
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED);
             break;
