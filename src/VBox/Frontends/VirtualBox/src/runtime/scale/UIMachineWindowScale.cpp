@@ -74,7 +74,7 @@ void UIMachineWindowScale::prepareVisualState()
     if (uiCommon().isBeta())
     {
         QPixmap betaLabel = ::betaLabel(QSize(74, 26));
-        ::darwinLabelWindow(this, &betaLabel, false);
+        ::darwinLabelWindow(this, &betaLabel);
     }
 
     /* For 'Yosemite' and above: */

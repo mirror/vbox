@@ -2031,7 +2031,7 @@ void UIVirtualBoxManager::prepare()
     if (uiCommon().isBeta())
     {
         QPixmap betaLabel = ::betaLabel(QSize(74, 26));
-        ::darwinLabelWindow(this, &betaLabel, false);
+        ::darwinLabelWindow(this, &betaLabel);
     }
 #endif /* VBOX_WS_MAC */
 

@@ -87,7 +87,7 @@ QString darwinFromNativeString(NativeNSStringRef pString);
 void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow);
-SHARED_LIBRARY_STUFF void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage, bool fCenter);
+SHARED_LIBRARY_STUFF void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage);
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled);
 SHARED_LIBRARY_STUFF void darwinSetWindowHasShadow(NativeNSWindowRef pWindow, bool fEnabled);
 SHARED_LIBRARY_STUFF void darwinSetMouseCoalescingEnabled(bool fEnabled);
@@ -260,7 +260,7 @@ private:
  *
  ********************************************************************************/
 void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled);
-SHARED_LIBRARY_STUFF void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap, bool fCenter);
+SHARED_LIBRARY_STUFF void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap);
 void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled);
 SHARED_LIBRARY_STUFF void darwinSetHidesAllTitleButtons(QWidget *pWidget);
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);
@@ -305,4 +305,3 @@ SHARED_LIBRARY_STUFF void darwinMouseRelease(QWidget *pWidget);
 SHARED_LIBRARY_STUFF void *darwinCocoaToCarbonEvent(void *pvCocoaEvent);
 
 #endif /* !FEQT_INCLUDED_SRC_platform_darwin_VBoxUtils_darwin_h */
-
