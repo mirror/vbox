@@ -37,6 +37,7 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/poll.h>
@@ -1202,9 +1203,79 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
     if (RT_FAILURE(rc))
         return rc;
 
+    /** @todo The file size should give the same info and be slightly faster... */
     DWORD cbAvailable = 0;
     if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL))
+    {
+#if ARCH_BITS == 32
+        /*
+         * Kludge!
+         *
+         * Prior to XP SP1 (?), the returned cbAvailable value was not adjusted
+         * by read position in the current message/buffer, so it could
+         * potentially be too high.  This could cause the caller to try read
+         * more data than what's actually available, which may cause the read
+         * to block when the caller thought it wouldn't.
+         *
+         * To get the accurate size, we have to provide and output buffer
+         * and see how much we actually get back in it, as the data peeking
+         * works correctly (as you would expect).
+         */
+        if (cbAvailable == 0 || g_enmWinVer >= kRTWinOSType_XP64)
+        { /* No data available or kernel shouldn't be affected. */ }
+        else
+        {
+            for (unsigned i = 0; ; i++)
+            {
+                uint8_t abBufStack[_16K];
+                void   *pvBufFree = NULL;
+                void   *pvBuf;
+                DWORD   cbBuf     = RT_ALIGN_32(cbAvailable + i * 256, 64);
+                if (cbBuf <= sizeof(abBufStack))
+                {
+                    pvBuf = abBufStack;
+                    /* No cbBuf = sizeof(abBufStack) here! PeekNamedPipe bounce buffers the request on the heap. */
+                }
+                else
+                {
+                    pvBufFree = pvBuf = RTMemTmpAlloc(cbBuf);
+                    if (!pvBuf)
+                    {
+                        rc = VERR_NO_TMP_MEMORY;
+                        cbAvailable = 1;
+                        break;
+                    }
+                }
+
+                DWORD cbAvailable2 = 0;
+                DWORD cbRead       = 0;
+                BOOL fRc = PeekNamedPipe(pThis->hPipe, pvBuf, cbBuf, &cbRead, &cbAvailable2, NULL);
+                Log(("RTPipeQueryReadable: #%u: cbAvailable=%#x cbRead=%#x cbAvailable2=%#x (cbBuf=%#x)\n",
+                     i, cbAvailable, cbRead, cbAvailable2, cbBuf));
+
+                RTMemTmpFree(pvBufFree);
+
+                if (fRc)
+                {
+                    if (cbAvailable2 <= cbBuf || i >= 10)
+                        cbAvailable = cbRead;
+                    else
+                    {
+                        cbAvailable = cbAvailable2;
+                        continue;
+                    }
+                }
+                else
+                {
+                    rc = RTErrConvertFromWin32(GetLastError());
+                    cbAvailable = 1;
+                }
+                break;
+            }
+        }
+#endif
         *pcbReadable = cbAvailable;
+    }
     else
         rc = RTErrConvertFromWin32(GetLastError());
 
