@@ -2743,6 +2743,143 @@ void tstASMMisc(void)
     }
 }
 
+
+void tstASMBit(void)
+{
+    RTTestSub(g_hTest, "ASMBitFirstSetU16");
+    RTTESTI_CHECK(ASMBitFirstSetU16(0x0000) == 0);
+    RTTESTI_CHECK(ASMBitFirstSetU16(0x0001) == 1);
+    RTTESTI_CHECK(ASMBitFirstSetU16(0x8000) == 16);
+    RTTESTI_CHECK(ASMBitFirstSetU16(0x0ef0) == 5);
+    for (unsigned iBit = 0; iBit < 16; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitFirstSetU16((uint16_t)1 << iBit) == iBit + 1);
+        RTTESTI_CHECK(ASMBitFirstSetU16(UINT16_MAX  << iBit) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMBitFirstSetU32");
+    RTTESTI_CHECK(ASMBitFirstSetU32(UINT32_C(0x00000000)) == 0);
+    RTTESTI_CHECK(ASMBitFirstSetU32(UINT32_C(0x00000001)) == 1);
+    RTTESTI_CHECK(ASMBitFirstSetU32(UINT32_C(0x80000000)) == 32);
+    RTTESTI_CHECK(ASMBitFirstSetU32(UINT32_C(0x0efff0f0)) == 5);
+    for (unsigned iBit = 0; iBit < 32; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitFirstSetU32((uint32_t)1 << iBit) == iBit + 1);
+        RTTESTI_CHECK(ASMBitFirstSetU32(UINT32_MAX  << iBit) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMBitFirstSetU64");
+    RTTESTI_CHECK(ASMBitFirstSetU64(UINT64_C(0x0000000000000000)) == 0);
+    RTTESTI_CHECK(ASMBitFirstSetU64(UINT64_C(0x0000000000000001)) == 1);
+    RTTESTI_CHECK(ASMBitFirstSetU64(UINT64_C(0x8000000000000000)) == 64);
+    RTTESTI_CHECK(ASMBitFirstSetU64(UINT64_C(0x0effffff0ffff0f0)) == 5);
+    for (unsigned iBit = 0; iBit < 64; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitFirstSetU64((uint64_t)1 << iBit) == iBit + 1);
+        RTTESTI_CHECK(ASMBitFirstSetU64(UINT64_MAX  << iBit) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMBitLastSetU16");
+    RTTESTI_CHECK(ASMBitLastSetU16(0x0000) == 0);
+    RTTESTI_CHECK(ASMBitLastSetU16(0x0001) == 1);
+    RTTESTI_CHECK(ASMBitLastSetU16(0x8000) == 16);
+    RTTESTI_CHECK(ASMBitLastSetU16(0x0fe0) == 12);
+    for (unsigned iBit = 0; iBit < 16; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitLastSetU16(UINT16_C(0x8000) >> (15 - iBit)) == iBit + 1);
+        RTTESTI_CHECK(ASMBitLastSetU16(UINT16_MAX       >> (15 - iBit)) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMBitLastSetU32");
+    RTTESTI_CHECK(ASMBitLastSetU32(UINT32_C(0x00000000)) == 0);
+    RTTESTI_CHECK(ASMBitLastSetU32(UINT32_C(0x00000001)) == 1);
+    RTTESTI_CHECK(ASMBitLastSetU32(UINT32_C(0x80000000)) == 32);
+    RTTESTI_CHECK(ASMBitLastSetU32(UINT32_C(0x0fffffe0)) == 28);
+    for (unsigned iBit = 0; iBit < 32; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitLastSetU32(UINT32_C(0x80000000) >> (31 - iBit)) == iBit + 1);
+        RTTESTI_CHECK(ASMBitLastSetU32(UINT32_MAX           >> (31 - iBit)) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMBitLastSetU64");
+    RTTESTI_CHECK(ASMBitLastSetU64(UINT64_C(0x0000000000000000)) == 0);
+    RTTESTI_CHECK(ASMBitLastSetU64(UINT64_C(0x0000000000000001)) == 1);
+    RTTESTI_CHECK(ASMBitLastSetU64(UINT64_C(0x8000000000000000)) == 64);
+    RTTESTI_CHECK(ASMBitLastSetU64(UINT64_C(0x0ffffefff0ffffe0)) == 60);
+    for (unsigned iBit = 0; iBit < 64; iBit++)
+    {
+        RTTESTI_CHECK(ASMBitLastSetU64(UINT64_C(0x8000000000000000) >> (63 - iBit)) == iBit + 1);
+        RTTESTI_CHECK(ASMBitLastSetU64(UINT64_MAX                   >> (63 - iBit)) == iBit + 1);
+    }
+
+    RTTestSub(g_hTest, "ASMCountLeadingZerosU16");
+    RTTESTI_CHECK(ASMCountLeadingZerosU16(0x0000) == 16);
+    RTTESTI_CHECK(ASMCountLeadingZerosU16(0x0001) == 15);
+    RTTESTI_CHECK(ASMCountLeadingZerosU16(0x8000) == 0);
+    RTTESTI_CHECK(ASMCountLeadingZerosU16(0x0fe0) == 4);
+    for (unsigned iBit = 0; iBit < 16; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountLeadingZerosU16(UINT16_C(0x8000) >> iBit) == iBit);
+        RTTESTI_CHECK(ASMCountLeadingZerosU16(UINT16_MAX       >> iBit) == iBit);
+    }
+
+    RTTestSub(g_hTest, "ASMCountLeadingZerosU32");
+    RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_C(0x00000000)) == 32);
+    RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_C(0x00000001)) == 31);
+    RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_C(0x80000000)) == 0);
+    RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_C(0x0fffffe0)) == 4);
+    for (unsigned iBit = 0; iBit < 32; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_C(0x80000000) >> iBit) == iBit);
+        RTTESTI_CHECK(ASMCountLeadingZerosU32(UINT32_MAX           >> iBit) == iBit);
+    }
+
+    RTTestSub(g_hTest, "ASMCountLeadingZerosU64");
+    RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_C(0x0000000000000000)) == 64);
+    RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_C(0x0000000000000001)) == 63);
+    RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_C(0x8000000000000000)) == 0);
+    RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_C(0x0fffffff0f0fffe0)) == 4);
+    for (unsigned iBit = 0; iBit < 64; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_C(0x8000000000000000) >> iBit) == iBit);
+        RTTESTI_CHECK(ASMCountLeadingZerosU64(UINT64_MAX                   >> iBit) == iBit);
+    }
+
+    RTTestSub(g_hTest, "ASMCountTrailingZerosU16");
+    RTTESTI_CHECK(ASMCountTrailingZerosU16(0x0000) == 16);
+    RTTESTI_CHECK(ASMCountTrailingZerosU16(0x0001) == 0);
+    RTTESTI_CHECK(ASMCountTrailingZerosU16(0x8000) == 15);
+    RTTESTI_CHECK(ASMCountTrailingZerosU16(0x0ef0) == 4);
+    for (unsigned iBit = 0; iBit < 16; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountTrailingZerosU16((uint16_t)1 << iBit) == iBit);
+        RTTESTI_CHECK(ASMCountTrailingZerosU16(UINT16_MAX  << iBit) == iBit);
+    }
+
+    RTTestSub(g_hTest, "ASMCountTrailingZerosU32");
+    RTTESTI_CHECK(ASMCountTrailingZerosU32(UINT32_C(0x00000000)) == 32);
+    RTTESTI_CHECK(ASMCountTrailingZerosU32(UINT32_C(0x00000001)) == 0);
+    RTTESTI_CHECK(ASMCountTrailingZerosU32(UINT32_C(0x80000000)) == 31);
+    RTTESTI_CHECK(ASMCountTrailingZerosU32(UINT32_C(0x0efffff0)) == 4);
+    for (unsigned iBit = 0; iBit < 32; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountTrailingZerosU32((uint32_t)1 << iBit) == iBit);
+        RTTESTI_CHECK(ASMCountTrailingZerosU32(UINT32_MAX  << iBit) == iBit);
+    }
+
+    RTTestSub(g_hTest, "ASMCountTrailingZerosU64");
+    RTTESTI_CHECK(ASMCountTrailingZerosU64(UINT64_C(0x0000000000000000)) == 64);
+    RTTESTI_CHECK(ASMCountTrailingZerosU64(UINT64_C(0x0000000000000001)) == 0);
+    RTTESTI_CHECK(ASMCountTrailingZerosU64(UINT64_C(0x8000000000000000)) == 63);
+    RTTESTI_CHECK(ASMCountTrailingZerosU64(UINT64_C(0x0effff0fefef0ff0)) == 4);
+    for (unsigned iBit = 0; iBit < 64; iBit++)
+    {
+        RTTESTI_CHECK(ASMCountTrailingZerosU64((uint64_t)1 << iBit) == iBit);
+        RTTESTI_CHECK(ASMCountTrailingZerosU64(UINT64_MAX  << iBit) == iBit);
+    }
+}
+
+
 void tstASMMath(void)
 {
     RTTestSub(g_hTest, "Math");
@@ -3103,6 +3240,20 @@ void tstASMBench(void)
     BENCH(ASMSerializeInstruction(),             "ASMSerializeInstruction");
     BENCH(ASMNopPause(),                         "ASMNopPause");
 
+    BENCH(ASMBitFirstSetU16(s_u16),              "ASMBitFirstSetU16");
+    BENCH(ASMBitFirstSetU32(s_u32),              "ASMBitFirstSetU32");
+    BENCH(ASMBitFirstSetU64(s_u32),              "ASMBitFirstSetU64");
+    BENCH(ASMBitLastSetU16(s_u16),               "ASMBitLastSetU16");
+    BENCH(ASMBitLastSetU32(s_u32),               "ASMBitLastSetU32");
+    BENCH(ASMBitLastSetU64(s_u32),               "ASMBitLastSetU64");
+    BENCH(ASMCountLeadingZerosU16(s_u16),        "ASMCountLeadingZerosU16");
+    BENCH(ASMCountLeadingZerosU32(s_u32),        "ASMCountLeadingZerosU32");
+    BENCH(ASMCountLeadingZerosU64(s_u64),        "ASMCountLeadingZerosU64");
+    BENCH(ASMCountTrailingZerosU16(s_u16),       "ASMCountTrailingZerosU16");
+    BENCH(ASMCountTrailingZerosU32(s_u32),       "ASMCountTrailingZerosU32");
+    BENCH(ASMCountTrailingZerosU64(s_u64),       "ASMCountTrailingZerosU64");
+
+s_u32 = 0; if (s_u32) { /// remove me
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
@@ -3176,6 +3327,8 @@ int main(int argc, char **argv)
     tstASMProbe(g_hTest);
 
     tstASMMisc();
+
+    tstASMBit();
 
     tstASMMath();
 

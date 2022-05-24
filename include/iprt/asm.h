@@ -7562,6 +7562,365 @@ DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_DEF
 
 
 /**
+ * Count the number of leading zero bits in the given 32-bit integer.
+ *
+ * The counting starts with the most significate bit.
+ *
+ * @returns Number of most significant zero bits.
+ * @returns 32 if all bits are cleared.
+ * @param   u32     Integer to consider.
+ * @remarks Similar to __builtin_clz() in gcc, except defined zero input result.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountLeadingZerosU32(uint32_t u32) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountLeadingZerosU32(uint32_t u32) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    unsigned long iBit;
+    if (!_BitScanReverse(&iBit, u32))
+        return 32;
+    return 31 - (unsigned)iBit;
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    uint32_t iBit;
+#  if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64) && 0 /* significantly slower on 10980xe; 929 vs 237 ps/call */
+    __asm__ __volatile__("bsrl   %1, %0\n\t"
+                         "cmovzl %2, %0\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u32)
+                         , "rm" ((int32_t)-1)
+                         : "cc");
+#  elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("bsr  %1, %0\n\t"
+                         "jnz  1f\n\t"
+                         "mov  $-1, %0\n\t"
+                         "1:\n\t"
+                         : "=r" (iBit)
+                         : "rm" (u32)
+                         : "cc");
+#  else
+    _asm
+    {
+        bsr     eax, [u32]
+        jnz     found
+        mov     eax, -1
+    found:
+        mov     [iBit], eax
+    }
+#  endif
+    return 31 - iBit;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t iBit;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "clz  %w[iBit], %w[uVal]\n\t"
+#  else
+                         "clz  %[iBit], %[uVal]\n\t"
+#  endif
+                         : [uVal] "=r" (u32)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u32));
+    return iBit;
+
+# elif defined(__GNUC__)
+    AssertCompile(sizeof(u32) == sizeof(unsigned int));
+    return u32 ? __builtin_clz(u32) : 32;
+
+# else
+#  error "Port me"
+# endif
+    return iBit;
+}
+#endif
+
+
+/**
+ * Count the number of leading zero bits in the given 64-bit integer.
+ *
+ * The counting starts with the most significate bit.
+ *
+ * @returns Number of most significant zero bits.
+ * @returns 64 if all bits are cleared.
+ * @param   u64     Integer to consider.
+ * @remarks Similar to __builtin_clzl() in gcc, except defined zero input
+ *          result.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountLeadingZerosU64(uint64_t u64) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountLeadingZerosU64(uint64_t u64) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    unsigned long iBit;
+#  if ARCH_BITS == 64
+    if (_BitScanReverse64(&iBit, u64))
+        return 63 - (unsigned)iBit;
+#  else
+    if (_BitScanReverse(&iBit, (uint32_t)(u64 >> 32)))
+        return 31 - (unsigned)iBit;
+    if (_BitScanReverse(&iBit, (uint32_t)u64))
+        return 63 - (unsigned)iBit;
+#  endif
+    return 64;
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    uint64_t iBit;
+#  if 0 /* 10980xe benchmark: 932 ps/call - the slower variant */
+    __asm__ __volatile__("bsrq   %1, %0\n\t"
+                         "cmovzq %2, %0\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u64)
+                         , "rm" ((int64_t)-1)
+                         : "cc");
+#  else /* 10980xe benchmark: 262 ps/call */
+    __asm__ __volatile__("bsrq   %1, %0\n\t"
+                         "jnz    1f\n\t"
+                         "mov    $-1, %0\n\t"
+                         "1:\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u64)
+                         : "cc");
+#  endif
+    return 63 - (unsigned)iBit;
+
+# elif defined(RT_ARCH_ARM64)
+    uint64_t iBit;
+    __asm__ __volatile__("clz  %[iBit], %[uVal]\n\t"
+                         : [uVal] "=r" (u64)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u64));
+    return (unsigned)iBit;
+
+# elif defined(__GNUC__) && ARCH_BITS == 64
+    AssertCompile(sizeof(u64) == sizeof(unsigned long));
+    return u64 ? __builtin_clzl(u64) : 64;
+
+# else
+    unsigned iBit = ASMCountLeadingZerosU32((uint32_t)(u64 >> 32));
+    if (iBit == 32)
+        iBit = ASMCountLeadingZerosU32((uint32_t)u64) + 32;
+    return iBit;
+# endif
+}
+#endif
+
+
+/**
+ * Count the number of leading zero bits in the given 16-bit integer.
+ *
+ * The counting starts with the most significate bit.
+ *
+ * @returns Number of most significant zero bits.
+ * @returns 16 if all bits are cleared.
+ * @param   u16     Integer to consider.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountLeadingZerosU16(uint16_t u16) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountLeadingZerosU16(uint16_t u16) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && 0 /* slower (10980xe: 987 vs 292 ps/call) */
+    uint16_t iBit;
+    __asm__ __volatile__("bsrw %1, %0\n\t"
+                         "jnz  1f\n\t"
+                         "mov  $-1, %0\n\t"
+                         "1:\n\t"
+                         : "=r" (iBit)
+                         : "rm" (u16)
+                         : "cc");
+    return 15 - (int16_t)iBit;
+# else
+    return ASMCountLeadingZerosU32((uint32_t)u16) - 16;
+# endif
+}
+#endif
+
+
+/**
+ * Count the number of trailing zero bits in the given 32-bit integer.
+ *
+ * The counting starts with the least significate bit, i.e. the zero bit.
+ *
+ * @returns Number of lest significant zero bits.
+ * @returns 32 if all bits are cleared.
+ * @param   u32     Integer to consider.
+ * @remarks Similar to __builtin_ctz() in gcc, except defined zero input result.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountTrailingZerosU32(uint32_t u32) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountTrailingZerosU32(uint32_t u32) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    unsigned long iBit;
+    if (!_BitScanForward(&iBit, u32))
+        return 32;
+    return (unsigned)iBit;
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    uint32_t iBit;
+#  if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64) && 0 /* significantly slower on 10980xe; 932 vs 240 ps/call */
+    __asm__ __volatile__("bsfl   %1, %0\n\t"
+                         "cmovzl %2, %0\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u32)
+                         , "rm" ((int32_t)32)
+                         : "cc");
+#  elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("bsfl %1, %0\n\t"
+                         "jnz  1f\n\t"
+                         "mov  $32, %0\n\t"
+                         "1:\n\t"
+                         : "=r" (iBit)
+                         : "rm" (u32)
+                         : "cc");
+#  else
+    _asm
+    {
+        bsf     eax, [u32]
+        jnz     found
+        mov     eax, 32
+    found:
+        mov     [iBit], eax
+    }
+#  endif
+    return iBit;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* Invert the bits and use clz. */
+    uint32_t iBit;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "rbit %w[uVal], %w[uVal]\n\t"
+                         "clz  %w[iBit], %w[uVal]\n\t"
+#  else
+                         "rbit %[uVal], %[uVal]\n\t"
+                         "clz  %[iBit], %[uVal]\n\t"
+#  endif
+                         : [uVal] "=r" (u32)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u32));
+    return iBit;
+
+# elif defined(__GNUC__)
+    AssertCompile(sizeof(u32) == sizeof(unsigned int));
+    return u32 ? __builtin_ctz(u32) : 32;
+
+# else
+#  error "Port me"
+# endif
+    return iBit;
+}
+#endif
+
+
+/**
+ * Count the number of trailing zero bits in the given 64-bit integer.
+ *
+ * The counting starts with the least significate bit.
+ *
+ * @returns Number of least significant zero bits.
+ * @returns 64 if all bits are cleared.
+ * @param   u64     Integer to consider.
+ * @remarks Similar to __builtin_ctzl() in gcc, except defined zero input
+ *          result.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountTrailingZerosU64(uint64_t u64) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountTrailingZerosU64(uint64_t u64) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    unsigned long iBit;
+#  if ARCH_BITS == 64
+    if (_BitScanForward64(&iBit, u64))
+        return (unsigned)iBit;
+#  else
+    if (_BitScanForward(&iBit, (uint32_t)u64))
+        return (unsigned)iBit;
+    if (_BitScanForward(&iBit, (uint32_t)(u64 >> 32)))
+        return (unsigned)iBit + 32;
+#  endif
+    return 64;
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    uint64_t iBit;
+#  if 0 /* 10980xe benchmark: 932 ps/call - the slower variant */
+    __asm__ __volatile__("bsfq   %1, %0\n\t"
+                         "cmovzq %2, %0\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u64)
+                         , "rm" ((int64_t)64)
+                         : "cc");
+#  else /* 10980xe benchmark: 262 ps/call */
+    __asm__ __volatile__("bsfq   %1, %0\n\t"
+                         "jnz    1f\n\t"
+                         "mov    $64, %0\n\t"
+                         "1:\n\t"
+                         : "=&r" (iBit)
+                         : "rm" (u64)
+                         : "cc");
+#  endif
+    return (unsigned)iBit;
+
+# elif defined(RT_ARCH_ARM64)
+    /* Invert the bits and use clz. */
+    uint64_t iBit;
+    __asm__ __volatile__("rbit %[uVal], %[uVal]\n\t"
+                         "clz  %[iBit], %[uVal]\n\t"
+                         : [uVal] "=r" (u64)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u64));
+    return (unsigned)iBit;
+
+# elif defined(__GNUC__) && ARCH_BITS == 64
+    AssertCompile(sizeof(u64) == sizeof(unsigned long));
+    return u64 ? __builtin_ctzl(u64) : 64;
+
+# else
+    unsigned iBit = ASMCountTrailingZerosU32((uint32_t)u64);
+    if (iBit == 32)
+        iBit = ASMCountTrailingZerosU32((uint32_t)(u64 >> 32)) + 32;
+    return iBit;
+# endif
+}
+#endif
+
+
+/**
+ * Count the number of trailing zero bits in the given 16-bit integer.
+ *
+ * The counting starts with the most significate bit.
+ *
+ * @returns Number of most significant zero bits.
+ * @returns 16 if all bits are cleared.
+ * @param   u16     Integer to consider.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMCountTrailingZerosU16(uint16_t u16) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(unsigned) ASMCountTrailingZerosU16(uint16_t u16) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && 0 /* slower (10980xe: 992 vs 349 ps/call) */
+    uint16_t iBit;
+    __asm__ __volatile__("bsfw %1, %0\n\t"
+                         "jnz  1f\n\t"
+                         "mov  $16, %0\n\t"
+                         "1:\n\t"
+                         : "=r" (iBit)
+                         : "rm" (u16)
+                         : "cc");
+    return iBit;
+# else
+    return ASMCountTrailingZerosU32((uint32_t)u16 | UINT32_C(0x10000));
+#endif
+}
+#endif
+
+
+/**
  * Rotate 32-bit unsigned value to the left by @a cShift.
  *
  * @returns Rotated value.
