@@ -1950,12 +1950,20 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
 #ifdef VBOX_IS_QT6_OR_LATER
 void UIHelpBrowserWidget::sltLinkHighlighted(const QUrl &url)
 {
-    emit sigStatusBarMessage(url.url(), 0); /** @todo qt6: ??? */
+    QString strMessage = url.url();
+    if (url.scheme() != "qthelp")
+        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(url.url());
+
+    emit sigStatusBarMessage(strMessage, 0); /** @todo qt6: ??? */
 }
 #else
 void UIHelpBrowserWidget::sltLinkHighlighted(const QString &strLink)
 {
-    emit sigStatusBarMessage(strLink, 0);
+    QString strMessage = strLink;
+    if (QUrl(strLink).scheme() != "qthelp")
+        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(strLink);
+
+    emit sigStatusBarMessage(strMessage, 0);
 }
 #endif
 

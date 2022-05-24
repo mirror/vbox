@@ -462,6 +462,8 @@ void UIHelpViewer::setSource(const QUrl &url)
 #endif
 {
     clearOverlay();
+    if (url.scheme() != "qthelp")
+        return;
 #ifdef VBOX_IS_QT6_OR_LATER
     QTextBrowser::doSetSource(url, type);
 #else
@@ -698,12 +700,22 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
     clearOverlay();
 
     QString strAnchor = anchorAt(pEvent->pos());
+
     if (!strAnchor.isEmpty())
     {
+
+        QString strLink = source().resolved(strAnchor).toString();
+
+        if (source().resolved(strAnchor).scheme() != "qthelp" && pEvent->button() == Qt::LeftButton)
+        {
+            uiCommon().openURL(strLink);
+            return;
+        }
+
         if ((pEvent->modifiers() & Qt::ControlModifier) ||
             pEvent->button() == Qt::MiddleButton)
         {
-            QString strLink = source().resolved(strAnchor).toString();
+
             emit sigOpenLinkInNewTab(strLink, true);
             return;
         }
@@ -906,7 +918,7 @@ void UIHelpViewer::sltOpenLink()
         return;
     QUrl url = pSender->data().toUrl();
     if (url.isValid())
-        QTextBrowser::setSource(url);
+        setSource(url);
 }
 
 void UIHelpViewer::sltCopyLink()

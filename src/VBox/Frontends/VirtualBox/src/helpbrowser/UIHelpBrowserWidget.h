@@ -63,6 +63,7 @@ signals:
     void sigReloadPage();
     void sigAddBookmark();
     void sigStatusBarMessage(const QString &strMessage, int iTimeOut);
+
 public:
 
     UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath, QWidget *pParent = 0);
