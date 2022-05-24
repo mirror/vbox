@@ -7636,7 +7636,6 @@ DECLINLINE(unsigned) ASMCountLeadingZerosU32(uint32_t u32) RT_NOTHROW_DEF
 # else
 #  error "Port me"
 # endif
-    return iBit;
 }
 #endif
 
@@ -7816,7 +7815,6 @@ DECLINLINE(unsigned) ASMCountTrailingZerosU32(uint32_t u32) RT_NOTHROW_DEF
 # else
 #  error "Port me"
 # endif
-    return iBit;
 }
 #endif
 
