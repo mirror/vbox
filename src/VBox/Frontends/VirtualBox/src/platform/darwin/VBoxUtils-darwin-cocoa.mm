@@ -406,6 +406,13 @@ int darwinWindowToolBarHeight(NativeNSWindowRef pWindow)
     return toolbarHeight;
 }
 
+int darwinWindowTitleHeight(NativeNSWindowRef pWindow)
+{
+    NSView *pSuperview = [[pWindow standardWindowButton:NSWindowCloseButton] superview];
+    NSSize sz = [pSuperview frame].size;
+    return sz.height;
+}
+
 bool darwinIsToolbarVisible(NativeNSWindowRef pWindow)
 {
     NSToolbar *pToolbar = [pWindow toolbar];

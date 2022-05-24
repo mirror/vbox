@@ -214,6 +214,11 @@ int darwinWindowToolBarHeight(QWidget *pWidget)
     return 0;
 }
 
+int darwinWindowTitleHeight(QWidget *pWidget)
+{
+    return ::darwinWindowTitleHeight(::darwinToNativeWindow(pWidget));
+}
+
 bool darwinIsToolbarVisible(QToolBar *pToolBar)
 {
     bool fResult = false;
