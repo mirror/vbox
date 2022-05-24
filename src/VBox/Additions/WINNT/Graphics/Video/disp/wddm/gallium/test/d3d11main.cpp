@@ -31,6 +31,7 @@ public:
     virtual ID3D11Device *Device();
     virtual ID3D11DeviceContext *ImmediateContext();
     virtual ID3D11RenderTargetView *RenderTargetView();
+    virtual ID3D11DepthStencilView *DepthStencilView();
 
 private:
     HRESULT initWindow(HINSTANCE hInstance, int nCmdShow);
@@ -57,6 +58,8 @@ private:
         ID3D11RenderTargetView *pRenderTargetView;     /* The render target view. */
         IDXGIResource          *pDxgiResource;         /* Interface of the render target. */
         IDXGIKeyedMutex        *pDXGIKeyedMutex;       /* Synchronization interface for the render device. */
+        ID3D11Texture2D        *pDepthStencilBuffer;
+        ID3D11DepthStencilView *pDepthStencilView;
     } mRender;
 
     HANDLE mSharedHandle;
@@ -191,7 +194,11 @@ static HRESULT d3d11TestCreateDevice(ID3D11Device **ppDevice,
     {
         D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
         D3D_FEATURE_LEVEL_9_3,
+        D3D_FEATURE_LEVEL_9_2,
+        D3D_FEATURE_LEVEL_9_1
     };
     UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef DEBUG
@@ -199,20 +206,41 @@ static HRESULT d3d11TestCreateDevice(ID3D11Device **ppDevice,
 #endif
     D3D_FEATURE_LEVEL FeatureLevel = D3D_FEATURE_LEVEL_9_1;
 
-    HTEST(D3D11CreateDevice(pAdapter,
-                            D3D_DRIVER_TYPE_HARDWARE,
-                            NULL,
-                            Flags,
-                            aFeatureLevels,
-                            RT_ELEMENTS(aFeatureLevels),
-                            D3D11_SDK_VERSION,
-                            ppDevice,
-                            &FeatureLevel,
-                            ppImmediateContext));
+    hr = D3D11CreateDevice(pAdapter,
+                           D3D_DRIVER_TYPE_HARDWARE,
+                           NULL,
+                           Flags,
+                           aFeatureLevels,
+                           RT_ELEMENTS(aFeatureLevels),
+                           D3D11_SDK_VERSION,
+                           ppDevice,
+                           &FeatureLevel,
+                           ppImmediateContext);
+    if (FAILED(hr) && RT_BOOL(Flags & D3D11_CREATE_DEVICE_DEBUG))
+    {
+        /* Device creation may fail because _DEBUG flag requires "D3D11 SDK Layers for Windows 10" ("Graphics Tools"):
+         *   Settings/System/Apps/Optional features/Add a feature/Graphics Tools
+         * Retry without the flag.
+         */
+        Flags &= ~D3D11_CREATE_DEVICE_DEBUG;
+        hr = D3D11CreateDevice(pAdapter,
+                               D3D_DRIVER_TYPE_HARDWARE,
+                               NULL,
+                               Flags,
+                               aFeatureLevels,
+                               RT_ELEMENTS(aFeatureLevels),
+                               D3D11_SDK_VERSION,
+                               ppDevice,
+                               &FeatureLevel,
+                               ppImmediateContext);
+    }
+    D3DAssertHR(hr);
 
     if (FeatureLevel != D3D_FEATURE_LEVEL_11_1)
     {
-        D3DTestShowError(hr, "FeatureLevel");
+        char s[128];
+        sprintf(s, "Feature level %x", FeatureLevel);
+        D3DTestShowError(hr, s);
     }
 
     IDXGIDevice *pDxgiDevice = 0;
@@ -271,6 +299,22 @@ HRESULT D3D11Test::initDirect3D11()
         HTEST(mRender.pDxgiResource->GetSharedHandle(&mSharedHandle));
 
         HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mRender.pDXGIKeyedMutex));
+
+        D3D11_TEXTURE2D_DESC depthStencilDesc;
+        depthStencilDesc.Width     = 800;
+        depthStencilDesc.Height    = 600;
+        depthStencilDesc.MipLevels = 1;
+        depthStencilDesc.ArraySize = 1;
+        depthStencilDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        depthStencilDesc.SampleDesc.Count   = 1;
+        depthStencilDesc.SampleDesc.Quality = 0;
+        depthStencilDesc.Usage          = D3D11_USAGE_DEFAULT;
+        depthStencilDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
+        depthStencilDesc.CPUAccessFlags = 0;
+        depthStencilDesc.MiscFlags      = 0;
+
+        HTEST(mRender.pDevice->CreateTexture2D(&depthStencilDesc, 0, &mRender.pDepthStencilBuffer));
+        HTEST(mRender.pDevice->CreateDepthStencilView(mRender.pDepthStencilBuffer, 0, &mRender.pDepthStencilView));
     }
 
     if (mRender.pImmediateContext)
@@ -464,7 +508,7 @@ int D3D11Test::Run()
                     /*
                      * Use the shared texture from the render device.
                      */
-                    mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, NULL);
+                    mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, mRender.pDepthStencilView);
                     mpRender->DoRender(this);
                 }
                 else
@@ -542,6 +586,11 @@ ID3D11DeviceContext *D3D11Test::ImmediateContext()
 ID3D11RenderTargetView *D3D11Test::RenderTargetView()
 {
     return mRender.pRenderTargetView;
+}
+
+ID3D11DepthStencilView *D3D11Test::DepthStencilView()
+{
+    return mRender.pDepthStencilView;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance,

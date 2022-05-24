@@ -269,6 +269,9 @@ HRESULT D3D11RenderTriangleShader::DoRender(D3D11DeviceProvider *pDP)
 
     FLOAT aColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     pImmediateContext->ClearRenderTargetView(pDP->RenderTargetView(), aColor);
+    if (pDP->DepthStencilView())
+        pImmediateContext->ClearDepthStencilView(pDP->DepthStencilView(),
+                                                 D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     pImmediateContext->IASetInputLayout(mpInputLayout);
     pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

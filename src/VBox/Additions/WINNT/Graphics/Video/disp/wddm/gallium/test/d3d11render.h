@@ -59,6 +59,7 @@ public:
     virtual ID3D11Device *Device() = 0;
     virtual ID3D11DeviceContext *ImmediateContext() = 0;
     virtual ID3D11RenderTargetView *RenderTargetView() = 0;
+    virtual ID3D11DepthStencilView *DepthStencilView() = 0;
 };
 
 class D3D11Render
