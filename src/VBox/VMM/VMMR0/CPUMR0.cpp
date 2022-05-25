@@ -519,6 +519,9 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST));
 
+    /* Notify the support driver prior to loading the guest-FPU register state. */
+    SUPR0FpuBegin(false /* unused */);
+
     if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
     {
         Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
@@ -564,6 +567,9 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
     Assert(ASMGetCR4() & X86_CR4_OSFXSR);
     if (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST))
     {
+        /* Notify the support driver prior to loading the host-FPU register state. */
+        SUPR0FpuEnd(false /* unused */);
+
         fSavedGuest = RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
         Assert(fSavedGuest == pVCpu->cpum.s.Guest.fUsedFpuGuest);
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE))
