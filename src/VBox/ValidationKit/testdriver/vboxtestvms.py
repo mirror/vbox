@@ -1977,7 +1977,7 @@ class TestVmManager(object):
                sKind = 'WindowsNT4', acCpusSup = range(1, 33)),
 
         # W2K
-        TestVm('tst-2ksp4',                 kfGrpStdSmoke,        sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
+        TestVm('tst-w2ksp4',                kfGrpStdSmoke,        sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
                sKind = 'Windows2000', acCpusSup = range(1, 33)),
 
         # XP
