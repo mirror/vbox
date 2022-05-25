@@ -7358,13 +7358,6 @@ static int dxDefineDepthStencilView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXC
     DXVIEW *pView = &pDXContext->pBackendDXContext->paDepthStencilView[depthStencilViewId];
     Assert(pView->u.pView == NULL);
 
-    if (   pSurface->pBackendSurface != NULL
-        && pDXContext->cid != pSurface->idAssociatedContext)
-    {
-        /* Supposed to be per context. Sometimes the guest reuses the texture in another context. */
-        vmsvga3dBackSurfaceDestroy(pThisCC, pSurface);
-    }
-
     if (pSurface->pBackendSurface == NULL)
     {
         /* Create the actual texture. */
