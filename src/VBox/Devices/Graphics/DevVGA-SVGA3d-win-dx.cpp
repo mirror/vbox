@@ -2617,8 +2617,7 @@ static int vmsvga3dBackSurfaceCreateBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTE
     RT_ZERO(bd);
     bd.ByteWidth = pMipLevel->cbSurface;
     bd.Usage     = D3D11_USAGE_DEFAULT;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER
-                 | D3D11_BIND_INDEX_BUFFER;
+    bd.BindFlags = dxBindFlags(pSurface->f.surfaceFlags);
 
     HRESULT hr = pDevice->pDevice->CreateBuffer(&bd, pInitialData, &pBackendSurface->u.pBuffer);
     if (SUCCEEDED(hr))
@@ -2662,7 +2661,7 @@ static int vmsvga3dBackSurfaceCreateSoBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCON
     RT_ZERO(bd);
     bd.ByteWidth           = pSurface->paMipmapLevels[0].cbSurface;
     bd.Usage               = D3D11_USAGE_DEFAULT;
-    bd.BindFlags           = dxBindFlags(pSurface->f.surfaceFlags); // D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_STREAM_OUTPUT;
+    bd.BindFlags           = dxBindFlags(pSurface->f.surfaceFlags);
     bd.CPUAccessFlags      = 0; /// @todo ? D3D11_CPU_ACCESS_READ;
     bd.MiscFlags           = 0;
     bd.StructureByteStride = 0;
