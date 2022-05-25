@@ -197,18 +197,20 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst);
 /**
  * Logs a verbose message to the appropriate system log.
  *
+ * @param   cVerbosity  Verbosity level when logging should happen.
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
  */
-DECLHIDDEN(void) autostartSvcLogVerboseV(const char *pszFormat, va_list va);
+DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFormat, va_list va);
 
 /**
  * Logs a verbose message to the appropriate system log.
  *
+ * @param   cVerbosity  Verbosity level when logging should happen.
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
  */
-DECLHIDDEN(void) autostartSvcLogVerbose(const char *pszFormat, ...);
+DECLHIDDEN(void) autostartSvcLogVerbose(unsigned cVerbosity, const char *pszFormat, ...);
 
 /**
  * Logs a warning message to the appropriate system log.

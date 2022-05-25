@@ -35,6 +35,8 @@
 
 using namespace com;
 
+extern unsigned g_cVerbosity;
+
 DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fShort)
 {
     switch (machineState)
@@ -116,42 +118,48 @@ DECLHIDDEN(RTEXITCODE) autostartSvcLogError(const char *pszFormat, ...)
     return RTEXITCODE_FAILURE;
 }
 
-DECLHIDDEN(void) autostartSvcLogVerboseV(const char *pszFormat, va_list va)
+DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFormat, va_list va)
 {
-    if (*pszFormat)
+    AssertPtrReturnVoid(pszFormat);
+
+    if (g_cVerbosity < cVerbosity)
+       return;
+
+    char *pszMsg = NULL;
+    if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
     {
-        char *pszMsg = NULL;
-        if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
-        {
-            autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_VERBOSE);
-            RTStrFree(pszMsg);
-        }
-        else
-            autostartSvcOsLogStr(pszFormat, AUTOSTARTLOGTYPE_VERBOSE);
+        RTPrintf("%s", pszMsg);
+        autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_VERBOSE);
+        RTStrFree(pszMsg);
     }
 }
 
-DECLHIDDEN(void) autostartSvcLogVerbose(const char *pszFormat, ...)
+DECLHIDDEN(void) autostartSvcLogVerbose(unsigned cVerbosity, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    autostartSvcLogVerboseV(pszFormat, va);
+    autostartSvcLogVerboseV(cVerbosity, pszFormat, va);
     va_end(va);
 }
 
 DECLHIDDEN(void) autostartSvcLogWarningV(const char *pszFormat, va_list va)
 {
-    if (*pszFormat)
+    AssertPtrReturnVoid(pszFormat);
+
+    char *pszMsg = NULL;
+    if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
     {
-        char *pszMsg = NULL;
-        if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
-        {
-            autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_WARNING);
-            RTStrFree(pszMsg);
-        }
-        else
-            autostartSvcOsLogStr(pszFormat, AUTOSTARTLOGTYPE_WARNING);
+        autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_WARNING);
+        RTStrFree(pszMsg);
     }
+}
+
+DECLHIDDEN(void) autostartSvcLogWarning(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    autostartSvcLogWarningV(pszFormat, va);
+    va_end(va);
 }
 
 DECLHIDDEN(void) autostartSvcLogInfo(const char *pszFormat, ...)
@@ -164,25 +172,15 @@ DECLHIDDEN(void) autostartSvcLogInfo(const char *pszFormat, ...)
 
 DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va)
 {
-    if (*pszFormat)
-    {
-        char *pszMsg = NULL;
-        if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
-        {
-            autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_INFO);
-            RTStrFree(pszMsg);
-        }
-        else
-            autostartSvcOsLogStr(pszFormat, AUTOSTARTLOGTYPE_INFO);
-    }
-}
+    AssertPtrReturnVoid(pszFormat);
 
-DECLHIDDEN(void) autostartSvcLogWarning(const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    autostartSvcLogWarningV(pszFormat, va);
-    va_end(va);
+    char *pszMsg = NULL;
+    if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
+    {
+        RTPrintf("%s", pszMsg);
+        autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_INFO);
+        RTStrFree(pszMsg);
+    }
 }
 
 DECLHIDDEN(RTEXITCODE) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue)
@@ -204,7 +202,7 @@ DECLHIDDEN(RTEXITCODE) autostartSvcLogTooManyArgsError(const char *pszAction, in
 
 DECLHIDDEN(RTEXITCODE) autostartSvcDisplayErrorV(const char *pszFormat, va_list va)
 {
-    RTStrmPrintf(g_pStdErr, "VBoxSupSvc error: ");
+    RTStrmPrintf(g_pStdErr, "Error: ");
     RTStrmPrintfV(g_pStdErr, pszFormat, va);
     Log(("autostartSvcDisplayErrorV: %s", pszFormat)); /** @todo format it! */
     return RTEXITCODE_FAILURE;
