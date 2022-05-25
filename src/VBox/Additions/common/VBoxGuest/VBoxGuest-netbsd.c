@@ -170,16 +170,16 @@ extern struct cfattach vboxguest_ca; /* CFATTACH_DECL */
  */
 static struct cdevsw g_VBoxGuestNetBSDChrDevSW =
 {
-    VBoxGuestNetBSDOpen,
-    noclose,
-    noread,
-    nowrite,
-    noioctl,
-    nostop,
-    notty,
-    nopoll,
-    nommap,
-    nokqfilter,
+    .d_open = VBoxGuestNetBSDOpen,
+    .d_close = noclose,
+    .d_read = noread,
+    .d_write = nowrite,
+    .d_ioctl = noioctl,
+    .d_stop = nostop,
+    .d_tty = notty,
+    .d_poll = nopoll,
+    .d_mmap = nommap,
+    .d_kqfilter = nokqfilter,
 };
 
 static const struct fileops vboxguest_fileops = {
