@@ -1269,7 +1269,7 @@ static int dxTrackRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
 }
 
 
-static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry)
+static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry, DXSHADER *pDXShader)
 {
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
@@ -1310,6 +1310,34 @@ static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
         pDst->StartComponent = iFirstBit > 0 ? iFirstBit - 1 : 0;
         pDst->ComponentCount = iFirstBit > 0 ? iLastBit - (iFirstBit - 1) : 0;
         pDst->OutputSlot     = pSrc->outputSlot;
+    }
+
+    for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
+    {
+        D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
+        SVGA3dStreamOutputDeclarationEntry const *decl = &paDecls[i];
+
+        /* Find the corresponding register and mask in the GS shader output. */
+        int idxFound = -1;
+        for (uint32_t iOutputEntry = 0; iOutputEntry < pDXShader->shaderInfo.cOutputSignature; ++iOutputEntry)
+        {
+            SVGA3dDXSignatureEntry const *pOutputEntry = &pDXShader->shaderInfo.aOutputSignature[iOutputEntry];
+            if (   pOutputEntry->registerIndex == decl->registerIndex
+                && (decl->registerMask & ~pOutputEntry->mask) == 0) /* SO decl mask is a subset of shader output mask. */
+            {
+                idxFound = iOutputEntry;
+                break;
+            }
+        }
+
+        if (idxFound >= 0)
+        {
+            DXShaderAttributeSemantic const *pOutputSemantic = &pDXShader->shaderInfo.aOutputSemantic[idxFound];
+            pDeclarationEntry->SemanticName = pOutputSemantic->pcszSemanticName;
+            pDeclarationEntry->SemanticIndex = pOutputSemantic->SemanticIndex;
+        }
+        else
+            AssertFailed();
     }
 
     if (pMob)
@@ -5505,36 +5533,8 @@ static void vboxDXMatchShaderSignatures(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
 
                 if (pDXStreamOutput->cDeclarationEntry == 0)
                 {
-                    int rc = dxDefineStreamOutput(pThisCC, pDXContext, soid, pStreamOutputEntry);
+                    int rc = dxDefineStreamOutput(pThisCC, pDXContext, soid, pStreamOutputEntry, pDXShader);
                     AssertRCReturnVoid(rc);
-                }
-
-                for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
-                {
-                    D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
-                    SVGA3dStreamOutputDeclarationEntry const *decl = &pStreamOutputEntry->decl[i];
-
-                    /* Find the corresponding register and mask in the GS shader output. */
-                    int idxFound = -1;
-                    for (uint32_t iOutputEntry = 0; iOutputEntry < pDXShader->shaderInfo.cOutputSignature; ++iOutputEntry)
-                    {
-                        SVGA3dDXSignatureEntry const *pOutputEntry = &pDXShader->shaderInfo.aOutputSignature[iOutputEntry];
-                        if (   pOutputEntry->registerIndex == decl->registerIndex
-                            && (decl->registerMask & ~pOutputEntry->mask) == 0) /* SO decl mask is a subset of shader output mask. */
-                        {
-                            idxFound = iOutputEntry;
-                            break;
-                        }
-                    }
-
-                    if (idxFound >= 0)
-                    {
-                        DXShaderAttributeSemantic const *pOutputSemantic = &pDXShader->shaderInfo.aOutputSemantic[idxFound];
-                        pDeclarationEntry->SemanticName = pOutputSemantic->pcszSemanticName;
-                        pDeclarationEntry->SemanticIndex = pOutputSemantic->SemanticIndex;
-                    }
-                    else
-                        AssertFailed();
                 }
             }
             break;
@@ -6310,14 +6310,22 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstanced(PVGASTATECC pThisCC,
 
 static DECLCALLBACK(int) vmsvga3dBackDXDrawAuto(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
-    Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
     dxSetupPipeline(pThisCC, pDXContext);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
+
+    pDevice->pImmediateContext->DrawAuto();
+
+    /* Note which surfaces are being drawn. */
+    dxTrackRenderTargets(pThisCC, pDXContext);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -8174,26 +8182,6 @@ static DECLCALLBACK(int) vmsvga3dBackScreenCopy(PVGASTATECC pThisCC, PVMSVGA3DDX
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackGrowOTable(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXGrowCOTable(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
 static DECLCALLBACK(int) vmsvga3dBackIntraSurfaceCopy(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
@@ -8893,8 +8881,6 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXSetCSConstantBufferOffset = vmsvga3dBackDXSetCSConstantBufferOffset;
                 p->pfnDXCondBindAllShader         = vmsvga3dBackDXCondBindAllShader;
                 p->pfnScreenCopy                  = vmsvga3dBackScreenCopy;
-                p->pfnGrowOTable                  = vmsvga3dBackGrowOTable;
-                p->pfnDXGrowCOTable               = vmsvga3dBackDXGrowCOTable;
                 p->pfnIntraSurfaceCopy            = vmsvga3dBackIntraSurfaceCopy;
                 p->pfnDXResolveCopy               = vmsvga3dBackDXResolveCopy;
                 p->pfnDXPredResolveCopy           = vmsvga3dBackDXPredResolveCopy;

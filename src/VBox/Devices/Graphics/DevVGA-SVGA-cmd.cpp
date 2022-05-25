@@ -419,7 +419,7 @@ vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
 
 #ifdef VBOX_WITH_VMSVGA3D
 
-static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, bool fWriteProtected, PVMSVGAGBO pGbo)
+static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fWriteProtected, PVMSVGAGBO pGbo)
 {
     ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
 
@@ -433,20 +433,21 @@ static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth,
      */
 
     /* Verify and normalize the ptDepth value. */
+    bool fGCPhys64; /* Whether the page table contains 64 bit page numbers. */
     if (RT_LIKELY(   ptDepth == SVGA3D_MOBFMT_PTDEPTH64_0
                   || ptDepth == SVGA3D_MOBFMT_PTDEPTH64_1
                   || ptDepth == SVGA3D_MOBFMT_PTDEPTH64_2))
-        ASSERT_GUEST_RETURN(fGCPhys64, VERR_INVALID_PARAMETER);
+        fGCPhys64 = true;
     else if (   ptDepth == SVGA3D_MOBFMT_PTDEPTH_0
              || ptDepth == SVGA3D_MOBFMT_PTDEPTH_1
              || ptDepth == SVGA3D_MOBFMT_PTDEPTH_2)
     {
-        ASSERT_GUEST_RETURN(!fGCPhys64, VERR_INVALID_PARAMETER);
+        fGCPhys64 = false;
         /* Shift ptDepth to the SVGA3D_MOBFMT_PTDEPTH64_x range. */
         ptDepth = (SVGAMobFormat)(ptDepth + SVGA3D_MOBFMT_PTDEPTH64_0 - SVGA3D_MOBFMT_PTDEPTH_0);
     }
     else if (ptDepth == SVGA3D_MOBFMT_RANGE)
-    { }
+        fGCPhys64 = false; /* Does not matter, there is no page table. */
     else
         ASSERT_GUEST_FAILED_RETURN(VERR_INVALID_PARAMETER);
 
@@ -762,6 +763,32 @@ static int vmsvgaR3GboBackingStoreReadFromGuest(PVMSVGAR3STATE pSvgaR3State, PVM
     return vmsvgaR3GboRead(pSvgaR3State, pGbo, 0, pGbo->pvHost, pGbo->cbTotal);
 }
 
+static int vmsvgaR3GboCopy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboDst, uint32_t offDst,
+                           PVMSVGAGBO pGboSrc, uint32_t offSrc, uint32_t cbCopy)
+{
+    uint32_t const cbTmpBuf = GUEST_PAGE_SIZE;
+    void *pvTmpBuf = RTMemTmpAlloc(cbTmpBuf);
+    AssertPtrReturn(pvTmpBuf, VERR_NO_MEMORY);
+
+    int  rc = VINF_SUCCESS;
+    while (cbCopy > 0)
+    {
+        uint32_t const cbToCopy = RT_MIN(cbTmpBuf, cbCopy);
+
+        rc = vmsvgaR3GboRead(pSvgaR3State, pGboSrc, offSrc, pvTmpBuf, cbToCopy);
+        AssertRCBreak(rc);
+
+        rc = vmsvgaR3GboWrite(pSvgaR3State, pGboDst, offDst, pvTmpBuf, cbToCopy);
+        AssertRCBreak(rc);
+
+        offSrc += cbToCopy;
+        offDst += cbToCopy;
+        cbCopy -= cbToCopy;
+    }
+
+    RTMemTmpFree(pvTmpBuf);
+    return rc;
+}
 
 
 /*
@@ -769,6 +796,40 @@ static int vmsvgaR3GboBackingStoreReadFromGuest(PVMSVGAR3STATE pSvgaR3State, PVM
  * Object Tables.
  *
  */
+
+static int vmsvgaR3OTableSetOrGrow(PVMSVGAR3STATE pSvgaR3State, SVGAOTableType type, PPN64 baseAddress,
+                                   uint32_t sizeInBytes, uint32 validSizeInBytes, SVGAMobFormat ptDepth, bool fGrow)
+{
+    ASSERT_GUEST_RETURN(type <= RT_ELEMENTS(pSvgaR3State->aGboOTables), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(sizeInBytes >= validSizeInBytes, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    ASSERT_GUEST_RETURN(pSvgaR3State->aGboOTables[type].cbTotal >= validSizeInBytes, VERR_INVALID_PARAMETER);
+
+    if (sizeInBytes > 0)
+    {
+        /* Create a new guest backed object for the object table. */
+        VMSVGAGBO gbo;
+        int rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, /* fWriteProtected = */ true, &gbo);
+        AssertRCReturn(rc, rc);
+
+        if (fGrow && validSizeInBytes)
+        {
+            /* Copy data from old gbo to the new one. */
+            rc = vmsvgaR3GboCopy(pSvgaR3State, &gbo, 0, &pSvgaR3State->aGboOTables[type], 0, validSizeInBytes);
+            AssertRCReturnStmt(rc, vmsvgaR3GboDestroy(pSvgaR3State, &gbo), rc);
+        }
+
+        vmsvgaR3GboDestroy(pSvgaR3State, &pSvgaR3State->aGboOTables[type]);
+        pSvgaR3State->aGboOTables[type] = gbo;
+
+    }
+    else
+        vmsvgaR3GboDestroy(pSvgaR3State, &pSvgaR3State->aGboOTables[type]);
+
+    return VINF_SUCCESS;
+}
+
 
 static int vmsvgaR3OTableVerifyIndex(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboOTable,
                                      uint32_t idx, uint32_t cbEntry)
@@ -829,7 +890,7 @@ int vmsvgaR3OTableReadSurface(PVMSVGAR3STATE pSvgaR3State, uint32_t sid, SVGAOTa
 
 static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
                              SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, SVGAMobId mobid,
-                             bool fGCPhys64, PVMSVGAMOB pMob)
+                             PVMSVGAMOB pMob)
 {
     RT_ZERO(*pMob);
 
@@ -843,10 +904,21 @@ static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
     if (RT_SUCCESS(rc))
     {
         /* Create the corresponding GBO. */
-        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, fGCPhys64, /* fWriteProtected = */ false, &pMob->Gbo);
+        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, /* fWriteProtected = */ false, &pMob->Gbo);
         if (RT_SUCCESS(rc))
         {
-            /* Add to the tree of known GBOs and the LRU list. */
+            /* If a mob with this id already exists, then delete it. */
+            PVMSVGAMOB pOldMob = (PVMSVGAMOB)RTAvlU32Remove(&pSvgaR3State->MOBTree, mobid);
+            if (pOldMob)
+            {
+                /* This should not happen. */
+                ASSERT_GUEST_FAILED();
+                RTListNodeRemove(&pOldMob->nodeLRU);
+                vmsvgaR3GboDestroy(pSvgaR3State, &pOldMob->Gbo);
+                RTMemFree(pOldMob);
+            }
+
+            /* Add to the tree of known MOBs and the LRU list. */
             pMob->Core.Key = mobid;
             if (RTAvlU32Insert(&pSvgaR3State->MOBTree, &pMob->Core))
             {
@@ -854,6 +926,7 @@ static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
                 return VINF_SUCCESS;
             }
 
+            AssertFailedStmt(rc = VERR_INVALID_STATE);
             vmsvgaR3GboDestroy(pSvgaR3State, &pMob->Gbo);
         }
     }
@@ -1211,6 +1284,15 @@ static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface
 }
 
 
+/* SVGA_3D_CMD_SET_OTABLE_BASE 1091 */
+static void vmsvga3dCmdSetOTableBase(PVGASTATECC pThisCC, SVGA3dCmdSetOTableBase const *pCmd)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    vmsvgaR3OTableSetOrGrow(pSvgaR3State, pCmd->type, pCmd->baseAddress,
+                            pCmd->sizeInBytes, pCmd->validSizeInBytes, pCmd->ptDepth, /*fGrow*/ false);
+}
+
+
 /* SVGA_3D_CMD_DEFINE_GB_MOB 1093 */
 static void vmsvga3dCmdDefineGBMob(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob const *pCmd)
 {
@@ -1224,7 +1306,7 @@ static void vmsvga3dCmdDefineGBMob(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob con
     PVMSVGAMOB pMob = (PVMSVGAMOB)RTMemAllocZ(sizeof(*pMob));
     AssertPtrReturnVoid(pMob);
 
-    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, /*fGCPhys64=*/ false, pMob);
+    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, pMob);
     if (RT_SUCCESS(rc))
     {
         return;
@@ -1692,29 +1774,8 @@ static void vmsvga3dCmdInvalidateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdInvalid
 static void vmsvga3dCmdSetOTableBase64(PVGASTATECC pThisCC, SVGA3dCmdSetOTableBase64 const *pCmd)
 {
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-
-    /*
-     * Create a GBO for the table.
-     */
-    PVMSVGAGBO pGbo;
-    if (pCmd->type <= RT_ELEMENTS(pSvgaR3State->aGboOTables))
-    {
-        RT_UNTRUSTED_VALIDATED_FENCE();
-        pGbo = &pSvgaR3State->aGboOTables[pCmd->type];
-    }
-    else
-    {
-        ASSERT_GUEST_FAILED();
-        pGbo = NULL;
-    }
-
-    if (pGbo)
-    {
-        /* Recreate. */
-        vmsvgaR3GboDestroy(pSvgaR3State, pGbo);
-        int rc = vmsvgaR3GboCreate(pSvgaR3State, pCmd->ptDepth, pCmd->baseAddress, pCmd->sizeInBytes, /*fGCPhys64=*/ true, /* fWriteProtected = */ true, pGbo);
-        AssertRC(rc);
-    }
+    vmsvgaR3OTableSetOrGrow(pSvgaR3State, pCmd->type, pCmd->baseAddress,
+                            pCmd->sizeInBytes, pCmd->validSizeInBytes, pCmd->ptDepth, /*fGrow*/ false);
 }
 
 
@@ -1983,7 +2044,7 @@ static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64
     PVMSVGAMOB pMob = (PVMSVGAMOB)RTMemAllocZ(sizeof(*pMob));
     AssertPtrReturnVoid(pMob);
 
-    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, /*fGCPhys64=*/ true, pMob);
+    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, pMob);
     if (RT_SUCCESS(rc))
     {
         return;
@@ -2307,9 +2368,8 @@ static int vmsvga3dCmdDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXC
 static int vmsvga3dCmdDXDrawAuto(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawAuto const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(pCmd, cbCmd);
     return vmsvga3dDXDrawAuto(pThisCC, idDXContext);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
@@ -3582,28 +3642,28 @@ static int vmsvga3dCmdScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
 
 
 /* SVGA_3D_CMD_GROW_OTABLE 1236 */
-static int vmsvga3dCmdGrowOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdGrowOTable const *pCmd, uint32_t cbCmd)
+static int vmsvga3dCmdGrowOTable(PVGASTATECC pThisCC, SVGA3dCmdGrowOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dGrowOTable(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvgaR3OTableSetOrGrow(pSvgaR3State, pCmd->type, pCmd->baseAddress,
+                                   pCmd->sizeInBytes, pCmd->validSizeInBytes, pCmd->ptDepth, /*fGrow*/ true);
 #else
-    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    RT_NOREF(pThisCC, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
 #endif
 }
 
 
 /* SVGA_3D_CMD_DX_GROW_COTABLE 1237 */
-static int vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGrowCOTable const *pCmd, uint32_t cbCmd)
+static int vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXGrowCOTable(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXGrowCOTable(pThisCC, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -4697,7 +4757,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdSetOTableBase *pCmd = (SVGA3dCmdSetOTableBase *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdSetOTableBase(pThisCC, pCmd);
         break;
     }
 
@@ -5832,7 +5892,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdGrowOTable *pCmd = (SVGA3dCmdGrowOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        rcParse = vmsvga3dCmdGrowOTable(pThisCC, idDXContext, pCmd, cbCmd);
+        rcParse = vmsvga3dCmdGrowOTable(pThisCC, pCmd, cbCmd);
         break;
     }
 
@@ -5840,7 +5900,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdDXGrowCOTable *pCmd = (SVGA3dCmdDXGrowCOTable *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        rcParse = vmsvga3dCmdDXGrowCOTable(pThisCC, idDXContext, pCmd, cbCmd);
+        rcParse = vmsvga3dCmdDXGrowCOTable(pThisCC, pCmd, cbCmd);
         break;
     }
 

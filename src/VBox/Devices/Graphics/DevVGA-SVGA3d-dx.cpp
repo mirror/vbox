@@ -2198,7 +2198,6 @@ int vmsvga3dDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dC
 
     SVGA3dStreamOutputId const soid = pCmd->soid;
 
-    ASSERT_GUEST_RETURN(pDXContext->cot.paStreamOutput, VERR_INVALID_STATE);
     ASSERT_GUEST_RETURN(   soid == SVGA_ID_INVALID
                         || soid < pDXContext->cot.cStreamOutput, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
@@ -2210,28 +2209,19 @@ int vmsvga3dDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dC
 }
 
 
-int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, PVMSVGAMOB pMob)
+static int dxSetOrGrowCOTable(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGAMOB pMob,
+                              SVGACOTableType type, uint32_t validSizeInBytes, bool fGrow)
 {
-    int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXSetCOTable, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
+    int rc = VINF_SUCCESS;
 
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
-    AssertRCReturn(rc, rc);
+    ASSERT_GUEST_RETURN(type < RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    ASSERT_GUEST_RETURN(pCmd->type < RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_PARAMETER);
-    RT_UNTRUSTED_VALIDATED_FENCE();
-
-    uint32_t validSizeInBytes;
     uint32_t cbCOT;
     if (pMob)
     {
-        /* Bind a mob to the COTable. */
-        validSizeInBytes = pCmd->validSizeInBytes;
+        /* Bind a new mob to the COTable. */
         cbCOT = vmsvgaR3MobSize(pMob);
 
         ASSERT_GUEST_RETURN(validSizeInBytes <= cbCOT, VERR_INVALID_PARAMETER);
@@ -2245,7 +2235,7 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
         /* Unbind. */
         validSizeInBytes = 0;
         cbCOT = 0;
-        vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pDXContext->aCOTMobs[pCmd->type]);
+        vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pDXContext->aCOTMobs[type]);
     }
 
     uint32_t cEntries = 0;
@@ -2268,16 +2258,32 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
             sizeof(SVGACOTableDXUAViewEntry),
         };
 
-        cEntries = cbCOT / s_acbEntry[pCmd->type];
-        cValidEntries = validSizeInBytes / s_acbEntry[pCmd->type];
+        cEntries = cbCOT / s_acbEntry[type];
+        cValidEntries = validSizeInBytes / s_acbEntry[type];
     }
 
     if (RT_SUCCESS(rc))
     {
-        pDXContext->aCOTMobs[pCmd->type] = pMob;
+        if (   fGrow
+            && pDXContext->aCOTMobs[type]
+            && cValidEntries)
+        {
+            /* Copy entries from the current mob to the new mob. */
+            void const *pvSrc = vmsvgaR3MobBackingStorePtr(pDXContext->aCOTMobs[type], 0);
+            void *pvDst = vmsvgaR3MobBackingStorePtr(pMob, 0);
+            if (pvSrc && pvDst)
+                memcpy(pvDst, pvSrc, validSizeInBytes);
+            else
+                AssertFailedStmt(rc = VERR_INVALID_STATE);
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDXContext->aCOTMobs[type] = pMob;
 
         void *pvCOT = vmsvgaR3MobBackingStorePtr(pMob, 0);
-        switch (pCmd->type)
+        switch (type)
         {
             case SVGA_COTABLE_RTVIEW:
                 pDXContext->cot.paRTView          = (SVGACOTableDXRTViewEntry *)pvCOT;
@@ -2335,9 +2341,26 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
 
     /* Notify the backend. */
     if (RT_SUCCESS(rc))
-        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, pCmd->type, cValidEntries);
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, type, cValidEntries);
 
     return rc;
+}
+
+
+int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, PVMSVGAMOB pMob)
+{
+    int rc;
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXSetCOTable, VERR_INVALID_STATE);
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    AssertReturn(p3dState, VERR_INVALID_STATE);
+
+    PVMSVGA3DDXCONTEXT pDXContext;
+    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
+    AssertRCReturn(rc, rc);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    return dxSetOrGrowCOTable(pThisCC, pDXContext, pMob, pCmd->type, pCmd->validSizeInBytes, false);
 }
 
 
@@ -2649,37 +2672,20 @@ int vmsvga3dScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dGrowOTable(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnGrowOTable, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXSetCOTable, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
     PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
+    rc = vmsvga3dDXContextFromCid(p3dState, pCmd->cid, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnGrowOTable(pThisCC, pDXContext);
-    return rc;
-}
-
-
-int vmsvga3dDXGrowCOTable(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXGrowCOTable, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXGrowCOTable(pThisCC, pDXContext);
-    return rc;
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
+    return dxSetOrGrowCOTable(pThisCC, pDXContext, pMob, pCmd->type, pCmd->validSizeInBytes, true);
 }
 
 
