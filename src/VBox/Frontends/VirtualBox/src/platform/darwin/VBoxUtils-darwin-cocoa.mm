@@ -131,7 +131,7 @@ void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
     [pWindow setShowsToolbarButton:fEnabled];
 }
 
-void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage)
+void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage, double dDpr)
 {
     /* Get the parent view of the close button. */
     NSView *wv = [[pWindow standardWindowButton:NSWindowCloseButton] superview];
@@ -141,9 +141,9 @@ void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage)
         NSSize s = [pImage size];
         NSSize s1 = [wv frame].size;
         /* Correctly position the label. */
-        NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(s1.width - s.width,
-                                                                        s1.height - s.height - 1,
-                                                                        s.width, s.height)];
+        NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(s1.width - s.width / dDpr,
+                                                                        s1.height - s.height / dDpr - 1,
+                                                                        s.width / dDpr, s.height / dDpr)];
         /* Configure the NSImageView for auto moving. */
         [iv setImage:pImage];
         [iv setAutoresizesSubviews:true];

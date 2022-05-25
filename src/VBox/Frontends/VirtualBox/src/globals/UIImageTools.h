@@ -45,7 +45,7 @@ namespace UIImageTools
     SHARED_LIBRARY_STUFF void blurImageVertical(const QImage &source, QImage &destination, int iRadius);
 
     /** Applies BET-label of passed @a size. */
-    SHARED_LIBRARY_STUFF QPixmap betaLabel(const QSize &size = QSize(80, 16));
+    SHARED_LIBRARY_STUFF QPixmap betaLabel(const QSize &size = QSize(80, 16), QWidget *pHint = 0);
 }
 using namespace UIImageTools /* if header included */;
 

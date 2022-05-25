@@ -21,6 +21,7 @@
 #include <QPainterPathStroker>
 
 /* GUI include */
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIImageTools.h"
 
 /* External includes: */
@@ -200,8 +201,13 @@ void UIImageTools::blurImageVertical(const QImage &source, QImage &destination, 
     }
 }
 
-static QImage betaLabelImage(const QSize &size)
+static QImage betaLabelImage(QSize size, QWidget *pHint)
 {
+    /* Calculate device pixel ratio: */
+    const double dDpr = pHint ? gpDesktop->devicePixelRatio(pHint) : gpDesktop->devicePixelRatio(-1);
+    if (dDpr > 1.0)
+        size *= dDpr;
+
     /* Beta label: */
     QColor bgc(246, 179, 0);
     QImage i(size, QImage::Format_ARGB32);
@@ -223,6 +229,8 @@ static QImage betaLabelImage(const QSize &size)
 
     /* The text: */
     QFont f = p.font();
+    if (dDpr > 1.0)
+        f.setPointSize(f.pointSize() * dDpr);
     f.setBold(true);
     QPainterPath tp;
     tp.addText(0, 0, f, "BETA");
@@ -253,11 +261,13 @@ static QImage betaLabelImage(const QSize &size)
     lg.setColorAt(1, QColor(Qt::transparent));
     p1.fillRect(0, 0, size.width(), size.height(), lg);
     p1.end();
+    if (dDpr > 1.0)
+        i1.setDevicePixelRatio(dDpr);
 
     return i1;
 }
 
-QPixmap UIImageTools::betaLabel(const QSize &size /* = QSize(80, 16) */)
+QPixmap UIImageTools::betaLabel(const QSize &size /* = QSize(80, 16) */, QWidget *pHint /* = 0 */)
 {
-    return QPixmap::fromImage(betaLabelImage(size));
+    return QPixmap::fromImage(betaLabelImage(size, pHint));
 }

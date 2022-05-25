@@ -74,7 +74,7 @@ void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled)
 
 void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap)
 {
-    ::darwinLabelWindow(::darwinToNativeWindow(pWidget), ::darwinToNSImageRef(pPixmap));
+    ::darwinLabelWindow(::darwinToNativeWindow(pWidget), ::darwinToNSImageRef(pPixmap), pPixmap->devicePixelRatio());
 }
 
 void darwinSetHidesAllTitleButtons(QWidget *pWidget)
