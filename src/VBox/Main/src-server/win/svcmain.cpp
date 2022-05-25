@@ -56,7 +56,7 @@
 class CExeModule : public ATL::CComModule
 {
 public:
-    LONG Unlock();
+    LONG Unlock() throw();
     DWORD dwThreadID;
     HANDLE hEventShutdown;
     void MonitorShutdown();
@@ -103,7 +103,7 @@ static DWORD WINAPI MonitorProc(void *pv) RT_NOTHROW_DEF
     return 0;
 }
 
-LONG CExeModule::Unlock()
+LONG CExeModule::Unlock() throw()
 {
     LONG cLocks = ATL::CComModule::Unlock();
     if (isIdleLockCount(cLocks))
