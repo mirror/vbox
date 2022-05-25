@@ -50,7 +50,8 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-extern decltype(NtQueryFullAttributesFile) *g_pfnNtQueryFullAttributesFile; /* init-win.cpp */
+typedef NTSTATUS (NTAPI *PFNNTQUERYFULLATTRIBUTESFILE)(struct _OBJECT_ATTRIBUTES *, struct _FILE_NETWORK_OPEN_INFORMATION *);
+extern PFNNTQUERYFULLATTRIBUTESFILE g_pfnNtQueryFullAttributesFile; /* init-win.cpp */
 
 
 /* ASSUMES FileID comes after ShortName and the structs are identical up to that point. */
