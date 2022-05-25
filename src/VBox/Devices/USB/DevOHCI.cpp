@@ -5547,7 +5547,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ohciMmioRead(PPDMDEVINS pDevIns, void *pvUser,
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(VBOXSTRICTRC) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     POHCI pThis = PDMDEVINS_2_DATA(pDevIns, POHCI);
     RT_NOREF(pvUser);

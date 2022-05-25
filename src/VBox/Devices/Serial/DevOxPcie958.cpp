@@ -286,7 +286,7 @@ static VBOXSTRICTRC ox958UartRegWrite(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX95
  * @param   iLUN        The UART index.
  * @param   iLvl        IRQ level requested.
  */
-PDMBOTHCBDECL(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
+static DECLCALLBACK(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
 {
     RT_NOREF(pUart);
     PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);

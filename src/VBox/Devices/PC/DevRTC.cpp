@@ -350,7 +350,7 @@ static void rtc_set_time(PRTCSTATE pThis)
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
     Assert(offPort < 4);
@@ -416,7 +416,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     Assert(offPort < 4);

@@ -103,7 +103,7 @@ typedef CTX_SUFF(PDEVSERIAL) PDEVSERIALCC;
 
 
 
-PDMBOTHCBDECL(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
+static DECLCALLBACK(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
 {
     RT_NOREF(pUart, iLUN);
     PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
