@@ -19,8 +19,22 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/buildconfig.h>
+#include <iprt/dir.h>
+#include <iprt/env.h>
+#include <iprt/errcore.h>
+#include <iprt/getopt.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/message.h>
+#include <iprt/process.h>
+#include <iprt/path.h>
+#include <iprt/semaphore.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+
 #include <iprt/win/windows.h>
-#include <tchar.h>
 
 #define SECURITY_WIN32
 #include <Security.h>
@@ -37,20 +51,6 @@
 
 #include <VBox/log.h>
 #include <VBox/version.h>
-
-#include <iprt/dir.h>
-#include <iprt/env.h>
-#include <iprt/errcore.h>
-#include <iprt/getopt.h>
-#include <iprt/initterm.h>
-#include <iprt/mem.h>
-#include <iprt/message.h>
-#include <iprt/process.h>
-#include <iprt/path.h>
-#include <iprt/semaphore.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <iprt/thread.h>
 
 #include "VBoxAutostart.h"
 #include "PasswordInput.h"
@@ -1186,11 +1186,10 @@ static RTEXITCODE autostartSvcWinShowVersion(int argc, char **argv)
  */
 static RTEXITCODE autostartSvcWinShowHelp(void)
 {
-    RTPrintf("VirtualBox Autostart Service Version %s\n"
-             "(C) 2012 Oracle Corporation\n"
-             "All rights reserved.\n"
-             "\n",
-             VBOX_VERSION_STRING);
+    RTPrintf(VBOX_PRODUCT " VirtualBox Autostart Service Version " VBOX_VERSION_STRING " - r%s\n"
+             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n\n", RTBldCfgRevisionStr());
+
     RTPrintf("Usage:\n"
              "\n"
              "VBoxAutostartSvc\n"
