@@ -1465,7 +1465,9 @@ float float16ToFloat(uint16_t f16)
 
 static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
 {
-    if (pMap->cbBlock != 4 && pMap->cbBlock != 1 && pMap->format != SVGA3D_R16G16B16A16_FLOAT)
+    if (   pMap->cbBlock != 4 && pMap->cbBlock != 1
+        && pMap->format != SVGA3D_R16G16B16A16_FLOAT
+        && pMap->format != SVGA3D_R32G32B32A32_FLOAT)
         return VERR_NOT_SUPPORTED;
 
     int const w = pMap->cbRow / pMap->cbBlock;
@@ -1497,7 +1499,45 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
         fwrite(&coreHdr, 1, sizeof(coreHdr), f);
     }
 
-    if (pMap->cbBlock == 4)
+    if (pMap->format == SVGA3D_R16G16B16A16_FLOAT)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (int32_t y = 0; y < h; ++y)
+        {
+            for (int32_t x = 0; x < w; ++x)
+            {
+                uint16_t const *pu16Pixel = (uint16_t *)(s + x * 8);
+                uint8_t r = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[0]));
+                uint8_t g = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[1]));
+                uint8_t b = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[2]));
+                uint8_t a = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[3]));
+                uint32_t u32Pixel = b + (g << 8) + (r << 16) + (a << 24);
+                fwrite(&u32Pixel, 1, 4, f);
+            }
+
+            s += pMap->cbRowPitch;
+        }
+    }
+    else if (pMap->format == SVGA3D_R32G32B32A32_FLOAT)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (int32_t y = 0; y < h; ++y)
+        {
+            for (int32_t x = 0; x < w; ++x)
+            {
+                float const *pPixel = (float *)(s + x * 8);
+                uint8_t r = (uint8_t)(255.0 * pPixel[0]);
+                uint8_t g = (uint8_t)(255.0 * pPixel[1]);
+                uint8_t b = (uint8_t)(255.0 * pPixel[2]);
+                uint8_t a = (uint8_t)(255.0 * pPixel[3]);
+                uint32_t u32Pixel = b + (g << 8) + (r << 16) + (a << 24);
+                fwrite(&u32Pixel, 1, 4, f);
+            }
+
+            s += pMap->cbRowPitch;
+        }
+    }
+    else if (pMap->cbBlock == 4)
     {
         const uint8_t *s = (uint8_t *)pMap->pvData;
         for (uint32_t iRow = 0; iRow < pMap->cRows; ++iRow)
@@ -1521,25 +1561,6 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
             s += pMap->cbRowPitch;
         }
     }
-    else if (pMap->format == SVGA3D_R16G16B16A16_FLOAT)
-    {
-        const uint8_t *s = (uint8_t *)pMap->pvData;
-        for (int32_t y = 0; y < h; ++y)
-        {
-            for (int32_t x = 0; x < w; ++x)
-            {
-                uint16_t const *pu16Pixel = (uint16_t *)(s + x * 8);
-                uint8_t r = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[0]));
-                uint8_t g = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[1]));
-                uint8_t b = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[2]));
-                uint8_t a = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[3]));
-                uint32_t u32Pixel = b + (g << 8) + (r << 16) + (a << 24);
-                fwrite(&u32Pixel, 1, 4, f);
-            }
-
-            s += pMap->cbRowPitch;
-        }
-    }
 
     fclose(f);
 
@@ -1552,7 +1573,7 @@ void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *ps
     static int idxBitmap = 0;
     char *pszFilename = RTStrAPrintf2("bmp\\%s%d.bmp", pszPrefix, idxBitmap++);
     int rc = vmsvga3dBmpWrite(pszFilename, pMap);
-    Log(("WriteBmpFile %s %Rrc\n", pszFilename, rc)); RT_NOREF(rc);
+    Log(("WriteBmpFile %s format %d %Rrc\n", pszFilename, pMap->format, rc)); RT_NOREF(rc);
     RTStrFree(pszFilename);
 }
 
