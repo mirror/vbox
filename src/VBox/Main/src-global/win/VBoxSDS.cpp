@@ -691,7 +691,7 @@ protected:
         }
     }
 
-    virtual HRESULT preMessageLoop(int nShowCmd)
+    virtual HRESULT preMessageLoop(int nShowCmd) throw()
     {
         Assert(m_fInitialized);
         LogFunc(("Enter\n"));
