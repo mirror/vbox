@@ -937,8 +937,8 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
  *
  * @remarks The @a uUser argument is the index of the PGMPOOLPAGE.
  */
-DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                                  RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
+DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                    RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorRZ, a);
     PPGMPOOL const      pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1244,7 +1244,7 @@ flushPage:
  * @remarks Only uses the VINF_PGM_HANDLER_DO_DEFAULT status.
  * @note    The @a uUser argument is the index of the PGMPOOLPAGE.
  */
-PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+DECLCALLBACK(VBOXSTRICTRC)
 pgmPoolAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                      PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
