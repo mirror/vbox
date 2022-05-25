@@ -44,3 +44,10 @@ EXPORTS
 
     RTStrMemFind32
 
+    ; Export aliases for noexcept affected methods.
+    ?setConsumerCallback@RTCRestBinaryResponse@@QAEXP6AHPAV1@PBXII_K2@_EPAX@Z=?setConsumerCallback@RTCRestBinaryResponse@@QAEXP6AHPAV1@PBXII_K2@ZPAX@Z      ; before-noexcept ; (public: void __thiscall RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned int,unsigned int,unsigned __int64,unsigned __int64),void *))
+    ?setConsumerCallback@RTCRestBinaryResponse@@QAEXP6AHPAV1@PBXII_K2@ZPAX@Z=?setConsumerCallback@RTCRestBinaryResponse@@QAEXP6AHPAV1@PBXII_K2@_EPAX@Z ; after-noexcept  ; (public: void __thiscall RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned int,unsigned int,unsigned __int64,unsigned __int64),void *))
+    ?setProducerCallback@RTCRestBinaryParameter@@QAEXP6AHPAV1@PAXI_KPAI@_E12@Z=?setProducerCallback@RTCRestBinaryParameter@@QAEXP6AHPAV1@PAXI_KPAI@Z12@Z   ; before-noexcept; (public: void __thiscall RTCRestBinaryParameter::setProducerCallback(int (__cdecl*)(class RTCRestBinaryParameter *,void *,unsigned int,unsigned __int64,unsigned int *),void *,unsigned __int64))
+    ?setProducerCallback@RTCRestBinaryParameter@@QAEXP6AHPAV1@PAXI_KPAI@Z12@Z=?setProducerCallback@RTCRestBinaryParameter@@QAEXP6AHPAV1@PAXI_KPAI@_E12@Z   ; after-noexcept; (public: void __thiscall RTCRestBinaryParameter::setProducerCallback(int (__cdecl*)(class RTCRestBinaryParameter *,void *,unsigned int,unsigned __int64,unsigned int *),void *,unsigned __int64))
+
+

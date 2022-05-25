@@ -30,6 +30,11 @@
 /not-some-systems/d
 
 #
+# Check the external side of function aliases.
+#
+s/=[^ ;]*//
+
+#
 # Remove comments and space. Skip empty lines.
 #
 s/;.*$//g
