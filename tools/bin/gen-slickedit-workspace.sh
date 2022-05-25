@@ -1138,6 +1138,8 @@ my_generate_project "DIS"           "src/VBox/Disassembler"                 --be
 
 # src/VBox/Frontends
 if test -z "$MY_OPT_MINIMAL"; then
+    my_generate_project "FE-VBoxAutostart"   "src/VBox/Frontends/VBoxAutostart"   --begin-incs "include" "src/VBox/Frontends/VBoxAutostart"       --end-includes "src/VBox/Frontends/VBoxAutostart"
+    my_generate_project "FE-VBoxBugReport"   "src/VBox/Frontends/VBoxBugReport"   --begin-incs "include" "src/VBox/Frontends/VBoxBugReport"       --end-includes "src/VBox/Frontends/VBoxBugReport"
     my_generate_project "FE-VBoxBalloonCtrl" "src/VBox/Frontends/VBoxBalloonCtrl" --begin-incs "include" "src/VBox/Frontends/VBoxBalloonCtrl"     --end-includes "src/VBox/Frontends/VBoxBalloonCtrl"
 fi
 my_generate_project "FE-VBoxManage"      "src/VBox/Frontends/VBoxManage"      --begin-incs "include" "src/VBox/Frontends/VBoxManage"          --end-includes "src/VBox/Frontends/VBoxManage"
