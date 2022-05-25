@@ -1467,7 +1467,7 @@ int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, 
     vmsvga3dSurfaceMapInit(pMap, enmMapType, &clipBox, pSurface,
                            pMipLevel->pSurfaceData, pMipLevel->cbSurfacePitch, pMipLevel->cbSurfacePlane);
 
-    LogFunc(("SysMem: pvData %p\n", pMap->pvData));
+    LogFunc(("SysMem: sid = %u, pvData %p\n", pImage->sid, pMap->pvData));
     return VINF_SUCCESS;
 }
 
