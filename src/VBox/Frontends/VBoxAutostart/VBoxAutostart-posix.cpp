@@ -63,7 +63,6 @@ using namespace com;
 #endif
 
 ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
-bool                      g_fVerbose    = false;
 ComPtr<IVirtualBox>       g_pVirtualBox = NULL;
 ComPtr<ISession>          g_pSession    = NULL;
 
@@ -71,6 +70,9 @@ ComPtr<ISession>          g_pSession    = NULL;
 static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 10 files. */
 static uint32_t      g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
 static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
+
+/** Verbosity level. */
+unsigned             g_cVerbosity = 0;
 
 /** Run in background. */
 static bool          g_fDaemonize = false;
@@ -239,7 +241,7 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
 DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
 {
     if (   enmLogType == AUTOSTARTLOGTYPE_VERBOSE
-        && !g_fVerbose)
+        && !g_cVerbosity)
         return;
 
     LogRel(("%s", pszMsg));
@@ -358,7 +360,7 @@ int main(int argc, char *argv[])
                 return 0;
 
             case 'v':
-                g_fVerbose = true;
+                g_cVerbosity++;
                 break;
 
 #ifdef VBOXAUTOSTART_DAEMONIZE
