@@ -554,3 +554,16 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
     return 0;
 }
 
+
+SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+    return false;
+}
+
+
+SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+}
+

@@ -275,6 +275,8 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    2,  SUPR0ContFree),
     SUPEXP_STK_BACK(    2,  SUPR0ChangeCR4),
     SUPEXP_STK_BACK(    1,  SUPR0EnableVTx),
+    SUPEXP_STK_OKAY(    1,  SUPR0FpuBegin),
+    SUPEXP_STK_OKAY(    1,  SUPR0FpuEnd),
     SUPEXP_STK_BACK(    0,  SUPR0SuspendVTxOnCpu),
     SUPEXP_STK_BACK(    1,  SUPR0ResumeVTxOnCpu),
     SUPEXP_STK_OKAY(    1,  SUPR0GetCurrentGdtRw),

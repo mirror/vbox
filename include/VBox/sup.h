@@ -2361,6 +2361,26 @@ RT_IPRT_FORMAT_ATTR(1, 2) SUPR0Printf(const char *pszFormat, ...)
  */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 
+/**
+ * Notification from R0 VMM prior to loading the guest-FPU register state.
+ *
+ * @returns Whether the host-FPU register state has been saved by the host kernel.
+ * @param   fCtxHook    Whether thread-context hooks are enabled.
+ *
+ * @remarks Called with preemption disabled.
+ */
+SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook);
+
+/**
+ * Notification from R0 VMM prior to saving the guest-FPU register state (and
+ * potentially restoring the host-FPU register state) in ring-0.
+ *
+ * @param   fCtxHook    Whether thread-context hooks are enabled.
+ *
+ * @remarks Called with preemption disabled.
+ */
+SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook);
+
 /** @copydoc RTLogDefaultInstanceEx
  * @remarks To allow overriding RTLogDefaultInstanceEx locally. */
 SUPR0DECL(struct RTLOGGER *) SUPR0DefaultLogInstanceEx(uint32_t fFlagsAndGroup);

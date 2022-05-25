@@ -1729,6 +1729,21 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 SUPR0_EXPORT_SYMBOL(SUPR0GetKernelFeatures);
 
 
+SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+    return false;
+}
+SUPR0_EXPORT_SYMBOL(SUPR0FpuBegin);
+
+
+SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+}
+SUPR0_EXPORT_SYMBOL(SUPR0FpuEnd);
+
+
 int VBOXCALL    supdrvOSGetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 {
 #if RTLNX_VER_MIN(4,12,0)

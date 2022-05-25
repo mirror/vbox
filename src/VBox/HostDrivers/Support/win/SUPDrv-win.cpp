@@ -3030,6 +3030,19 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 }
 
 
+SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+    return false;
+}
+
+
+SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+{
+    RT_NOREF(fCtxHook);
+}
+
+
 SUPR0DECL(int) SUPR0IoCtlSetupForHandle(PSUPDRVSESSION pSession, intptr_t hHandle, uint32_t fFlags, PSUPR0IOCTLCTX *ppCtx)
 {
     /*
