@@ -181,11 +181,11 @@ RTR3DECL(int) RTTestIErrContextV(const char *pszFormat, va_list va)
 }
 
 
-RTR3DECL(int) RTTestErrContext(const char *pszFormat, ...)
+RTR3DECL(int) RTTestIErrContext(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    int rc = RTTestIErrContextV(pszFormat, va);
+    int rc = RTTestErrContextV(NIL_RTTEST, pszFormat, va);
     va_end(va);
     return rc;
 }
