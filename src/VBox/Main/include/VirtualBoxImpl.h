@@ -147,9 +147,9 @@ public:
     HRESULT i_removeProgress(IN_GUID aId);
 
 #ifdef RT_OS_WINDOWS
-    typedef DECLCALLBACKPTR(HRESULT, SVCHelperClientFunc,(SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc));
+    typedef HRESULT (*PFN_SVC_HELPER_CLIENT_T)(SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc);
     HRESULT i_startSVCHelperClient(bool aPrivileged,
-                                   SVCHelperClientFunc aFunc,
+                                   PFN_SVC_HELPER_CLIENT_T aFunc,
                                    void *aUser, Progress *aProgress);
 #endif
 
