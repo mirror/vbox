@@ -68,11 +68,18 @@ static const char g_szVDPlugin[] = "VDPluginCrypt";
 struct SnapshotRef
 {
     /** Equality predicate for stdc++. */
-    struct EqualsTo : public std::unary_function <SnapshotRef, bool>
+    struct EqualsTo
+#if __cplusplus < 201700 /* deprecated in C++11, removed in C++17. */
+        : public std::unary_function <SnapshotRef, bool>
+#endif
     {
         explicit EqualsTo(const Guid &aSnapshotId) : snapshotId(aSnapshotId) {}
 
+#if __cplusplus < 201700 /* deprecated in C++11, removed in C++17. */
         bool operator()(const argument_type &aThat) const
+#else
+        bool operator()(const SnapshotRef &aThat) const
+#endif
         {
             return aThat.snapshotId == snapshotId;
         }
@@ -99,11 +106,18 @@ struct SnapshotRef
 struct BackRef
 {
     /** Equality predicate for stdc++. */
-    struct EqualsTo : public std::unary_function <BackRef, bool>
+    struct EqualsTo
+#if __cplusplus < 201700 /* deprecated in C++11, removed in C++17. */
+        : public std::unary_function <BackRef, bool>
+#endif
     {
         explicit EqualsTo(const Guid &aMachineId) : machineId(aMachineId) {}
 
+#if __cplusplus < 201700 /* deprecated in C++11, removed in C++17. */
         bool operator()(const argument_type &aThat) const
+#else
+        bool operator()(const BackRef &aThat) const
+#endif
         {
             return aThat.machineId == machineId;
         }
