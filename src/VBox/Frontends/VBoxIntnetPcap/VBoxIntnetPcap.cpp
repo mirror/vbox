@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "IntNetIf.h"
 #include "Pcap.h"
 
@@ -29,19 +33,25 @@
 
 #include <VBox/version.h>
 
-void captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame);
-void captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame);
-void checkCaptureLimit();
 
-IntNetIf g_net;
-PRTSTREAM g_pStrmOut;
-uint64_t g_StartNanoTS;
-bool g_fPacketBuffered;
-uint64_t g_u64Count;
-size_t g_cbSnapLen;
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static DECLCALLBACK(void) captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame);
+static DECLCALLBACK(void) captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame);
 
 
-RTGETOPTDEF g_aGetOptDef[] =
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static IntNetIf     g_net;
+static PRTSTREAM    g_pStrmOut;
+static uint64_t     g_StartNanoTS;
+static bool         g_fPacketBuffered;
+static uint64_t     g_cCountDown;
+static size_t       g_cbSnapLen = 0xffff;
+
+static const RTGETOPTDEF g_aGetOptDef[] =
 {
     { "--count",                'c',   RTGETOPT_REQ_UINT64 },
     { "--network",              'i',   RTGETOPT_REQ_STRING },
@@ -54,19 +64,19 @@ RTGETOPTDEF g_aGetOptDef[] =
 int
 main(int argc, char *argv[])
 {
-    int rc;
-
-    RTCString strNetworkName;
-    RTCString strPcapFile;
-
-    rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    /*
+     * Parse options
+     */
     RTGETOPTSTATE State;
-    rc = RTGetOptInit(&State, argc, argv,
-                      g_aGetOptDef, RT_ELEMENTS(g_aGetOptDef),
-                      1, 0);
+    rc = RTGetOptInit(&State, argc, argv, g_aGetOptDef, RT_ELEMENTS(g_aGetOptDef), 1, 0);
+    AssertRC(rc);
+
+    const char *pszNetworkName = NULL;
+    const char *pszPcapFile    = NULL;
 
     int ch;
     RTGETOPTUNION Val;
@@ -75,32 +85,20 @@ main(int argc, char *argv[])
         switch (ch)
         {
             case 'c':           /* --count */
-                if (g_u64Count != 0)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "multiple --count options");
                 if (Val.u64 == 0)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "--count must be greater than zero");
-                g_u64Count = Val.u64;
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--count must be greater than zero");
+                g_cCountDown = Val.u64;
                 break;
 
             case 'i':           /* --network */
-                if (strNetworkName.isNotEmpty())
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "multiple --network options");
                 if (Val.psz[0] == '\0')
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "empty --network option");
-                strNetworkName = Val.psz;
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "empty --network option");
+                pszNetworkName = Val.psz;
                 break;
 
             case 's':           /* --snaplen */
-                if (g_cbSnapLen != 0)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "multiple --snaplen options");
                 if (Val.u32 == 0)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "--snaplen must be greater than zero");
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--snaplen must be greater than zero");
                 g_cbSnapLen = Val.u32;
                 break;
 
@@ -109,13 +107,9 @@ main(int argc, char *argv[])
                 break;
 
             case 'w':           /* --write */
-                if (strPcapFile.isNotEmpty())
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "multiple --write options");
                 if (Val.psz[0] == '\0')
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                          "empty --write option");
-                strPcapFile = Val.psz;
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "empty --write option");
+                pszPcapFile = Val.psz;
                 break;
 
 
@@ -141,39 +135,31 @@ main(int argc, char *argv[])
                              g_aGetOptDef[i].iShort, g_aGetOptDef[i].pszLong);
                 return RTEXITCODE_SUCCESS;
 
-            case VINF_GETOPT_NOT_OPTION:
-                return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                                      "unexpected non-option argument");
-
             default:
+            case VINF_GETOPT_NOT_OPTION:
                 return RTGetOptPrintError(ch, &Val);
         }
     }
+    if (!pszNetworkName)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No network specified. Please use the --network option");
+    if (!pszPcapFile)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No output file specified. Please use the --write option");
 
-    if (strNetworkName.isEmpty())
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                              "missing --network option");
-
-    if (strPcapFile.isEmpty())
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                              "missing --write option");
-
-    if (g_cbSnapLen == 0)
-        g_cbSnapLen = 0xffff;
-
-
-    if (strPcapFile == "-")
-    {
+    /*
+     * Open the output file.
+     */
+    if (strcmp(pszPcapFile, "-") == 0)
         g_pStrmOut = g_pStdOut;
-    }
     else
     {
-        rc = RTStrmOpen(strPcapFile.c_str(), "wb", &g_pStrmOut);
+        rc = RTStrmOpen(pszPcapFile, "wb", &g_pStrmOut);
         if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "%s: %Rrf", strPcapFile.c_str(), rc);
+            return RTMsgErrorExitFailure("%s: %Rrf", pszPcapFile, rc);
     }
 
+    /*
+     * Configure the snooper.
+     */
     g_net.setInputCallback(captureFrame, NULL);
     g_net.setInputGSOCallback(captureGSO, NULL);
 
@@ -182,53 +168,51 @@ main(int argc, char *argv[])
      * created when one doesn't exist, so there's no way to catch a
      * typo...  beware.
      */
-    rc = g_net.init(strNetworkName);
+    rc = g_net.init(pszNetworkName);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "%s: %Rrf", strNetworkName.c_str(), rc);
+        return RTMsgErrorExitFailure("%s: %Rrf", pszNetworkName, rc);
 
     rc = g_net.ifSetPromiscuous();
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "%s: failed to set promiscuous mode: %Rrf",
-                              strNetworkName.c_str(), rc);
+        return RTMsgErrorExitFailure("%s: failed to set promiscuous mode: %Rrf", pszNetworkName, rc);
 
+    /*
+     * Snoop traffic.
+     */
     g_StartNanoTS = RTTimeNanoTS();
     rc = PcapStreamHdr(g_pStrmOut, g_StartNanoTS);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "write: %Rrf", rc);
+        return RTMsgErrorExitFailure("write: %Rrf", rc);
     if (g_fPacketBuffered)
         RTStrmFlush(g_pStrmOut);
 
     g_net.ifPump();
-    RTStrmClose(g_pStrmOut);
 
-    return RTEXITCODE_SUCCESS;
+    RTEXITCODE rcExit = RT_SUCCESS(RTStrmError(g_pStrmOut)) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    rc = RTStrmClose(g_pStrmOut);
+    if (RT_FAILURE(rc))
+        rcExit = RTMsgErrorExitFailure("close: %Rrf", rc);
+    return rcExit;
 }
 
 
-void
-checkCaptureLimit()
+static void checkCaptureLimit(void)
 {
-    if (g_u64Count > 0)
+    if (g_cCountDown > 0)
     {
-        if (g_u64Count-- == 1)
+        if (g_cCountDown-- == 1)
             g_net.ifAbort();
     }
 }
 
 
-void
-captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
+static DECLCALLBACK(void) captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
 {
-    int rc;
-
     RT_NOREF(pvUser);
 
-    rc = PcapStreamFrame(g_pStrmOut, g_StartNanoTS,
-                         pvFrame, cbFrame, g_cbSnapLen);
-    if (RT_FAILURE(rc)) {
+    int rc = PcapStreamFrame(g_pStrmOut, g_StartNanoTS, pvFrame, cbFrame, g_cbSnapLen);
+    if (RT_FAILURE(rc))
+    {
         RTMsgError("write: %Rrf", rc);
         g_net.ifAbort();
     }
@@ -240,11 +224,9 @@ captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
 }
 
 
-void
-captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame)
+static DECLCALLBACK(void) captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame)
 {
-    RT_NOREF(pvUser);
-    RT_NOREF(pcGso, cbFrame);
+    RT_NOREF(pvUser, pcGso, cbFrame);
 
     checkCaptureLimit();
 }

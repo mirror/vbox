@@ -1,6 +1,7 @@
 # $Id$
 ## @file
 # Sub-makefile for the VBoxIntnetPcap
+#
 
 #
 # Copyright (C) 2021-2022 Oracle Corporation
@@ -18,20 +19,16 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxIntnetPcap
-
-VBoxIntnetPcap_TEMPLATE = VBOXR3EXE
-
-VBoxIntnetPcap_SOURCES = #
-VBoxIntnetPcap_SOURCES += VBoxIntnetPcap.cpp
-VBoxIntnetPcap_SOURCES += ../../NetworkServices/NetLib/IntNetIf.cpp
-VBoxIntnetPcap_SOURCES += ../../Devices/Network/Pcap.cpp
-
-VBoxIntnetPcap_INCS += ../../NetworkServices/NetLib
-VBoxIntnetPcap_INCS += ../../Devices/Network
-
-VBoxIntnetPcap_LDFLAGS.win = /SUBSYSTEM:windows
-
-VBoxIntnetPcap_LIBS += $(LIB_RUNTIME)
+VBoxIntnetPcap_TEMPLATE := VBOXR3EXE
+VBoxIntnetPcap_INCS     := \
+	../../NetworkServices/NetLib \
+	../../Devices/Network
+VBoxIntnetPcap_SOURCES  := \
+	VBoxIntnetPcap.cpp \
+	../../NetworkServices/NetLib/IntNetIf.cpp \
+	../../Devices/Network/Pcap.cpp
+VBoxIntnetPcap_LIBS     = $(LIB_RUNTIME)
 # VBoxIntnetPcap_LIBS.solaris += socket nsl # XXX: when we add rpcapd support
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
