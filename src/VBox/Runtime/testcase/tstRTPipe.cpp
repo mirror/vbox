@@ -204,45 +204,57 @@ static void tstRTPipe3(void)
 {
     RTTestISub("Full write buffer");
 
-    RTPIPE  hPipeR = (RTPIPE)999999;
-    RTPIPE  hPipeW = (RTPIPE)999999;
-    RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
-
-    static char s_abBuf[_256K];
-    int         rc      = VINF_SUCCESS;
-    size_t      cbTotal = 0;
-    memset(s_abBuf, 0xff, sizeof(s_abBuf));
-    for (;;)
+#ifdef RT_OS_WINDOWS
+    /* Kludge! The RTPipeWrite+RTPipeWriteBlocking code is able to write twice the size
+               of the pipe buffer, so the testcase won't behave right if we go lower
+               than 50% on the readback. */
+    for (unsigned uPct = 50; uPct < 100; uPct += 12)
+#else
+    for (unsigned uPct = 25; uPct < 100; uPct += 12)
+#endif
     {
-        RTTESTI_CHECK(cbTotal < _1G);
-        if (cbTotal > _1G)
-            break;
+        RTPIPE  hPipeR = (RTPIPE)999999;
+        RTPIPE  hPipeW = (RTPIPE)999999;
+        RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
+        RTTestIErrContext("uPct=%d", uPct);
 
-        size_t cbWritten = _1G;
-        rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
-        RTTESTI_CHECK_MSG(rc == VINF_SUCCESS || rc == VINF_TRY_AGAIN, ("rc=%Rrc\n", rc));
-        if (rc != VINF_SUCCESS)
-            break;
-        cbTotal += cbWritten;
+        static char s_abBuf[_256K];
+        int         rc      = VINF_SUCCESS;
+        size_t      cbTotal = 0;
+        memset(s_abBuf, 0xff, sizeof(s_abBuf));
+        for (;;)
+        {
+            RTTESTI_CHECK(cbTotal < _1G);
+            if (cbTotal > _1G)
+                break;
+
+            size_t cbWritten = _1G;
+            rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
+            RTTESTI_CHECK_MSG(rc == VINF_SUCCESS || rc == VINF_TRY_AGAIN, ("rc=%Rrc\n", rc));
+            if (rc != VINF_SUCCESS)
+                break;
+            cbTotal += cbWritten;
+        }
+
+        if (rc == VINF_TRY_AGAIN)
+        {
+            size_t const cbToRead = RT_MIN(sizeof(s_abBuf), cbTotal * uPct / 100);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "cbTotal=%zu (%#zx)  cbToRead=%zu (%#zx)\n", cbTotal, cbTotal, cbToRead, cbToRead);
+            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VERR_TIMEOUT);
+            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VERR_TIMEOUT);
+            size_t cbRead;
+            RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeR, s_abBuf, cbToRead, &cbRead), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VINF_SUCCESS);
+
+            size_t cbWritten = _1G;
+            rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
+            RTTESTI_CHECK(rc == VINF_SUCCESS);
+        }
+
+        RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
     }
-
-    if (rc == VINF_TRY_AGAIN)
-    {
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "cbTotal=%zu (%#zx)\n", cbTotal, cbTotal);
-        RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VERR_TIMEOUT);
-        RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VERR_TIMEOUT);
-        size_t cbRead;
-        RTTESTI_CHECK_RC(RTPipeRead(hPipeR, s_abBuf, RT_MIN(sizeof(s_abBuf), cbTotal) / 2, &cbRead), VINF_SUCCESS);
-        RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VINF_SUCCESS);
-        RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VINF_SUCCESS);
-
-        size_t cbWritten = _1G;
-        rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
-        RTTESTI_CHECK(rc == VINF_SUCCESS);
-    }
-
-    RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
-    RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 }
 
 static void tstRTPipe2(void)

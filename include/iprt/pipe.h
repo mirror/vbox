@@ -37,6 +37,12 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_pipe      RTPipe - Anonymous Pipes
  * @ingroup grp_rt
+ *
+ * @note    The current Windows implementation has some peculiarities,
+ *          especially with respect to the write side where the it is possible
+ *          to write one extra pipe buffer sized block of data when the pipe
+ *          buffer is full.
+ *
  * @{
  */
 

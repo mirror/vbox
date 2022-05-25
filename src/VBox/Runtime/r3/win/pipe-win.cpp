@@ -628,8 +628,8 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
             pThis->cUsers++;
 
             /*
-             * Kick of a an overlapped read.  It should return immediately if
-             * there is bytes in the buffer.  If not, we'll cancel it and see
+             * Kick off a an overlapped read.  It should return immediately if
+             * there are bytes in the buffer.  If not, we'll cancel it and see
              * what we get back.
              */
             rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
@@ -796,7 +796,8 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                     /** @todo fixme: To get the pipe writing support to work the
                      *               block below needs to be commented out until a
                      *               way is found to address the problem of the incorrectly
-                     *               set field Info.WriteQuotaAvailable. */
+                     *               set field Info.WriteQuotaAvailable.
+                     * Update: We now just write up to RTPIPE_NT_SIZE more. */
 #if 0
                     else if (   cbToWrite >= Info.WriteQuotaAvailable
                              && Info.OutboundQuota != 0
@@ -1093,6 +1094,24 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
             else
             {
                 FILE_PIPE_LOCAL_INFORMATION Info;
+#if 1
+                /* We can always write one bounce buffer full of data regardless of
+                   the pipe buffer state.  We must of course take this into account,
+                   or code like "Full write buffer" test in tstRTPipe gets confused. */
+                rc = VINF_SUCCESS;
+                if (rtPipeQueryNtInfo(pThis, &Info))
+                {
+                    /* Check for broken pipe. */
+                    if (Info.NamedPipeState != FILE_PIPE_CLOSING_STATE)
+                        pThis->fPromisedWritable = true;
+                    else
+                        rc = VERR_BROKEN_PIPE;
+                }
+                else
+                    pThis->fPromisedWritable = true;
+                break;
+
+#else /* old code: */
                 if (rtPipeQueryNtInfo(pThis, &Info))
                 {
                     /* Check for broken pipe. */
@@ -1101,18 +1120,19 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                         rc = VERR_BROKEN_PIPE;
                         break;
                     }
+
                     /* Check for available write buffer space. */
-                    else if (Info.WriteQuotaAvailable > 0)
+                    if (Info.WriteQuotaAvailable > 0)
                     {
                         pThis->fPromisedWritable = false;
                         rc = VINF_SUCCESS;
                         break;
                     }
+
                     /* delayed buffer alloc or timeout: phony promise
                        later: See if we still can associate a semaphore with
                               the pipe, like on OS/2. */
-                    else if (   Info.OutboundQuota == 0
-                             || cMillies)
+                    if (Info.OutboundQuota == 0 || cMillies)
                     {
                         pThis->fPromisedWritable = true;
                         rc = VINF_SUCCESS;
@@ -1125,6 +1145,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                     rc = VINF_SUCCESS;
                     break;
                 }
+#endif
             }
         }
         if (RT_FAILURE(rc))
