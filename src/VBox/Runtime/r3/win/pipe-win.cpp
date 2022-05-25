@@ -797,7 +797,9 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                      *               block below needs to be commented out until a
                      *               way is found to address the problem of the incorrectly
                      *               set field Info.WriteQuotaAvailable.
-                     * Update: We now just write up to RTPIPE_NT_SIZE more. */
+                     * Update: We now just write up to RTPIPE_NT_SIZE more.  This is quite
+                     *         possibely what lead to the misunderstanding here wrt to
+                     *         WriteQuotaAvailable updating. */
 #if 0
                     else if (   cbToWrite >= Info.WriteQuotaAvailable
                              && Info.OutboundQuota != 0
