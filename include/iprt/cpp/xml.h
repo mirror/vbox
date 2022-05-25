@@ -363,13 +363,9 @@ private:
  */
 
 
-#if RT_CLANG_PREREQ(4, 0) /* VC++ needs the nothrow'ed-ness, while clang barfs at it. */
-typedef xmlParserInput *FNEXTERNALENTITYLOADER(const char *aURI, const char *aID, xmlParserCtxt *aCtxt);
-#else
 typedef DECLCALLBACKTYPE_EX(xmlParserInput *, RT_NOTHING, FNEXTERNALENTITYLOADER,(const char *aURI, const char *aID,
                                                                                   xmlParserCtxt *aCtxt));
-#endif
-typedef FNEXTERNALENTITYLOADER *PFNEXTERNALENTITYLOADER; /**< xmlExternalEntityLoader */
+typedef FNEXTERNALENTITYLOADER *PFNEXTERNALENTITYLOADER; /**< xmlExternalEntityLoader w/ noexcept. */
 
 class RT_DECL_CLASS GlobalLock
 {

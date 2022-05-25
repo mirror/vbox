@@ -426,7 +426,7 @@ GlobalLock::~GlobalLock()
 
 void GlobalLock::setExternalEntityLoader(PFNEXTERNALENTITYLOADER pfnLoader)
 {
-    m->pfnOldLoader = xmlGetExternalEntityLoader();
+    m->pfnOldLoader = (PFNEXTERNALENTITYLOADER)xmlGetExternalEntityLoader();
     xmlSetExternalEntityLoader(pfnLoader);
 }
 
