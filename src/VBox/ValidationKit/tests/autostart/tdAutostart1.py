@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Autostart testcase using.
+Autostart testcase using <please-tell-what-I-am-doing>.
 """
 
 __copyright__ = \
@@ -1363,12 +1363,12 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         """
         Execute the testcase.
         """
-        return self.oTestVmSet.actionExecute(self, self.testAutostartOneVfg)
+        return self.oTestVmSet.actionExecute(self, self.testAutostartOneCfg)
 
     #
     # Test execution helpers.
     #
-    def testAutostartOneVfg(self, oVM, oTestVm):
+    def testAutostartOneCfg(self, oVM, oTestVm):
         # Reconfigure the VM
         fRc = True;
         self.logVmInfo(oVM);
