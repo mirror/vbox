@@ -3418,6 +3418,13 @@ VBOX_GCC_std := -std=c++11
 VBOX_GCC_std := -std=c++0x
  endif
 endif
+ifndef VBOX_VCC_std
+ if $(VBOX_VCC_TOOL_STEM) >= VCC141 # since 2017 15.3
+  if 0 # not yet enabled
+  VBOX_VCC_std := -std:c++17 -Zc:__cplusplus
+  endif
+ endif
+endif
 
 
 #
@@ -3506,7 +3513,6 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  #    -wd4350: behavior change: 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc(const std::_Wrap_alloc<std::allocator<char>> &) throw()' called instead of 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc<std::_Wrap_alloc<std::allocator<char>>>(_Other &) throw()'
  #    -wd4435: iprt/cpp/xml.h(185) : warning C4435: 'xml::Input' : Object layout under /vd2 will change due to virtual base 'xml::Stream'
  VBOX_VCC_WARN_ALL += -wd4350 -wd4435
- VBOX_VCC120_WARN_ALL := $(VBOX_VCC_WARN_ALL)
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  #    -wd5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
@@ -3518,7 +3524,8 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  #    -wd5026: 'SUPDRVTRACERDATA': move constructor was implicitly defined as deleted
  #    -wd5027: 'SUPDRVTRACERDATA': move assignment operator was implicitly defined as deleted
  #    -wd4435: 'xml::Input': Object layout under /vd2 will change due to virtual base 'xml::Stream'
- VBOX_VCC_WARN_ALL += -wd5045 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027 -wd4435
+ #    -wd4577: 'noexcept' used with no exception handling mode specified; termination on exception is not guaranteed. Specify /EHsc
+ VBOX_VCC_WARN_ALL += -wd5045 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027 -wd4435 -wd4577
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142"  # With v16.11.9, not with v16.6.0 4242
  #    -wd5220: 'RTDBGMODINT::cRefs': a non-static data member with a volatile qualified type no longer implies that compiler generated copy/move constructors and copy/move assignment operators are not trivial
@@ -5173,14 +5180,14 @@ ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
 TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
-  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
+  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
 TEMPLATE_VBoxR0_CXXFLAGS           += -Gw
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
 TEMPLATE_VBoxR0_CXXFLAGS           += /analyze
  endif
-TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
+TEMPLATE_VBoxR0_CFLAGS              = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBoxR0_CXXFLAGS))
 TEMPLATE_VBoxR0_LDFLAGS             = -Ignore:4197 \
 	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) \
 	-Release -Debug -Opt:Ref -Opt:Icf $(VBOX_VCC_LD_GUARD_CF) \
@@ -5919,7 +5926,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
- 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += -Gw
  endif
@@ -5929,7 +5936,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXR3EXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile  = -Gh -GH
- TEMPLATE_VBOXR3EXE_CFLAGS             = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
+ TEMPLATE_VBOXR3EXE_CFLAGS             = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
  TEMPLATE_VBOXR3EXE_CFLAGS.debug       = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
  TEMPLATE_VBOXR3EXE_CFLAGS.dbgopt      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.dbgopt)
  TEMPLATE_VBOXR3EXE_CFLAGS.kprofile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
@@ -7025,7 +7032,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
- 	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS)
+ 	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
@@ -7041,7 +7048,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
- TEMPLATE_VBOXMAINEXE_CFLAGS             = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
+ TEMPLATE_VBOXMAINEXE_CFLAGS             = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
  TEMPLATE_VBOXMAINEXE_CFLAGS.debug       = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
  TEMPLATE_VBOXMAINEXE_CFLAGS.dbgopt      = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt)
  TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile    = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
@@ -7695,7 +7702,7 @@ ifdef VBOX_WITH_QTGUI
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS)
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
   #    -wd4481: nonstandard extension used: override specifier 'override'
   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -7716,6 +7723,11 @@ ifdef VBOX_WITH_QTGUI
    #            qwidget.h(730): note: see declaration of 'QWidget::data'
    #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
+  endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+   #   -wd4866: UIVirtualBoxManager.cpp(221) : warning C4866: compiler may not enforce left-to-right evaluation order for call to 'QStringList::operator<<'
+   #            Only with -std=c++17 and later.
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4866
   endif
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # With v16.11.9, not with v16.6.0 4242
    #   -wd5219: qpoint.h(187): warning C5219: implicit conversion from 'const int' to 'float', possible loss of data
@@ -8029,7 +8041,7 @@ ifeq ($(KBUILD_HOST),win)
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
  TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
- 	-MT$(VBOX_VCC_CRT_TYPE) -Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ 	-MT$(VBOX_VCC_CRT_TYPE) -Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxBldProg_CXXFLAGS         += -Gw
  endif
@@ -8040,7 +8052,7 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBoxBldProg_CXXFLAGS.profile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
  TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
- TEMPLATE_VBoxBldProg_CFLAGS             = $(TEMPLATE_VBoxBldProg_CXXFLAGS)
+ TEMPLATE_VBoxBldProg_CFLAGS             = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBoxBldProg_CXXFLAGS))
  TEMPLATE_VBoxBldProg_CFLAGS.debug       = $(TEMPLATE_VBoxBldProg_CXXFLAGS.debug)
  TEMPLATE_VBoxBldProg_CFLAGS.dbgopt      = $(TEMPLATE_VBoxBldProg_CXXFLAGS.dbgopt)
  TEMPLATE_VBoxBldProg_CFLAGS.release     = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
