@@ -44,6 +44,9 @@
 #include <VBox/log.h>
 #include <VBox/sup.h>
 #include <VBox/version.h>
+
+#include <algorithm>
+
 #include "AutoCaller.h"
 #include "Global.h"
 #include "ProgressImpl.h"
@@ -2463,11 +2466,8 @@ HRESULT ExtPackManager::getInstalledExtPacks(std::vector<ComPtr<IExtPack> > &aIn
 
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-
-    SafeIfaceArray<IExtPack> SaExtPacks(m->llInstalledExtPacks);
-    aInstalledExtPacks.resize(SaExtPacks.size());
-    for(size_t i = 0; i < SaExtPacks.size(); ++i)
-        aInstalledExtPacks[i] = SaExtPacks[i];
+    aInstalledExtPacks.resize(m->llInstalledExtPacks.size());
+    std::copy(m->llInstalledExtPacks.begin(), m->llInstalledExtPacks.end(), aInstalledExtPacks.begin());
 
     return S_OK;
 }
