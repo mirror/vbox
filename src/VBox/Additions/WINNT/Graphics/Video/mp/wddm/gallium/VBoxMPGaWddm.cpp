@@ -161,69 +161,102 @@ NTSTATUS GaContextCreate(PVBOXWDDM_EXT_GA pGaDevExt,
                          PVBOXWDDM_CREATECONTEXT_INFO pInfo,
                          PVBOXWDDM_CONTEXT pContext)
 {
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+    NTSTATUS Status;
+
     AssertReturn(pContext->NodeOrdinal == 0, STATUS_NOT_SUPPORTED);
 
-    pContext->pSvgaContext = (PVMSVGACONTEXT)GaMemAllocZero(sizeof(VMSVGACONTEXT));
-    AssertReturn(pContext->pSvgaContext, STATUS_INSUFFICIENT_RESOURCES);
+    /*
+     * Allocate SVGA context and initialize it.
+     */
+    PVMSVGACONTEXT pSvgaContext = (PVMSVGACONTEXT)GaMemAllocZero(sizeof(VMSVGACONTEXT));
+    AssertReturn(pSvgaContext, STATUS_INSUFFICIENT_RESOURCES);
 
-    pContext->pSvgaContext->fDXContext = RT_BOOL(pInfo->u.vmsvga.u32Flags & VBOXWDDM_F_GA_CONTEXT_VGPU10);
+    pSvgaContext->fDXContext = RT_BOOL(pInfo->u.vmsvga.u32Flags & VBOXWDDM_F_GA_CONTEXT_VGPU10);
 
-    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
     uint32_t u32Cid;
-    NTSTATUS Status;
-    if (pContext->pSvgaContext->fDXContext)
+    if (pSvgaContext->fDXContext)
         Status = SvgaDXContextIdAlloc(pSvga, &u32Cid);
     else
         Status = SvgaContextIdAlloc(pSvga, &u32Cid);
     if (NT_SUCCESS(Status))
     {
-        if (pContext->pSvgaContext->fDXContext)
+        if (pSvgaContext->fDXContext)
             Status = SvgaDXContextCreate(pSvga, u32Cid);
         else
             Status = SvgaContextCreate(pSvga, u32Cid);
         if (Status == STATUS_SUCCESS)
         {
-            /** @todo Save other pInfo fields. */
-            RT_NOREF(pInfo);
-
-            /* Init pContext fields, which are relevant to the VMSVGA context. */
-            pContext->pSvgaContext->u32Cid = u32Cid;
-
-            GALOG(("pGaDevExt = %p, cid = %d (%d)\n", pGaDevExt, u32Cid, pContext->pSvgaContext->fDXContext ? "DX" : "VGPU9"));
+            pSvgaContext->u32Cid = u32Cid;
+            GALOG(("pGaDevExt = %p, cid = %d (%s)\n", pGaDevExt, u32Cid, pSvgaContext->fDXContext ? "DX" : "VGPU9"));
         }
         else
         {
             AssertFailed();
-            if (pContext->pSvgaContext->fDXContext)
+            if (pSvgaContext->fDXContext)
                 SvgaDXContextIdFree(pSvga, u32Cid);
             else
                 SvgaContextIdFree(pSvga, u32Cid);
         }
     }
 
-    if (!NT_SUCCESS(Status))
-    {
-        GaMemFree(pContext->pSvgaContext);
-        pContext->pSvgaContext = 0;
-    }
+    if (NT_SUCCESS(Status))
+        pContext->pSvgaContext = pSvgaContext;
+    else
+        GaMemFree(pSvgaContext);
     return Status;
 }
 
 NTSTATUS GaContextDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
                           PVBOXWDDM_CONTEXT pContext)
 {
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+
     PVMSVGACONTEXT pSvgaContext = pContext->pSvgaContext;
     if (!pSvgaContext)
         return STATUS_SUCCESS;
-    pContext->pSvgaContext = 0;
+    pContext->pSvgaContext = NULL;
 
     GALOG(("u32Cid = %d\n", pSvgaContext->u32Cid));
-
-    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
 
     NTSTATUS Status;
     if (pSvgaContext->fDXContext)
     {
+        for (unsigned i = 0; i < RT_ELEMENTS(pSvgaContext->aCOT); ++i)
+        {
+            PVMSVGACOT pCOT = &pSvgaContext->aCOT[i];
+            if (pCOT->pMob)
+            {
+                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DX_SET_COTABLE, sizeof(SVGA3dCmdDXSetCOTable), SVGA3D_INVALID_ID);
+                if (pvCmd)
+                {
+                    SVGA3dCmdDXSetCOTable *pCmd = (SVGA3dCmdDXSetCOTable *)pvCmd;
+                    pCmd->cid              = pSvgaContext->u32Cid;
+                    pCmd->mobid            = SVGA3D_INVALID_ID;
+                    pCmd->type             = (SVGACOTableType)i;
+                    pCmd->validSizeInBytes = 0;
+                    SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+                }
+
+                pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
+                if (pvCmd)
+                {
+                    SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
+                    pCmd->mobid = VMSVGAMOB_ID(pCOT->pMob);
+                    SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+                }
+
+                SvgaMobFree(pSvga, pCOT->pMob);
+                pCOT->pMob = NULL;
+            }
+
+            if (pCOT->hMemObj != NIL_RTR0MEMOBJ)
+            {
+                RTR0MemObjFree(pCOT->hMemObj, true);
+                pCOT->hMemObj = NIL_RTR0MEMOBJ;
+            }
+        }
+
         SvgaDXContextDestroy(pSvga, pSvgaContext->u32Cid);
         Status = SvgaDXContextIdFree(pSvga, pSvgaContext->u32Cid);
     }
@@ -232,6 +265,8 @@ NTSTATUS GaContextDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
         SvgaContextDestroy(pSvga, pSvgaContext->u32Cid);
         Status = SvgaContextIdFree(pSvga, pSvgaContext->u32Cid);
     }
+
+    SvgaFlush(pSvga);
 
     GaMemFree(pSvgaContext);
     return Status;

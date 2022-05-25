@@ -445,6 +445,7 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
 
     /* Buffer header is not allocated. */
     pCB->hHeader = VMSVGACBHEADER_NIL;
+    RTListInit(&pCB->listCompletion);
 
     *ppCB = pCB;
     return STATUS_SUCCESS;
@@ -753,6 +754,18 @@ NTSTATUS SvgaCmdBufAllocUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS DmaBuff
 }
 
 
+static void svgaCBCallCompletion(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
+{
+    PVMSVGACBCOMPLETION pIter, pNext;
+    RTListForEachSafe(&pCB->listCompletion, pIter, pNext, VMSVGACBCOMPLETION, nodeCompletion)
+    {
+        pIter->pfn(pSvga, &pIter[1], pIter->cb);
+        RTListNodeRemove(&pIter->nodeCompletion);
+        RTMemFree(pIter);
+    }
+}
+
+
 /** Process command buffers processed by the host at DPC level.
  *
  * @param pSvga            The device instance.
@@ -811,6 +824,7 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
             case SVGA_CB_STATUS_COMPLETED:
                 /* Just delete the buffer. */
                 RTListNodeRemove(&pIter->nodeQueue);
+                svgaCBCallCompletion(pSvga, pIter);
                 svgaCBFree(pCBState, pIter);
                 break;
 
@@ -840,8 +854,25 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
 }
 
 
+void SvgaCmdBufSetCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, PFNCBCOMPLETION pfn, void const *pv, uint32_t cb)
+{
+    VMSVGACBCOMPLETION *p = (VMSVGACBCOMPLETION *)RTMemAlloc(sizeof(VMSVGACBCOMPLETION) + cb);
+    AssertReturnVoid(p);
+
+    p->pfn = pfn;
+    p->cb = cb;
+    memcpy(&p[1], pv, cb);
+
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+    ExAcquireFastMutex(&pCBState->CBCurrentMutex);
+    RTListAppend(&pCBState->pCBCurrent->listCompletion, &p->nodeCompletion);
+    ExReleaseFastMutex(&pCBState->CBCurrentMutex);
+}
+
+
 NTSTATUS SvgaCmdBufDestroy(PVBOXWDDM_EXT_VMSVGA pSvga)
 {
+    /** PVMSVGACBSTATE pCBState as parameter. */
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
     if (pCBState == NULL)
         return STATUS_SUCCESS;
@@ -877,6 +908,7 @@ NTSTATUS SvgaCmdBufDestroy(PVBOXWDDM_EXT_VMSVGA pSvga)
 
 NTSTATUS SvgaCmdBufInit(PVBOXWDDM_EXT_VMSVGA pSvga)
 {
+    /** PVMSVGACBSTATE *ppCBState as parameter. */
     NTSTATUS Status;
 
     PVMSVGACBSTATE pCBState = (PVMSVGACBSTATE)GaMemAllocZero(sizeof(VMSVGACBSTATE));

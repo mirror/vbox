@@ -73,6 +73,18 @@ typedef struct VMSVGACBPAGE
 typedef int32_t VMSVGACBHEADERHANDLE;
 #define VMSVGACBHEADER_NIL (-1)
 
+struct VBOXWDDM_EXT_VMSVGA;
+typedef DECLCALLBACKTYPE(void, FNCBCOMPLETION, (struct VBOXWDDM_EXT_VMSVGA *pSvga, void *pvData, uint32_t cbData));
+typedef FNCBCOMPLETION *PFNCBCOMPLETION;
+
+typedef struct VMSVGACBCOMPLETION
+{
+    RTLISTNODE                  nodeCompletion;             /* VMSVGACB::listCompletion */
+    PFNCBCOMPLETION             pfn;                        /* Function to call. */
+    uint32_t                    cb;                         /* Size of data in bytes. */
+    /* cb bytes follow. */
+} VMSVGACBCOMPLETION, *PVMSVGACBCOMPLETION;
+
 typedef enum VMSVGACBTYPE
 {
     VMSVGACB_INVALID = 0,
@@ -100,6 +112,7 @@ typedef struct VMSVGACB
         VMSVGACBPAGE     page;                     /* VMSVGACB_CONTEXT_DEVICE and VMSVGACB_MINIPORT */
         PHYSICAL_ADDRESS DmaBufferPhysicalAddress; /* VMSVGACB_UMD */
     } commands;
+    RTLISTANCHOR         listCompletion;           /* VMSVGACBCOMPLETION to be called on completion. */
 #ifdef DEBUG
     bool fSubmitted : 1;
 #endif
@@ -136,21 +149,35 @@ typedef struct VMSVGACBSTATE
     KSPIN_LOCK           SpinLock;                 /* Lock for aCBContexts. */
 } VMSVGACBSTATE, *PVMSVGACBSTATE;
 
-/* Contexts + One shaders mob per context + surfaces. */
-#define SVGA3D_MAX_MOBS (SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_SURFACE_IDS)
-
-typedef struct VMSVGAMOB
+/* Guest Backed Object: a set of locked pages and a page table for the host to access. */
+typedef struct VMSVGAGBO
 {
-    AVLU32NODECORE              core;                       /* AVL entry. Key is mobid, allocated by the miniport. */
-    uint32_t                    cbMob;                      /* Size of mob in bytes. */
-    uint32_t                    cDescriptionPages;          /* How many pages are required to hold PPN64 page table. */
+    uint32_t                    cbGbo;                      /* Size of gbo in bytes. */
+    uint32_t                    cPTPages;                   /* How many pages are required to hold PPN64 page table. */
     SVGAMobFormat               enmMobFormat;               /* Page table format. */
     PPN64                       base;                       /* Page which contains the page table. */
     RTR0MEMOBJ                  hMemObjPT;                  /* Page table pages. */
+} VMSVGAGBO, *PVMSVGAGBO;
+
+/* Contexts + One shaders mob per context + surfaces. */
+#define SVGA3D_MAX_MOBS (SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_SURFACE_IDS)
+
+/* Memory OBject: a gbo with an id, possibly bound to an allocation. */
+typedef struct VMSVGAMOB
+{
+    AVLU32NODECORE              core;                       /* AVL entry. Key is mobid, allocated by the miniport. */
     HANDLE                      hAllocation;                /* Allocation which is bound to the mob. */
+    VMSVGAGBO                   gbo;                        /* Gbo for this mob. */
 } VMSVGAMOB, *PVMSVGAMOB;
 
 #define VMSVGAMOB_ID(a_pMob) ((a_pMob)->core.Key)
+
+typedef struct VMSVGAOT
+{
+    VMSVGAGBO                   gbo;
+    RTR0MEMOBJ                  hMemObj;
+    uint32_t                    cEntries;                   /* How many objects can be stored in the OTable. */
+} VMSVGAOT, *PVMSVGAOT;
 
 /* VMSVGA specific part of Gallium device extension. */
 typedef struct VBOXWDDM_EXT_VMSVGA
@@ -159,14 +186,6 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     RTIOPORT ioportBase;
     /** Pointer to FIFO MMIO region. */
     volatile uint32_t *pu32FIFO;
-
-    /** Used only with SVGA_CAP_COMMAND_BUFFERS capability. */
-    RTR0MEMOBJ hMemObj;
-    RTR0PTR  pvR0Hdr, pvR0Cmd;
-    RTHCPHYS paHdr, paCmd;
-    uint32_t u32NumCmdBufs;
-
-    RTR0MEMOBJ hMemObjOTables;
 
     /**
      * Hardware capabilities.
@@ -189,6 +208,7 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** Command buffers state. */
     PVMSVGACBSTATE pCBState;
+    /** Whether the host has generated an IRQ for buffer completion or error. */
     bool volatile fCommandBufferIrq;
 
     /** For atomic hardware access. */
@@ -196,6 +216,9 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** Maintaining the host objects lists. */
     KSPIN_LOCK HostObjectsSpinLock;
+
+    /** For ids allocation. */
+    KSPIN_LOCK IdSpinLock;
 
     /** AVL tree for mapping GMR id to the corresponding structure. */
     AVLU32TREE GMRTree;
@@ -212,17 +235,16 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     /** SVGA data access. */
     FAST_MUTEX SvgaMutex;
 
+    /** MOB access: MobTree. */
+    KSPIN_LOCK MobSpinLock;
+
     struct
     {
         uint32_t u32Offset;
         uint32_t u32BytesPerLine;
     } lastGMRFB;
 
-    struct
-    {
-        PVMSVGAMOB pMob;
-        RTR0MEMOBJ hMemObj;
-    } aOT[SVGA_OTABLE_DX_MAX];
+    VMSVGAOT aOT[SVGA_OTABLE_DX_MAX];
 
     /** Bitmap of used GMR ids. Bit 0 - GMR id 0, etc. */
     uint32_t *pu32GMRBits; /* Number of GMRs is controlled by the host (u32GmrMaxIds), so allocate the bitmap. */
@@ -247,8 +269,6 @@ typedef struct VMSVGACOT
     PVMSVGAMOB              pMob;                       /* COTable mob. */
     RTR0MEMOBJ              hMemObj;                    /* COTable pages. */
     uint32_t                cEntries;                   /* How many objects can be stored in the COTable. */
-    uint32_t                cNewEntries;                /* New size of the COTable for rebind. */
-    bool                    fRebind : 1;                /* Mob must be reallocated and host must be informed. */
 } VMSVGACOT, *PVMSVGACOT;
 
 typedef struct VMSVGACONTEXT
@@ -576,21 +596,22 @@ NTSTATUS SvgaDebugCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
                               uint32_t cbSource);
 #endif
 
-NTSTATUS SvgaMobAlloc(VBOXWDDM_EXT_VMSVGA *pSvga,
-                      PVMSVGAMOB *ppMob);
+NTSTATUS SvgaGboInit(VMSVGAGBO *pGbo, uint32_t cPages);
+void SvgaGboFree(VMSVGAGBO *pGbo);
+NTSTATUS SvgaGboFillPageTableForMDL(PVMSVGAGBO pGbo,
+                                    PMDL pMdl,
+                                    uint32_t MdlOffset);
+NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
+                                       RTR0MEMOBJ hMemObj);
+
 void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
                  PVMSVGAMOB pMob);
+PVMSVGAMOB SvgaMobQuery(VBOXWDDM_EXT_VMSVGA *pSvga,
+                        uint32_t mobid);
 NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                        PVMSVGAMOB *ppMob,
                        uint32_t cMobPages,
                        HANDLE hAllocation);
-NTSTATUS SvgaMobFillPageTableForMDL(VBOXWDDM_EXT_VMSVGA *pSvga,
-                                    PVMSVGAMOB pMob,
-                                    PMDL pMdl,
-                                    uint32_t MdlOffset);
-NTSTATUS SvgaMobFillPageTableForMemObj(VBOXWDDM_EXT_VMSVGA *pSvga,
-                                       PVMSVGAMOB pMob,
-                                       RTR0MEMOBJ hMemObj);
 
 NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
                          PVMSVGACONTEXT pSvgaContext,

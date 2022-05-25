@@ -128,7 +128,7 @@ static NTSTATUS svgaCreateGBMobForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWD
     Assert(NT_SUCCESS(Status));
     if (NT_SUCCESS(Status))
     {
-        Status = SvgaMobFillPageTableForMemObj(pSvga, pAllocation->dx.gb.pMob, pAllocation->dx.gb.hMemObjGB);
+        Status = SvgaGboFillPageTableForMemObj(&pAllocation->dx.gb.pMob->gbo, pAllocation->dx.gb.hMemObjGB);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
@@ -139,9 +139,9 @@ static NTSTATUS svgaCreateGBMobForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWD
             {
                 SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
                 pCmd->mobid       = VMSVGAMOB_ID(pAllocation->dx.gb.pMob);
-                pCmd->ptDepth     = pAllocation->dx.gb.pMob->enmMobFormat;
-                pCmd->base        = pAllocation->dx.gb.pMob->base;
-                pCmd->sizeInBytes = pAllocation->dx.gb.pMob->cbMob;
+                pCmd->ptDepth     = pAllocation->dx.gb.pMob->gbo.enmMobFormat;
+                pCmd->base        = pAllocation->dx.gb.pMob->gbo.base;
+                pCmd->sizeInBytes = pAllocation->dx.gb.pMob->gbo.cbGbo;
                 SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBMob64));
             }
             else
@@ -720,7 +720,7 @@ static NTSTATUS svgaPagingMapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUI
                                     pBuildPagingBuffer->MapApertureSegment.hAllocation);
     AssertReturn(NT_SUCCESS(Status), Status);
 
-    Status = SvgaMobFillPageTableForMDL(pSvga, pMob, pBuildPagingBuffer->MapApertureSegment.pMdl,
+    Status = SvgaGboFillPageTableForMDL(&pMob->gbo, pBuildPagingBuffer->MapApertureSegment.pMdl,
                                         pBuildPagingBuffer->MapApertureSegment.MdlOffset);
     AssertReturnStmt(NT_SUCCESS(Status), SvgaMobFree(pSvga, pMob), Status);
 
@@ -737,11 +737,6 @@ static NTSTATUS svgaPagingMapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUI
         return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
     }
 
-    /* Add to the container. */
-    ExAcquireFastMutex(&pSvga->SvgaMutex);
-    RTAvlU32Insert(&pSvga->MobTree, &pMob->core);
-    ExReleaseFastMutex(&pSvga->SvgaMutex);
-
     pAllocation->dx.mobid = VMSVGAMOB_ID(pMob);
 
     uint8_t *pu8Cmd = (uint8_t *)pBuildPagingBuffer->pDmaBuffer;
@@ -754,9 +749,9 @@ static NTSTATUS svgaPagingMapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUI
     {
     SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pu8Cmd;
     pCmd->mobid       = VMSVGAMOB_ID(pMob);
-    pCmd->ptDepth     = pMob->enmMobFormat;
-    pCmd->base        = pMob->base;
-    pCmd->sizeInBytes = pMob->cbMob;
+    pCmd->ptDepth     = pMob->gbo.enmMobFormat;
+    pCmd->base        = pMob->gbo.base;
+    pCmd->sizeInBytes = pMob->gbo.cbGbo;
     pu8Cmd += sizeof(*pCmd);
     }
 
@@ -810,9 +805,7 @@ static NTSTATUS svgaPagingUnmapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_B
     }
 
     /* Find the mob. */
-    ExAcquireFastMutex(&pSvga->SvgaMutex);
-    PVMSVGAMOB pMob = (PVMSVGAMOB)RTAvlU32Get(&pSvga->MobTree, pAllocation->dx.mobid);
-    ExReleaseFastMutex(&pSvga->SvgaMutex);
+    PVMSVGAMOB pMob = SvgaMobQuery(pSvga, pAllocation->dx.mobid);
     AssertReturn(pMob, STATUS_INVALID_PARAMETER);
 
     uint32_t cbRequired = sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdDestroyGBMob);
@@ -902,25 +895,21 @@ NTSTATUS DxgkDdiDXBuildPagingBuffer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGB
             AssertFailedStmt(Status = STATUS_NOT_IMPLEMENTED);
     }
 
-    /* Fill RenderData description in any case, it will be ignored if the above code failed. */
-    GARENDERDATA *pRenderData = (GARENDERDATA *)pBuildPagingBuffer->pDmaBufferPrivateData;
-    pRenderData->u32DataType   = GARENDERDATA_TYPE_PAGING;
-    pRenderData->cbData        = cbCommands;
-    pRenderData->pFenceObject  = NULL;
-    pRenderData->pvDmaBuffer   = pBuildPagingBuffer->pDmaBuffer;
-    pRenderData->pHwRenderData = NULL;
-
-    switch (Status)
+    if (   Status == STATUS_SUCCESS
+        || Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER)
     {
-        case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
-            DEBUG_BREAKPOINT_TEST();
-            RT_FALL_THRU();
-        case STATUS_SUCCESS:
+        if (cbCommands)
         {
+            GARENDERDATA *pRenderData = (GARENDERDATA *)pBuildPagingBuffer->pDmaBufferPrivateData;
+            pRenderData->u32DataType   = GARENDERDATA_TYPE_PAGING;
+            pRenderData->cbData        = cbCommands;
+            pRenderData->pFenceObject  = NULL;
+            pRenderData->pvDmaBuffer   = pBuildPagingBuffer->pDmaBuffer;
+            pRenderData->pHwRenderData = NULL;
+
             pBuildPagingBuffer->pDmaBuffer = (uint8_t *)pBuildPagingBuffer->pDmaBuffer + cbCommands;
             pBuildPagingBuffer->pDmaBufferPrivateData = (uint8_t *)pBuildPagingBuffer->pDmaBufferPrivateData + sizeof(GARENDERDATA);
-        } break;
-        default: break;
+        }
     }
 
     return Status;
