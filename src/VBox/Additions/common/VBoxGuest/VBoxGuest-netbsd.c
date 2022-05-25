@@ -202,11 +202,35 @@ const struct wsmouse_accessops vboxguest_wsm_accessops = {
 };
 
 
+/*
+ * XXX: wsmux(4) doesn't properly handle the case when two mice with
+ * absolute position events but different calibration data are being
+ * multiplexed.  Without GAs the absolute events will be reported
+ * through the tablet ums(4) device with the range of 32k, but with
+ * GAs the absolute events will be reported through the VMM device
+ * (wsmouse at vboxguest) and VMM uses the range of 64k.  Which one
+ * responds to the calibration ioctl depends on the order of
+ * attachment.  On boot kernel attaches ums first and GAs later, so
+ * it's VMM (this driver) that gets the ioctl.  After save/restore the
+ * ums will be detached and re-attached and after that it's ums that
+ * will get the ioctl, but the events (with a wider range) will still
+ * come via the VMM, confusing X, wsmoused, etc.  Hack around that by
+ * forcing the range here to match the tablet's range.
+ *
+ * We force VMM range into the ums range and rely on the fact that no
+ * actual calibration is done and both devices are used in the raw
+ * mode.  See tpcalib_trans call below.
+ *
+ * Cf. src/VBox/Devices/Input/UsbMouse.cpp
+ */
+#define USB_TABLET_RANGE_MIN 0
+#define USB_TABLET_RANGE_MAX 0x7fff
+
 static struct wsmouse_calibcoords vboxguest_wsm_default_calib = {
-    .minx = VMMDEV_MOUSE_RANGE_MIN,
-    .miny = VMMDEV_MOUSE_RANGE_MIN,
-    .maxx = VMMDEV_MOUSE_RANGE_MAX,
-    .maxy = VMMDEV_MOUSE_RANGE_MAX,
+    .minx = USB_TABLET_RANGE_MIN, // VMMDEV_MOUSE_RANGE_MIN,
+    .miny = USB_TABLET_RANGE_MIN, // VMMDEV_MOUSE_RANGE_MIN,
+    .maxx = USB_TABLET_RANGE_MAX, // VMMDEV_MOUSE_RANGE_MAX,
+    .maxy = USB_TABLET_RANGE_MAX, // VMMDEV_MOUSE_RANGE_MAX,
     .samplelen = WSMOUSE_CALIBCOORDS_RESET,
 };
 
@@ -537,10 +561,10 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
         if (RT_FAILURE(rc))
             return;
 
-        tpcalib_trans(&sc->sc_tpcalib,
-                      sc->sc_vmmmousereq->pointerXPos,
-                      sc->sc_vmmmousereq->pointerYPos,
-                      &x, &y);
+        /* XXX: see the comment for vboxguest_wsm_default_calib */
+        int rawx = (unsigned)sc->sc_vmmmousereq->pointerXPos >> 1;
+        int rawy = (unsigned)sc->sc_vmmmousereq->pointerYPos >> 1;
+        tpcalib_trans(&sc->sc_tpcalib, rawx, rawy, &x, &y);
 
         wsmouse_input(sc->sc_wsmousedev,
                       0,    /* buttons */
