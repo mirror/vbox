@@ -3420,9 +3420,7 @@ VBOX_GCC_std := -std=c++0x
 endif
 ifndef VBOX_VCC_std
  if $(VBOX_VCC_TOOL_STEM) >= VCC141 # since 2017 15.3
-  if 0 # not yet enabled
   VBOX_VCC_std := -std:c++17 -Zc:__cplusplus
-  endif
  endif
 endif
 
