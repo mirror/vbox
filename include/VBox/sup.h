@@ -2372,7 +2372,7 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook);
 
 /**
- * Notification from R0 VMM prior to saving the guest-FPU register state (and
+ * Notification from R0 VMM after saving the guest-FPU register state (and
  * potentially restoring the host-FPU register state) in ring-0.
  *
  * @param   fCtxHook    Whether thread-context hooks are enabled.
