@@ -2570,7 +2570,7 @@ if1of ($(DLLS), VBoxRT-x86)
  # .def file for windows.
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRT-x86)
  $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def \
+		$(VBOX_PATH_RUNTIME_SRC)/r3/win/VBoxRT-win32.def \
 		| $$(dir $$@) # Hopefully no need to export openssl here.
 	$(RM) -f -- $@
 	$(SED)  --output "$@" \
@@ -2579,7 +2579,7 @@ if1of ($(DLLS), VBoxRT-x86)
 		-e "/only-arm64/d" \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def
+		$(VBOX_PATH_RUNTIME_SRC)/r3/win/VBoxRT-win32.def
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def)
 endif
