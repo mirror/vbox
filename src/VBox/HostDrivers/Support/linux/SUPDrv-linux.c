@@ -40,6 +40,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
+#include <iprt/thread.h>
 #include <VBox/err.h>
 #include <iprt/mem.h>
 #include <VBox/log.h>
@@ -1732,11 +1733,37 @@ SUPR0_EXPORT_SYMBOL(SUPR0GetKernelFeatures);
 SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
 {
     RT_NOREF(fCtxHook);
-#if RTLNX_VER_MIN(4,19,0)
+#if RTLNX_VER_MIN(4,19,0) /* Going back to 4.19.0 for better coverage, we
+                             probably only need 5.17.7+ in the end. */
+    /*
+     * HACK ALERT!
+     *
+     * We'd like to use the old __kernel_fpu_begin() API which was removed in
+     * early 2019, because we typically run with preemption enabled and have an
+     * preemption hook installed which will call kernel_fpu_end() in case we're
+     * scheduled out after getting in here.  The preemption hook is almost
+     * useless if we run with preemption disabled.
+     *
+     * For the case where the kernel does not have preemption hooks, we get here
+     * with preemption already disabled and one more count doesn't make any
+     * difference.
+     *
+     * So, after the kernel_fpu_begin() call we undo the implicit preempt_disable()
+     * call it does, so the preemption hook can do its work and the VBox user has
+     * a more responsive system.
+     *
+     * See @bugref{10209#c12} and onwards for more details.
+     */
+    Assert(fCtxHook || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     kernel_fpu_begin();
-    /* if (fCtxHook) */
-        preempt_enable();  /* HACK ALERT! undo the implicit preempt_disable() in kernel_fpu_begin(). */
-    return true;
+# if 0 /* Always do it for now for better test coverage. */
+    if (fCtxHook)
+# endif
+        preempt_enable();
+    return false; /** @todo Not sure if we have license to use any extended state, or
+                   *        if we're limited to the SSE & x87 FPU. If it's the former,
+                   *        we should return @a true and the caller can skip
+                   *        saving+restoring the host state and save some time. */
 #else
     return false;
 #endif
@@ -1748,8 +1775,12 @@ SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
 {
     RT_NOREF(fCtxHook);
 #if RTLNX_VER_MIN(4,19,0)
-    /* if (fCtxHook) */
-        preempt_disable();  /* HACK ALERT! undo the implicit preempt_enable() in SUPR0FpuBegin(). */
+    /* HACK ALERT! See SUPR0FpuBegin for an explanation of this. */
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+# if 0 /* Always do it for now for better test coverage. */
+    if (fCtxHook)
+# endif
+        preempt_disable();
     kernel_fpu_end();
 #endif
 }

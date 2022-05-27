@@ -520,7 +520,9 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST));
 
     /* Notify the support driver prior to loading the guest-FPU register state. */
-    SUPR0FpuBegin(false /* unused */);
+    SUPR0FpuBegin(VMMR0ThreadCtxHookIsEnabled(pVCpu));
+    /** @todo use return value? Currently skipping that to be on the safe side
+     *        wrt. extended state (linux). */
 
     if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
     {
@@ -590,7 +592,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
         }
 
         /* Notify the support driver after loading the host-FPU register state. */
-        SUPR0FpuEnd(false /* unused */);
+        SUPR0FpuEnd(VMMR0ThreadCtxHookIsEnabled(pVCpu));
     }
     else
         fSavedGuest = false;
