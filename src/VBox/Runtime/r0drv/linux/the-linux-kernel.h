@@ -184,6 +184,11 @@
 # include <asm/tlbflush.h>
 #endif
 
+/* for kernel_fpu_begin / kernel_fpu_end() */
+#if RTLNX_VER_MIN(4,20,0)
+# include <asm/fpu/api.h>
+#endif
+
 #if RTLNX_VER_MIN(3,7,0)
 # include <asm/smap.h>
 #else
