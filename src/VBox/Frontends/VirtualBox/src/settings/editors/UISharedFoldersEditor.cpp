@@ -27,9 +27,12 @@
 #include "QIToolBar.h"
 #include "QITreeWidget.h"
 #include "UIIconPool.h"
-#include "UIMachineSettingsSFDetails.h"
+#include "UISharedFolderDetailsEditor.h"
 #include "UISharedFoldersEditor.h"
 #include "VBoxUtils.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 /** Shared Folder tree-widget item. */
@@ -507,11 +510,11 @@ void UISharedFoldersEditor::sltHandleContextMenuRequest(const QPoint &position)
 
 void UISharedFoldersEditor::sltAddFolder()
 {
-    /* Configure folder details dialog: */
-    UIMachineSettingsSFDetails dlgFolderDetails(UIMachineSettingsSFDetails::AddType,
-                                                m_foldersAvailable.value(UISharedFolderType_Console),
-                                                usedList(true),
-                                                this);
+    /* Configure shared folder details editor: */
+    UISharedFolderDetailsEditor dlgFolderDetails(UISharedFolderDetailsEditor::EditorType_Add,
+                                                 m_foldersAvailable.value(UISharedFolderType_Console),
+                                                 usedList(true),
+                                                 this);
 
     /* Run folder details dialog: */
     if (dlgFolderDetails.exec() == QDialog::Accepted)
@@ -548,11 +551,11 @@ void UISharedFoldersEditor::sltEditFolder()
     AssertPtrReturnVoid(pItem);
     AssertPtrReturnVoid(pItem->parentItem());
 
-    /* Configure folder details dialog: */
-    UIMachineSettingsSFDetails dlgFolderDetails(UIMachineSettingsSFDetails::EditType,
-                                                m_foldersAvailable.value(UISharedFolderType_Console),
-                                                usedList(false),
-                                                this);
+    /* Configure shared folder details editor: */
+    UISharedFolderDetailsEditor dlgFolderDetails(UISharedFolderDetailsEditor::EditorType_Edit,
+                                                 m_foldersAvailable.value(UISharedFolderType_Console),
+                                                 usedList(false),
+                                                 this);
     dlgFolderDetails.setPath(pItem->m_strPath);
     dlgFolderDetails.setName(pItem->m_strName);
     dlgFolderDetails.setPermanent(pItem->m_enmType == UISharedFolderType_Machine);

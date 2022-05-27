@@ -921,6 +921,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIRecordingSettingsEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
 	src/settings/editors/UISharedClipboardEditor.h \
+	src/settings/editors/UISharedFolderDetailsEditor.h \
 	src/settings/editors/UISharedFoldersEditor.h \
 	src/settings/editors/UIShortcutConfigurationEditor.h \
 	src/settings/editors/UISnapshotFolderEditor.h \
@@ -941,7 +942,6 @@ UICommon_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsNetwork.h \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsSF.h \
-	src/settings/machine/UIMachineSettingsSFDetails.h \
 	src/settings/machine/UIMachineSettingsSerial.h \
 	src/settings/machine/UIMachineSettingsStorage.h \
 	src/settings/machine/UIMachineSettingsSystem.h \
@@ -1491,6 +1491,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIRecordingSettingsEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \
 	src/settings/editors/UISharedClipboardEditor.cpp \
+	src/settings/editors/UISharedFolderDetailsEditor.cpp \
 	src/settings/editors/UISharedFoldersEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
 	src/settings/editors/UISnapshotFolderEditor.cpp \
@@ -1511,7 +1512,6 @@ UICommon_SOURCES = \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsSF.cpp \
-	src/settings/machine/UIMachineSettingsSFDetails.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsSystem.cpp \

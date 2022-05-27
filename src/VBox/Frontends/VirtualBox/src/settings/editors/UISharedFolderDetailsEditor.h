@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineSettingsSFDetails class declaration.
+ * VBox Qt GUI - UISharedFolderDetailsEditor class declaration.
  */
 
 /*
@@ -15,66 +15,86 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSFDetails_h
-#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSFDetails_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UISharedFolderDetailsEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UISharedFolderDetailsEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-/* Includes */
+/* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UIMachineSettingsSF.h"
 
-class UIFilePathSelector;
+/* Forward declarations: */
 class QCheckBox;
 class QLabel;
 class QLineEdit;
 class QIDialogButtonBox;
+class UIFilePathSelector;
 
-/* Shared folders details dialog: */
-class SHARED_LIBRARY_STUFF UIMachineSettingsSFDetails : public QIWithRetranslateUI2<QIDialog>
+/** QIDialog subclass used as a shared folders editor. */
+class SHARED_LIBRARY_STUFF UISharedFolderDetailsEditor : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    enum SFDialogType
+    /** Editor types. */
+    enum EditorType
     {
-        AddType,
-        EditType
+        EditorType_Add,
+        EditorType_Edit
     };
 
-    UIMachineSettingsSFDetails(SFDialogType type,
-                               bool fUsePermanent,
-                               const QStringList &usedNames,
-                               QWidget *pParent = 0);
+    /** Constructs editor passing @a pParent to the base-class.
+      * @param  enmType        Brings editor type.
+      * @param  fUsePermanent  Brings whether folder can be permanent.
+      * @param  usedNames      Brings existing folder names. */
+    UISharedFolderDetailsEditor(EditorType enmType,
+                                bool fUsePermanent,
+                                const QStringList &usedNames,
+                                QWidget *pParent = 0);
 
+    /** Defines folder @a strPath. */
     void setPath(const QString &strPath);
+    /** Returns folder path. */
     QString path() const;
 
+    /** Defines folder @a strName. */
     void setName(const QString &strName);
+    /** Returns folder name. */
     QString name() const;
 
+    /** Defines whether folder is @a fWritable. */
     void setWriteable(bool fWriteable);
+    /** Returns whether folder is writable. */
     bool isWriteable() const;
 
+    /** Defines whether folder supports @a fAutoMount. */
     void setAutoMount(bool fAutoMount);
+    /** Returns whether folder supports auto mount. */
     bool isAutoMounted() const;
 
+    /** Defines folder @a strAutoMountPoint. */
     void setAutoMountPoint(const QString &strAutoMountPoint);
+    /** Returns folder auto mount point. */
     QString autoMountPoint() const;
 
+    /** Defines whether folder is @a fPermanent. */
     void setPermanent(bool fPermanent);
+    /** Returns whether folder is permanent. */
     bool isPermanent() const;
 
 protected:
 
-    void retranslateUi();
+    /** Handles translation event. */
+    void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
+    /** Holds signal about folder path selected. */
     void sltSelectPath();
+    /** Checks editor validness. */
     void sltValidate();
 
 private:
@@ -86,10 +106,15 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
-    SFDialogType  m_type;
-    bool          m_fUsePermanent;
-    QStringList   m_usedNames;
-    UISettingsCacheSharedFolders *m_pCache;
+    /** @name Arguments
+      * @{ */
+        /** Holds editor type. */
+        EditorType   m_enmType;
+        /** Holds whether folder can be permanent. */
+        bool         m_fUsePermanent;
+        /** Holds existing folder names. */
+        QStringList  m_usedNames;
+    /** @} */
 
     /** @name Widgets
       * @{ */
@@ -116,4 +141,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSFDetails_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UISharedFolderDetailsEditor_h */
