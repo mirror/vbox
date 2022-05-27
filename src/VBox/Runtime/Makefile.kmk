@@ -2360,6 +2360,8 @@ VBoxRT_SOURCES.amd64          := $(RuntimeR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
 	 $(VBoxRT_0_OUTDIR)/VBoxRT.def
+VBoxRT_CLEAN.win              += \
+	$(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
@@ -2414,26 +2416,6 @@ VBoxRT_LDFLAGS.win             = /MANIFEST \
 	/delayload:ole32.dll \
 	/delayload:oleaut32.dll \
 	/delayload:advapi32.dll
-
-if1of ($(DLLS), VBoxRT)
-VBoxRT_CLEAN += $(VBoxRT_0_OUTDIR)/VBoxRT.def
-$$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
-		$(if-expr defined(VBOX_WITH_OPENSSL3)\
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-3.0.def \
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-1.1plus.def )\
-		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
-		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
-	$(RM) -f -- $@
-	$(SED)  --output "$@" \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e "/not-amd64/d",-e "/only-amd64/d") \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
-		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
-		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
-		$^
-endif
 
 if1of (VBoxRT,$(DLLS))
  $(call VBOX_SET_VER_INFO_DLL,VBoxRT,VirtualBox Runtime)
@@ -2502,6 +2484,29 @@ VBoxRT:: VBoxRTDummy
  endif # building VBoxRT
 endif # linux
 
+if1of ($(DLLS), VBoxRT)
+ # .def file for windows.
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRT)
+ $(VBoxRT_0_OUTDIR)/VBoxRT.def: \
+		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
+		$(if-expr defined(VBOX_WITH_OPENSSL3)\
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-3.0.def \
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-1.1plus.def )\
+		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
+		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
+	$(RM) -f -- $@
+	$(SED)  --output "$@" \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e "/not-amd64/d",-e "/only-amd64/d") \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
+		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
+		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
+		$^
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRT_0_OUTDIR)/VBoxRT.def)
+endif
+
 
 #
 # VBoxRT-x86 - 32-bit version of VBoxRT
@@ -2556,8 +2561,15 @@ VBoxRT-x86_LIBS.win               += \
 VBoxRT-x86_SOURCES.win = $(filter-out %.def %.rc,$(VBoxRT_SOURCES.win)) \
 	$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
 VBoxRT-x86_CLEAN += $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
+
+if1of (VBoxRT-x86,$(DLLS))
+ $(call VBOX_SET_VER_INFO_DLL,VBoxRT-x86,VirtualBox 32-bit Runtime)
+endif
+
 if1of ($(DLLS), VBoxRT-x86)
-$$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
+ # .def file for windows.
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRT-x86)
+ $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def \
 		| $$(dir $$@) # Hopefully no need to export openssl here.
 	$(RM) -f -- $@
@@ -2567,11 +2579,9 @@ $$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
 		-e "/only-arm64/d" \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
-		$^
-endif
-
-if1of (VBoxRT-x86,$(DLLS))
- $(call VBOX_SET_VER_INFO_DLL,VBoxRT-x86,VirtualBox 32-bit Runtime)
+		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def)
 endif
 
 #
@@ -2601,24 +2611,26 @@ if1of (VBoxRT,$(DLLS))
  	$(LIB_RUNTIME)
  VBoxRTStableCheck_CLEAN = \
  	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRTStableCheck)
+
  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-       $(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
-	$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
-	| $$(dir $$@)
+ $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+ 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
+ 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
+ 		| $$(dir $$@)
  else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-       $(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
-	$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
+ $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+ 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
+ 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
  else
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-       $(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
+ $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+ 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+ 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
  endif
 	$(APPEND) -tn "$@" '%include "iprt/asmdefs.mac"' ''
 	$(SED) --append "$@" \
@@ -2633,6 +2645,9 @@ $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
 		-f "$<" $(filter %.def, $^)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)
+
 endif
 endif ## @todo bugref:9898
 endif # remove later
