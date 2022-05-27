@@ -185,7 +185,7 @@
 #endif
 
 /* for kernel_fpu_begin / kernel_fpu_end() */
-#if RTLNX_VER_MIN(4,20,0)
+#if RTLNX_VER_MIN(4,2,0)
 # include <asm/fpu/api.h>
 #endif
 
