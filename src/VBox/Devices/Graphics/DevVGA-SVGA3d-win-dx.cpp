@@ -2154,6 +2154,43 @@ static DXGI_FORMAT dxGetDxgiTypelessFormat(DXGI_FORMAT dxgiFormat)
 {
     switch (dxgiFormat)
     {
+        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        case DXGI_FORMAT_R32G32B32A32_UINT:
+        case DXGI_FORMAT_R32G32B32A32_SINT:
+            return DXGI_FORMAT_R32G32B32A32_TYPELESS;       /* 1 */
+        case DXGI_FORMAT_R32G32B32_FLOAT:
+        case DXGI_FORMAT_R32G32B32_UINT:
+        case DXGI_FORMAT_R32G32B32_SINT:
+            return DXGI_FORMAT_R32G32B32_TYPELESS;          /* 5 */
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        case DXGI_FORMAT_R16G16B16A16_UNORM:
+        case DXGI_FORMAT_R16G16B16A16_UINT:
+        case DXGI_FORMAT_R16G16B16A16_SNORM:
+        case DXGI_FORMAT_R16G16B16A16_SINT:
+            return DXGI_FORMAT_R16G16B16A16_TYPELESS;       /* 9 */
+        case DXGI_FORMAT_R32G32_FLOAT:
+        case DXGI_FORMAT_R32G32_UINT:
+        case DXGI_FORMAT_R32G32_SINT:
+            return DXGI_FORMAT_R32G32_TYPELESS;             /* 15 */
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+            return DXGI_FORMAT_R32G8X24_TYPELESS;           /* 19 */
+        case DXGI_FORMAT_R10G10B10A2_UNORM:
+        case DXGI_FORMAT_R10G10B10A2_UINT:
+            return DXGI_FORMAT_R10G10B10A2_TYPELESS;        /* 23 */
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        case DXGI_FORMAT_R8G8B8A8_UINT:
+        case DXGI_FORMAT_R8G8B8A8_SNORM:
+        case DXGI_FORMAT_R8G8B8A8_SINT:
+            return DXGI_FORMAT_R8G8B8A8_TYPELESS;           /* 27 */
+        case DXGI_FORMAT_R16G16_FLOAT:
+        case DXGI_FORMAT_R16G16_UNORM:
+        case DXGI_FORMAT_R16G16_UINT:
+        case DXGI_FORMAT_R16G16_SNORM:
+        case DXGI_FORMAT_R16G16_SINT:
+            return DXGI_FORMAT_R16G16_TYPELESS;             /* 33 */
         case DXGI_FORMAT_D32_FLOAT:
         case DXGI_FORMAT_R32_FLOAT:
         case DXGI_FORMAT_R32_UINT:
@@ -2163,14 +2200,50 @@ static DXGI_FORMAT dxGetDxgiTypelessFormat(DXGI_FORMAT dxgiFormat)
         case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
         case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
             return DXGI_FORMAT_R24G8_TYPELESS;              /* 44 */
+        case DXGI_FORMAT_R8G8_UNORM:
+        case DXGI_FORMAT_R8G8_UINT:
+        case DXGI_FORMAT_R8G8_SNORM:
+        case DXGI_FORMAT_R8G8_SINT:
+            return DXGI_FORMAT_R8G8_TYPELESS;               /* 48*/
+        case DXGI_FORMAT_R16_FLOAT:
+        case DXGI_FORMAT_D16_UNORM:
+        case DXGI_FORMAT_R16_UNORM:
+        case DXGI_FORMAT_R16_UINT:
+        case DXGI_FORMAT_R16_SNORM:
+        case DXGI_FORMAT_R16_SINT:
+            return DXGI_FORMAT_R16_TYPELESS;                /* 53 */
+        case DXGI_FORMAT_R8_UNORM:
+        case DXGI_FORMAT_R8_UINT:
+        case DXGI_FORMAT_R8_SNORM:
+        case DXGI_FORMAT_R8_SINT:
+            return DXGI_FORMAT_R8_TYPELESS;                 /* 60*/
+        case DXGI_FORMAT_BC1_UNORM:
+        case DXGI_FORMAT_BC1_UNORM_SRGB:
+            return DXGI_FORMAT_BC1_TYPELESS;                /* 70 */
+        case DXGI_FORMAT_BC2_UNORM:
+        case DXGI_FORMAT_BC2_UNORM_SRGB:
+            return DXGI_FORMAT_BC2_TYPELESS;                /* 73 */
+        case DXGI_FORMAT_BC3_UNORM:
+        case DXGI_FORMAT_BC3_UNORM_SRGB:
+            return DXGI_FORMAT_BC3_TYPELESS;                /* 76 */
+        case DXGI_FORMAT_BC4_UNORM:
+        case DXGI_FORMAT_BC4_SNORM:
+            return DXGI_FORMAT_BC4_TYPELESS;                /* 79 */
+        case DXGI_FORMAT_BC5_UNORM:
+        case DXGI_FORMAT_BC5_SNORM:
+            return DXGI_FORMAT_BC5_TYPELESS;                /* 82 */
         case DXGI_FORMAT_B8G8R8A8_UNORM:
-        case DXGI_FORMAT_B8G8R8X8_UNORM :
-        case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
         case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
-        case DXGI_FORMAT_B8G8R8X8_TYPELESS:
-        case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
             return DXGI_FORMAT_B8G8R8A8_TYPELESS;           /* 90 */
-        /** @todo Other _TYPELESS formats. */
+        case DXGI_FORMAT_B8G8R8X8_UNORM:
+        case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+            return DXGI_FORMAT_B8G8R8X8_TYPELESS;           /* 92 */
+        case DXGI_FORMAT_BC6H_UF16:
+        case DXGI_FORMAT_BC6H_SF16:
+            return DXGI_FORMAT_BC6H_TYPELESS;               /* 94 */
+        case DXGI_FORMAT_BC7_UNORM:
+        case DXGI_FORMAT_BC7_UNORM_SRGB:
+            return DXGI_FORMAT_BC7_TYPELESS;                /* 97 */
         default:
             break;
     }
@@ -2183,9 +2256,11 @@ static bool dxIsDepthStencilFormat(DXGI_FORMAT dxgiFormat)
 {
     switch (dxgiFormat)
     {
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_D32_FLOAT:
         case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R16_FLOAT:
             return true;
-        /** @todo Other Depth Stencil formats. */
         default:
             break;
     }
@@ -5568,7 +5643,9 @@ static void vboxDXMatchShaderSignatures(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
     /* Intermediate shaders normally have both input and output signatures. However it is ok if they do not.
      * Just catch this unusual case in order to see if everything is fine.
      */
-    Assert(   (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_VS || pDXShader->enmShaderType == SVGA3D_SHADERTYPE_PS)
+    Assert(   (   pDXShader->enmShaderType == SVGA3D_SHADERTYPE_VS
+               || pDXShader->enmShaderType == SVGA3D_SHADERTYPE_PS
+               || pDXShader->enmShaderType == SVGA3D_SHADERTYPE_CS)
            || (pDXShader->shaderInfo.cInputSignature && pDXShader->shaderInfo.cOutputSignature));
 }
 
@@ -5629,6 +5706,11 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
     /* Unbind render target views because they mught be (re-)used as shader resource views. */
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     pDXDevice->pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 0, 0, NULL, NULL);
+    for (unsigned i = 0; i < SVGA3D_DX11_1_MAX_UAVIEWS; ++i)
+    {
+        ID3D11UnorderedAccessView *pNullUA = 0;
+        pDXDevice->pImmediateContext->CSSetUnorderedAccessViews(i, 1, &pNullUA, NULL);
+    }
 
     /*
      * Shader resources
@@ -5732,7 +5814,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 AssertContinue(RT_SUCCESS(rc));
             }
 
-            LogFunc(("uav[%d] sid = %u, uaid = %u\n", idxUA, sid, uaViewId));
+            LogFunc(("csuav[%d] sid = %u, uaid = %u\n", idxUA, sid, uaViewId));
         }
     }
 
@@ -5769,6 +5851,8 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
             rc = dxDefineDepthStencilView(pThisCC, pDXContext, viewId, pDSViewEntry);
             AssertReturnVoid(RT_SUCCESS(rc));
         }
+
+        LogFunc(("dsv sid = %u, dsvid = %u\n", pDSViewEntry->sid, viewId));
     }
 
     for (uint32_t i = 0; i < SVGA3D_MAX_SIMULTANEOUS_RENDER_TARGETS; ++i)
@@ -5794,6 +5878,8 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 rc = dxDefineRenderTargetView(pThisCC, pDXContext, viewId, pRTViewEntry);
                 AssertReturnVoid(RT_SUCCESS(rc));
             }
+
+            LogFunc(("rtv sid = %u, rtvid = %u\n", pRTViewEntry->sid, viewId));
         }
     }
 
@@ -5854,7 +5940,6 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
             if (pDXShader->pShader == NULL)
             {
                 /* Create a new shader. */
-                Log(("Shader: cid=%u shid=%u type=%d, GuestSignatures %d\n", pDXContext->cid, shaderId, pDXShader->enmShaderType, pDXShader->shaderInfo.fGuestSignatures));
 
                 /* Apply resource types to a pixel shader. */
                 if (shaderType == SVGA3D_SHADERTYPE_PS) /* Others too? */
@@ -5942,9 +6027,9 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     if (FAILED(hr))
                         rc = VERR_INVALID_STATE;
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
+
+            LogFunc(("Shader: cid=%u shid=%u type=%d, GuestSignatures %d, %Rrc\n", pDXContext->cid, shaderId, pDXShader->enmShaderType, pDXShader->shaderInfo.fGuestSignatures, rc));
         }
         else
             pDXShader = NULL;
@@ -5959,7 +6044,6 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
      * InputLayout
      */
     SVGA3dElementLayoutId const elementLayoutId = pDXContext->svgaDXContext.inputAssembly.layoutId;
-    LogFunc(("Input layout id %u\n", elementLayoutId));
     ID3D11InputLayout *pInputLayout = NULL;
     if (elementLayoutId != SVGA3D_INVALID_ID)
     {
@@ -5981,6 +6065,8 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
         }
 
         pInputLayout = pDXElementLayout->pElementLayout;
+
+        LogFunc(("Input layout id %u\n", elementLayoutId));
     }
 
     pDevice->pImmediateContext->IASetInputLayout(pInputLayout);
@@ -8481,6 +8567,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXDispatch(PVGASTATECC pThisCC, PVMSVGA3DDX
 
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+
+    dxSetupPipeline(pThisCC, pDXContext);
 
     pDevice->pImmediateContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
 
