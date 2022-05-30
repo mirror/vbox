@@ -614,7 +614,6 @@ int vmsvga3dDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDX
     ASSERT_GUEST_RETURN(pCmd->startSampler < SVGA3D_DX_MAX_SAMPLERS, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(cSamplerId <= SVGA3D_DX_MAX_SAMPLERS - pCmd->startSampler, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(pCmd->type >= SVGA3D_SHADERTYPE_MIN && pCmd->type < SVGA3D_SHADERTYPE_MAX, VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_RETURN(pDXContext->cot.paSampler, VERR_INVALID_STATE);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     uint32_t const idxShaderState = pCmd->type - SVGA3D_SHADERTYPE_MIN;
@@ -774,7 +773,6 @@ int vmsvga3dDXSetInputLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dEl
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(pDXContext->cot.paElementLayout, VERR_INVALID_STATE);
     ASSERT_GUEST_RETURN(   elementLayoutId == SVGA3D_INVALID_ID
                         || elementLayoutId < pDXContext->cot.cElementLayout, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
