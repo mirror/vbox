@@ -53,12 +53,13 @@ static DECLCALLBACK(bool) autostartVMCmp(const AUTOSTARTVM &vm1, const AUTOSTART
     return vm1.uStartupDelay <= vm2.uStartupDelay;
 }
 
-DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
+DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
 {
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     int vrc = VINF_SUCCESS;
     std::list<AUTOSTARTVM> listVM;
     uint32_t uStartupDelay = 0;
+
+    autostartSvcLogVerbose(1, "Starting machines ...\n");
 
     pCfgAst = autostartConfigAstGetByName(pCfgAst, "startup_delay");
     if (pCfgAst)
@@ -67,7 +68,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
         {
             vrc = RTStrToUInt32Full(pCfgAst->u.KeyValue.aszValue, 10, &uStartupDelay);
             if (RT_FAILURE(vrc))
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "'startup_delay' must be an unsigned number");
+                return autostartSvcLogErrorRc(vrc, "'startup_delay' must be an unsigned number");
         }
     }
 
@@ -78,7 +79,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
     }
 
     if (vrc == VERR_INTERRUPTED)
-        return RTEXITCODE_SUCCESS;
+        return VINF_SUCCESS;
 
     /*
      * Build a list of all VMs we need to autostart first, apply the overrides
@@ -95,22 +96,32 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
         {
             if (machines[i])
             {
+                Bstr strName;
+                CHECK_ERROR_BREAK(machines[i], COMGETTER(Name)(strName.asOutParam()));
+
                 BOOL fAccessible;
                 CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible)(&fAccessible));
                 if (!fAccessible)
+                {
+                    autostartSvcLogVerbose(1, "Machine '%ls' is not accessible, skipping\n", strName.raw());
                     continue;
+                }
+
+                AUTOSTARTVM autostartVM;
 
                 BOOL fAutostart;
                 CHECK_ERROR_BREAK(machines[i], COMGETTER(AutostartEnabled)(&fAutostart));
                 if (fAutostart)
                 {
-                    AUTOSTARTVM autostartVM;
-
                     CHECK_ERROR_BREAK(machines[i], COMGETTER(Id)(autostartVM.strId.asOutParam()));
                     CHECK_ERROR_BREAK(machines[i], COMGETTER(AutostartDelay)(&autostartVM.uStartupDelay));
 
                     listVM.push_back(autostartVM);
                 }
+
+                autostartSvcLogVerbose(1, "Machine '%ls': Autostart is %s (startup delay is %RU32 seconds)\n",
+                                       strName.raw(), fAutostart ? "enabled" : "disabled",
+                                       fAutostart ? autostartVM.uStartupDelay : 0);
             }
         }
 
@@ -119,13 +130,23 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
          * to mistinterpreted Dijkstra's "single exit" commandment
          * just to add this log, hence a bit of duplicate logic here.
          */
-        if (SUCCEEDED(rc) && listVM.empty())
-            LogRel(("No VMs configured for autostart\n"));
+        if (SUCCEEDED(rc))
+        {
+            if (machines.size() == 0)
+                autostartSvcLogWarning("No virtual machines found.\n"
+                                       "This either could be a configuration problem (access rights), "
+                                       "or there are no VMs configured yet.");
+            else if (listVM.empty())
+                autostartSvcLogWarning("No virtual machines configured for autostart.\n"
+                                       "Please consult the manual about how to enable auto starting VMs.\n");
+        }
+        else
+            autostartSvcLogError("Enumerating virtual machines failed with %Rhrc\n", rc);
 
         if (   SUCCEEDED(rc)
             && !listVM.empty())
         {
-            ULONG uDelayCurr = 0;
+            ULONG uDelayCur = 0;
 
             /* Sort by startup delay and apply base override. */
             listVM.sort(autostartVMCmp);
@@ -136,22 +157,24 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                 ComPtr<IMachine> machine;
                 ComPtr<IProgress> progress;
 
-                if ((*it).uStartupDelay > uDelayCurr)
-                {
-                    autostartSvcLogVerbose(1, "Delaying start of the next VMs for %ul seconds ...\n",
-                                           (*it).uStartupDelay - uDelayCurr);
-                    RTThreadSleep(((*it).uStartupDelay - uDelayCurr) * 1000);
-                    uDelayCurr = (*it).uStartupDelay;
-                }
+                CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine((*it).strId.raw(), machine.asOutParam()));
 
-                CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine((*it).strId.raw(),
-                                                             machine.asOutParam()));
+                Bstr strName;
+                CHECK_ERROR_BREAK(machine, COMGETTER(Name)(strName.asOutParam()));
+
+                if ((*it).uStartupDelay > uDelayCur)
+                {
+                    autostartSvcLogVerbose(1, "Waiting for %ul seconds before starting machine '%s' ...\n",
+                                           (*it).uStartupDelay - uDelayCur, strName.raw());
+                    RTThreadSleep(((*it).uStartupDelay - uDelayCur) * 1000);
+                    uDelayCur = (*it).uStartupDelay;
+                }
 
                 CHECK_ERROR_BREAK(machine, LaunchVMProcess(g_pSession, Bstr("headless").raw(),
                                                            ComSafeArrayNullInParam(), progress.asOutParam()));
                 if (SUCCEEDED(rc) && !progress.isNull())
                 {
-                    autostartSvcLogVerbose(1, "Waiting for VM '%ls' to power on...\n", (*it).strId.raw());
+                    autostartSvcLogVerbose(1, "Waiting for machine '%ls' to power on ...\n", strName.raw());
                     CHECK_ERROR(progress, WaitForCompletion(-1));
                     if (SUCCEEDED(rc))
                     {
@@ -171,7 +194,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                                     com::GluePrintErrorInfo(info);
                                 }
                                 else
-                                    autostartSvcLogVerbose(1, "VM '%ls' has been successfully started.\n", (*it).strId.raw());
+                                    autostartSvcLogVerbose(1, "Machine '%ls' has been successfully started.\n", strName.raw());
                             }
                         }
                     }
@@ -184,6 +207,6 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
         }
     }
 
-    return rcExit;
+    return vrc;
 }
 

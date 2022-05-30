@@ -19,10 +19,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/buildconfig.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
@@ -50,7 +49,6 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <VBox/log.h>
-#include <VBox/version.h>
 
 #include "VBoxAutostart.h"
 #include "PasswordInput.h"
@@ -260,9 +258,10 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
 
 DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
 {
-    /* write it to the release log too */
+    /* write it to the console + release log too (if configured). */
     LogRel(("%s", pszMsg));
 
+    /** @todo r=andy Only (un)register source once? */
     HANDLE hEventLog = RegisterEventSourceA(NULL /* local computer */, "VBoxAutostartSvc");
     AssertReturnVoid(hEventLog != NULL);
     WORD wType = 0;
@@ -273,23 +272,27 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
     switch (enmLogType)
     {
         case AUTOSTARTLOGTYPE_INFO:
+            RTStrmPrintf(g_pStdOut, "%s", pszMsg);
             wType = 0;
             break;
         case AUTOSTARTLOGTYPE_ERROR:
+            RTStrmPrintf(g_pStdErr, "Error: %s", pszMsg);
             wType = EVENTLOG_ERROR_TYPE;
             break;
         case AUTOSTARTLOGTYPE_WARNING:
+            RTStrmPrintf(g_pStdOut, "Warning: %s", pszMsg);
             wType = EVENTLOG_WARNING_TYPE;
             break;
         case AUTOSTARTLOGTYPE_VERBOSE:
-            if (!g_cVerbosity)
-                return;
+            RTStrmPrintf(g_pStdOut, "%s", pszMsg);
             wType = EVENTLOG_INFORMATION_TYPE;
             break;
         default:
-            AssertMsgFailed(("Invalid log type %d\n", enmLogType));
+            AssertMsgFailed(("Invalid log type %#x\n", enmLogType));
+            break;
     }
 
+    /** @todo r=andy Why ANSI and not Unicode (xxxW)? */
     BOOL fRc = ReportEventA(hEventLog,               /* hEventLog */
                             wType,                   /* wType */
                             0,                       /* wCategory */
@@ -299,7 +302,7 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
                             0,                       /* dwDataSize */
                             apsz,                    /* lpStrings */
                             NULL);                   /* lpRawData */
-    AssertMsg(fRc, ("%u\n", GetLastError())); NOREF(fRc);
+    AssertMsg(fRc, ("ReportEventA failed with %ld\n", GetLastError())); RT_NOREF(fRc);
     DeregisterEventSource(hEventLog);
 }
 
@@ -341,6 +344,7 @@ static SC_HANDLE autostartSvcWinOpenSCManager(const char *pszAction, DWORD dwAcc
  *
  * @returns Valid service handle on success.
  *          NULL on failure, will display an error message unless it's ignored.
+ *          Use GetLastError() to find out what the last Windows error was.
  *
  * @param   pszAction           The action which is requesting access to the service.
  * @param   dwSCMAccess         The service control manager access.
@@ -363,16 +367,16 @@ static SC_HANDLE autostartSvcWinOpenService(const PRTUTF16 pwszServiceName, cons
     }
     else
     {
-        DWORD   err = GetLastError();
-        bool    fIgnored = false;
+        DWORD const dwErr    = GetLastError();
+        bool        fIgnored = false;
         va_list va;
         va_start(va, cIgnoredErrors);
         while (!fIgnored && cIgnoredErrors-- > 0)
-            fIgnored = (DWORD)va_arg(va, int) == err;
+            fIgnored = (DWORD)va_arg(va, int) == dwErr;
         va_end(va);
         if (!fIgnored)
         {
-            switch (err)
+            switch (dwErr)
             {
                 case ERROR_ACCESS_DENIED:
                     autostartSvcDisplayError("%s - OpenService failure: access denied\n", pszAction);
@@ -382,13 +386,13 @@ static SC_HANDLE autostartSvcWinOpenService(const PRTUTF16 pwszServiceName, cons
                                              pszAction, pwszServiceName);
                     break;
                 default:
-                    autostartSvcDisplayError("%s - OpenService failure: %d\n", pszAction, err);
+                    autostartSvcDisplayError("%s - OpenService failure, rc=%Rrc (%#x)\n", RTErrConvertFromWin32(dwErr), dwErr);
                     break;
             }
         }
 
         CloseServiceHandle(hSCM);
-        SetLastError(err);
+        SetLastError(dwErr);
     }
     return hSvc;
 }
@@ -471,7 +475,7 @@ static RTEXITCODE autostartSvcWinEnable(int argc, char **argv)
  * @param   argc    The action argument count.
  * @param   argv    The action argument vector.
  */
-static int autostartSvcWinDelete(int argc, char **argv)
+static RTEXITCODE autostartSvcWinDelete(int argc, char **argv)
 {
     /*
      * Parse the arguments.
@@ -507,35 +511,29 @@ static int autostartSvcWinDelete(int argc, char **argv)
     com::Utf8Str sServiceName;
     int vrc = autostartGetServiceName(pszUser, sServiceName);
     if (RT_FAILURE(vrc))
-        return autostartSvcDisplayError("delete - DeleteService failed, service name for user %s can not be constructed.\n",
+        return autostartSvcDisplayError("delete - DeleteService failed, service name for user %s cannot be constructed.\n",
                                         pszUser);
     /*
-     * Create the service.
+     * Delete the service.
      */
-    RTEXITCODE rc = RTEXITCODE_FAILURE;
-    SC_HANDLE hSvc = autostartSvcWinOpenService(com::Bstr(sServiceName).raw(), "delete", SERVICE_CHANGE_CONFIG, DELETE,
-                                                1, ERROR_SERVICE_DOES_NOT_EXIST);
+    RTEXITCODE rcExit = RTEXITCODE_FAILURE;
+    SC_HANDLE hSvc = autostartSvcWinOpenService(com::Bstr(sServiceName).raw(), "delete", SERVICE_CHANGE_CONFIG, DELETE, 0);
     if (hSvc)
     {
         if (DeleteService(hSvc))
         {
-            RTPrintf("Successfully deleted the %s service.\n", sServiceName.c_str());
-            rc = RTEXITCODE_SUCCESS;
+            if (g_cVerbosity)
+                RTPrintf("Successfully deleted the %s service.\n", sServiceName.c_str());
+            rcExit = RTEXITCODE_SUCCESS;
         }
         else
-            autostartSvcDisplayError("delete - DeleteService failed, err=%d.\n", GetLastError());
+        {
+            DWORD const dwErr = GetLastError();
+            autostartSvcDisplayError("delete - DeleteService failed, rc=%Rrc (%#x)\n", RTErrConvertFromWin32(dwErr), dwErr);
+        }
         CloseServiceHandle(hSvc);
     }
-    else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
-    {
-
-        if (g_cVerbosity)
-            RTPrintf("The service %s was not installed, nothing to be done.", sServiceName.c_str());
-        else
-            RTPrintf("Successfully deleted the %s service.\n", sServiceName.c_str());
-        rc = RTEXITCODE_SUCCESS;
-    }
-    return rc;
+    return rcExit;
 }
 
 
@@ -785,8 +783,8 @@ autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID p
              * and return.
              */
             int rc = RTSemEventMultiSignal(g_hSupSvcWinEvent);
-            if (RT_FAILURE(rc))
-                autostartSvcLogError("SERVICE_CONTROL_STOP: RTSemEventMultiSignal failed, %Rrc\n", rc);
+            if (RT_FAILURE(rc)) /** @todo r=andy Don't we want to report back an error here to SCM? */
+                autostartSvcLogErrorRc(rc, "SERVICE_CONTROL_STOP: RTSemEventMultiSignal failed, %Rrc\n", rc);
 
             return NO_ERROR;
         }
@@ -804,22 +802,22 @@ autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID p
     return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
-static RTEXITCODE autostartStartVMs(void)
+static int autostartStartVMs(void)
 {
     int rc = autostartSetup();
     if (RT_FAILURE(rc))
-        return RTEXITCODE_FAILURE;
+        return rc;
 
     const char *pszConfigFile = RTEnvGet("VBOXAUTOSTART_CONFIG");
     if (!pszConfigFile)
-        return autostartSvcLogError("Starting VMs failed. VBOXAUTOSTART_CONFIG environment variable is not defined.\n");
+        return autostartSvcLogErrorRc(VERR_ENV_VAR_NOT_FOUND,
+                                      "Starting VMs failed. VBOXAUTOSTART_CONFIG environment variable is not defined.\n");
     bool fAllow = false;
 
     PCFGAST pCfgAst = NULL;
     rc = autostartParseConfig(pszConfigFile, &pCfgAst);
     if (RT_FAILURE(rc))
-        return autostartSvcLogError("Starting VMs failed. Failed to parse the config file. Check the access permissions and file structure.\n");
-
+        return autostartSvcLogErrorRc(rc, "Starting VMs failed. Failed to parse the config file. Check the access permissions and file structure.\n");
     PCFGAST pCfgAstPolicy = autostartConfigAstGetByName(pCfgAst, "default_policy");
     /* Check default policy. */
     if (pCfgAstPolicy)
@@ -834,7 +832,7 @@ static RTEXITCODE autostartStartVMs(void)
         else
         {
             autostartConfigAstDestroy(pCfgAst);
-            return autostartSvcLogError("'default_policy' must be either 'allow' or 'deny'.\n");
+            return autostartSvcLogErrorRc(VERR_INVALID_PARAMETER, "'default_policy' must be either 'allow' or 'deny'.\n");
         }
     }
 
@@ -843,7 +841,7 @@ static RTEXITCODE autostartStartVMs(void)
     if (RT_FAILURE(rc))
     {
         autostartConfigAstDestroy(pCfgAst);
-        return autostartSvcLogError("Failed to query username of the process (%Rrc).\n", rc);
+        return autostartSvcLogErrorRc(rc, "Failed to query username of the process (%Rrc).\n", rc);
     }
 
     PCFGAST pCfgAstUser = NULL;
@@ -876,28 +874,28 @@ static RTEXITCODE autostartStartVMs(void)
             else
             {
                 autostartConfigAstDestroy(pCfgAst);
-                return autostartSvcLogError("'allow' must be either 'true' or 'false'.\n");
+                return autostartSvcLogErrorRc(VERR_INVALID_PARAMETER, "'allow' must be either 'true' or 'false'.\n");
             }
         }
     }
     else if (pCfgAstUser)
     {
         autostartConfigAstDestroy(pCfgAst);
-        return autostartSvcLogError("Invalid config, user is not a compound node.\n");
+        return autostartSvcLogErrorRc(VERR_INVALID_PARAMETER, "Invalid config, user is not a compound node.\n");
     }
 
     if (!fAllow)
     {
         autostartConfigAstDestroy(pCfgAst);
-        return autostartSvcLogError("User is not allowed to autostart VMs.\n");
+        return autostartSvcLogErrorRc(VERR_INVALID_PARAMETER, "User is not allowed to autostart VMs.\n");
     }
 
-    RTEXITCODE rcExit = autostartStartMain(pCfgAstUser);
-    autostartConfigAstDestroy(pCfgAst);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        autostartSvcLogError("Starting VMs failed\n");
+    if (RT_SUCCESS(rc))
+        rc = autostartStartMain(pCfgAstUser);
 
-    return rcExit;
+    autostartConfigAstDestroy(pCfgAst);
+
+    return rc;
 }
 
 /**
@@ -952,13 +950,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
                     if (RT_FAILURE(rc))
                     {
                         /* No one signaled us to stop */
-                        RTEXITCODE ec = autostartStartVMs();
-                        if (ec == RTEXITCODE_SUCCESS)
-                        {
-                            LogFlow(("autostartSvcWinServiceMain: done starting VMs\n"));
-                            dwErr = NO_ERROR;
-                        }
-                        /* No reason to keep started. Shutdown the service*/
+                        rc = autostartStartVMs();
                     }
                     autostartShutdown();
                 }
@@ -981,13 +973,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
         }
         autostartSvcWinSetServiceStatus(SERVICE_STOPPED, 0, dwErr);
     }
-    else
-    {
-        dwErr = GetLastError();
-        autostartSvcLogError("RegisterServiceCtrlHandlerEx failed, rc=%Rrc (%#x)\n", RTErrConvertFromWin32(dwErr), dwErr);
-    }
-
-    LogFlowFuncLeave();
+    /* else error will be handled by the caller. */
 }
 
 
@@ -1000,7 +986,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
  */
 static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
 {
-    int rc;
+    int vrc;
 
     LogFlowFuncEnter();
 
@@ -1030,11 +1016,11 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
     do
     {
         char szLogFile[RTPATH_MAX];
-        rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile),
+        vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile),
                                            /* :fCreateDir */ false);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
-            autostartSvcLogError("Failed to get VirtualBox user home directory: %Rrc\n", rc);
+            autostartSvcLogError("Failed to get VirtualBox user home directory: %Rrc\n", vrc);
             break;
         }
 
@@ -1044,14 +1030,14 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
             break;
         }
 
-        rc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxAutostart.log");
-        if (RT_FAILURE(rc))
+        vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxAutostart.log");
+        if (RT_FAILURE(vrc))
         {
-            autostartSvcLogError("Failed to construct release log file name: %Rrc\n", rc);
+            autostartSvcLogError( "Failed to construct release log file name: %Rrc\n", vrc);
             break;
         }
 
-        rc = com::VBoxLogRelCreate(AUTOSTART_SERVICE_NAME,
+        vrc = com::VBoxLogRelCreate(AUTOSTART_SERVICE_NAME,
                                    szLogFile,
                                      RTLOGFLAGS_PREFIX_THREAD
                                    | RTLOGFLAGS_PREFIX_TIME_PROG,
@@ -1063,8 +1049,8 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
                                    g_uHistoryFileTime,
                                    g_uHistoryFileSize,
                                    NULL);
-        if (RT_FAILURE(rc))
-            autostartSvcLogError("Failed to create release log file: %Rrc\n", rc);
+        if (RT_FAILURE(vrc))
+            autostartSvcLogError("Failed to create release log file: %Rrc\n", vrc);
     } while (0);
 
     /*
@@ -1111,9 +1097,8 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
     if (!pszServiceName)
     {
         autostartSvcLogError("runit failed, service name is missing");
-        return RTEXITCODE_FAILURE;
+        return RTEXITCODE_SYNTAX;
     }
-
 
     autostartSvcLogInfo("Starting service %ls\n", g_bstrServiceName.raw());
 
@@ -1126,6 +1111,7 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
         { g_bstrServiceName.raw(), autostartSvcWinServiceMain },
         { NULL, NULL}
     };
+
     if (StartServiceCtrlDispatcherW(&s_aServiceStartTable[0]))
     {
         LogFlowFuncLeave();
@@ -1136,7 +1122,8 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
     switch (dwErr)
     {
         case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-            autostartSvcWinServiceMain(0, NULL);//autostartSvcDisplayError("Cannot run a service from the command line. Use the 'start' action to start it the right way.\n");
+            autostartSvcLogWarning("Cannot run a service from the command line. Use the 'start' action to start it the right way.\n");
+            autostartSvcWinServiceMain(0 /* cArgs */, NULL /* papwszArgs */);
             break;
         default:
             autostartSvcLogError("StartServiceCtrlDispatcher failed, rc=%Rrc (%#x)\n", RTErrConvertFromWin32(dwErr), dwErr);
@@ -1146,14 +1133,6 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
     com::Shutdown();
 
     return RTEXITCODE_FAILURE;
-}
-
-
-static void autostartSvcShowHeader(void)
-{
-    RTPrintf(VBOX_PRODUCT " VirtualBox Autostart Service Version " VBOX_VERSION_STRING " - r%s\n"
-             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n\n", RTBldCfgRevisionStr());
 }
 
 
@@ -1186,10 +1165,8 @@ static RTEXITCODE autostartSvcWinShowVersion(int argc, char **argv)
     /*
      * Do the printing.
      */
-    if (fBrief)
-        RTPrintf("%s\n", VBOX_VERSION_STRING);
-    else
-        autostartSvcShowHeader();
+    autostartSvcShowVersion(fBrief);
+
     return RTEXITCODE_SUCCESS;
 }
 
@@ -1210,26 +1187,33 @@ static RTEXITCODE autostartSvcWinShowHelp(void)
              "%s [global-options] [command] [command-options]\n"
              "\n"
              "Global options:\n"
-             "  <help|-?|-h|--help> [...]\n"
-             "    Displays this help screen.\n"
-             "  <version|-v|--version> [-brief]\n"
-             "    Displays the version.\n"
-             "\n"
+             "  -v\n"
+             "    Increases the verbosity. Can be specified multiple times."
+             "\n\n"
              "No command given:\n"
              "  Runs the service.\n"
+             "Options:\n"
              "  --service <name>\n"
              "    Specifies the service name to run.\n"
+             "\n"
+             "Command </help|help|-?|-h|--help> [...]\n"
+             "    Displays this help screen.\n"
+             "\n"
+             "Command </version|version|-V|--version> [-brief]\n"
+             "    Displays the version.\n"
              "\n"
              "Command </i|install|/RegServer> --user <username> --password-file <...>\n"
              "  Installs the service.\n"
              "Options:\n"
              "  --user <username>\n"
-             "    Specifies the user name the service should use for installation.\n"
+             "    Specifies the user name the service should be installed for.\n"
              "  --password-file <path/to/file>\n"
              "    Specifies the file for user password to use for installation.\n"
              "\n"
              "Command </u|uninstall|delete|/UnregServer>\n"
-             "  Uninstalls the service.\n",
+             "  Uninstalls the service.\n"
+             "  --user <username>\n"
+             "    Specifies the user name the service should will be deleted for.\n",
              pszExe);
     return RTEXITCODE_SUCCESS;
 }
@@ -1323,8 +1307,8 @@ int main(int argc, char **argv)
                  || !stricmp(argv[iArg], "--help"))
             return autostartSvcWinShowHelp();
         else if (   !stricmp(argv[iArg], "version")
-                 || !stricmp(argv[iArg], "/v")
-                 || !stricmp(argv[iArg], "-v")
+                 || !stricmp(argv[iArg], "/ver")
+                 || !stricmp(argv[iArg], "-V") /* Note: "-v" is used for specifying the verbosity. */
                  || !stricmp(argv[iArg], "/version")
                  || !stricmp(argv[iArg], "-version")
                  || !stricmp(argv[iArg], "--version"))

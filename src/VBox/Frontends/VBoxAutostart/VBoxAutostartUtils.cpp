@@ -24,7 +24,9 @@
 #include <VBox/com/errorprint.h>
 
 #include <VBox/err.h>
+#include <VBox/version.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/message.h>
 #include <iprt/thread.h>
 #include <iprt/stream.h>
@@ -93,29 +95,67 @@ DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fS
     return "unknown";
 }
 
-DECLHIDDEN(RTEXITCODE) autostartSvcLogErrorV(const char *pszFormat, va_list va)
+DECLHIDDEN(void) autostartSvcShowHeader(void)
 {
-    if (*pszFormat)
-    {
-        char *pszMsg = NULL;
-        if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
-        {
-            autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_ERROR);
-            RTStrFree(pszMsg);
-        }
-        else
-            autostartSvcOsLogStr(pszFormat, AUTOSTARTLOGTYPE_ERROR);
-    }
-    return RTEXITCODE_FAILURE;
+    RTPrintf(VBOX_PRODUCT " VirtualBox Autostart Service Version " VBOX_VERSION_STRING " - r%s\n"
+             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n\n", RTBldCfgRevisionStr());
 }
 
-DECLHIDDEN(RTEXITCODE) autostartSvcLogError(const char *pszFormat, ...)
+DECLHIDDEN(void) autostartSvcShowVersion(bool fBrief)
 {
+    if (fBrief)
+        RTPrintf("%s\n", VBOX_VERSION_STRING);
+    else
+        autostartSvcShowHeader();
+}
+
+DECLHIDDEN(int) autostartSvcLogErrorV(const char *pszFormat, va_list va)
+{
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+
+    char *pszMsg = NULL;
+    if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
+    {
+        autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_ERROR);
+        RTStrFree(pszMsg);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_BUFFER_OVERFLOW;
+}
+
+DECLHIDDEN(int) autostartSvcLogError(const char *pszFormat, ...)
+{
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+
     va_list va;
     va_start(va, pszFormat);
-    autostartSvcLogErrorV(pszFormat, va);
+    int rc = autostartSvcLogErrorV(pszFormat, va);
     va_end(va);
-    return RTEXITCODE_FAILURE;
+
+    return rc;
+}
+
+DECLHIDDEN(int) autostartSvcLogErrorRcV(int rc, const char *pszFormat, va_list va)
+{
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+
+    int rc2 = autostartSvcLogErrorV(pszFormat, va);
+    if (RT_SUCCESS(rc2))
+        return rc; /* Return handed-in rc. */
+    return rc2;
+}
+
+DECLHIDDEN(int) autostartSvcLogErrorRc(int rc, const char *pszFormat, ...)
+{
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+
+    va_list va;
+    va_start(va, pszFormat);
+    int rc2 = autostartSvcLogErrorRcV(rc, pszFormat, va);
+    va_end(va);
+    return rc2;
 }
 
 DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFormat, va_list va)
@@ -128,7 +168,6 @@ DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFor
     char *pszMsg = NULL;
     if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
     {
-        RTPrintf("%s", pszMsg);
         autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_VERBOSE);
         RTStrFree(pszMsg);
     }
@@ -177,27 +216,25 @@ DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va)
     char *pszMsg = NULL;
     if (RTStrAPrintfV(&pszMsg, pszFormat, va) != -1)
     {
-        RTPrintf("%s", pszMsg);
         autostartSvcOsLogStr(pszMsg, AUTOSTARTLOGTYPE_INFO);
         RTStrFree(pszMsg);
     }
 }
 
-DECLHIDDEN(RTEXITCODE) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue)
+DECLHIDDEN(int) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue)
 {
-    NOREF(pValue);
-    autostartSvcLogError("%s - RTGetOpt failure, %Rrc (%d): %s",
-                   pszAction, rc, rc, iArg < argc ? argv[iArg] : "<null>");
-    return RTEXITCODE_FAILURE;
+    RT_NOREF(pValue);
+    autostartSvcLogError("%s - RTGetOpt failure, %Rrc (%d): %s", pszAction, rc, rc, iArg < argc ? argv[iArg] : "<null>");
+    return RTEXITCODE_SYNTAX;
 }
 
-DECLHIDDEN(RTEXITCODE) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg)
+DECLHIDDEN(int) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg)
 {
-    Assert(iArg < argc);
+    AssertReturn(iArg < argc, RTEXITCODE_FAILURE);
     autostartSvcLogError("%s - Too many arguments: %s", pszAction, argv[iArg]);
     for ( ; iArg < argc; iArg++)
         LogRel(("arg#%i: %s\n", iArg, argv[iArg]));
-    return RTEXITCODE_FAILURE;
+    return VERR_INVALID_PARAMETER;
 }
 
 DECLHIDDEN(RTEXITCODE) autostartSvcDisplayErrorV(const char *pszFormat, va_list va)

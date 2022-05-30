@@ -455,16 +455,16 @@ static size_t autostartConfigTokenGetLength(PCFGTOKEN pToken)
 /**
  * Log unexpected token error.
  *
- * @returns nothing.
+ * @returns VBox status code (VERR_INVALID_PARAMETER).
  * @param   pToken          The token which caused the error.
  * @param   pszExpected     String of the token which was expected.
  */
-static void autostartConfigTokenizerMsgUnexpectedToken(PCFGTOKEN pToken, const char *pszExpected)
+static int autostartConfigTokenizerMsgUnexpectedToken(PCFGTOKEN pToken, const char *pszExpected)
 {
-    autostartSvcLogError("Unexpected token '%s' at %d:%d.%d, expected '%s'",
-                         autostartConfigTokenToString(pToken),
-                         pToken->iLine, pToken->cchStart,
-                         pToken->cchStart + autostartConfigTokenGetLength(pToken) - 1, pszExpected);
+    return autostartSvcLogErrorRc(VERR_INVALID_PARAMETER, "Unexpected token '%s' at %d:%d.%d, expected '%s'",
+                                autostartConfigTokenToString(pToken),
+                                pToken->iLine, pToken->cchStart,
+                                pToken->cchStart + autostartConfigTokenGetLength(pToken) - 1, pszExpected);
 }
 
 /**
@@ -483,10 +483,7 @@ static int autostartConfigTokenizerCheckAndConsume(PCFGTOKENIZER pCfgTokenizer, 
     if (RT_SUCCESS(rc))
     {
         if (pCfgToken->enmType != enmType)
-        {
-            autostartConfigTokenizerMsgUnexpectedToken(pCfgToken, autostartConfigTokenTypeToStr(enmType));
-            rc = VERR_INVALID_PARAMETER;
-        }
+            return autostartConfigTokenizerMsgUnexpectedToken(pCfgToken, autostartConfigTokenTypeToStr(enmType));
 
         autostartConfigTokenFree(pCfgTokenizer, pCfgToken);
     }
@@ -572,10 +569,7 @@ static int autostartConfigParseValue(PCFGTOKENIZER pCfgTokenizer, const char *ps
         *ppCfgAst = pCfgAst;
     }
     else
-    {
-        autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
-        rc = VERR_INVALID_PARAMETER;
-    }
+        rc = autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
 
     return rc;
 }
@@ -640,10 +634,7 @@ static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const c
             }
         }
         else if (RT_SUCCESS(rc))
-        {
-            autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
-            rc = VERR_INVALID_PARAMETER;
-        }
+            rc = autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
 
         /* Add to the current compound node. */
         if (RT_SUCCESS(rc))
@@ -723,6 +714,7 @@ DECLHIDDEN(void) autostartConfigAstDestroy(PCFGAST pCfgAst)
             break;
         }
         case CFGASTNODETYPE_LIST:
+            RT_FALL_THROUGH();
         default:
             AssertMsgFailed(("Invalid AST node type %d\n", pCfgAst->enmType));
     }

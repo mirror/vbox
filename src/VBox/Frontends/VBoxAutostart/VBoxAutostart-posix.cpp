@@ -247,26 +247,20 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
     LogRel(("%s", pszMsg));
 }
 
-static void displayHeader()
-{
-    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Autostart " VBOX_VERSION_STRING "\n"
-                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                 "All rights reserved.\n\n");
-}
-
 /**
- * Displays the help.
+ * Shows the help.
  *
  * @param   pszImage                Name of program name (image).
  */
-static void displayHelp(const char *pszImage)
+static void showHelp(const char *pszImage)
 {
     AssertPtrReturnVoid(pszImage);
 
-    displayHeader();
+    autostartSvcShowHeader();
 
     RTStrmPrintf(g_pStdErr,
                  "Usage: %s [-v|--verbose] [-h|-?|--help]\n"
+                 "           [-V|--version]\n"
                  "           [-F|--logfile=<file>] [-R|--logrotate=<num>]\n"
                  "           [-S|--logsize=<bytes>] [-I|--loginterval=<seconds>]\n"
                  "           [-c|--config=<config file>]\n",
@@ -281,7 +275,7 @@ static void displayHelp(const char *pszImage)
         switch (g_aOptions[i].iShort)
         {
             case 'h':
-                pcszDescr = "Print this help message and exit.";
+                pcszDescr = "Prints this help message and exit.";
                 break;
 
 #ifdef VBOXAUTOSTART_DAEMONIZE
@@ -309,6 +303,11 @@ static void displayHelp(const char *pszImage)
             case 'c':
                 pcszDescr = "Name of the configuration file for the global overrides.";
                 break;
+
+            case 'V':
+                pcszDescr = "Shows the service version.";
+                break;
+
             default:
                 AssertFailedBreakStmt(pcszDescr = "");
         }
@@ -356,8 +355,8 @@ int main(int argc, char *argv[])
         switch (c)
         {
             case 'h':
-                displayHelp(argv[0]);
-                return 0;
+                showHelp(argv[0]);
+                return RTEXITCODE_SUCCESS;
 
             case 'v':
                 g_cVerbosity++;
@@ -369,8 +368,8 @@ int main(int argc, char *argv[])
                 break;
 #endif
             case 'V':
-                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-                return 0;
+                autostartSvcShowVersion(false);
+                return RTEXITCODE_SUCCESS;
 
             case 'F':
                 pszLogFile = ValueUnion.psz;
@@ -411,23 +410,23 @@ int main(int argc, char *argv[])
 
     if (!fStart && !fStop)
     {
-        displayHelp(argv[0]);
+        showHelp(argv[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Either --start or --stop must be present");
     }
     else if (fStart && fStop)
     {
-        displayHelp(argv[0]);
+        showHelp(argv[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "--start or --stop are mutually exclusive");
     }
 
     if (!pszConfigFile)
     {
-        displayHelp(argv[0]);
+        showHelp(argv[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "--config <config file> is missing");
     }
 
     if (!fQuiet)
-        displayHeader();
+        autostartSvcShowHeader();
 
     PCFGAST pCfgAst = NULL;
     char *pszUser = NULL;
@@ -543,19 +542,18 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    RTEXITCODE rcExit;
     if (fStart)
-        rcExit = autostartStartMain(pCfgAstUser);
+        rc = autostartStartMain(pCfgAstUser);
     else
     {
         Assert(fStop);
-        rcExit = autostartStopMain(pCfgAstUser);
+        rc = autostartStopMain(pCfgAstUser);
     }
 
     autostartConfigAstDestroy(pCfgAst);
     NativeEventQueue::getMainEventQueue()->processEventQueue(0);
-
     autostartShutdown();
-    return rcExit;
+
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 

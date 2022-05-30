@@ -125,6 +125,18 @@ typedef enum AUTOSTARTLOGTYPE
 } AUTOSTARTLOGTYPE;
 
 /**
+ * Prints the service header header (product name, version, ++) to stdout.
+ */
+DECLHIDDEN(void) autostartSvcShowHeader(void);
+
+/**
+ * Prints the service version information header to stdout.
+ *
+ * @param   fBrief            Whether to show brief information or not.
+ */
+DECLHIDDEN(void) autostartSvcShowVersion(bool fBrief);
+
+/**
  * Log messages to the system and release log.
  *
  * @returns nothing.
@@ -180,22 +192,22 @@ DECLHIDDEN(PCFGAST) autostartConfigAstGetByName(PCFGAST pCfgAst, const char *psz
 /**
  * Main routine for the autostart daemon.
  *
- * @returns exit status code.
+ * @returns VBox status code.
  * @param   pCfgAst        Config AST for the startup part of the autostart daemon.
  */
-DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst);
+DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst);
 
 /**
  * Main routine for the autostart daemon when stopping virtual machines
  * during system shutdown.
  *
- * @returns exit status code.
+ * @returns VBox status code.
  * @param   pCfgAst        Config AST for the shutdown part of the autostart daemon.
  */
-DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst);
+DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst);
 
 /**
- * Logs a verbose message to the appropriate system log.
+ * Logs a verbose message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   cVerbosity  Verbosity level when logging should happen.
  * @param   pszFormat   The log string. No trailing newline.
@@ -204,7 +216,7 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst);
 DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFormat, va_list va);
 
 /**
- * Logs a verbose message to the appropriate system log.
+ * Logs a verbose message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   cVerbosity  Verbosity level when logging should happen.
  * @param   pszFormat   The log string. No trailing newline.
@@ -213,7 +225,7 @@ DECLHIDDEN(void) autostartSvcLogVerboseV(unsigned cVerbosity, const char *pszFor
 DECLHIDDEN(void) autostartSvcLogVerbose(unsigned cVerbosity, const char *pszFormat, ...);
 
 /**
- * Logs a warning message to the appropriate system log.
+ * Logs a warning message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
@@ -221,7 +233,7 @@ DECLHIDDEN(void) autostartSvcLogVerbose(unsigned cVerbosity, const char *pszForm
 DECLHIDDEN(void) autostartSvcLogWarningV(const char *pszFormat, va_list va);
 
 /**
- * Logs a warning message to the appropriate system log.
+ * Logs a warning message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
@@ -229,7 +241,7 @@ DECLHIDDEN(void) autostartSvcLogWarningV(const char *pszFormat, va_list va);
 DECLHIDDEN(void) autostartSvcLogWarning(const char *pszFormat, ...);
 
 /**
- * Logs a info message to the appropriate system log.
+ * Logs a info message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
@@ -237,7 +249,7 @@ DECLHIDDEN(void) autostartSvcLogWarning(const char *pszFormat, ...);
 DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va);
 
 /**
- * Logs a info message to the appropriate system log.
+ * Logs a info message to the appropriate system log and stdout + release log (if configured).
  *
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
@@ -245,33 +257,57 @@ DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va);
 DECLHIDDEN(void) autostartSvcLogInfo(const char *pszFormat, ...);
 
 /**
+ * Logs the message to the appropriate system log and stderr + release log (if configured).
+ *
+ * In debug builds this will also put it in the debug log.
+ *
+ * @returns VBox status code.
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(int) autostartSvcLogErrorV(const char *pszFormat, va_list va);
+
+/**
+ * Logs the message to the appropriate system log and stderr + release log (if configured).
+ *
+ * In debug builds this will also put it in the debug log.
+ *
+ * @returns VBox status code.
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(int) autostartSvcLogError(const char *pszFormat, ...);
+
+/**
  * Logs the message to the appropriate system log.
  *
  * In debug builds this will also put it in the debug log.
  *
+ * @returns VBox status code specified by \a rc.
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
  *
- * @todo    This should later be replaced by the release logger and callback destination(s).
+ * @note    Convenience function to return directly with the specified \a rc.
  */
-DECLHIDDEN(RTEXITCODE) autostartSvcLogErrorV(const char *pszFormat, va_list va);
+DECLHIDDEN(int) autostartSvcLogErrorRcV(int rc, const char *pszFormat, va_list va);
 
 /**
  * Logs the error message to the appropriate system log.
  *
  * In debug builds this will also put it in the debug log.
  *
+ * @returns VBox status code specified by \a rc.
  * @param   pszFormat   The log string. No trailing newline.
  * @param   ...         Format arguments.
  *
- * @todo    This should later be replaced by the release logger and callback destination(s).
+ * @note    Convenience function to return directly with the specified \a rc.
  */
-DECLHIDDEN(RTEXITCODE) autostartSvcLogError(const char *pszFormat, ...);
+DECLHIDDEN(int) autostartSvcLogErrorRc(int rc, const char *pszFormat, ...);
 
 /**
  * Deals with RTGetOpt failure, bitching in the system log.
  *
- * @returns 1
+ * @returns VBox status code specified by \a rc.
  * @param   pszAction       The action name.
  * @param   rc              The RTGetOpt return value.
  * @param   argc            The argument count.
@@ -279,22 +315,23 @@ DECLHIDDEN(RTEXITCODE) autostartSvcLogError(const char *pszFormat, ...);
  * @param   iArg            The argument index.
  * @param   pValue          The value returned by RTGetOpt.
  */
-DECLHIDDEN(RTEXITCODE) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue);
+DECLHIDDEN(int) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue);
 
 /**
  * Bitch about too many arguments (after RTGetOpt stops) in the system log.
  *
- * @returns 1
+ * @returns VERR_INVALID_PARAMETER
  * @param   pszAction       The action name.
  * @param   argc            The argument count.
  * @param   argv            The argument vector.
  * @param   iArg            The argument index.
  */
-DECLHIDDEN(RTEXITCODE) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg);
+DECLHIDDEN(int) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg);
 
 /**
  * Prints an error message to the screen.
  *
+ * @returns RTEXITCODE
  * @param   pszFormat   The message format string.
  * @param   va          Format arguments.
  */
@@ -303,6 +340,7 @@ DECLHIDDEN(RTEXITCODE) autostartSvcDisplayErrorV(const char *pszFormat, va_list 
 /**
  * Prints an error message to the screen.
  *
+ * @returns RTEXITCODE
  * @param   pszFormat   The message format string.
  * @param   ...         Format arguments.
  */
@@ -318,8 +356,8 @@ DECLHIDDEN(RTEXITCODE) autostartSvcDisplayError(const char *pszFormat, ...);
  */
 DECLHIDDEN(RTEXITCODE) autostartSvcDisplayGetOptError(const char *pszAction, int rc, PCRTGETOPTUNION pValue);
 
-DECLHIDDEN(int) autostartSetup();
+DECLHIDDEN(int) autostartSetup(void);
 
-DECLHIDDEN(void) autostartShutdown();
+DECLHIDDEN(void) autostartShutdown(void);
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxAutostart_VBoxAutostart_h */
