@@ -2621,6 +2621,9 @@ int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION
 
         uint32_t const offToken = pInfo->aOffDclResource[i];
         AssertContinue(offToken < pInfo->cbBytecode);
+        if (offToken == 0) /* nothing at this index */
+            continue;
+
         uint32_t *paToken = (uint32_t *)((uintptr_t)pInfo->pvBytecode + offToken);
 
         VGPU10OpcodeToken0 *pOpcode = (VGPU10OpcodeToken0 *)&paToken[0];
