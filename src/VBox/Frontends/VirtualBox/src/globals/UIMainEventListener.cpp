@@ -172,7 +172,7 @@ void UIMainEventListeningThread::run()
             if (comEvent.GetWaitable())
             {
                 comSource.EventProcessed(comListener, comEvent);
-                LogRel(("GUI: UIMainEventListener/ThreadRun: EventProcessed set for waitable event\n"));
+                LogRel2(("GUI: UIMainEventListener/ThreadRun: EventProcessed set for waitable event\n"));
             }
 
             /* Check whether we should finish our job on this event: */
