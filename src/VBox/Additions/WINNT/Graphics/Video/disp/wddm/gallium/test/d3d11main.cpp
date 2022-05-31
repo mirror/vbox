@@ -437,6 +437,239 @@ HRESULT D3D11Test::Init(HINSTANCE hInstance,
     return hr;
 }
 
+#include "d3d11blitter.hlsl.vs.h"
+#include "d3d11blitter.hlsl.ps.h"
+
+typedef struct D3D11BLITTER
+{
+    ID3D11Device           *pDevice;
+    ID3D11DeviceContext    *pImmediateContext;
+
+    ID3D11VertexShader     *pVertexShader;
+    ID3D11PixelShader      *pPixelShader;
+    ID3D11SamplerState     *pSamplerState;
+    ID3D11RasterizerState  *pRasterizerState;
+    ID3D11BlendState       *pBlendState;
+} D3D11BLITTER;
+
+
+static void BlitRelease(D3D11BLITTER *pBlitter)
+{
+    D3D_RELEASE(pBlitter->pVertexShader);
+    D3D_RELEASE(pBlitter->pPixelShader);
+    D3D_RELEASE(pBlitter->pSamplerState);
+    D3D_RELEASE(pBlitter->pRasterizerState);
+    D3D_RELEASE(pBlitter->pBlendState);
+    RT_ZERO(*pBlitter);
+}
+
+
+static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext)
+{
+    HRESULT hr;
+
+    RT_ZERO(*pBlitter);
+
+    pBlitter->pDevice = pDevice;
+    pBlitter->pImmediateContext = pImmediateContext;
+
+    HTEST(pBlitter->pDevice->CreateVertexShader(g_vs_blitter, sizeof(g_vs_blitter), NULL, &pBlitter->pVertexShader));
+    HTEST(pBlitter->pDevice->CreatePixelShader(g_ps_blitter, sizeof(g_ps_blitter), NULL, &pBlitter->pPixelShader));
+
+    D3D11_SAMPLER_DESC SamplerDesc;
+    SamplerDesc.Filter         = D3D11_FILTER_ANISOTROPIC;
+    SamplerDesc.AddressU       = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.AddressV       = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.MipLODBias     = 0.0f;
+    SamplerDesc.MaxAnisotropy  = 4;
+    SamplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    SamplerDesc.BorderColor[0] = 0.0f;
+    SamplerDesc.BorderColor[1] = 0.0f;
+    SamplerDesc.BorderColor[2] = 0.0f;
+    SamplerDesc.BorderColor[3] = 0.0f;
+    SamplerDesc.MinLOD         = 0.0f;
+    SamplerDesc.MaxLOD         = 0.0f;
+    HTEST(pBlitter->pDevice->CreateSamplerState(&SamplerDesc, &pBlitter->pSamplerState));
+
+    D3D11_RASTERIZER_DESC RasterizerDesc;
+    RasterizerDesc.FillMode              = D3D11_FILL_SOLID;
+    RasterizerDesc.CullMode              = D3D11_CULL_NONE;
+    RasterizerDesc.FrontCounterClockwise = FALSE;
+    RasterizerDesc.DepthBias             = 0;
+    RasterizerDesc.DepthBiasClamp        = 0.0f;
+    RasterizerDesc.SlopeScaledDepthBias  = 0.0f;
+    RasterizerDesc.DepthClipEnable       = FALSE;
+    RasterizerDesc.ScissorEnable         = FALSE;
+    RasterizerDesc.MultisampleEnable     = FALSE;
+    RasterizerDesc.AntialiasedLineEnable = FALSE;
+    HTEST(pBlitter->pDevice->CreateRasterizerState(&RasterizerDesc, &pBlitter->pRasterizerState));
+
+    D3D11_BLEND_DESC BlendDesc;
+    BlendDesc.AlphaToCoverageEnable = FALSE;
+    BlendDesc.IndependentBlendEnable = FALSE;
+    for (unsigned i = 0; i < RT_ELEMENTS(BlendDesc.RenderTarget); ++i)
+    {
+        BlendDesc.RenderTarget[i].BlendEnable           = FALSE;
+        BlendDesc.RenderTarget[i].SrcBlend              = D3D11_BLEND_SRC_COLOR;
+        BlendDesc.RenderTarget[i].DestBlend             = D3D11_BLEND_ZERO;
+        BlendDesc.RenderTarget[i].BlendOp               = D3D11_BLEND_OP_ADD;
+        BlendDesc.RenderTarget[i].SrcBlendAlpha         = D3D11_BLEND_SRC_ALPHA;
+        BlendDesc.RenderTarget[i].DestBlendAlpha        = D3D11_BLEND_ZERO;
+        BlendDesc.RenderTarget[i].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
+        BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xF;
+    }
+    HTEST(pBlitter->pDevice->CreateBlendState(&BlendDesc, &pBlitter->pBlendState));
+
+    return S_OK;
+}
+
+
+static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *pDstRenderTargetView,
+                               float cDstWidth, float cDstHeight, D3D11_RECT const &rectDst,
+                               ID3D11ShaderResourceView *pSrcShaderResourceView)
+{
+    HRESULT hr;
+
+    /*
+     * Save pipeline state.
+     */
+    struct
+    {
+        D3D11_PRIMITIVE_TOPOLOGY    Topology;
+        ID3D11InputLayout          *pInputLayout;
+        ID3D11Buffer               *pConstantBuffer;
+        ID3D11VertexShader         *pVertexShader;
+        ID3D11ShaderResourceView   *pShaderResourceView;
+        ID3D11PixelShader          *pPixelShader;
+        ID3D11SamplerState         *pSamplerState;
+        ID3D11RasterizerState      *pRasterizerState;
+        ID3D11BlendState           *pBlendState;
+        FLOAT                       BlendFactor[4];
+        UINT                        SampleMask;
+        ID3D11RenderTargetView     *apRenderTargetView[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        ID3D11DepthStencilView     *pDepthStencilView;
+        UINT                        NumViewports;
+        D3D11_VIEWPORT              aViewport[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    } SavedState;
+
+    pBlitter->pImmediateContext->IAGetPrimitiveTopology(&SavedState.Topology);
+    pBlitter->pImmediateContext->IAGetInputLayout(&SavedState.pInputLayout);
+    pBlitter->pImmediateContext->VSGetConstantBuffers(0, 1, &SavedState.pConstantBuffer);
+    pBlitter->pImmediateContext->VSGetShader(&SavedState.pVertexShader, NULL, NULL);
+    pBlitter->pImmediateContext->PSGetShaderResources(0, 1, &SavedState.pShaderResourceView);
+    pBlitter->pImmediateContext->PSGetShader(&SavedState.pPixelShader, NULL, NULL);
+    pBlitter->pImmediateContext->PSGetSamplers(0, 1, &SavedState.pSamplerState);
+    pBlitter->pImmediateContext->RSGetState(&SavedState.pRasterizerState);
+    pBlitter->pImmediateContext->OMGetBlendState(&SavedState.pBlendState, SavedState.BlendFactor, &SavedState.SampleMask);
+    pBlitter->pImmediateContext->OMGetRenderTargets(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView, &SavedState.pDepthStencilView);
+    SavedState.NumViewports = RT_ELEMENTS(SavedState.aViewport);
+    pBlitter->pImmediateContext->RSGetViewports(&SavedState.NumViewports, &SavedState.aViewport[0]);
+
+    /*
+     * Setup pipeline for the blitter.
+     */
+
+    /* Render target is first.
+     * If the source texture is bound as a render target, then this call will unbind it
+     * and allow to use it as the shader resource.
+     */
+    pBlitter->pImmediateContext->OMSetRenderTargets(1, &pDstRenderTargetView, NULL);
+
+    /* Input assembler. */
+    pBlitter->pImmediateContext->IASetInputLayout(NULL);
+    pBlitter->pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    /* Constant buffer. */
+    struct
+    {
+        float scaleX;
+        float scaleY;
+        float offsetX;
+        float offsetY;
+    } VSConstantBuffer;
+    VSConstantBuffer.scaleX = (float)(rectDst.right - rectDst.left) / cDstWidth;
+    VSConstantBuffer.scaleY = (float)(rectDst.bottom - rectDst.top) / cDstHeight;
+    VSConstantBuffer.offsetX = (float)(rectDst.right + rectDst.left) / cDstWidth - 1.0f;
+    VSConstantBuffer.offsetY = -((float)(rectDst.bottom + rectDst.top) / cDstHeight - 1.0f);
+
+    D3D11_SUBRESOURCE_DATA initialData;
+    initialData.pSysMem          = &VSConstantBuffer;
+    initialData.SysMemPitch      = sizeof(VSConstantBuffer);
+    initialData.SysMemSlicePitch = sizeof(VSConstantBuffer);
+
+    D3D11_BUFFER_DESC bd;
+    RT_ZERO(bd);
+    bd.ByteWidth           = sizeof(VSConstantBuffer);
+    bd.Usage               = D3D11_USAGE_IMMUTABLE;
+    bd.BindFlags           = D3D11_BIND_CONSTANT_BUFFER;
+
+    ID3D11Buffer *pConstantBuffer;
+    HTEST(pBlitter->pDevice->CreateBuffer(&bd, &initialData, &pConstantBuffer));
+    pBlitter->pImmediateContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    D3D_RELEASE(pConstantBuffer); /* xSSetConstantBuffers "will hold a reference to the interfaces passed in." */
+
+    /* Vertex shader. */
+    pBlitter->pImmediateContext->VSSetShader(pBlitter->pVertexShader, NULL, 0);
+
+    /* Shader resource view. */
+    pBlitter->pImmediateContext->PSSetShaderResources(0, 1, &pSrcShaderResourceView);
+
+    /* Pixel shader. */
+    pBlitter->pImmediateContext->PSSetShader(pBlitter->pPixelShader, NULL, 0);
+
+    /* Sampler. */
+    pBlitter->pImmediateContext->PSSetSamplers(0, 1, &pBlitter->pSamplerState);
+
+    /* Rasterizer. */
+    pBlitter->pImmediateContext->RSSetState(pBlitter->pRasterizerState);
+
+    /* Blend state. */
+    static FLOAT const BlendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    pBlitter->pImmediateContext->OMSetBlendState(pBlitter->pBlendState, BlendFactor, 0xffffffff);
+
+    /* Viewport. */
+    D3D11_VIEWPORT Viewport;
+    Viewport.TopLeftX = 0;
+    Viewport.TopLeftY = 0;
+    Viewport.Width    = cDstWidth;
+    Viewport.Height   = cDstHeight;
+    Viewport.MinDepth = 0.0f;
+    Viewport.MaxDepth = 1.0f;
+    pBlitter->pImmediateContext->RSSetViewports(1, &Viewport);
+
+    /* Draw. */
+    pBlitter->pImmediateContext->Draw(4, 0);
+
+    /*
+     * Restore pipeline state.
+     */
+    pBlitter->pImmediateContext->IASetPrimitiveTopology(SavedState.Topology);
+    pBlitter->pImmediateContext->IASetInputLayout(SavedState.pInputLayout);
+    D3D_RELEASE(SavedState.pInputLayout);
+    pBlitter->pImmediateContext->VSSetConstantBuffers(0, 1, &SavedState.pConstantBuffer);
+    D3D_RELEASE(SavedState.pConstantBuffer);
+    pBlitter->pImmediateContext->VSSetShader(SavedState.pVertexShader, NULL, 0);
+    D3D_RELEASE(SavedState.pVertexShader);
+    pBlitter->pImmediateContext->PSSetShaderResources(0, 1, &SavedState.pShaderResourceView);
+    D3D_RELEASE(SavedState.pShaderResourceView);
+    pBlitter->pImmediateContext->PSSetShader(SavedState.pPixelShader, NULL, 0);
+    D3D_RELEASE(SavedState.pPixelShader);
+    pBlitter->pImmediateContext->PSSetSamplers(0, 1, &SavedState.pSamplerState);
+    D3D_RELEASE(SavedState.pSamplerState);
+    pBlitter->pImmediateContext->RSSetState(SavedState.pRasterizerState);
+    D3D_RELEASE(SavedState.pRasterizerState);
+    pBlitter->pImmediateContext->OMSetBlendState(SavedState.pBlendState, SavedState.BlendFactor, SavedState.SampleMask);
+    D3D_RELEASE(SavedState.pBlendState);
+    pBlitter->pImmediateContext->OMSetRenderTargets(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView, SavedState.pDepthStencilView);
+    D3D_RELEASE_ARRAY(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView);
+    D3D_RELEASE(SavedState.pDepthStencilView);
+    pBlitter->pImmediateContext->RSSetViewports(SavedState.NumViewports, &SavedState.aViewport[0]);
+
+    return S_OK;
+}
+
+
 int D3D11Test::Run()
 {
     HRESULT hr = S_OK;
@@ -453,6 +686,9 @@ int D3D11Test::Run()
 
     int cFrames = 0;
     float elapsed = 0;
+
+    D3D11BLITTER Blitter;
+    BlitInit(&Blitter, mOutput.pDevice, mOutput.pImmediateContext);
 
     do
     {
@@ -532,7 +768,25 @@ int D3D11Test::Run()
                         /*
                          * Use the shared texture from the output device.
                          */
-                        mOutput.pImmediateContext->CopyResource(pBackBuffer, mOutput.pSharedTexture);
+                        float cDstWidth = 800.0f;
+                        float cDstHeight = 600.0f;
+
+                        D3D11_RECT rectDst;
+                        rectDst.left   = 0;
+                        rectDst.top    = 0;
+                        rectDst.right  = 800;
+                        rectDst.bottom = 600;
+
+                        ID3D11ShaderResourceView *pShaderResourceView = 0;
+                        HTEST(Blitter.pDevice->CreateShaderResourceView(mOutput.pSharedTexture, NULL, &pShaderResourceView));
+
+                        ID3D11RenderTargetView *pRenderTargetView = 0;
+                        HTEST(Blitter.pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView));
+
+                        BlitFromTexture(&Blitter, pRenderTargetView, cDstWidth, cDstHeight, rectDst, pShaderResourceView);
+
+                        D3D_RELEASE(pRenderTargetView);
+                        D3D_RELEASE(pShaderResourceView);
                     }
                     else
                         D3DTestShowError(hr, "Output.AcquireSync(1)");
@@ -570,6 +824,7 @@ int D3D11Test::Run()
         }
     } while (msg.message != WM_QUIT);
 
+    BlitRelease(&Blitter);
     return msg.wParam;
 }
 

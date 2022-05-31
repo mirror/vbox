@@ -35,6 +35,11 @@
     }                         \
 } while (0)
 
+#define D3D_RELEASE_ARRAY(a_Count, a_papArray) do { \
+    for (uint32_t i = 0; i < (a_Count); ++i) \
+        D3D_RELEASE((a_papArray)[i]); \
+} while (0)
+
 inline void D3DTestShowError(HRESULT hr, const char *pszString)
 {
     (void)hr;
