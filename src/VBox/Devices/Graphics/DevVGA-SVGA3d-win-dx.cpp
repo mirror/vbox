@@ -64,7 +64,7 @@
 /** Fake ID for the backend DX context. The context creates all shared textures. */
 #define DX_CID_BACKEND UINT32_C(0xfffffffe)
 
-#define DX_RELEASE_ARRAY(a_Count, a_papArray) do { \
+#define D3D_RELEASE_ARRAY(a_Count, a_papArray) do { \
     for (uint32_t i = 0; i < (a_Count); ++i) \
         D3D_RELEASE((a_papArray)[i]); \
 } while (0)
@@ -5219,13 +5219,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
                 D3D_RELEASE(pBackendDXContext->paElementLayout[i].pElementLayout);
         }
         if (pBackendDXContext->papBlendState)
-            DX_RELEASE_ARRAY(pBackendDXContext->cBlendState, pBackendDXContext->papBlendState);
+            D3D_RELEASE_ARRAY(pBackendDXContext->cBlendState, pBackendDXContext->papBlendState);
         if (pBackendDXContext->papDepthStencilState)
-            DX_RELEASE_ARRAY(pBackendDXContext->cDepthStencilState, pBackendDXContext->papDepthStencilState);
+            D3D_RELEASE_ARRAY(pBackendDXContext->cDepthStencilState, pBackendDXContext->papDepthStencilState);
         if (pBackendDXContext->papRasterizerState)
-            DX_RELEASE_ARRAY(pBackendDXContext->cRasterizerState, pBackendDXContext->papRasterizerState);
+            D3D_RELEASE_ARRAY(pBackendDXContext->cRasterizerState, pBackendDXContext->papRasterizerState);
         if (pBackendDXContext->papSamplerState)
-            DX_RELEASE_ARRAY(pBackendDXContext->cSamplerState, pBackendDXContext->papSamplerState);
+            D3D_RELEASE_ARRAY(pBackendDXContext->cSamplerState, pBackendDXContext->papSamplerState);
         if (pBackendDXContext->paQuery)
         {
             for (uint32_t i = 0; i < pBackendDXContext->cQuery; ++i)
@@ -7536,7 +7536,7 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
     pBlitter->pImmediateContext->OMSetBlendState(SavedState.pBlendState, SavedState.BlendFactor, SavedState.SampleMask);
     D3D_RELEASE(SavedState.pBlendState);
     pBlitter->pImmediateContext->OMSetRenderTargets(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView, SavedState.pDepthStencilView);
-    DX_RELEASE_ARRAY(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView);
+    D3D_RELEASE_ARRAY(RT_ELEMENTS(SavedState.apRenderTargetView), SavedState.apRenderTargetView);
     D3D_RELEASE(SavedState.pDepthStencilView);
     pBlitter->pImmediateContext->RSSetViewports(SavedState.NumViewports, &SavedState.aViewport[0]);
 
