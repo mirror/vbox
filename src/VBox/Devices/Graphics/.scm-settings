@@ -65,6 +65,7 @@
 
 --filter-out-dirs  "/vmsvga_include/."
 --filter-out-dirs  "/svgadump/."
+--filter-out-dirs  "/shaders/."
 
 /vmsvga_glext/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 

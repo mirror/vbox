@@ -1,0 +1,40 @@
+# $Id$
+## @file
+# Makefile for D3D11 shader compilation.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+OTHERS        += \
+	$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.vs.h \
+	$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.ps.h
+OTHERS_CLEAN  += \
+	$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.vs.h \
+	$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.ps.h
+
+VBOX_FXC ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/fxc.exe
+
+$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.vs.h: \
+		$(PATH_SUB_CURRENT)/Makefile.kmk \
+		$(PATH_SUB_CURRENT)/d3d11blitter.hlsl
+	$(VBOX_FXC) /nologo /Fhd3d11blitter.hlsl.vs.h /Evs_blitter /Tvs_5_0 d3d11blitter.hlsl
+
+$(PATH_SUB_CURRENT)/d3d11blitter.hlsl.ps.h: \
+		$(PATH_SUB_CURRENT)/Makefile.kmk \
+		$(PATH_SUB_CURRENT)/d3d11blitter.hlsl
+	$(VBOX_FXC) /nologo /Fhd3d11blitter.hlsl.ps.h /Eps_blitter /Tps_5_0 d3d11blitter.hlsl
+
+include $(FILE_KBUILD_SUB_FOOTER)
