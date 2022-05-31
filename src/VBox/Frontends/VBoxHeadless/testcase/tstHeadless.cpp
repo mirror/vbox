@@ -68,13 +68,13 @@ int main(int argc, char **argv)
              "Operation : %s\n\n",
              name, operation);
 
-    HRESULT rc;
+    HRESULT hrc;
 
-    rc = com::Initialize();
-    if (FAILED(rc))
+    hrc = com::Initialize();
+    if (FAILED(hrc))
     {
         RTPrintf("ERROR: failed to initialize COM!\n");
-        return rc;
+        return hrc;
     }
 
     do
@@ -84,24 +84,24 @@ int main(int argc, char **argv)
         ComPtr <ISession> session;
 
         RTPrintf("Creating VirtualBox object...\n");
-        rc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
-        if (SUCCEEDED(rc))
-            rc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
-        if (FAILED(rc))
+        hrc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+        if (SUCCEEDED(hrc))
+            hrc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+        if (FAILED(hrc))
             RTPrintf("ERROR: failed to create the VirtualBox object!\n");
         else
         {
-            rc = session.createInprocObject(CLSID_Session);
-            if (FAILED(rc))
+            hrc = session.createInprocObject(CLSID_Session);
+            if (FAILED(hrc))
                 RTPrintf("ERROR: failed to create a session object!\n");
         }
 
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
             {
-                com::GluePrintRCMessage(rc);
+                com::GluePrintRCMessage(hrc);
                 RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
             }
             else
@@ -203,6 +203,6 @@ int main(int argc, char **argv)
 
     RTPrintf("tstHeadless FINISHED.\n");
 
-    return rc;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 

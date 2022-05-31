@@ -212,12 +212,12 @@ static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> 
     /* Send scancodes to the VM. */
     com::SafeArray<LONG> saScancodes(llScancodes);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     size_t i;
     for (i = 0; i < saScancodes.size(); ++i)
     {
-        rc = pKeyboard->PutScancode(saScancodes[i]);
-        if (FAILED(rc))
+        hrc = pKeyboard->PutScancode(saScancodes[i]);
+        if (FAILED(hrc))
         {
             RTMsgError(ControlVM::tr("Failed to send a scancode."));
             break;
@@ -226,7 +226,7 @@ static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> 
         RTThreadSleep(10); /* "Typing" too fast causes lost characters. */
     }
 
-    return rc;
+    return hrc;
 }
 
 static void keyboardCharsToScancodes(const char *pch, size_t cchMax, std::list<LONG> &llScancodes, bool *pfShift)
@@ -345,7 +345,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 {
     using namespace com;
     bool fNeedsSaving = false;
-    HRESULT rc;
+    HRESULT hrc;
 
     if (a->argc < 2)
         return errorSyntax(ControlVM::tr("Not enough parameters."));
@@ -354,7 +354,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     /* open a session for the VM */
@@ -395,7 +395,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -409,7 +409,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -423,7 +423,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -442,7 +442,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(fEnabled), RTEXITCODE_FAILURE);
@@ -451,7 +451,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else
             {
                 errorSyntax(ControlVM::tr("Audio adapter not enabled in VM configuration."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -466,7 +466,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(fEnabled), RTEXITCODE_FAILURE);
@@ -475,7 +475,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else
             {
                 errorSyntax(ControlVM::tr("Audio adapter not enabled in VM configuration."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -485,7 +485,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -496,7 +496,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc <= 1 + 2)
                 {
                     errorSyntax(ControlVM::tr("Missing argument to '%s %s'."), a->argv[1], a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -511,12 +511,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 else
                 {
                     errorSyntax(ControlVM::tr("Invalid '%s %s' argument '%s'."), a->argv[1], a->argv[2], a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardMode)(mode));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     fNeedsSaving = true;
             }
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -526,7 +526,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc <= 1 + 2)
                 {
                     errorSyntax(ControlVM::tr("Missing argument to '%s %s'."), a->argv[1], a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -534,7 +534,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[3], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid '%s %s' argument '%s'."), a->argv[1], a->argv[2], a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -545,7 +545,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else
             {
                 errorArgument(ControlVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -556,7 +556,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -572,12 +572,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else
             {
                 errorSyntax(ControlVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
             }
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(DnDMode)(mode));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     fNeedsSaving = true;
             }
         }
@@ -587,7 +587,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
-            rc = showProgress(progress);
+            hrc = showProgress(progress);
             CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Failed to power off machine.")));
         }
         else if (!strcmp(a->argv[1], "savestate"))
@@ -595,17 +595,17 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SAVESTATE);
             /* first pause so we don't trigger a live save which needs more time/resources */
             bool fPaused = false;
-            rc = console->Pause();
-            if (FAILED(rc))
+            hrc = console->Pause();
+            if (FAILED(hrc))
             {
                 bool fError = true;
-                if (rc == VBOX_E_INVALID_VM_STATE)
+                if (hrc == VBOX_E_INVALID_VM_STATE)
                 {
                     /* check if we are already paused */
                     MachineState_T machineState;
                     CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
                     /* the error code was lost by the previous instruction */
-                    rc = VBOX_E_INVALID_VM_STATE;
+                    hrc = VBOX_E_INVALID_VM_STATE;
                     if (machineState != MachineState_Paused)
                     {
                         RTMsgError(ControlVM::tr("Machine in invalid state %d -- %s."),
@@ -623,16 +623,16 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR(sessionMachine, SaveState(progress.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
                 if (!fPaused)
                     console->Resume();
                 break;
             }
 
-            rc = showProgress(progress);
+            hrc = showProgress(progress);
             CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Failed to save machine state.")));
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
                 if (!fPaused)
                     console->Resume();
@@ -663,7 +663,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pGuest)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -678,9 +678,9 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 aShutdownFlags.push_back(GuestShutdownFlag_Force);
 
             CHECK_ERROR(pGuest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
-                if (rc == VBOX_E_NOT_SUPPORTED)
+                if (hrc == VBOX_E_NOT_SUPPORTED)
                 {
                     if (fReboot)
                         RTMsgError(ControlVM::tr("Current installed Guest Additions don't support rebooting the guest."));
@@ -698,7 +698,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pKeyboard)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -706,7 +706,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s)."),
                               a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -721,11 +721,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     && a->argv[i][2] == 0)
                 {
                     uint8_t u8Scancode;
-                    int irc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
-                    if (RT_FAILURE (irc))
+                    int vrc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
+                    if (RT_FAILURE (vrc))
                     {
-                        RTMsgError(ControlVM::tr("Converting '%s' returned %Rrc!"), a->argv[i], rc);
-                        rc = E_FAIL;
+                        RTMsgError(ControlVM::tr("Converting '%s' returned %Rrc!"), a->argv[i], vrc);
+                        hrc = E_FAIL;
                         break;
                     }
 
@@ -734,15 +734,15 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 else
                 {
                     RTMsgError(ControlVM::tr("'%s' is not a hex byte!"), a->argv[i]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
             }
 
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
 
-            rc = keyboardPutScancodes(pKeyboard, llScancodes);
+            hrc = keyboardPutScancodes(pKeyboard, llScancodes);
         }
         else if (!strcmp(a->argv[1], "keyboardputstring"))
         {
@@ -752,18 +752,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pKeyboard)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'. Expected ASCII string(s)."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
-            rc = keyboardPutString(pKeyboard, a->argc, a->argv);
+            hrc = keyboardPutString(pKeyboard, a->argc, a->argv);
         }
         else if (!strcmp(a->argv[1], "keyboardputfile"))
         {
@@ -773,18 +773,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pKeyboard)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
-            rc = keyboardPutFile(pKeyboard, a->argv[2]);
+            hrc = keyboardPutFile(pKeyboard, a->argv[2]);
         }
         else if (!strncmp(a->argv[1], "setlinkstate", 12))
         {
@@ -794,13 +794,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             /* get the corresponding network adapter */
@@ -812,7 +812,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[3], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid link state '%s'."), a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(fEnabled));
@@ -832,13 +832,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -858,10 +858,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     else
                     {
                         errorSyntax(ControlVM::tr("Filename not specified for NIC %lu."), n);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fNeedsSaving = true;
                 }
                 else
@@ -876,13 +876,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -899,7 +899,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     if (RT_FAILURE(parseBool(a->argv[3], &fTraceEnabled)))
                     {
                         errorSyntax(ControlVM::tr("Invalid nictrace%lu argument '%s'."), n, a->argv[2]);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
                     CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(fTraceEnabled), RTEXITCODE_FAILURE);
@@ -917,13 +917,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][5], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -932,14 +932,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (!adapter)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             ComPtr<INATEngine> engine;
             CHECK_ERROR(adapter, COMGETTER(NATEngine)(engine.asOutParam()));
             if (!engine)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1000,7 +1000,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         RTStrToUInt16(strHostPort), Bstr(strGuestIp).raw(), RTStrToUInt16(strGuestPort)));
 #undef ITERATE_TO_NEXT_TERM
             }
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 fNeedsSaving = true;
         }
         else if (!strncmp(a->argv[1], "nicproperty", 11))
@@ -1011,13 +1011,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][11], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1042,13 +1042,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                             Bstr bstrName = pszProperty;
                             Bstr bstrValue = &pDelimiter[1];
                             CHECK_ERROR(adapter, SetProperty(bstrName.raw(), bstrValue.raw()));
-                            if (SUCCEEDED(rc))
+                            if (SUCCEEDED(hrc))
                                 fNeedsSaving = true;
                         }
                         else
                         {
                             errorSyntax(ControlVM::tr("Invalid nicproperty%d argument '%s'."), n, a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                         }
                         RTStrFree(pszProperty);
                     }
@@ -1056,9 +1056,9 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         RTMsgError(ControlVM::tr("Failed to allocate memory for nicproperty%d '%s'."),
                                      n, a->argv[2]);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                     }
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         break;
                 }
                 else
@@ -1073,13 +1073,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][10], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1103,12 +1103,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     else
                     {
                         errorSyntax(ControlVM::tr("Unknown promiscuous mode policy '%s'."), a->argv[2]);
-                        rc = E_INVALIDARG;
+                        hrc = E_INVALIDARG;
                         break;
                     }
 
                     CHECK_ERROR(adapter, COMSETTER(PromiscModePolicy)(enmPromiscModePolicy));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fNeedsSaving = true;
                 }
                 else
@@ -1123,13 +1123,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc <= 2)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1158,7 +1158,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         if (a->argc <= 3)
                         {
                             errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(BridgedInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
@@ -1170,7 +1170,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         if (a->argc <= 3)
                         {
                             errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
@@ -1182,7 +1182,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         if (a->argc <= 3)
                         {
                             errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(HostOnlyInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
@@ -1195,7 +1195,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         if (a->argc <= 3)
                         {
                             errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(GenericDriver)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
@@ -1206,7 +1206,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         if (a->argc <= 3)
                         {
                             errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
@@ -1215,10 +1215,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     else
                     {
                         errorSyntax(ControlVM::tr("Invalid type '%s' specfied for NIC %lu."), a->argv[2], n);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fNeedsSaving = true;
                 }
                 else
@@ -1235,7 +1235,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             ComPtr<IVRDEServer> vrdeServer;
@@ -1247,7 +1247,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid remote desktop server state '%s'."), a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(fEnabled));
@@ -1264,7 +1264,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1281,7 +1281,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     ports = a->argv[2];
 
                 CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), ports.raw()));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     fNeedsSaving = true;
             }
         }
@@ -1295,7 +1295,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             ComPtr<IVRDEServer> vrdeServer;
@@ -1306,7 +1306,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 Bstr value = a->argv[2];
 
                 CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("VideoChannel/Quality").raw(), value.raw()));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     fNeedsSaving = true;
             }
         }
@@ -1316,7 +1316,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 1 + 1)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             ComPtr<IVRDEServer> vrdeServer;
@@ -1336,13 +1336,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         Bstr bstrName = pszProperty;
                         Bstr bstrValue = &pDelimiter[1];
                         CHECK_ERROR(vrdeServer, SetVRDEProperty(bstrName.raw(), bstrValue.raw()));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                             fNeedsSaving = true;
                     }
                     else
                     {
                         errorSyntax(ControlVM::tr("Invalid vrdeproperty argument '%s'."), a->argv[2]);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                     }
                     RTStrFree(pszProperty);
                 }
@@ -1350,10 +1350,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 {
                     RTMsgError(ControlVM::tr("Failed to allocate memory for VRDE property '%s'."),
                                  a->argv[2]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
             }
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
                 break;
             }
@@ -1370,13 +1370,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc < 3)
             {
                 errorSyntax(ControlVM::tr("Not enough parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             else if (a->argc == 4 || a->argc > 5)
             {
                 errorSyntax(ControlVM::tr("Wrong number of arguments."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1390,7 +1390,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 else
                 {
                     errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
             }
@@ -1423,7 +1423,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else if (guid.isZero())
             {
                 errorSyntax(ControlVM::tr("Zero UUID argument '%s'."), a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1442,7 +1442,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc != 5 && a->argc != 6 && a->argc != 7 && a->argc != 9)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             bool fEnabled = true;
@@ -1460,7 +1460,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(parseBool(a->argv[6], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Either \"yes\" or \"no\" is expected."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
             }
@@ -1476,7 +1476,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pDisplay)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             CHECK_ERROR_BREAK(pDisplay, SetVideoModeHint(uDisplayIdx, fEnabled,
@@ -1489,7 +1489,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc < 4)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1498,7 +1498,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pDisplay)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1525,7 +1525,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 else
                 {
                     errorSyntax(ControlVM::tr("Display status must be <on> or <off>."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1540,7 +1540,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     if (argc < 7)
                     {
                         errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
 
@@ -1567,7 +1567,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 aGuestScreenInfos.push_back(pInfo);
             }
 
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
 
             CHECK_ERROR_BREAK(pDisplay, SetScreenLayout(ScreenLayoutMode_Apply, ComSafeArrayAsInParam(aGuestScreenInfos)));
@@ -1585,7 +1585,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     && strcmp(a->argv[5 + (a->argc - 7)], "-allowlocallogon"))
                 {
                     errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[5]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 if (!strcmp(a->argv[6 + (a->argc - 7)], "no"))
@@ -1597,7 +1597,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                              && strcmp(a->argv[3], "--passwordfile"))))
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             Utf8Str passwd, domain;
@@ -1611,7 +1611,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 RTEXITCODE rcExit = readPasswordFile(a->argv[4], &passwd);
                 if (rcExit != RTEXITCODE_SUCCESS)
                 {
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 domain = a->argv[5];
@@ -1622,7 +1622,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pGuest)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             CHECK_ERROR_BREAK(pGuest, SetCredentials(Bstr(a->argv[2]).raw(),
@@ -1636,7 +1636,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc != 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             uint32_t uVal;
@@ -1645,18 +1645,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (vrc != VINF_SUCCESS)
             {
                 errorSyntax(ControlVM::tr("Error parsing guest memory balloon size '%s'."), a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             /* guest is running; update IGuest */
             ComPtr<IGuest> pGuest;
-            rc = console->COMGETTER(Guest)(pGuest.asOutParam());
-            if (SUCCEEDED(rc))
+            hrc = console->COMGETTER(Guest)(pGuest.asOutParam());
+            if (SUCCEEDED(hrc))
             {
                 if (!pGuest)
                 {
                     RTMsgError(ControlVM::tr("Guest not running."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR(pGuest, COMSETTER(MemoryBalloonSize)(uVal));
@@ -1684,7 +1684,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_TELEPORT);
             int ch;
             RTGETOPTUNION Value;
-            while (   SUCCEEDED(rc)
+            while (   SUCCEEDED(hrc)
                    && (ch = RTGetOpt(&GetOptState, &Value)))
             {
                 switch (ch)
@@ -1697,18 +1697,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         RTEXITCODE rcExit = readPasswordFile(Value.psz, &strPassword);
                         if (rcExit != RTEXITCODE_SUCCESS)
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                         break;
                     }
                     case 'W': strPassword   = Value.psz; break;
                     case 't': cMsTimeout    = Value.u32; break;
                     default:
                         errorGetOpt(ch, &Value);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                 }
             }
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
 
             ComPtr<IProgress> progress;
@@ -1719,12 +1719,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
             if (cMsTimeout)
             {
-                rc = progress->COMSETTER(Timeout)(cMsTimeout);
-                if (FAILED(rc) && rc != VBOX_E_INVALID_OBJECT_STATE)
+                hrc = progress->COMSETTER(Timeout)(cMsTimeout);
+                if (FAILED(hrc) && hrc != VBOX_E_INVALID_OBJECT_STATE)
                     CHECK_ERROR_BREAK(progress, COMSETTER(Timeout)(cMsTimeout)); /* lazyness */
             }
 
-            rc = showProgress(progress);
+            hrc = showProgress(progress);
             CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Teleportation failed")));
         }
         else if (!strcmp(a->argv[1], "screenshotpng"))
@@ -1733,7 +1733,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc <= 2 || a->argc > 4)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             int vrc;
@@ -1744,7 +1744,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (vrc != VINF_SUCCESS)
                 {
                     errorSyntax(ControlVM::tr("Error parsing display number '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
             }
@@ -1753,7 +1753,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pDisplay)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             ULONG width, height, bpp;
@@ -1767,14 +1767,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (RT_FAILURE(vrc))
             {
                 RTMsgError(ControlVM::tr("Failed to create file '%s' (%Rrc)."), a->argv[2], vrc);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             vrc = RTFileWrite(pngFile, saScreenshot.raw(), saScreenshot.size(), NULL);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError(ControlVM::tr("Failed to write screenshot to file '%s' (%Rrc)."), a->argv[2], vrc);
-                rc = E_FAIL;
+                hrc = E_FAIL;
             }
             RTFileClose(pngFile);
         }
@@ -1785,7 +1785,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc < 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1819,13 +1819,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 if (RT_FAILURE(parseScreens(a->argv[3], &saScreens)))
                 {
                     errorSyntax(ControlVM::tr("Error parsing list of screen IDs '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1838,7 +1838,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1852,7 +1852,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 5)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1861,7 +1861,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing video width '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1870,7 +1870,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing video height '%s'."), a->argv[4]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1886,7 +1886,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1895,7 +1895,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing video rate '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1908,7 +1908,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1917,7 +1917,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing video FPS '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1930,7 +1930,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1939,7 +1939,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing maximum time '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1952,7 +1952,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1961,7 +1961,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     errorSyntax(ControlVM::tr("Error parsing maximum file size '%s'."), a->argv[3]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1976,7 +1976,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -1990,7 +1990,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc < 3)
             {
                 errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -1999,7 +1999,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!pEmulatedUSB)
             {
                 RTMsgError(ControlVM::tr("Guest not running."));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -2035,7 +2035,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else
             {
                 errorArgument(ControlVM::tr("Invalid argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -2107,13 +2107,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             unsigned n = parseNum(&a->argv[1][14], 4, "UART");
             if (!n)
             {
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             if (a->argc < 3)
             {
                 errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -2127,7 +2127,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 3)
                 {
                     errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_Disconnected));
@@ -2142,7 +2142,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
 
@@ -2183,7 +2183,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (a->argc != 3)
                 {
                     errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 CHECK_ERROR(uart, COMSETTER(Path)(Bstr(a->argv[2]).raw()));
@@ -2196,14 +2196,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc != 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             VMProcPriority_T enmPriority = nameToVMProcPriority(a->argv[2]);
             if (enmPriority == VMProcPriority_Invalid)
             {
                 errorSyntax(ControlVM::tr("Invalid vm-process-priority '%s'."), a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
             }
             else
             {
@@ -2217,14 +2217,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc != 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             bool fEnabled;
             if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
             {
                 errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(TRUE));
@@ -2237,7 +2237,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (a->argc != 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             uint32_t u32;
@@ -2246,18 +2246,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (RT_FAILURE(vrc) || *pszNext != '\0')
             {
                 errorSyntax(ControlVM::tr("Invalid autostart delay number '%s'."), a->argv[2]);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             CHECK_ERROR(sessionMachine, COMSETTER(AutostartDelay)(u32));
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 fNeedsSaving = true;
             break;
         }
         else
         {
             errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[1]);
-            rc = E_FAIL;
+            hrc = E_FAIL;
         }
     } while (0);
 
@@ -2267,5 +2267,5 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

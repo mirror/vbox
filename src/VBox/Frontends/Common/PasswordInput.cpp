@@ -93,9 +93,9 @@ RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszF
     RTEXITCODE rcExit = readPasswordFile(pszFilename, &passwd);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        int rc;
+        HRESULT hrc;
         CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(passwd).raw()));
-        if (FAILED(rc))
+        if (FAILED(hrc))
             rcExit = RTEXITCODE_FAILURE;
     }
 

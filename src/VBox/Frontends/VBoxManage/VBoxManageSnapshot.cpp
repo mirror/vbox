@@ -55,7 +55,7 @@ bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
                                      uint32_t uMediumLevel,
                                      uint32_t uSnapshotLevel)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     do
     {
@@ -133,7 +133,7 @@ void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
                             ComPtr<ISnapshot> &pCurrentSnapshot,
                             uint32_t uLevel)
 {
-    HRESULT rc;
+    HRESULT hrc;
     do
     {
         // print this medium
@@ -218,7 +218,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
  */
 void DumpSnapshot(ComPtr<IMachine> &pMachine)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     do
     {
@@ -315,7 +315,7 @@ static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUniqu
  */
 RTEXITCODE handleSnapshot(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
 /** @todo r=bird: sub-standard command line parsing here!
  *
@@ -357,7 +357,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             if (a->argc < 3)
             {
                 errorSyntax(Snapshot::tr("Missing snapshot name"));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
             Bstr name(a->argv[2]);
@@ -381,7 +381,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             int ch;
             RTGETOPTUNION Value;
             int vrc;
-            while (   SUCCEEDED(rc)
+            while (   SUCCEEDED(hrc)
                    && (ch = RTGetOpt(&GetOptState, &Value)))
             {
                 switch (ch)
@@ -406,19 +406,19 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
                     default:
                         errorGetOpt(ch, &Value);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                 }
             }
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
 
             if (enmUnique & (SnapshotUniqueFlags_Number | SnapshotUniqueFlags_Timestamp))
             {
                 ComPtr<ISnapshot> pSnapshot;
-                rc = sessionMachine->FindSnapshot(name.raw(),
-                                                  pSnapshot.asOutParam());
-                if (SUCCEEDED(rc) || (enmUnique & SnapshotUniqueFlags_Force))
+                hrc = sessionMachine->FindSnapshot(name.raw(),
+                                                   pSnapshot.asOutParam());
+                if (SUCCEEDED(hrc) || (enmUnique & SnapshotUniqueFlags_Force))
                 {
                     /* there is a duplicate, need to create a unique name */
                     uint32_t count = 0;
@@ -454,22 +454,22 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                         else
                             tryName = BstrFmt("%ls%s", name.raw(), suffix.c_str());
                         count++;
-                        rc = sessionMachine->FindSnapshot(tryName.raw(),
-                                                          pSnapshot.asOutParam());
-                        if (FAILED(rc))
+                        hrc = sessionMachine->FindSnapshot(tryName.raw(),
+                                                           pSnapshot.asOutParam());
+                        if (FAILED(hrc))
                         {
                             name = tryName;
                             break;
                         }
                     }
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         errorArgument(Snapshot::tr("Failed to generate a unique snapshot name"));
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
                 }
-                rc = S_OK;
+                hrc = S_OK;
             }
 
             ComPtr<IProgress> progress;
@@ -478,8 +478,8 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                                                            fPause, snapId.asOutParam(),
                                                            progress.asOutParam()));
 
-            rc = showProgress(progress);
-            if (SUCCEEDED(rc))
+            hrc = showProgress(progress);
+            if (SUCCEEDED(hrc))
                 RTPrintf(Snapshot::tr("Snapshot taken. UUID: %ls\n"), snapId.raw());
             else
                 CHECK_PROGRESS_ERROR(progress, (Snapshot::tr("Failed to take snapshot")));
@@ -498,7 +498,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                 if (a->argc > 2)
                 {
                     errorSyntax(Snapshot::tr("Too many arguments"));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
             }
@@ -506,7 +506,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             else if (a->argc != 3)
             {
                 errorSyntax(Snapshot::tr("Expecting snapshot name only"));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -550,7 +550,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                 CHECK_ERROR_BREAK(sessionMachine, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
             }
 
-            rc = showProgress(pProgress);
+            hrc = showProgress(pProgress);
             CHECK_PROGRESS_ERROR(pProgress, (Snapshot::tr("Snapshot operation failed")));
         }
         else if (!strcmp(a->argv[1], "edit"))
@@ -559,7 +559,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             if (a->argc < 3)
             {
                 errorSyntax(Snapshot::tr("Missing snapshot name"));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -582,7 +582,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                          2, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
             int ch;
             RTGETOPTUNION Value;
-            while (   SUCCEEDED(rc)
+            while (   SUCCEEDED(hrc)
                    && (ch = RTGetOpt(&GetOptState, &Value)))
             {
                 switch (ch)
@@ -610,12 +610,12 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
                     default:
                         errorGetOpt(ch, &Value);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                 }
             }
 
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
         }
         else if (!strcmp(a->argv[1], "showvminfo"))
@@ -626,7 +626,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             if (a->argc != 3)
             {
                 errorSyntax(Snapshot::tr("Expecting snapshot name only"));
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
 
@@ -643,18 +643,18 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
         else if (!strcmp(a->argv[1], "list"))
         {
             setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_LIST);
-            rc = handleSnapshotList(a, sessionMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+            hrc = handleSnapshotList(a, sessionMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
         }
         else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
             DumpSnapshot(sessionMachine);
         else
         {
             errorSyntax(Snapshot::tr("Invalid parameter '%s'"), a->argv[1]);
-            rc = E_FAIL;
+            hrc = E_FAIL;
         }
     } while (0);
 
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

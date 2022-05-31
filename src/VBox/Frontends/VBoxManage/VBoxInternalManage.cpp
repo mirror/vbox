@@ -583,7 +583,7 @@ static HRESULT SetInt64(ComPtr<IMachine> pMachine, const char *pszKeyBase, const
 static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     RT_NOREF(aSession);
-    HRESULT rc;
+    HRESULT hrc;
 
     /*
      * Get the VM
@@ -609,9 +609,9 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     /* offDelta */
     if (argc >= 3)
     {
-        int irc = RTStrToInt64Ex(argv[2], NULL, 0, &offDelta);
-        if (RT_FAILURE(irc))
-            return errorArgument(argv[0], Internal::tr("Failed to read delta '%s', rc=%Rrc\n"), argv[2], rc);
+        int vrc = RTStrToInt64Ex(argv[2], NULL, 0, &offDelta);
+        if (RT_FAILURE(vrc))
+            return errorArgument(argv[0], Internal::tr("Failed to read delta '%s', rc=%Rrc\n"), argv[2], vrc);
     }
 
     /* pszModule */
@@ -621,24 +621,24 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     /* ModuleAddress */
     if (argc >= 5)
     {
-        int irc = RTStrToUInt64Ex(argv[4], NULL, 0, &ModuleAddress);
-        if (RT_FAILURE(irc))
-            return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[4], rc);
+        int vrc = RTStrToUInt64Ex(argv[4], NULL, 0, &ModuleAddress);
+        if (RT_FAILURE(vrc))
+            return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[4], vrc);
     }
 
     /* ModuleSize */
     if (argc >= 6)
     {
-        int irc = RTStrToUInt64Ex(argv[5], NULL, 0, &ModuleSize);
-        if (RT_FAILURE(irc))
-            return errorArgument(argv[0], Internal::tr("Failed to read module size '%s', rc=%Rrc\n"), argv[5], rc);
+        int vrc = RTStrToUInt64Ex(argv[5], NULL, 0, &ModuleSize);
+        if (RT_FAILURE(vrc))
+            return errorArgument(argv[0], Internal::tr("Failed to read module size '%s', rc=%Rrc\n"), argv[5], vrc);
     }
 
     /*
      * Add extra data.
      */
     Utf8Str KeyStr;
-    HRESULT hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadsyms", KeyStr);
+    hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadsyms", KeyStr);
     if (SUCCEEDED(hrc))
         hrc = SetString(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "Filename", pszFilename);
     if (SUCCEEDED(hrc) && argc >= 3)
@@ -660,7 +660,7 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
 static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     RT_NOREF(aSession);
-    HRESULT rc;
+    HRESULT hrc;
 
     /*
      * Get the VM
@@ -686,9 +686,9 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
     /* address */
     if (argc < 3)
         return errorArgument(Internal::tr("Missing the module address argument!\n"));
-    int irc = RTStrToUInt64Ex(argv[2], NULL, 0, &ModuleAddress);
-    if (RT_FAILURE(irc))
-        return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[2], rc);
+    int vrc = RTStrToUInt64Ex(argv[2], NULL, 0, &ModuleAddress);
+    if (RT_FAILURE(vrc))
+        return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[2], vrc);
 
     /* name (optional) */
     if (argc > 3)
@@ -697,24 +697,24 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
     /* subtrahend (optional) */
     if (argc > 4)
     {
-        irc = RTStrToUInt64Ex(argv[4], NULL, 0, &offSubtrahend);
-        if (RT_FAILURE(irc))
-            return errorArgument(argv[0], Internal::tr("Failed to read subtrahend '%s', rc=%Rrc\n"), argv[4], rc);
+        vrc = RTStrToUInt64Ex(argv[4], NULL, 0, &offSubtrahend);
+        if (RT_FAILURE(vrc))
+            return errorArgument(argv[0], Internal::tr("Failed to read subtrahend '%s', rc=%Rrc\n"), argv[4], vrc);
     }
 
     /* segment (optional) */
     if (argc > 5)
     {
-        irc = RTStrToUInt32Ex(argv[5], NULL, 0, &iSeg);
-        if (RT_FAILURE(irc))
-            return errorArgument(argv[0], Internal::tr("Failed to read segment number '%s', rc=%Rrc\n"), argv[5], rc);
+        vrc = RTStrToUInt32Ex(argv[5], NULL, 0, &iSeg);
+        if (RT_FAILURE(vrc))
+            return errorArgument(argv[0], Internal::tr("Failed to read segment number '%s', rc=%Rrc\n"), argv[5], vrc);
     }
 
     /*
      * Add extra data.
      */
     Utf8Str KeyStr;
-    HRESULT hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadmap", KeyStr);
+    hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadmap", KeyStr);
     if (SUCCEEDED(hrc))
         hrc = SetString(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Filename", pszFilename);
     if (SUCCEEDED(hrc))
@@ -1282,7 +1282,7 @@ static PVDISKRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVDISKRAWPARTDESC
 static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
     RT_NOREF(aVirtualBox, aSession);
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     Utf8Str filename;
     const char *pszMBRFilename = NULL;
     Utf8Str rawdisk;
@@ -1948,8 +1948,8 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
+    hrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(vrc);
 
     vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk); /* Raw VMDK's are harddisk only. */
@@ -1996,7 +1996,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             RTMemFree(RawDescriptor.pPartDescs);
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 
 out:
     RTMsgError(Internal::tr("The raw disk vmdk file was not created"));
@@ -2476,7 +2476,7 @@ static RTEXITCODE CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         return errorSyntaxInternal(USAGE_I_DEBUGLOG, Internal::tr("Missing VM name/UUID"));
 
     ComPtr<IMachine> ptrMachine;
-    HRESULT rc;
+    HRESULT hrc;
     CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
                                              ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
 
@@ -2643,7 +2643,7 @@ static RTEXITCODE CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     RTPrintf(Internal::tr("argc=%d interval=%u\n"), argc, aUpdateInterval);
 
     ComPtr<IMachine> ptrMachine;
-    HRESULT rc;
+    HRESULT hrc;
     CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
                                              ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
 

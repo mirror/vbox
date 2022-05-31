@@ -56,17 +56,17 @@ static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
 
 HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachine = 0)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     Bstr name;
     RTPrintf("Getting machine name...\n");
-    CHECK_ERROR_RET(machine, COMGETTER(Name)(name.asOutParam()), rc);
+    CHECK_ERROR_RET(machine, COMGETTER(Name)(name.asOutParam()), hrc);
     RTPrintf("Name: {%ls}\n", name.raw());
 
     RTPrintf("Getting machine GUID...\n");
     Bstr guid;
     CHECK_ERROR(machine, COMGETTER(Id)(guid.asOutParam()));
-    if (SUCCEEDED(rc) && !guid.isEmpty()) {
+    if (SUCCEEDED(hrc) && !guid.isEmpty()) {
         RTPrintf("Guid::toString(): {%s}\n", Utf8Str(guid).c_str());
     } else {
         RTPrintf("WARNING: there's no GUID!");
@@ -74,34 +74,34 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
 
     ULONG memorySize;
     RTPrintf("Getting memory size...\n");
-    CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySize), rc);
+    CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySize), hrc);
     RTPrintf("Memory size: %d\n", memorySize);
 
     MachineState_T machineState;
     RTPrintf("Getting machine state...\n");
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), rc);
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), hrc);
     RTPrintf("Machine state: %d\n", machineState);
 
     BOOL modified;
     RTPrintf("Are any settings modified?...\n");
     CHECK_ERROR(machine, COMGETTER(SettingsModified)(&modified));
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         RTPrintf("%s\n", modified ? "yes" : "no");
 
     ULONG memorySizeBig = memorySize * 10;
     RTPrintf("Changing memory size to %d...\n", memorySizeBig);
     CHECK_ERROR(machine, COMSETTER(MemorySize)(memorySizeBig));
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         RTPrintf("Are any settings modified now?...\n");
-        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), hrc);
         RTPrintf("%s\n", modified ? "yes" : "no");
         ASSERT_RET(modified, 0);
 
         ULONG memorySizeGot;
         RTPrintf("Getting memory size again...\n");
-        CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySizeGot), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySizeGot), hrc);
         RTPrintf("Memory size: %d\n", memorySizeGot);
         ASSERT_RET(memorySizeGot == memorySizeBig, 0);
 
@@ -115,37 +115,37 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
         }
 
         RTPrintf("Discarding recent changes...\n");
-        CHECK_ERROR_RET(machine, DiscardSettings(), rc);
+        CHECK_ERROR_RET(machine, DiscardSettings(), hrc);
         RTPrintf("Are any settings modified after discarding?...\n");
-        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), hrc);
         RTPrintf("%s\n", modified ? "yes" : "no");
         ASSERT_RET(!modified, 0);
 
         RTPrintf("Getting memory size once more...\n");
-        CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySizeGot), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(MemorySize)(&memorySizeGot), hrc);
         RTPrintf("Memory size: %d\n", memorySizeGot);
         ASSERT_RET(memorySizeGot == memorySize, 0);
 
         memorySize = memorySize > 128 ? memorySize / 2 : memorySize * 2;
         RTPrintf("Changing memory size to %d...\n", memorySize);
-        CHECK_ERROR_RET(machine, COMSETTER(MemorySize)(memorySize), rc);
+        CHECK_ERROR_RET(machine, COMSETTER(MemorySize)(memorySize), hrc);
     }
 
     Bstr desc;
     RTPrintf("Getting description...\n");
-    CHECK_ERROR_RET(machine, COMGETTER(Description)(desc.asOutParam()), rc);
+    CHECK_ERROR_RET(machine, COMGETTER(Description)(desc.asOutParam()), hrc);
     RTPrintf("Description is: \"%ls\"\n", desc.raw());
 
     desc = L"This is an exemplary description (changed).";
     RTPrintf("Setting description to \"%ls\"...\n", desc.raw());
-    CHECK_ERROR_RET(machine, COMSETTER(Description)(desc.raw()), rc);
+    CHECK_ERROR_RET(machine, COMSETTER(Description)(desc.raw()), hrc);
 
     RTPrintf("Saving machine settings...\n");
     CHECK_ERROR(machine, SaveSettings());
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         RTPrintf("Are any settings modified after saving?...\n");
-        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(SettingsModified)(&modified), hrc);
         RTPrintf("%s\n", modified ? "yes" : "no");
         ASSERT_RET(!modified, 0);
 
@@ -161,7 +161,7 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
     Bstr extraDataKey = L"Blafasel";
     Bstr extraData;
     RTPrintf("Getting extra data key {%ls}...\n", extraDataKey.raw());
-    CHECK_ERROR_RET(machine, GetExtraData(extraDataKey.raw(), extraData.asOutParam()), rc);
+    CHECK_ERROR_RET(machine, GetExtraData(extraDataKey.raw(), extraData.asOutParam()), hrc);
     if (!extraData.isEmpty()) {
         RTPrintf("Extra data value: {%ls}\n", extraData.raw());
     } else {
@@ -176,9 +176,9 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
              extraDataKey.raw(), extraData.raw());
     CHECK_ERROR(machine, SetExtraData(extraDataKey.raw(), extraData.raw()));
 
-    if (SUCCEEDED(rc)) {
+    if (SUCCEEDED(hrc)) {
         RTPrintf("Getting extra data key {%ls} again...\n", extraDataKey.raw());
-        CHECK_ERROR_RET(machine, GetExtraData(extraDataKey.raw(), extraData.asOutParam()), rc);
+        CHECK_ERROR_RET(machine, GetExtraData(extraDataKey.raw(), extraData.asOutParam()), hrc);
         if (!extraData.isEmpty()) {
             RTPrintf("Extra data value: {%ls}\n", extraData.raw());
         } else {
@@ -186,7 +186,7 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
         }
     }
 
-    return rc;
+    return hrc;
 }
 
 // main
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
      */
     RTR3InitExe(argc, &argv, 0);
 
-    HRESULT rc;
+    HRESULT hrc;
 
     {
         char homeDir[RTPATH_MAX];
@@ -210,11 +210,11 @@ int main(int argc, char *argv[])
 
     RTPrintf("Initializing COM...\n");
 
-    rc = com::Initialize();
-    if (FAILED(rc))
+    hrc = com::Initialize();
+    if (FAILED(hrc))
     {
         RTPrintf("ERROR: failed to initialize COM!\n");
-        return rc;
+        return hrc;
     }
 
     do
@@ -242,24 +242,24 @@ int main(int argc, char *argv[])
 #endif
 
     RTPrintf("Creating VirtualBox object...\n");
-    rc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
-    if (SUCCEEDED(rc))
-        rc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
-    if (FAILED(rc))
+    hrc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+    if (SUCCEEDED(hrc))
+        hrc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+    if (FAILED(hrc))
         RTPrintf("ERROR: failed to create the VirtualBox object!\n");
     else
     {
-        rc = session.createInprocObject(CLSID_Session);
-        if (FAILED(rc))
+        hrc = session.createInprocObject(CLSID_Session);
+        if (FAILED(hrc))
             RTPrintf("ERROR: failed to create a session object!\n");
     }
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
         com::ErrorInfo info;
         if (!info.isFullAvailable() && !info.isBasicAvailable())
         {
-            com::GluePrintRCMessage(rc);
+            com::GluePrintRCMessage(hrc);
             RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
         }
         else
@@ -1591,7 +1591,7 @@ int main(int argc, char *argv[])
 
     RTPrintf("tstAPI FINISHED.\n");
 
-    return rc;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API

@@ -1076,7 +1076,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                    ComPtr<ISession> pSession,
                    VMINFO_DETAILS details /*= VMINFO_NONE*/)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IConsole> pConsole;
     if (pSession)
         pSession->COMGETTER(Console)(pConsole.asOutParam());
@@ -1117,13 +1117,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             if (details != VMINFO_MACHINEREADABLE)
             {
                 Bstr settingsFilePath;
-                rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
+                hrc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
                 RTPrintf(Info::tr("Config file:     %ls\n"), settingsFilePath.raw());
 
                 Bstr strCipher;
                 Bstr strPasswordId;
-                HRESULT rc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
-                if (SUCCEEDED(rc2))
+                HRESULT hrc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
+                if (SUCCEEDED(hrc2))
                 {
                     RTPrintf("Encryption:     enabled\n");
                     RTPrintf("Cipher:         %ls\n", strCipher.raw());
@@ -1133,7 +1133,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     RTPrintf("Encryption:     disabled\n");
 
                 ComPtr<IVirtualBoxErrorInfo> accessError;
-                rc = machine->COMGETTER(AccessError)(accessError.asOutParam());
+                hrc = machine->COMGETTER(AccessError)(accessError.asOutParam());
                 RTPrintf(Info::tr("Access error details:\n"));
                 ErrorInfo ei(accessError);
                 GluePrintErrorInfo(ei);
@@ -1158,8 +1158,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     {
         Bstr strCipher;
         Bstr strPasswordId;
-        HRESULT rc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
-        if (SUCCEEDED(rc2))
+        HRESULT hrc2 = machine->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
+        if (SUCCEEDED(hrc2))
         {
             RTPrintf("Encryption:     enabled\n");
             RTPrintf("Cipher:         %ls\n", strCipher.raw());
@@ -1249,8 +1249,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     for (uOrdinal = 0; uOrdinal < _4K; uOrdinal++)
     {
         ULONG uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX;
-        rc = machine->GetCPUIDLeafByOrdinal(uOrdinal, &uLeaf, &uSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
-        if (SUCCEEDED(rc))
+        hrc = machine->GetCPUIDLeafByOrdinal(uOrdinal, &uLeaf, &uSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
+        if (SUCCEEDED(hrc))
         {
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("cpuid=%08x,%08x,%08x,%08x,%08x,%08x", uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX);
@@ -1263,8 +1263,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         }
         else
         {
-            if (rc != E_INVALIDARG)
-                com::GlueHandleComError(machine, "GetCPUIDLeaf", rc, __FILE__, __LINE__);
+            if (hrc != E_INVALIDARG)
+                com::GlueHandleComError(machine, "GetCPUIDLeaf", hrc, __FILE__, __LINE__);
             break;
         }
     }
@@ -1417,8 +1417,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf(Info::tr("%-28s %s (since %s)\n"), Info::tr("State:"), pszState, pszTime);
 
     GraphicsControllerType_T enmGraphics;
-    rc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&enmGraphics);
-    if (SUCCEEDED(rc))
+    hrc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&enmGraphics);
+    if (SUCCEEDED(hrc))
     {
         const char *pszCtrl;
         switch (enmGraphics)
@@ -1558,9 +1558,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 RTPrintf(Info::tr("#%u: '%ls', Type: %s, Instance: %u, Ports: %u (max %u), %s\n"), i, bstrName.raw(),
                          storageControllerTypeToName(enmCtlType, false), uInstance, cPorts, cMaxPorts,
                          fBootable ? Info::tr("Bootable") : Info::tr("Not bootable"));
-                rc = showMediumAttachments(machine, storageCtl, details);
-                if (FAILED(rc))
-                    return rc;
+                hrc = showMediumAttachments(machine, storageCtl, details);
+                if (FAILED(hrc))
+                    return hrc;
             }
         }
     }
@@ -1570,9 +1570,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (details == VMINFO_MACHINEREADABLE)
         for (size_t j = 0; j < storageCtls.size(); ++ j)
         {
-            rc = showMediumAttachments(machine, storageCtls[j], details);
-            if (FAILED(rc))
-                return rc;
+            hrc = showMediumAttachments(machine, storageCtls[j], details);
+            if (FAILED(hrc))
+                return hrc;
         }
 
     /* get the maximum amount of NICS */
@@ -1581,8 +1581,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     for (ULONG currentNIC = 0; currentNIC < maxNICs; currentNIC++)
     {
         ComPtr<INetworkAdapter> nic;
-        rc = machine->GetNetworkAdapter(currentNIC, nic.asOutParam());
-        if (SUCCEEDED(rc) && nic)
+        hrc = machine->GetNetworkAdapter(currentNIC, nic.asOutParam());
+        if (SUCCEEDED(hrc) && nic)
         {
             FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "nic%u" : Info::tr("NIC %u:"), currentNIC + 1);
 
@@ -1765,10 +1765,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             // show the generic properties
                             com::SafeArray<BSTR> aProperties;
                             com::SafeArray<BSTR> aValues;
-                            rc = nic->GetProperties(NULL,
-                                                    ComSafeArrayAsOutParam(aProperties),
-                                                    ComSafeArrayAsOutParam(aValues));
-                            if (SUCCEEDED(rc))
+                            hrc = nic->GetProperties(NULL,
+                                                     ComSafeArrayAsOutParam(aProperties),
+                                                     ComSafeArrayAsOutParam(aValues));
+                            if (SUCCEEDED(hrc))
                             {
                                 strAttachment += " { ";
                                 for (unsigned i = 0; i < aProperties.size(); ++i)
@@ -2002,8 +2002,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     for (ULONG currentUART = 0; currentUART < maxUARTs; currentUART++)
     {
         ComPtr<ISerialPort> uart;
-        rc = machine->GetSerialPort(currentUART, uart.asOutParam());
-        if (SUCCEEDED(rc) && uart)
+        hrc = machine->GetSerialPort(currentUART, uart.asOutParam());
+        if (SUCCEEDED(hrc) && uart)
         {
             FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "uart%u" : Info::tr("UART %u:"), currentUART + 1);
 
@@ -2108,8 +2108,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     for (ULONG currentLPT = 0; currentLPT < maxLPTs; currentLPT++)
     {
         ComPtr<IParallelPort> lpt;
-        rc = machine->GetParallelPort(currentLPT, lpt.asOutParam());
-        if (SUCCEEDED(rc) && lpt)
+        hrc = machine->GetParallelPort(currentLPT, lpt.asOutParam());
+        if (SUCCEEDED(hrc) && lpt)
         {
             FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "lpt%u" : Info::tr("LPT %u:"), currentLPT + 1);
 
@@ -2144,18 +2144,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     }
 
     ComPtr<IAudioAdapter> AudioAdapter;
-    rc = machine->COMGETTER(AudioAdapter)(AudioAdapter.asOutParam());
-    if (SUCCEEDED(rc))
+    hrc = machine->COMGETTER(AudioAdapter)(AudioAdapter.asOutParam());
+    if (SUCCEEDED(hrc))
     {
         const char *pszDrv   = Info::tr("Unknown");
         const char *pszCtrl  = Info::tr("Unknown");
         const char *pszCodec = Info::tr("Unknown");
         BOOL fEnabled;
-        rc = AudioAdapter->COMGETTER(Enabled)(&fEnabled);
-        if (SUCCEEDED(rc) && fEnabled)
+        hrc = AudioAdapter->COMGETTER(Enabled)(&fEnabled);
+        if (SUCCEEDED(hrc) && fEnabled)
         {
             AudioDriverType_T enmDrvType;
-            rc = AudioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
+            hrc = AudioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
             switch (enmDrvType)
             {
                 case AudioDriverType_Null:
@@ -2212,7 +2212,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     break;
             }
             AudioControllerType_T enmCtrlType;
-            rc = AudioAdapter->COMGETTER(AudioController)(&enmCtrlType);
+            hrc = AudioAdapter->COMGETTER(AudioController)(&enmCtrlType);
             switch (enmCtrlType)
             {
                 case AudioControllerType_AC97:
@@ -2237,7 +2237,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     break;
             }
             AudioCodecType_T enmCodecType;
-            rc = AudioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
+            hrc = AudioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
             switch (enmCodecType)
             {
                 case AudioCodecType_SB16:
@@ -2276,7 +2276,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     {
         const char *psz;
         ClipboardMode_T enmMode = (ClipboardMode_T)0;
-        rc = machine->COMGETTER(ClipboardMode)(&enmMode);
+        hrc = machine->COMGETTER(ClipboardMode)(&enmMode);
         switch (enmMode)
         {
             case ClipboardMode_Disabled:
@@ -2305,7 +2305,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     {
         const char *psz;
         DnDMode_T enmMode;
-        rc = machine->COMGETTER(DnDMode)(&enmMode);
+        hrc = machine->COMGETTER(DnDMode)(&enmMode);
         switch (enmMode)
         {
             case DnDMode_Disabled:
@@ -2329,12 +2329,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     {
         SessionState_T sessState;
-        rc = machine->COMGETTER(SessionState)(&sessState);
-        if (SUCCEEDED(rc) && sessState != SessionState_Unlocked)
+        hrc = machine->COMGETTER(SessionState)(&sessState);
+        if (SUCCEEDED(hrc) && sessState != SessionState_Unlocked)
         {
             Bstr sessName;
-            rc = machine->COMGETTER(SessionName)(sessName.asOutParam());
-            if (SUCCEEDED(rc) && !sessName.isEmpty())
+            hrc = machine->COMGETTER(SessionName)(sessName.asOutParam());
+            if (SUCCEEDED(hrc) && !sessName.isEmpty())
                 SHOW_BSTR_STRING("SessionName", Info::tr("Session name:"), sessName);
         }
     }
@@ -2344,25 +2344,25 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         do
         {
             ComPtr<IDisplay> display;
-            rc = pConsole->COMGETTER(Display)(display.asOutParam());
-            if (rc == E_ACCESSDENIED || display.isNull())
+            hrc = pConsole->COMGETTER(Display)(display.asOutParam());
+            if (hrc == E_ACCESSDENIED || display.isNull())
                 break; /* VM not powered up */
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
-                com::GlueHandleComError(pConsole, "COMGETTER(Display)(display.asOutParam())", rc, __FILE__, __LINE__);
-                return rc;
+                com::GlueHandleComError(pConsole, "COMGETTER(Display)(display.asOutParam())", hrc, __FILE__, __LINE__);
+                return hrc;
             }
             ULONG xRes, yRes, bpp;
             LONG xOrigin, yOrigin;
             GuestMonitorStatus_T monitorStatus;
-            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp, &xOrigin, &yOrigin, &monitorStatus);
-            if (rc == E_ACCESSDENIED)
+            hrc = display->GetScreenResolution(0, &xRes, &yRes, &bpp, &xOrigin, &yOrigin, &monitorStatus);
+            if (hrc == E_ACCESSDENIED)
                 break; /* VM not powered up */
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
                 com::ErrorInfo info(display, COM_IIDOF(IDisplay));
                 GluePrintErrorInfo(info);
-                return rc;
+                return hrc;
             }
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("VideoMode=\"%d,%d,%d\"@%d,%d %d\n", xRes, yRes, bpp, xOrigin, yOrigin, monitorStatus);
@@ -2386,8 +2386,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * Remote Desktop
      */
     ComPtr<IVRDEServer> vrdeServer;
-    rc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
-    if (SUCCEEDED(rc) && vrdeServer)
+    hrc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+    if (SUCCEEDED(hrc) && vrdeServer)
     {
         BOOL fEnabled = false;
         vrdeServer->COMGETTER(Enabled)(&fEnabled);
@@ -2441,19 +2441,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             if (pConsole)
             {
                 ComPtr<IVRDEServerInfo> vrdeServerInfo;
-                CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
+                CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), hrc);
                 if (!vrdeServerInfo.isNull())
                 {
-                    rc = vrdeServerInfo->COMGETTER(Port)(&currentPort);
-                    if (rc == E_ACCESSDENIED)
+                    hrc = vrdeServerInfo->COMGETTER(Port)(&currentPort);
+                    if (hrc == E_ACCESSDENIED)
                     {
                         currentPort = -1; /* VM not powered up */
                     }
-                    else if (FAILED(rc))
+                    else if (FAILED(hrc))
                     {
                         com::ErrorInfo info(vrdeServerInfo, COM_IIDOF(IVRDEServerInfo));
                         GluePrintErrorInfo(info);
-                        return rc;
+                        return hrc;
                     }
                 }
             }
@@ -2522,8 +2522,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * USB.
      */
     SafeIfaceArray<IUSBController> USBCtlColl;
-    rc = machine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(USBCtlColl));
-    if (SUCCEEDED(rc))
+    hrc = machine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(USBCtlColl));
+    if (SUCCEEDED(hrc))
     {
         bool fOhciEnabled = false;
         bool fEhciEnabled = false;
@@ -2533,8 +2533,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         {
             USBControllerType_T enmType;
 
-            rc = USBCtlColl[i]->COMGETTER(Type)(&enmType);
-            if (SUCCEEDED(rc))
+            hrc = USBCtlColl[i]->COMGETTER(Type)(&enmType);
+            if (SUCCEEDED(hrc))
             {
                 switch (enmType)
                 {
@@ -2559,12 +2559,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     }
 
     ComPtr<IUSBDeviceFilters> USBFlts;
-    rc = machine->COMGETTER(USBDeviceFilters)(USBFlts.asOutParam());
-    if (SUCCEEDED(rc))
+    hrc = machine->COMGETTER(USBDeviceFilters)(USBFlts.asOutParam());
+    if (SUCCEEDED(hrc))
     {
         SafeIfaceArray <IUSBDeviceFilter> Coll;
-        rc = USBFlts->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
-        if (SUCCEEDED(rc))
+        hrc = USBFlts->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
+        if (SUCCEEDED(hrc))
         {
             if (Coll.size() > 0)
             {
@@ -2588,7 +2588,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     if (details != VMINFO_MACHINEREADABLE)
                     {
                         ULONG fMaskedIfs;
-                        CHECK_ERROR_RET(DevPtr, COMGETTER(MaskedInterfaces)(&fMaskedIfs), rc);
+                        CHECK_ERROR_RET(DevPtr, COMGETTER(MaskedInterfaces)(&fMaskedIfs), hrc);
                         if (fMaskedIfs)
                             RTPrintf("%-28s %#010x\n", Info::tr("Masked Interfaces:"), fMaskedIfs);
                     }
@@ -2602,18 +2602,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         {
             {
                 SafeIfaceArray<IHostUSBDevice> coll;
-                CHECK_ERROR_RET(pConsole, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), rc);
-                rc = showUsbDevices(coll, "USBRemote", Info::tr("Available remote USB devices:"), details);
-                if (FAILED(rc))
-                    return rc;
+                CHECK_ERROR_RET(pConsole, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), hrc);
+                hrc = showUsbDevices(coll, "USBRemote", Info::tr("Available remote USB devices:"), details);
+                if (FAILED(hrc))
+                    return hrc;
             }
 
             {
                 SafeIfaceArray<IUSBDevice> coll;
-                CHECK_ERROR_RET(pConsole, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), rc);
+                CHECK_ERROR_RET(pConsole, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), hrc);
                 showUsbDevices(coll, "USBAttach", Info::tr("Currently attached USB devices:"), details);
-                if (FAILED(rc))
-                    return rc;
+                if (FAILED(hrc))
+                    return hrc;
             }
         }
     } /* USB */
@@ -2622,8 +2622,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     /* Host PCI passthrough devices */
     {
          SafeIfaceArray <IPCIDeviceAttachment> assignments;
-         rc = machine->COMGETTER(PCIDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
-         if (SUCCEEDED(rc))
+         hrc = machine->COMGETTER(PCIDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
+         if (SUCCEEDED(hrc))
          {
              if (assignments.size() > 0 && (details != VMINFO_MACHINEREADABLE))
              {
@@ -2665,9 +2665,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("%-28s ", Info::tr("Bandwidth groups:"));
     {
         ComPtr<IBandwidthControl> bwCtrl;
-        CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), hrc);
 
-        rc = showBandwidthGroups(bwCtrl, details);
+        hrc = showBandwidthGroups(bwCtrl, details);
     }
 
 
@@ -2693,7 +2693,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     /* now VM mappings */
     {
         com::SafeIfaceArray <ISharedFolder> folders;
-        CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), hrc);
         for (size_t i = 0; i < folders.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = folders[i];
@@ -2705,7 +2705,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (pConsole)
     {
         com::SafeIfaceArray <ISharedFolder> folders;
-        CHECK_ERROR_RET(pConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
+        CHECK_ERROR_RET(pConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), hrc);
         for (size_t i = 0; i < folders.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = folders[i];
@@ -2727,7 +2727,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
          * Live VRDE info.
          */
         ComPtr<IVRDEServerInfo> vrdeServerInfo;
-        CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
+        CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), hrc);
         BOOL    fActive = FALSE;
         ULONG   cNumberOfClients = 0;
         LONG64  BeginTime = 0;
@@ -2745,20 +2745,20 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
         if (!vrdeServerInfo.isNull())
         {
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Active)(&fActive), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(NumberOfClients)(&cNumberOfClients), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BeginTime)(&BeginTime), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EndTime)(&EndTime), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSent)(&BytesSent), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSentTotal)(&BytesSentTotal), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceived)(&BytesReceived), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceivedTotal)(&BytesReceivedTotal), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(User)(User.asOutParam()), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Domain)(Domain.asOutParam()), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientName)(ClientName.asOutParam()), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientIP)(ClientIP.asOutParam()), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientVersion)(&ClientVersion), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), rc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Active)(&fActive), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(NumberOfClients)(&cNumberOfClients), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BeginTime)(&BeginTime), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EndTime)(&EndTime), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSent)(&BytesSent), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSentTotal)(&BytesSentTotal), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceived)(&BytesReceived), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceivedTotal)(&BytesReceivedTotal), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(User)(User.asOutParam()), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Domain)(Domain.asOutParam()), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientName)(ClientName.asOutParam()), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientIP)(ClientIP.asOutParam()), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientVersion)(&ClientVersion), hrc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), hrc);
         }
 
         SHOW_BOOL_VALUE_EX("VRDEActiveConnection", Info::tr("VRDE Connection:"), fActive, Info::tr("active"), Info::tr("not active"));
@@ -2813,26 +2813,26 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 # endif
 
         ComPtr<IRecordingSettings> recordingSettings;
-        CHECK_ERROR_RET(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()), hrc);
 
         SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
-        CHECK_ERROR_RET(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)), rc);
+        CHECK_ERROR_RET(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)), hrc);
 
         /* For now all screens have the same configuration; so take screen 0 and work with that. */
         ULONG fFeatures;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Features)(&fFeatures), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Features)(&fFeatures), hrc);
         ULONG Width;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoWidth)(&Width), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoWidth)(&Width), hrc);
         ULONG Height;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoHeight)(&Height), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoHeight)(&Height), hrc);
         ULONG Rate;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoRate)(&Rate), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoRate)(&Rate), hrc);
         ULONG Fps;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoFPS)(&Fps), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoFPS)(&Fps), hrc);
         Bstr  bstrFile;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Filename)(bstrFile.asOutParam()), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Filename)(bstrFile.asOutParam()), hrc);
         Bstr  bstrOptions;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), hrc);
 
         Utf8Str strOptions(bstrOptions);
         size_t pos = 0;
@@ -2859,7 +2859,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         for (size_t i = 0, off = 0; i < saRecordingScreenScreens.size(); i++)
         {
             BOOL fEnabled;
-            CHECK_ERROR_RET(saRecordingScreenScreens[i], COMGETTER(Enabled)(&fEnabled), rc);
+            CHECK_ERROR_RET(saRecordingScreenScreens[i], COMGETTER(Enabled)(&fEnabled), hrc);
             if (fEnabled && off < sizeof(szValue) - 3)
                 off += RTStrPrintf(&szValue[off], sizeof(szValue) - off, off ? ",%zu" : "%zu", i);
         }
@@ -2922,12 +2922,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * Snapshots.
      */
     ComPtr<ISnapshot> snapshot;
-    rc = machine->FindSnapshot(Bstr().raw(), snapshot.asOutParam());
-    if (SUCCEEDED(rc) && snapshot)
+    hrc = machine->FindSnapshot(Bstr().raw(), snapshot.asOutParam());
+    if (SUCCEEDED(hrc) && snapshot)
     {
         ComPtr<ISnapshot> currentSnapshot;
-        rc = machine->COMGETTER(CurrentSnapshot)(currentSnapshot.asOutParam());
-        if (SUCCEEDED(rc))
+        hrc = machine->COMGETTER(CurrentSnapshot)(currentSnapshot.asOutParam());
+        if (SUCCEEDED(hrc))
         {
             if (details != VMINFO_MACHINEREADABLE)
                 RTPrintf(Info::tr("* Snapshots:\n"));
@@ -2947,24 +2947,24 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (pConsole)
     {
         ComPtr<IGuest> guest;
-        rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
-        if (SUCCEEDED(rc) && !guest.isNull())
+        hrc = pConsole->COMGETTER(Guest)(guest.asOutParam());
+        if (SUCCEEDED(hrc) && !guest.isNull())
         {
             SHOW_STRING_PROP_NOT_EMPTY(guest, OSTypeId, "GuestOSType", Info::tr("OS type:"));
 
             AdditionsRunLevelType_T guestRunLevel; /** @todo Add a runlevel-to-string (e.g. 0 = "None") method? */
-            rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
-            if (SUCCEEDED(rc))
+            hrc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
+            if (SUCCEEDED(hrc))
                 SHOW_ULONG_VALUE("GuestAdditionsRunLevel", Info::tr("Additions run level:"), (ULONG)guestRunLevel, "");
 
             Bstr guestString;
-            rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
-            if (   SUCCEEDED(rc)
+            hrc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+            if (   SUCCEEDED(hrc)
                 && !guestString.isEmpty())
             {
                 ULONG uRevision;
-                rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
-                if (FAILED(rc))
+                hrc = guest->COMGETTER(AdditionsRevision)(&uRevision);
+                if (FAILED(hrc))
                     uRevision = 0;
                 RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
                 SHOW_UTF8_STRING("GuestAdditionsVersion", Info::tr("Additions version:"), szValue);
@@ -2972,7 +2972,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
             /* Print information about known Guest Additions facilities: */
             SafeIfaceArray <IAdditionsFacility> collFac;
-            CHECK_ERROR_RET(guest, COMGETTER(Facilities)(ComSafeArrayAsOutParam(collFac)), rc);
+            CHECK_ERROR_RET(guest, COMGETTER(Facilities)(ComSafeArrayAsOutParam(collFac)), hrc);
             if (collFac.size() > 0)
             {
                 if (details != VMINFO_MACHINEREADABLE)
@@ -2985,11 +2985,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     ComPtr<IAdditionsFacility> fac = collFac[index];
                     if (fac)
                     {
-                        CHECK_ERROR_RET(fac, COMGETTER(Name)(guestString.asOutParam()), rc);
+                        CHECK_ERROR_RET(fac, COMGETTER(Name)(guestString.asOutParam()), hrc);
                         if (!guestString.isEmpty())
                         {
-                            CHECK_ERROR_RET(fac, COMGETTER(Status)(&curStatus), rc);
-                            CHECK_ERROR_RET(fac, COMGETTER(LastUpdated)(&lLastUpdatedMS), rc);
+                            CHECK_ERROR_RET(fac, COMGETTER(Status)(&curStatus), hrc);
+                            CHECK_ERROR_RET(fac, COMGETTER(LastUpdated)(&lLastUpdatedMS), hrc);
                             if (details == VMINFO_MACHINEREADABLE)
                                 RTPrintf("GuestAdditionsFacility_%ls=%u,%lld\n",
                                          guestString.raw(), curStatus, lLastUpdatedMS);
@@ -3037,7 +3037,7 @@ static const RTGETOPTDEF g_aShowVMInfoOptions[] =
 
 RTEXITCODE handleShowVMInfo(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     const char *VMNameOrUuid = NULL;
     bool fLog = false;
     uint32_t uLogIdx = 0;
@@ -3097,7 +3097,7 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
                                            machine.asOutParam()));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     /* Printing the log is exclusive. */
@@ -3175,17 +3175,17 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
             details = VMINFO_STANDARD;
 
         /* open an existing session for the VM */
-        rc = machine->LockMachine(a->session, LockType_Shared);
-        if (SUCCEEDED(rc))
+        hrc = machine->LockMachine(a->session, LockType_Shared);
+        if (SUCCEEDED(hrc))
             /* get the session machine */
-            rc = a->session->COMGETTER(Machine)(machine.asOutParam());
+            hrc = a->session->COMGETTER(Machine)(machine.asOutParam());
 
-        rc = showVMInfo(a->virtualBox, machine, a->session, details);
+        hrc = showVMInfo(a->virtualBox, machine, a->session, details);
 
         a->session->UnlockMachine();
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

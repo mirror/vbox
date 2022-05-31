@@ -86,8 +86,8 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
      * from the configuration and start the VMs afterwards.
      */
     com::SafeIfaceArray<IMachine> machines;
-    HRESULT rc = g_pVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
-    if (SUCCEEDED(rc))
+    HRESULT hrc = g_pVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
+    if (SUCCEEDED(hrc))
     {
         /*
          * Iterate through the collection
@@ -130,7 +130,7 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
          * to mistinterpreted Dijkstra's "single exit" commandment
          * just to add this log, hence a bit of duplicate logic here.
          */
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             if (machines.size() == 0)
                 autostartSvcLogWarning("No virtual machines found.\n"
@@ -141,9 +141,9 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
                                        "Please consult the manual about how to enable auto starting VMs.\n");
         }
         else
-            autostartSvcLogError("Enumerating virtual machines failed with %Rhrc\n", rc);
+            autostartSvcLogError("Enumerating virtual machines failed with %Rhrc\n", hrc);
 
-        if (   SUCCEEDED(rc)
+        if (   SUCCEEDED(hrc)
             && !listVM.empty())
         {
             ULONG uDelayCur = 0;
@@ -172,21 +172,21 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
 
                 CHECK_ERROR_BREAK(machine, LaunchVMProcess(g_pSession, Bstr("headless").raw(),
                                                            ComSafeArrayNullInParam(), progress.asOutParam()));
-                if (SUCCEEDED(rc) && !progress.isNull())
+                if (SUCCEEDED(hrc) && !progress.isNull())
                 {
                     autostartSvcLogVerbose(1, "Waiting for machine '%ls' to power on ...\n", strName.raw());
                     CHECK_ERROR(progress, WaitForCompletion(-1));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         BOOL completed = true;
                         CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             ASSERT(completed);
 
                             LONG iRc;
                             CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
-                            if (SUCCEEDED(rc))
+                            if (SUCCEEDED(hrc))
                             {
                                 if (FAILED(iRc))
                                 {
@@ -201,7 +201,7 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
                 }
                 SessionState_T enmSessionState;
                 CHECK_ERROR(g_pSession, COMGETTER(State)(&enmSessionState));
-                if (SUCCEEDED(rc) && enmSessionState == SessionState_Locked)
+                if (SUCCEEDED(hrc) && enmSessionState == SessionState_Locked)
                     g_pSession->UnlockMachine();
             }
         }

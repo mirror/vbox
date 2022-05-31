@@ -34,7 +34,7 @@ unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
 {
     ULONG NetworkAdapterCount = 0;
     do {
-        HRESULT rc;
+        HRESULT hrc;
 
         ComPtr<ISystemProperties> info;
         CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(SystemProperties)(info.asOutParam()));

@@ -87,7 +87,7 @@ STDMETHODIMP GuestFileEventListener::HandleEvent(VBoxEventType_T aType, IEvent *
     {
         case VBoxEventType_OnGuestFileStateChanged:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestFileStateChangedEvent> pEvent = aEvent;
@@ -143,7 +143,7 @@ STDMETHODIMP GuestProcessEventListener::HandleEvent(VBoxEventType_T aType, IEven
     {
         case VBoxEventType_OnGuestProcessStateChanged:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestProcessStateChangedEvent> pEvent = aEvent;
@@ -195,7 +195,7 @@ void GuestSessionEventListener::uninit(void)
     {
         if (!itProc->first.isNull())
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 /* Listener unregistration. */
@@ -215,7 +215,7 @@ void GuestSessionEventListener::uninit(void)
     {
         if (!itFile->first.isNull())
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 /* Listener unregistration. */
@@ -237,7 +237,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
     {
         case VBoxEventType_OnGuestFileRegistered:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestFileRegisteredEvent> pEvent = aEvent;
@@ -301,7 +301,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
 
         case VBoxEventType_OnGuestProcessRegistered:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestProcessRegisteredEvent> pEvent = aEvent;
@@ -365,7 +365,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
 
         case VBoxEventType_OnGuestSessionStateChanged:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestSessionStateChangedEvent> pEvent = aEvent;
@@ -417,7 +417,7 @@ void GuestEventListener::uninit(void)
     {
         if (!itSession->first.isNull())
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 /* Listener unregistration. */
@@ -440,7 +440,7 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
     {
         case VBoxEventType_OnGuestSessionRegistered:
         {
-            HRESULT rc;
+            HRESULT hrc;
             do
             {
                 ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
@@ -536,7 +536,7 @@ STDMETHODIMP GuestAdditionsRunlevelListener::HandleEvent(VBoxEventType_T aType, 
 {
     Assert(mRunLevelTarget != AdditionsRunLevelType_None);
 
-    HRESULT rc;
+    HRESULT hrc;
 
     switch (aType)
     {

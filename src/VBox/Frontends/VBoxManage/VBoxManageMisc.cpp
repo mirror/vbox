@@ -65,7 +65,7 @@ static const RTGETOPTDEF g_aRegisterVMOptions[] =
 
 RTEXITCODE handleRegisterVM(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     const char *VMName = NULL;
 
     Bstr bstrVMName;
@@ -130,10 +130,10 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
     /** @todo Ugly hack to get both the API interpretation of relative paths
      * and the client's interpretation of relative paths. Remove after the API
      * has been redesigned. */
-    rc = a->virtualBox->OpenMachine(Bstr(a->argv[0]).raw(),
-                                    Bstr(strPassword).raw(),
-                                    machine.asOutParam());
-    if (rc == VBOX_E_FILE_ERROR)
+    hrc = a->virtualBox->OpenMachine(Bstr(a->argv[0]).raw(),
+                                     Bstr(strPassword).raw(),
+                                     machine.asOutParam());
+    if (hrc == VBOX_E_FILE_ERROR)
     {
         char szVMFileAbs[RTPATH_MAX] = "";
         int vrc = RTPathAbs(a->argv[0], szVMFileAbs, sizeof(szVMFileAbs));
@@ -144,16 +144,16 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
                                                Bstr(strPassword).raw(),
                                                machine.asOutParam()));
     }
-    else if (FAILED(rc))
+    else if (FAILED(hrc))
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]).raw(),
                                                Bstr(strPassword).raw(),
                                                machine.asOutParam()));
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         ASSERT(machine);
         CHECK_ERROR(a->virtualBox, RegisterMachine(machine));
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aUnregisterVMOptions[] =
@@ -164,7 +164,7 @@ static const RTGETOPTDEF g_aUnregisterVMOptions[] =
 
 RTEXITCODE handleUnregisterVM(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     const char *VMName = NULL;
     bool fDelete = false;
 
@@ -222,7 +222,7 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a)
         CHECK_ERROR_RET(machine, DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress.asOutParam()),
                         RTEXITCODE_FAILURE);
 
-        rc = showProgress(pProgress);
+        hrc = showProgress(pProgress);
         CHECK_PROGRESS_ERROR_RET(pProgress, (Misc::tr("Machine delete failed")), RTEXITCODE_FAILURE);
     }
     else
@@ -235,9 +235,9 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a)
         {
             IMedium *pMedium = aMedia[i];
             if (pMedium)
-                rc = pMedium->Close();
+                hrc = pMedium->Close();
         }
-        rc = S_OK;
+        hrc = S_OK; /** @todo r=andy Why overwriting the result from closing the medium above? */
     }
     return RTEXITCODE_SUCCESS;
 }
@@ -267,7 +267,7 @@ static const RTGETOPTDEF g_aCreateVMOptions[] =
 
 RTEXITCODE handleCreateVM(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     Bstr bstrBaseFolder;
     Bstr bstrName;
     Bstr bstrOsTypeId;
@@ -411,7 +411,7 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
     }
     while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aMoveVMOptions[] =
@@ -422,7 +422,7 @@ static const RTGETOPTDEF g_aMoveVMOptions[] =
 
 RTEXITCODE handleMoveVM(HandlerArg *a)
 {
-    HRESULT                        rc;
+    HRESULT                        hrc;
     const char                    *pszSrcName      = NULL;
     const char                    *pszType         = NULL;
     char                          szTargetFolder[RTPATH_MAX];
@@ -498,7 +498,7 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
                                Bstr(pszType).raw(),
                                progress.asOutParam()),
                         RTEXITCODE_FAILURE);
-        rc = showProgress(progress);
+        hrc = showProgress(progress);
         CHECK_PROGRESS_ERROR_RET(progress, (Misc::tr("Move VM failed")), RTEXITCODE_FAILURE);
 
         sessionMachine.setNull();
@@ -576,7 +576,7 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
 
 RTEXITCODE handleCloneVM(HandlerArg *a)
 {
-    HRESULT                        rc;
+    HRESULT                        hrc;
     const char                    *pszSrcName       = NULL;
     const char                    *pszSnapshotName  = NULL;
     CloneMode_T                    mode             = CloneMode_MachineState;
@@ -703,7 +703,7 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
                                         ComSafeArrayAsInParam(options),
                                         progress.asOutParam()),
                     RTEXITCODE_FAILURE);
-    rc = showProgress(progress);
+    hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, (Misc::tr("Clone VM failed")), RTEXITCODE_FAILURE);
 
     if (fRegister)
@@ -718,7 +718,7 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
 
 RTEXITCODE handleStartVM(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     std::list<const char *> VMs;
     Bstr sessionType;
     com::SafeArray<IN_BSTR> aBstrEnv;
@@ -845,7 +845,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
          it != VMs.end();
          ++it)
     {
-        HRESULT rc2 = rc;
+        HRESULT hrc2 = hrc;
         const char *pszVM = *it;
         ComPtr<IMachine> machine;
         CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszVM).raw(),
@@ -855,29 +855,29 @@ RTEXITCODE handleStartVM(HandlerArg *a)
             if (pszPasswordId && strPassword.isNotEmpty())
             {
                 CHECK_ERROR(machine, AddEncryptionPassword(Bstr(pszPasswordId).raw(), Bstr(strPassword).raw()));
-                if (rc == VBOX_E_PASSWORD_INCORRECT)
+                if (hrc == VBOX_E_PASSWORD_INCORRECT)
                     RTMsgError("Password incorrect!");
             }
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
             {
                 ComPtr<IProgress> progress;
                 CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
                                                      ComSafeArrayAsInParam(aBstrEnv), progress.asOutParam()));
-                if (SUCCEEDED(rc) && !progress.isNull())
+                if (SUCCEEDED(hrc) && !progress.isNull())
                 {
                     RTPrintf("Waiting for VM \"%s\" to power on...\n", pszVM);
                     CHECK_ERROR(progress, WaitForCompletion(-1));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         BOOL completed = true;
                         CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             ASSERT(completed);
 
                             LONG iRc;
                             CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
-                            if (SUCCEEDED(rc))
+                            if (SUCCEEDED(hrc))
                             {
                                 if (SUCCEEDED(iRc))
                                     RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
@@ -886,7 +886,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                                     ProgressErrorInfo info(progress);
                                     com::GluePrintErrorInfo(info);
                                 }
-                                rc = iRc;
+                                hrc = iRc;
                             }
                         }
                     }
@@ -898,11 +898,11 @@ RTEXITCODE handleStartVM(HandlerArg *a)
         a->session->UnlockMachine();
 
         /* make sure that we remember the failed state */
-        if (FAILED(rc2))
-            rc = rc2;
+        if (FAILED(hrc2))
+            hrc = hrc2;
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
@@ -917,7 +917,7 @@ static const RTGETOPTDEF g_aSetVMEncryptionOptions[] =
 
 RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
 {
-    HRESULT           rc;
+    HRESULT           hrc;
     ComPtr<IMachine>  machine;
     const char       *pszPasswordNew = NULL;
     const char       *pszPasswordOld = NULL;
@@ -1031,13 +1031,13 @@ RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
         CHECK_ERROR(machine, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
                                               Bstr(strPasswordNew).raw(), Bstr(pszNewPasswordId).raw(),
                                               fForce, progress.asOutParam()));
-        if (SUCCEEDED(rc))
-            rc = showProgress(progress);
-        if (FAILED(rc))
+        if (SUCCEEDED(hrc))
+            hrc = showProgress(progress);
+        if (FAILED(hrc))
         {
-            if (rc == E_NOTIMPL)
+            if (hrc == E_NOTIMPL)
                 RTMsgError("Encrypt VM operation is not implemented!");
-            else if (rc == VBOX_E_NOT_SUPPORTED)
+            else if (hrc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError("Encrypt VM operation for this cipher is not implemented yet!");
             else if (!progress.isNull())
                 CHECK_PROGRESS_ERROR(progress, ("Failed to encrypt the VM"));
@@ -1045,12 +1045,12 @@ RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
                 RTMsgError("Failed to encrypt the VM!");
         }
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleCheckVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IMachine> machine;
     Utf8Str strPassword;
 
@@ -1079,10 +1079,10 @@ RTEXITCODE handleCheckVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
     if (machine)
     {
         CHECK_ERROR(machine, CheckEncryptionPassword(Bstr(strPassword).raw()));
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             RTPrintf("The given password is correct\n");
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aAddVMOptions[] =
@@ -1093,7 +1093,7 @@ static const RTGETOPTDEF g_aAddVMOptions[] =
 
 RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IMachine> machine;
     const char *pszPassword = NULL;
     const char *pszPasswordId = NULL;
@@ -1166,15 +1166,15 @@ RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
     {
         ComPtr<IProgress> progress;
         CHECK_ERROR(machine, AddEncryptionPassword(Bstr(pszPasswordId).raw(), Bstr(strPassword).raw()));
-        if (rc == VBOX_E_PASSWORD_INCORRECT)
+        if (hrc == VBOX_E_PASSWORD_INCORRECT)
             RTMsgError("Password incorrect!");
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleRemoveVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IMachine> machine;
 
     if (a->argc != 1)
@@ -1185,10 +1185,10 @@ RTEXITCODE handleRemoveVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
     if (machine)
     {
         CHECK_ERROR(machine, RemoveEncryptionPassword(Bstr(a->argv[0]).raw()));
-        if (rc == VBOX_E_INVALID_VM_STATE)
+        if (hrc == VBOX_E_INVALID_VM_STATE)
             RTMsgError("The machine is in online or transient state\n");
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleEncryptVM(HandlerArg *a)
@@ -1215,7 +1215,7 @@ RTEXITCODE handleEncryptVM(HandlerArg *a)
 
 RTEXITCODE handleDiscardState(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     if (a->argc != 1)
         return errorSyntax(Misc::tr("Incorrect number of parameters"));
@@ -1239,12 +1239,12 @@ RTEXITCODE handleDiscardState(HandlerArg *a)
         } while (0);
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleAdoptState(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     if (a->argc != 2)
         return errorSyntax(Misc::tr("Incorrect number of parameters"));
@@ -1274,12 +1274,12 @@ RTEXITCODE handleAdoptState(HandlerArg *a)
         } while (0);
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleGetExtraData(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (a->argc > 2 || a->argc < 1)
         return errorSyntax(Misc::tr("Incorrect number of parameters"));
@@ -1353,12 +1353,12 @@ RTEXITCODE handleGetExtraData(HandlerArg *a)
             }
         }
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleSetExtraData(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (a->argc < 2)
         return errorSyntax(Misc::tr("Not enough parameters"));
@@ -1399,12 +1399,12 @@ RTEXITCODE handleSetExtraData(HandlerArg *a)
                 return errorSyntax(Misc::tr("Too many parameters"));
         }
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleSetProperty(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     /* there must be two arguments: property name and value */
     if (a->argc != 2)
@@ -1535,7 +1535,7 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
     else
         return errorSyntax(Misc::tr("Invalid parameter '%s'"), a->argv[0]);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /**

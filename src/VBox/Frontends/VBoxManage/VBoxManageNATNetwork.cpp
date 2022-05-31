@@ -85,7 +85,7 @@ typedef LOOPBACK2DELETEADD::iterator LOOPBACK2DELETEADDITERATOR;
 static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet,
                                bool fLong = true)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     do
     {
@@ -156,12 +156,12 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet,
         RTPrintf("\n");
     } while (0);
 
-    return rc;
+    return hrc;
 }
 
 static RTEXITCODE handleNATList(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     RTPrintf(Nat::tr("NAT Networks:\n\n"));
 
@@ -187,17 +187,17 @@ static RTEXITCODE handleNATList(HandlerArg *a)
                 continue;
         }
 
-        rc = printNATNetwork(pNATNet);
-        if (FAILED(rc))
+        hrc = printNATNetwork(pNATNet);
+        if (FAILED(hrc))
             break;
 
         cFound++;
     }
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         RTPrintf(Nat::tr("%zu %s found\n"), cFound, cFound == 1 ? Nat::tr("network") : Nat::tr("networks", "", cFound));
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
@@ -396,22 +396,22 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             AssertMsgFailedReturn((Nat::tr("Unknown operation (:%d)"), enmCode), RTEXITCODE_FAILURE);
     }
 
-    HRESULT rc;
+    HRESULT hrc;
     Bstr NetName;
     NetName = Bstr(pNetName);
 
     ComPtr<INATNetwork> net;
-    rc = a->virtualBox->FindNATNetworkByName(NetName.mutableRaw(), net.asOutParam());
+    hrc = a->virtualBox->FindNATNetworkByName(NetName.mutableRaw(), net.asOutParam());
     if (enmCode == OP_ADD)
     {
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             return errorArgument(Nat::tr("NATNetwork server already exists"));
 
         CHECK_ERROR(a->virtualBox, CreateNATNetwork(NetName.raw(), net.asOutParam()));
-        if (FAILED(rc))
+        if (FAILED(hrc))
             return errorArgument(Nat::tr("Failed to create the NAT network service"));
     }
-    else if (FAILED(rc))
+    else if (FAILED(hrc))
         return errorArgument(Nat::tr("NATNetwork server does not exist"));
 
     switch (enmCode)
@@ -422,13 +422,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             if (pPrefixIPv4)
             {
                 CHECK_ERROR(net, COMSETTER(Network)(Bstr(pPrefixIPv4).raw()));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
             if (dhcp >= 0)
             {
                 CHECK_ERROR(net, COMSETTER(NeedDhcpServer) ((BOOL)dhcp));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
@@ -440,14 +440,14 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             if (ipv6 == 0)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Enabled)(FALSE));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
             if (pPrefixIPv6)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Prefix)(Bstr(pPrefixIPv6).raw()));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
@@ -458,7 +458,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             if (ipv6 > 0)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Enabled)(TRUE));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
@@ -466,7 +466,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             {
                 BOOL fIPv6Default = RT_BOOL(ipv6_default);
                 CHECK_ERROR(net, COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(fIPv6Default));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
@@ -477,7 +477,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                 {
                     CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
                                                            Bstr((*it).szName).raw()));
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         return errorArgument(Nat::tr("Failed to delete pf"));
                 }
             }
@@ -502,7 +502,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                                                         (*it).u16PfrHostPort,
                                                         Bstr((*it).szPfrGuestAddr).raw(),
                                                         (*it).u16PfrGuestPort));
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         return errorArgument(Nat::tr("Failed to add pf"));
                 }
             }
@@ -561,7 +561,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             if (enable >= 0)
             {
                 CHECK_ERROR(net, COMSETTER(Enabled) ((BOOL)enable));
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
             break;
@@ -569,21 +569,21 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         case OP_REMOVE:
         {
             CHECK_ERROR(a->virtualBox, RemoveNATNetwork(net));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(Nat::tr("Failed to remove nat network"));
             break;
         }
         case OP_START:
         {
             CHECK_ERROR(net, Start());
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(Nat::tr("Failed to start network"));
             break;
         }
         case OP_STOP:
         {
             CHECK_ERROR(net, Stop());
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(Nat::tr("Failed to stop network"));
             break;
         }
@@ -644,7 +644,7 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
 RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
                            const ComPtr<IVirtualBox> &pVirtualBox)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     com::SafeIfaceArray<INATNetwork> aNets;
     CHECK_ERROR_RET(pVirtualBox,

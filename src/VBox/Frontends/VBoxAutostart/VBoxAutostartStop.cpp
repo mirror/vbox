@@ -48,7 +48,7 @@ typedef struct AUTOSTOPVM
 
 static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<IProgress> progress;
 
@@ -56,17 +56,17 @@ static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
     {
         /* first pause so we don't trigger a live save which needs more time/resources */
         bool fPaused = false;
-        rc = console->Pause();
-        if (FAILED(rc))
+        hrc = console->Pause();
+        if (FAILED(hrc))
         {
             bool fError = true;
-            if (rc == VBOX_E_INVALID_VM_STATE)
+            if (hrc == VBOX_E_INVALID_VM_STATE)
             {
                 /* check if we are already paused */
                 MachineState_T machineState;
                 CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
                 /* the error code was lost by the previous instruction */
-                rc = VBOX_E_INVALID_VM_STATE;
+                hrc = VBOX_E_INVALID_VM_STATE;
                 if (machineState != MachineState_Paused)
                 {
                     RTMsgError("Machine in invalid state %d -- %s\n",
@@ -84,23 +84,23 @@ static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
 
         CHECK_ERROR(console, COMGETTER(Machine)(machine.asOutParam()));
         CHECK_ERROR(machine, SaveState(progress.asOutParam()));
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             if (!fPaused)
                 console->Resume();
             break;
         }
 
-        rc = showProgress(progress);
+        hrc = showProgress(progress);
         CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state"));
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             if (!fPaused)
                 console->Resume();
         }
     } while (0);
 
-    return rc;
+    return hrc;
 }
 
 DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst)
@@ -115,8 +115,8 @@ DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst)
      * from the configuration and start the VMs afterwards.
      */
     com::SafeIfaceArray<IMachine> machines;
-    HRESULT rc = g_pVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
-    if (SUCCEEDED(rc))
+    HRESULT hrc = g_pVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
+    if (SUCCEEDED(hrc))
     {
         /*
          * Iterate through the collection and construct a list of machines
@@ -154,7 +154,7 @@ DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst)
             }
         }
 
-        if (   SUCCEEDED(rc)
+        if (   SUCCEEDED(hrc)
             && !listVM.empty())
         {
             std::list<AUTOSTOPVM>::iterator it;
@@ -196,17 +196,17 @@ DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst)
                     {
                         case AutostopType_SaveState:
                         {
-                            rc = autostartSaveVMState(console);
+                            hrc = autostartSaveVMState(console);
                             break;
                         }
                         case AutostopType_PowerOff:
                         {
                             CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
-                            rc = showProgress(progress);
+                            hrc = showProgress(progress);
                             CHECK_PROGRESS_ERROR(progress, ("Failed to powering off machine '%ls'", strName.raw()));
-                            if (FAILED(rc))
-                                autostartSvcLogError("Powering off machine '%ls' failed with %Rhrc\n", strName.raw(), rc);
+                            if (FAILED(hrc))
+                                autostartSvcLogError("Powering off machine '%ls' failed with %Rhrc\n", strName.raw(), hrc);
                             break;
                         }
                         case AutostopType_AcpiShutdown:
@@ -239,7 +239,7 @@ DECLHIDDEN(int) autostartStopMain(PCFGAST pCfgAst)
                                 /* Use save state instead and log this to the console. */
                                 autostartSvcLogWarning("The guest of machine '%ls' does not support ACPI shutdown or is currently paused, saving state...\n",
                                                        strName.raw());
-                                rc = autostartSaveVMState(console);
+                                hrc = autostartSaveVMState(console);
                             }
                             break;
                         }

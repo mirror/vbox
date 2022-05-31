@@ -51,7 +51,7 @@ DECLARE_TRANSLATION_CONTEXT(GuestProp);
 
 static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_GET);
 
@@ -90,12 +90,12 @@ static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
             RTPrintf(GuestProp::tr("Flags: %ls\n"), flags.raw());
         }
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static RTEXITCODE handleSetGuestProperty(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_SET);
 
@@ -145,17 +145,17 @@ static RTEXITCODE handleSetGuestProperty(HandlerArg *a)
                                                   Bstr(pszValue).raw(),
                                                   Bstr(pszFlags).raw()));
 
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             CHECK_ERROR(machine, SaveSettings());
 
         a->session->UnlockMachine();
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_UNSET);
 
@@ -185,12 +185,12 @@ static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
 
         CHECK_ERROR(machine, DeleteGuestProperty(Bstr(pszName).raw()));
 
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             CHECK_ERROR(machine, SaveSettings());
 
         a->session->UnlockMachine();
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /**
@@ -225,7 +225,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
      * Make the actual call to Main.
      */
     ComPtr<IMachine> machine;
-    HRESULT rc;
+    HRESULT hrc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
     if (machine)
@@ -245,7 +245,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
                                                       ComSafeArrayAsOutParam(values),
                                                       ComSafeArrayAsOutParam(timestamps),
                                                       ComSafeArrayAsOutParam(flags)));
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             if (names.size() == 0)
                 RTPrintf(GuestProp::tr("No properties found.\n"));
@@ -254,7 +254,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
                          names[i], values[i], timestamps[i], flags[i]);
         }
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /**
@@ -279,7 +279,7 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
     else
         pszPatterns = a->argv[1];
     ComPtr<IMachine> machine;
-    HRESULT rc;
+    HRESULT hrc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
     if (!machine)
@@ -333,11 +333,11 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
         }
 
         ComPtr<IEvent> ev;
-        rc = es->GetEvent(listener, cMsWait, ev.asOutParam());
-        if (ev)
+        hrc = es->GetEvent(listener, cMsWait, ev.asOutParam());
+        if (ev) /** @todo r=andy Why not using SUCCEEDED(hrc) here? */
         {
             VBoxEventType_T aType;
-            rc = ev->COMGETTER(Type)(&aType);
+            hrc = ev->COMGETTER(Type)(&aType);
             switch (aType)
             {
                 case VBoxEventType_OnGuestPropertyChanged:

@@ -113,9 +113,9 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  */
 #define CHECK_ERROR(iface, method) \
     do { \
-        rc = iface->method; \
-        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
-            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
+        hrc = iface->method; \
+        if (FAILED(hrc) || SUCCEEDED_WARNING(hrc)) \
+            com::GlueHandleComError(iface, #method, hrc, __FILE__, __LINE__); \
     } while (0)
 /**
  * Simplified version of CHECK_ERROR2_EX, no error statement or type necessary.
@@ -145,11 +145,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  */
 #define CHECK_ERROR_STMT(iface, method, stmt) \
     do { \
-        rc = iface->method; \
-        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
+        hrc = iface->method; \
+        if (FAILED(hrc) || SUCCEEDED_WARNING(hrc)) \
         { \
-            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            if (!SUCCEEDED_WARNING(rc) \
+            com::GlueHandleComError(iface, #method, hrc, __FILE__, __LINE__); \
+            if (!SUCCEEDED_WARNING(hrc) \
             { \
                 stmt; \
             } \
@@ -187,11 +187,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 # define CHECK_ERROR_BREAK(iface, method) \
     __extension__ \
     ({ \
-        rc = iface->method; \
-        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
+        hrc = iface->method; \
+        if (FAILED(hrc) || SUCCEEDED_WARNING(hrc)) \
         { \
-            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            if (!SUCCEEDED_WARNING(rc)) \
+            com::GlueHandleComError(iface, #method, hrc, __FILE__, __LINE__); \
+            if (!SUCCEEDED_WARNING(hrc)) \
                 break; \
         } \
     })
@@ -199,11 +199,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 # define CHECK_ERROR_BREAK(iface, method) \
     if (1) \
     { \
-        rc = iface->method; \
-        if (FAILED(rc)) \
+        hrc = iface->method; \
+        if (FAILED(hrc)) \
         { \
-            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            if (!SUCCEEDED_WARNING(rc)) \
+            com::GlueHandleComError(iface, #method, hrc, __FILE__, __LINE__); \
+            if (!SUCCEEDED_WARNING(hrc)) \
                 break; \
         } \
     } \
@@ -249,11 +249,11 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  */
 #define CHECK_ERROR_RET(iface, method, ret) \
     do { \
-        rc = iface->method; \
-        if (FAILED(rc) || SUCCEEDED_WARNING(rc)) \
+        hrc = iface->method; \
+        if (FAILED(hrc) || SUCCEEDED_WARNING(hrc)) \
         { \
-            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
-            if (!SUCCEEDED_WARNING(rc)) \
+            com::GlueHandleComError(iface, #method, hrc, __FILE__, __LINE__); \
+            if (!SUCCEEDED_WARNING(hrc)) \
                 return (ret); \
         } \
     } while (0)
@@ -288,10 +288,10 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 #define CHECK_PROGRESS_ERROR(progress, msg) \
     do { \
         LONG iRc; \
-        rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(rc) || FAILED(iRc)) \
+        hrc = progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
+            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
         } \
@@ -307,10 +307,10 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
     __extension__ \
     ({ \
         LONG iRc; \
-        rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(rc) || FAILED(iRc)) \
+        hrc = progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
+            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
             break; \
@@ -321,10 +321,10 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
     if (1) \
     { \
         LONG iRc; \
-        rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(rc) || FAILED(iRc)) \
+        hrc = progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
+            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
             break; \

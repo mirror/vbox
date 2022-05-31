@@ -421,7 +421,7 @@ static RTEXITCODE handleModifyNvramChangeUefiVar(HandlerArg *a, ComPtr<INvramSto
  */
 RTEXITCODE handleModifyNvram(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<INvramStore> nvramStore;
 
@@ -437,59 +437,59 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
-    rc = machine->COMGETTER(NonVolatileStore)(nvramStore.asOutParam());
-    if (FAILED(rc)) goto leave;
+    hrc = machine->COMGETTER(NonVolatileStore)(nvramStore.asOutParam());
+    if (FAILED(hrc)) goto leave;
 
     if (!strcmp(a->argv[1], "inituefivarstore"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_INITUEFIVARSTORE);
-        rc = handleModifyNvramInitUefiVarStore(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramInitUefiVarStore(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "enrollmssignatures"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLMSSIGNATURES);
-        rc = handleModifyNvramEnrollMsSignatures(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramEnrollMsSignatures(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "enrollpk"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLPK);
-        rc = handleModifyNvramEnrollPlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramEnrollPlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "enrollorclpk"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLORCLPK);
-        rc = handleModifyNvramEnrollOraclePlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramEnrollOraclePlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "listvars"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_LISTVARS);
-        rc = handleModifyNvramListUefiVars(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramListUefiVars(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "queryvar"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_QUERYVAR);
-        rc = handleModifyNvramQueryUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramQueryUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "deletevar"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_DELETEVAR);
-        rc = handleModifyNvramDeleteUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramDeleteUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "changevar"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_CHANGEVAR);
-        rc = handleModifyNvramChangeUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleModifyNvramChangeUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else
         return errorUnknownSubcommand(a->argv[0]);
 
     /* commit changes */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         CHECK_ERROR(machine, SaveSettings());
 
 leave:
     /* it's important to always close sessions */
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

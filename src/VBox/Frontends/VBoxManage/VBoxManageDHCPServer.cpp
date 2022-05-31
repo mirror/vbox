@@ -906,7 +906,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
         /*
          * Find or create the server.
          */
-        HRESULT rc;
+        HRESULT hrc;
         Bstr NetName;
         if (!pCtx->pszNetwork)
         {
@@ -915,11 +915,11 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
             ComPtr<IHostNetworkInterface> hif;
             CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pCtx->pszInterface).mutableRaw(), hif.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(DHCPServer::tr("Could not find interface '%s'"), pCtx->pszInterface);
 
             CHECK_ERROR(hif, COMGETTER(NetworkName) (NetName.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(DHCPServer::tr("Could not get network name for the interface '%s'"), pCtx->pszInterface);
         }
         else
@@ -927,23 +927,22 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
             NetName = Bstr(pCtx->pszNetwork);
         }
 
-        rc = pCtx->pArg->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), ptrDHCPServer.asOutParam());
+        hrc = pCtx->pArg->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), ptrDHCPServer.asOutParam());
         if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
         {
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 return errorArgument(DHCPServer::tr("DHCP server already exists"));
 
             CHECK_ERROR(pCtx->pArg->virtualBox, CreateDHCPServer(NetName.mutableRaw(), ptrDHCPServer.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return errorArgument(DHCPServer::tr("Failed to create the DHCP server"));
         }
-        else if (FAILED(rc))
+        else if (FAILED(hrc))
             return errorArgument(DHCPServer::tr("DHCP server does not exist"));
 
         /*
          * Apply IDHCPServer settings:
          */
-        HRESULT hrc;
         if (pszServerIp || pszNetmask || pszLowerIp || pszUpperIp)
         {
             Bstr bstrServerIp(pszServerIp);

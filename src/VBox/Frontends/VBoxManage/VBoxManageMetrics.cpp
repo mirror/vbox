@@ -49,7 +49,7 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
                                      ComSafeArrayOut(BSTR, outMetrics),
                                      ComSafeArrayOut(IUnknown *, outObjects))
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     com::SafeArray<BSTR> retMetrics(1);
     com::SafeIfaceArray <IUnknown> retObjects;
 
@@ -78,9 +78,9 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
         else
         {
             ComPtr<IMachine> machine;
-            rc = aVirtualBox->FindMachine(Bstr(argv[0]).raw(),
-                                          machine.asOutParam());
-            if (SUCCEEDED(rc))
+            hrc = aVirtualBox->FindMachine(Bstr(argv[0]).raw(),
+                                           machine.asOutParam());
+            if (SUCCEEDED(hrc))
             {
                 retObjects.reset(1);
                 machine.queryInterfaceTo(&retObjects[0]);
@@ -88,7 +88,7 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
             else
             {
                 errorArgument(Metrics::tr("Invalid machine name: '%s'"), argv[0]);
-                return rc;
+                return hrc;
             }
         }
 
@@ -97,7 +97,7 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
     retObjects.detachTo(ComSafeArrayOutArg(outObjects));
 
-    return rc;
+    return hrc;
 }
 
 static Bstr toBaseName(Utf8Str& aFullName)
@@ -121,7 +121,7 @@ static Bstr toBaseName(Utf8Str& aFullName)
 
 static Bstr getObjectName(ComPtr<IUnknown> aObject)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     ComPtr<IHost> host = aObject;
     if (!host.isNull())
@@ -132,7 +132,7 @@ static Bstr getObjectName(ComPtr<IUnknown> aObject)
     {
         Bstr name;
         CHECK_ERROR(machine, COMGETTER(Name)(name.asOutParam()));
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             return name;
     }
     return Bstr(Metrics::tr("unknown"));
@@ -140,7 +140,7 @@ static Bstr getObjectName(ComPtr<IUnknown> aObject)
 
 static void listAffectedMetrics(ComSafeArrayIn(IPerformanceMetric*, aMetrics))
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeIfaceArray<IPerformanceMetric> metrics(ComSafeArrayInArg(aMetrics));
     if (metrics.size())
     {
@@ -171,16 +171,16 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
                              ComPtr<IVirtualBox> aVirtualBox,
                              ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
 
     setCurrentSubcommand(HELP_SCOPE_METRICS_LIST);
 
-    rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
+    hrc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeIfaceArray<IPerformanceMetric> metricInfo;
@@ -222,7 +222,7 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
                                      ComPtr<IVirtualBox> aVirtualBox,
                                      ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
     uint32_t period = 1, samples = 1;
@@ -258,10 +258,10 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
             break; /* The rest of params should define the filter */
     }
 
-    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
-                               ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    hrc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
+                                ComSafeArrayAsOutParam(metrics),
+                                ComSafeArrayAsOutParam(objects));
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
@@ -269,7 +269,7 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
         SetupMetrics(ComSafeArrayAsInParam(metrics),
                      ComSafeArrayAsInParam(objects), period, samples,
                      ComSafeArrayAsOutParam(affectedMetrics)));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
@@ -285,16 +285,16 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
                                      ComPtr<IVirtualBox> aVirtualBox,
                                      ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
 
     setCurrentSubcommand(HELP_SCOPE_METRICS_QUERY);
 
-    rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
-                               ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    hrc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
+                                ComSafeArrayAsOutParam(metrics),
+                                ComSafeArrayAsOutParam(objects));
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeArray<BSTR>          retNames;
@@ -394,7 +394,7 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
                                        ComPtr<IVirtualBox> aVirtualBox,
                                        ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
     uint32_t period = 1, samples = 1;
@@ -433,10 +433,10 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
             break; /* The rest of params should define the filter */
     }
 
-    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
-                               ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    hrc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
+                                ComSafeArrayAsOutParam(metrics),
+                                ComSafeArrayAsOutParam(objects));
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeIfaceArray<IPerformanceMetric> metricInfo;
@@ -470,7 +470,7 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
         SetupMetrics(ComSafeArrayAsInParam(baseMetricsFiltered),
                      ComSafeArrayAsInParam(objectsFiltered), period, samples,
                      ComSafeArrayAsOutParam(affectedMetrics)));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
@@ -550,7 +550,7 @@ static RTEXITCODE handleMetricsEnable(int argc, char *argv[],
                                       ComPtr<IVirtualBox> aVirtualBox,
                                       ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
     bool listMatches = false;
@@ -567,10 +567,10 @@ static RTEXITCODE handleMetricsEnable(int argc, char *argv[],
             break; /* The rest of params should define the filter */
     }
 
-    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
-                               ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    hrc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
+                                ComSafeArrayAsOutParam(metrics),
+                                ComSafeArrayAsOutParam(objects));
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
@@ -578,7 +578,7 @@ static RTEXITCODE handleMetricsEnable(int argc, char *argv[],
         EnableMetrics(ComSafeArrayAsInParam(metrics),
                       ComSafeArrayAsInParam(objects),
                       ComSafeArrayAsOutParam(affectedMetrics)));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
@@ -594,7 +594,7 @@ static RTEXITCODE handleMetricsDisable(int argc, char *argv[],
                                        ComPtr<IVirtualBox> aVirtualBox,
                                        ComPtr<IPerformanceCollector> performanceCollector)
 {
-    HRESULT rc;
+    HRESULT hrc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
     bool listMatches = false;
@@ -611,10 +611,10 @@ static RTEXITCODE handleMetricsDisable(int argc, char *argv[],
             break; /* The rest of params should define the filter */
     }
 
-    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
-                               ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(objects));
-    if (FAILED(rc))
+    hrc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
+                                ComSafeArrayAsOutParam(metrics),
+                                ComSafeArrayAsOutParam(objects));
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
@@ -622,7 +622,7 @@ static RTEXITCODE handleMetricsDisable(int argc, char *argv[],
         DisableMetrics(ComSafeArrayAsInParam(metrics),
                        ComSafeArrayAsInParam(objects),
                        ComSafeArrayAsOutParam(affectedMetrics)));
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)

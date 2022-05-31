@@ -217,7 +217,7 @@ typedef enum APPLIANCETYPE
 
 RTEXITCODE handleImportAppliance(HandlerArg *arg)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     APPLIANCETYPE enmApplType = NOT_SET;
     Utf8Str strOvfFilename;
     bool fExecute = true;                  // if true, then we actually do the import
@@ -496,7 +496,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                            progressRead.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
-        rc = showProgress(progressRead);
+        hrc = showProgress(progressRead);
         CHECK_PROGRESS_ERROR_RET(progressRead, (Appliance::tr("Appliance read failed")), RTEXITCODE_FAILURE);
 
         Bstr path; /* fetch the path, there is stuff like username/password removed if any */
@@ -510,7 +510,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
             // call interpret(); this can yield both warnings and errors, so we need
             // to tinker with the error info a bit
             RTStrmPrintf(g_pStdErr, Appliance::tr("Interpreting %ls...\n"), path.raw());
-            rc = pAppliance->Interpret();
+            hrc = pAppliance->Interpret();
             com::ErrorInfoKeeper eik;
 
             /** @todo r=klaus Eliminate this special way of signalling
@@ -527,9 +527,9 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
             }
 
             eik.restore();
-            if (FAILED(rc))     // during interpret, after printing warnings
+            if (FAILED(hrc))     // during interpret, after printing warnings
             {
-                com::GlueHandleComError(pAppliance, "Interpret()", rc, __FILE__, __LINE__);
+                com::GlueHandleComError(pAppliance, "Interpret()", hrc, __FILE__, __LINE__);
                 break;
             }
 
@@ -1393,16 +1393,16 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 CHECK_ERROR_BREAK(pAppliance,
                                   ImportMachines(ComSafeArrayAsInParam(options), progress.asOutParam()));
 
-                rc = showProgress(progress);
+                hrc = showProgress(progress);
                 CHECK_PROGRESS_ERROR_RET(progress, (Appliance::tr("Appliance import failed")), RTEXITCODE_FAILURE);
 
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     RTPrintf(Appliance::tr("Successfully imported the appliance.\n"));
             }
         } // end if (aVirtualSystemDescriptions.size() > 0)
     } while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int parseExportOptions(const char *psz, com::SafeArray<ExportOptions_T> *options)
@@ -1484,7 +1484,7 @@ static const RTGETOPTDEF g_aExportOptions[] =
 
 RTEXITCODE handleExportAppliance(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     Utf8Str strOutputFile;
     Utf8Str strOvfFormat("ovf-1.0"); // the default export version
@@ -1760,11 +1760,11 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         return errorSyntax("%Rrs", c);
             }
 
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
         }
 
-        if (FAILED(rc))
+        if (FAILED(hrc))
             break;
 
         if (llMachines.empty())
@@ -1927,7 +1927,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
             VSDList.push_back(pVSD);//store vsd for the possible second stage
         }
 
-        if (FAILED(rc))
+        if (FAILED(hrc))
             break;
 
         /* Query required passwords and supply them to the appliance. */
@@ -1974,10 +1974,10 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                                             progress.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
-        rc = showProgress(progress);
+        hrc = showProgress(progress);
         CHECK_PROGRESS_ERROR_RET(progress, (Appliance::tr("Appliance write failed")), RTEXITCODE_FAILURE);
 
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             RTPrintf(Appliance::tr("Successfully exported %d machine(s).\n", "", llMachines.size()), llMachines.size());
 
         /*
@@ -2038,11 +2038,11 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                     ComPtr<IProgress> progress1;
                     CHECK_ERROR_BREAK(oCloudClient, LaunchVM(pVSD, progress1.asOutParam()));
-                    rc = showProgress(progress1);
+                    hrc = showProgress(progress1);
                     CHECK_PROGRESS_ERROR_RET(progress1, (Appliance::tr("Creating the cloud instance failed")),
                                              RTEXITCODE_FAILURE);
 
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudInstanceId,
                                                  ComSafeArrayAsOutParam(retTypes),
@@ -2061,7 +2061,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         }
     } while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 

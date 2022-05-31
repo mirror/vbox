@@ -493,7 +493,7 @@ static int gctlPrintError(IUnknown *pObj, const GUID &aIID)
 static int gctlPrintProgressError(ComPtr<IProgress> pProgress)
 {
     int vrc = VINF_SUCCESS;
-    HRESULT rc;
+    HRESULT hrc;
 
     do
     {
@@ -512,7 +512,7 @@ static int gctlPrintProgressError(ComPtr<IProgress> pProgress)
 
     } while(0);
 
-    AssertMsgStmt(SUCCEEDED(rc), (GuestCtrl::tr("Could not lookup progress information\n")), vrc = VERR_COM_UNEXPECTED);
+    AssertMsgStmt(SUCCEEDED(hrc), (GuestCtrl::tr("Could not lookup progress information\n")), vrc = VERR_COM_UNEXPECTED);
 
     return vrc;
 }
@@ -655,7 +655,7 @@ static RTEXITCODE gctlCtxSetOption(PGCTLCMDCTX pCtx, int ch, PRTGETOPTUNION pVal
  */
 static RTEXITCODE gctlCtxInitVmSession(PGCTLCMDCTX pCtx)
 {
-    HRESULT rc;
+    HRESULT hrc;
     AssertPtr(pCtx);
     AssertPtr(pCtx->pArg);
 
@@ -664,28 +664,28 @@ static RTEXITCODE gctlCtxInitVmSession(PGCTLCMDCTX pCtx)
      */
     ComPtr<IMachine> machine;
     CHECK_ERROR(pCtx->pArg->virtualBox, FindMachine(Bstr(pCtx->pszVmNameOrUuid).raw(), machine.asOutParam()));
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         MachineState_T enmMachineState;
         CHECK_ERROR(machine, COMGETTER(State)(&enmMachineState));
-        if (   SUCCEEDED(rc)
+        if (   SUCCEEDED(hrc)
             && enmMachineState == MachineState_Running)
         {
             /*
              * It's running. So, open a session to it and get the IGuest interface.
              */
             CHECK_ERROR(machine, LockMachine(pCtx->pArg->session, LockType_Shared));
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
             {
                 pCtx->fLockedVmSession = true;
                 ComPtr<IConsole> ptrConsole;
                 CHECK_ERROR(pCtx->pArg->session, COMGETTER(Console)(ptrConsole.asOutParam()));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     if (ptrConsole.isNotNull())
                     {
                         CHECK_ERROR(ptrConsole, COMGETTER(Guest)(pCtx->pGuest.asOutParam()));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                             return RTEXITCODE_SUCCESS;
                     }
                     else
@@ -693,7 +693,7 @@ static RTEXITCODE gctlCtxInitVmSession(PGCTLCMDCTX pCtx)
                 }
             }
         }
-        else if (SUCCEEDED(rc))
+        else if (SUCCEEDED(hrc))
             RTMsgError(GuestCtrl::tr("Machine \"%s\" is not running (currently %s)!\n"),
                        pCtx->pszVmNameOrUuid, machineStateToName(enmMachineState, false));
     }
@@ -712,7 +712,7 @@ static RTEXITCODE gctlCtxInitVmSession(PGCTLCMDCTX pCtx)
  */
 static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
 {
-    HRESULT rc;
+    HRESULT hrc;
     AssertPtr(pCtx);
     Assert(!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS));
     Assert(pCtx->pGuest.isNotNull());
@@ -743,9 +743,9 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
     catch (std::bad_alloc &)
     {
         RTMsgError(GuestCtrl::tr("Out of memory setting up IGuest::CreateSession call"));
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         /*
          * Wait for guest session to start.
@@ -764,9 +764,9 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
         catch (std::bad_alloc &)
         {
             RTMsgError(GuestCtrl::tr("Out of memory setting up IGuestSession::WaitForArray call"));
-            rc = E_OUTOFMEMORY;
+            hrc = E_OUTOFMEMORY;
         }
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             /* The WaitFlagNotSupported result may happen with GAs older than 4.3. */
             if (   enmWaitResult == GuestSessionWaitResult_Start
@@ -776,7 +776,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
                  * Get the session ID and we're ready to rumble.
                  */
                 CHECK_ERROR(pCtx->pGuestSession, COMGETTER(Id)(&pCtx->uSessionID));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     if (pCtx->cVerbose)
                         RTPrintf(GuestCtrl::tr("Successfully started guest session (ID %RU32)\n"), pCtx->uSessionID);
@@ -789,7 +789,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
                 GuestSessionStatus_T enmSessionStatus;
                 CHECK_ERROR(pCtx->pGuestSession, COMGETTER(Status)(&enmSessionStatus));
                 RTMsgError(GuestCtrl::tr("Error starting guest session (current status is: %s)\n"),
-                           SUCCEEDED(rc) ? gctlGuestSessionStatusToText(enmSessionStatus) : GuestCtrl::tr("<unknown>"));
+                           SUCCEEDED(hrc) ? gctlGuestSessionStatusToText(enmSessionStatus) : GuestCtrl::tr("<unknown>"));
             }
         }
     }
@@ -867,7 +867,7 @@ static RTEXITCODE gctlCtxPostOptionParsingInit(PGCTLCMDCTX pCtx)
  */
 static void gctlCtxTerm(PGCTLCMDCTX pCtx)
 {
-    HRESULT rc;
+    HRESULT hrc;
     AssertPtr(pCtx);
 
     /*
@@ -1326,7 +1326,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    HRESULT rc;
+    HRESULT hrc;
 
     try
     {
@@ -1543,7 +1543,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
 
     /*
@@ -1555,11 +1555,11 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
      *
      * For the 'run' command the guest process quits with us.
      */
-    if (!fRunCmd && SUCCEEDED(rc) && !g_fGuestCtrlCanceled)
+    if (!fRunCmd && SUCCEEDED(hrc) && !g_fGuestCtrlCanceled)
         pCtx->fDetachGuestSession = true;
 
     /* Make sure we return failure on failure. */
-    if (FAILED(rc) && rcExit == RTEXITCODE_SUCCESS)
+    if (FAILED(hrc) && rcExit == RTEXITCODE_SUCCESS)
         rcExit = RTEXITCODE_FAILURE;
     return rcExit;
 }
@@ -1673,7 +1673,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             RTPrintf(GuestCtrl::tr("Copying from guest to host ...\n"));
     }
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     bool fDstIsDir = false;
 
@@ -1688,8 +1688,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     else
     {
         BOOL fDirExists = FALSE;
-        rc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), TRUE /* fFollowSymlinks */, &fDirExists);
-        if (SUCCEEDED(rc))
+        hrc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), TRUE /* fFollowSymlinks */, &fDirExists);
+        if (SUCCEEDED(hrc))
             fDstIsDir = RT_BOOL(fDirExists);
     }
 
@@ -1735,8 +1735,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                             RTPrintf(GuestCtrl::tr("File '%s' -> '%s'\n"), szAbsSrc, pszDst);
 
                         SafeArray<FileCopyFlag_T> aCopyFlags;
-                        rc = pCtx->pGuestSession->FileCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
-                                                                  ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
+                        hrc = pCtx->pGuestSession->FileCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
+                                                                   ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
                     {
@@ -1749,8 +1749,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                             aCopyFlags.push_back(DirectoryCopyFlag_Recursive);
                         if (fFollow)
                             aCopyFlags.push_back(DirectoryCopyFlag_FollowLinks);
-                        rc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
-                                                                       ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
+                        hrc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
+                                                                        ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else
                         rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("Not a file or directory: %s\n"), szAbsSrc);
@@ -1768,12 +1768,12 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
              */
             /* We need to query the source type on the guest first in order to know which copy flavor we need. */
             ComPtr<IGuestFsObjInfo> pFsObjInfo;
-            rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszSource).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
-            if (SUCCEEDED(rc))
+            hrc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszSource).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
+            if (SUCCEEDED(hrc))
             {
                 FsObjType_T enmObjType;
                 CHECK_ERROR(pFsObjInfo,COMGETTER(Type)(&enmObjType));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     /* Take action according to source file. */
                     if (enmObjType == FsObjType_Directory)
@@ -1787,8 +1787,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                             aCopyFlags.push_back(DirectoryCopyFlag_Recursive);
                         if (fFollow)
                             aCopyFlags.push_back(DirectoryCopyFlag_FollowLinks);
-                        rc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
-                                                                         ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
+                        hrc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
+                                                                          ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else if (enmObjType == FsObjType_File)
                     {
@@ -1798,8 +1798,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                         SafeArray<FileCopyFlag_T> aCopyFlags;
                         if (fFollow)
                             aCopyFlags.push_back(FileCopyFlag_FollowLinks);
-                        rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
-                                                                    ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
+                        hrc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
+                                                                     ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else
                         rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("Not a file or directory: %s\n"), pszSource);
@@ -1808,20 +1808,20 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                     rcExit = RTEXITCODE_FAILURE;
             }
             else
-                rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("FsObjQueryInfo failed on '%s': %Rhrc"), pszSource, rc);
+                rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("FsObjQueryInfo failed on '%s': %Rhrc"), pszSource, hrc);
         }
 
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
         }
         else if (pProgress.isNotNull())
         {
             if (pCtx->cVerbose)
-                rc = showProgress(pProgress);
+                hrc = showProgress(pProgress);
             else
-                rc = pProgress->WaitForCompletion(-1 /* No timeout */);
-            if (SUCCEEDED(rc))
+                hrc = pProgress->WaitForCompletion(-1 /* No timeout */);
+            if (SUCCEEDED(hrc))
                 CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("File copy failed")));
             vrc = gctlPrintProgressError(pProgress);
         }
@@ -1911,10 +1911,10 @@ static DECLCALLBACK(RTEXITCODE) gctrlHandleMkDir(PGCTLCMDCTX pCtx, int argc, cha
                     RTPrintf(GuestCtrl::tr("Creating directory \"%s\" ...\n"), ValueUnion.psz);
                 try
                 {
-                    HRESULT rc;
+                    HRESULT hrc;
                     CHECK_ERROR(pCtx->pGuestSession, DirectoryCreate(Bstr(ValueUnion.psz).raw(),
                                                                      fDirMode, ComSafeArrayAsInParam(aDirCreateFlags)));
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         rcExit = RTEXITCODE_FAILURE;
                 }
                 catch (std::bad_alloc &)
@@ -1989,7 +1989,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                                           argc - GetState.iNext + 1);
 
                 cDirRemoved++;
-                HRESULT rc;
+                HRESULT hrc;
                 if (!fRecursive)
                 {
                     /*
@@ -2026,13 +2026,13 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                         CHECK_ERROR(pCtx->pGuestSession, DirectoryRemoveRecursive(Bstr(ValueUnion.psz).raw(),
                                                                                   ComSafeArrayAsInParam(aRemRecFlags),
                                                                                   ptrProgress.asOutParam()));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             if (pCtx->cVerbose)
-                                rc = showProgress(ptrProgress);
+                                hrc = showProgress(ptrProgress);
                             else
-                                rc = ptrProgress->WaitForCompletion(-1 /* indefinitely */);
-                            if (SUCCEEDED(rc))
+                                hrc = ptrProgress->WaitForCompletion(-1 /* indefinitely */);
+                            if (SUCCEEDED(hrc))
                                 CHECK_PROGRESS_ERROR(ptrProgress, (GuestCtrl::tr("Directory deletion failed")));
                             ptrProgress.setNull();
                         }
@@ -2046,7 +2046,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                 /*
                  * This command returns immediately on failure since it's destructive in nature.
                  */
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     return RTEXITCODE_FAILURE;
                 break;
             }
@@ -2117,9 +2117,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                 {
                     /** @todo How does IGuestSession::FsObjRemove work with read-only files? Do we
                      *        need to do some chmod or whatever to better emulate the --force flag? */
-                    HRESULT rc;
+                    HRESULT hrc;
                     CHECK_ERROR(pCtx->pGuestSession, FsObjRemove(Bstr(ValueUnion.psz).raw()));
-                    if (FAILED(rc) && !fForce)
+                    if (FAILED(hrc) && !fForce)
                         return RTEXITCODE_FAILURE;
                 }
                 catch (std::bad_alloc &)
@@ -2208,22 +2208,22 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     vecSources.pop_back();
     cSources = vecSources.size();
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* Destination must be a directory when specifying multiple sources. */
     if (cSources > 1)
     {
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszDst).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
-        if (FAILED(rc))
+        hrc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszDst).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
+        if (FAILED(hrc))
         {
             return RTMsgErrorExit(RTEXITCODE_FAILURE, GuestCtrl::tr("Destination does not exist\n"));
         }
         else
         {
             FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
-            rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
-            if (SUCCEEDED(rc))
+            hrc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
+            if (SUCCEEDED(hrc))
             {
                 if (enmObjType != FsObjType_Directory)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE,
@@ -2232,7 +2232,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
             else
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                       GuestCtrl::tr("Unable to determine destination type: %Rhrc\n"),
-                                      rc);
+                                      hrc);
         }
     }
 
@@ -2251,10 +2251,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
         FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
-        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strSrcCur).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
-        if (SUCCEEDED(rc))
-            rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
-        if (FAILED(rc))
+        hrc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strSrcCur).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
+        if (FAILED(hrc))
         {
             RTPrintf(GuestCtrl::tr("Cannot stat \"%s\": No such file or directory\n"), strSrcCur.c_str());
             ++it;
@@ -2296,7 +2296,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
         RTPrintf(GuestCtrl::tr("Warning: Not all sources were renamed\n"));
     }
 
-    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
 static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, char **argv)
@@ -2389,7 +2389,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
                      strTemplate.c_str());
     }
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     if (fDirectory)
     {
         Bstr bstrDirectory;
@@ -2397,7 +2397,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
                                                              fMode, Bstr(strTempDir).raw(),
                                                              fSecure,
                                                              bstrDirectory.asOutParam()));
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
             RTPrintf(GuestCtrl::tr("Directory name: %ls\n"), bstrDirectory.raw());
     }
     else
@@ -2405,10 +2405,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
         // else - temporary file not yet implemented
         /** @todo implement temporary file creation (we fend it off above, no
          *        worries). */
-        rc = E_FAIL;
+        hrc = E_FAIL;
     }
 
-    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
 static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char **argv)
@@ -2567,7 +2567,7 @@ static int gctlWaitForRunLevel(PGCTLCMDCTX pCtx, AdditionsRunLevelType_T enmRunL
 
     try
     {
-        HRESULT rc = S_OK;
+        HRESULT hrc = S_OK;
         /** Whether we need to actually wait for the run level or if we already reached it. */
         bool fWait = false;
 
@@ -2744,7 +2744,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
     if (pCtx->cVerbose)
         RTPrintf(GuestCtrl::tr("Updating Guest Additions ...\n"));
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     while (strSource.isEmpty())
     {
         ComPtr<ISystemProperties> pProperties;
@@ -2772,23 +2772,23 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
 #if 0
         ComPtr<IGuest> guest;
         rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
-        if (SUCCEEDED(rc) && !guest.isNull())
+        if (SUCCEEDED(hrc) && !guest.isNull())
         {
             SHOW_STRING_PROP_NOT_EMPTY(guest, OSTypeId, "GuestOSType", GuestCtrl::tr("OS type:"));
 
             AdditionsRunLevelType_T guestRunLevel; /** @todo Add a runlevel-to-string (e.g. 0 = "None") method? */
             rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 SHOW_ULONG_VALUE("GuestAdditionsRunLevel", GuestCtrl::tr("Additions run level:"), (ULONG)guestRunLevel, "");
 
             Bstr guestString;
             rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
-            if (   SUCCEEDED(rc)
+            if (   SUCCEEDED(hrc)
                 && !guestString.isEmpty())
             {
                 ULONG uRevision;
                 rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     uRevision = 0;
                 RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
                 SHOW_UTF8_STRING("GuestAdditionsVersion", GuestCtrl::tr("Additions version:"), szValue);
@@ -2821,12 +2821,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
             /* Get current Guest Additions version / revision. */
             Bstr  strGstVerCur;
             ULONG uGstRevCur   = 0;
-            rc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerCur.asOutParam());
-            if (   SUCCEEDED(rc)
+            hrc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerCur.asOutParam());
+            if (   SUCCEEDED(hrc)
                 && !strGstVerCur.isEmpty())
             {
-                rc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevCur);
-                if (SUCCEEDED(rc))
+                hrc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevCur);
+                if (SUCCEEDED(hrc))
                 {
                     if (pCtx->cVerbose)
                         RTPrintf(GuestCtrl::tr("Guest Additions %lsr%RU64 currently installed, waiting for Guest Additions installer to start ...\n"),
@@ -2843,16 +2843,16 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                                                            ComSafeArrayAsInParam(aArgs),
                                                            ComSafeArrayAsInParam(aUpdateFlags),
                                                            pProgress.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 vrc = gctlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
             else
             {
                 if (pCtx->cVerbose)
-                    rc = showProgress(pProgress);
+                    hrc = showProgress(pProgress);
                 else
-                    rc = pProgress->WaitForCompletion((int32_t)cMsTimeout);
+                    hrc = pProgress->WaitForCompletion((int32_t)cMsTimeout);
 
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("Guest Additions update failed")));
                 vrc = gctlPrintProgressError(pProgress);
                 if (RT_SUCCESS(vrc))
@@ -2867,9 +2867,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                         com::SafeArray<GuestShutdownFlag_T> aShutdownFlags;
                         aShutdownFlags.push_back(GuestShutdownFlag_Reboot);
                         CHECK_ERROR(pCtx->pGuest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
-                        if (FAILED(rc))
+                        if (FAILED(hrc))
                         {
-                            if (rc == VBOX_E_NOT_SUPPORTED)
+                            if (hrc == VBOX_E_NOT_SUPPORTED)
                             {
                                 RTPrintf(GuestCtrl::tr("Current installed Guest Additions don't support automatic rebooting. "
                                                        "Please reboot manually.\n"));
@@ -2896,12 +2896,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                                         /* Get new Guest Additions version / revision. */
                                         Bstr strGstVerNew;
                                         ULONG uGstRevNew   = 0;
-                                        rc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerNew.asOutParam());
-                                        if (   SUCCEEDED(rc)
+                                        hrc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerNew.asOutParam());
+                                        if (   SUCCEEDED(hrc)
                                             && !strGstVerNew.isEmpty())
                                         {
-                                            rc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevNew);
-                                            if (FAILED(rc))
+                                            hrc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevNew);
+                                            if (FAILED(hrc))
                                                 uGstRevNew = 0;
                                         }
 
@@ -3083,13 +3083,13 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char 
 
     /** @todo Do we need a machine-readable output here as well? */
 
-    HRESULT rc;
+    HRESULT hrc;
     size_t cTotalProcs = 0;
     size_t cTotalFiles = 0;
 
     SafeIfaceArray <IGuestSession> collSessions;
     CHECK_ERROR(pCtx->pGuest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         size_t const cSessions = collSessions.size();
         if (cSessions)
@@ -3185,7 +3185,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char 
             RTPrintf(GuestCtrl::tr("No active guest sessions found\n"));
     }
 
-    if (FAILED(rc)) /** @todo yeah, right... Only the last error? */
+    if (FAILED(hrc)) /** @todo yeah, right... Only the last error? */
         rcExit = RTEXITCODE_FAILURE;
 
     return rcExit;
@@ -3275,7 +3275,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     ComPtr<IGuestSession> pSession;
     ComPtr<IGuestProcess> pProcess;
@@ -3362,7 +3362,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
     pProcess.setNull();
     pSession.setNull();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -3429,7 +3429,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx, int arg
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     do
     {
@@ -3474,12 +3474,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx, int arg
         if (!cSessionsHandled)
         {
             RTPrintf(GuestCtrl::tr("No guest session(s) found\n"));
-            rc = E_ABORT; /* To set exit code accordingly. */
+            hrc = E_ABORT; /* To set exit code accordingly. */
         }
 
     } while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -3526,7 +3526,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    HRESULT rc;
+    HRESULT hrc;
 
     try
     {
@@ -3585,10 +3585,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /**

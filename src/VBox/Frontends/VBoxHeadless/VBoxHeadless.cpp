@@ -991,12 +991,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    HRESULT rc;
-    int irc;
+    HRESULT hrc;
+    int vrc;
 
-    rc = com::Initialize();
+    hrc = com::Initialize();
 #ifdef VBOX_WITH_XPCOM
-    if (rc == NS_ERROR_FILE_ACCESS_DENIED)
+    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
     {
         char szHome[RTPATH_MAX] = "";
         com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
@@ -1004,7 +1004,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 #endif
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
         RTPrintf("VBoxHeadless: ERROR: failed to initialize COM!\n");
         return 1;
@@ -1021,14 +1021,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     do
     {
-        rc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
-        if (FAILED(rc))
+        hrc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+        if (FAILED(hrc))
         {
             RTPrintf("VBoxHeadless: ERROR: failed to create the VirtualBoxClient object!\n");
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
             {
-                com::GluePrintRCMessage(rc);
+                com::GluePrintRCMessage(hrc);
                 RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
             }
             else
@@ -1036,23 +1036,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
-        rc = pVirtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
-        if (FAILED(rc))
+        hrc = pVirtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+        if (FAILED(hrc))
         {
-            RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", rc);
+            RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", hrc);
             break;
         }
-        rc = pVirtualBoxClient->COMGETTER(Session)(session.asOutParam());
-        if (FAILED(rc))
+        hrc = pVirtualBoxClient->COMGETTER(Session)(session.asOutParam());
+        if (FAILED(hrc))
         {
-            RTPrintf("Failed to get session object (rc=%Rhrc)!\n", rc);
+            RTPrintf("Failed to get session object (rc=%Rhrc)!\n", hrc);
             break;
         }
 
         if (pcszSettingsPw)
         {
             CHECK_ERROR(virtualBox, SetSettingsSecret(Bstr(pcszSettingsPw).raw()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 break;
         }
         else if (pcszSettingsPwFile)
@@ -1064,10 +1064,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         ComPtr<IMachine> m;
 
-        rc = virtualBox->FindMachine(Bstr(pcszNameOrUUID).raw(), m.asOutParam());
-        if (FAILED(rc))
+        hrc = virtualBox->FindMachine(Bstr(pcszNameOrUUID).raw(), m.asOutParam());
+        if (FAILED(hrc))
         {
-            LogError("Invalid machine name or UUID!\n", rc);
+            LogError("Invalid machine name or UUID!\n", hrc);
             break;
         }
 
@@ -1092,16 +1092,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                                        Bstr(strPassword).raw()));
         }
         Bstr bstrVMId;
-        rc = m->COMGETTER(Id)(bstrVMId.asOutParam());
-        AssertComRC(rc);
-        if (FAILED(rc))
+        hrc = m->COMGETTER(Id)(bstrVMId.asOutParam());
+        AssertComRC(hrc);
+        if (FAILED(hrc))
             break;
         g_strVMUUID = bstrVMId;
 
         Bstr bstrVMName;
-        rc = m->COMGETTER(Name)(bstrVMName.asOutParam());
-        AssertComRC(rc);
-        if (FAILED(rc))
+        hrc = m->COMGETTER(Name)(bstrVMName.asOutParam());
+        AssertComRC(hrc);
+        if (FAILED(hrc))
             break;
         g_strVMName = bstrVMName;
 
@@ -1254,7 +1254,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         {
                             RTPrintf("Error: Invalid VRDE property '%s'\n", aVRDEProperties[i]);
                             RTStrFree(pszProperty);
-                            rc = E_INVALIDARG;
+                            hrc = E_INVALIDARG;
                             break;
                         }
                         RTStrFree(pszProperty);
@@ -1262,11 +1262,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     else
                     {
                         RTPrintf("Error: Failed to allocate memory for VRDE property '%s'\n", aVRDEProperties[i]);
-                        rc = E_OUTOFMEMORY;
+                        hrc = E_OUTOFMEMORY;
                         break;
                     }
                 }
-                if (FAILED(rc))
+                if (FAILED(hrc))
                     break;
             }
 
@@ -1328,8 +1328,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
             CHECK_ERROR_BREAK(console, PowerUpPaused(progress.asOutParam()));
 
-        rc = showProgress(progress);
-        if (FAILED(rc))
+        hrc = showProgress(progress);
+        if (FAILED(hrc))
         {
             com::ProgressErrorInfo info(progress);
             if (info.isBasicAvailable())
@@ -1348,13 +1348,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * Spawn windows message pump to monitor session events.
          */
         RTTHREAD hThrMsg;
-        irc = RTThreadCreate(&hThrMsg,
-                            windowsMessageMonitor, NULL,
-                            0, /* :cbStack */
-                            RTTHREADTYPE_MSG_PUMP, 0,
-                            "MSG");
-        if (RT_FAILURE(irc))    /* not fatal */
-            LogRel(("VBoxHeadless: failed to start windows message monitor: %Rrc\n", irc));
+        vrc = RTThreadCreate(&hThrMsg,
+                             windowsMessageMonitor, NULL,
+                             0, /* :cbStack */
+                             RTTHREADTYPE_MSG_PUMP, 0,
+                             "MSG");
+        if (RT_FAILURE(vrc))    /* not fatal */
+            LogRel(("VBoxHeadless: failed to start windows message monitor: %Rrc\n", vrc));
 #endif /* RT_OS_WINDOWS */
 
 
@@ -1364,7 +1364,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LogRel(("VBoxHeadless: starting event loop\n"));
         for (;;)
         {
-            irc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
+            vrc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
 
             /*
              * interruptEventQueueProcessing from another thread is
@@ -1372,14 +1372,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             if (g_fTerminateFE)
             {
-                LogRel(("VBoxHeadless: processEventQueue: %Rrc, termination requested\n", irc));
+                LogRel(("VBoxHeadless: processEventQueue: %Rrc, termination requested\n", vrc));
                 break;
             }
 
-            if (RT_FAILURE(irc))
+            if (RT_FAILURE(vrc))
             {
-                LogRel(("VBoxHeadless: processEventQueue: %Rrc\n", irc));
-                RTMsgError("event loop: %Rrc", irc);
+                LogRel(("VBoxHeadless: processEventQueue: %Rrc\n", vrc));
+                RTMsgError("event loop: %Rrc", vrc);
                 break;
             }
         }
@@ -1408,11 +1408,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     MachineState_T machineState = MachineState_Aborted;
     if (!machine.isNull())
     {
-        rc = machine->COMGETTER(State)(&machineState);
-        if (SUCCEEDED(rc))
+        hrc = machine->COMGETTER(State)(&machineState);
+        if (SUCCEEDED(hrc))
             Log(("machine state = %RU32\n", machineState));
         else
-            Log(("IMachine::getState: %Rhrc\n", rc));
+            Log(("IMachine::getState: %Rhrc\n", hrc));
     }
     else
     {
@@ -1439,12 +1439,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
             CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
 
-        rc = showProgress(pProgress);
-        if (FAILED(rc))
+        hrc = showProgress(pProgress);
+        if (FAILED(hrc))
         {
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
-                com::GluePrintRCMessage(rc);
+                com::GluePrintRCMessage(hrc);
             else
                 com::GluePrintErrorInfo(info);
             break;
@@ -1517,7 +1517,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #endif
 
     LogRel(("VBoxHeadless: exiting\n"));
-    return FAILED(rc) ? 1 : 0;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 

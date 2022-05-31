@@ -598,7 +598,7 @@ VMProcPriority_T nameToVMProcPriority(const char *pszName)
 RTEXITCODE handleModifyVM(HandlerArg *a)
 {
     int c;
-    HRESULT rc;
+    HRESULT hrc;
     Bstr name;
 
     /* VM ID + at least one parameter. Parameter arguments are checked
@@ -633,7 +633,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                  RT_ELEMENTS(g_aModifyVMOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
     RTGETOPTUNION ValueUnion;
-    while (   SUCCEEDED (rc)
+    while (   SUCCEEDED (hrc)
            && (c = RTGetOpt(&GetOptState, &ValueUnion)))
     {
         switch (c)
@@ -668,7 +668,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     RTMsgError(ModifyVM::tr("Cannot open file \"%s\": %Rrc"), ValueUnion.psz, vrc);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 uint64_t cbSize;
@@ -676,21 +676,21 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (RT_FAILURE(vrc))
                 {
                     RTMsgError(ModifyVM::tr("Cannot get size of file \"%s\": %Rrc"), ValueUnion.psz, vrc);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 if (cbSize > _256K)
                 {
                     RTMsgError(ModifyVM::tr("File \"%s\" is bigger than 256KByte"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 SafeArray<BYTE> icon((size_t)cbSize);
-                rc = RTFileRead(iconFile, icon.raw(), (size_t)cbSize, NULL);
+                hrc = RTFileRead(iconFile, icon.raw(), (size_t)cbSize, NULL);
                 if (RT_FAILURE(vrc))
                 {
                     RTMsgError(ModifyVM::tr("Cannot read contents of file \"%s\": %Rrc"), ValueUnion.psz, vrc);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                     break;
                 }
                 RTFileClose(iconFile);
@@ -741,7 +741,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --firmware argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -812,7 +812,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --paravirtprovider argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -983,7 +983,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --graphicscontroller argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -1049,7 +1049,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --biosbootmenu argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -1073,7 +1073,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --biosapic argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -1160,11 +1160,11 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     ComPtr<IMedium> hardDisk;
-                    rc = openMedium(a, ValueUnion.psz, DeviceType_HardDisk,
+                    hrc = openMedium(a, ValueUnion.psz, DeviceType_HardDisk,
                                     AccessMode_ReadWrite, hardDisk,
                                     false /* fForceNewUuidOnOpen */,
                                     false /* fSilent */);
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         break;
                     if (hardDisk)
                     {
@@ -1174,7 +1174,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                           hardDisk));
                     }
                     else
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                 }
                 break;
             }
@@ -1200,7 +1200,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --idecontroller argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -1211,7 +1211,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, GetStorageControllerByName(Bstr("SATA").raw(),
                                                                 SataCtl.asOutParam()));
 
-                if (SUCCEEDED(rc) && ValueUnion.u32 > 0)
+                if (SUCCEEDED(hrc) && ValueUnion.u32 > 0)
                     CHECK_ERROR(SataCtl, COMSETTER(PortCount)(ValueUnion.u32));
                 break;
             }
@@ -1237,28 +1237,28 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             {
                 if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
-                    rc = sessionMachine->DetachDevice(Bstr("LsiLogic").raw(),
+                    hrc = sessionMachine->DetachDevice(Bstr("LsiLogic").raw(),
                                                GetOptState.uIndex, 0);
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         CHECK_ERROR(sessionMachine, DetachDevice(Bstr("BusLogic").raw(),
                                                           GetOptState.uIndex, 0));
                 }
                 else
                 {
                     ComPtr<IMedium> hardDisk;
-                    rc = openMedium(a, ValueUnion.psz, DeviceType_HardDisk,
+                    hrc = openMedium(a, ValueUnion.psz, DeviceType_HardDisk,
                                     AccessMode_ReadWrite, hardDisk,
                                     false /* fForceNewUuidOnOpen */,
                                     false /* fSilent */);
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         break;
                     if (hardDisk)
                     {
-                        rc = sessionMachine->AttachDevice(Bstr("LsiLogic").raw(),
+                        hrc = sessionMachine->AttachDevice(Bstr("LsiLogic").raw(),
                                                    GetOptState.uIndex, 0,
                                                    DeviceType_HardDisk,
                                                    hardDisk);
-                        if (FAILED(rc))
+                        if (FAILED(hrc))
                             CHECK_ERROR(sessionMachine,
                                         AttachDevice(Bstr("BusLogic").raw(),
                                                      GetOptState.uIndex, 0,
@@ -1266,7 +1266,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                      hardDisk));
                     }
                     else
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                 }
                 break;
             }
@@ -1277,8 +1277,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                 if (!RTStrICmp(ValueUnion.psz, "LsiLogic"))
                 {
-                    rc = sessionMachine->RemoveStorageController(Bstr("BusLogic").raw());
-                    if (FAILED(rc))
+                    hrc = sessionMachine->RemoveStorageController(Bstr("BusLogic").raw());
+                    if (FAILED(hrc))
                         CHECK_ERROR(sessionMachine, RemoveStorageController(Bstr("LsiLogic").raw()));
 
                     CHECK_ERROR(sessionMachine,
@@ -1286,13 +1286,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                       StorageBus_SCSI,
                                                       ctl.asOutParam()));
 
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "BusLogic"))
                 {
-                    rc = sessionMachine->RemoveStorageController(Bstr("LsiLogic").raw());
-                    if (FAILED(rc))
+                    hrc = sessionMachine->RemoveStorageController(Bstr("LsiLogic").raw());
+                    if (FAILED(hrc))
                         CHECK_ERROR(sessionMachine, RemoveStorageController(Bstr("BusLogic").raw()));
 
                     CHECK_ERROR(sessionMachine,
@@ -1300,7 +1300,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                       StorageBus_SCSI,
                                                       ctl.asOutParam()));
 
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else
@@ -1317,13 +1317,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, AddStorageController(Bstr("BusLogic").raw(),
                                                               StorageBus_SCSI,
                                                               ctl.asOutParam()));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "off") || !RTStrICmp(ValueUnion.psz, "disable"))
                 {
-                    rc = sessionMachine->RemoveStorageController(Bstr("BusLogic").raw());
-                    if (FAILED(rc))
+                    hrc = sessionMachine->RemoveStorageController(Bstr("BusLogic").raw());
+                    if (FAILED(hrc))
                         CHECK_ERROR(sessionMachine, RemoveStorageController(Bstr("LsiLogic").raw()));
                 }
                 break;
@@ -1351,7 +1351,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                    rc = host->FindHostDVDDrive(Bstr(ValueUnion.psz + 5).raw(),
+                    hrc = host->FindHostDVDDrive(Bstr(ValueUnion.psz + 5).raw(),
                                                 dvdMedium.asOutParam());
                     if (!dvdMedium)
                     {
@@ -1360,30 +1360,30 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         if (RT_FAILURE(RTPathReal(ValueUnion.psz + 5, szPathReal, sizeof(szPathReal))))
                         {
                             errorArgument(ModifyVM::tr("Invalid host DVD drive name \"%s\""), ValueUnion.psz + 5);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
-                        rc = host->FindHostDVDDrive(Bstr(szPathReal).raw(),
+                        hrc = host->FindHostDVDDrive(Bstr(szPathReal).raw(),
                                                     dvdMedium.asOutParam());
                         if (!dvdMedium)
                         {
                             errorArgument(ModifyVM::tr("Invalid host DVD drive name \"%s\""), ValueUnion.psz + 5);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                     }
                 }
                 else
                 {
-                    rc = openMedium(a, ValueUnion.psz, DeviceType_DVD,
+                    hrc = openMedium(a, ValueUnion.psz, DeviceType_DVD,
                                     AccessMode_ReadOnly, dvdMedium,
                                     false /* fForceNewUuidOnOpen */,
                                     false /* fSilent */);
-                    if (FAILED(rc))
+                    if (FAILED(hrc))
                         break;
                     if (!dvdMedium)
                     {
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
                 }
@@ -1429,26 +1429,26 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     {
                         ComPtr<IHost> host;
                         CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                        rc = host->FindHostFloppyDrive(Bstr(ValueUnion.psz + 5).raw(),
+                        hrc = host->FindHostFloppyDrive(Bstr(ValueUnion.psz + 5).raw(),
                                                        floppyMedium.asOutParam());
                         if (!floppyMedium)
                         {
                             errorArgument(ModifyVM::tr("Invalid host floppy drive name \"%s\""), ValueUnion.psz + 5);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                     }
                     else
                     {
-                        rc = openMedium(a, ValueUnion.psz, DeviceType_Floppy,
+                        hrc = openMedium(a, ValueUnion.psz, DeviceType_Floppy,
                                         AccessMode_ReadWrite, floppyMedium,
                                         false /* fForceNewUuidOnOpen */,
                                         false /* fSilent */);
-                        if (FAILED(rc))
+                        if (FAILED(hrc))
                             break;
                         if (!floppyMedium)
                         {
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                     }
@@ -1514,7 +1514,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         else
                         {
                             errorArgument(ModifyVM::tr("Invalid --nicproperty%d argument '%s'"), GetOptState.uIndex, ValueUnion.psz);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                         }
                         RTStrFree(pszProperty);
                     }
@@ -1522,7 +1522,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     {
                         RTStrmPrintf(g_pStdErr, ModifyVM::tr("Error: Failed to allocate memory for --nicproperty%d '%s'\n"),
                                      GetOptState.uIndex, ValueUnion.psz);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                     }
                 }
                 break;
@@ -1596,7 +1596,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     errorArgument(ModifyVM::tr("Invalid NIC type '%s' specified for NIC %u"),
                                   ValueUnion.psz, GetOptState.uIndex);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -1630,7 +1630,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (ValueUnion.u32 > 4)
                 {
                     errorArgument(ModifyVM::tr("Invalid boot priority '%u' specfied for NIC %u"), ValueUnion.u32, GetOptState.uIndex);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 else
                 {
@@ -1652,7 +1652,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Unknown promiscuous mode policy '%s'"), ValueUnion.psz);
-                    rc = E_INVALIDARG;
+                    hrc = E_INVALIDARG;
                     break;
                 }
 
@@ -1688,10 +1688,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                     CHECK_ERROR(sessionMachine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
 
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         CHECK_ERROR(bwCtrl, GetBandwidthGroup(Bstr(ValueUnion.psz).raw(), bwGroup.asOutParam()));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(bwGroup));
                         }
@@ -1787,7 +1787,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid type '%s' specfied for NIC %u"), ValueUnion.psz, GetOptState.uIndex);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2071,7 +2071,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     else
                     {
                         errorArgument(ModifyVM::tr("Invalid proto '%s' specfied for NIC %u"), ValueUnion.psz, GetOptState.uIndex);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                         break;
                     }
                     CHECK_ERROR(engine, AddRedirect(Bstr(strName).raw(), proto,
@@ -2267,19 +2267,19 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "usb"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_USBMouse));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "usbtablet"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_USBTablet));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "usbmultitouch"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_USBMultiTouch));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "none"))
@@ -2289,17 +2289,17 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid type '%s' specfied for pointing device"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 if (fEnableUsb)
                 {
                     /* Make sure either the OHCI or xHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
                     ULONG cXhciCtrls = 0;
-                    rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
-                    if (SUCCEEDED(rc)) {
-                        rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
-                        if (   SUCCEEDED(rc)
+                    hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
+                    if (SUCCEEDED(hrc)) {
+                        hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                        if (   SUCCEEDED(hrc)
                             && cOhciCtrls + cXhciCtrls == 0)
                         {
                             /* If there's nothing, enable OHCI (always available). */
@@ -2322,29 +2322,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "usb"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(KeyboardHIDType)(KeyboardHIDType_USBKeyboard));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(KeyboardHIDType)(KeyboardHIDType_None));
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid type '%s' specfied for keyboard"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 if (fEnableUsb)
                 {
                     /* Make sure either the OHCI or xHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
                     ULONG cXhciCtrls = 0;
-                    rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
-                    if (SUCCEEDED(rc)) {
-                        rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
-                        if (   SUCCEEDED(rc)
+                    hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
+                    if (SUCCEEDED(hrc)) {
+                        hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                        if (   SUCCEEDED(hrc)
                             && cOhciCtrls + cXhciCtrls == 0)
                         {
                             /* If there's nothing, enable OHCI (always available). */
@@ -2537,7 +2537,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --audiocontroller argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2559,7 +2559,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --audiocodec argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2631,7 +2631,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --audio argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2671,9 +2671,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --clipboard-mode argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(ClipboardMode)(mode));
                 }
@@ -2691,9 +2691,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --clipboard-file-transfers argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(ClipboardFileTransfersEnabled)(fEnabled));
                 }
@@ -2716,9 +2716,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --draganddrop argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(DnDMode)(mode));
                 }
@@ -2770,7 +2770,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             RTStrFree(pszProperty);
 
                             errorArgument(ModifyVM::tr("Invalid --vrdeproperty argument '%s'"), ValueUnion.psz);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         RTStrFree(pszProperty);
@@ -2779,7 +2779,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     {
                         RTStrmPrintf(g_pStdErr, ModifyVM::tr("Error: Failed to allocate memory for VRDE property '%s'\n"),
                                      ValueUnion.psz);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                     }
                 }
                 break;
@@ -2840,7 +2840,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --vrdeauthtype argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2958,7 +2958,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (!fRenamed)
                 {
                     errorArgument(ModifyVM::tr("Invalid --usbrename parameters, nothing renamed"));
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -2966,8 +2966,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_USBXHCI:
             {
                 ULONG cXhciCtrls = 0;
-                rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
-                if (SUCCEEDED(rc))
+                hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                if (SUCCEEDED(hrc))
                 {
                     if (!cXhciCtrls && ValueUnion.f)
                     {
@@ -2999,8 +2999,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_USBEHCI:
             {
                 ULONG cEhciCtrls = 0;
-                rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_EHCI, &cEhciCtrls);
-                if (SUCCEEDED(rc))
+                hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_EHCI, &cEhciCtrls);
+                if (SUCCEEDED(hrc))
                 {
                     if (!cEhciCtrls && ValueUnion.f)
                     {
@@ -3032,8 +3032,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_USBOHCI:
             {
                 ULONG cOhciCtrls = 0;
-                rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
-                if (SUCCEEDED(rc))
+                hrc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
+                if (SUCCEEDED(hrc))
                 {
                     if (!cOhciCtrls && ValueUnion.f)
                     {
@@ -3100,7 +3100,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 Utf8Str password;
                 RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &password);
                 if (rcExit != RTEXITCODE_SUCCESS)
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 else
                     CHECK_ERROR(sessionMachine, COMSETTER(TeleporterPassword)(Bstr(password).raw()));
                 break;
@@ -3168,7 +3168,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --chipset argument '%s' (valid: piix3,ich9)"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -3186,7 +3186,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Intel));
 #else
                     errorArgument(ModifyVM::tr("Invalid --iommu argument '%s' (valid: none,amd,automatic)"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
 #endif
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "automatic"))
@@ -3200,7 +3200,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --iommu argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -3225,7 +3225,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid --tpm-type argument '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -3282,7 +3282,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         if (RT_FAILURE(parseScreens(ValueUnion.psz, &screens)))
                         {
                             errorArgument(ModifyVM::tr("Invalid list of screens specified\n"));
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
 
@@ -3304,7 +3304,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             if (RT_FAILURE(vrc))
                             {
                                 errorArgument(ModifyVM::tr("Cannot convert filename \"%s\" to absolute path\n"), ValueUnion.psz);
-                                rc = E_FAIL;
+                                hrc = E_FAIL;
                                 break;
                             }
                             bstr = szVCFileAbs;
@@ -3335,7 +3335,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         {
                             errorArgument(ModifyVM::tr("Error parsing video resolution '%s' (expected <width>x<height>)"),
                                           ValueUnion.psz);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
                         uint32_t uHeight = 0;
@@ -3344,7 +3344,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         {
                             errorArgument(ModifyVM::tr("Error parsing video resolution '%s' (expected <width>x<height>)"),
                                           ValueUnion.psz);
-                            rc = E_FAIL;
+                            hrc = E_FAIL;
                             break;
                         }
 
@@ -3419,10 +3419,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     errorArgument(ModifyVM::tr("Invalid --autostop-type argument '%s' (valid: disabled, savestate, poweroff, acpishutdown)"),
                                   ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
 
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                     CHECK_ERROR(sessionMachine, COMSETTER(AutostopType)(enmAutostopType));
                 break;
             }
@@ -3439,7 +3439,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     errorArgument(ModifyVM::tr("Invalid --pciattach argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')"),
                                   ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 else
                 {
@@ -3456,7 +3456,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (iHostAddr == -1)
                 {
                     errorArgument(ModifyVM::tr("Invalid --pcidetach argument '%s' (valid: 'HB:HD.HF')"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 else
                 {
@@ -3490,7 +3490,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (enmPriority == VMProcPriority_Invalid)
                 {
                     errorArgument(ModifyVM::tr("Invalid --vm-process-priority '%s'"), ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 else
                 {
@@ -3500,11 +3500,11 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_TESTING_ENABLED:
-                rc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled", ValueUnion.f ? "1" : "");
+                hrc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled", ValueUnion.f ? "1" : "");
                 break;
 
             case MODIFYVM_TESTING_MMIO:
-                rc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingMMIO", ValueUnion.f ? "1" : "");
+                hrc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingMMIO", ValueUnion.f ? "1" : "");
                 break;
 
             case MODIFYVM_TESTING_CFG_DWORD:
@@ -3515,26 +3515,26 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                 GetOptState.uIndex);
                     char szValue[32];
                     RTStrPrintf(szValue, sizeof(szValue), "%u", ValueUnion.u32);
-                    rc = setExtraData(sessionMachine, szVar, szValue);
+                    hrc = setExtraData(sessionMachine, szVar, szValue);
                 }
                 else
-                    rc = errorArgumentHr(ModifyVM::tr("--testing-cfg-dword index %u is out of range: 0 thru 9"),
+                    hrc = errorArgumentHr(ModifyVM::tr("--testing-cfg-dword index %u is out of range: 0 thru 9"),
                                          GetOptState.uIndex);
                 break;
 
             default:
                 errorGetOpt(c, &ValueUnion);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
         }
     }
 
     /* commit changes */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         CHECK_ERROR(sessionMachine, SaveSettings());
 
     /* it's important to always close sessions */
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

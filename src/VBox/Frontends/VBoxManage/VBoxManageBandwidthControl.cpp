@@ -99,7 +99,7 @@ static const char *parseLimit(const char *pcszLimit, int64_t *pLimit)
  */
 static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     static const RTGETOPTDEF g_aBWCtlAddOptions[] =
         {
             { "--type",   't', RTGETOPT_REQ_STRING },
@@ -124,7 +124,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
     RTGetOptInit(&GetState, a->argc, a->argv, g_aBWCtlAddOptions,
                  RT_ELEMENTS(g_aBWCtlAddOptions), 3, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
-    while (   SUCCEEDED(rc)
+    while (   SUCCEEDED(hrc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -134,7 +134,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
                 if (ValueUnion.psz)
                     pszType = ValueUnion.psz;
                 else
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 break;
             }
 
@@ -150,14 +150,14 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
                     }
                 }
                 else
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 break;
             }
 
             default:
             {
                 errorGetOpt(c, &ValueUnion);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -188,7 +188,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
  */
 static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     static const RTGETOPTDEF g_aBWCtlAddOptions[] =
         {
             { "--limit",  'l', RTGETOPT_REQ_STRING }
@@ -205,7 +205,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
     RTGetOptInit(&GetState, a->argc, a->argv, g_aBWCtlAddOptions,
                  RT_ELEMENTS(g_aBWCtlAddOptions), 3, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
-    while (   SUCCEEDED(rc)
+    while (   SUCCEEDED(hrc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -222,14 +222,14 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
                     }
                 }
                 else
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 break;
             }
 
             default:
             {
                 errorGetOpt(c, &ValueUnion);
-                rc = E_FAIL;
+                hrc = E_FAIL;
                 break;
             }
         }
@@ -240,7 +240,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
     {
         ComPtr<IBandwidthGroup> bwGroup;
         CHECK_ERROR2I_RET(bwCtrl, GetBandwidthGroup(name.raw(), bwGroup.asOutParam()), RTEXITCODE_FAILURE);
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             CHECK_ERROR2I_RET(bwGroup, COMSETTER(MaxBytesPerSec)((LONG64)cMaxBytesPerSec), RTEXITCODE_FAILURE);
         }
@@ -310,7 +310,7 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
  */
 RTEXITCODE handleBandwidthControl(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<IBandwidthControl> bwCtrl;
 
@@ -331,8 +331,8 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
-    rc = machine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());
-    if (FAILED(rc)) goto leave;
+    hrc = machine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());
+    if (FAILED(hrc)) goto leave; /** @todo r=andy Argh!! */
 
     if (!strcmp(a->argv[1], "add"))
     {
@@ -341,7 +341,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
             errorArgument(BWControl::tr("Bandwidth groups cannot be created while the VM is running\n"));
             goto leave;
         }
-        rc = handleBandwidthControlAdd(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleBandwidthControlAdd(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "remove"))
     {
@@ -350,25 +350,25 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
             errorArgument(BWControl::tr("Bandwidth groups cannot be deleted while the VM is running\n"));
             goto leave;
         }
-        rc = handleBandwidthControlRemove(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleBandwidthControlRemove(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "set"))
-        rc = handleBandwidthControlSet(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleBandwidthControlSet(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else if (!strcmp(a->argv[1], "list"))
-        rc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        hrc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else
     {
         errorSyntax(BWControl::tr("Invalid parameter '%s'"), a->argv[1]);
-        rc = E_FAIL;
+        hrc = E_FAIL;
     }
 
     /* commit changes */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         CHECK_ERROR(machine, SaveSettings());
 
 leave:
     /* it's important to always close sessions */
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

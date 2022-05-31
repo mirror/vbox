@@ -170,7 +170,7 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
                    ComPtr<IMedium> &pMedium, bool fForceNewUuidOnOpen,
                    bool fSilent)
 {
-    HRESULT rc;
+    HRESULT hrc;
     Guid id(pszFilenameOrUuid);
     char szFilenameAbs[RTPATH_MAX] = "";
 
@@ -194,20 +194,20 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
                                               fForceNewUuidOnOpen,
                                               pMedium.asOutParam()));
     else
-        rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(),
-                                       enmDevType,
-                                       enmAccessMode,
-                                       fForceNewUuidOnOpen,
-                                       pMedium.asOutParam());
+        hrc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(),
+                                        enmDevType,
+                                        enmAccessMode,
+                                        fForceNewUuidOnOpen,
+                                        pMedium.asOutParam());
 
-    return rc;
+    return hrc;
 }
 
 static HRESULT createMedium(HandlerArg *a, const char *pszFormat,
                             const char *pszFilename, DeviceType_T enmDevType,
                             AccessMode_T enmAccessMode, ComPtr<IMedium> &pMedium)
 {
-    HRESULT rc;
+    HRESULT hrc;
     char szFilenameAbs[RTPATH_MAX] = "";
 
     /** @todo laziness shortcut. should really check the MediumFormatCapabilities */
@@ -227,7 +227,7 @@ static HRESULT createMedium(HandlerArg *a, const char *pszFormat,
                                             enmAccessMode,
                                             enmDevType,
                                             pMedium.asOutParam()));
-    return rc;
+    return hrc;
 }
 
 static const RTGETOPTDEF g_aCreateMediumOptions[] =
@@ -297,7 +297,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
 {
     std::list<MediumProperty> lstProperties;
 
-    HRESULT rc;
+    HRESULT hrc;
     int vrc;
     const char *filename = NULL;
     const char *diffparent = NULL;
@@ -496,21 +496,21 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
             else
                 format = pszExt;
         }
-        rc = openMedium(a, diffparent, DeviceType_HardDisk,
-                        AccessMode_ReadWrite, pParentMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
-        if (FAILED(rc))
+        hrc = openMedium(a, diffparent, DeviceType_HardDisk,
+                         AccessMode_ReadWrite, pParentMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
         if (pParentMedium.isNull())
             return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid parent hard disk reference, avoiding crash"));
         MediumState_T state;
         CHECK_ERROR(pParentMedium, COMGETTER(State)(&state));
-        if (FAILED(rc))
+        if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
         if (state == MediumState_Inaccessible)
         {
             CHECK_ERROR(pParentMedium, RefreshState(&state));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 return RTEXITCODE_FAILURE;
         }
     }
@@ -538,19 +538,19 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
 
     ComPtr<IMedium> pMedium;
     if (cmd == CMD_DISK)
-        rc = createMedium(a, format, filename, DeviceType_HardDisk,
-                          AccessMode_ReadWrite, pMedium);
+        hrc = createMedium(a, format, filename, DeviceType_HardDisk,
+                           AccessMode_ReadWrite, pMedium);
     else if (cmd == CMD_DVD)
-        rc = createMedium(a, format, filename, DeviceType_DVD,
-                          AccessMode_ReadOnly, pMedium);
+        hrc = createMedium(a, format, filename, DeviceType_DVD,
+                           AccessMode_ReadOnly, pMedium);
     else if (cmd == CMD_FLOPPY)
-        rc = createMedium(a, format, filename, DeviceType_Floppy,
-                          AccessMode_ReadWrite, pMedium);
+        hrc = createMedium(a, format, filename, DeviceType_Floppy,
+                           AccessMode_ReadWrite, pMedium);
     else
-        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
+        hrc = E_INVALIDARG; /* cannot happen but make gcc happy */
 
 
-    if (SUCCEEDED(rc) && pMedium)
+    if (SUCCEEDED(hrc) && pMedium)
     {
         if (lstProperties.size() > 0)
         {
@@ -593,7 +593,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 else
                 {
                     com::Bstr bstrBase64Value;
-                    HRESULT hrc = bstrBase64Value.base64Encode(it->m_pszValue, it->m_cbValue);
+                    hrc = bstrBase64Value.base64Encode(it->m_pszValue, it->m_cbValue);
                     if (FAILED(hrc))
                         return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Base64 encoding of the property %s failed. (%Rhrc)"),
                                               pszKey, hrc);
@@ -616,14 +616,14 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
             CHECK_ERROR(pMedium, CreateBaseStorage(size, ComSafeArrayAsInParam(l_variants), pProgress.asOutParam()));
         else
             CHECK_ERROR(pParentMedium, CreateDiffStorage(pMedium, ComSafeArrayAsInParam(l_variants), pProgress.asOutParam()));
-        if (SUCCEEDED(rc) && pProgress)
+        if (SUCCEEDED(hrc) && pProgress)
         {
-            rc = showProgress(pProgress);
+            hrc = showProgress(pProgress);
             CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to create medium")));
         }
     }
 
-    if (SUCCEEDED(rc) && pMedium)
+    if (SUCCEEDED(hrc) && pMedium)
     {
         Bstr uuid;
         CHECK_ERROR(pMedium, COMGETTER(Id)(uuid.asOutParam()));
@@ -631,7 +631,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
 
         //CHECK_ERROR(pMedium, Close());
     }
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aModifyMediumOptions[] =
@@ -658,7 +658,7 @@ static const RTGETOPTDEF g_aModifyMediumOptions[] =
 
 RTEXITCODE handleModifyMedium(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     int vrc;
     enum {
         CMD_NONE,
@@ -746,7 +746,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                     else
                     {
                         errorArgument(Disk::tr("Invalid --property argument '%s'"), ValueUnion.psz);
-                        rc = E_FAIL;
+                        hrc = E_FAIL;
                     }
                     RTStrFree(pszProperty);
                 }
@@ -754,7 +754,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                 {
                     RTStrmPrintf(g_pStdErr, Disk::tr("Error: Failed to allocate memory for medium property '%s'\n"),
                                  ValueUnion.psz);
-                    rc = E_FAIL;
+                    hrc = E_FAIL;
                 }
                 break;
             }
@@ -835,20 +835,20 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
 
     /* Always open the medium if necessary, there is no other way. */
     if (cmd == CMD_DISK)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_DVD)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_FLOPPY)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else
-        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
-    if (FAILED(rc))
+        hrc = E_INVALIDARG; /* cannot happen but make gcc happy */
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
     if (pMedium.isNull())
     {
@@ -902,13 +902,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     {
         ComPtr<IProgress> pProgress;
         CHECK_ERROR(pMedium, Compact(pProgress.asOutParam()));
-        if (SUCCEEDED(rc))
-            rc = showProgress(pProgress);
-        if (FAILED(rc))
+        if (SUCCEEDED(hrc))
+            hrc = showProgress(pProgress);
+        if (FAILED(hrc))
         {
-            if (rc == E_NOTIMPL)
+            if (hrc == E_NOTIMPL)
                 RTMsgError(Disk::tr("Compact medium operation is not implemented!"));
-            else if (rc == VBOX_E_NOT_SUPPORTED)
+            else if (hrc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError(Disk::tr("Compact medium operation for this format is not implemented yet!"));
             else if (!pProgress.isNull())
                 CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to compact medium")));
@@ -921,15 +921,15 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     {
         ComPtr<IProgress> pProgress;
         CHECK_ERROR(pMedium, Resize(cbResize, pProgress.asOutParam()));
-        if (SUCCEEDED(rc))
-            rc = showProgress(pProgress);
-        if (FAILED(rc))
+        if (SUCCEEDED(hrc))
+            hrc = showProgress(pProgress);
+        if (FAILED(hrc))
         {
             if (!pProgress.isNull())
                 CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to resize medium")));
-            else if (rc == E_NOTIMPL)
+            else if (hrc == E_NOTIMPL)
                 RTMsgError(Disk::tr("Resize medium operation is not implemented!"));
-            else if (rc == VBOX_E_NOT_SUPPORTED)
+            else if (hrc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError(Disk::tr("Resize medium operation for this format is not implemented yet!"));
             else
                 RTMsgError(Disk::tr("Failed to resize medium!"));
@@ -945,9 +945,9 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
             RTStrFree(pszNewLocation);
             CHECK_ERROR(pMedium, MoveTo(Bstr(strLocation).raw(), pProgress.asOutParam()));
 
-            if (SUCCEEDED(rc) && !pProgress.isNull())
+            if (SUCCEEDED(hrc) && !pProgress.isNull())
             {
-                rc = showProgress(pProgress);
+                hrc = showProgress(pProgress);
                 CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to move medium")));
             }
 
@@ -977,7 +977,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         RTPrintf(Disk::tr("Medium description has been changed.\n"));
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aCloneMediumOptions[] =
@@ -996,7 +996,7 @@ static const RTGETOPTDEF g_aCloneMediumOptions[] =
 
 RTEXITCODE handleCloneMedium(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     int vrc;
     enum {
         CMD_NONE,
@@ -1099,17 +1099,17 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
     ComPtr<IMedium> pDstMedium;
 
     if (cmd == CMD_DISK)
-        rc = openMedium(a, pszSrc, DeviceType_HardDisk, AccessMode_ReadOnly, pSrcMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszSrc, DeviceType_HardDisk, AccessMode_ReadOnly, pSrcMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_DVD)
-        rc = openMedium(a, pszSrc, DeviceType_DVD, AccessMode_ReadOnly, pSrcMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszSrc, DeviceType_DVD, AccessMode_ReadOnly, pSrcMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_FLOPPY)
-        rc = openMedium(a, pszSrc, DeviceType_Floppy, AccessMode_ReadOnly, pSrcMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszSrc, DeviceType_Floppy, AccessMode_ReadOnly, pSrcMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else
-        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
-    if (FAILED(rc))
+        hrc = E_INVALIDARG; /* cannot happen but make gcc happy */
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     do
@@ -1118,15 +1118,15 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         if (fExisting)
         {
             if (cmd == CMD_DISK)
-                rc = openMedium(a, pszDst, DeviceType_HardDisk, AccessMode_ReadWrite, pDstMedium,
-                                false /* fForceNewUuidOnOpen */, false /* fSilent */);
+                hrc = openMedium(a, pszDst, DeviceType_HardDisk, AccessMode_ReadWrite, pDstMedium,
+                                 false /* fForceNewUuidOnOpen */, false /* fSilent */);
             else if (cmd == CMD_DVD)
-                rc = openMedium(a, pszDst, DeviceType_DVD, AccessMode_ReadOnly, pDstMedium,
-                                false /* fForceNewUuidOnOpen */, false /* fSilent */);
+                hrc = openMedium(a, pszDst, DeviceType_DVD, AccessMode_ReadOnly, pDstMedium,
+                                 false /* fForceNewUuidOnOpen */, false /* fSilent */);
             else if (cmd == CMD_FLOPPY)
-                rc = openMedium(a, pszDst, DeviceType_Floppy, AccessMode_ReadWrite, pDstMedium,
-                                false /* fForceNewUuidOnOpen */, false /* fSilent */);
-            if (FAILED(rc))
+                hrc = openMedium(a, pszDst, DeviceType_Floppy, AccessMode_ReadWrite, pDstMedium,
+                                 false /* fForceNewUuidOnOpen */, false /* fSilent */);
+            if (FAILED(hrc))
                 break;
 
             /* Perform accessibility check now. */
@@ -1156,15 +1156,15 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
             }
             Utf8Str strFormat(format);
             if (cmd == CMD_DISK)
-                rc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_HardDisk,
-                                  AccessMode_ReadWrite, pDstMedium);
+                hrc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_HardDisk,
+                                   AccessMode_ReadWrite, pDstMedium);
             else if (cmd == CMD_DVD)
-                rc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_DVD,
-                                  AccessMode_ReadOnly,  pDstMedium);
+                hrc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_DVD,
+                                   AccessMode_ReadOnly,  pDstMedium);
             else if (cmd == CMD_FLOPPY)
-                rc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_Floppy,
-                                  AccessMode_ReadWrite, pDstMedium);
-            if (FAILED(rc))
+                hrc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_Floppy,
+                                   AccessMode_ReadWrite, pDstMedium);
+            if (FAILED(hrc))
                 break;
         }
 
@@ -1180,7 +1180,7 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
 
         CHECK_ERROR_BREAK(pSrcMedium, CloneTo(pDstMedium, ComSafeArrayAsInParam(l_variants), NULL, pProgress.asOutParam()));
 
-        rc = showProgress(pProgress);
+        hrc = showProgress(pProgress);
         CHECK_PROGRESS_ERROR_BREAK(pProgress, (Disk::tr("Failed to clone medium")));
 
         Bstr uuid;
@@ -1191,7 +1191,7 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
     }
     while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
@@ -1383,7 +1383,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        const char *pszParentUUID,
                        bool fOptLong)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     do
     {
         Bstr uuid;
@@ -1533,8 +1533,8 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
 
         Bstr strCipher;
         Bstr strPasswordId;
-        HRESULT rc2 = pMedium->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
-        if (SUCCEEDED(rc2))
+        HRESULT hrc2 = pMedium->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
+        if (SUCCEEDED(hrc2))
         {
             RTPrintf(Disk::tr("Encryption:     enabled\n"));
             if (fOptLong)
@@ -1625,7 +1625,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
     }
     while (0);
 
-    return rc;
+    return hrc;
 }
 
 static const RTGETOPTDEF g_aShowMediumInfoOptions[] =
@@ -1704,22 +1704,22 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
     if (!pszFilenameOrUuid)
         return errorSyntax(Disk::tr("Medium name or UUID required"));
 
-    HRESULT rc = S_OK; /* Prevents warning. */
+    HRESULT hrc = S_OK; /* Prevents warning. */
 
     ComPtr<IMedium> pMedium;
     if (cmd == CMD_DISK)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_DVD)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_FLOPPY)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
-    if (FAILED(rc))
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     Utf8Str strParentUUID(Disk::tr("base"));
@@ -1732,9 +1732,9 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
         strParentUUID = bstrParentUUID;
     }
 
-    rc = showMediumInfo(a->virtualBox, pMedium, strParentUUID.c_str(), true);
+    hrc = showMediumInfo(a->virtualBox, pMedium, strParentUUID.c_str(), true);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aCloseMediumOptions[] =
@@ -1747,7 +1747,7 @@ static const RTGETOPTDEF g_aCloseMediumOptions[] =
 
 RTEXITCODE handleCloseMedium(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     enum {
         CMD_NONE,
         CMD_DISK,
@@ -1821,41 +1821,41 @@ RTEXITCODE handleCloseMedium(HandlerArg *a)
 
     ComPtr<IMedium> pMedium;
     if (cmd == CMD_DISK)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_DVD)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_FLOPPY)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
 
-    if (SUCCEEDED(rc) && pMedium)
+    if (SUCCEEDED(hrc) && pMedium)
     {
         if (fDelete)
         {
             ComPtr<IProgress> pProgress;
             CHECK_ERROR(pMedium, DeleteStorage(pProgress.asOutParam()));
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
             {
-                rc = showProgress(pProgress);
+                hrc = showProgress(pProgress);
                 CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to delete medium")));
             }
             else
-                RTMsgError(Disk::tr("Failed to delete medium. Error code %Rrc"), rc);
+                RTMsgError(Disk::tr("Failed to delete medium. Error code %Rhrc"), hrc);
         }
         CHECK_ERROR(pMedium, Close());
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleMediumProperty(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     const char *pszCmd = NULL;
     enum {
         CMD_NONE,
@@ -1912,18 +1912,18 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
     pszProperty       = a->argv[2];
 
     if (cmd == CMD_DISK)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_DVD)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
-                        AccessMode_ReadOnly, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_DVD,
+                         AccessMode_ReadOnly, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     else if (cmd == CMD_FLOPPY)
-        rc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
-                        AccessMode_ReadWrite, pMedium,
-                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
-    if (SUCCEEDED(rc) && !pMedium.isNull())
+        hrc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
+                         AccessMode_ReadWrite, pMedium,
+                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (SUCCEEDED(hrc) && !pMedium.isNull())
     {
         if (!RTStrICmp(pszAction, "set"))
         {
@@ -1942,7 +1942,7 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
 
             Bstr strVal;
             CHECK_ERROR(pMedium, GetProperty(Bstr(pszProperty).raw(), strVal.asOutParam()));
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 RTPrintf("%s=%ls\n", pszProperty, strVal.raw());
         }
         else if (!RTStrICmp(pszAction, "delete"))
@@ -1952,7 +1952,7 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
         }
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aEncryptMediumOptions[] =
@@ -1965,7 +1965,7 @@ static const RTGETOPTDEF g_aEncryptMediumOptions[] =
 
 RTEXITCODE handleEncryptMedium(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IMedium> hardDisk;
     const char *pszPasswordNew = NULL;
     const char *pszPasswordOld = NULL;
@@ -2076,10 +2076,10 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
     }
 
     /* Always open the medium if necessary, there is no other way. */
-    rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                    AccessMode_ReadWrite, hardDisk,
-                    false /* fForceNewUuidOnOpen */, false /* fSilent */);
-    if (FAILED(rc))
+    hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                     AccessMode_ReadWrite, hardDisk,
+                     false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
         return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid hard disk reference, avoiding crash"));
@@ -2088,13 +2088,13 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
     CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
                                            Bstr(strPasswordNew).raw(), Bstr(pszNewPasswordId).raw(),
                                            progress.asOutParam()));
-    if (SUCCEEDED(rc))
-        rc = showProgress(progress);
-    if (FAILED(rc))
+    if (SUCCEEDED(hrc))
+        hrc = showProgress(progress);
+    if (FAILED(hrc))
     {
-        if (rc == E_NOTIMPL)
+        if (hrc == E_NOTIMPL)
             RTMsgError(Disk::tr("Encrypt hard disk operation is not implemented!"));
-        else if (rc == VBOX_E_NOT_SUPPORTED)
+        else if (hrc == VBOX_E_NOT_SUPPORTED)
             RTMsgError(Disk::tr("Encrypt hard disk operation for this cipher is not implemented yet!"));
         else if (!progress.isNull())
             CHECK_PROGRESS_ERROR(progress, (Disk::tr("Failed to encrypt hard disk")));
@@ -2102,12 +2102,12 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
             RTMsgError(Disk::tr("Failed to encrypt hard disk!"));
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IMedium> hardDisk;
     const char *pszFilenameOrUuid = NULL;
     Utf8Str strPassword;
@@ -2135,18 +2135,18 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
     }
 
     /* Always open the medium if necessary, there is no other way. */
-    rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
-                    AccessMode_ReadWrite, hardDisk,
-                    false /* fForceNewUuidOnOpen */, false /* fSilent */);
-    if (FAILED(rc))
+    hrc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                     AccessMode_ReadWrite, hardDisk,
+                     false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
         return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid hard disk reference, avoiding crash"));
 
     CHECK_ERROR(hardDisk, CheckEncryptionPassword(Bstr(strPassword).raw()));
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         RTPrintf(Disk::tr("The given password is correct\n"));
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 

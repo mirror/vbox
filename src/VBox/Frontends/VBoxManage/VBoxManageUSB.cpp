@@ -170,7 +170,7 @@ struct USBFilterCmd
 
 RTEXITCODE handleUSBFilter(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     USBFilterCmd cmd;
 
     /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
@@ -550,7 +550,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
 
     if (cmd.mMachine)
     {
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             /* commit the session */
             CHECK_ERROR(cmd.mMachine, SaveSettings());
@@ -559,12 +559,12 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
         a->session->UnlockMachine();
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 RTEXITCODE handleUSBDevSource(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* at least: 0: command, 1: source id */
     if (a->argc < 2)
@@ -611,7 +611,7 @@ RTEXITCODE handleUSBDevSource(HandlerArg *a)
         CHECK_ERROR_RET(host, RemoveUSBDeviceSource(Bstr(a->argv[1]).raw()), RTEXITCODE_FAILURE);
     }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
