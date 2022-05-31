@@ -7523,11 +7523,11 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
     D3D_RELEASE(SavedState.pInputLayout);
     pBlitter->pImmediateContext->VSSetConstantBuffers(0, 1, &SavedState.pConstantBuffer);
     D3D_RELEASE(SavedState.pConstantBuffer);
-    pBlitter->pImmediateContext->VSSetShader(SavedState.pVertexShader, NULL, NULL);
+    pBlitter->pImmediateContext->VSSetShader(SavedState.pVertexShader, NULL, 0);
     D3D_RELEASE(SavedState.pVertexShader);
     pBlitter->pImmediateContext->PSSetShaderResources(0, 1, &SavedState.pShaderResourceView);
     D3D_RELEASE(SavedState.pShaderResourceView);
-    pBlitter->pImmediateContext->PSSetShader(SavedState.pPixelShader, NULL, NULL);
+    pBlitter->pImmediateContext->PSSetShader(SavedState.pPixelShader, NULL, 0);
     D3D_RELEASE(SavedState.pPixelShader);
     pBlitter->pImmediateContext->PSSetSamplers(0, 1, &SavedState.pSamplerState);
     D3D_RELEASE(SavedState.pSamplerState);
