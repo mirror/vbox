@@ -1383,7 +1383,7 @@ int vmsvga3dDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPre
 }
 
 
-int vmsvga3dDXPresentBlt(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXPresentBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPresentBlt const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1395,7 +1395,9 @@ int vmsvga3dDXPresentBlt(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXPresentBlt(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXPresentBlt(pThisCC, pDXContext,
+                                                 pCmd->dstSid, pCmd->destSubResource, &pCmd->boxDest,
+                                                 pCmd->srcSid, pCmd->srcSubResource, &pCmd->boxSrc, pCmd->mode);
     return rc;
 }
 
