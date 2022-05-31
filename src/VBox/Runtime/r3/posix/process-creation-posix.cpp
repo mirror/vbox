@@ -391,10 +391,26 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
                 }
             }
 
-            /* As a last resort, try the TTY's name instead. */
+            /** @todo Should we - distinguished from the login service - also set the hostname as PAM_TTY?
+             *        The pam_access and pam_systemd talk about this. Similarly, SSH and cron use "ssh" and "cron" for PAM_TTY
+             *        (see PAM_TTY_KLUDGE). */
+#ifdef IPRT_WITH_PAM_TTY_KLUDGE
             if (RT_FAILURE(rc2))
             {
-                if (RTStrPrintf2(szTTY, sizeof(szTTY), "%s", ttyname(0)) <= 0)
+                if (!RTStrICmp(pszPamService, "access")) /* Access management needed? */
+                {
+                    int err = gethostname(szTTY, sizeof(szTTY));
+                    if (err == 0)
+                        rc2 = VINF_SUCCESS;
+                }
+            }
+#endif
+            /* As a last resort, try stdin's TTY name instead (if any). */
+            if (RT_FAILURE(rc2))
+            {
+                if (RTStrPrintf2(szTTY, sizeof(szTTY), "%s", ttyname(STDIN_FILENO)) > 0)
+                    rc2 = VINF_SUCCESS;
+                else
                     rc2 = VERR_BUFFER_OVERFLOW;
             }
 
