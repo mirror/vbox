@@ -193,7 +193,7 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
         || g_fDryrun)
         return VINF_SUCCESS; /* Nothing to do. */
 
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr <IMachine> machine;
     CHECK_ERROR_RET(g_pVirtualBox, FindMachine(strUuid.raw(),
                                                machine.asOutParam()), VERR_NOT_FOUND);
@@ -247,16 +247,16 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
 
                         /* First pause so we don't trigger a live save which needs more time/resources. */
                         bool fPaused = false;
-                        rc = console->Pause();
-                        if (FAILED(rc))
+                        hrc = console->Pause();
+                        if (FAILED(hrc))
                         {
                             bool fError = true;
-                            if (rc == VBOX_E_INVALID_VM_STATE)
+                            if (hrc == VBOX_E_INVALID_VM_STATE)
                             {
                                 /* Check if we are already paused. */
                                 CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
                                 /* The error code was lost by the previous instruction. */
-                                rc = VBOX_E_INVALID_VM_STATE;
+                                hrc = VBOX_E_INVALID_VM_STATE;
                                 if (machineState != MachineState_Paused)
                                 {
                                     serviceLog("apimon: Machine \"%ls\" in invalid state %d -- %s\n",
@@ -273,14 +273,14 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                         }
 
                         CHECK_ERROR(sessionMachine, SaveState(progress.asOutParam()));
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             progress->WaitForCompletion(cMsTimeout);
                             CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
                                                  strUuid.raw()));
                         }
 
-                        if (SUCCEEDED(rc))
+                        if (SUCCEEDED(hrc))
                         {
                             serviceLogVerbose(("apimon: State of machine \"%ls\" saved, powering off ...\n", strUuid.raw()));
                             CHECK_ERROR_BREAK(console, PowerButton());
@@ -313,7 +313,7 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
 
 
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR;
+    return SUCCEEDED(hrc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR;
 }
 
 static bool apimonHandleVM(const PVBOXWATCHDOG_MACHINE pMachine)
@@ -457,7 +457,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char *argv[], int *pi
 
 static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     do
     {
@@ -517,12 +517,12 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
 
     } while (0);
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         g_uAPIMonIslnLastBeatMS = 0;
     }
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better rc! */
+    return SUCCEEDED(hrc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better rc! */
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
@@ -535,7 +535,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
     uLastRun = uNow;
 
     int vrc = VINF_SUCCESS;
-    HRESULT rc;
+    HRESULT hrc;
 
 #ifdef DEBUG
     serviceLogVerbose(("apimon: Checking for API heartbeat (%RU64ms) ...\n",
@@ -547,7 +547,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
         Bstr strHeartbeat;
         CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Heartbeat").raw(),
                                                       strHeartbeat.asOutParam()));
-        if (   SUCCEEDED(rc)
+        if (   SUCCEEDED(hrc)
             && !strHeartbeat.isEmpty()
             && g_strAPIMonIslnLastBeat.compare(strHeartbeat, Bstr::CaseSensitive))
         {
@@ -570,7 +570,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
         }
     } while (0);
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
         vrc = VERR_COM_IPRT_ERROR;
 
     return vrc;

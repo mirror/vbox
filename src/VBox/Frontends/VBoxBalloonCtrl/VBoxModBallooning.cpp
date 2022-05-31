@@ -188,9 +188,9 @@ static uint32_t balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
     char szSource[64];
 
     Bstr strValue;
-    HRESULT hr = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
-                                             strValue.asOutParam());
-    if (   SUCCEEDED(hr)
+    HRESULT hrc = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
+                                              strValue.asOutParam());
+    if (   SUCCEEDED(hrc)
         && strValue.isNotEmpty())
     {
         cMbBalloonMax = Utf8Str(strValue).toUInt32();
@@ -253,9 +253,9 @@ static uint32_t balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
     char szSource[64];
 
     Bstr strValue;
-    HRESULT hr = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax").raw(),
-                                           strValue.asOutParam());
-    if (   SUCCEEDED(hr)
+    HRESULT hrc = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax").raw(),
+                                            strValue.asOutParam());
+    if (   SUCCEEDED(hrc)
         && strValue.isNotEmpty())
     {
         cMbBalloonReq = Utf8Str(strValue).toUInt32();
@@ -264,9 +264,9 @@ static uint32_t balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
     }
     else
     {
-        hr = rptrMachine->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
-                                       strValue.asOutParam());
-        if (   SUCCEEDED(hr)
+        hrc = rptrMachine->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
+                                        strValue.asOutParam());
+        if (   SUCCEEDED(hrc)
             && strValue.isNotEmpty())
         {
             cMbBalloonReq = Utf8Str(strValue).toUInt32();
@@ -275,7 +275,7 @@ static uint32_t balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
         }
     }
 
-    if (   FAILED(hr)
+    if (   FAILED(hrc)
         || strValue.isEmpty())
     {
         cMbBalloonReq = 0;
@@ -302,9 +302,9 @@ static bool balloonIsEnabled(PVBOXWATCHDOG_MACHINE pMachine)
     char szSource[64];
 
     Bstr strValue;
-    HRESULT hr = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonEnabled").raw(),
-                                             strValue.asOutParam());
-    if (   SUCCEEDED(hr)
+    HRESULT hrc = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonEnabled").raw(),
+                                              strValue.asOutParam());
+    if (   SUCCEEDED(hrc)
         && strValue.isNotEmpty())
     {
        if (g_fVerbose)
@@ -312,9 +312,9 @@ static bool balloonIsEnabled(PVBOXWATCHDOG_MACHINE pMachine)
     }
     else
     {
-        hr = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonEnabled").raw(),
-                                       strValue.asOutParam());
-        if (SUCCEEDED(hr))
+        hrc = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonEnabled").raw(),
+                                        strValue.asOutParam());
+        if (SUCCEEDED(hrc))
         {
             if (g_fVerbose)
                 RTStrPrintf(szSource, sizeof(szSource), "per-VM extra-data");
@@ -378,7 +378,7 @@ int balloonMachineSetup(const Bstr& strUuid)
         Bstr strMetricNames(L"Guest/RAM/Usage");
         strMetricNames.cloneTo(&metricNames[0]);
 
-        HRESULT rc = m.queryInterfaceTo(&metricObjects[0]);
+        HRESULT hrc = m.queryInterfaceTo(&metricObjects[0]);
 
 #ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
         CHECK_ERROR_BREAK(g_pPerfCollector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
@@ -396,7 +396,7 @@ int balloonMachineSetup(const Bstr& strUuid)
                                              1 /* One sample is enough */,
                                              ComSafeArrayAsOutParam(metricAffected)));
 #endif
-        if (FAILED(rc))
+        if (FAILED(hrc))
             vrc = VERR_COM_IPRT_ERROR; /** @todo Find better rc! */
 
     } while (0);
@@ -514,7 +514,7 @@ static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, uint32_t cMbBalloonCur
         return VINF_SUCCESS;
 
     /* Open a session for the VM. */
-    HRESULT rc;
+    HRESULT hrc;
     CHECK_ERROR_RET(pMachine->machine, LockMachine(g_pSession, LockType_Shared), VERR_ACCESS_DENIED);
 
     do
@@ -524,13 +524,13 @@ static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, uint32_t cMbBalloonCur
         CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
 
         ComPtr <IGuest> guest;
-        rc = console->COMGETTER(Guest)(guest.asOutParam());
-        if (SUCCEEDED(rc))
+        hrc = console->COMGETTER(Guest)(guest.asOutParam());
+        if (SUCCEEDED(hrc))
             CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)((LONG)cMbBalloonCur));
         else
             serviceLog("Error: Unable to set new balloon size %RU32 for machine '%ls', rc=%Rhrc\n",
-                       cMbBalloonCur, pMachine->strName.raw(), rc);
-        if (FAILED(rc))
+                       cMbBalloonCur, pMachine->strName.raw(), hrc);
+        if (FAILED(hrc))
             vrc = VERR_COM_IPRT_ERROR;
 
     } while (0);

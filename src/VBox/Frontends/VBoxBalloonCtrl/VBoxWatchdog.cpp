@@ -188,11 +188,11 @@ class VirtualBoxEventListener
 
                     Bstr uuid;
                     BOOL fRegistered;
-                    HRESULT hr = pEvent->COMGETTER(Registered)(&fRegistered);
-                    if (SUCCEEDED(hr))
-                        hr = pEvent->COMGETTER(MachineId)(uuid.asOutParam());
+                    HRESULT hrc = pEvent->COMGETTER(Registered)(&fRegistered);
+                    if (SUCCEEDED(hrc))
+                        hrc = pEvent->COMGETTER(MachineId)(uuid.asOutParam());
 
-                    if (SUCCEEDED(hr))
+                    if (SUCCEEDED(hrc))
                     {
                         int rc = RTCritSectEnter(&g_csMachines);
                         if (RT_SUCCESS(rc))
@@ -217,11 +217,11 @@ class VirtualBoxEventListener
                     MachineState_T machineState;
                     Bstr uuid;
 
-                    HRESULT hr = pEvent->COMGETTER(State)(&machineState);
-                    if (SUCCEEDED(hr))
-                        hr = pEvent->COMGETTER(MachineId)(uuid.asOutParam());
+                    HRESULT hrc = pEvent->COMGETTER(State)(&machineState);
+                    if (SUCCEEDED(hrc))
+                        hrc = pEvent->COMGETTER(MachineId)(uuid.asOutParam());
 
-                    if (SUCCEEDED(hr))
+                    if (SUCCEEDED(hrc))
                     {
                         int rc = RTCritSectEnter(&g_csMachines);
                         if (RT_SUCCESS(rc))
@@ -348,7 +348,7 @@ static void signalHandlerUninstall()
  */
 static int machineAdd(const Bstr &strUuid)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     /** @todo Add exception handling! */
 
@@ -422,7 +422,7 @@ static int machineAdd(const Bstr &strUuid)
                 rc2 = g_aModules[j].pDesc->pfnOnMachineRegistered(strUuid);
                 if (RT_FAILURE(rc2))
                     serviceLog("OnMachineRegistered: Module '%s' reported an error: %Rrc\n",
-                               g_aModules[j].pDesc->pszName, rc);
+                               g_aModules[j].pDesc->pszName, hrc);
                 /* Keep going. */
             }
 
@@ -430,7 +430,7 @@ static int machineAdd(const Bstr &strUuid)
 
     /** @todo Add std exception handling! */
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better error! */
+    return SUCCEEDED(hrc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better error! */
 }
 
 static int machineDestroy(const Bstr &strUuid)
@@ -695,7 +695,7 @@ static int watchdogShutdownModules()
 
 static RTEXITCODE watchdogMain(/*HandlerArg *a */)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     do
     {
@@ -796,11 +796,11 @@ static RTEXITCODE watchdogMain(/*HandlerArg *a */)
         AssertRC(vrc);
 
         if (RT_FAILURE(vrc))
-            rc = VBOX_E_IPRT_ERROR;
+            hrc = VBOX_E_IPRT_ERROR;
 
     } while (0);
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 void serviceLog(const char *pszFormat, ...)
@@ -933,17 +933,17 @@ static int watchdogSetup()
     /*
      * Setup VirtualBox + session interfaces.
      */
-    HRESULT rc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
-    if (SUCCEEDED(rc))
+    HRESULT hrc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        rc = g_pSession.createInprocObject(CLSID_Session);
-        if (FAILED(rc))
-            RTMsgError("Failed to create a session object (rc=%Rhrc)!", rc);
+        hrc = g_pSession.createInprocObject(CLSID_Session);
+        if (FAILED(hrc))
+            RTMsgError("Failed to create a session object (rc=%Rhrc)!", hrc);
     }
     else
-        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", rc);
+        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", hrc);
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return VERR_COM_OBJECT_NOT_FOUND;
 
     /*

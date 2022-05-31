@@ -868,7 +868,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    HRESULT rc;
+    HRESULT hrc;
     int vrc;
     Guid uuidVM;
     char *vmName = NULL;
@@ -1385,9 +1385,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
-    rc = com::Initialize();
+    hrc = com::Initialize();
 #ifdef VBOX_WITH_XPCOM
-    if (rc == NS_ERROR_FILE_ACCESS_DENIED)
+    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
     {
         char szHome[RTPATH_MAX] = "";
         com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
@@ -1395,9 +1395,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 #endif
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
-        RTPrintf("Error: COM initialization failed (rc=%Rhrc)!\n", rc);
+        RTPrintf("Error: COM initialization failed (rc=%Rhrc)!\n", hrc);
         return 1;
     }
 
@@ -1417,35 +1417,35 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr<IMachine> pMachine;
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
 
-    rc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
-    if (FAILED(rc))
+    hrc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+    if (FAILED(hrc))
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
             PrintError("Failed to create VirtualBoxClient object",
                        info.getText().raw(), info.getComponent().raw());
         else
-            RTPrintf("Failed to create VirtualBoxClient object! No error information available (rc=%Rhrc).\n", rc);
+            RTPrintf("Failed to create VirtualBoxClient object! No error information available (rc=%Rhrc).\n", hrc);
         goto leave;
     }
 
-    rc = pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam());
-    if (FAILED(rc))
+    hrc = pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam());
+    if (FAILED(hrc))
     {
-        RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", rc);
+        RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", hrc);
         goto leave;
     }
-    rc = pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
-    if (FAILED(rc))
+    hrc = pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
+    if (FAILED(hrc))
     {
-        RTPrintf("Failed to get session object (rc=%Rhrc)!\n", rc);
+        RTPrintf("Failed to get session object (rc=%Rhrc)!\n", hrc);
         goto leave;
     }
 
     if (pcszSettingsPw)
     {
         CHECK_ERROR(pVirtualBox, SetSettingsSecret(Bstr(pcszSettingsPw).raw()));
-        if (FAILED(rc))
+        if (FAILED(hrc))
             goto leave;
     }
     else if (pcszSettingsPwFile)
@@ -1460,8 +1460,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     if (uuidVM.isValid())
     {
-        rc = pVirtualBox->FindMachine(uuidVM.toUtf16().raw(), pMachine.asOutParam());
-        if (FAILED(rc) || !pMachine)
+        hrc = pVirtualBox->FindMachine(uuidVM.toUtf16().raw(), pMachine.asOutParam());
+        if (FAILED(hrc) || !pMachine)
         {
             RTPrintf("Error: machine with the given ID not found!\n");
             goto leave;
@@ -1472,8 +1472,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /*
          * Do we have a name but no UUID?
          */
-        rc = pVirtualBox->FindMachine(Bstr(vmName).raw(), pMachine.asOutParam());
-        if ((rc == S_OK) && pMachine)
+        hrc = pVirtualBox->FindMachine(Bstr(vmName).raw(), pMachine.asOutParam());
+        if ((hrc == S_OK) && pMachine)
         {
             Bstr bstrId;
             pMachine->COMGETTER(Id)(bstrId.asOutParam());
@@ -1491,15 +1491,15 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = pVirtualBoxClient->CheckMachineError(pMachine);
-    if (FAILED(rc))
+    hrc = pVirtualBoxClient->CheckMachineError(pMachine);
+    if (FAILED(hrc))
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
             PrintError("The VM has errors",
                        info.getText().raw(), info.getComponent().raw());
         else
-            RTPrintf("Failed to check for VM errors! No error information available (rc=%Rhrc).\n", rc);
+            RTPrintf("Failed to check for VM errors! No error information available (rc=%Rhrc).\n", hrc);
         goto leave;
     }
 
@@ -1519,20 +1519,20 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
         {
             ComPtr<IProgress> progress;
-            rc = pMachine->LaunchVMProcess(pSession, Bstr("headless").raw(), ComSafeArrayNullInParam(), progress.asOutParam());
-            if (SUCCEEDED(rc) && !progress.isNull())
+            hrc = pMachine->LaunchVMProcess(pSession, Bstr("headless").raw(), ComSafeArrayNullInParam(), progress.asOutParam());
+            if (SUCCEEDED(hrc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM to power on...\n");
-                rc = progress->WaitForCompletion(-1);
-                if (SUCCEEDED(rc))
+                hrc = progress->WaitForCompletion(-1);
+                if (SUCCEEDED(hrc))
                 {
                     BOOL completed = true;
-                    rc = progress->COMGETTER(Completed)(&completed);
-                    if (SUCCEEDED(rc))
+                    hrc = progress->COMGETTER(Completed)(&completed);
+                    if (SUCCEEDED(hrc))
                     {
                         LONG iRc;
-                        rc = progress->COMGETTER(ResultCode)(&iRc);
-                        if (SUCCEEDED(rc))
+                        hrc = progress->COMGETTER(ResultCode)(&iRc);
+                        if (SUCCEEDED(hrc))
                         {
                             if (FAILED(iRc))
                             {
@@ -1553,21 +1553,21 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             RTPrintf("Error: failed to power up VM! No error text available.\n");
             goto leave;
         }
 
-        rc = pMachine->LockMachine(pSession, LockType_Shared);
+        hrc = pMachine->LockMachine(pSession, LockType_Shared);
     }
     else
     {
         pSession->COMSETTER(Name)(Bstr("GUI/SDL").raw());
-        rc = pMachine->LockMachine(pSession, LockType_VM);
+        hrc = pMachine->LockMachine(pSession, LockType_VM);
     }
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
@@ -1693,17 +1693,17 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /* Assume it's a host drive name */
             ComPtr<IHost> pHost;
             CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()));
-            rc = pHost->FindHostFloppyDrive(bstrFdaFile.raw(),
+            hrc = pHost->FindHostFloppyDrive(bstrFdaFile.raw(),
                                             pMedium.asOutParam());
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
                 /* try to find an existing one */
-                rc = pVirtualBox->OpenMedium(bstrFdaFile.raw(),
+                hrc = pVirtualBox->OpenMedium(bstrFdaFile.raw(),
                                              DeviceType_Floppy,
                                              AccessMode_ReadWrite,
                                              FALSE /* fForceNewUuid */,
                                              pMedium.asOutParam());
-                if (FAILED(rc))
+                if (FAILED(hrc))
                 {
                     /* try to add to the list */
                     RTPrintf("Adding floppy image '%s'...\n", pcszFdaFile);
@@ -1755,7 +1755,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                             DeviceType_Floppy, pMedium));
     }
     while (0);
-    if (FAILED(rc))
+    if (FAILED(hrc))
         goto leave;
 
     /*
@@ -1778,16 +1778,16 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /* Assume it's a host drive name */
             ComPtr<IHost> pHost;
             CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()));
-            rc = pHost->FindHostDVDDrive(bstrCdromFile.raw(), pMedium.asOutParam());
-            if (FAILED(rc))
+            hrc = pHost->FindHostDVDDrive(bstrCdromFile.raw(), pMedium.asOutParam());
+            if (FAILED(hrc))
             {
                 /* try to find an existing one */
-                rc = pVirtualBox->OpenMedium(bstrCdromFile.raw(),
+                hrc = pVirtualBox->OpenMedium(bstrCdromFile.raw(),
                                             DeviceType_DVD,
                                             AccessMode_ReadWrite,
                                             FALSE /* fForceNewUuid */,
                                             pMedium.asOutParam());
-                if (FAILED(rc))
+                if (FAILED(hrc))
                 {
                     /* try to add to the list */
                     RTPrintf("Adding ISO image '%s'...\n", pcszCdromFile);
@@ -1839,7 +1839,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                             DeviceType_DVD, pMedium));
     }
     while (0);
-    if (FAILED(rc))
+    if (FAILED(hrc))
         goto leave;
 
     if (fDiscardState)
@@ -1866,11 +1866,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
             ComPtr<ISnapshot> pCurrentSnapshot;
             CHECK_ERROR(gpMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
                 goto leave;
 
             CHECK_ERROR(gpMachine, RestoreSnapshot(pCurrentSnapshot, gpProgress.asOutParam()));
-            rc = gpProgress->WaitForCompletion(-1);
+            hrc = gpProgress->WaitForCompletion(-1);
         }
     }
 
@@ -1890,8 +1890,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // set the boot drive
     if (bootDevice != DeviceType_Null)
     {
-        rc = gpMachine->SetBootOrder(1, bootDevice);
-        if (rc != S_OK)
+        hrc = gpMachine->SetBootOrder(1, bootDevice);
+        if (hrc != S_OK)
         {
             RTPrintf("Error: could not set boot device, using default.\n");
         }
@@ -1900,8 +1900,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // set the memory size if not default
     if (memorySize)
     {
-        rc = gpMachine->COMSETTER(MemorySize)(memorySize);
-        if (rc != S_OK)
+        hrc = gpMachine->COMSETTER(MemorySize)(memorySize);
+        if (hrc != S_OK)
         {
             ULONG ramSize = 0;
             gpMachine->COMGETTER(MemorySize)(&ramSize);
@@ -1909,8 +1909,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
-    rc = gpMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
-    if (rc != S_OK)
+    hrc = gpMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    if (hrc != S_OK)
     {
         RTPrintf("Error: could not get graphics adapter object\n");
         goto leave;
@@ -1918,8 +1918,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     if (vramSize)
     {
-        rc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramSize);
-        if (rc != S_OK)
+        hrc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramSize);
+        if (hrc != S_OK)
         {
             pGraphicsAdapter->COMGETTER(VRAMSize)((ULONG*)&vramSize);
             RTPrintf("Error: could not set VRAM size, using current setting of %d MBytes\n", vramSize);
@@ -1950,9 +1950,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         // create our SDL framebuffer instance
         gpFramebuffer[i].createObject();
-        rc = gpFramebuffer[i]->init(i, fFullscreen, fResizable, fShowSDLConfig, false,
+        hrc = gpFramebuffer[i]->init(i, fFullscreen, fResizable, fShowSDLConfig, false,
                                     fixedWidth, fixedHeight, fixedBPP, fSeparate);
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             RTPrintf("Error: could not create framebuffer object!\n");
             goto leave;
@@ -2030,8 +2030,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
-        rc = gpDisplay->AttachFramebuffer(i, gpFramebuffer[i], gaFramebufferId[i].asOutParam());
-        if (FAILED(rc))
+        hrc = gpDisplay->AttachFramebuffer(i, gpFramebuffer[i], gaFramebufferId[i].asOutParam());
+        if (FAILED(hrc))
         {
             RTPrintf("Error: could not register framebuffer object!\n");
             goto leave;
@@ -2039,7 +2039,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ULONG dummy;
         LONG xOrigin, yOrigin;
         GuestMonitorStatus_T monitorStatus;
-        rc = gpDisplay->GetScreenResolution(i, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
+        hrc = gpDisplay->GetScreenResolution(i, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
 
@@ -2090,31 +2090,31 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     if (pszPortVRDP)
     {
-        rc = gpMachine->COMGETTER(VRDEServer)(gpVRDEServer.asOutParam());
-        AssertMsg((rc == S_OK) && gpVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
+        hrc = gpMachine->COMGETTER(VRDEServer)(gpVRDEServer.asOutParam());
+        AssertMsg((hrc == S_OK) && gpVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", hrc));
         if (gpVRDEServer)
         {
             // has a non standard VRDP port been requested?
             if (strcmp(pszPortVRDP, "0"))
             {
-                rc = gpVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(pszPortVRDP).raw());
-                if (rc != S_OK)
+                hrc = gpVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(pszPortVRDP).raw());
+                if (hrc != S_OK)
                 {
-                    RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);
+                    RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", hrc);
                     goto leave;
                 }
             }
             // now enable VRDP
-            rc = gpVRDEServer->COMSETTER(Enabled)(TRUE);
-            if (rc != S_OK)
+            hrc = gpVRDEServer->COMSETTER(Enabled)(TRUE);
+            if (hrc != S_OK)
             {
-                RTPrintf("Error: could not enable VRDP server! rc = 0x%x\n", rc);
+                RTPrintf("Error: could not enable VRDP server! rc = 0x%x\n", hrc);
                 goto leave;
             }
         }
     }
 
-    rc = E_FAIL;
+    hrc = E_FAIL;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
     if (u32WarpDrive != 0)
     {
@@ -2187,8 +2187,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (!fSeparate)
     {
         LogFlow(("Powering up the VM...\n"));
-        rc = gpConsole->PowerUp(gpProgress.asOutParam());
-        if (rc != S_OK)
+        hrc = gpConsole->PowerUp(gpProgress.asOutParam());
+        if (hrc != S_OK)
         {
             com::ErrorInfo info(gpConsole, COM_IIDOF(IConsole));
             if (info.isBasicAvailable())
@@ -2227,8 +2227,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     MachineState_T machineState;
     do
     {
-        rc = gpMachine->COMGETTER(State)(&machineState);
-        if (    rc == S_OK
+        hrc = gpMachine->COMGETTER(State)(&machineState);
+        if (    hrc == S_OK
             &&  (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
                  || machineState == MachineState_TeleportingIn
@@ -2279,7 +2279,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         /* update xOrigin, yOrigin -> mouse */
                         ULONG dummy;
                         GuestMonitorStatus_T monitorStatus;
-                        rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
+                        hrc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
                         gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                         break;
                     }
@@ -2324,7 +2324,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
         eventQ->processEventQueue(0);
-    } while (   rc == S_OK
+    } while (   hrc == S_OK
              && (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
                  || machineState == MachineState_TeleportingIn
@@ -2346,7 +2346,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (info.isBasicAvailable())
             PrintError("Failed to power up VM", info.getText().raw());
         else
-            RTPrintf("Error: failed to power up VM! No error text available (rc = 0x%x state = %d)\n", rc, machineState);
+            RTPrintf("Error: failed to power up VM! No error text available (rc = 0x%x state = %d)\n", hrc, machineState);
         goto leave;
     }
 
@@ -2354,7 +2354,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // note that there's a possible race condition here...
     pConsoleListener->getWrapped()->ignorePowerOffEvents(false);
 
-    rc = gpConsole->COMGETTER(Keyboard)(gpKeyboard.asOutParam());
+    hrc = gpConsole->COMGETTER(Keyboard)(gpKeyboard.asOutParam());
     if (!gpKeyboard)
     {
         RTPrintf("Error: could not get keyboard object!\n");
@@ -2840,7 +2840,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 /* update xOrigin, yOrigin -> mouse */
                 ULONG dummy;
                 GuestMonitorStatus_T monitorStatus;
-                rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
+                hrc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
                 gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                 break;
             }
@@ -2936,7 +2936,7 @@ leave:
 #endif /* VBOX_WITH_XPCOM */
 
     if (gpVRDEServer)
-        rc = gpVRDEServer->COMSETTER(Enabled)(FALSE);
+        hrc = gpVRDEServer->COMSETTER(Enabled)(FALSE);
 
     /*
      * Get the machine state.
@@ -2967,16 +2967,16 @@ leave:
             BOOL completed;
             CHECK_ERROR_BREAK(pProgress, COMGETTER(Completed)(&completed));
             ASSERT(completed);
-            LONG hrc;
-            CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&hrc));
-            if (FAILED(hrc))
+            LONG hrc2;
+            CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&hrc2));
+            if (FAILED(hrc2))
             {
                 com::ErrorInfo info;
                 if (info.isFullAvailable())
                     PrintError("Failed to power down VM",
                                info.getText().raw(), info.getComponent().raw());
                 else
-                    RTPrintf("Failed to power down virtual machine! No error information available (rc = 0x%x).\n", hrc);
+                    RTPrintf("Failed to power down virtual machine! No error information available (rc=%Rhrc).\n", hrc2);
                 break;
             }
         } while (0);
@@ -3000,15 +3000,15 @@ leave:
         && machineState != MachineState_Saved
         && machineState != MachineState_AbortedSaved)
     {
-        rc = gpMachine->DiscardSettings();
-        AssertMsg(SUCCEEDED(rc), ("DiscardSettings %Rhrc, machineState %d\n", rc, machineState));
+        hrc = gpMachine->DiscardSettings();
+        AssertMsg(SUCCEEDED(hrc), ("DiscardSettings %Rhrc, machineState %d\n", hrc, machineState));
     }
 
     /* close the session */
     if (sessionOpened)
     {
-        rc = pSession->UnlockMachine();
-        AssertComRC(rc);
+        hrc = pSession->UnlockMachine();
+        AssertComRC(hrc);
     }
 
 #ifndef VBOX_WITH_SDL2
@@ -3120,7 +3120,7 @@ leave:
 
     LogFlow(("Returning from main()!\n"));
     RTLogFlush(NULL);
-    return FAILED(rc) ? 1 : 0;
+    return FAILED(hrc) ? 1 : 0;
 }
 
 #ifndef VBOX_WITH_HARDENING
@@ -4124,10 +4124,10 @@ void SaveState(void)
     RTThreadYield();
     UpdateTitlebar(TITLEBAR_SAVE);
     gpProgress = NULL;
-    HRESULT rc = gpMachine->SaveState(gpProgress.asOutParam());
-    if (FAILED(rc))
+    HRESULT hrc = gpMachine->SaveState(gpProgress.asOutParam());
+    if (FAILED(hrc))
     {
-        RTPrintf("Error saving state! rc = 0x%x\n", rc);
+        RTPrintf("Error saving state! rc=%Rhrc\n", hrc);
         return;
     }
     Assert(gpProgress);
@@ -4141,12 +4141,12 @@ void SaveState(void)
     for (;;)
     {
         BOOL fCompleted = false;
-        rc = gpProgress->COMGETTER(Completed)(&fCompleted);
-        if (FAILED(rc) || fCompleted)
+        hrc = gpProgress->COMGETTER(Completed)(&fCompleted);
+        if (FAILED(hrc) || fCompleted)
             break;
         ULONG cPercentNow;
-        rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
-        if (FAILED(rc))
+        hrc = gpProgress->COMGETTER(Percent)(&cPercentNow);
+        if (FAILED(hrc))
             break;
         if (cPercentNow != cPercent)
         {
@@ -4155,8 +4155,8 @@ void SaveState(void)
         }
 
         /* wait */
-        rc = gpProgress->WaitForCompletion(100);
-        if (FAILED(rc))
+        hrc = gpProgress->WaitForCompletion(100);
+        if (FAILED(hrc))
             break;
         /// @todo process gui events.
     }
@@ -4173,12 +4173,12 @@ void SaveState(void)
          * Check for completion.
          */
         BOOL fCompleted = false;
-        rc = gpProgress->COMGETTER(Completed)(&fCompleted);
-        if (FAILED(rc) || fCompleted)
+        hrc = gpProgress->COMGETTER(Completed)(&fCompleted);
+        if (FAILED(hrc) || fCompleted)
             break;
         ULONG cPercentNow;
-        rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
-        if (FAILED(rc))
+        hrc = gpProgress->COMGETTER(Percent)(&cPercentNow);
+        if (FAILED(hrc))
             break;
         if (cPercentNow != cPercent)
         {
@@ -4237,8 +4237,8 @@ void SaveState(void)
      * What's the result of the operation?
      */
     LONG lrc;
-    rc = gpProgress->COMGETTER(ResultCode)(&lrc);
-    if (FAILED(rc))
+    hrc = gpProgress->COMGETTER(ResultCode)(&lrc);
+    if (FAILED(hrc))
         lrc = ~0;
     if (!lrc)
     {
@@ -4323,8 +4323,8 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
             else if (machineState == MachineState_Restoring)
             {
                 ULONG cPercentNow;
-                HRESULT rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
-                if (SUCCEEDED(rc))
+                HRESULT hrc = gpProgress->COMGETTER(Percent)(&cPercentNow);
+                if (SUCCEEDED(hrc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring %d%%...", (int)cPercentNow);
                 else
@@ -4334,8 +4334,8 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
             else if (machineState == MachineState_TeleportingIn)
             {
                 ULONG cPercentNow;
-                HRESULT rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
-                if (SUCCEEDED(rc))
+                HRESULT hrc = gpProgress->COMGETTER(Percent)(&cPercentNow);
+                if (SUCCEEDED(hrc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Teleporting %d%%...", (int)cPercentNow);
                 else
@@ -4872,15 +4872,15 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             char pszSnapshotName[20];
             RTStrPrintf(pszSnapshotName, sizeof(pszSnapshotName), "Snapshot %d", cSnapshots + 1);
             gpProgress = NULL;
-            HRESULT rc;
+            HRESULT hrc;
             Bstr snapId;
             CHECK_ERROR(gpMachine, TakeSnapshot(Bstr(pszSnapshotName).raw(),
                                                 Bstr("Taken by VBoxSDL").raw(),
                                                 TRUE, snapId.asOutParam(),
                                                 gpProgress.asOutParam()));
-            if (FAILED(rc))
+            if (FAILED(hrc))
             {
-                RTPrintf("Error taking snapshot! rc = 0x%x\n", rc);
+                RTPrintf("Error taking snapshot! rc=%Rhrc\n", hrc);
                 /* continue operation */
                 return VINF_SUCCESS;
             }
@@ -4892,12 +4892,12 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             for (;;)
             {
                 BOOL fCompleted = false;
-                rc = gpProgress->COMGETTER(Completed)(&fCompleted);
-                if (FAILED(rc) || fCompleted)
+                hrc = gpProgress->COMGETTER(Completed)(&fCompleted);
+                if (FAILED(hrc) || fCompleted)
                     break;
                 ULONG cPercentNow;
-                rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
-                if (FAILED(rc))
+                hrc = gpProgress->COMGETTER(Percent)(&cPercentNow);
+                if (FAILED(hrc))
                     break;
                 if (cPercentNow != cPercent)
                 {
@@ -4906,8 +4906,8 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
                 }
 
                 /* wait */
-                rc = gpProgress->WaitForCompletion(100);
-                if (FAILED(rc))
+                hrc = gpProgress->WaitForCompletion(100);
+                if (FAILED(hrc))
                     break;
                 /// @todo process gui events.
             }
