@@ -86,7 +86,7 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 
 #define CHECK_ERROR_L(iface, method) \
     do { \
-        rc = iface->method; \
+        hrc = iface->method; \
         if (FAILED(rc)) \
             RTPrintf("warning: %s->%s failed on line %u with hrc=%Rhrc\n", #iface, #method, __LINE__, rc);\
     } while (0)
@@ -99,32 +99,32 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 
 static int tstStartVM(IVirtualBox *pVBox, ISession *pSession, Bstr machineID, bool fSkipUnlock)
 {
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IProgress> progress;
     ComPtr<IMachine> machine;
     Bstr machineName;
 
-    rc = TST_COM_EXPR(pVBox->FindMachine(machineID.raw(), machine.asOutParam()));
-    if(SUCCEEDED(rc))
-        rc = TST_COM_EXPR(machine->COMGETTER(Name)(machineName.asOutParam()));
-    if(SUCCEEDED(rc))
+    hrc = TST_COM_EXPR(pVBox->FindMachine(machineID.raw(), machine.asOutParam()));
+    if(SUCCEEDED(hrc))
+        hrc = TST_COM_EXPR(machine->COMGETTER(Name)(machineName.asOutParam()));
+    if(SUCCEEDED(hrc))
     {
-        rc = machine->LaunchVMProcess(pSession, Bstr("headless").raw(),
+        hrc = machine->LaunchVMProcess(pSession, Bstr("headless").raw(),
                                       ComSafeArrayNullInParam(), progress.asOutParam());
     }
-    if (SUCCEEDED(rc) && !progress.isNull())
+    if (SUCCEEDED(hrc) && !progress.isNull())
     {
         CHECK_ERROR_L(progress, WaitForCompletion(-1));
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             BOOL completed = true;
             CHECK_ERROR_L(progress, COMGETTER(Completed)(&completed));
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
             {
                 Assert(completed);
                 LONG iRc;
                 CHECK_ERROR_L(progress, COMGETTER(ResultCode)(&iRc));
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
                 {
                     if (FAILED(iRc))
                     {
@@ -141,7 +141,7 @@ static int tstStartVM(IVirtualBox *pVBox, ISession *pSession, Bstr machineID, bo
         else
             RTPrintf("Session unlock skipped.\n");
     }
-    return rc;
+    return hrc;
 }
 
 
