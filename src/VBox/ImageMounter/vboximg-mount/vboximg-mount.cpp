@@ -270,10 +270,10 @@ briefUsage()
 static int
 vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *outargs)
 {
-    NOREF(data);
-    NOREF(arg);
-    NOREF(optKey);
-    NOREF(outargs);
+    RT_NOREF(data);
+    RT_NOREF(arg);
+    RT_NOREF(optKey);
+    RT_NOREF(outargs);
 
     /*
      * Apparently this handler is only called for arguments FUSE can't parse,
@@ -312,8 +312,8 @@ static int vboxImgMntVfsObjQueryFromPath(const char *pszPath, PRTVFSOBJ phVfsObj
             {
                 /* Retrieve the accessed volume and return the stat data. */
                 uint32_t idxVol;
-                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][3], 10, &idxVol);
-                if (   rcIprt == VINF_SUCCESS
+                int vrc = RTStrToUInt32Full(&pPathSplit->apszComps[1][3], 10, &idxVol);
+                if (   vrc == VINF_SUCCESS
                     && idxVol < g_cVolumes
                     && g_paVolumes[idxVol].hVfsFileVol != NIL_RTVFSFILE)
                     *phVfsObj = RTVfsObjFromFile(g_paVolumes[idxVol].hVfsFileVol);
@@ -324,8 +324,8 @@ static int vboxImgMntVfsObjQueryFromPath(const char *pszPath, PRTVFSOBJ phVfsObj
             {
                 /* Retrieve the accessed volume and return the stat data. */
                 uint32_t idxVol;
-                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][2], 10, &idxVol);
-                if (   rcIprt == VINF_SUCCESS
+                int vrc = RTStrToUInt32Full(&pPathSplit->apszComps[1][2], 10, &idxVol);
+                if (   vrc == VINF_SUCCESS
                     && idxVol < g_cVolumes
                     && g_paVolumes[idxVol].hVfsDirRoot != NIL_RTVFSDIR)
                     *phVfsObj = RTVfsObjFromDir(g_paVolumes[idxVol].hVfsDirRoot);
@@ -389,8 +389,8 @@ static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
     int rc = 0;
 
     RTVFSOBJ hVfsObj;
-    int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
-    if (RT_SUCCESS(rc))
+    int vrc = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
+    if (RT_SUCCESS(vrc))
     {
         uint32_t fNotSup = 0;
 
@@ -419,7 +419,6 @@ static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
                 rc = -ENOTDIR;
 # endif
 #endif
-
             if (!rc)
             {
                 pInfo->fh = (uintptr_t)hVfsObj;
@@ -432,7 +431,7 @@ static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
         RTVfsObjRelease(hVfsObj);
     }
     else
-        rc = -RTErrConvertToErrno(rcIprt);
+        rc = -RTErrConvertToErrno(vrc);
 
     LogFlowFunc(("rc=%d \"%s\"\n", rc, pszPath));
     return rc;
@@ -442,7 +441,7 @@ static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
 /** @copydoc fuse_operations::release */
 static int vboximgOp_release(const char *pszPath, struct fuse_file_info *pInfo)
 {
-    NOREF(pszPath);
+    RT_NOREF(pszPath);
 
     LogFlowFunc(("pszPath=%s\n", pszPath));
 
@@ -456,9 +455,9 @@ static int vboximgOp_release(const char *pszPath, struct fuse_file_info *pInfo)
 
 /** @copydoc fuse_operations::read */
 static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
-                           off_t offset, struct fuse_file_info *pInfo)
+                          off_t offset, struct fuse_file_info *pInfo)
 {
-    NOREF(pszPath);
+    RT_NOREF(pszPath);
 
     LogFlowFunc(("offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
@@ -474,10 +473,10 @@ static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
         {
             size_t cbRead = 0;
             RTVFSFILE hVfsFile = RTVfsObjToFile(hVfsObj);
-            int rcIprt = RTVfsFileReadAt(hVfsFile, offset, pbBuf, cbBuf, &cbRead);
+            int vrc = RTVfsFileReadAt(hVfsFile, offset, pbBuf, cbBuf, &cbRead);
             if (cbRead)
                 rc = cbRead;
-            else if (rcIprt == VINF_EOF)
+            else if (vrc == VINF_EOF)
                 rc = -RTErrConvertToErrno(VERR_EOF);
             RTVfsFileRelease(hVfsFile);
             break;
@@ -495,8 +494,8 @@ static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
 static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
-    NOREF(pszPath);
-    NOREF(pInfo);
+    RT_NOREF(pszPath);
+    RT_NOREF(pInfo);
 
     LogFlowFunc(("offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
@@ -519,10 +518,10 @@ static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
         {
             size_t cbWritten = 0;
             RTVFSFILE hVfsFile = RTVfsObjToFile(hVfsObj);
-            int rcIprt = RTVfsFileWriteAt(hVfsFile, offset, pbBuf, cbBuf, &cbWritten);
+            int vrc = RTVfsFileWriteAt(hVfsFile, offset, pbBuf, cbBuf, &cbWritten);
             if (cbWritten)
                 rc = cbWritten;
-            else if (rcIprt == VINF_EOF)
+            else if (vrc == VINF_EOF)
                 rc = -RTErrConvertToErrno(VERR_EOF);
             RTVfsFileRelease(hVfsFile);
             break;
@@ -538,8 +537,7 @@ static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
 }
 
 /** @copydoc fuse_operations::getattr */
-static int
-vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
+static int vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
 {
     int rc = 0;
 
@@ -576,13 +574,13 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
     {
         /* Query the VFS object and fill in the data. */
         RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
-        int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
-        if (RT_SUCCESS(rcIprt))
+        int vrc = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
+        if (RT_SUCCESS(vrc))
         {
             RTFSOBJINFO ObjInfo;
 
-            rcIprt = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_UNIX);
-            if (RT_SUCCESS(rcIprt))
+            vrc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_UNIX);
+            if (RT_SUCCESS(vrc))
             {
                 stbuf->st_size  = ObjInfo.cbObject;
                 stbuf->st_nlink = 1;
@@ -695,20 +693,18 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
 
             RTVfsObjRelease(hVfsObj);
         }
-        else if (rcIprt == VERR_NOT_FOUND)
+        else if (vrc == VERR_NOT_FOUND)
             rc = -ENOENT;
         else
-            rc = -RTErrConvertToErrno(rcIprt);
+            rc = -RTErrConvertToErrno(vrc);
     }
 
     return rc;
 }
 
 /** @copydoc fuse_operations::readdir */
-static int
-vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
-                              off_t offset, struct fuse_file_info *pInfo)
-
+static int vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
+                             off_t offset, struct fuse_file_info *pInfo)
 {
     RT_NOREF(offset);
     RT_NOREF(pInfo);
@@ -767,8 +763,8 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
     {
         /* Query the VFS object and fill in the data. */
         RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
-        int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
-        if (RT_SUCCESS(rcIprt))
+        int vrc = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
+        if (RT_SUCCESS(vrc))
         {
             switch (RTVfsObjGetType(hVfsObj))
             {
@@ -777,12 +773,12 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                     RTVFSDIR hVfsDir = RTVfsObjToDir(hVfsObj);
                     RTDIRENTRYEX DirEntry;
 
-                    rcIprt = RTVfsDirRewind(hVfsDir); AssertRC(rcIprt);
-                    rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
-                    while (RT_SUCCESS(rcIprt))
+                    vrc = RTVfsDirRewind(hVfsDir); AssertRC(vrc);
+                    vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+                    while (RT_SUCCESS(vrc))
                     {
                         pfnFiller(pvBuf, DirEntry.szName, NULL, 0);
-                        rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+                        vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
                     }
 
                     RTVfsDirRelease(hVfsDir);
@@ -795,17 +791,16 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
             RTVfsObjRelease(hVfsObj);
         }
         else
-            rc = -RTErrConvertToErrno(rcIprt);
+            rc = -RTErrConvertToErrno(vrc);
     }
 
     return rc;
 }
 
 /** @copydoc fuse_operations::readlink */
-static int
-vboximgOp_readlink(const char *pszPath, char *buf, size_t size)
+static int vboximgOp_readlink(const char *pszPath, char *buf, size_t size)
 {
-    NOREF(pszPath);
+    RT_NOREF(pszPath);
     RTStrCopy(buf, size, g_pszImagePath);
     return 0;
 }
@@ -989,8 +984,6 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
      */
     if (g_vboximgOpts.pszImageUuidOrPath)
     {
-        HRESULT hrc;
-
         /* compiler was too fussy about access mode's data type in conditional expr, so... */
         if (g_vboximgOpts.fRW)
             CHECK_ERROR(pVirtualBox, OpenMedium(Bstr(g_vboximgOpts.pszImageUuidOrPath).raw(), DeviceType_HardDisk,
@@ -1188,36 +1181,36 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
 /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 /* **************** END IFDEF'D (STUBBED-OUT) CODE ***************** */
 
-    int rc = RTCritSectInit(&g_vdioLock);
-    if (RT_SUCCESS(rc))
+    int vrc = RTCritSectInit(&g_vdioLock);
+    if (RT_SUCCESS(vrc))
     {
         g_VDIfThreadSync.pfnStartRead   = vboximgThreadStartRead;
         g_VDIfThreadSync.pfnFinishRead  = vboximgThreadFinishRead;
         g_VDIfThreadSync.pfnStartWrite  = vboximgThreadStartWrite;
         g_VDIfThreadSync.pfnFinishWrite = vboximgThreadFinishWrite;
-        rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboximg_ThreadSync", VDINTERFACETYPE_THREADSYNC,
-                            &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
+        vrc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboximg_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                             &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
     }
     else
         return RTMsgErrorExitFailure("ERROR: Failed to create critsects "
-                                     "for virtual disk I/O, rc=%Rrc\n", rc);
+                                     "for virtual disk I/O, rc=%Rrc\n", vrc);
 
    /*
      * Create HDD container to open base image and differencing images into
      */
-    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
-                     CSTR(pVDiskBaseImagePath), VDTYPE_INVALID, &pszFormat, &enmType);
+    vrc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
+                      CSTR(pVDiskBaseImagePath), VDTYPE_INVALID, &pszFormat, &enmType);
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExitFailure("VDGetFormat(,,%s,,) "
-            "failed (during HDD container creation), rc=%Rrc\n", g_pszImagePath, rc);
+            "failed (during HDD container creation), rc=%Rrc\n", g_pszImagePath, vrc);
 
     if (VERBOSE)
         RTPrintf("\nCreating container for base image of format %s\n", pszFormat);
 
     PVDISK pVDisk = NULL;
-    rc = VDCreate(g_pVdIfs, enmType, &pVDisk);
-    if ((rc))
+    vrc = VDCreate(g_pVdIfs, enmType, &pVDisk);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExitFailure("ERROR: Couldn't create virtual disk container\n");
 
     /* Open all virtual disk media from leaf snapshot (if any) to base image*/
@@ -1231,15 +1224,15 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
         if (VERBOSE)
             RTPrintf("  Open: %s\n", CSTR(pCurMedium->pImagePath));
 
-        rc = VDOpen(pVDisk,
-                    pszFormat,
-                    CSTR(pCurMedium->pImagePath),
-                    pCurMedium->fWriteable ? 0 : VD_OPEN_FLAGS_READONLY,
-                    g_pVdIfs);
+        vrc = VDOpen(pVDisk,
+                     pszFormat,
+                     CSTR(pCurMedium->pImagePath),
+                     pCurMedium->fWriteable ? 0 : VD_OPEN_FLAGS_READONLY,
+                     g_pVdIfs);
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             return RTMsgErrorExitFailure("Could not open the medium storage unit '%s' %Rrc",
-                CSTR(pCurMedium->pImagePath), rc);
+                                         CSTR(pCurMedium->pImagePath), vrc);
 
         pCurMedium = pCurMedium->prev;
     }
@@ -1247,14 +1240,14 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
     RTStrFree(pszFormat);
 
     /* Create the VFS file to use for the disk image access. */
-    rc = VDCreateVfsFileFromDisk(pVDisk, VD_VFSFILE_DESTROY_ON_RELEASE, &g_hVfsFileDisk);
-    if (RT_FAILURE(rc))
+    vrc = VDCreateVfsFileFromDisk(pVDisk, VD_VFSFILE_DESTROY_ON_RELEASE, &g_hVfsFileDisk);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExitFailure("Error creating VFS file wrapper for disk image\n");
 
     g_cbSector = VDGetSectorSize(pVDisk, VD_LAST_IMAGE);
 
-    rc = vboxImgMntVolumesSetup();
-    if (RT_FAILURE(rc))
+    vrc = vboxImgMntVolumesSetup();
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExitFailure("Error parsing volumes on disk\n");
 
     if (g_vboximgOpts.fList)
@@ -1264,7 +1257,7 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
 
         RTPrintf("\n");
         vboxImgMntVolumesDisplay();
-        return 0;
+        return VINF_SUCCESS; /** @todo r=andy Re-visit this. */
     }
 
     /* Try to "mount" supported filesystems inside the disk image if specified. */
@@ -1272,14 +1265,14 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
     {
         for (uint32_t i = 0; i < g_cVolumes; i++)
         {
-            rc = RTVfsMountVol(g_paVolumes[i].hVfsFileVol,
+            vrc = RTVfsMountVol(g_paVolumes[i].hVfsFileVol,
                                g_vboximgOpts.fRW ? 0 : RTVFSMNT_F_READ_ONLY,
                                &g_paVolumes[i].hVfsRoot,
                                NULL);
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
-                rc = RTVfsOpenRoot(g_paVolumes[i].hVfsRoot, &g_paVolumes[i].hVfsDirRoot);
-                if (RT_FAILURE(rc))
+                vrc = RTVfsOpenRoot(g_paVolumes[i].hVfsRoot, &g_paVolumes[i].hVfsDirRoot);
+                if (RT_FAILURE(vrc))
                 {
                     RTPrintf("\nvboximg-mount: Failed to access filesystem on volume %u, ignoring\n", i);
                     RTVfsRelease(g_paVolumes[i].hVfsRoot);
@@ -1297,12 +1290,13 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
     if (VERBOSE)
         RTPrintf("\nvboximg-mount: Going into background...\n");
 
-    rc = fuse_main_real(args->argc, args->argv, &g_vboximgOps, sizeof(g_vboximgOps), NULL);
+    int rc = fuse_main_real(args->argc, args->argv, &g_vboximgOps, sizeof(g_vboximgOps), NULL);
+    RTPrintf("vboximg-mount: fuse_main -> %d\n", rc);
 
     int rc2 = RTVfsFileRelease(g_hVfsFileDisk);
     AssertRC(rc2);
-    RTPrintf("vboximg-mount: fuse_main -> %d\n", rc);
-    return rc;
+
+    return vrc;
 }
 
 
