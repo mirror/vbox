@@ -1341,9 +1341,14 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
         if (x11Context.pXRRDestroyMode)
             x11Context.pXRRDestroyMode(x11Context.pDisplay, aPrevMode[outputId]);
 #endif
+        /* Forget destroyed mode. */
+        aPrevMode[outputId] = 0;
     }
 
-    aPrevMode[outputId] = pModeInfo->id;
+    /* Only cache modes created "by us". XRRDestroyMode will complain if provided mode
+     * was not created by XRRCreateMode call. */
+    if (fNewMode)
+        aPrevMode[outputId] = pModeInfo->id;
 
     if (paOutputs[iOutputIndex].fPrimary)
     {
@@ -1479,7 +1484,10 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
             break;
         if (!paOutputs[i].fEnabled)
             continue;
-        configureOutput(i, paOutputs);
+        if (configureOutput(i, paOutputs))
+            VBClLogInfo("output[%d] successfully configured\n", i);
+        else
+            VBClLogError("failed to configure output[%d]\n", i);
     }
     XSync(x11Context.pDisplay, False);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
