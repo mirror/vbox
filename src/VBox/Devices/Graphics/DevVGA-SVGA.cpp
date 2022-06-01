@@ -6941,9 +6941,18 @@ DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns)
      */
     if (pThisCC->svga.pFIFOIOThread)
     {
+        /* Hack around a deadlock:
+         * - the caller holds the device critsect;
+         * - FIFO thread may attempt to enter the critsect too (when raising an IRQ).
+         */
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+
         int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, pThisCC,  VMSVGA_FIFO_EXTCMD_POWEROFF,
                                                NULL /*pvParam*/, 30000 /*ms*/);
         AssertLogRelRC(rc);
+
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
     }
 }
 
