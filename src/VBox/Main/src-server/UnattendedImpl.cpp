@@ -3653,7 +3653,7 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
         }
     }
     /* Skip all OpenSUSE variants for now. */
-    if ((mEnmOsType & 0xff000) == VBOXOSTYPE_OpenSUSE)
+    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_OpenSUSE)
     {
         *aIsUnattendedInstallSupported = false;
         return S_OK;
