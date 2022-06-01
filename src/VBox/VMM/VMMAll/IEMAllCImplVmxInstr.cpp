@@ -2441,7 +2441,7 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    LogFlow(("vmexit: reason=%#RX32 qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
+    LogFlow(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
              pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
              pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4));
 
@@ -4371,6 +4371,7 @@ static void iemVmxVirtApicClearVectorInReg(PVMCPUCC pVCpu, uint16_t offReg, uint
  */
 static bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPUCC pVCpu, uint16_t offAccess, size_t cbAccess, uint32_t fAccess) RT_NOEXCEPT
 {
+    Assert(cbAccess > 0);
     PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     /*
@@ -9895,18 +9896,18 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
                                                          RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 
 {
-    RT_NOREF4(pVM, pRegFrame, pvFault, uUser);
+    RT_NOREF3(pVM, pRegFrame, uUser);
 
     /*
      * Handle the VMX APIC-access page only when the guest is in VMX non-root mode.
      * Otherwise we must deregister the page and allow regular RAM access.
      * Failing to do so lands us with endless EPT misconfiguration VM-exits.
      */
-    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhysPage = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
         Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
-        Assert(CPUMGetGuestVmxApicAccessPageAddrEx(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
+        Assert(CPUMGetGuestVmxApicAccessPageAddrEx(IEM_GET_CTX(pVCpu)) == GCPhysPage);
 
         /*
          * Check if the access causes an APIC-access VM-exit.
@@ -9919,8 +9920,9 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
         else
             fAccess = IEM_ACCESS_DATA_R;
 
-        uint16_t const offAccess = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
-        bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, 0 /* cbAccess */, fAccess);
+        RTGCPHYS const GCPhysNestedFault = (RTGCPHYS)pvFault;
+        uint16_t const offAccess         = GCPhysNestedFault & GUEST_PAGE_OFFSET_MASK;
+        bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, 1 /* cbAccess */, fAccess);
         if (fIntercept)
         {
             /*
@@ -9943,8 +9945,8 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
              * Other accesses should go through the other handler (iemVmxApicAccessPageHandler).
              */
             AssertLogRelMsgReturn(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
-                                  ("Unexpected call to the VMX APIC-access page #PF handler for %#RGp (off=%u) uReason=%#RX32\n",
-                                   GCPhysAccessBase, offAccess, HmExitAux.Vmx.uReason), VERR_IEM_IPE_9);
+                                  ("Unexpected call to the VMX APIC-access page #PF handler for %#RGp (Nested=%#RGp, GCPhysAddr%#RGp) off=%u uReason=%u\n",
+                                   GCPhysPage, GCPhysNestedFault, HmExitAux.Vmx.u64GuestPhysAddr, offAccess, HmExitAux.Vmx.uReason), VERR_IEM_IPE_9);
 
             /*
              * Construct the virtual APIC-access VM-exit.
@@ -10002,8 +10004,8 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
-    LogFunc(("Accessed outside VMX non-root mode, deregistering page handler for %#RGp\n", GCPhysAccessBase));
-    int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysAccessBase);
+    LogFunc(("Accessed outside VMX non-root mode, deregistering page handler for %#RGp\n", GCPhysPage));
+    int const rc = PGMHandlerPhysicalDeregister(pVM, GCPhysPage);
     if (RT_FAILURE(rc))
         return rc;
 
