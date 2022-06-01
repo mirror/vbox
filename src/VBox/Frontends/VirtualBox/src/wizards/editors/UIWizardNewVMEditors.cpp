@@ -383,7 +383,7 @@ void UINewVMHardwareContainer::prepare()
     QGridLayout *pHardwareLayout = new QGridLayout(this);
     pHardwareLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
+    m_pBaseMemoryEditor = new UIBaseMemoryEditor;
     m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
     m_pEFICheckBox      = new QCheckBox;
     pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);

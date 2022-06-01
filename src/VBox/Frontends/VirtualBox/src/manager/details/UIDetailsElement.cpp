@@ -929,7 +929,7 @@ void UIDetailsElement::popupBaseMemoryEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIBaseMemoryEditor *pEditor = new UIBaseMemoryEditor(pPopup, true /* with label */);
+        UIBaseMemoryEditor *pEditor = new UIBaseMemoryEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(strValue.toInt());
@@ -963,7 +963,7 @@ void UIDetailsElement::popupBootOrderEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIBootOrderEditor *pEditor = new UIBootOrderEditor(pPopup, true /* with label */);
+        UIBootOrderEditor *pEditor = new UIBootOrderEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(bootItemsFromSerializedString(strValue));

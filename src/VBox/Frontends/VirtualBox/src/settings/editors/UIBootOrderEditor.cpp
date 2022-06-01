@@ -417,9 +417,9 @@ UIBootItemDataList UIBootDataTools::bootItemsFromSerializedString(const QString 
 *   Class UIBootOrderEditor implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
+    , m_pLayout(0)
     , m_pLabel(0)
     , m_pTable(0)
     , m_pToolbar(0)
@@ -438,6 +438,17 @@ void UIBootOrderEditor::setValue(const UIBootItemDataList &guiValue)
 UIBootItemDataList UIBootOrderEditor::value() const
 {
     return m_pTable ? m_pTable->bootItems() : UIBootItemDataList();
+}
+
+int UIBootOrderEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
+}
+
+void UIBootOrderEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
 bool UIBootOrderEditor::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -484,18 +495,22 @@ void UIBootOrderEditor::sltHandleCurrentBootItemChange()
 
 void UIBootOrderEditor::prepare()
 {
+    /* Configure self: */
+    setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+
     /* Create main layout: */
-    QGridLayout *pLayout = new QGridLayout(this);
-    if (pLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create label: */
-        if (m_fWithLabel)
-            m_pLabel = new QLabel(this);
+        m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+        {
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
+        }
 
         /* Create table layout: */
         QHBoxLayout *pTableLayout = new QHBoxLayout;
@@ -540,7 +555,7 @@ void UIBootOrderEditor::prepare()
             }
 
             /* Add table layout to main layout: */
-            pLayout->addLayout(pTableLayout, 0, iRow++, 3, 1);
+            m_pLayout->addLayout(pTableLayout, 0, 1, 4, 1);
         }
     }
 

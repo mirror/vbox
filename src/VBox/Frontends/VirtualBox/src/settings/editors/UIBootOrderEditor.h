@@ -32,6 +32,7 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QIToolBar;
 class UIBootListWidget;
@@ -91,14 +92,18 @@ class SHARED_LIBRARY_STUFF UIBootOrderEditor : public QIWithRetranslateUI<QWidge
 
 public:
 
-    /** Constructs editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIBootOrderEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs editor passing @a pParent to the base-class. */
+    UIBootOrderEditor(QWidget *pParent = 0);
 
     /** Defines editor @a guiValue. */
     void setValue(const UIBootItemDataList &guiValue);
     /** Returns editor value. */
     UIBootItemDataList value() const;
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -121,9 +126,8 @@ private:
     /** Updates action availability: */
     void updateActionAvailability();
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
+    /** Holds the main layout instance. */
+    QGridLayout      *m_pLayout;
     /** Holds the label instance. */
     QLabel           *m_pLabel;
     /** Holds the table instance. */

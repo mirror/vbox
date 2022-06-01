@@ -237,10 +237,10 @@ int UIBaseMemorySlider::calcPageStep(int iMaximum) const
 *   Class UIBaseMemoryEditor implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIBaseMemoryEditor::UIBaseMemoryEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIBaseMemoryEditor::UIBaseMemoryEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_iValue(0)
+    , m_pLayout(0)
     , m_pLabelMemory(0)
     , m_pSlider(0)
     , m_pLabelMemoryMin(0)
@@ -275,6 +275,17 @@ uint UIBaseMemoryEditor::maxRAMOpt() const
 uint UIBaseMemoryEditor::maxRAMAlw() const
 {
     return m_pSlider ? m_pSlider->maxRAMAlw() : 0;
+}
+
+int UIBaseMemoryEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabelMemory ? m_pLabelMemory->minimumSizeHint().width() : 0;
+}
+
+void UIBaseMemoryEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
 void UIBaseMemoryEditor::retranslateUi()
@@ -328,17 +339,18 @@ void UIBaseMemoryEditor::sltHandleSpinBoxChange()
 void UIBaseMemoryEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pLayout = new QGridLayout(this);
-    if (pLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create memory label: */
-        if (m_fWithLabel)
-            m_pLabelMemory = new QLabel(this);
+        m_pLabelMemory = new QLabel(this);
         if (m_pLabelMemory)
-            pLayout->addWidget(m_pLabelMemory, 0, iRow++, 1, 1);
+        {
+            m_pLabelMemory->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelMemory, 0, 0);
+        }
 
         /* Create slider layout: */
         QVBoxLayout *pSliderLayout = new QVBoxLayout;
@@ -380,7 +392,7 @@ void UIBaseMemoryEditor::prepare()
             }
 
             /* Add slider layout to main layout: */
-            pLayout->addLayout(pSliderLayout, 0, iRow++, 2, 1);
+            m_pLayout->addLayout(pSliderLayout, 0, 1, 2, 1);
         }
 
         /* Create memory spin-box: */
@@ -394,7 +406,7 @@ void UIBaseMemoryEditor::prepare()
             m_pSpinBox->setMaximum(m_pSlider->maxRAM());
             connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIBaseMemoryEditor::sltHandleSpinBoxChange);
-            pLayout->addWidget(m_pSpinBox, 0, iRow++, 1, 1);
+            m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }
     }
 

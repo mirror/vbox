@@ -29,6 +29,7 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QSpinBox;
 class UIBaseMemorySlider;
@@ -47,9 +48,8 @@ signals:
 
 public:
 
-    /** Constructs editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIBaseMemoryEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs editor passing @a pParent to the base-class. */
+    UIBaseMemoryEditor(QWidget *pParent = 0);
 
     /** Defines editor @a iValue. */
     void setValue(int iValue);
@@ -60,6 +60,11 @@ public:
     uint maxRAMOpt() const;
     /** Returns the maximum allowed RAM. */
     uint maxRAMAlw() const;
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -81,14 +86,13 @@ private:
     /** Revalidates and emits validity change signal. */
     void revalidate();
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
     /** Holds the value to be selected. */
     int  m_iValue;
 
     /** @name Widgets
      * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout        *m_pLayout;
         /** Holds the memory label instance. */
         QLabel             *m_pLabelMemory;
         /** Holds the memory slider instance. */

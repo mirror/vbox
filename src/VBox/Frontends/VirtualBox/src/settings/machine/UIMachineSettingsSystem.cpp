@@ -158,9 +158,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pCache(0)
     , m_pTabWidget(0)
     , m_pTabMotherboard(0)
-    , m_pLabelBaseMemory(0)
     , m_pEditorBaseMemory(0)
-    , m_pLabelBootOrder(0)
     , m_pEditorBootOrder(0)
     , m_pEditorChipset(0)
     , m_pEditorPointingHID(0)
@@ -641,10 +639,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsSystem::retranslateUi()
 {
-    m_pLabelBaseMemory->setText(tr("Base &Memory:"));
     m_pEditorBaseMemory->setToolTip(tr("Controls the amount of memory provided to the virtual machine. "
                                        "If you assign too much, the machine might not start."));
-    m_pLabelBootOrder->setText(tr("&Boot Order:"));
     m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
@@ -697,11 +693,13 @@ void UIMachineSettingsSystem::retranslateUi()
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBaseMemory->minimumSizeHint().width());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBootOrder->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBaseMemory->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBootOrder->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMotherboardFeatures->minimumLabelHorizontalHint());
+    m_pEditorBaseMemory->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorBootOrder->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
@@ -713,9 +711,7 @@ void UIMachineSettingsSystem::polishPage()
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Polish 'Motherboard' availability: */
-    m_pLabelBaseMemory->setEnabled(isMachineOffline());
     m_pEditorBaseMemory->setEnabled(isMachineOffline());
-    m_pLabelBootOrder->setEnabled(isMachineOffline());
     m_pEditorBootOrder->setEnabled(isMachineOffline());
     m_pEditorChipset->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
@@ -848,59 +844,33 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
         QGridLayout *pLayoutMotherboard = new QGridLayout(m_pTabMotherboard);
         if (pLayoutMotherboard)
         {
-            pLayoutMotherboard->setColumnStretch(4, 1);
-            pLayoutMotherboard->setRowStretch(9, 1);
+            pLayoutMotherboard->setColumnStretch(1, 1);
+            pLayoutMotherboard->setRowStretch(5, 1);
 
-            /* Prepare base memory label: */
-            m_pLabelBaseMemory = new QLabel(m_pTabMotherboard);
-            if (m_pLabelBaseMemory)
-            {
-                m_pLabelBaseMemory->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMotherboard->addWidget(m_pLabelBaseMemory, 0, 0);
-            }
             /* Prepare base memory editor: */
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
             if (m_pEditorBaseMemory)
-            {
-                if (m_pLabelBaseMemory)
-                    m_pLabelBaseMemory->setBuddy(m_pEditorBaseMemory->focusProxy());
-                m_pEditorBaseMemory->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
+                pLayoutMotherboard->addWidget(m_pEditorBaseMemory, 0, 0, 1, 2);
 
-                pLayoutMotherboard->addWidget(m_pEditorBaseMemory, 0, 1, 2, 4);
-            }
-
-            /* Prepare boot order label: */
-            m_pLabelBootOrder = new QLabel(m_pTabMotherboard);
-            if (m_pLabelBootOrder)
-            {
-                m_pLabelBootOrder->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMotherboard->addWidget(m_pLabelBootOrder, 2, 0);
-            }
             /* Prepare boot order editor: */
             m_pEditorBootOrder = new UIBootOrderEditor(m_pTabMotherboard);
             if (m_pEditorBootOrder)
-            {
-                if (m_pLabelBootOrder)
-                    m_pLabelBootOrder->setBuddy(m_pEditorBootOrder->focusProxy());
-                m_pEditorBootOrder->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-
-                pLayoutMotherboard->addWidget(m_pEditorBootOrder, 2, 1, 2, 2);
-            }
+                pLayoutMotherboard->addWidget(m_pEditorBootOrder, 1, 0);
 
             /* Prepare chipset editor: */
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
             if (m_pEditorChipset)
-                pLayoutMotherboard->addWidget(m_pEditorChipset, 4, 0, 1, 3);
+                pLayoutMotherboard->addWidget(m_pEditorChipset, 2, 0);
 
             /* Prepare pointing HID editor: */
             m_pEditorPointingHID = new UIPointingHIDEditor(m_pTabMotherboard);
             if (m_pEditorPointingHID)
-                pLayoutMotherboard->addWidget(m_pEditorPointingHID, 5, 0, 1, 3);
+                pLayoutMotherboard->addWidget(m_pEditorPointingHID, 3, 0);
 
             /* Prepare motherboard features editor: */
             m_pEditorMotherboardFeatures = new UIMotherboardFeaturesEditor(m_pTabMotherboard);
             if (m_pEditorMotherboardFeatures)
-                pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 6, 0, 1, 3);
+                pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 4, 0);
         }
 
         m_pTabWidget->addTab(m_pTabMotherboard, QString());

@@ -38,7 +38,6 @@ class UIBootOrderEditor;
 class UIChipsetEditor;
 class UIMotherboardFeaturesEditor;
 class UIPointingHIDEditor;
-class CMachine;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
@@ -177,12 +176,8 @@ private:
 
         /** Holds the 'Motherboard' tab instance. */
         QWidget                     *m_pTabMotherboard;
-        /** Holds the base memory label instance. */
-        QLabel                      *m_pLabelBaseMemory;
         /** Holds the base memory editor instance. */
         UIBaseMemoryEditor          *m_pEditorBaseMemory;
-        /** Holds the boot order label instance. */
-        QLabel                      *m_pLabelBootOrder;
         /** Holds the boot order editor instance. */
         UIBootOrderEditor           *m_pEditorBootOrder;
         /** Holds the chipset editor instance. */
