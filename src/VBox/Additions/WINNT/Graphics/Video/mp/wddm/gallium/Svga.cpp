@@ -1535,6 +1535,7 @@ NTSTATUS SvgaDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                                      pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -1595,6 +1596,7 @@ NTSTATUS SvgaDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
                                           pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
