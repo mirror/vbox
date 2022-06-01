@@ -1650,7 +1650,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         case DXGKQAITYPE_DRIVERCAPS:
         {
             DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
-            memset(pCaps, 0, sizeof (*pCaps));
+            memset(pCaps, 0, pQueryAdapterInfo->OutputDataSize);
 
             pCaps->HighestAcceptableAddress.LowPart = ~0UL;
 #ifdef RT_ARCH_AMD64
