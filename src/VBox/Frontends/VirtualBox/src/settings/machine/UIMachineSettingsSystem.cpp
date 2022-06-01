@@ -35,6 +35,7 @@
 #include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
+#include "UIMotherboardFeaturesEditor.h"
 #include "UIPointingHIDEditor.h"
 #include "UITranslator.h"
 
@@ -163,10 +164,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorBootOrder(0)
     , m_pEditorChipset(0)
     , m_pEditorPointingHID(0)
-    , m_pLabelExtendedMotherboard(0)
-    , m_pCheckBoxAPIC(0)
-    , m_pCheckBoxEFI(0)
-    , m_pCheckBoxUTC(0)
+    , m_pEditorMotherboardFeatures(0)
     , m_pTabProcessor(0)
     , m_pLabelProcessorCount(0)
     , m_pSliderProcessorCount(0)
@@ -329,12 +327,12 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorChipset->setValue(oldSystemData.m_chipsetType);
     if (m_pEditorPointingHID)
         m_pEditorPointingHID->setValue(oldSystemData.m_pointingHIDType);
-    if (m_pCheckBoxAPIC)
-        m_pCheckBoxAPIC->setChecked(oldSystemData.m_fEnabledIoApic);
-    if (m_pCheckBoxEFI)
-        m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
-    if (m_pCheckBoxUTC)
-        m_pCheckBoxUTC->setChecked(oldSystemData.m_fEnabledUTC);
+    if (m_pEditorMotherboardFeatures)
+    {
+        m_pEditorMotherboardFeatures->setEnableIoApic(oldSystemData.m_fEnabledIoApic);
+        m_pEditorMotherboardFeatures->setEnableEfi(oldSystemData.m_fEnabledEFI);
+        m_pEditorMotherboardFeatures->setEnableUtcTime(oldSystemData.m_fEnabledUTC);
+    }
 
     /* Load old 'Processor' data from cache: */
     if (m_pSliderProcessorCount)
@@ -388,16 +386,16 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_chipsetType = m_pEditorChipset->value();
     if (m_pEditorPointingHID)
         newSystemData.m_pointingHIDType = m_pEditorPointingHID->value();
-    if (   m_pCheckBoxAPIC
+    if (   m_pEditorMotherboardFeatures
         && m_pSliderProcessorCount
         && m_pEditorChipset)
-        newSystemData.m_fEnabledIoApic =    m_pCheckBoxAPIC->isChecked()
+        newSystemData.m_fEnabledIoApic =    m_pEditorMotherboardFeatures->isEnabledIoApic()
                                          || m_pSliderProcessorCount->value() > 1
                                          || m_pEditorChipset->value() == KChipsetType_ICH9;
-    if (m_pCheckBoxEFI)
-        newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
-    if (m_pCheckBoxUTC)
-        newSystemData.m_fEnabledUTC = m_pCheckBoxUTC->isChecked();
+    if (m_pEditorMotherboardFeatures)
+        newSystemData.m_fEnabledEFI = m_pEditorMotherboardFeatures->isEnabledEfi();
+    if (m_pEditorMotherboardFeatures)
+        newSystemData.m_fEnabledUTC = m_pEditorMotherboardFeatures->isEnabledUtcTime();
 
     /* Gather 'Processor' data: */
     if (m_pSliderProcessorCount)
@@ -473,7 +471,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Chipset type vs IO-APIC test: */
-        if (m_pEditorChipset->value() == KChipsetType_ICH9 && !m_pCheckBoxAPIC->isChecked())
+        if (m_pEditorChipset->value() == KChipsetType_ICH9 && !m_pEditorMotherboardFeatures->isEnabledIoApic())
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
@@ -520,7 +518,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* VCPU vs IO-APIC test: */
-        if (m_pSliderProcessorCount->value() > 1 && !m_pCheckBoxAPIC->isChecked())
+        if (m_pSliderProcessorCount->value() > 1 && !m_pEditorMotherboardFeatures->isEnabledIoApic())
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
@@ -625,12 +623,10 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorBaseMemory, m_pEditorBootOrder);
     setTabOrder(m_pEditorBootOrder, m_pEditorChipset);
     setTabOrder(m_pEditorChipset, m_pEditorPointingHID);
-    setTabOrder(m_pEditorPointingHID, m_pCheckBoxAPIC);
-    setTabOrder(m_pCheckBoxAPIC, m_pCheckBoxEFI);
-    setTabOrder(m_pCheckBoxEFI, m_pCheckBoxUTC);
+    setTabOrder(m_pEditorPointingHID, m_pEditorMotherboardFeatures);
+    setTabOrder(m_pEditorMotherboardFeatures, m_pSliderProcessorCount);
 
     /* Configure navigation for 'processor' tab: */
-    setTabOrder(m_pCheckBoxUTC, m_pSliderProcessorCount);
     setTabOrder(m_pSliderProcessorCount, m_pSpinboxProcessorCount);
     setTabOrder(m_pSpinboxProcessorCount, m_pSliderProcessorExecCap);
     setTabOrder(m_pSliderProcessorExecCap, m_pSpinboxProcessorExecCap);
@@ -652,18 +648,6 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
-    m_pLabelExtendedMotherboard->setText(tr("Extended Features:"));
-    m_pCheckBoxAPIC->setToolTip(tr("When checked, the virtual machine will support the Input Output APIC (I/O APIC), "
-                                   "which may slightly decrease performance. <b>Note:</b> don't disable this feature after "
-                                   "having installed a Windows guest operating system!"));
-    m_pCheckBoxAPIC->setText(tr("Enable &I/O APIC"));
-    m_pCheckBoxEFI->setToolTip(tr("When checked, the guest will support the Extended Firmware Interface (EFI), "
-                                  "which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot "
-                                  "if this option is activated."));
-    m_pCheckBoxEFI->setText(tr("Enable &EFI (special OSes only)"));
-    m_pCheckBoxUTC->setToolTip(tr("When checked, the RTC device will report the time in UTC, otherwise in local (host) time. "
-                                  "Unix usually expects the hardware clock to be set to UTC."));
-    m_pCheckBoxUTC->setText(tr("Hardware Clock in &UTC Time"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pLabelProcessorCount->setText(tr("&Processor(s):"));
     m_pSliderProcessorCount->setToolTip(tr("Controls the number of virtual CPUs in the virtual machine. You need hardware "
@@ -717,9 +701,10 @@ void UIMachineSettingsSystem::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBootOrder->minimumSizeHint().width());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedMotherboard->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMotherboardFeatures->minimumLabelHorizontalHint());
     m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -734,10 +719,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pEditorBootOrder->setEnabled(isMachineOffline());
     m_pEditorChipset->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
-    m_pLabelExtendedMotherboard->setEnabled(isMachineOffline());
-    m_pCheckBoxAPIC->setEnabled(isMachineOffline());
-    m_pCheckBoxEFI->setEnabled(isMachineOffline());
-    m_pCheckBoxUTC->setEnabled(isMachineOffline());
+    m_pEditorMotherboardFeatures->setEnabled(isMachineOffline());
 
     /* Polish 'Processor' availability: */
     m_pLabelProcessorCount->setEnabled(isMachineOffline());
@@ -915,34 +897,10 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             if (m_pEditorPointingHID)
                 pLayoutMotherboard->addWidget(m_pEditorPointingHID, 5, 0, 1, 3);
 
-            /* Prepare extended motherboard label: */
-            m_pLabelExtendedMotherboard = new QLabel(m_pTabMotherboard);
-            if (m_pLabelExtendedMotherboard)
-            {
-                m_pLabelExtendedMotherboard->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMotherboard->addWidget(m_pLabelExtendedMotherboard, 6, 0);
-            }
-            /* Prepare APIC check-box: */
-            m_pCheckBoxAPIC = new QCheckBox(m_pTabMotherboard);
-            if (m_pCheckBoxAPIC)
-            {
-                m_pCheckBoxAPIC->setObjectName(QStringLiteral("m_pCheckBoxAPIC"));
-                pLayoutMotherboard->addWidget(m_pCheckBoxAPIC, 6, 1, 1, 3);
-            }
-            /* Prepare EFI check-box: */
-            m_pCheckBoxEFI = new QCheckBox(m_pTabMotherboard);
-            if (m_pCheckBoxEFI)
-            {
-                m_pCheckBoxEFI->setObjectName(QStringLiteral("m_pCheckBoxEFI"));
-                pLayoutMotherboard->addWidget(m_pCheckBoxEFI, 7, 1, 1, 3);
-            }
-            /* Prepare UTC check-box: */
-            m_pCheckBoxUTC = new QCheckBox(m_pTabMotherboard);
-            if (m_pCheckBoxUTC)
-            {
-                m_pCheckBoxUTC->setObjectName(QStringLiteral("m_pCheckBoxUTC"));
-                pLayoutMotherboard->addWidget(m_pCheckBoxUTC, 8, 1, 1, 3);
-            }
+            /* Prepare motherboard features editor: */
+            m_pEditorMotherboardFeatures = new UIMotherboardFeaturesEditor(m_pTabMotherboard);
+            if (m_pEditorMotherboardFeatures)
+                pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 6, 0, 1, 3);
         }
 
         m_pTabWidget->addTab(m_pTabMotherboard, QString());
@@ -1204,8 +1162,10 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorPointingHID, &UIPointingHIDEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pEditorBaseMemory, &UIBaseMemoryEditor::sigValidChanged, this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pCheckBoxAPIC, &QCheckBox::stateChanged, this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pEditorBaseMemory, &UIBaseMemoryEditor::sigValidChanged,
+            this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pEditorMotherboardFeatures, &UIMotherboardFeaturesEditor::sigChangedIoApic,
+            this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Processor' connections: */
     connect(m_pSliderProcessorCount, &QIAdvancedSlider::valueChanged, this, &UIMachineSettingsSystem::sltHandleCPUCountSliderChange);

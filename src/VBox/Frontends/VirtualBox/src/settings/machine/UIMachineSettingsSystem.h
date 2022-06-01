@@ -27,7 +27,6 @@
 /* Forward declarations: */
 struct UIDataSettingsMachineSystem;
 typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSystem;
-class CMachine;
 class QCheckBox;
 class QComboBox;
 class QLabel;
@@ -37,7 +36,9 @@ class QITabWidget;
 class UIBaseMemoryEditor;
 class UIBootOrderEditor;
 class UIChipsetEditor;
+class UIMotherboardFeaturesEditor;
 class UIPointingHIDEditor;
+class CMachine;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
@@ -175,27 +176,21 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Motherboard' tab instance. */
-        QWidget             *m_pTabMotherboard;
+        QWidget                     *m_pTabMotherboard;
         /** Holds the base memory label instance. */
-        QLabel              *m_pLabelBaseMemory;
+        QLabel                      *m_pLabelBaseMemory;
         /** Holds the base memory editor instance. */
-        UIBaseMemoryEditor  *m_pEditorBaseMemory;
+        UIBaseMemoryEditor          *m_pEditorBaseMemory;
         /** Holds the boot order label instance. */
-        QLabel              *m_pLabelBootOrder;
+        QLabel                      *m_pLabelBootOrder;
         /** Holds the boot order editor instance. */
-        UIBootOrderEditor   *m_pEditorBootOrder;
+        UIBootOrderEditor           *m_pEditorBootOrder;
         /** Holds the chipset editor instance. */
-        UIChipsetEditor     *m_pEditorChipset;
-        /** Holds the pointing HID combo instance. */
-        UIPointingHIDEditor *m_pEditorPointingHID;
-        /** Holds the extended motherboard label instance. */
-        QLabel              *m_pLabelExtendedMotherboard;
-        /** Holds the APIC check-box instance. */
-        QCheckBox           *m_pCheckBoxAPIC;
-        /** Holds the EFI check-box instance. */
-        QCheckBox           *m_pCheckBoxEFI;
-        /** Holds the UTC check-box instance. */
-        QCheckBox           *m_pCheckBoxUTC;
+        UIChipsetEditor             *m_pEditorChipset;
+        /** Holds the pointing HID editor instance. */
+        UIPointingHIDEditor         *m_pEditorPointingHID;
+        /** Holds the motherboard features editor instance. */
+        UIMotherboardFeaturesEditor *m_pEditorMotherboardFeatures;
 
         /** Holds the 'Processor' tab instance. */
         QWidget          *m_pTabProcessor;
