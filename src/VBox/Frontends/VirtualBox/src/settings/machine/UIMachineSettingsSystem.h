@@ -37,6 +37,7 @@ class QITabWidget;
 class UIBaseMemoryEditor;
 class UIBootOrderEditor;
 class UIChipsetEditor;
+class UIPointingHIDEditor;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
@@ -136,13 +137,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Repopulates Pointing HID type combo-box. */
-    void repopulateComboPointingHIDType();
     /** Repopulates Paravirtualization Provider type combo-box. */
     void repopulateComboParavirtProviderType();
 
-    /** Retranslates Pointing HID type combo-box. */
-    void retranslateComboPointingHIDType();
     /** Retranslates Paravirtualization providers combo-box. */
     void retranslateComboParavirtProvider();
 
@@ -178,29 +175,27 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Motherboard' tab instance. */
-        QWidget            *m_pTabMotherboard;
+        QWidget             *m_pTabMotherboard;
         /** Holds the base memory label instance. */
-        QLabel             *m_pLabelBaseMemory;
+        QLabel              *m_pLabelBaseMemory;
         /** Holds the base memory editor instance. */
-        UIBaseMemoryEditor *m_pEditorBaseMemory;
+        UIBaseMemoryEditor  *m_pEditorBaseMemory;
         /** Holds the boot order label instance. */
-        QLabel             *m_pLabelBootOrder;
+        QLabel              *m_pLabelBootOrder;
         /** Holds the boot order editor instance. */
-        UIBootOrderEditor  *m_pEditorBootOrder;
+        UIBootOrderEditor   *m_pEditorBootOrder;
         /** Holds the chipset editor instance. */
-        UIChipsetEditor    *m_pEditorChipset;
-        /** Holds the pointing HID label instance. */
-        QLabel             *m_pLabelPointingHID;
+        UIChipsetEditor     *m_pEditorChipset;
         /** Holds the pointing HID combo instance. */
-        QComboBox          *m_pComboPointingHID;
+        UIPointingHIDEditor *m_pEditorPointingHID;
         /** Holds the extended motherboard label instance. */
-        QLabel             *m_pLabelExtendedMotherboard;
+        QLabel              *m_pLabelExtendedMotherboard;
         /** Holds the APIC check-box instance. */
-        QCheckBox          *m_pCheckBoxAPIC;
+        QCheckBox           *m_pCheckBoxAPIC;
         /** Holds the EFI check-box instance. */
-        QCheckBox          *m_pCheckBoxEFI;
+        QCheckBox           *m_pCheckBoxEFI;
         /** Holds the UTC check-box instance. */
-        QCheckBox          *m_pCheckBoxUTC;
+        QCheckBox           *m_pCheckBoxUTC;
 
         /** Holds the 'Processor' tab instance. */
         QWidget          *m_pTabProcessor;

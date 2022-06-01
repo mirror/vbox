@@ -35,6 +35,7 @@
 #include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
+#include "UIPointingHIDEditor.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -161,8 +162,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pLabelBootOrder(0)
     , m_pEditorBootOrder(0)
     , m_pEditorChipset(0)
-    , m_pLabelPointingHID(0)
-    , m_pComboPointingHID(0)
+    , m_pEditorPointingHID(0)
     , m_pLabelExtendedMotherboard(0)
     , m_pCheckBoxAPIC(0)
     , m_pCheckBoxEFI(0)
@@ -233,7 +233,7 @@ bool UIMachineSettingsSystem::isNestedHWVirtExEnabled() const
 
 bool UIMachineSettingsSystem::isHIDEnabled() const
 {
-    return m_pComboPointingHID->currentData().value<KPointingHIDType>() != KPointingHIDType_PS2Mouse;
+    return m_pEditorPointingHID->value() != KPointingHIDType_PS2Mouse;
 }
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
@@ -318,7 +318,6 @@ void UIMachineSettingsSystem::getFromCache()
 
     /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
-    repopulateComboPointingHIDType();
     repopulateComboParavirtProviderType();
 
     /* Load old 'Motherboard' data from cache: */
@@ -328,11 +327,8 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
     if (m_pEditorChipset)
         m_pEditorChipset->setValue(oldSystemData.m_chipsetType);
-    if (m_pComboPointingHID)
-    {
-        const int iHIDTypePosition = m_pComboPointingHID->findData(oldSystemData.m_pointingHIDType);
-        m_pComboPointingHID->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
-    }
+    if (m_pEditorPointingHID)
+        m_pEditorPointingHID->setValue(oldSystemData.m_pointingHIDType);
     if (m_pCheckBoxAPIC)
         m_pCheckBoxAPIC->setChecked(oldSystemData.m_fEnabledIoApic);
     if (m_pCheckBoxEFI)
@@ -390,8 +386,8 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_bootItems = m_pEditorBootOrder->value();
     if (m_pEditorChipset)
         newSystemData.m_chipsetType = m_pEditorChipset->value();
-    if (m_pComboPointingHID)
-        newSystemData.m_pointingHIDType = m_pComboPointingHID->currentData().value<KPointingHIDType>();
+    if (m_pEditorPointingHID)
+        newSystemData.m_pointingHIDType = m_pEditorPointingHID->value();
     if (   m_pCheckBoxAPIC
         && m_pSliderProcessorCount
         && m_pEditorChipset)
@@ -628,8 +624,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pTabWidget->focusProxy(), m_pEditorBaseMemory);
     setTabOrder(m_pEditorBaseMemory, m_pEditorBootOrder);
     setTabOrder(m_pEditorBootOrder, m_pEditorChipset);
-    setTabOrder(m_pEditorChipset, m_pComboPointingHID);
-    setTabOrder(m_pComboPointingHID, m_pCheckBoxAPIC);
+    setTabOrder(m_pEditorChipset, m_pEditorPointingHID);
+    setTabOrder(m_pEditorPointingHID, m_pCheckBoxAPIC);
     setTabOrder(m_pCheckBoxAPIC, m_pCheckBoxEFI);
     setTabOrder(m_pCheckBoxEFI, m_pCheckBoxUTC);
 
@@ -656,9 +652,6 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
-    m_pLabelPointingHID->setText(tr("&Pointing Device:"));
-    m_pComboPointingHID->setToolTip(tr("Determines whether the emulated pointing device is a standard PS/2 mouse, "
-                                       "a USB tablet or a USB multi-touch tablet."));
     m_pLabelExtendedMotherboard->setText(tr("Extended Features:"));
     m_pCheckBoxAPIC->setToolTip(tr("When checked, the virtual machine will support the Input Output APIC (I/O APIC), "
                                    "which may slightly decrease performance. <b>Note:</b> don't disable this feature after "
@@ -716,7 +709,6 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pLabelProcessorExecCapMax->setText(tr("%1%").arg(m_uMaxGuestCPUExecCap));
 
     /* Retranslate combo-boxes: */
-    retranslateComboPointingHIDType();
     retranslateComboParavirtProvider();
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
@@ -724,9 +716,10 @@ void UIMachineSettingsSystem::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBaseMemory->minimumSizeHint().width());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBootOrder->minimumSizeHint().width());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelPointingHID->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedMotherboard->minimumSizeHint().width());
     m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -740,8 +733,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelBootOrder->setEnabled(isMachineOffline());
     m_pEditorBootOrder->setEnabled(isMachineOffline());
     m_pEditorChipset->setEnabled(isMachineOffline());
-    m_pLabelPointingHID->setEnabled(isMachineOffline());
-    m_pComboPointingHID->setEnabled(isMachineOffline());
+    m_pEditorPointingHID->setEnabled(isMachineOffline());
     m_pLabelExtendedMotherboard->setEnabled(isMachineOffline());
     m_pCheckBoxAPIC->setEnabled(isMachineOffline());
     m_pCheckBoxEFI->setEnabled(isMachineOffline());
@@ -916,26 +908,12 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             /* Prepare chipset editor: */
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
             if (m_pEditorChipset)
-                pLayoutMotherboard->addWidget(m_pEditorChipset, 4, 0, 1, 2);
+                pLayoutMotherboard->addWidget(m_pEditorChipset, 4, 0, 1, 3);
 
-            /* Prepare pointing HID label: */
-            m_pLabelPointingHID = new QLabel(m_pTabMotherboard);
-            if (m_pLabelPointingHID)
-            {
-                m_pLabelPointingHID->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMotherboard->addWidget(m_pLabelPointingHID, 5, 0);
-            }
-            /* Prepare pointing HID combo: */
-            m_pComboPointingHID = new QComboBox(m_pTabMotherboard);
-            if (m_pComboPointingHID)
-            {
-                if (m_pLabelPointingHID)
-                    m_pLabelPointingHID->setBuddy(m_pComboPointingHID);
-                m_pComboPointingHID->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-                m_pComboPointingHID->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-
-                pLayoutMotherboard->addWidget(m_pComboPointingHID, 5, 1);
-            }
+            /* Prepare pointing HID editor: */
+            m_pEditorPointingHID = new UIPointingHIDEditor(m_pTabMotherboard);
+            if (m_pEditorPointingHID)
+                pLayoutMotherboard->addWidget(m_pEditorPointingHID, 5, 0, 1, 3);
 
             /* Prepare extended motherboard label: */
             m_pLabelExtendedMotherboard = new QLabel(m_pTabMotherboard);
@@ -1224,7 +1202,7 @@ void UIMachineSettingsSystem::prepareConnections()
     /* Configure 'Motherboard' connections: */
     connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pComboPointingHID, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pEditorPointingHID, &UIPointingHIDEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorBaseMemory, &UIBaseMemoryEditor::sigValidChanged, this, &UIMachineSettingsSystem::revalidate);
     connect(m_pCheckBoxAPIC, &QCheckBox::stateChanged, this, &UIMachineSettingsSystem::revalidate);
@@ -1252,27 +1230,6 @@ void UIMachineSettingsSystem::cleanup()
     m_pCache = 0;
 }
 
-void UIMachineSettingsSystem::repopulateComboPointingHIDType()
-{
-    AssertPtrReturnVoid(m_pComboPointingHID);
-    {
-        /* Clear combo first of all: */
-        m_pComboPointingHID->clear();
-
-        /* Load currently supported pointing HID types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KPointingHIDType> pointingHidTypes = comProperties.GetSupportedPointingHIDTypes();
-        /* Take into account currently cached value: */
-        const KPointingHIDType enmCachedValue = m_pCache->base().m_pointingHIDType;
-        if (!pointingHidTypes.contains(enmCachedValue))
-            pointingHidTypes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KPointingHIDType &enmType, pointingHidTypes)
-            m_pComboPointingHID->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
-    }
-}
-
 void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
 {
     AssertPtrReturnVoid(m_pComboParavirtProvider);
@@ -1291,17 +1248,6 @@ void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
         /* Populate combo finally: */
         foreach (const KParavirtProvider &enmProvider, supportedProviderTypes)
             m_pComboParavirtProvider->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
-    }
-}
-
-void UIMachineSettingsSystem::retranslateComboPointingHIDType()
-{
-    /* For each the element in m_pComboPointingHID: */
-    for (int iIndex = 0; iIndex < m_pComboPointingHID->count(); ++iIndex)
-    {
-        /* Apply retranslated text: */
-        const KPointingHIDType enmType = m_pComboPointingHID->currentData().value<KPointingHIDType>();
-        m_pComboPointingHID->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 
