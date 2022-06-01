@@ -899,6 +899,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
 	src/settings/editors/UIBootOrderEditor.h \
+	src/settings/editors/UIChipsetEditor.h \
 	src/settings/editors/UIColorThemeEditor.h \
 	src/settings/editors/UIDefaultMachineFolderEditor.h \
 	src/settings/editors/UIDiskEncryptionSettingsEditor.h \
@@ -1469,6 +1470,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIAutoCaptureKeyboardEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
+	src/settings/editors/UIChipsetEditor.cpp \
 	src/settings/editors/UIColorThemeEditor.cpp \
 	src/settings/editors/UIDefaultMachineFolderEditor.cpp \
 	src/settings/editors/UIDiskEncryptionSettingsEditor.cpp \

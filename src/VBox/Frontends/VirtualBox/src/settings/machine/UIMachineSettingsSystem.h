@@ -36,6 +36,7 @@ class QIAdvancedSlider;
 class QITabWidget;
 class UIBaseMemoryEditor;
 class UIBootOrderEditor;
+class UIChipsetEditor;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
@@ -135,15 +136,11 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Repopulates Chipset type combo-box. */
-    void repopulateComboChipsetType();
     /** Repopulates Pointing HID type combo-box. */
     void repopulateComboPointingHIDType();
     /** Repopulates Paravirtualization Provider type combo-box. */
     void repopulateComboParavirtProviderType();
 
-    /** Retranslates Chipset type combo-box. */
-    void retranslateComboChipsetType();
     /** Retranslates Pointing HID type combo-box. */
     void retranslateComboPointingHIDType();
     /** Retranslates Paravirtualization providers combo-box. */
@@ -190,10 +187,8 @@ private:
         QLabel             *m_pLabelBootOrder;
         /** Holds the boot order editor instance. */
         UIBootOrderEditor  *m_pEditorBootOrder;
-        /** Holds the chipset label instance. */
-        QLabel             *m_pLabelChipset;
-        /** Holds the chipset combo instance. */
-        QComboBox          *m_pComboChipset;
+        /** Holds the chipset editor instance. */
+        UIChipsetEditor    *m_pEditorChipset;
         /** Holds the pointing HID label instance. */
         QLabel             *m_pLabelPointingHID;
         /** Holds the pointing HID combo instance. */

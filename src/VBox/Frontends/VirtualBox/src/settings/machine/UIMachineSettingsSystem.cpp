@@ -29,6 +29,7 @@
 #include "QIWidgetValidator.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
+#include "UIChipsetEditor.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
@@ -159,8 +160,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorBaseMemory(0)
     , m_pLabelBootOrder(0)
     , m_pEditorBootOrder(0)
-    , m_pLabelChipset(0)
-    , m_pComboChipset(0)
+    , m_pEditorChipset(0)
     , m_pLabelPointingHID(0)
     , m_pComboPointingHID(0)
     , m_pLabelExtendedMotherboard(0)
@@ -238,7 +238,7 @@ bool UIMachineSettingsSystem::isHIDEnabled() const
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
 {
-    return m_pComboChipset->currentData().value<KChipsetType>();
+    return m_pEditorChipset->value();
 }
 
 void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
@@ -318,7 +318,6 @@ void UIMachineSettingsSystem::getFromCache()
 
     /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
-    repopulateComboChipsetType();
     repopulateComboPointingHIDType();
     repopulateComboParavirtProviderType();
 
@@ -327,11 +326,8 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorBaseMemory->setValue(oldSystemData.m_iMemorySize);
     if (m_pEditorBootOrder)
         m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
-    if (m_pComboChipset)
-    {
-        const int iChipsetTypePosition = m_pComboChipset->findData(oldSystemData.m_chipsetType);
-        m_pComboChipset->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
-    }
+    if (m_pEditorChipset)
+        m_pEditorChipset->setValue(oldSystemData.m_chipsetType);
     if (m_pComboPointingHID)
     {
         const int iHIDTypePosition = m_pComboPointingHID->findData(oldSystemData.m_pointingHIDType);
@@ -392,16 +388,16 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_iMemorySize = m_pEditorBaseMemory->value();
     if (m_pEditorBootOrder)
         newSystemData.m_bootItems = m_pEditorBootOrder->value();
-    if (m_pComboChipset)
-        newSystemData.m_chipsetType = m_pComboChipset->currentData().value<KChipsetType>();
+    if (m_pEditorChipset)
+        newSystemData.m_chipsetType = m_pEditorChipset->value();
     if (m_pComboPointingHID)
         newSystemData.m_pointingHIDType = m_pComboPointingHID->currentData().value<KPointingHIDType>();
     if (   m_pCheckBoxAPIC
         && m_pSliderProcessorCount
-        && m_pComboChipset)
+        && m_pEditorChipset)
         newSystemData.m_fEnabledIoApic =    m_pCheckBoxAPIC->isChecked()
                                          || m_pSliderProcessorCount->value() > 1
-                                         || m_pComboChipset->currentData().value<KChipsetType>() == KChipsetType_ICH9;
+                                         || m_pEditorChipset->value() == KChipsetType_ICH9;
     if (m_pCheckBoxEFI)
         newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
     if (m_pCheckBoxUTC)
@@ -481,7 +477,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Chipset type vs IO-APIC test: */
-        if (m_pComboChipset->currentData().value<KChipsetType>() == KChipsetType_ICH9 && !m_pCheckBoxAPIC->isChecked())
+        if (m_pEditorChipset->value() == KChipsetType_ICH9 && !m_pCheckBoxAPIC->isChecked())
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
@@ -631,8 +627,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(pWidget, m_pTabWidget->focusProxy());
     setTabOrder(m_pTabWidget->focusProxy(), m_pEditorBaseMemory);
     setTabOrder(m_pEditorBaseMemory, m_pEditorBootOrder);
-    setTabOrder(m_pEditorBootOrder, m_pComboChipset);
-    setTabOrder(m_pComboChipset, m_pComboPointingHID);
+    setTabOrder(m_pEditorBootOrder, m_pEditorChipset);
+    setTabOrder(m_pEditorChipset, m_pComboPointingHID);
     setTabOrder(m_pComboPointingHID, m_pCheckBoxAPIC);
     setTabOrder(m_pCheckBoxAPIC, m_pCheckBoxEFI);
     setTabOrder(m_pCheckBoxEFI, m_pCheckBoxUTC);
@@ -660,10 +656,6 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
-    m_pLabelChipset->setText(tr("&Chipset:"));
-    m_pComboChipset->setToolTip(tr("Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset "
-                                   "emulation is experimental and not recommended except for guest systems (such as Mac OS X) "
-                                   "which require it."));
     m_pLabelPointingHID->setText(tr("&Pointing Device:"));
     m_pComboPointingHID->setToolTip(tr("Determines whether the emulated pointing device is a standard PS/2 mouse, "
                                        "a USB tablet or a USB multi-touch tablet."));
@@ -724,9 +716,17 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pLabelProcessorExecCapMax->setText(tr("%1%").arg(m_uMaxGuestCPUExecCap));
 
     /* Retranslate combo-boxes: */
-    retranslateComboChipsetType();
     retranslateComboPointingHIDType();
     retranslateComboParavirtProvider();
+
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBaseMemory->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelBootOrder->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelPointingHID->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedMotherboard->minimumSizeHint().width());
+    m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -739,8 +739,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pEditorBaseMemory->setEnabled(isMachineOffline());
     m_pLabelBootOrder->setEnabled(isMachineOffline());
     m_pEditorBootOrder->setEnabled(isMachineOffline());
-    m_pLabelChipset->setEnabled(isMachineOffline());
-    m_pComboChipset->setEnabled(isMachineOffline());
+    m_pEditorChipset->setEnabled(isMachineOffline());
     m_pLabelPointingHID->setEnabled(isMachineOffline());
     m_pComboPointingHID->setEnabled(isMachineOffline());
     m_pLabelExtendedMotherboard->setEnabled(isMachineOffline());
@@ -914,24 +913,10 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
                 pLayoutMotherboard->addWidget(m_pEditorBootOrder, 2, 1, 2, 2);
             }
 
-            /* Prepare chipset label: */
-            m_pLabelChipset = new QLabel(m_pTabMotherboard);
-            if (m_pLabelChipset)
-            {
-                m_pLabelChipset->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMotherboard->addWidget(m_pLabelChipset, 4, 0);
-            }
-            /* Prepare chipset combo: */
-            m_pComboChipset = new QComboBox(m_pTabMotherboard);
-            if (m_pComboChipset)
-            {
-                if (m_pLabelChipset)
-                    m_pLabelChipset->setBuddy(m_pComboChipset);
-                m_pComboChipset->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-                m_pComboChipset->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-
-                pLayoutMotherboard->addWidget(m_pComboChipset, 4, 1);
-            }
+            /* Prepare chipset editor: */
+            m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
+            if (m_pEditorChipset)
+                pLayoutMotherboard->addWidget(m_pEditorChipset, 4, 0, 1, 2);
 
             /* Prepare pointing HID label: */
             m_pLabelPointingHID = new QLabel(m_pTabMotherboard);
@@ -1237,7 +1222,7 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
 void UIMachineSettingsSystem::prepareConnections()
 {
     /* Configure 'Motherboard' connections: */
-    connect(m_pComboChipset, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pComboPointingHID, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIMachineSettingsSystem::revalidate);
@@ -1265,27 +1250,6 @@ void UIMachineSettingsSystem::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
-}
-
-void UIMachineSettingsSystem::repopulateComboChipsetType()
-{
-    AssertPtrReturnVoid(m_pComboChipset);
-    {
-        /* Clear combo first of all: */
-        m_pComboChipset->clear();
-
-        /* Load currently supported chipset types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KChipsetType> chipsetTypes = comProperties.GetSupportedChipsetTypes();
-        /* Take into account currently cached value: */
-        const KChipsetType enmCachedValue = m_pCache->base().m_chipsetType;
-        if (!chipsetTypes.contains(enmCachedValue))
-            chipsetTypes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KChipsetType &enmType, chipsetTypes)
-            m_pComboChipset->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
-    }
 }
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()
@@ -1327,17 +1291,6 @@ void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
         /* Populate combo finally: */
         foreach (const KParavirtProvider &enmProvider, supportedProviderTypes)
             m_pComboParavirtProvider->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
-    }
-}
-
-void UIMachineSettingsSystem::retranslateComboChipsetType()
-{
-    /* For each the element in m_pComboChipset: */
-    for (int iIndex = 0; iIndex < m_pComboChipset->count(); ++iIndex)
-    {
-        /* Apply retranslated text: */
-        const KChipsetType enmType = m_pComboChipset->currentData().value<KChipsetType>();
-        m_pComboChipset->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 
