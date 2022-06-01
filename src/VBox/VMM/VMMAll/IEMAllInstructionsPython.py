@@ -220,6 +220,7 @@ g_kdOpTypes = {
     'Eq_WO':        ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      'RM',    ),
     'Ew':           ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      'RM',    ),
     'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      'RM',    ),
+    'Ey':           ( 'IDX_UseModRM',       'rm',     '%Ey',  'Ey',      'RM',    ),
     'Qq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
     'Qq_WO':        ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
     'Wss':          ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     'RM',    ),
@@ -269,6 +270,7 @@ g_kdOpTypes = {
     'Gw':           ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      '',      ),
     'Gv':           ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
     'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
+    'Gy':           ( 'IDX_UseModRM',       'reg',    '%Gy',  'Gy',      '',      ),
     'Pd':           ( 'IDX_UseModRM',       'reg',    '%Pd',  'Pd',      '',      ),
     'PdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Pd',  'PdZx',    '',      ),
     'Pq':           ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      '',      ),
@@ -297,6 +299,7 @@ g_kdOpTypes = {
     'Vx_WO':        ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      '',      ),
 
     # VEX.vvvv
+    'By':           ( 'IDX_UseModRM',       'vvvv',   '%By',  'By',      'V',     ),
     'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   'V',     ),
     'HsdHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HsdHi',   'V',     ),
     'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    'V',     ),
@@ -367,6 +370,9 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
     'VEX_RVM':      ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '',            ),
     'VEX_RVM_REG':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '11 mr/reg',   ),
     'VEX_RVM_MEM':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '!11 mr/reg',  ),
+    'VEX_RMV':      ( 'VEX.ModR/M', [ 'reg', 'rm', 'vvvv' ], '',            ),
+    'VEX_RMV_REG':  ( 'VEX.ModR/M', [ 'reg', 'rm', 'vvvv' ], '11 mr/reg',   ),
+    'VEX_RMV_MEM':  ( 'VEX.ModR/M', [ 'reg', 'rm', 'vvvv' ], '!11 mr/reg',  ),
     'VEX_MVR':      ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '',            ),
     'VEX_MVR_REG':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '11 mr/reg',   ),
     'VEX_MVR_MEM':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '!11 mr/reg',  ),
@@ -594,19 +600,31 @@ class InstructionMap(object):
         'xop10':    [], ##< XOP prefix with vvvvv = 10
     };
     ## Selectors.
-    ## The first value is the number of table entries required by a
+    ## 1. The first value is the number of table entries required by a
     ## decoder or disassembler for this type of selector.
+    ## 2. The second value is how many entries per opcode byte if applicable.
     kdSelectors = {
-        'byte':     [ 256, ], ##< next opcode byte selects the instruction (default).
-        '/r':       [   8, ], ##< modrm.reg selects the instruction.
-        'memreg /r':[  16, ], ##< modrm.reg and (modrm.mod == 3) selects the instruction.
-        'mod /r':   [  32, ], ##< modrm.reg and modrm.mod selects the instruction.
-        '!11 /r':   [   8, ], ##< modrm.reg selects the instruction with modrm.mod != 0y11.
-        '11 /r':    [   8, ], ##< modrm.reg select the instruction with modrm.mod == 0y11.
-        '11':       [  64, ], ##< modrm.reg and modrm.rm select the instruction with modrm.mod == 0y11.
+        'byte':     [  256, 1, ], ##< next opcode byte selects the instruction (default).
+        'byte+pfx': [ 1024, 4, ], ##< next opcode byte selects the instruction together with the 0x66, 0xf2 and 0xf3 prefixes.
+        '/r':       [    8, 1, ], ##< modrm.reg selects the instruction.
+        'memreg /r':[   16, 1, ], ##< modrm.reg and (modrm.mod == 3) selects the instruction.
+        'mod /r':   [   32, 1, ], ##< modrm.reg and modrm.mod selects the instruction.
+        '!11 /r':   [    8, 1, ], ##< modrm.reg selects the instruction with modrm.mod != 0y11.
+        '11 /r':    [    8, 1, ], ##< modrm.reg select the instruction with modrm.mod == 0y11.
+        '11':       [   64, 1, ], ##< modrm.reg and modrm.rm select the instruction with modrm.mod == 0y11.
     };
 
-    def __init__(self, sName, asLeadOpcodes = None, sSelector = 'byte', sEncoding = 'legacy', sDisParse = None):
+    ## Define the subentry number according to the Instruction::sPrefix
+    ## value for 'byte+pfx' selected tables.
+    kiPrefixOrder = {
+        'none': 0,
+        '0x66': 1,
+        '0xf3': 2,
+        '0xf2': 3,
+    };
+
+    def __init__(self, sName, sIemName = None, asLeadOpcodes = None, sSelector = 'byte+pfx',
+                 sEncoding = 'legacy', sDisParse = None):
         assert sSelector in self.kdSelectors;
         assert sEncoding in self.kdEncodings;
         if asLeadOpcodes is None:
@@ -617,11 +635,26 @@ class InstructionMap(object):
         assert sDisParse is None or sDisParse.startswith('IDX_Parse');
 
         self.sName          = sName;
+        self.sIemName       = sIemName;
         self.asLeadOpcodes  = asLeadOpcodes;    ##< Lead opcode bytes formatted as hex strings like '0x0f'.
         self.sSelector      = sSelector;        ##< The member selector, see kdSelectors.
         self.sEncoding      = sEncoding;        ##< The encoding, see kdSelectors.
         self.aoInstructions = []                # type: Instruction
         self.sDisParse      = sDisParse;        ##< IDX_ParseXXX.
+
+    def copy(self, sNewName, sPrefixFilter = None):
+        """
+        Copies the table with filtering instruction by sPrefix if not None.
+        """
+        oCopy = InstructionMap(sNewName, sIemName = self.sIemName, asLeadOpcodes = self.asLeadOpcodes,
+                               sSelector = 'byte' if sPrefixFilter is not None and self.sSelector == 'byte+pfx'
+                               else self.sSelector,
+                               sEncoding = self.sEncoding, sDisParse = self.sDisParse);
+        if sPrefixFilter is None:
+            oCopy.aoInstructions = list(self.aoInstructions);
+        else:
+            oCopy.aoInstructions = [oInstr for oInstr in self.aoInstructions if oInstr.sPrefix == sPrefixFilter];
+        return oCopy;
 
     def getTableSize(self):
         """
@@ -629,16 +662,31 @@ class InstructionMap(object):
         """
         return self.kdSelectors[self.sSelector][0];
 
+    def getEntriesPerByte(self):
+        """
+        Number of table entries per opcode bytes.
+
+        This only really makes sense for the 'byte' and 'byte+pfx' selectors, for
+        the others it will just return 1.
+        """
+        return self.kdSelectors[self.sSelector][1];
+
     def getInstructionIndex(self, oInstr):
         """
         Returns the table index for the instruction.
         """
         bOpcode = oInstr.getOpcodeByte();
 
-        # The byte selector is simple.  We need a full opcode byte and need just return it.
+        # The byte selectors are simple.  We need a full opcode byte and need just return it.
         if self.sSelector == 'byte':
             assert oInstr.sOpcode[:2] == '0x' and len(oInstr.sOpcode) == 4, str(oInstr);
             return bOpcode;
+
+        # The byte + prefix selector is similarly simple, though requires a prefix as well as the full opcode.
+        if self.sSelector  == 'byte+pfx':
+            assert oInstr.sOpcode[:2] == '0x' and len(oInstr.sOpcode) == 4, str(oInstr);
+            assert self.kiPrefixOrder.get(oInstr.sPrefix, -16384) >= 0;
+            return bOpcode * 4 + self.kiPrefixOrder.get(oInstr.sPrefix, -16384);
 
         # The other selectors needs masking and shifting.
         if self.sSelector == '/r':
@@ -716,6 +764,11 @@ class InstructionMap(object):
                 sName += sWord[0].upper() + sWord[1:];
         return sName;
 
+    def getDisasRangeName(self):
+        """
+        Returns the disassembler table range name for this map.
+        """
+        return self.getDisasTableName().replace('g_aDisas', 'g_Disas') + 'Range';
 
     def isVexMap(self):
         """ Returns True if a VEX map. """
@@ -1337,6 +1390,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
     def __init__(self, sSrcFile, iLine):
         ## @name Core attributes.
         ## @{
+        self.oParent        = None      # type: Instruction
         self.sMnemonic      = None;
         self.sBrief         = None;
         self.asDescSections = []        # type: list(str)
@@ -1397,6 +1451,8 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         aasFields = [];
 
         aasFields.append(['opcode',    self.sOpcode]);
+        if self.sPrefix:
+            aasFields.append(['prefix', self.sPrefix]);
         aasFields.append(['mnemonic',  self.sMnemonic]);
         for iOperand, oOperand in enumerate(self.aoOperands):
             aasFields.append(['op%u' % (iOperand + 1,), '%s:%s' % (oOperand.sWhere, oOperand.sType,)]);
@@ -1441,6 +1497,59 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         """ Provide unambigious string representation. """
         return self.toString(True);
+
+    def copy(self, oMap = None, sOpcode = None, sSubOpcode = None, sPrefix = None):
+        """
+        Makes a copy of the object for the purpose of putting in a different map
+        or a different place in the current map.
+        """
+        oCopy = Instruction(self.sSrcFile, self.iLineCreated);
+
+        oCopy.oParent           = self;
+        oCopy.sMnemonic         = self.sMnemonic;
+        oCopy.sBrief            = self.sBrief;
+        oCopy.asDescSections    = list(self.asDescSections);
+        oCopy.aoMaps            = [oMap,]    if oMap       else list(self.aoMaps);
+        oCopy.aoOperands        = list(self.aoOperands); ## Deeper copy?
+        oCopy.sPrefix           = sPrefix    if sPrefix    else self.sPrefix;
+        oCopy.sOpcode           = sOpcode    if sOpcode    else self.sOpcode;
+        oCopy.sSubOpcode        = sSubOpcode if sSubOpcode else self.sSubOpcode;
+        oCopy.sEncoding         = self.sEncoding;
+        oCopy.asFlTest          = self.asFlTest;
+        oCopy.asFlModify        = self.asFlModify;
+        oCopy.asFlUndefined     = self.asFlUndefined;
+        oCopy.asFlSet           = self.asFlSet;
+        oCopy.asFlClear         = self.asFlClear;
+        oCopy.dHints            = dict(self.dHints);
+        oCopy.sDisEnum          = self.sDisEnum;
+        oCopy.asCpuIds          = list(self.asCpuIds);
+        oCopy.asReqFeatures     = list(self.asReqFeatures);
+        oCopy.aoTests           = list(self.aoTests); ## Deeper copy?
+        oCopy.sMinCpu           = self.sMinCpu;
+        oCopy.oCpuExpr          = self.oCpuExpr;
+        oCopy.sGroup            = self.sGroup;
+        oCopy.fUnused           = self.fUnused;
+        oCopy.fInvalid          = self.fInvalid;
+        oCopy.sInvalidStyle     = self.sInvalidStyle;
+        oCopy.sXcptType         = self.sXcptType;
+
+        oCopy.sStats            = self.sStats;
+        oCopy.sFunction         = self.sFunction;
+        oCopy.fStub             = self.fStub;
+        oCopy.fUdStub           = self.fUdStub;
+
+        oCopy.iLineCompleted    = self.iLineCompleted;
+        oCopy.cOpTags           = self.cOpTags;
+        oCopy.iLineFnIemOpMacro = self.iLineFnIemOpMacro;
+        oCopy.iLineMnemonicMacro = self.iLineMnemonicMacro;
+
+        oCopy.sRawDisOpNo       = self.sRawDisOpNo;
+        oCopy.asRawDisParams    = list(self.asRawDisParams);
+        oCopy.sRawIemOpFlags    = self.sRawIemOpFlags;
+        oCopy.sRawOldOpcodes    = self.sRawOldOpcodes;
+        oCopy.asCopyTests       = list(self.asCopyTests);
+
+        return oCopy;
 
     def getOpcodeByte(self):
         """
@@ -1527,65 +1636,70 @@ g_dAllInstructionsByFunction = {}   # type: dict(list(Instruction))
 g_aoOnlyTestInstructions = []       # type: list(Instruction)
 
 ## Instruction maps.
-g_dInstructionMaps = {
-    'one':          InstructionMap('one'),
-    'grp1_80':      InstructionMap('grp1_80',   asLeadOpcodes = ['0x80',]),
-    'grp1_81':      InstructionMap('grp1_81',   asLeadOpcodes = ['0x81',], sSelector = '/r'),
-    'grp1_82':      InstructionMap('grp1_82',   asLeadOpcodes = ['0x82',], sSelector = '/r'),
-    'grp1_83':      InstructionMap('grp1_83',   asLeadOpcodes = ['0x83',], sSelector = '/r'),
-    'grp1a':        InstructionMap('grp1a',     asLeadOpcodes = ['0x8f',], sSelector = '/r'),
-    'grp2_c0':      InstructionMap('grp2_c0',   asLeadOpcodes = ['0xc0',], sSelector = '/r'),
-    'grp2_c1':      InstructionMap('grp2_c1',   asLeadOpcodes = ['0xc1',], sSelector = '/r'),
-    'grp2_d0':      InstructionMap('grp2_d0',   asLeadOpcodes = ['0xd0',], sSelector = '/r'),
-    'grp2_d1':      InstructionMap('grp2_d1',   asLeadOpcodes = ['0xd1',], sSelector = '/r'),
-    'grp2_d2':      InstructionMap('grp2_d2',   asLeadOpcodes = ['0xd2',], sSelector = '/r'),
-    'grp2_d3':      InstructionMap('grp2_d3',   asLeadOpcodes = ['0xd3',], sSelector = '/r'),
-    'grp3_f6':      InstructionMap('grp3_f6',   asLeadOpcodes = ['0xf6',], sSelector = '/r'),
-    'grp3_f7':      InstructionMap('grp3_f7',   asLeadOpcodes = ['0xf7',], sSelector = '/r'),
-    'grp4':         InstructionMap('grp4',      asLeadOpcodes = ['0xfe',], sSelector = '/r'),
-    'grp5':         InstructionMap('grp5',      asLeadOpcodes = ['0xff',], sSelector = '/r'),
-    'grp11_c6_m':   InstructionMap('grp11_c6_m',asLeadOpcodes = ['0xc6',], sSelector = '!11 /r'),
-    'grp11_c6_r':   InstructionMap('grp11_c6_r',asLeadOpcodes = ['0xc6',], sSelector = '11'),    # xabort
-    'grp11_c7_m':   InstructionMap('grp11_c7_m',asLeadOpcodes = ['0xc7',], sSelector = '!11 /r'),
-    'grp11_c7_r':   InstructionMap('grp11_c7_r',asLeadOpcodes = ['0xc7',], sSelector = '11'),    # xbegin
+g_aoInstructionMaps = [
+    InstructionMap('one',        'g_apfnOneByteMap',        sSelector = 'byte'),
+    InstructionMap('grp1_80',    asLeadOpcodes = ['0x80',], sSelector = '/r'),
+    InstructionMap('grp1_81',    asLeadOpcodes = ['0x81',], sSelector = '/r'),
+    InstructionMap('grp1_82',    asLeadOpcodes = ['0x82',], sSelector = '/r'),
+    InstructionMap('grp1_83',    asLeadOpcodes = ['0x83',], sSelector = '/r'),
+    InstructionMap('grp1a',      asLeadOpcodes = ['0x8f',], sSelector = '/r'),
+    InstructionMap('grp2_c0',    asLeadOpcodes = ['0xc0',], sSelector = '/r'),
+    InstructionMap('grp2_c1',    asLeadOpcodes = ['0xc1',], sSelector = '/r'),
+    InstructionMap('grp2_d0',    asLeadOpcodes = ['0xd0',], sSelector = '/r'),
+    InstructionMap('grp2_d1',    asLeadOpcodes = ['0xd1',], sSelector = '/r'),
+    InstructionMap('grp2_d2',    asLeadOpcodes = ['0xd2',], sSelector = '/r'),
+    InstructionMap('grp2_d3',    asLeadOpcodes = ['0xd3',], sSelector = '/r'),
+    ## @todo g_apfnEscF1_E0toFF
+    InstructionMap('grp3_f6',    asLeadOpcodes = ['0xf6',], sSelector = '/r'),
+    InstructionMap('grp3_f7',    asLeadOpcodes = ['0xf7',], sSelector = '/r'),
+    InstructionMap('grp4',       asLeadOpcodes = ['0xfe',], sSelector = '/r'),
+    InstructionMap('grp5',       asLeadOpcodes = ['0xff',], sSelector = '/r'),
+    InstructionMap('grp11_c6_m', asLeadOpcodes = ['0xc6',], sSelector = '!11 /r'),
+    InstructionMap('grp11_c6_r', asLeadOpcodes = ['0xc6',], sSelector = '11'),    # xabort
+    InstructionMap('grp11_c7_m', asLeadOpcodes = ['0xc7',], sSelector = '!11 /r'),
+    InstructionMap('grp11_c7_r', asLeadOpcodes = ['0xc7',], sSelector = '11'),    # xbegin
 
-    'two0f':        InstructionMap('two0f',     asLeadOpcodes = ['0x0f',], sDisParse = 'IDX_ParseTwoByteEsc'),
-    'grp6':         InstructionMap('grp6',      asLeadOpcodes = ['0x0f', '0x00',], sSelector = '/r'),
-    'grp7_m':       InstructionMap('grp7_m',    asLeadOpcodes = ['0x0f', '0x01',], sSelector = '!11 /r'),
-    'grp7_r':       InstructionMap('grp7_r',    asLeadOpcodes = ['0x0f', '0x01',], sSelector = '11'),
-    'grp8':         InstructionMap('grp8',      asLeadOpcodes = ['0x0f', '0xba',], sSelector = '/r'),
-    'grp9':         InstructionMap('grp9',      asLeadOpcodes = ['0x0f', '0xc7',], sSelector = 'mod /r'),
-    'grp10':        InstructionMap('grp10',     asLeadOpcodes = ['0x0f', '0xb9',], sSelector = '/r'), # UD1 /w modr/m
-    'grp12':        InstructionMap('grp12',     asLeadOpcodes = ['0x0f', '0x71',], sSelector = 'mod /r'),
-    'grp13':        InstructionMap('grp13',     asLeadOpcodes = ['0x0f', '0x72',], sSelector = 'mod /r'),
-    'grp14':        InstructionMap('grp14',     asLeadOpcodes = ['0x0f', '0x73',], sSelector = 'mod /r'),
-    'grp15':        InstructionMap('grp15',     asLeadOpcodes = ['0x0f', '0xae',], sSelector = 'memreg /r'),
-    'grp16':        InstructionMap('grp16',     asLeadOpcodes = ['0x0f', '0x18',], sSelector = 'mod /r'),
-    'grpA17':       InstructionMap('grpA17',    asLeadOpcodes = ['0x0f', '0x78',], sSelector = '/r'), # AMD: EXTRQ weirdness
-    'grpP':         InstructionMap('grpP',      asLeadOpcodes = ['0x0f', '0x0d',], sSelector = '/r'), # AMD: prefetch
+    InstructionMap('two0f',      'g_apfnTwoByteMap',    asLeadOpcodes = ['0x0f',], sDisParse = 'IDX_ParseTwoByteEsc'),
+    InstructionMap('grp6',       'g_apfnGroup6',        asLeadOpcodes = ['0x0f', '0x00',], sSelector = '/r'),
+    InstructionMap('grp7_m',     'g_apfnGroup7Mem',     asLeadOpcodes = ['0x0f', '0x01',], sSelector = '!11 /r'),
+    InstructionMap('grp7_r',                            asLeadOpcodes = ['0x0f', '0x01',], sSelector = '11'),
+    InstructionMap('grp8',                              asLeadOpcodes = ['0x0f', '0xba',], sSelector = '/r'),
+    InstructionMap('grp9',       'g_apfnGroup9RegReg',  asLeadOpcodes = ['0x0f', '0xc7',], sSelector = 'mod /r'),
+    ## @todo What about g_apfnGroup9MemReg?
+    InstructionMap('grp10',      None,                  asLeadOpcodes = ['0x0f', '0xb9',], sSelector = '/r'), # UD1 /w modr/m
+    InstructionMap('grp12',      'g_apfnGroup12RegReg', asLeadOpcodes = ['0x0f', '0x71',], sSelector = 'mod /r'),
+    InstructionMap('grp13',      'g_apfnGroup13RegReg', asLeadOpcodes = ['0x0f', '0x72',], sSelector = 'mod /r'),
+    InstructionMap('grp14',      'g_apfnGroup14RegReg', asLeadOpcodes = ['0x0f', '0x73',], sSelector = 'mod /r'),
+    InstructionMap('grp15',      'g_apfnGroup15MemReg', asLeadOpcodes = ['0x0f', '0xae',], sSelector = 'memreg /r'),
+    ## @todo What about g_apfnGroup15RegReg?
+    InstructionMap('grp16',       asLeadOpcodes = ['0x0f', '0x18',], sSelector = 'mod /r'),
+    InstructionMap('grpA17',      asLeadOpcodes = ['0x0f', '0x78',], sSelector = '/r'), # AMD: EXTRQ weirdness
+    InstructionMap('grpP',        asLeadOpcodes = ['0x0f', '0x0d',], sSelector = '/r'), # AMD: prefetch
 
-    'three0f38':    InstructionMap('three0f38', asLeadOpcodes = ['0x0f', '0x38',]),
-    'three0f3a':    InstructionMap('three0f3a', asLeadOpcodes = ['0x0f', '0x3a',]),
+    InstructionMap('three0f38',  'g_apfnThreeByte0f38',    asLeadOpcodes = ['0x0f', '0x38',]),
+    InstructionMap('three0f3a',  'g_apfnThreeByte0f3a',    asLeadOpcodes = ['0x0f', '0x3a',]),
 
-    'vexmap1':      InstructionMap('vexmap1',   sEncoding = 'vex1'),
-    'vexgrp12':     InstructionMap('vexgrp12',  sEncoding = 'vex1', asLeadOpcodes = ['0x71',], sSelector = 'mod /r'),
-    'vexgrp13':     InstructionMap('vexgrp13',  sEncoding = 'vex1', asLeadOpcodes = ['0x72',], sSelector = 'mod /r'),
-    'vexgrp14':     InstructionMap('vexgrp14',  sEncoding = 'vex1', asLeadOpcodes = ['0x73',], sSelector = 'mod /r'),
-    'vexgrp15':     InstructionMap('vexgrp15',  sEncoding = 'vex1', asLeadOpcodes = ['0xae',], sSelector = 'memreg /r'),
-    'vexgrp17':     InstructionMap('vexgrp17',  sEncoding = 'vex1', asLeadOpcodes = ['0xf3',], sSelector = '/r'),
+    InstructionMap('vexmap1',  'g_apfnVexMap1',          sEncoding = 'vex1'),
+    InstructionMap('vexgrp12', 'g_apfnVexGroup12RegReg', sEncoding = 'vex1', asLeadOpcodes = ['0x71',], sSelector = 'mod /r'),
+    InstructionMap('vexgrp13', 'g_apfnVexGroup13RegReg', sEncoding = 'vex1', asLeadOpcodes = ['0x72',], sSelector = 'mod /r'),
+    InstructionMap('vexgrp14', 'g_apfnVexGroup14RegReg', sEncoding = 'vex1', asLeadOpcodes = ['0x73',], sSelector = 'mod /r'),
+    InstructionMap('vexgrp15', 'g_apfnVexGroup15MemReg', sEncoding = 'vex1', asLeadOpcodes = ['0xae',], sSelector = 'memreg /r'),
+    InstructionMap('vexgrp17', 'g_apfnVexGroup17_f3',    sEncoding = 'vex1', asLeadOpcodes = ['0xf3',], sSelector = '/r'),
 
-    'vexmap2':      InstructionMap('vexmap2',   sEncoding = 'vex2'),
-    'vexmap3':      InstructionMap('vexmap3',   sEncoding = 'vex3'),
+    InstructionMap('vexmap2',  'g_apfnVexMap2',          sEncoding = 'vex2'),
+    InstructionMap('vexmap3',  'g_apfnVexMap3',          sEncoding = 'vex3'),
 
-    '3dnow':        InstructionMap('3dnow',     asLeadOpcodes = ['0x0f', '0x0f',]),
-    'xopmap8':      InstructionMap('xopmap8',   sEncoding = 'xop8'),
-    'xopmap9':      InstructionMap('xopmap9',   sEncoding = 'xop9'),
-    'xopgrp1':      InstructionMap('xopgrp1',   sEncoding = 'xop9',  asLeadOpcodes = ['0x01'], sSelector = '/r'),
-    'xopgrp2':      InstructionMap('xopgrp2',   sEncoding = 'xop9',  asLeadOpcodes = ['0x02'], sSelector = '/r'),
-    'xopgrp3':      InstructionMap('xopgrp3',   sEncoding = 'xop9',  asLeadOpcodes = ['0x12'], sSelector = '/r'),
-    'xopmap10':     InstructionMap('xopmap10',  sEncoding = 'xop10'),
-    'xopgrp4':      InstructionMap('xopgrp4',   sEncoding = 'xop10', asLeadOpcodes = ['0x12'], sSelector = '/r'),
-};
+    InstructionMap('3dnow',    asLeadOpcodes = ['0x0f', '0x0f',]),
+    InstructionMap('xopmap8',  sEncoding = 'xop8'),
+    InstructionMap('xopmap9',  sEncoding = 'xop9'),
+    InstructionMap('xopgrp1',  sEncoding = 'xop9',  asLeadOpcodes = ['0x01'], sSelector = '/r'),
+    InstructionMap('xopgrp2',  sEncoding = 'xop9',  asLeadOpcodes = ['0x02'], sSelector = '/r'),
+    InstructionMap('xopgrp3',  sEncoding = 'xop9',  asLeadOpcodes = ['0x12'], sSelector = '/r'),
+    InstructionMap('xopmap10', sEncoding = 'xop10'),
+    InstructionMap('xopgrp4',  sEncoding = 'xop10', asLeadOpcodes = ['0x12'], sSelector = '/r'),
+];
+g_dInstructionMaps          = { oMap.sName:    oMap for oMap in g_aoInstructionMaps };
+g_dInstructionMapsByIemName = { oMap.sIemName: oMap for oMap in g_aoInstructionMaps };
 
 
 
@@ -1628,6 +1742,8 @@ class SimpleParser(object):
         self.oReFunctionName= re.compile('^iemOp_[A-Za-z_][A-Za-z0-9_]*$');
         self.oReGroupName   = re.compile('^og_[a-z0-9]+(|_[a-z0-9]+|_[a-z0-9]+_[a-z0-9]+)$');
         self.oReDisEnum     = re.compile('^OP_[A-Z0-9_]+$');
+        self.oReFunTable    = re.compile('^(IEM_STATIC|static) +const +PFNIEMOP +g_apfn[A-Za-z0-9_]+ *\[ *\d* *\] *= *$');
+        self.oReComment     = re.compile('//.*?$|/\*.*?\*/'); ## Full comments.
         self.fDebug         = True;
 
         self.dTagHandlers   = {
@@ -1725,6 +1841,122 @@ class SimpleParser(object):
         if self.fDebug:
             print('debug: %s' % (sMessage,));
 
+    def stripComments(self, sLine):
+        """
+        Returns sLine with comments stripped.
+
+        Complains if traces of incomplete multi-line comments are encountered.
+        """
+        sLine = self.oReComment.sub(" ", sLine);
+        if sLine.find('/*') >= 0 or sLine.find('*/') >= 0:
+            self.error('Unexpected multi-line comment will not be handled correctly. Please simplify.');
+        return sLine;
+
+    def parseFunctionTable(self, sLine):
+        """
+        Parses a PFNIEMOP table, updating/checking the @oppfx value.
+
+        Note! Updates iLine as it consumes the whole table.
+        """
+
+        #
+        # Extract the table name.
+        #
+        sName = re.search(' *([a-zA-Z_0-9]+) *\[', sLine).group(1);
+        oMap  = g_dInstructionMapsByIemName.get(sName);
+        if not oMap:
+            self.debug('No map for PFNIEMOP table: %s' % (sName,));
+            oMap = self.oDefaultMap; # This is wrong wrong wrong.
+
+        #
+        # All but the g_apfnOneByteMap & g_apfnEscF1_E0toFF tables uses four
+        # entries per byte:
+        #       no prefix, 066h prefix, f3h prefix, f2h prefix
+        # Those tables has 256 & 32 entries respectively.
+        #
+        cEntriesPerByte   = 4;
+        cValidTableLength = 1024;
+        asPrefixes        = ('none', '0x66', '0xf3', '0xf2');
+
+        oEntriesMatch = re.search('\[ *(256|32) *\]', sLine);
+        if oEntriesMatch:
+            cEntriesPerByte   = 1;
+            cValidTableLength = int(oEntriesMatch.group(1));
+            asPrefixes        = (None,);
+
+        #
+        # The next line should be '{' and nothing else.
+        #
+        if self.iLine >= len(self.asLines) or not re.match('^ *{ *$', self.asLines[self.iLine]):
+            return self.errorOnLine(self.iLine + 1, 'Expected lone "{" on line following PFNIEMOP table %s start' % (sName, ));
+        self.iLine += 1;
+
+        #
+        # Parse till we find the end of the table.
+        #
+        iEntry = 0;
+        while self.iLine < len(self.asLines):
+            # Get the next line and strip comments and spaces (assumes no
+            # multi-line comments).
+            sLine = self.asLines[self.iLine];
+            self.iLine += 1;
+            sLine = self.stripComments(sLine).strip();
+
+            # Split the line up into entries, expanding IEMOP_X4 usage.
+            asEntries = sLine.split(',');
+            for i in range(len(asEntries) - 1, -1, -1):
+                sEntry = asEntries[i].strip();
+                if sEntry.startswith('IEMOP_X4(') and sEntry[-1] == ')':
+                    sEntry = (sEntry[len('IEMOP_X4('):-1]).strip();
+                    asEntries.insert(i + 1, sEntry);
+                    asEntries.insert(i + 1, sEntry);
+                    asEntries.insert(i + 1, sEntry);
+                if sEntry:
+                    asEntries[i] = sEntry;
+                else:
+                    del asEntries[i];
+
+            # Process the entries.
+            for sEntry in asEntries:
+                if sEntry in ('};', '}'):
+                    if iEntry != cValidTableLength:
+                        return self.error('Wrong table length for %s: %#x, expected %#x' % (sName, iEntry, cValidTableLength, ));
+                    return True;
+                if sEntry.startswith('iemOp_Invalid'):
+                    pass; # skip
+                else:
+                    # Look up matching instruction by function.
+                    sPrefix = asPrefixes[iEntry % cEntriesPerByte];
+                    sOpcode = '%#04x' % (iEntry // cEntriesPerByte);
+                    aoInstr  = g_dAllInstructionsByFunction.get(sEntry);
+                    if aoInstr:
+                        if not isinstance(aoInstr, list):
+                            aoInstr = [aoInstr,];
+                        oInstr = None;
+                        for oCurInstr in aoInstr:
+                            if oCurInstr.sOpcode == sOpcode and oCurInstr.sPrefix == sPrefix:
+                                pass;
+                            elif oCurInstr.sOpcode == sOpcode and oCurInstr.sPrefix is None:
+                                oCurInstr.sPrefix = sPrefix;
+                            elif oCurInstr.sOpcode is None and oCurInstr.sPrefix is None:
+                                oCurInstr.sOpcode = sOpcode;
+                                oCurInstr.sPrefix = sPrefix;
+                            else:
+                                continue;
+                            oInstr = oCurInstr;
+                            break;
+                        if not oInstr:
+                            oInstr = aoInstr[0].copy(oMap = oMap, sOpcode = sOpcode, sPrefix = sPrefix);
+                            aoInstr.append(oInstr);
+                            g_dAllInstructionsByFunction[sEntry] = aoInstr;
+                            g_aoAllInstructions.append(oInstr);
+                            oMap.aoInstructions.append(oInstr);
+                    else:
+                        self.debug('Function "%s", entry %#04x / byte %#04x in %s, is not associated with an instruction.'
+                                   % (sEntry, iEntry, iEntry // cEntriesPerByte, sName,));
+                iEntry += 1;
+
+        return self.error('Unexpected end of file in PFNIEMOP table');
 
     def addInstruction(self, iLine = None):
         """
@@ -1869,7 +2101,7 @@ class SimpleParser(object):
         self.cTotalInstr += len(self.aoCurInstrs);
 
         self.sComment     = '';
-        self.aoCurInstrs   = [];
+        self.aoCurInstrs  = [];
         return True;
 
     def setInstrunctionAttrib(self, sAttrib, oValue, fOverwrite = False):
@@ -2583,8 +2815,8 @@ class SimpleParser(object):
                         else:
                             self.errorComment(iTagLine, '%s: invalid %s field "%s" in "%s"\nvalid fields: %s'
                                                          % ( sTag, sDesc, sField, sItem,
-                                                             ', '.join([sKey for sKey in TestInOut.kdFields
-                                                                        if TestInOut.kdFields[sKey][1] in asValidFieldKinds]),));
+                                                             ', '.join([sKey for sKey, asVal in TestInOut.kdFields.items()
+                                                                        if asVal[1] in asValidFieldKinds]),));
                         break;
                     if oItem is not None:
                         for oExisting in aoDst:
@@ -3287,6 +3519,11 @@ class SimpleParser(object):
                 #self.debug('line %d: }' % (self.iLine,));
                 self.doneInstructions();
 
+            # Look for instruction table on the form 'IEM_STATIC const PFNIEMOP g_apfnVexMap3'
+            # so we can check/add @oppfx info from it.
+            elif self.iState == self.kiCode and sLine.find('PFNIEMOP') > 0 and self.oReFunTable.match(sLine):
+                self.parseFunctionTable(sLine);
+
         self.doneInstructions();
         self.debug('%3s stubs out of %3s instructions in %s'
                    % (self.cTotalStubs, self.cTotalInstr, os.path.basename(self.sSrcFile),));
@@ -3301,7 +3538,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     # Read sSrcFile into a line array.
     #
     try:
-        oFile = open(sSrcFile, "r");
+        oFile = open(sSrcFile, "r");    # pylint: disable=consider-using-with
     except Exception as oXcpt:
         raise Exception("failed to open %s for reading: %s" % (sSrcFile, oXcpt,));
     try:
@@ -3399,169 +3636,267 @@ __parseAll();
 #
 # Generators (may perhaps move later).
 #
+def __formatDisassemblerTableEntry(oInstr):
+    """
+    """
+    sMacro = 'OP';
+    cMaxOperands = 3;
+    if len(oInstr.aoOperands) > 3:
+        sMacro = 'OPVEX'
+        cMaxOperands = 4;
+        assert len(oInstr.aoOperands) <= cMaxOperands;
+
+    #
+    # Format string.
+    #
+    sTmp = '%s("%s' % (sMacro, oInstr.sMnemonic,);
+    for iOperand, oOperand in enumerate(oInstr.aoOperands):
+        sTmp += ' ' if iOperand == 0 else ',';
+        if g_kdOpTypes[oOperand.sType][2][0] != '%':        ## @todo remove upper() later.
+            sTmp += g_kdOpTypes[oOperand.sType][2].upper(); ## @todo remove upper() later.
+        else:
+            sTmp += g_kdOpTypes[oOperand.sType][2];
+    sTmp += '",';
+    asColumns = [ sTmp, ];
+
+    #
+    # Decoders.
+    #
+    iStart = len(asColumns);
+    if oInstr.sEncoding is None:
+        pass;
+    elif oInstr.sEncoding == 'ModR/M':
+        # ASSUME the first operand is using the ModR/M encoding
+        assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM();
+        asColumns.append('IDX_ParseModRM,');
+    elif oInstr.sEncoding in [ 'prefix', ]:
+        for oOperand in oInstr.aoOperands:
+            asColumns.append('0,');
+    elif oInstr.sEncoding in [ 'fixed', 'VEX.fixed' ]:
+        pass;
+    elif oInstr.sEncoding == 'VEX.ModR/M':
+        asColumns.append('IDX_ParseModRM,');
+    elif oInstr.sEncoding == 'vex2':
+        asColumns.append('IDX_ParseVex2b,')
+    elif oInstr.sEncoding == 'vex3':
+        asColumns.append('IDX_ParseVex3b,')
+    elif oInstr.sEncoding in g_dInstructionMaps:
+        asColumns.append(g_dInstructionMaps[oInstr.sEncoding].sDisParse + ',');
+    else:
+        ## @todo
+        #IDX_ParseTwoByteEsc,
+        #IDX_ParseGrp1,
+        #IDX_ParseShiftGrp2,
+        #IDX_ParseGrp3,
+        #IDX_ParseGrp4,
+        #IDX_ParseGrp5,
+        #IDX_Parse3DNow,
+        #IDX_ParseGrp6,
+        #IDX_ParseGrp7,
+        #IDX_ParseGrp8,
+        #IDX_ParseGrp9,
+        #IDX_ParseGrp10,
+        #IDX_ParseGrp12,
+        #IDX_ParseGrp13,
+        #IDX_ParseGrp14,
+        #IDX_ParseGrp15,
+        #IDX_ParseGrp16,
+        #IDX_ParseThreeByteEsc4,
+        #IDX_ParseThreeByteEsc5,
+        #IDX_ParseModFence,
+        #IDX_ParseEscFP,
+        #IDX_ParseNopPause,
+        #IDX_ParseInvOpModRM,
+        assert False, str(oInstr);
+
+    # Check for immediates and stuff in the remaining operands.
+    for oOperand in oInstr.aoOperands[len(asColumns) - iStart:]:
+        sIdx = g_kdOpTypes[oOperand.sType][0];
+        #if sIdx != 'IDX_UseModRM':
+        asColumns.append(sIdx + ',');
+    asColumns.extend(['0,'] * (cMaxOperands - (len(asColumns) - iStart)));
+
+    #
+    # Opcode and operands.
+    #
+    assert oInstr.sDisEnum, str(oInstr);
+    asColumns.append(oInstr.sDisEnum + ',');
+    iStart = len(asColumns)
+    for oOperand in oInstr.aoOperands:
+        asColumns.append('OP_PARM_' + g_kdOpTypes[oOperand.sType][3] + ',');
+    asColumns.extend(['OP_PARM_NONE,'] * (cMaxOperands - (len(asColumns) - iStart)));
+
+    #
+    # Flags.
+    #
+    sTmp = '';
+    for sHint in sorted(oInstr.dHints.keys()):
+        sDefine = g_kdHints[sHint];
+        if sDefine.startswith('DISOPTYPE_'):
+            if sTmp:
+                sTmp += ' | ' + sDefine;
+            else:
+                sTmp += sDefine;
+    if sTmp:
+        sTmp += '),';
+    else:
+        sTmp += '0),';
+    asColumns.append(sTmp);
+
+    #
+    # Format the columns into a line.
+    #
+    aoffColumns = [4, 29, 49, 65, 77, 89, 109, 125, 141, 157, 183, 199];
+    sLine = '';
+    for i, s in enumerate(asColumns):
+        if len(sLine) < aoffColumns[i]:
+            sLine += ' ' * (aoffColumns[i] - len(sLine));
+        else:
+            sLine += ' ';
+        sLine += s;
+
+    # OP("psrlw %Vdq,%Wdq", IDX_ParseModRM, IDX_UseModRM, 0, OP_PSRLW, OP_PARM_Vdq, OP_PARM_Wdq, OP_PARM_NONE,
+    # DISOPTYPE_HARMLESS),
+    # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
+    # { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
+    return sLine;
+
+def __checkIfShortTable(aoTableOrdered, oMap):
+    """
+    Returns (iInstr, cInstructions, fShortTable)
+    """
+
+    # Determin how much we can trim off.
+    cInstructions = len(aoTableOrdered);
+    while cInstructions > 0 and aoTableOrdered[cInstructions - 1] is None:
+        cInstructions -= 1;
+
+    iInstr = 0;
+    while iInstr < cInstructions and aoTableOrdered[iInstr] is None:
+        iInstr += 1;
+
+    # If we can save more than 30%, we go for the short table version.
+    if iInstr + len(aoTableOrdered) - cInstructions >= len(aoTableOrdered) // 30:
+        return (iInstr, cInstructions, True);
+    _ = oMap; # Use this for overriding.
+
+    # Output the full table.
+    return (0, len(aoTableOrdered), False);
+
 def generateDisassemblerTables(oDstFile = sys.stdout):
     """
     Generates disassembler tables.
     """
 
+    #
+    # The disassembler uses a slightly different table layout to save space,
+    # since several of the prefix varia
+    #
+    aoDisasmMaps = [];
     for sName, oMap in sorted(iter(g_dInstructionMaps.items()),
                               key = lambda aKV: aKV[1].sEncoding + ''.join(aKV[1].asLeadOpcodes)):
-        assert oMap.sName == sName;
-        asLines = [];
+        if oMap.sSelector != 'byte+pfx':
+            aoDisasmMaps.append(oMap);
+        else:
+            # Split the map by prefix.
+            aoDisasmMaps.append(oMap.copy(oMap.sName,         'none'));
+            aoDisasmMaps.append(oMap.copy(oMap.sName + '_66', '0x66'));
+            aoDisasmMaps.append(oMap.copy(oMap.sName + '_F3', '0xf3'));
+            aoDisasmMaps.append(oMap.copy(oMap.sName + '_F2', '0xf2'));
 
+    #
+    # Dump each map.
+    #
+    asHeaderLines = [];
+    print("debug: maps=%s\n" % (', '.join([oMap.sName for oMap in aoDisasmMaps]),));
+    for oMap in aoDisasmMaps:
+        sName = oMap.sName;
+
+        if not sName.startswith("vex"): continue; # only looking at the vex maps at the moment.
+
+        #
+        # Get the instructions for the map and see if we can do a short version or not.
+        #
+        aoTableOrder    = oMap.getInstructionsInTableOrder();
+        cEntriesPerByte = oMap.getEntriesPerByte();
+        (iInstrStart, iInstrEnd, fShortTable) = __checkIfShortTable(aoTableOrder, oMap);
+
+        #
+        # Output the table start.
+        # Note! Short tables are static and only accessible via the map range record.
+        #
+        asLines = [];
         asLines.append('/* Generated from: %-11s  Selector: %-7s  Encoding: %-7s  Lead bytes opcodes: %s */'
                        % ( oMap.sName, oMap.sSelector, oMap.sEncoding, ' '.join(oMap.asLeadOpcodes), ));
-        asLines.append('const DISOPCODE %s[] =' % (oMap.getDisasTableName(),));
+        if fShortTable:
+            asLines.append('%sconst DISOPCODE %s[] =' % ('static ' if fShortTable else '', oMap.getDisasTableName(),));
+        else:
+            asHeaderLines.append('extern const DISOPCODE %s[%d];'  % (oMap.getDisasTableName(), iInstrEnd - iInstrStart,));
+            asLines.append(             'const DISOPCODE %s[%d] =' % (oMap.getDisasTableName(), iInstrEnd - iInstrStart,));
         asLines.append('{');
 
-        aoffColumns = [4, 29, 49, 65, 77, 89, 109, 125, 141, 157, 183, 199];
+        if fShortTable and (iInstrStart & ((0x10 * cEntriesPerByte) - 1)) != 0:
+            asLines.append('    /* %#04x: */' % (iInstrStart,));
 
-        aoTableOrder = oMap.getInstructionsInTableOrder();
-        for iInstr, oInstr in enumerate(aoTableOrder):
-
-            if (iInstr & 0xf) == 0:
-                if iInstr != 0:
+        #
+        # Output the instructions.
+        #
+        iInstr = iInstrStart;
+        while iInstr < iInstrEnd:
+            oInstr = aoTableOrder[iInstr];
+            if (iInstr & ((0x10 * cEntriesPerByte) - 1)) == 0:
+                if iInstr != iInstrStart:
                     asLines.append('');
-                asLines.append('    /* %x */' % (iInstr >> 4,));
+                asLines.append('    /* %x */' % ((iInstr // cEntriesPerByte) >> 4,));
 
             if oInstr is None:
-                pass;#asLines.append('    /* %#04x */ None,' % (iInstr));
+                # Invalid. Optimize blocks of invalid instructions.
+                cInvalidInstrs = 1;
+                while iInstr + cInvalidInstrs < len(aoTableOrder) and aoTableOrder[iInstr + cInvalidInstrs] is None:
+                    cInvalidInstrs += 1;
+                if (iInstr & (0x10 * cEntriesPerByte - 1)) == 0 and cInvalidInstrs >= 0x10 * cEntriesPerByte:
+                    asLines.append('    INVALID_OPCODE_BLOCK_%u,' % (0x10 * cEntriesPerByte,));
+                    iInstr += 0x10 * cEntriesPerByte - 1;
+                elif cEntriesPerByte > 1:
+                    if (iInstr & (cEntriesPerByte - 1)) == 0 and cInvalidInstrs >= cEntriesPerByte:
+                        asLines.append('    INVALID_OPCODE_BLOCK_%u,' % (cEntriesPerByte,));
+                        iInstr += 3;
+                    else:
+                        asLines.append('    /* %#04x/%d */ INVALID_OPCODE,'
+                                       % (iInstr // cEntriesPerByte, iInstr % cEntriesPerByte));
+                else:
+                    asLines.append('    /* %#04x */ INVALID_OPCODE,' % (iInstr));
             elif isinstance(oInstr, list):
-                asLines.append('    /* %#04x */ ComplicatedListStuffNeedingWrapper,' % (iInstr));
+                if len(oInstr) != 0:
+                    asLines.append('    /* %#04x */ ComplicatedListStuffNeedingWrapper, /* \n -- %s */'
+                                   % (iInstr, '\n -- '.join([str(oItem) for oItem in oInstr]),));
+                else:
+                    asLines.append(__formatDisassemblerTableEntry(oInstr));
             else:
-                sMacro = 'OP';
-                cMaxOperands = 3;
-                if len(oInstr.aoOperands) > 3:
-                    sMacro = 'OPVEX'
-                    cMaxOperands = 4;
-                    assert len(oInstr.aoOperands) <= cMaxOperands;
+                asLines.append(__formatDisassemblerTableEntry(oInstr));
 
-                #
-                # Format string.
-                #
-                sTmp = '%s("%s' % (sMacro, oInstr.sMnemonic,);
-                for iOperand, oOperand in enumerate(oInstr.aoOperands):
-                    sTmp += ' ' if iOperand == 0 else ',';
-                    if g_kdOpTypes[oOperand.sType][2][0] != '%':        ## @todo remove upper() later.
-                        sTmp += g_kdOpTypes[oOperand.sType][2].upper(); ## @todo remove upper() later.
-                    else:
-                        sTmp += g_kdOpTypes[oOperand.sType][2];
-                sTmp += '",';
-                asColumns = [ sTmp, ];
+            iInstr += 1;
 
-                #
-                # Decoders.
-                #
-                iStart = len(asColumns);
-                if oInstr.sEncoding is None:
-                    pass;
-                elif oInstr.sEncoding == 'ModR/M':
-                    # ASSUME the first operand is using the ModR/M encoding
-                    assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM();
-                    asColumns.append('IDX_ParseModRM,');
-                    ## @todo IDX_ParseVexDest
-                    # Is second operand using ModR/M too?
-                    if len(oInstr.aoOperands) > 1 and oInstr.aoOperands[1].usesModRM():
-                        asColumns.append('IDX_UseModRM,')
-                elif oInstr.sEncoding in [ 'prefix', ]:
-                    for oOperand in oInstr.aoOperands:
-                        asColumns.append('0,');
-                elif oInstr.sEncoding in [ 'fixed' ]:
-                    pass;
-                elif oInstr.sEncoding == 'vex2':
-                    asColumns.append('IDX_ParseVex2b,')
-                elif oInstr.sEncoding == 'vex3':
-                    asColumns.append('IDX_ParseVex3b,')
-                elif oInstr.sEncoding in g_dInstructionMaps:
-                    asColumns.append(g_dInstructionMaps[oInstr.sEncoding].sDisParse + ',');
-                else:
-                    ## @todo
-                    #IDX_ParseTwoByteEsc,
-                    #IDX_ParseGrp1,
-                    #IDX_ParseShiftGrp2,
-                    #IDX_ParseGrp3,
-                    #IDX_ParseGrp4,
-                    #IDX_ParseGrp5,
-                    #IDX_Parse3DNow,
-                    #IDX_ParseGrp6,
-                    #IDX_ParseGrp7,
-                    #IDX_ParseGrp8,
-                    #IDX_ParseGrp9,
-                    #IDX_ParseGrp10,
-                    #IDX_ParseGrp12,
-                    #IDX_ParseGrp13,
-                    #IDX_ParseGrp14,
-                    #IDX_ParseGrp15,
-                    #IDX_ParseGrp16,
-                    #IDX_ParseThreeByteEsc4,
-                    #IDX_ParseThreeByteEsc5,
-                    #IDX_ParseModFence,
-                    #IDX_ParseEscFP,
-                    #IDX_ParseNopPause,
-                    #IDX_ParseInvOpModRM,
-                    assert False, str(oInstr);
-
-                # Check for immediates and stuff in the remaining operands.
-                for oOperand in oInstr.aoOperands[len(asColumns) - iStart:]:
-                    sIdx = g_kdOpTypes[oOperand.sType][0];
-                    if sIdx != 'IDX_UseModRM':
-                        asColumns.append(sIdx + ',');
-                asColumns.extend(['0,'] * (cMaxOperands - (len(asColumns) - iStart)));
-
-                #
-                # Opcode and operands.
-                #
-                assert oInstr.sDisEnum, str(oInstr);
-                asColumns.append(oInstr.sDisEnum + ',');
-                iStart = len(asColumns)
-                for oOperand in oInstr.aoOperands:
-                    asColumns.append('OP_PARM_' + g_kdOpTypes[oOperand.sType][3] + ',');
-                asColumns.extend(['OP_PARM_NONE,'] * (cMaxOperands - (len(asColumns) - iStart)));
-
-                #
-                # Flags.
-                #
-                sTmp = '';
-                for sHint in sorted(oInstr.dHints.keys()):
-                    sDefine = g_kdHints[sHint];
-                    if sDefine.startswith('DISOPTYPE_'):
-                        if sTmp:
-                            sTmp += ' | ' + sDefine;
-                        else:
-                            sTmp += sDefine;
-                if sTmp:
-                    sTmp += '),';
-                else:
-                    sTmp += '0),';
-                asColumns.append(sTmp);
-
-                #
-                # Format the columns into a line.
-                #
-                sLine = '';
-                for i, s in enumerate(asColumns):
-                    if len(sLine) < aoffColumns[i]:
-                        sLine += ' ' * (aoffColumns[i] - len(sLine));
-                    else:
-                        sLine += ' ';
-                    sLine += s;
-
-                # OP("psrlw %Vdq,%Wdq", IDX_ParseModRM, IDX_UseModRM, 0, OP_PSRLW, OP_PARM_Vdq, OP_PARM_Wdq, OP_PARM_NONE,
-                # DISOPTYPE_HARMLESS),
-                # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-                # { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
-
-                asLines.append(sLine);
+        if iInstrStart >= iInstrEnd:
+            asLines.append('    /* dummy */ INVALID_OPCODE');
 
         asLines.append('};');
-        asLines.append('AssertCompile(RT_ELEMENTS(%s) == %s);' % (oMap.getDisasTableName(), oMap.getTableSize(),));
+        asLines.append('AssertCompile(RT_ELEMENTS(%s) == %s);' % (oMap.getDisasTableName(), iInstrEnd - iInstrStart,));
+
+        #
+        # We always emit a map range record, assuming the linker will eliminate the unnecessary ones.
+        #
+        asHeaderLines.append('extern const DISOPMAPDESC %sRange;'  % (oMap.getDisasRangeName()));
+        asLines.append('const DISOPMAPDESC %s = { &%s[0], %#04x, RT_ELEMENTS(%s) };'
+                       % (oMap.getDisasRangeName(), oMap.getDisasTableName(), iInstrStart, oMap.getDisasTableName(),));
 
         #
         # Write out the lines.
         #
         oDstFile.write('\n'.join(asLines));
         oDstFile.write('\n');
-        break; #for now
+        oDstFile.write('\n');
+        #break; #for now
 
 if __name__ == '__main__':
     generateDisassemblerTables();

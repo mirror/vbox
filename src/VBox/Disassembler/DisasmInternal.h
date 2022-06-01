@@ -84,6 +84,28 @@ enum IDX_Parse
 AssertCompile(IDX_ParseMax < 64 /* Packed DISOPCODE assumption. */);
 /** @}  */
 
+/**
+ * Opcode map descriptor.
+ *
+ * This is used a number of places to save storage space where there are lots of
+ * invalid instructions and the beginning or end of the map.
+ */
+typedef struct DISOPMAPDESC
+{
+    /** Pointer to the opcodes described by this structure. */
+    PCDISOPCODE     papOpcodes;
+#if ARCH_BITS <= 32
+    uint16_t
+#else
+    uint32_t
+#endif
+    /** The map index corresponding to the first papOpcodes entry. */
+                    idxFirst,
+    /** Number of opcodes in the map. */
+                    cOpcodes;
+} DISOPMAPDESC;
+/** Pointer to a const opcode map descriptor. */
+typedef DISOPMAPDESC const *PCDISOPMAPDESC;
 
 /** @name Opcode maps.
  * @{ */
@@ -124,17 +146,22 @@ extern PCDISOPCODE const g_apThreeByteMapX86_66F20F38[16];
 
 /** VEX opcodes table defined by [VEX.m-mmmm - 1].
   * 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 00b */
-extern PCDISOPCODE const g_aVexOpcodesMap[3];
+extern PCDISOPMAPDESC const g_apVexOpcodesMapRanges_None[3];
 
 /** VEX opcodes table defined by [VEX.m-mmmm - 1].
   * 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 01b (66h) */
-extern PCDISOPCODE const g_aVexOpcodesMap_66H[3];
+extern PCDISOPMAPDESC const g_apVexOpcodesMapRanges_66H[3];
 
 /** 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 10b (F3h) */
-extern PCDISOPCODE const g_aVexOpcodesMap_F3H[3];
+extern PCDISOPMAPDESC const g_apVexOpcodesMapRanges_F3H[3];
 
 /** 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 11b (F2h) */
-extern PCDISOPCODE const g_aVexOpcodesMap_F2H[3];
+extern PCDISOPMAPDESC const g_apVexOpcodesMapRanges_F2H[3];
+
+/** Two dimmentional map descriptor array: first index is by VEX.pp (prefix),
+ * second by the VEX.mmmm (map).
+ * The latter has to be bounced checked as we only have the first 4 maps. */
+extern PCDISOPMAPDESC const g_aapVexOpcodesMapRanges[4][4];
 /** @} */
 
 /** @name Opcode extensions (Group tables)

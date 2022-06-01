@@ -2478,8 +2478,6 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 {
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
-    PCDISOPCODE pOpCode = &g_InvalidOpcode[0];
-
     uint8_t byte = disReadByte(pDis, offInstr++);
     pDis->bOpCode = disReadByte(pDis, offInstr++);
 
@@ -2493,29 +2491,13 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         pDis->fRexPrefix = DISPREFIX_REX_FLAGS_R;
     }
 
-    switch(byte & 3)
-    {
-        case 0:
-            pOpCode = g_aVexOpcodesMap[0] + pDis->bOpCode;
-        break;
-        // 0x66 prefix
-        case 1:
-            pOpCode = g_aVexOpcodesMap_66H[0] + pDis->bOpCode;
-
-        break;
-
-        // 0xF3 prefix
-        case 2:
-            pOpCode = g_aVexOpcodesMap_F3H[0] + pDis->bOpCode;
-        break;
-
-        // 0xF2 prefix
-        case 3:
-            pOpCode = g_aVexOpcodesMap_F2H[0] + pDis->bOpCode;
-        break;
-        default:
-        break;
-    }
+    PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte & 3][1];
+    unsigned  const      idxOpcode = pDis->bOpCode - pRange->idxFirst;
+    PCDISOPCODE          pOpCode;
+    if (idxOpcode < pRange->cOpcodes)
+        pOpCode = &pRange->papOpcodes[idxOpcode];
+    else
+        pOpCode = &g_InvalidOpcode[0];
 
     return disParseInstruction(offInstr, pOpCode, pDis);
 }
@@ -2524,8 +2506,6 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
-
-    PCDISOPCODE pOpCode = NULL;
 
     uint8_t byte1 = disReadByte(pDis, offInstr++);
     uint8_t byte2 = disReadByte(pDis, offInstr++);
@@ -2545,90 +2525,18 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     if (pDis->fRexPrefix)
         pDis->fPrefix |= DISPREFIX_REX;
 
-    switch(byte2 & 3)
+    PCDISOPCODE pOpCode;
+    if (implOpcode < RT_ELEMENTS(g_aapVexOpcodesMapRanges[byte2 & 3]))
     {
-        case 0:
-            if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
-            {
-                pOpCode = g_aVexOpcodesMap[implOpcode - 1];
-                if (pOpCode != NULL)
-                {
-                    switch (implOpcode)
-                    {
-                        case 2:
-                            if (pDis->bOpCode >= 0xf0)
-                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
-                            else pOpCode = g_InvalidOpcode;
-                            break;
-                        default:
-                        pOpCode = &pOpCode[pDis->bOpCode];
-                    }
-                }
-            }
-        break;
-        // 0x66 prefix
-        case 1:
-            if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
-            {
-                pOpCode = g_aVexOpcodesMap_66H[implOpcode - 1];
-                if (pOpCode != NULL)
-                    pOpCode = &pOpCode[pDis->bOpCode];
-            }
-        break;
-
-        // 0xF3 prefix
-        case 2:
-            if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
-            {
-                pOpCode = g_aVexOpcodesMap_F3H[implOpcode - 1];
-                if (pOpCode != NULL)
-                {
-                    switch (implOpcode)
-                    {
-                        case 2:
-                            if (pDis->bOpCode >= 0xf0)
-                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
-                            else pOpCode = g_InvalidOpcode;
-                            break;
-                        default:
-                        pOpCode = &pOpCode[pDis->bOpCode];
-                    }
-                }
-
-            }
-        break;
-
-        // 0xF2 prefix
-        case 3:
-            if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
-            {
-                pOpCode = g_aVexOpcodesMap_F2H[implOpcode - 1];
-                if (pOpCode != NULL)
-                {
-                    switch (implOpcode)
-                    {
-                        case 2:
-                            if (pDis->bOpCode >= 0xf0)
-                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
-                            else pOpCode = g_InvalidOpcode;
-                            break;
-                        case 3:
-                            if (pDis->bOpCode != 0xf0)
-                                pOpCode = g_InvalidOpcode;
-                            break;
-                        default:
-                        pOpCode = &pOpCode[pDis->bOpCode];
-                    }
-                }
-            }
-        break;
-
-        default:
-        break;
+        PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte2 & 3][implOpcode];
+        unsigned  const      idxOpcode = pDis->bOpCode - pRange->idxFirst;
+        if (idxOpcode < pRange->cOpcodes)
+            pOpCode = &pRange->papOpcodes[idxOpcode];
+        else
+            pOpCode = &g_InvalidOpcode[0];
     }
-
-    if (pOpCode == NULL)
-        pOpCode = g_InvalidOpcode;
+    else
+        pOpCode = &g_InvalidOpcode[0];
 
     return disParseInstruction(offInstr, pOpCode, pDis);
 }
