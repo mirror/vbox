@@ -715,10 +715,6 @@ QString UIWizardNewVM::ISOFilePath() const
 
 void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 {
-    QFileInfo isoFileInfo(strISOFilePath);
-    if (!isoFileInfo.exists())
-        return;
-
     AssertReturnVoid(!m_comUnattended.isNull());
     m_comUnattended.SetIsoPath(strISOFilePath);
     AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));

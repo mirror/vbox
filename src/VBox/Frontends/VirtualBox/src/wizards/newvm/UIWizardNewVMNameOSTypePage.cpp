@@ -527,17 +527,23 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
      */
     QString strMessage;
     if (m_pNameAndSystemEditor->ISOImagePath().isEmpty())
-        strMessage = UIWizardNewVM::tr("No ISO selected, the guest OS will need to be installed manually.");
+        strMessage = UIWizardNewVM::tr("No ISO image is selected, the guest OS will need to be installed manually.");
     else if (pWizard->detectedOSTypeId().isEmpty())
-        strMessage = UIWizardNewVM::tr("OS type cannot be determined from the selected ISO, the guest OS will need to be installed manually.");
+        strMessage = UIWizardNewVM::tr("OS type cannot be determined from the selected ISO, "
+                                       "the guest OS will need to be installed manually.");
     else if (!pWizard->detectedOSTypeId().isEmpty())
     {
+        QString strType = uiCommon().vmGuestOSTypeDescription(pWizard->detectedOSTypeId());
         if (!pWizard->isUnattendedInstallSupported())
-            strMessage = UIWizardNewVM::tr("Detected OS type cannot be installed unattendedly, the guest OS will need to be installed manually.");
+            strMessage = QString("%1 %2. %3").arg(UIWizardNewVM::tr("Detected OS type: ")).arg(strType)
+                                                 .arg(UIWizardNewVM::tr("This OS type cannot be installed unattendedly. The install "
+                                                                        "needs to be started manually."));
         else if (pWizard->skipUnattendedInstall())
             strMessage = UIWizardNewVM::tr("You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.");
         else
-            strMessage = UIWizardNewVM::tr("After closing this wizard the guest OS system will start installing from the selected ISO.");
+            strMessage = QString("%1 %2. %3").arg(UIWizardNewVM::tr("Detected OS type: ")).arg(strType)
+                                                 .arg(UIWizardNewVM::tr("This OS type can be installed unattendedly. The install "
+                                                                        "will start after this wizard is closed."));
     }
 
     m_pInfoLabel->setText(QString("<img src=\":/session_info_16px.png\" style=\"vertical-align:top\"> %1").arg(strMessage));
@@ -602,6 +608,11 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     setSkipCheckBoxEnable();
     setEditionSelectorEnabled();
     updateInfoLabel();
+
+    /* Disable OS type selector(s) to prevent user from changing guest OS type manually: */
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setOSTypeStuffEnabled(pWizard->detectedOSTypeId().isEmpty());
+
     emit completeChanged();
 }
 
