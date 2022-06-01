@@ -210,6 +210,13 @@
         </DirectorySearch>
     </Property>
 
+<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+    <Property Id="EXISTING_PYTHON_API_FOLDER" Secure="yes" >
+        <RegistrySearch Id="RegistryGetPythonApiInstallPath" Root="HKLM" Key="$(var.Property_RegKey)"
+                        Name="PythonApiInstallDir" Type="raw" Win64="$(var.Property_Win64)"/>
+    </Property>
+<?endif ?>
+
     <!--
                             install upgrade uninstall
     VBOXDEPENDENCY             0      1/0      1/0
@@ -268,6 +275,10 @@
         <Directory Id="$(var.Property_ProgramFiles)" Name="PFiles">
             <Directory Id="VENDOR" Name="$(env.VBOX_VENDOR_SHORT)">
                 <Directory Id="INSTALLDIR" Name="VirtualBox">
+                    <!-- Components for removing empty folder after cleaning traces -->
+                    <Component Id="cp_INSTALLDIR" Guid="374723AF-5990-4552-A1B0-82C72EFA360F">
+                        <RemoveFolder Id="INSTALLDIR" On="uninstall" />
+                    </Component>
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1">
                     <ConfigurationData Name="argRegisterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/>
@@ -363,6 +374,10 @@
                         </Directory>
     <?endif ?>
                     </Directory>
+                    <!-- Component for removing empty folder after cleaning traces -->
+                    <Component Id="cp_SDK" Guid="ACA59290-B2D6-4E96-B164-C45F70A90219">
+                        <RemoveFolder Id="dir_SDK" On="uninstall" />
+                    </Component>
                 </Directory>
 <?endif ?>
 
@@ -433,6 +448,10 @@
         <ComponentRef Id="cp_DesktopShortcut" />
         <ComponentRef Id="cp_QuickLaunchVBox" />
 <?endif ?>
+        <!-- Components for removing empty folders after cleaning traces -->
+        <ComponentRef Id="cp_INSTALLDIR" />
+        <ComponentRef Id="cp_SDK" />
+
         <!-- Components handled either by the installer itself or
              the merge module -->
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
@@ -443,7 +462,7 @@
 <?else ?>
     <!-- Make sure to reference the permissions component, which takes care of setting
          the required ACLs for our files / folders. -->
-    <ComponentRef Id="cp_Permissions" />
+        <ComponentRef Id="cp_Permissions" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_RegisterExtensions" />
     <?endif ?>
@@ -471,6 +490,7 @@
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <ComponentRef Id="cp_VBoxPyInst" />
         <ComponentRef Id="cp_VBoxPyMod" />
+        <ComponentRef Id="cp_VBoxPyDel" />
     <?endif ?>
     <?if $(env.VBOX_WITH_VBOXSDL) = "yes" ?>
         <ComponentRef Id="cp_VBoxSDLBinaries" />
