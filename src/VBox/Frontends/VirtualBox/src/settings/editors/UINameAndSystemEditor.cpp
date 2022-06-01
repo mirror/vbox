@@ -349,7 +349,7 @@ void UINameAndSystemEditor::retranslateUi()
                                     "(called a guest operating system)."));
     if (m_pSelectorImage)
         m_pSelectorImage->setToolTip(tr("Selects an ISO image to be attached to the new "
-                                        "virtual machine or used in attended install."));
+                                        "virtual machine or used in unattended install."));
 }
 
 void UINameAndSystemEditor::sltFamilyChanged(int iIndex)

@@ -88,6 +88,7 @@ private:
     bool isUnattendedEnabled() const;
     bool isUnattendedInstallSupported() const;
     void setEditionSelectorEnabled();
+    void updateInfoLabel();
 
     /** @name Widgets
      * @{ */
@@ -95,6 +96,7 @@ private:
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QCheckBox             *m_pSkipUnattendedCheckBox;
         QIRichTextLabel       *m_pNameOSTypeLabel;
+        QIRichTextLabel       *m_pInfoLabel;
     /** @} */
     QSet<QString> m_userModifiedParameters;
 };

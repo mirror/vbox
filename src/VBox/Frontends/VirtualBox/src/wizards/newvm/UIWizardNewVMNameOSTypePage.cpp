@@ -402,6 +402,7 @@ UIWizardNewVMNameOSTypePage::UIWizardNewVMNameOSTypePage()
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameOSTypeLabel(0)
+    , m_pInfoLabel(0)
 {
     prepare();
 }
@@ -492,7 +493,8 @@ void UIWizardNewVMNameOSTypePage::retranslateUi()
     if (m_pNameOSTypeLabel)
         m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new "
                                                       "virtual machine. The name you choose will be used throughout VirtualBox "
-                                                      "to identify this machine."));
+                                                      "to identify this machine. Additionally, you can select an ISO image which "
+                                                      "may be used to install the guest operating system."));
 
     if (m_pSkipUnattendedCheckBox)
     {
@@ -503,6 +505,42 @@ void UIWizardNewVMNameOSTypePage::retranslateUi()
 
     if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
+
+    updateInfoLabel();
+}
+
+void UIWizardNewVMNameOSTypePage::updateInfoLabel()
+{
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
+
+    if (!m_pInfoLabel)
+        return;
+
+    /*
+     * Here are the scenarios we consider while updating the info label:
+     * - No ISO selected,
+     * - Unattended cannot determine OS type from the ISO,
+     * - Unattended can determine the OS type from the ISO but cannot install it,
+     * - User has disabled unattended explicitly,
+     * - Unattended install will kick off.
+     */
+    QString strMessage;
+    if (m_pNameAndSystemEditor->ISOImagePath().isEmpty())
+        strMessage = UIWizardNewVM::tr("No ISO selected, the guest OS will need to be installed manually.");
+    else if (pWizard->detectedOSTypeId().isEmpty())
+        strMessage = UIWizardNewVM::tr("OS type cannot be determined from the selected ISO, the guest OS will need to be installed manually.");
+    else if (!pWizard->detectedOSTypeId().isEmpty())
+    {
+        if (!pWizard->isUnattendedInstallSupported())
+            strMessage = UIWizardNewVM::tr("Detected OS type cannot be installed unattendedly, the guest OS will need to be installed manually.");
+        else if (pWizard->skipUnattendedInstall())
+            strMessage = UIWizardNewVM::tr("You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.");
+        else
+            strMessage = UIWizardNewVM::tr("After closing this wizard the guest OS system will start installing from the selected ISO.");
+    }
+
+    m_pInfoLabel->setText(QString("<img src=\":/session_info_16px.png\" style=\"vertical-align:top\"> %1").arg(strMessage));
 }
 
 void UIWizardNewVMNameOSTypePage::initializePage()
@@ -563,6 +601,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 
     setSkipCheckBoxEnable();
     setEditionSelectorEnabled();
+    updateInfoLabel();
     emit completeChanged();
 }
 
@@ -587,6 +626,7 @@ void UIWizardNewVMNameOSTypePage::sltSkipUnattendedInstallChanged(bool fSkip)
     m_userModifiedParameters << "SkipUnattendedInstall";
     wizardWindow<UIWizardNewVM>()->setSkipUnattendedInstall(fSkip);
     setEditionSelectorEnabled();
+    updateInfoLabel();
 }
 
 QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
@@ -615,6 +655,9 @@ QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
             m_pSkipUnattendedCheckBox = new QCheckBox;
             if (m_pSkipUnattendedCheckBox)
                 m_pNameAndSystemLayout->addWidget(m_pSkipUnattendedCheckBox, 1, 1);
+            m_pInfoLabel = new QIRichTextLabel;
+            if (m_pInfoLabel)
+                m_pNameAndSystemLayout->addWidget(m_pInfoLabel, 2, 1);
         }
     }
 
