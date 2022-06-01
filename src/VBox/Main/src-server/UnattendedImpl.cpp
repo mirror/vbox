@@ -3626,7 +3626,7 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
         return S_OK;
     }
     /* We cannot install Ubuntus older than 11.04. */
-    if (mEnmOsType == VBOXOSTYPE_Ubuntu || mEnmOsType == VBOXOSTYPE_Ubuntu_x64)
+    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Ubuntu)
     {
         if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
         {
@@ -3635,7 +3635,7 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
         }
     }
     /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
-    if (mEnmOsType == VBOXOSTYPE_Oracle || mEnmOsType == VBOXOSTYPE_Oracle_x64)
+    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Oracle)
     {
         if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "6.4") < 0)
         {
@@ -3644,7 +3644,7 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
         }
     }
     /* Old Debians fail since package repos have been move to some other mirror location. */
-    if (mEnmOsType == VBOXOSTYPE_Debian || mEnmOsType == VBOXOSTYPE_Debian_x64)
+    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Debian)
     {
         if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "9.0") < 0)
         {
