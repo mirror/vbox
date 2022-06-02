@@ -764,8 +764,10 @@ VBOX_WITH_FE_BALLOONCTRL = 1
 VBOX_WITH_FE_AUTOSTART = 1
 # VBox Bug Report tool.
 VBOX_WITH_FE_BUGREPORT = 1
-# The SDL based GUI.
-VBOX_WITH_VBOXSDL = 1
+# Enable this to get the SDL based GUI built. Mostly useful for development
+# purposes. For production use it's recommended to use the Qt GUI which can
+# be also stripped down. See VBOX_WITH_QTGUI.
+VBOX_WITH_VBOXSDL =
 # Build VBoxSDL with secure label support.
 ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much work with freetype and all that.
 VBOX_WITH_SECURELABEL = 1
