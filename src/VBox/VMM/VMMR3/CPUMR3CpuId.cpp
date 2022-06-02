@@ -3261,6 +3261,29 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
     PCPUMCPUIDLEAF pLeaf;
     PCPUMMSRRANGE  pMsrRange;
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define CHECK_X86_HOST_FEATURE_RET(a_fFeature, a_szFeature) \
+    if (!pVM->cpum.s.HostFeatures. a_fFeature) \
+    { \
+        LogRel(("CPUM: WARNING! Can't turn on " a_szFeature " when the host doesn't support it!\n")); \
+        return; \
+    } else do { } while (0)
+#else
+# define CHECK_X86_HOST_FEATURE_RET(a_fFeature, a_szFeature) do { } while (0)
+#endif
+
+#define GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(a_fFeature, a_szFeature) \
+    do \
+    { \
+        pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001)); \
+        if (!pLeaf) \
+        { \
+            LogRel(("CPUM: WARNING! Can't turn on " a_szFeature " when no 0x80000001 CPUID leaf!\n")); \
+            return; \
+        } \
+        CHECK_X86_HOST_FEATURE_RET(a_fFeature,a_szFeature); \
+    } while (0)
+
     switch (enmFeature)
     {
         /*
@@ -3321,12 +3344,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_SEP:
-            if (!pVM->cpum.s.HostFeatures.fSysEnter)
-            {
-                AssertMsgFailed(("ERROR: Can't turn on SEP when the host doesn't support it!!\n"));
-                return;
-            }
-
+            CHECK_X86_HOST_FEATURE_RET(fSysEnter, "SEP");
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_SEP;
@@ -3339,13 +3357,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_SYSCALL:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fSysCall)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on SYSCALL/SYSRET when the host doesn't support it!\n"));
-                return;
-            }
+            GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(fSysCall, "SYSCALL/SYSRET");
 
             /* Valid for both Intel and AMD CPUs, although only in 64 bits mode for Intel. */
             pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_SYSCALL;
@@ -3358,12 +3370,6 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_PAE:
-            if (!pVM->cpum.s.HostFeatures.fPae)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on PAE when the host doesn't support it!\n"));
-                return;
-            }
-
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAE;
@@ -3383,13 +3389,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_LONG_MODE:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fLongMode)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on LONG MODE when the host doesn't support it!\n"));
-                return;
-            }
+            GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(fLongMode, "LONG MODE");
 
             /* Valid for both Intel and AMD. */
             pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
@@ -3409,13 +3409,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_NX:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fNoExecute)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on NX/XD when the host doesn't support it!\n"));
-                return;
-            }
+            GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(fNoExecute, "NX/XD");
 
             /* Valid for both Intel and AMD. */
             pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_NX;
@@ -3429,13 +3423,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support this)
          */
         case CPUMCPUIDFEATURE_LAHF:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fLahfSahf)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on LAHF/SAHF when the host doesn't support it!\n"));
-                return;
-            }
+            GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(fLahfSahf, "LAHF/SAHF");
 
             /* Valid for both Intel and AMD. */
             pVM->cpum.s.aGuestCpuIdPatmExt[1].uEcx = pLeaf->uEcx |= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
@@ -3448,15 +3436,10 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
          * Assumes the caller knows what it's doing! (host must support this)
          */
         case CPUMCPUIDFEATURE_RDTSCP:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fRdTscP
-                || pVM->cpum.s.u8PortableCpuIdLevel > 0)
-            {
-                if (!pVM->cpum.s.u8PortableCpuIdLevel)
-                    LogRel(("CPUM: WARNING! Can't turn on RDTSCP when the host doesn't support it!\n"));
+            if (pVM->cpum.s.u8PortableCpuIdLevel > 0)
                 return;
-            }
+            GET_8000_0001_CHECK_X86_HOST_FEATURE_RET(fRdTscP, "RDTSCP");
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
 
             /* Valid for both Intel and AMD. */
             pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
@@ -3579,6 +3562,9 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
     }
+
+#undef GET_8000_0001_CHECK_X86_HOST_FEATURE_RET
+#undef CHECK_X86_HOST_FEATURE_RET
 }
 
 
