@@ -210,32 +210,33 @@ static HRESULT listHostOnlyNetworks(const ComPtr<IVirtualBox> pVirtualBox)
     for (size_t i = 0; i < hostOnlyNetworks.size(); ++i)
     {
         ComPtr<IHostOnlyNetwork> hostOnlyNetwork = hostOnlyNetworks[i];
-        Bstr networkName;
-        hostOnlyNetwork->COMGETTER(NetworkName)(networkName.asOutParam());
-        RTPrintf(List::tr("Name:            %ls\n"), networkName.raw());
-        Bstr networkGuid;
-        hostOnlyNetwork->COMGETTER(Id)(networkGuid.asOutParam());
-        RTPrintf("GUID:            %ls\n\n", networkGuid.raw());
+        Bstr bstrNetworkName;
+        CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(NetworkName)(bstrNetworkName.asOutParam()));
+        RTPrintf(List::tr("Name:            %ls\n"), bstrNetworkName.raw());
+        
+        Bstr bstr;
+        CHECK_ERROR(hostOnlyNetwork, COMGETTER(Id)(bstr.asOutParam()));
+        RTPrintf("GUID:            %ls\n\n", bstr.raw());
+        
         BOOL fEnabled = FALSE;
-        hostOnlyNetwork->COMGETTER(Enabled)(&fEnabled);
+        CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(Enabled)(&fEnabled));
         RTPrintf(List::tr("State:           %s\n"), fEnabled ? List::tr("Enabled") : List::tr("Disabled"));
 
-        Bstr networkMask;
-        hostOnlyNetwork->COMGETTER(NetworkMask)(networkMask.asOutParam());
-        RTPrintf(List::tr("NetworkMask:     %ls\n"), networkMask.raw());
-        Bstr lowerIP;
-        hostOnlyNetwork->COMGETTER(LowerIP)(lowerIP.asOutParam());
-        RTPrintf(List::tr("LowerIP:         %ls\n"), lowerIP.raw());
-        Bstr upperIP;
-        hostOnlyNetwork->COMGETTER(UpperIP)(upperIP.asOutParam());
-        RTPrintf(List::tr("UpperIP:         %ls\n"), upperIP.raw());
-        // Bstr NetworkId;
-        // hostOnlyNetwork->COMGETTER(Id)(NetworkId.asOutParam());
-        // RTPrintf("NetworkId:       %ls\n", NetworkId.raw());
-        Bstr netName = BstrFmt("hostonly-%ls", networkName.raw());
-        RTPrintf(List::tr("VBoxNetworkName: %ls\n\n"), netName.raw());
+        CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(NetworkMask)(bstr.asOutParam()));
+        RTPrintf(List::tr("NetworkMask:     %ls\n"), bstr.raw());
+        
+        CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(LowerIP)(bstr.asOutParam()));
+        RTPrintf(List::tr("LowerIP:         %ls\n"), bstr.raw());
+        
+        CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(UpperIP)(bstr.asOutParam()));
+        RTPrintf(List::tr("UpperIP:         %ls\n"), bstr.raw());
+
+        // CHECK_ERROR2I(hostOnlyNetwork, COMGETTER(Id)(bstr.asOutParam());
+        // RTPrintf("NetworkId:       %ls\n", bstr.raw());
+
+        RTPrintf(List::tr("VBoxNetworkName: hostonly-%ls\n\n"), bstrNetworkName.raw());
     }
-    return rc;
+    return hrc;
 }
 #endif /* VBOX_WITH_VMNET */
 
@@ -250,9 +251,8 @@ static HRESULT listHostOnlyNetworks(const ComPtr<IVirtualBox> pVirtualBox)
  */
 static HRESULT listCloudNetworks(const ComPtr<IVirtualBox> pVirtualBox)
 {
-    HRESULT hrc;
     com::SafeIfaceArray<ICloudNetwork> cloudNetworks;
-    CHECK_ERROR(pVirtualBox, COMGETTER(CloudNetworks)(ComSafeArrayAsOutParam(cloudNetworks)));
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(CloudNetworks)(ComSafeArrayAsOutParam(cloudNetworks)), hrcCheck);
     for (size_t i = 0; i < cloudNetworks.size(); ++i)
     {
         ComPtr<ICloudNetwork> cloudNetwork = cloudNetworks[i];
@@ -278,7 +278,7 @@ static HRESULT listCloudNetworks(const ComPtr<IVirtualBox> pVirtualBox)
         Bstr netName = BstrFmt("cloud-%ls", networkName.raw());
         RTPrintf(List::tr("VBoxNetworkName: %ls\n\n"), netName.raw());
     }
-    return hrc;
+    return S_OK;
 }
 #endif /* VBOX_WITH_CLOUD_NET */
 
