@@ -33,6 +33,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
+#include "UIExecutionCapEditor.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
 #include "UIMotherboardFeaturesEditor.h"
@@ -153,8 +154,7 @@ struct UIDataSettingsMachineSystem
 
 
 UIMachineSettingsSystem::UIMachineSettingsSystem()
-    : m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
-    , m_fIsUSBEnabled(false)
+    : m_fIsUSBEnabled(false)
     , m_pCache(0)
     , m_pTabWidget(0)
     , m_pTabMotherboard(0)
@@ -165,11 +165,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorMotherboardFeatures(0)
     , m_pTabProcessor(0)
     , m_pEditorVCPU(0)
-    , m_pLabelProcessorExecCap(0)
-    , m_pSliderProcessorExecCap(0)
-    , m_pSpinboxProcessorExecCap(0)
-    , m_pLabelProcessorExecCapMin(0)
-    , m_pLabelProcessorExecCapMax(0)
+    , m_pEditorExecCap(0)
     , m_pLabelExtendedProcessor(0)
     , m_pCheckBoxPAE(0)
     , m_pCheckBoxNestedVirtualization(0)
@@ -331,8 +327,8 @@ void UIMachineSettingsSystem::getFromCache()
     /* Load old 'Processor' data from cache: */
     if (m_pEditorVCPU)
         m_pEditorVCPU->setValue(oldSystemData.m_cCPUCount);
-    if (m_pSliderProcessorExecCap)
-        m_pSliderProcessorExecCap->setValue(oldSystemData.m_iCPUExecCap);
+    if (m_pEditorExecCap)
+        m_pEditorExecCap->setValue(oldSystemData.m_iCPUExecCap);
     if (m_pCheckBoxPAE)
         m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
     if (m_pCheckBoxNestedVirtualization)
@@ -394,8 +390,8 @@ void UIMachineSettingsSystem::putToCache()
     /* Gather 'Processor' data: */
     if (m_pEditorVCPU)
         newSystemData.m_cCPUCount = m_pEditorVCPU->value();
-    if (m_pSliderProcessorExecCap)
-        newSystemData.m_iCPUExecCap = m_pSliderProcessorExecCap->value();
+    if (m_pEditorExecCap)
+        newSystemData.m_iCPUExecCap = m_pEditorExecCap->value();
     if (m_pCheckBoxPAE)
         newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
@@ -534,13 +530,13 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* CPU execution cap test: */
-        if (m_pSliderProcessorExecCap->value() < (int)m_uMedGuestCPUExecCap)
+        if (m_pEditorExecCap->value() < m_pEditorExecCap->medExecCap())
         {
             message.second << tr("The processor execution cap is set to a low value. This may make the machine feel slow to respond.");
         }
 
         /* Warn user about possible performance degradation and suggest lowering # of CPUs assigned to the VM instead: */
-        if (m_pSliderProcessorExecCap->value() < 100)
+        if (m_pEditorExecCap->value() < 100)
         {
             if (m_pEditorVCPU->maxVCPUCount() > 1 && m_pEditorVCPU->value() > 1)
             {
@@ -621,9 +617,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorMotherboardFeatures, m_pEditorVCPU);
 
     /* Configure navigation for 'processor' tab: */
-    setTabOrder(m_pEditorVCPU, m_pSliderProcessorExecCap);
-    setTabOrder(m_pSliderProcessorExecCap, m_pSpinboxProcessorExecCap);
-    setTabOrder(m_pSpinboxProcessorExecCap, m_pComboParavirtProvider);
+    setTabOrder(m_pEditorVCPU, m_pEditorExecCap);
+    setTabOrder(m_pEditorExecCap, m_pComboParavirtProvider);
 
     /* Configure navigation for 'acceleration' tab: */
     setTabOrder(m_pComboParavirtProvider, m_pCheckBoxPAE);
@@ -640,16 +635,6 @@ void UIMachineSettingsSystem::retranslateUi()
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
-    m_pLabelProcessorExecCap->setText(tr("&Execution Cap:"));
-    m_pSliderProcessorExecCap->setToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
-                                             "Each virtual CPU will be allowed to use up to this percentage of the processing "
-                                             "time available on one physical CPU. The execution cap can be disabled by setting "
-                                             "it to 100%. Setting the cap too low can make the machine feel slow to respond."));
-    m_pSpinboxProcessorExecCap->setToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
-                                              "Each virtual CPU will be allowed to use up to this percentage of the processing "
-                                              "time available on one physical CPU. The execution cap can be disabled by setting "
-                                              "it to 100%. Setting the cap too low can make the machine feel slow to respond."));
-    m_pSpinboxProcessorExecCap->setSuffix(tr("%"));
     m_pLabelExtendedProcessor->setText(tr("Extended Features:"));
     m_pCheckBoxPAE->setToolTip(tr("When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed "
                                   "to the virtual machine."));
@@ -670,10 +655,6 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pCheckBoxNestedPaging->setText(tr("Enable Nested Pa&ging"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
 
-    /* Retranslate the cpu cap slider legend: */
-    m_pLabelProcessorExecCapMin->setText(tr("%1%").arg(m_uMinGuestCPUExecCap));
-    m_pLabelProcessorExecCapMax->setText(tr("%1%").arg(m_uMaxGuestCPUExecCap));
-
     /* Retranslate combo-boxes: */
     retranslateComboParavirtProvider();
 
@@ -691,9 +672,10 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
     iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVCPU->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelProcessorExecCap->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorExecCap->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedProcessor->minimumSizeHint().width());
     m_pEditorVCPU->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorExecCap->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -710,11 +692,7 @@ void UIMachineSettingsSystem::polishPage()
 
     /* Polish 'Processor' availability: */
     m_pEditorVCPU->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
-    m_pLabelProcessorExecCap->setEnabled(isMachineInValidMode());
-    m_pLabelProcessorExecCapMin->setEnabled(isMachineInValidMode());
-    m_pLabelProcessorExecCapMax->setEnabled(isMachineInValidMode());
-    m_pSliderProcessorExecCap->setEnabled(isMachineInValidMode());
-    m_pSpinboxProcessorExecCap->setEnabled(isMachineInValidMode());
+    m_pEditorExecCap->setEnabled(isMachineInValidMode());
     m_pLabelExtendedProcessor->setEnabled(isMachineOffline());
     m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
     m_pCheckBoxNestedVirtualization->setEnabled(   (systemData.m_fSupportedNestedHwVirtEx && isMachineOffline())
@@ -729,28 +707,6 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
-}
-
-void UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange()
-{
-    /* Apply new memory-size value: */
-    m_pSpinboxProcessorExecCap->blockSignals(true);
-    m_pSpinboxProcessorExecCap->setValue(m_pSliderProcessorExecCap->value());
-    m_pSpinboxProcessorExecCap->blockSignals(false);
-
-    /* Revalidate: */
-    revalidate();
-}
-
-void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
-{
-    /* Apply new memory-size value: */
-    m_pSliderProcessorExecCap->blockSignals(true);
-    m_pSliderProcessorExecCap->setValue(m_pSpinboxProcessorExecCap->value());
-    m_pSliderProcessorExecCap->blockSignals(false);
-
-    /* Revalidate: */
-    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
@@ -844,11 +800,6 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
-    /* Prepare common variables: */
-    m_uMinGuestCPUExecCap = 1;
-    m_uMedGuestCPUExecCap = 40;
-    m_uMaxGuestCPUExecCap = 100;
-
     /* Prepare 'Processor' tab: */
     m_pTabProcessor = new QWidget;
     if (m_pTabProcessor)
@@ -858,88 +809,33 @@ void UIMachineSettingsSystem::prepareTabProcessor()
         if (pLayoutProcessor)
         {
             pLayoutProcessor->setColumnStretch(1, 1);
-            pLayoutProcessor->setRowStretch(5, 1);
+            pLayoutProcessor->setRowStretch(4, 1);
 
             /* Prepare VCPU editor : */
             m_pEditorVCPU = new UIVirtualCPUEditor(m_pTabProcessor);
             if (m_pEditorVCPU)
                 pLayoutProcessor->addWidget(m_pEditorVCPU, 0, 0, 1, 4);
 
-            /* Prepare processor exec cap label: */
-            m_pLabelProcessorExecCap = new QLabel(m_pTabProcessor);
-            if (m_pLabelProcessorExecCap)
-            {
-                m_pLabelProcessorExecCap->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutProcessor->addWidget(m_pLabelProcessorExecCap, 1, 0);
-            }
-            /* Prepare processor exec cap layout: */
-            QVBoxLayout *pLayoutProcessorExecCap = new QVBoxLayout;
-            if (pLayoutProcessorExecCap)
-            {
-                pLayoutProcessorExecCap->setContentsMargins(0, 0, 0, 0);
-
-                /* Prepare processor exec cap slider: */
-                m_pSliderProcessorExecCap = new QIAdvancedSlider(m_pTabProcessor);
-                if (m_pSliderProcessorExecCap)
-                {
-                    m_pSliderProcessorExecCap->setOrientation(Qt::Horizontal);
-                    m_pSliderProcessorExecCap->setPageStep(10);
-                    m_pSliderProcessorExecCap->setSingleStep(1);
-                    m_pSliderProcessorExecCap->setTickInterval(10);
-                    m_pSliderProcessorExecCap->setMinimum(m_uMinGuestCPUExecCap);
-                    m_pSliderProcessorExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-                    m_pSliderProcessorExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
-                    m_pSliderProcessorExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
-
-                    pLayoutProcessorExecCap->addWidget(m_pSliderProcessorExecCap);
-                }
-                /* Prepare processor exec cap scale layout: */
-                QHBoxLayout *m_pLayoutProcessorExecCapScale = new QHBoxLayout;
-                if (m_pLayoutProcessorExecCapScale)
-                {
-                    /* Prepare processor exec cap min label: */
-                    m_pLabelProcessorExecCapMin = new QLabel(m_pTabProcessor);
-                    if (m_pLabelProcessorExecCapMin)
-                        m_pLayoutProcessorExecCapScale->addWidget(m_pLabelProcessorExecCapMin);
-                    m_pLayoutProcessorExecCapScale->addStretch();
-                    /* Prepare processor exec cap max label: */
-                    m_pLabelProcessorExecCapMax = new QLabel(m_pTabProcessor);
-                    if (m_pLabelProcessorExecCapMax)
-                        m_pLayoutProcessorExecCapScale->addWidget(m_pLabelProcessorExecCapMax);
-
-                    pLayoutProcessorExecCap->addLayout(m_pLayoutProcessorExecCapScale);
-                }
-
-                pLayoutProcessor->addLayout(pLayoutProcessorExecCap, 1, 1, 2, 2);
-            }
-            /* Prepare processor exec cap spinbox: */
-            m_pSpinboxProcessorExecCap = new QSpinBox(m_pTabProcessor);
-            if (m_pSpinboxProcessorExecCap)
-            {
-                if (m_pLabelProcessorExecCap)
-                    m_pLabelProcessorExecCap->setBuddy(m_pSpinboxProcessorExecCap);
-                m_pSpinboxProcessorExecCap->setMinimum(m_uMinGuestCPUExecCap);
-                m_pSpinboxProcessorExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-                uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxProcessorExecCap, 4);
-
-                pLayoutProcessor->addWidget(m_pSpinboxProcessorExecCap, 1, 3);
-            }
+            /* Prepare exec cap editor : */
+            m_pEditorExecCap = new UIExecutionCapEditor(m_pTabProcessor);
+            if (m_pEditorExecCap)
+                pLayoutProcessor->addWidget(m_pEditorExecCap, 1, 0, 1, 4);
 
             /* Prepare extended processor label: */
             m_pLabelExtendedProcessor = new QLabel(m_pTabProcessor);
             if (m_pLabelExtendedProcessor)
             {
                 m_pLabelExtendedProcessor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutProcessor->addWidget(m_pLabelExtendedProcessor, 3, 0);
+                pLayoutProcessor->addWidget(m_pLabelExtendedProcessor, 2, 0);
             }
             /* Prepare PAE check-box: */
             m_pCheckBoxPAE = new QCheckBox(m_pTabProcessor);
             if (m_pCheckBoxPAE)
-                pLayoutProcessor->addWidget(m_pCheckBoxPAE, 3, 1);
+                pLayoutProcessor->addWidget(m_pCheckBoxPAE, 2, 1);
             /* Prepare nested virtualization check-box: */
             m_pCheckBoxNestedVirtualization = new QCheckBox(m_pTabProcessor);
             if (m_pCheckBoxNestedVirtualization)
-                pLayoutProcessor->addWidget(m_pCheckBoxNestedVirtualization, 4, 1);
+                pLayoutProcessor->addWidget(m_pCheckBoxNestedVirtualization, 3, 1);
         }
 
         m_pTabWidget->addTab(m_pTabProcessor, QString());
@@ -1046,10 +942,8 @@ void UIMachineSettingsSystem::prepareConnections()
     /* Configure 'Processor' connections: */
     connect(m_pEditorVCPU, &UIVirtualCPUEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pSliderProcessorExecCap, &QIAdvancedSlider::valueChanged,
-            this, &UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange);
-    connect(m_pSpinboxProcessorExecCap, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, &UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange);
+    connect(m_pEditorExecCap, &UIExecutionCapEditor::sigValueChanged,
+            this, &UIMachineSettingsSystem::revalidate);
     connect(m_pCheckBoxNestedVirtualization, &QCheckBox::stateChanged,
             this, &UIMachineSettingsSystem::revalidate);
 
