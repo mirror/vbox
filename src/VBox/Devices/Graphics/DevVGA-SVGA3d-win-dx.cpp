@@ -1328,18 +1328,12 @@ static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
         pDst->Stream         = pSrc->stream;
         pDst->SemanticName   = NULL; /* Semantic name and index will be taken from the shader output declaration. */
         pDst->SemanticIndex  = 0;
-        /* A geometry shader may return an attribute as a component:
-         *   Name   Index Mask Register
-         *   ATTRIB 3       z  2
-         * In this case SO declaration expects StartComponent = 0 and ComponentCount = 1
-         * (not StartComponent = 2 and ComponentCount = 1)
-         * This 'StartComponent = iFirstBit > 0 ? iFirstBit - 1 : 0;' did not work with a sample from a D3D11 book.
-         */
-        pDst->StartComponent = 0;
+        pDst->StartComponent = iFirstBit > 0 ? iFirstBit - 1 : 0;
         pDst->ComponentCount = iFirstBit > 0 ? iLastBit - (iFirstBit - 1) : 0;
         pDst->OutputSlot     = pSrc->outputSlot;
     }
 
+    uint32_t MaxSemanticIndex = 0;
     for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
     {
         D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
@@ -1363,9 +1357,64 @@ static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
             DXShaderAttributeSemantic const *pOutputSemantic = &pDXShader->shaderInfo.aOutputSemantic[idxFound];
             pDeclarationEntry->SemanticName = pOutputSemantic->pcszSemanticName;
             pDeclarationEntry->SemanticIndex = pOutputSemantic->SemanticIndex;
+            MaxSemanticIndex = RT_MAX(MaxSemanticIndex, pOutputSemantic->SemanticIndex);
         }
         else
             AssertFailed();
+    }
+
+    /* A geometry shader may return components of the same register as different attributes:
+     *
+     *   Output signature
+     *   Name           Index Mask        Register
+     *   ATTRIB         2     xy          2
+     *   ATTRIB         3       z         2
+     *
+     * For ATTRIB 3 the stream output declaration expects StartComponent = 0 and ComponentCount = 1
+     * (not StartComponent = 2 and ComponentCount = 1):
+     *
+     *   Stream output declaration
+     *   SemanticName   SemanticIndex StartComponent ComponentCount
+     *   ATTRIB         2             0              2
+     *   ATTRIB         3             0              1
+     *
+     * Stream output declaration can have multiple entries for the same attribute.
+     * In this case StartComponent is the offset within the attribute.
+     *
+     *   Output signature
+     *   Name           Index Mask        Register
+     *   ATTRIB         0     xyzw        0
+     *
+     *   Stream output declaration
+     *   SemanticName   SemanticIndex StartComponent ComponentCount
+     *   ATTRIB         0             0              1
+     *   ATTRIB         0             1              1
+     *
+     * StartComponent has been computed as the component offset in a register:
+     * 'StartComponent = iFirstBit > 0 ? iFirstBit - 1 : 0;'.
+     *
+     * StartComponent must be the offset in an attribute.
+     */
+    for (uint32_t SemanticIndex = 0; SemanticIndex <= MaxSemanticIndex; ++SemanticIndex)
+    {
+        /* Find minimum StartComponent value for this attribute. */
+        uint32_t MinStartComponent = UINT32_MAX;
+        for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
+        {
+            D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
+            if (pDeclarationEntry->SemanticIndex == SemanticIndex)
+                MinStartComponent = RT_MIN(MinStartComponent, pDeclarationEntry->StartComponent);
+        }
+
+        AssertContinue(MinStartComponent != UINT32_MAX);
+
+        /* Adjust the StartComponent to start from 0 for this attribute. */
+        for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
+        {
+            D3D11_SO_DECLARATION_ENTRY *pDeclarationEntry = &pDXStreamOutput->aDeclarationEntry[i];
+            if (pDeclarationEntry->SemanticIndex == SemanticIndex)
+                pDeclarationEntry->StartComponent -= MinStartComponent;
+        }
     }
 
     if (pMob)
@@ -5637,6 +5686,19 @@ static void vboxDXMatchShaderSignatures(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
                 {
                     int rc = dxDefineStreamOutput(pThisCC, pDXContext, soid, pStreamOutputEntry, pDXShader);
                     AssertRCReturnVoid(rc);
+#ifdef LOG_ENABLED
+                    Log6(("Stream output declaration:\n\n"));
+                    Log6(("Stream SemanticName   SemanticIndex StartComponent ComponentCount OutputSlot\n"));
+                    Log6(("------ -------------- ------------- -------------- -------------- ----------\n"));
+                    for (unsigned i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
+                    {
+                        D3D11_SO_DECLARATION_ENTRY *p = &pDXStreamOutput->aDeclarationEntry[i];
+                        Log6(("%d      %-14s %d             %d              %d              %d\n",
+                              p->Stream, p->SemanticName, p->SemanticIndex, p->StartComponent, p->ComponentCount, p->OutputSlot));
+                    }
+                    Log6(("\n"));
+#endif
+
                 }
             }
             break;
