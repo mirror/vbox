@@ -2750,8 +2750,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                 LogRel(("CPUM: WARNING! Can't expose \"Unrestricted Guest\" to the guest when EPT is not exposed!\n"));
                 pVM->cpum.s.fNestedVmxUnrestrictedGuest = false;
             }
-        }
 #endif
+        }
     }
 
     /*
