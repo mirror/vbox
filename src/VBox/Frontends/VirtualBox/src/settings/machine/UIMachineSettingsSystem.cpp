@@ -18,15 +18,11 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QComboBox>
-#include <QHeaderView>
 #include <QLabel>
-#include <QSpinBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIAdvancedSlider.h"
 #include "QITabWidget.h"
-#include "QIWidgetValidator.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
 #include "UIChipsetEditor.h"
@@ -34,18 +30,15 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExecutionCapEditor.h"
-#include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
 #include "UIMotherboardFeaturesEditor.h"
 #include "UIPointingHIDEditor.h"
+#include "UIProcessorFeaturesEditor.h"
 #include "UITranslator.h"
 #include "UIVirtualCPUEditor.h"
 
 /* COM includes: */
 #include "CBIOSSettings.h"
-
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
 
 
 /** Machine settings: System page data structure. */
@@ -166,9 +159,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pTabProcessor(0)
     , m_pEditorVCPU(0)
     , m_pEditorExecCap(0)
-    , m_pLabelExtendedProcessor(0)
-    , m_pCheckBoxPAE(0)
-    , m_pCheckBoxNestedVirtualization(0)
+    , m_pEditorProcessorFeatures(0)
     , m_pTabAcceleration(0)
     , m_pLabelParavirtProvider(0)
     , m_pComboParavirtProvider(0)
@@ -216,7 +207,7 @@ bool UIMachineSettingsSystem::isNestedHWVirtExSupported() const
 
 bool UIMachineSettingsSystem::isNestedHWVirtExEnabled() const
 {
-    return m_pCheckBoxNestedVirtualization->isChecked();
+    return m_pEditorProcessorFeatures->isEnabledNestedVirtualization();
 }
 
 bool UIMachineSettingsSystem::isHIDEnabled() const
@@ -329,10 +320,11 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorVCPU->setValue(oldSystemData.m_cCPUCount);
     if (m_pEditorExecCap)
         m_pEditorExecCap->setValue(oldSystemData.m_iCPUExecCap);
-    if (m_pCheckBoxPAE)
-        m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
-    if (m_pCheckBoxNestedVirtualization)
-        m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
+    if (m_pEditorProcessorFeatures)
+    {
+        m_pEditorProcessorFeatures->setEnablePae(oldSystemData.m_fEnabledPAE);
+        m_pEditorProcessorFeatures->setEnableNestedVirtualization(oldSystemData.m_fEnabledNestedHwVirtEx);
+    }
 
     /* Load old 'Acceleration' data from cache: */
     if (m_pComboParavirtProvider)
@@ -392,8 +384,8 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_cCPUCount = m_pEditorVCPU->value();
     if (m_pEditorExecCap)
         newSystemData.m_iCPUExecCap = m_pEditorExecCap->value();
-    if (m_pCheckBoxPAE)
-        newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
+    if (m_pEditorProcessorFeatures)
+        newSystemData.m_fEnabledPAE = m_pEditorProcessorFeatures->isEnabledPae();
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
@@ -618,12 +610,11 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 
     /* Configure navigation for 'processor' tab: */
     setTabOrder(m_pEditorVCPU, m_pEditorExecCap);
-    setTabOrder(m_pEditorExecCap, m_pComboParavirtProvider);
+    setTabOrder(m_pEditorExecCap, m_pEditorProcessorFeatures);
+    setTabOrder(m_pEditorProcessorFeatures, m_pComboParavirtProvider);
 
     /* Configure navigation for 'acceleration' tab: */
-    setTabOrder(m_pComboParavirtProvider, m_pCheckBoxPAE);
-    setTabOrder(m_pCheckBoxPAE, m_pCheckBoxNestedVirtualization);
-    setTabOrder(m_pCheckBoxNestedVirtualization, m_pCheckBoxVirtualization);
+    setTabOrder(m_pComboParavirtProvider, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
 }
 
@@ -635,13 +626,6 @@ void UIMachineSettingsSystem::retranslateUi()
                                         "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
-    m_pLabelExtendedProcessor->setText(tr("Extended Features:"));
-    m_pCheckBoxPAE->setToolTip(tr("When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed "
-                                  "to the virtual machine."));
-    m_pCheckBoxPAE->setText(tr("Enable PA&E/NX"));
-    m_pCheckBoxNestedVirtualization->setToolTip(tr("When checked, the nested hardware virtualization CPU feature will be "
-                                                   "exposed to the virtual machine."));
-    m_pCheckBoxNestedVirtualization->setText(tr("Enable Nested &VT-x/AMD-V"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
     m_pLabelParavirtProvider->setText(tr("&Paravirtualization Interface:"));
     m_pComboParavirtProvider->setToolTip(tr("Selects the paravirtualization guest interface provider to be used by this "
@@ -673,9 +657,10 @@ void UIMachineSettingsSystem::retranslateUi()
     iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVCPU->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorExecCap->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedProcessor->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorProcessorFeatures->minimumLabelHorizontalHint());
     m_pEditorVCPU->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorExecCap->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorProcessorFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -693,10 +678,10 @@ void UIMachineSettingsSystem::polishPage()
     /* Polish 'Processor' availability: */
     m_pEditorVCPU->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
     m_pEditorExecCap->setEnabled(isMachineInValidMode());
-    m_pLabelExtendedProcessor->setEnabled(isMachineOffline());
-    m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
-    m_pCheckBoxNestedVirtualization->setEnabled(   (systemData.m_fSupportedNestedHwVirtEx && isMachineOffline())
-                                                || (systemData.m_fEnabledNestedHwVirtEx && isMachineOffline()));
+    m_pEditorProcessorFeatures->setEnablePaeAvailable(isMachineOffline() && systemData.m_fSupportedPAE);
+    m_pEditorProcessorFeatures->setEnableNestedVirtualizationAvailable(   isMachineOffline()
+                                                                       && (   systemData.m_fSupportedNestedHwVirtEx
+                                                                           || systemData.m_fEnabledNestedHwVirtEx));
 
     /* Polish 'Acceleration' availability: */
     m_pCheckBoxVirtualization->setEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
@@ -809,33 +794,22 @@ void UIMachineSettingsSystem::prepareTabProcessor()
         if (pLayoutProcessor)
         {
             pLayoutProcessor->setColumnStretch(1, 1);
-            pLayoutProcessor->setRowStretch(4, 1);
+            pLayoutProcessor->setRowStretch(3, 1);
 
             /* Prepare VCPU editor : */
             m_pEditorVCPU = new UIVirtualCPUEditor(m_pTabProcessor);
             if (m_pEditorVCPU)
-                pLayoutProcessor->addWidget(m_pEditorVCPU, 0, 0, 1, 4);
+                pLayoutProcessor->addWidget(m_pEditorVCPU, 0, 0, 1, 2);
 
             /* Prepare exec cap editor : */
             m_pEditorExecCap = new UIExecutionCapEditor(m_pTabProcessor);
             if (m_pEditorExecCap)
-                pLayoutProcessor->addWidget(m_pEditorExecCap, 1, 0, 1, 4);
+                pLayoutProcessor->addWidget(m_pEditorExecCap, 1, 0, 1, 2);
 
-            /* Prepare extended processor label: */
-            m_pLabelExtendedProcessor = new QLabel(m_pTabProcessor);
-            if (m_pLabelExtendedProcessor)
-            {
-                m_pLabelExtendedProcessor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutProcessor->addWidget(m_pLabelExtendedProcessor, 2, 0);
-            }
-            /* Prepare PAE check-box: */
-            m_pCheckBoxPAE = new QCheckBox(m_pTabProcessor);
-            if (m_pCheckBoxPAE)
-                pLayoutProcessor->addWidget(m_pCheckBoxPAE, 2, 1);
-            /* Prepare nested virtualization check-box: */
-            m_pCheckBoxNestedVirtualization = new QCheckBox(m_pTabProcessor);
-            if (m_pCheckBoxNestedVirtualization)
-                pLayoutProcessor->addWidget(m_pCheckBoxNestedVirtualization, 3, 1);
+            /* Prepare processor features editor: */
+            m_pEditorProcessorFeatures = new UIProcessorFeaturesEditor(m_pTabProcessor);
+            if (m_pEditorProcessorFeatures)
+                pLayoutProcessor->addWidget(m_pEditorProcessorFeatures, 2, 0);
         }
 
         m_pTabWidget->addTab(m_pTabProcessor, QString());
@@ -944,7 +918,7 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorExecCap, &UIExecutionCapEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pCheckBoxNestedVirtualization, &QCheckBox::stateChanged,
+    connect(m_pEditorProcessorFeatures, &UIProcessorFeaturesEditor::sigChangedNestedVirtualization,
             this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */

@@ -30,8 +30,6 @@ typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSyste
 class QCheckBox;
 class QComboBox;
 class QLabel;
-class QSpinBox;
-class QIAdvancedSlider;
 class QITabWidget;
 class UIBaseMemoryEditor;
 class UIBootOrderEditor;
@@ -39,6 +37,7 @@ class UIChipsetEditor;
 class UIExecutionCapEditor;
 class UIMotherboardFeaturesEditor;
 class UIPointingHIDEditor;
+class UIProcessorFeaturesEditor;
 class UIVirtualCPUEditor;
 
 /** Machine settings: System page. */
@@ -170,17 +169,13 @@ private:
         UIMotherboardFeaturesEditor *m_pEditorMotherboardFeatures;
 
         /** Holds the 'Processor' tab instance. */
-        QWidget              *m_pTabProcessor;
+        QWidget                   *m_pTabProcessor;
         /** Holds the VCPU editor instance. */
-        UIVirtualCPUEditor   *m_pEditorVCPU;
+        UIVirtualCPUEditor        *m_pEditorVCPU;
         /** Holds the exec cap editor instance. */
-        UIExecutionCapEditor *m_pEditorExecCap;
-        /** Holds the extended processor label instance. */
-        QLabel               *m_pLabelExtendedProcessor;
-        /** Holds the PAE check-box instance. */
-        QCheckBox            *m_pCheckBoxPAE;
-        /** Holds the nested virtualization check-box instance. */
-        QCheckBox            *m_pCheckBoxNestedVirtualization;
+        UIExecutionCapEditor      *m_pEditorExecCap;
+        /** Holds the motherboard features editor instance. */
+        UIProcessorFeaturesEditor *m_pEditorProcessorFeatures;
 
         /** Holds the 'Acceleration' tab instance. */
         QWidget   *m_pTabAcceleration;
