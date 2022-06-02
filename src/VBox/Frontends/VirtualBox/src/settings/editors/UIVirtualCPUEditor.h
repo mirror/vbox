@@ -48,6 +48,9 @@ public:
     /** Constructs editor passing @a pParent to the base-class. */
     UIVirtualCPUEditor(QWidget *pParent = 0);
 
+    /** Returns the maximum virtual CPU count. */
+    int maxVCPUCount() const;
+
     /** Defines editor @a iValue. */
     void setValue(int iValue);
     /** Returns editor value. */
@@ -77,9 +80,9 @@ private:
 
     /** @name Options
      * @{ */
-        /** Holds the maximum virtual CPU count. */
-        uint  m_uMinVCPUCount;
         /** Holds the minimum virtual CPU count. */
+        uint  m_uMinVCPUCount;
+        /** Holds the maximum virtual CPU count. */
         uint  m_uMaxVCPUCount;
     /** @} */
 

@@ -153,8 +153,7 @@ struct UIDataSettingsMachineSystem
 
 
 UIMachineSettingsSystem::UIMachineSettingsSystem()
-    : m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
-    , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
+    : m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fIsUSBEnabled(false)
     , m_pCache(0)
     , m_pTabWidget(0)
@@ -543,12 +542,12 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         /* Warn user about possible performance degradation and suggest lowering # of CPUs assigned to the VM instead: */
         if (m_pSliderProcessorExecCap->value() < 100)
         {
-            if (m_uMaxGuestCPU > 1 && m_pEditorVCPU->value() > 1)
+            if (m_pEditorVCPU->maxVCPUCount() > 1 && m_pEditorVCPU->value() > 1)
             {
                 message.second << tr("Please consider lowering the number of CPUs assigned to the virtual machine rather "
                                      "than setting the processor execution cap.");
             }
-            else if (m_uMaxGuestCPU > 1)
+            else if (m_pEditorVCPU->maxVCPUCount() > 1)
             {
                 message.second << tr("Lowering the processor execution cap may result in a decline in performance.");
             }
@@ -846,10 +845,6 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
     /* Prepare common variables: */
-    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-    const uint uHostCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
-    m_uMinGuestCPU = comProperties.GetMinGuestCPUCount();
-    m_uMaxGuestCPU = qMin(2 * uHostCPUs, (uint)comProperties.GetMaxGuestCPUCount());
     m_uMinGuestCPUExecCap = 1;
     m_uMedGuestCPUExecCap = 40;
     m_uMaxGuestCPUExecCap = 100;

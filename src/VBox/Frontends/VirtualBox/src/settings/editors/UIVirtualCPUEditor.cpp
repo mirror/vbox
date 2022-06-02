@@ -44,6 +44,11 @@ UIVirtualCPUEditor::UIVirtualCPUEditor(QWidget *pParent /* = 0 */)
     prepare();
 }
 
+int UIVirtualCPUEditor::maxVCPUCount() const
+{
+    return (int)m_uMaxVCPUCount;
+}
+
 void UIVirtualCPUEditor::setValue(int iValue)
 {
     if (m_pSlider)
@@ -132,7 +137,7 @@ void UIVirtualCPUEditor::prepare()
     {
         m_pLayout->setContentsMargins(0, 0, 0, 0);
 
-        /* Create VCPU label: */
+        /* Create main label: */
         m_pLabelVCPU = new QLabel(this);
         if (m_pLabelVCPU)
         {
@@ -201,7 +206,7 @@ void UIVirtualCPUEditor::prepare()
             m_pSpinBox->setMaximum(m_uMaxVCPUCount);
             connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIVirtualCPUEditor::sltHandleSpinBoxChange);
-            m_pLayout->addWidget(m_pSpinBox, 0, 2, 1, 1);
+            m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }
     }
 

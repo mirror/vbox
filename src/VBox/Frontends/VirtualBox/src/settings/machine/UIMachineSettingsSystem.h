@@ -149,10 +149,6 @@ private:
     /** Saves existing 'Acceleration' data from cache. */
     bool saveAccelerationData();
 
-    /** Holds the minimum guest CPU count. */
-    uint  m_uMinGuestCPU;
-    /** Holds the maximum guest CPU count. */
-    uint  m_uMaxGuestCPU;
     /** Holds the minimum guest CPU execution cap. */
     uint  m_uMinGuestCPUExecCap;
     /** Holds the medium guest CPU execution cap. */
@@ -189,21 +185,21 @@ private:
         /** Holds the VCPU editor instance. */
         UIVirtualCPUEditor *m_pEditorVCPU;
         /** Holds the processor exec cap label instance. */
-        QLabel           *m_pLabelProcessorExecCap;
+        QLabel             *m_pLabelProcessorExecCap;
         /** Holds the processor exec cap slider instance. */
-        QIAdvancedSlider *m_pSliderProcessorExecCap;
+        QIAdvancedSlider   *m_pSliderProcessorExecCap;
         /** Holds the processor exec cap spinbox instance. */
-        QSpinBox         *m_pSpinboxProcessorExecCap;
+        QSpinBox           *m_pSpinboxProcessorExecCap;
         /** Holds the processor exec cap min label instance. */
-        QLabel           *m_pLabelProcessorExecCapMin;
+        QLabel             *m_pLabelProcessorExecCapMin;
         /** Holds the processor exec cap max label instance. */
-        QLabel           *m_pLabelProcessorExecCapMax;
+        QLabel             *m_pLabelProcessorExecCapMax;
         /** Holds the extended processor label instance. */
-        QLabel           *m_pLabelExtendedProcessor;
+        QLabel             *m_pLabelExtendedProcessor;
         /** Holds the PAE check-box instance. */
-        QCheckBox        *m_pCheckBoxPAE;
+        QCheckBox          *m_pCheckBoxPAE;
         /** Holds the nested virtualization check-box instance. */
-        QCheckBox        *m_pCheckBoxNestedVirtualization;
+        QCheckBox          *m_pCheckBoxNestedVirtualization;
 
         /** Holds the 'Acceleration' tab instance. */
         QWidget   *m_pTabAcceleration;
