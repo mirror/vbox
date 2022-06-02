@@ -130,10 +130,9 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
      *     the final paging entry.
      */
     Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
-    uint64_t const fCumulativeEpt = PGM_PTATTRS_EPT_R_MASK
-                                  | PGM_PTATTRS_EPT_W_MASK
-                                  | PGM_PTATTRS_EPT_X_SUPER_MASK;
-    Assert(!(fCumulativeEpt & ~PGM_PTATTRS_EPT_MASK));
+    uint64_t const fCumulativeEpt = (  PGM_PTATTRS_EPT_R_MASK
+                                     | PGM_PTATTRS_EPT_W_MASK
+                                     | PGM_PTATTRS_EPT_X_SUPER_MASK) & PGM_PTATTRS_EPT_MASK;
 
     /*
      * Do the walk.
@@ -170,7 +169,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         { /* likely */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 4);
 
-        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
         uint64_t const fEptAttrs     = Pml4e.u & EPT_PML4E_ATTR_MASK;
         uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
         uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
