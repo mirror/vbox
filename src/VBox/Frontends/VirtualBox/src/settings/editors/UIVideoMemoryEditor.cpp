@@ -162,10 +162,11 @@ void UIVideoMemoryEditor::retranslateUi()
     if (m_pLabelMemory)
         m_pLabelMemory->setText(tr("Video &Memory:"));
 
+    const QString strToolTip(tr("Holds the amount of video memory provided to the virtual machine."));
     if (m_pSlider)
-        m_pSlider->setToolTip(tr("Holds the amount of video memory provided to the virtual machine."));
+        m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)
-        m_pSpinBox->setToolTip(tr("Holds the amount of video memory provided to the virtual machine."));
+        m_pSpinBox->setToolTip(strToolTip);
 
     if (m_pLabelMemoryMin)
     {

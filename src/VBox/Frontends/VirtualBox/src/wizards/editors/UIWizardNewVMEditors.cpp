@@ -384,7 +384,7 @@ void UINewVMHardwareContainer::prepare()
     pHardwareLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pBaseMemoryEditor = new UIBaseMemoryEditor;
-    m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
+    m_pVirtualCPUEditor = new UIVirtualCPUEditor;
     m_pEFICheckBox      = new QCheckBox;
     pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
     pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);

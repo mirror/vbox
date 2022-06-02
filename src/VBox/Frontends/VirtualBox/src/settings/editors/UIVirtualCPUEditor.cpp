@@ -23,24 +23,23 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIAdvancedSlider.h"
 #include "UICommon.h"
 #include "UIVirtualCPUEditor.h"
-#include "QIAdvancedSlider.h"
 
 /* COM includes */
 #include "COMEnums.h"
 #include "CSystemProperties.h"
 
-UIVirtualCPUEditor::UIVirtualCPUEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIVirtualCPUEditor::UIVirtualCPUEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_uMinVCPUCount(1)
+    , m_uMaxVCPUCount(1)
     , m_pLabelVCPU(0)
     , m_pSlider(0)
+    , m_pSpinBox(0)
     , m_pLabelVCPUMin(0)
     , m_pLabelVCPUMax(0)
-    , m_pSpinBox(0)
-    , m_uMaxVCPUCount(1)
-    , m_uMinVCPUCount(1)
-    , m_fWithLabel(fWithLabel)
 {
     prepare();
 }
@@ -56,66 +55,98 @@ int UIVirtualCPUEditor::value() const
     return m_pSlider ? m_pSlider->value() : 0;
 }
 
+int UIVirtualCPUEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabelVCPU->minimumSizeHint().width();
+}
+
+void UIVirtualCPUEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIVirtualCPUEditor::retranslateUi()
 {
     if (m_pLabelVCPU)
-        m_pLabelVCPU->setText(tr("&Processor(s):"));
-    if (m_pLabelVCPUMin)
-        m_pLabelVCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinVCPUCount));
-    if (m_pLabelVCPUMax)
-        m_pLabelVCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxVCPUCount));
+        m_pLabelVCPU->setText(tr("&Processors:"));
 
-    QString strToolTip(tr("Specifies the number of virtual CPUs the virtual machine will have"));
+    QString strToolTip(tr("Holds the number of virtual CPUs in the virtual machine. You need hardware "
+                          "virtualization support on your host system to use more than one virtual CPU."));
     if (m_pSlider)
         m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)
         m_pSpinBox->setToolTip(strToolTip);
+
+    if (m_pLabelVCPUMin)
+    {
+        m_pLabelVCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinVCPUCount));
+        m_pLabelVCPUMin->setToolTip(tr("Minimum possible virtual CPU count."));
+    }
+    if (m_pLabelVCPUMax)
+    {
+        m_pLabelVCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxVCPUCount));
+        m_pLabelVCPUMax->setToolTip(tr("Maximum possible virtual CPU count."));
+    }
 }
 
 void UIVirtualCPUEditor::sltHandleSliderChange()
 {
+    /* Apply spin-box value keeping it's signals disabled: */
     if (m_pSpinBox && m_pSlider)
     {
         m_pSpinBox->blockSignals(true);
         m_pSpinBox->setValue(m_pSlider->value());
         m_pSpinBox->blockSignals(false);
     }
+
+    /* Send signal to listener: */
     emit sigValueChanged(m_pSlider->value());
 }
 
 void UIVirtualCPUEditor::sltHandleSpinBoxChange()
 {
+    /* Apply slider value keeping it's signals disabled: */
     if (m_pSpinBox && m_pSlider)
     {
         m_pSlider->blockSignals(true);
         m_pSlider->setValue(m_pSpinBox->value());
         m_pSlider->blockSignals(false);
     }
+
+    /* Send signal to listener: */
     emit sigValueChanged(m_pSpinBox->value());
 }
 
 void UIVirtualCPUEditor::prepare()
 {
-    const CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    /* Prepare common variables: */
+    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     const uint uHostCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
-    m_uMinVCPUCount = properties.GetMinGuestCPUCount();
-    m_uMaxVCPUCount = qMin(2 * uHostCPUs, (uint)properties.GetMaxGuestCPUCount());
+    m_uMinVCPUCount = comProperties.GetMinGuestCPUCount();
+    m_uMaxVCPUCount = qMin(2 * uHostCPUs, (uint)comProperties.GetMaxGuestCPUCount());
 
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    /* Create main layout: */
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
-        if (m_fWithLabel)
-            m_pLabelVCPU = new QLabel(this);
+        /* Create VCPU label: */
+        m_pLabelVCPU = new QLabel(this);
         if (m_pLabelVCPU)
-            pMainLayout->addWidget(m_pLabelVCPU, 0, iRow++, 1, 1);
+        {
+            m_pLabelVCPU->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelVCPU, 0, 0);
+        }
 
+        /* Create slider layout: */
         QVBoxLayout *pSliderLayout = new QVBoxLayout;
         if (pSliderLayout)
         {
             pSliderLayout->setContentsMargins(0, 0, 0, 0);
+
+            /* Create VCPU slider: */
             m_pSlider = new QIAdvancedSlider(this);
             if (m_pSlider)
             {
@@ -127,26 +158,39 @@ void UIVirtualCPUEditor::prepare()
                 m_pSlider->setTickInterval(1);
                 m_pSlider->setOptimalHint(1, uHostCPUs);
                 m_pSlider->setWarningHint(uHostCPUs, m_uMaxVCPUCount);
-
                 connect(m_pSlider, &QIAdvancedSlider::valueChanged,
                         this, &UIVirtualCPUEditor::sltHandleSliderChange);
                 pSliderLayout->addWidget(m_pSlider);
             }
+
+            /* Create legend layout: */
             QHBoxLayout *pLegendLayout = new QHBoxLayout;
             if (pLegendLayout)
             {
                 pLegendLayout->setContentsMargins(0, 0, 0, 0);
+
+                /* Create min label: */
                 m_pLabelVCPUMin = new QLabel(this);
                 if (m_pLabelVCPUMin)
                     pLegendLayout->addWidget(m_pLabelVCPUMin);
+
+                /* Push labels from each other: */
                 pLegendLayout->addStretch();
+
+                /* Create max label: */
                 m_pLabelVCPUMax = new QLabel(this);
                 if (m_pLabelVCPUMax)
                     pLegendLayout->addWidget(m_pLabelVCPUMax);
+
+                /* Add legend layout to slider layout: */
                 pSliderLayout->addLayout(pLegendLayout);
             }
-            pMainLayout->addLayout(pSliderLayout, 0, iRow++, 2, 1);
+
+            /* Add slider layout to main layout: */
+            m_pLayout->addLayout(pSliderLayout, 0, 1, 2, 1);
         }
+
+        /* Create VCPU spin-box: */
         m_pSpinBox = new QSpinBox(this);
         if (m_pSpinBox)
         {
@@ -157,9 +201,10 @@ void UIVirtualCPUEditor::prepare()
             m_pSpinBox->setMaximum(m_uMaxVCPUCount);
             connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIVirtualCPUEditor::sltHandleSpinBoxChange);
-            pMainLayout->addWidget(m_pSpinBox, 0, iRow++, 1, 1);
+            m_pLayout->addWidget(m_pSpinBox, 0, 2, 1, 1);
         }
     }
 
+    /* Apply language settings: */
     retranslateUi();
 }

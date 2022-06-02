@@ -38,6 +38,7 @@ class UIBootOrderEditor;
 class UIChipsetEditor;
 class UIMotherboardFeaturesEditor;
 class UIPointingHIDEditor;
+class UIVirtualCPUEditor;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
@@ -108,10 +109,6 @@ protected:
 
 private slots:
 
-    /** Handles CPU count slider change. */
-    void sltHandleCPUCountSliderChange();
-    /** Handles CPU count editor change. */
-    void sltHandleCPUCountEditorChange();
     /** Handles CPU execution cap slider change. */
     void sltHandleCPUExecCapSliderChange();
     /** Handles CPU execution cap editor change. */
@@ -188,17 +185,9 @@ private:
         UIMotherboardFeaturesEditor *m_pEditorMotherboardFeatures;
 
         /** Holds the 'Processor' tab instance. */
-        QWidget          *m_pTabProcessor;
-        /** Holds the processor count label instance. */
-        QLabel           *m_pLabelProcessorCount;
-        /** Holds the processor count slider instance. */
-        QIAdvancedSlider *m_pSliderProcessorCount;
-        /** Holds the processor count spinbox instance. */
-        QSpinBox         *m_pSpinboxProcessorCount;
-        /** Holds the processor count min label instance. */
-        QLabel           *m_pLabelProcessorCountMin;
-        /** Holds the processor count max label instance. */
-        QLabel           *m_pLabelProcessorCountMax;
+        QWidget            *m_pTabProcessor;
+        /** Holds the VCPU editor instance. */
+        UIVirtualCPUEditor *m_pEditorVCPU;
         /** Holds the processor exec cap label instance. */
         QLabel           *m_pLabelProcessorExecCap;
         /** Holds the processor exec cap slider instance. */

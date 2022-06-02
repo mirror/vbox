@@ -27,32 +27,36 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
-
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QIAdvancedSlider;
 
-/** QWidget subclass used as a virtual cpu count editor. Includes a spinbox, a slider,
-  * optional label, and max-min value labels. */
+/** QWidget subclass used as a virtual CPU editor. */
 class SHARED_LIBRARY_STUFF UIVirtualCPUEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
- signals:
+signals:
 
+    /** Notifies listeners about @a iValue changed. */
     void sigValueChanged(int iValue);
 
 public:
 
-    /** Constructs editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Determines whether we should add label ourselves. */
-    UIVirtualCPUEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs editor passing @a pParent to the base-class. */
+    UIVirtualCPUEditor(QWidget *pParent = 0);
 
     /** Defines editor @a iValue. */
     void setValue(int iValue);
     /** Returns editor value. */
     int value() const;
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -71,20 +75,29 @@ private:
     /** Prepares all. */
     void prepare();
 
-
-    /* @{ */
-    /** Widgets */
-       QLabel           *m_pLabelVCPU;
-       QIAdvancedSlider *m_pSlider;
-       QLabel           *m_pLabelVCPUMin;
-       QLabel           *m_pLabelVCPUMax;
-       QSpinBox         *m_pSpinBox;
+    /** @name Options
+     * @{ */
+        /** Holds the maximum virtual CPU count. */
+        uint  m_uMinVCPUCount;
+        /** Holds the minimum virtual CPU count. */
+        uint  m_uMaxVCPUCount;
     /** @} */
 
-    unsigned m_uMaxVCPUCount;
-    unsigned m_uMinVCPUCount;
-    bool  m_fWithLabel;
-
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout      *m_pLayout;
+        /** Holds the main label instance. */
+        QLabel           *m_pLabelVCPU;
+        /** Holds the slider instance. */
+        QIAdvancedSlider *m_pSlider;
+        /** Holds the spinbox instance. */
+        QSpinBox         *m_pSpinBox;
+        /** Holds the minimum label instance. */
+        QLabel           *m_pLabelVCPUMin;
+        /** Holds the maximum label instance. */
+        QLabel           *m_pLabelVCPUMax;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIVirtualCPUEditor_h */
