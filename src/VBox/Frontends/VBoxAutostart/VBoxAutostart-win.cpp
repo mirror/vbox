@@ -1113,7 +1113,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
 static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
 {
     int vrc;
-RT_BREAKPOINT();
+
     LogFlowFuncEnter();
 
     /*
