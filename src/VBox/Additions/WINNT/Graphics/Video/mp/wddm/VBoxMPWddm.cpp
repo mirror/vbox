@@ -2139,6 +2139,7 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
             pAllocation->bAssigned = FALSE;
             KeInitializeSpinLock(&pAllocation->OpenLock);
             InitializeListHead(&pAllocation->OpenList);
+            pAllocation->CurVidPnSourceId = -1;
 
             switch (pAllocInfo->enmType)
             {
@@ -2394,6 +2395,18 @@ DxgkDdiDestroyAllocation(
 
     vboxVDbgBreakFv();
 
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+
+    for (UINT i = 0; i < pDestroyAllocation->NumAllocations; ++i)
+    {
+        PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[0];
+        if (pAllocation->CurVidPnSourceId != -1)
+        {
+            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAllocation->CurVidPnSourceId];
+            vboxWddmAssignPrimary(pSource, NULL, pAllocation->CurVidPnSourceId);
+        }
+    }
+
 #ifdef VBOX_WITH_VMSVGA3D_DX
     /* Check if this is a request from the D3D driver. */
     if (pDestroyAllocation->NumAllocations >= 1)
@@ -2407,8 +2420,6 @@ DxgkDdiDestroyAllocation(
     NTSTATUS Status = STATUS_SUCCESS;
 
     PVBOXWDDM_RESOURCE pRc = (PVBOXWDDM_RESOURCE)pDestroyAllocation->hResource;
-    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-
     if (pRc)
     {
         Assert(pRc->cAllocations == pDestroyAllocation->NumAllocations);

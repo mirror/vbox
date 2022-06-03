@@ -1275,12 +1275,13 @@ NTSTATUS APIENTRY GaDxgkDdiPatch(const HANDLE hAdapter, const DXGKARG_PATCH *pPa
 
     SvgaFlush(pDevExt->pGa->hw.pSvga);
 
-    GALOG(("pDmaBuffer = %p, cbDmaBuffer = %u, cPatches = %u\n",
+    GALOG(("pDmaBuffer %p, cbDmaBuffer %u, PatchStart %u, cPatches %u, Flags 0xx, context type %d\n",
            pPatch->pDmaBuffer, pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset,
-           pPatch->PatchLocationListSubmissionLength));
+           pPatch->PatchLocationListSubmissionStart, pPatch->PatchLocationListSubmissionLength, pPatch->Flags.Value,
+           ((PVBOXWDDM_CONTEXT)pPatch->hContext)->enmType));
 
-    /* The driver does not need to modify paging and present commands here. */
-    if (pPatch->Flags.Paging || pPatch->Flags.Present)
+    /* The driver does not need to modify paging commands. */
+    if (pPatch->Flags.Paging)
         return STATUS_SUCCESS;
 
 #ifdef VBOX_WITH_VMSVGA3D_DX

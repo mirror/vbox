@@ -121,6 +121,7 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOC
         pOldAlloc->bVisible = FALSE;
         pOldAlloc->bAssigned = FALSE;
         Assert(pOldAlloc->AllocData.SurfDesc.VidPnSourceId == srcId);
+        pOldAlloc->CurVidPnSourceId = -1;
     }
 
     if (pAllocation)
@@ -128,6 +129,7 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOC
         Assert(pAllocation->AllocData.SurfDesc.VidPnSourceId == srcId);
         pAllocation->bAssigned = TRUE;
         pAllocation->bVisible = pSource->bVisible;
+        pAllocation->CurVidPnSourceId = srcId;
 
         if (pSource->AllocData.hostID != pAllocation->AllocData.hostID)
         {

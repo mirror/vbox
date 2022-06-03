@@ -214,6 +214,9 @@ static NTSTATUS svgaCreateAllocationSurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_AL
 
         pAllocation->dx.SegmentId = 2;
     }
+    else
+        AssertFailedReturn(STATUS_INVALID_PARAMETER);
+
     pAllocationInfo->EvictionSegmentSet              = 0;
     pAllocationInfo->MaximumRenamingListLength       = 1;
     pAllocationInfo->hAllocation                     = pAllocation;
@@ -342,9 +345,9 @@ NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(
     pAllocation->dx.SegmentId = 0;
     pAllocation->dx.pMDL = 0;
 
-    /* Legacy. Unused. */
     KeInitializeSpinLock(&pAllocation->OpenLock);
     InitializeListHead(&pAllocation->OpenList);
+    pAllocation->CurVidPnSourceId = -1;
 
     if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
         Status = svgaCreateAllocationSurface(pDevExt, pAllocation, pAllocationInfo);
@@ -370,6 +373,8 @@ NTSTATUS APIENTRY DxgkDdiDXDestroyAllocation(
 
     PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[0];
     AssertReturn(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_D3D, STATUS_INVALID_PARAMETER);
+
+    Assert(pAllocation->cOpens == 0);
 
     if (pAllocation->dx.desc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
         Status = svgaDestroyAllocationSurface(pDevExt->pGa->hw.pSvga, pAllocation);
@@ -428,9 +433,25 @@ static NTSTATUS svgaRenderPatches(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
     uint32_t cOut = 0;
     for (unsigned i = 0; i < pRender->PatchLocationListInSize; ++i)
     {
+        if (cOut >= pRender->PatchLocationListOutSize)
+        {
+            /** @todo Merge generation of patches witht SvgaRenderCommandsD3D in order to correctly
+             * split a command buffer in case of STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER?
+             */
+            DEBUG_BREAKPOINT_TEST();
+            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
+            break;
+        }
+
         D3DDDI_PATCHLOCATIONLIST const *pIn = &pRender->pPatchLocationListIn[i];
         void * const pPatchAddress = (uint8_t *)pvDmaBuffer + pIn->PatchOffset;
         VBOXDXALLOCATIONTYPE const enmAllocationType = (VBOXDXALLOCATIONTYPE)pIn->DriverId;
+
+        /* "Even though the driver's DxgkDdiRender function pre-patches the DMA buffer, the driver
+         *  must still insert all of the references to allocations into the output patch-location list
+         *  that the pPatchLocationListOut member of DXGKARG_RENDER specifies."
+         */
+        pRender->pPatchLocationListOut[cOut] = *pIn;
 
         DXGK_ALLOCATIONLIST *pAllocationListEntry = &pRender->pAllocationList[pIn->AllocationIndex];
         PVBOXWDDM_OPENALLOCATION pOA = (PVBOXWDDM_OPENALLOCATION)pAllocationListEntry->hDeviceSpecificAllocation;
@@ -441,36 +462,15 @@ static NTSTATUS svgaRenderPatches(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
             Assert(pAllocation->dx.desc.enmAllocationType == enmAllocationType);
             if (enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
             {
-                /* Surfaces might also need a mobid. */
-                if (pAllocationListEntry->SegmentId == 3)
-                {
-                    /* DEFAULT resources only require the sid, because they exist outside the guest. */
-                    Assert(pAllocation->dx.sid != SVGA3D_INVALID_ID);
-                    Assert(pAllocation->dx.mobid != SVGA3D_INVALID_ID);
-                    Assert(pAllocation->dx.SegmentId == 3);
-
+                if (   pAllocation->dx.sid != SVGA3D_INVALID_ID
+                    && pAllocation->dx.mobid != SVGA3D_INVALID_ID)
                     *(uint32_t *)pPatchAddress = pAllocation->dx.sid;
-                    continue;
-                }
-                else
-                {
-                    /* For Aperture segment, the surface need a mob too, which must be created in BuildPagingBuffer. */
-                    if (   pAllocation->dx.sid != SVGA3D_INVALID_ID
-                        && pAllocation->dx.mobid != SVGA3D_INVALID_ID)
-                    {
-                        *(uint32_t *)pPatchAddress = pAllocation->dx.sid;
-                        continue;
-                    }
-                }
             }
             else if (   enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
                      || enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
             {
                 if (pAllocation->dx.mobid != SVGA3D_INVALID_ID)
-                {
                     *(uint32_t *)pPatchAddress = pAllocation->dx.mobid;
-                    continue;
-                }
             }
         }
         else
@@ -478,13 +478,10 @@ static NTSTATUS svgaRenderPatches(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
             if (   enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE
                 || enmAllocationType == VBOXDXALLOCATIONTYPE_SHADERS
                 || enmAllocationType == VBOXDXALLOCATIONTYPE_CO)
-            {
                 *(uint32_t *)pPatchAddress = SVGA3D_INVALID_ID;
-                continue;
-            }
         }
 
-        pRender->pPatchLocationListOut[cOut++] = *pIn;
+        ++cOut;
     }
 
     GALOG(("pvDmaBuffer = %p, cbDmaBuffer = %u, cOut = %u\n", pvDmaBuffer, cbDmaBuffer, cOut));
@@ -918,10 +915,6 @@ NTSTATUS DxgkDdiDXBuildPagingBuffer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGB
 
 NTSTATUS APIENTRY DxgkDdiDXPatch(PVBOXMP_DEVEXT pDevExt, const DXGKARG_PATCH *pPatch)
 {
-    GALOG(("pDmaBuffer = %p, cbDmaBuffer = %u, cPatches = %u\n",
-           pPatch->pDmaBuffer, pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset,
-           pPatch->PatchLocationListSubmissionLength));
-
     //DEBUG_BREAKPOINT_TEST();
 
     for (UINT i = 0; i < pPatch->PatchLocationListSubmissionLength; ++i)
