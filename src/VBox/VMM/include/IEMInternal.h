@@ -27,7 +27,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/param.h>
 
-#include <setjmp.h>
+#include <iprt/setjmp-without-sigmask.h>
 
 
 RT_C_DECLS_BEGIN
