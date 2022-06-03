@@ -7476,6 +7476,9 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
         ID3D11InputLayout          *pInputLayout;
         ID3D11Buffer               *pConstantBuffer;
         ID3D11VertexShader         *pVertexShader;
+        ID3D11HullShader           *pHullShader;
+        ID3D11DomainShader         *pDomainShader;
+        ID3D11GeometryShader       *pGeometryShader;
         ID3D11ShaderResourceView   *pShaderResourceView;
         ID3D11PixelShader          *pPixelShader;
         ID3D11SamplerState         *pSamplerState;
@@ -7493,6 +7496,9 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
     pBlitter->pImmediateContext->IAGetInputLayout(&SavedState.pInputLayout);
     pBlitter->pImmediateContext->VSGetConstantBuffers(0, 1, &SavedState.pConstantBuffer);
     pBlitter->pImmediateContext->VSGetShader(&SavedState.pVertexShader, NULL, NULL);
+    pBlitter->pImmediateContext->HSGetShader(&SavedState.pHullShader, NULL, NULL);
+    pBlitter->pImmediateContext->DSGetShader(&SavedState.pDomainShader, NULL, NULL);
+    pBlitter->pImmediateContext->GSGetShader(&SavedState.pGeometryShader, NULL, NULL);
     pBlitter->pImmediateContext->PSGetShaderResources(0, 1, &SavedState.pShaderResourceView);
     pBlitter->pImmediateContext->PSGetShader(&SavedState.pPixelShader, NULL, NULL);
     pBlitter->pImmediateContext->PSGetSamplers(0, 1, &SavedState.pSamplerState);
@@ -7548,6 +7554,11 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
     /* Vertex shader. */
     pBlitter->pImmediateContext->VSSetShader(pBlitter->pVertexShader, NULL, 0);
 
+    /* Unused shaders. */
+    pBlitter->pImmediateContext->HSSetShader(NULL, NULL, 0);
+    pBlitter->pImmediateContext->DSSetShader(NULL, NULL, 0);
+    pBlitter->pImmediateContext->GSSetShader(NULL, NULL, 0);
+
     /* Shader resource view. */
     pBlitter->pImmediateContext->PSSetShaderResources(0, 1, &pSrcShaderResourceView);
 
@@ -7587,6 +7598,14 @@ static HRESULT BlitFromTexture(D3D11BLITTER *pBlitter, ID3D11RenderTargetView *p
     D3D_RELEASE(SavedState.pConstantBuffer);
     pBlitter->pImmediateContext->VSSetShader(SavedState.pVertexShader, NULL, 0);
     D3D_RELEASE(SavedState.pVertexShader);
+
+    pBlitter->pImmediateContext->HSSetShader(SavedState.pHullShader, NULL, 0);
+    D3D_RELEASE(SavedState.pHullShader);
+    pBlitter->pImmediateContext->DSSetShader(SavedState.pDomainShader, NULL, 0);
+    D3D_RELEASE(SavedState.pDomainShader);
+    pBlitter->pImmediateContext->GSSetShader(SavedState.pGeometryShader, NULL, 0);
+    D3D_RELEASE(SavedState.pGeometryShader);
+
     pBlitter->pImmediateContext->PSSetShaderResources(0, 1, &SavedState.pShaderResourceView);
     D3D_RELEASE(SavedState.pShaderResourceView);
     pBlitter->pImmediateContext->PSSetShader(SavedState.pPixelShader, NULL, 0);
