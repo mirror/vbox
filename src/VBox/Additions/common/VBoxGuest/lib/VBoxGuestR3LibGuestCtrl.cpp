@@ -40,6 +40,10 @@
 
 #ifndef RT_OS_WINDOWS
 # include <signal.h>
+# ifdef RT_OS_DARWIN
+#  include <pthread.h>
+#  define sigprocmask pthread_sigmask /* On xnu sigprocmask works on the process, not the calling thread as elsewhere. */
+# endif
 #endif
 
 #include "VBoxGuestR3LibInternal.h"
