@@ -25,7 +25,7 @@
 #include <VBox/vmm/vmapi.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
-#include <setjmp.h>
+#include <iprt/setjmp-without-sigmask.h>
 
 
 

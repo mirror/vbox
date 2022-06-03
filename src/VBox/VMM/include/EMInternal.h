@@ -28,7 +28,7 @@
 #include <VBox/dis.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <iprt/avl.h>
-#include <setjmp.h>
+#include <iprt/setjmp-without-sigmask.h>
 
 RT_C_DECLS_BEGIN
 
