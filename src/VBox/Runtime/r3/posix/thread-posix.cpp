@@ -57,6 +57,9 @@
 #if defined(RT_OS_HAIKU)
 # include <OS.h>
 #endif
+#if defined(RT_OS_DARWIN)
+# define sigprocmask pthread_sigmask /* On xnu sigprocmask works on the process, not the calling thread as elsewhere. */
+#endif
 
 #include <iprt/thread.h>
 #include <iprt/log.h>

@@ -72,6 +72,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <pthread.h>
+#if defined(RT_OS_DARWIN)
+# define sigprocmask pthread_sigmask /* On xnu sigprocmask works on the process, not the calling thread as elsewhere. */
+#endif
 
 
 /*********************************************************************************************************************************
