@@ -498,8 +498,8 @@ static int processPendingEvents(nsIEventQueue *pQueue)
  *          out of bounds.  On darwin it will also be returned if the queue is
  *          stopped.
  *
- * @note    On darwin this function will not return when the thread receives a signal, 
- *          it will just resume the wait.
+ * @note    On darwin this function will not return when the thread receives a
+ *          signal, it will just resume the wait.
  */
 int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 {
@@ -522,10 +522,10 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
     {
 # ifdef RT_OS_DARWIN
         /** @todo check how Ctrl-C works on Darwin.
-         * Update: It doesn't work. MACH_RCV_INTERRUPT could perhaps be returned 
+         * Update: It doesn't work. MACH_RCV_INTERRUPT could perhaps be returned
          *         to __CFRunLoopServiceMachPort, but neither it nor __CFRunLoopRun
          *         has any way of expressing it via their return values.  So, if
-         *         Ctrl-C handling is important, signal needs to be handled on 
+         *         Ctrl-C handling is important, signal needs to be handled on
          *         a different thread or something. */
         rc = waitForEventsOnDarwin(cMsTimeout);
 # else // !RT_OS_DARWIN
