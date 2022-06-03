@@ -261,7 +261,7 @@ static bool rtR0NtTryMatchSymSet(PCRTNTSDBSET pSet, uint8_t *pbPrcb, const char 
     }
 
     /*
-     * Got a match, update the global variables and report succcess.
+     * Got a match, update the global variables and report success.
      */
     g_offrtNtPbQuantumEnd    = pSet->KPRCB.offQuantumEnd;
     g_cbrtNtPbQuantumEnd     = pSet->KPRCB.cbQuantumEnd;

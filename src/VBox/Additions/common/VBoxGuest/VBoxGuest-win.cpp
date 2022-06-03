@@ -1485,7 +1485,7 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
                 rc = vgdrvNtSetupDevice(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
                 if (NT_SUCCESS(rc))
                 {
-                    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
+                    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (success)\n", rc));
                     return rc;
                 }
 
