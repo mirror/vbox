@@ -33,14 +33,18 @@
 #include <iprt/cdefs.h>
 #include <setjmp.h>
 
-#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
 /*
- * Glibc does these redefinitions by default, thus the need for #undef.
- * macOS and BSDs doesn't.  Not sure about solaris.
+ * System V and ANSI-C setups does not by default map setjmp/longjmp to the
+ * signal mask saving/restoring variants (Linux included).  This is mainly
+ * an issue on BSD derivatives.
  */
-# undef  setjmp
+#if defined(IN_RING3) \
+ && (   defined(RT_OS_DARWIN) \
+     || defined(RT_OS_DRAGONFLY)
+     || defined(RT_OS_FREEBSD) \
+     || defined(RT_OS_NETBSD) \
+     || defined(RT_OS_OPENBSD) )
 # define setjmp  _setjmp
-# undef  longjmp
 # define longjmp _longjmp
 #endif
 
