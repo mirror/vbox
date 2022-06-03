@@ -40,7 +40,7 @@
  */
 #if defined(IN_RING3) \
  && (   defined(RT_OS_DARWIN) \
-     || defined(RT_OS_DRAGONFLY)
+     || defined(RT_OS_DRAGONFLY) \
      || defined(RT_OS_FREEBSD) \
      || defined(RT_OS_NETBSD) \
      || defined(RT_OS_OPENBSD) )
