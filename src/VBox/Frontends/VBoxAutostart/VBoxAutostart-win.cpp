@@ -34,6 +34,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/win/windows.h>
+#include <ntsecapi.h>
 
 #define SECURITY_WIN32
 #include <Security.h>
@@ -61,6 +62,13 @@
 #define AUTOSTART_SERVICE_NAME             "VBoxAutostartSvc"
 /** The service display name. */
 #define AUTOSTART_SERVICE_DISPLAY_NAME     "VirtualBox Autostart Service"
+
+/* just define it here instead of including
+ * a bunch of nt headers */
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS ((NTSTATUS)0)
+#endif
+
 
 ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
 bool                      g_fVerbose    = false;
@@ -305,6 +313,120 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
     AssertMsg(fRc, ("ReportEventA failed with %ld\n", GetLastError())); RT_NOREF(fRc);
     DeregisterEventSource(hEventLog);
 }
+
+
+/**
+ * Adds "logon as service" policy to user rights
+ *
+ * When this fails, an error message will be displayed.
+ *
+ * @returns VBox status code.
+ *
+ * @param   sUser        The name of user whom the policy should be added.
+ */
+static int autostartUpdatePolicy(const com::Utf8Str &sUser)
+{
+    LSA_OBJECT_ATTRIBUTES objectAttributes = { 0 };
+    /* Object attributes are reserved, so initialize to zeros. */
+    RT_ZERO(objectAttributes);
+
+    int vrc;
+
+    /* Get a handle to the Policy object. */
+    LSA_HANDLE hPolicy;
+    NTSTATUS ntRc = LsaOpenPolicy( NULL, &objectAttributes, POLICY_ALL_ACCESS, &hPolicy);
+    if (ntRc != STATUS_SUCCESS)
+    {
+        DWORD dwErr = LsaNtStatusToWinError(ntRc);
+        vrc = RTErrConvertFromWin32(dwErr);
+        autostartSvcDisplayError("LsaOpenPolicy failed rc=%Rrc (%#x)\n", vrc, dwErr);
+        return vrc;
+    }
+    /* Get user SID */
+    DWORD cbDomain = 0;
+    SID_NAME_USE enmSidUse = SidTypeUser;
+    RTUTF16 *pwszUser = NULL;
+    size_t cwUser = 0;
+    vrc = RTStrToUtf16Ex(sUser.c_str(), sUser.length(), &pwszUser, 0, &cwUser);
+    if (RT_SUCCESS(vrc))
+    {
+        PSID pSid = NULL;
+        DWORD cbSid = 0;
+        if (!LookupAccountNameW( NULL, pwszUser, pSid, &cbSid, NULL, &cbDomain, &enmSidUse))
+        {
+            DWORD dwErr = GetLastError();
+            if (dwErr == ERROR_INSUFFICIENT_BUFFER)
+            {
+                pSid = (PSID)RTMemAllocZ(cbSid);
+                if (pSid != NULL)
+                {
+                    PRTUTF16 pwszDomain = (PRTUTF16)RTMemAllocZ(cbDomain * sizeof(RTUTF16));
+                    if (pwszDomain != NULL)
+                    {
+                        if (LookupAccountNameW( NULL, pwszUser, pSid, &cbSid, pwszDomain, &cbDomain, &enmSidUse))
+                        {
+                            if (enmSidUse != SidTypeUser)
+                            {
+                                vrc = VERR_INVALID_PARAMETER;
+                                autostartSvcDisplayError("The name %s is not the user\n", sUser.c_str());
+                            }
+                            else
+                            {
+                                /* Add privilege */
+                                LSA_UNICODE_STRING lwsPrivilege;
+                                // Create an LSA_UNICODE_STRING for the privilege names.
+                                lwsPrivilege.Buffer = L"SeServiceLogonRight";
+                                size_t cwPrivilege = wcslen(lwsPrivilege.Buffer);
+                                lwsPrivilege.Length = (USHORT)cwPrivilege * sizeof(WCHAR);
+                                lwsPrivilege.MaximumLength = (USHORT)(cwPrivilege + 1) * sizeof(WCHAR);
+                                ntRc = LsaAddAccountRights(hPolicy, pSid, &lwsPrivilege, 1);
+                                if (ntRc != STATUS_SUCCESS)
+                                {
+                                    dwErr = LsaNtStatusToWinError(ntRc);
+                                    vrc = RTErrConvertFromWin32(dwErr);
+                                    autostartSvcDisplayError("LsaAddAccountRights failed rc=%Rrc (%#x)\n", vrc, dwErr);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            dwErr = GetLastError();
+                            vrc = RTErrConvertFromWin32(dwErr);
+                            autostartSvcDisplayError("LookupAccountName failed rc=%Rrc (%#x)\n", vrc, dwErr);
+                        }
+                        RTMemFree(pwszDomain);
+                    }
+                    else
+                    {
+                        vrc = VERR_NO_MEMORY;
+                        autostartSvcDisplayError("autostartUpdatePolicy failed rc=%Rrc\n", vrc);
+                    }
+
+                    RTMemFree(pSid);
+                }
+                else
+                {
+                    vrc = VERR_NO_MEMORY;
+                    autostartSvcDisplayError("autostartUpdatePolicy failed rc=%Rrc\n", vrc);
+                }
+            }
+            else
+            {
+                vrc = RTErrConvertFromWin32(dwErr);
+                autostartSvcDisplayError("LookupAccountName failed rc=%Rrc (%#x)\n", vrc, dwErr);
+            }
+        }
+    }
+    else
+        autostartSvcDisplayError("Failed to convert user name rc=%Rrc\n", vrc);
+
+    if (pwszUser != NULL)
+        RTUtf16Free(pwszUser);
+
+    LsaClose(hPolicy);
+    return vrc;
+}
+
 
 /**
  * Opens the service control manager.
@@ -615,6 +737,10 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
     com::Utf8Str    sServiceName;
     autostartFormatServiceName(sDomain, sUserTmp, sServiceName);
 
+    vrc = autostartUpdatePolicy(sUserFullName);
+    if (RT_FAILURE(vrc))
+        return autostartSvcDisplayError("Failed to get/update \"logon as service\" policy for user %s (%Rrc)\n",
+                                        sUserFullName.c_str(), vrc);
     /*
      * Create the service.
      */
@@ -987,7 +1113,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
 static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
 {
     int vrc;
-
+RT_BREAKPOINT();
     LogFlowFuncEnter();
 
     /*
@@ -1356,4 +1482,3 @@ int main(int argc, char **argv)
             return RTEXITCODE_FAILURE;
     }
 }
-
