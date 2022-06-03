@@ -326,7 +326,7 @@ DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLo
  */
 static int autostartUpdatePolicy(const com::Utf8Str &sUser)
 {
-    LSA_OBJECT_ATTRIBUTES objectAttributes = { 0 };
+    LSA_OBJECT_ATTRIBUTES objectAttributes;
     /* Object attributes are reserved, so initialize to zeros. */
     RT_ZERO(objectAttributes);
 
