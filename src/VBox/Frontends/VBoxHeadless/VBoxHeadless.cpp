@@ -43,6 +43,7 @@ using namespace com;
 #include <iprt/getopt.h>
 #include <iprt/env.h>
 #include <iprt/errcore.h>
+#include <iprt/thread.h>
 #include <VBoxVideo.h>
 
 #ifdef VBOX_WITH_RECORDING
@@ -78,12 +79,14 @@ using namespace com;
 /* global weak references (for event handlers) */
 static IConsole *gConsole = NULL;
 static NativeEventQueue *gEventQ = NULL;
+/** Inidcates whether gEventQ can safely be used or not. */
+static volatile bool g_fEventQueueSafe = false;
 
 /* keep this handy for messages */
 static com::Utf8Str g_strVMName;
 static com::Utf8Str g_strVMUUID;
 
-/* flag whether frontend should terminate */
+/** flag whether frontend should terminate */
 static volatile bool g_fTerminateFE = false;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -411,10 +414,12 @@ static void HandleSignal(int sig)
     const char *pszThread = RTThreadSelfName();
     if (pszThread)
     {
-        aSegs[cSegs++].iov_base = (char *)" on thread ";
+        aSegs[cSegs++].iov_base = (char *)"(on thread ";
         aSegs[cSegs++].iov_base = (char *)pszThread;        
+        aSegs[cSegs++].iov_base = (char *)")\n";
     }
-    aSegs[cSegs++].iov_base = (char *)"\n";
+    else
+        aSegs[cSegs++].iov_base = (char *)"\n";
     for (int i = 0; i < cSegs; i++)
         aSegs[i].iov_len = strlen((const char *)aSegs[i].iov_base);
     writev(2, aSegs, cSegs);
@@ -484,13 +489,14 @@ static DECLCALLBACK(int) SigThreadProc(RTTHREAD hThreadSelf, void *pvUser)
         int iSignal = -1;
         if (sigwait(&SigSetWait, &iSignal) == 0)
         {
-            g_fTerminateFE = true;
-            RTMsgInfo("Caught signal: %s\n", strsignal(iSignal));
             LogRel(("VBoxHeadless: Caught signal: %s\n", strsignal(iSignal)));
+            RTMsgInfo("");
+            RTMsgInfo("Caught signal: %s", strsignal(iSignal));
+            g_fTerminateFE = true;
         }
 
         /** @todo this is a little bit racy...   */
-        if (g_fTerminateFE && gEventQ != NULL)
+        if (g_fTerminateFE && g_fEventQueueSafe && gEventQ != NULL)
             gEventQ->interruptEventQueueProcessing();
     }
 }
@@ -768,7 +774,8 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
             /* tell the VM to save state/power off */
             g_fTerminateFE = true;
-            gEventQ->interruptEventQueueProcessing();
+            if (g_fEventQueueSafe && gEventQ != NULL)
+                gEventQ->interruptEventQueueProcessing();
 
             if (g_hCanQuit != NIL_RTSEMEVENT)
             {
@@ -794,7 +801,8 @@ WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-static const char * const ctrl_event_names[] = {
+static const char * const g_apszCtrlEventNames[] =
+{
     "CTRL_C_EVENT",
     "CTRL_BREAK_EVENT",
     "CTRL_CLOSE_EVENT",
@@ -810,26 +818,25 @@ static const char * const ctrl_event_names[] = {
 BOOL WINAPI
 ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
 {
-    const char *signame;
-    char namebuf[48];
-    int rc;
-
-    if (dwCtrlType < RT_ELEMENTS(ctrl_event_names))
-        signame = ctrl_event_names[dwCtrlType];
+    const char *pszSigName;
+    char szNameBuf[48];
+    if (dwCtrlType < RT_ELEMENTS(g_apszCtrlEventNames))
+        pszSigName = g_apszCtrlEventNames[dwCtrlType];
     else
     {
         /* should not happen, but be prepared */
-        RTStrPrintf(namebuf, sizeof(namebuf),
-                    "<console control event %lu>", (unsigned long)dwCtrlType);
-        signame = namebuf;
+        RTStrPrintf(szNameBuf, sizeof(szNameBuf), "<console control event %u>", dwCtrlType);
+        pszSigName = szNameBuf;
     }
-    LogRel(("VBoxHeadless: got %s\n", signame));
-    RTMsgInfo("Got %s\n", signame);
+
+    LogRel(("VBoxHeadless: got %s\n", pszSigName));
+    RTMsgInfo("Got %s", pszSigName);
     RTMsgInfo("");
 
     /* tell the VM to save state/power off */
     g_fTerminateFE = true;
-    gEventQ->interruptEventQueueProcessing();
+    if (g_fEventQueueSafe && gEventQ != NULL)
+        gEventQ->interruptEventQueueProcessing();
 
     /*
      * We don't need to wait for Ctrl-C / Ctrl-Break, but we must wait
@@ -839,7 +846,7 @@ ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
     {
         LogRel(("VBoxHeadless: waiting for VM termination...\n"));
 
-        rc = RTSemEventWait(g_hCanQuit, RT_INDEFINITE_WAIT);
+        int rc = RTSemEventWait(g_hCanQuit, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
             LogRel(("VBoxHeadless: Failed to wait for VM termination: %Rrc\n", rc));
     }
@@ -1297,6 +1304,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* initialize global references */
         gConsole = console;
         gEventQ = com::NativeEventQueue::getMainEventQueue();
+        g_fEventQueueSafe = true;
 
         /* VirtualBoxClient events registration. */
         {
@@ -1585,6 +1593,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
     } while (0);
+
+    /* No point in trying to post dummy messages to the event queue now. */
+    g_fEventQueueSafe = false;
 
     /* VirtualBox callback unregistration. */
     if (vboxListener)
