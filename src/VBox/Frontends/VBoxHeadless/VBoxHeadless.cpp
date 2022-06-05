@@ -58,8 +58,9 @@ using namespace com;
 #endif
 
 #if !defined(RT_OS_WINDOWS)
-#include <signal.h>
-static void HandleSignal(int sig);
+# include <signal.h>
+# include <unistd.h>
+# include <sys/uio.h>
 #endif
 
 #include "PasswordInput.h"
@@ -395,13 +396,152 @@ VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
 #if !defined(RT_OS_WINDOWS)
-static void
-HandleSignal(int sig)
+
+/** Signals we handle. */
+static int const g_aiSigs[] = { SIGHUP, SIGINT, SIGTERM, SIGUSR1 };
+
+/** The signal handler. */
+static void HandleSignal(int sig)
 {
-    RT_NOREF(sig);
-    LogRel(("VBoxHeadless: received singal %d\n", sig));
+# if 1
+    struct iovec aSegs[8];
+    int          cSegs = 0;
+    aSegs[cSegs++].iov_base = (char *)"VBoxHeadless: signal ";
+    aSegs[cSegs++].iov_base = (char *)strsignal(sig);
+    const char *pszThread = RTThreadSelfName();
+    if (pszThread)
+    {
+        aSegs[cSegs++].iov_base = (char *)" on thread ";
+        aSegs[cSegs++].iov_base = (char *)pszThread;        
+    }
+    aSegs[cSegs++].iov_base = (char *)"\n";
+    for (int i = 0; i < cSegs; i++)
+        aSegs[i].iov_len = strlen((const char *)aSegs[i].iov_base);
+    writev(2, aSegs, cSegs);
+# else
+    LogRel(("VBoxHeadless: received signal %d\n", sig)); /** @todo r=bird: This is not at all safe. */
+# endif    
     g_fTerminateFE = true;
 }
+
+# ifdef RT_OS_DARWIN
+
+/* For debugging. */
+uint32_t GetSignalMask(void)
+{
+    /* For some totally messed up reason, the xnu sigprocmask actually returns
+       the signal mask of the calling thread rather than the process one
+       (p_sigmask), so can call sigprocmask just as well as pthread_sigmask here. */
+    sigset_t Sigs;
+    RT_ZERO(Sigs);
+    sigprocmask(SIG_UNBLOCK, NULL, &Sigs);
+    RTMsgInfo("debug: thread %s mask: %.*Rhxs\n", RTThreadSelfName(), sizeof(Sigs), &Sigs);
+    for (int i = 0; i < 32; i++)
+        if (sigismember(&Sigs, i)) RTMsgInfo("debug: sig %2d blocked: %s\n", i, strsignal(i));
+    return *(uint32_t const *)&Sigs;
+}
+
+/**
+ * Blocks or unblocks the signals we handle.
+ *
+ * @note Only for darwin does fProcess make a difference, all others always
+ *       work on the calling thread regardless of the flag value.
+ */
+static void SetSignalMask(bool fBlock, bool fProcess)
+{
+    sigset_t Sigs;
+    sigemptyset(&Sigs);
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aiSigs); i++)
+        sigaddset(&Sigs, g_aiSigs[i]);
+    if (fProcess)
+    {
+        if (sigprocmask(fBlock ? SIG_BLOCK : SIG_UNBLOCK, &Sigs, NULL) != 0)
+            RTMsgError("sigprocmask failed: %d", errno);
+    }
+    else
+    {
+        if (pthread_sigmask(fBlock ? SIG_BLOCK : SIG_UNBLOCK, &Sigs, NULL) != 0)
+            RTMsgError("pthread_sigmask failed: %d", errno);
+    }
+}
+
+/** 
+ * @callback_method_impl{FNRTTHREAD, Signal wait thread}
+ */
+static DECLCALLBACK(int) SigThreadProc(RTTHREAD hThreadSelf, void *pvUser)
+{
+    RT_NOREF(hThreadSelf, pvUser);
+
+    /* The signals to wait for: */
+    sigset_t SigSetWait;
+    sigemptyset(&SigSetWait);
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aiSigs); i++)
+        sigaddset(&SigSetWait, g_aiSigs[i]);
+    
+    /* The wait + processing loop: */
+    for (;;)
+    {
+        int iSignal = -1;
+        if (sigwait(&SigSetWait, &iSignal) == 0)
+        {
+            g_fTerminateFE = true;
+            RTMsgInfo("Caught signal: %s\n", strsignal(iSignal));
+            LogRel(("VBoxHeadless: Caught signal: %s\n", strsignal(iSignal)));
+        }
+
+        /** @todo this is a little bit racy...   */
+        if (g_fTerminateFE && gEventQ != NULL)
+            gEventQ->interruptEventQueueProcessing();
+    }
+}
+
+/** The handle to the signal wait thread. */
+static RTTHREAD g_hSigThread = NIL_RTTHREAD;
+
+# endif /* RT_OS_DARWIN */
+
+static void SetUpSignalHandlers(void)
+{
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN);
+
+    /* Don't touch SIGUSR2 as IPRT could be using it for RTThreadPoke(). */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aiSigs); i++)
+    {
+        struct sigaction sa;
+        RT_ZERO(sa);
+        sa.sa_handler = HandleSignal;
+        if (sigaction(g_aiSigs[i], &sa, NULL) != 0)
+            RTMsgError("sigaction failed for signal #%u: %d", g_aiSigs[i], errno);
+    }
+    
+# if defined(RT_OS_DARWIN)
+    /*
+     * On darwin processEventQueue() does not return with VERR_INTERRUPTED or
+     * similar if a signal arrives while we're waiting for events.  So, in
+     * order to respond promptly to signals after they arrives, we use a
+     * dedicated thread for fielding the signals and poking the event queue
+     * after each signal.
+     *
+     * We block the signals for all threads (this is fine as the p_sigmask
+     * isn't actually used for anything at all and wont prevent signal
+     * delivery).  The signal thread should have them blocked as well, as it
+     * uses sigwait to do the waiting (better than sigsuspend, as we can safely
+     * LogRel the signal this way).
+     */
+    if (g_hSigThread == NIL_RTTHREAD)
+    {
+        SetSignalMask(true /*fBlock */, true /*fProcess*/);
+        int vrc = RTThreadCreate(&g_hSigThread, SigThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, 0, "SigWait");
+        if (RT_FAILURE(vrc))
+        {
+            RTMsgError("Failed to create signal waiter thread: %Rrc", vrc);
+            SetSignalMask(false /*fBlock */, false /*fProcess*/);
+        }
+    }
+# endif
+}
+
 #endif /* !RT_OS_WINDOWS */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1301,19 +1441,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * an early signal and use RAII to ensure proper cleanup.
          */
 #if !defined(RT_OS_WINDOWS)
-        signal(SIGPIPE, SIG_IGN);
-        signal(SIGTTOU, SIG_IGN);
-
-        struct sigaction sa;
-        RT_ZERO(sa);
-        sa.sa_handler = HandleSignal;
-        sigaction(SIGHUP,  &sa, NULL);
-        sigaction(SIGINT,  &sa, NULL);
-        sigaction(SIGTERM, &sa, NULL);
-        sigaction(SIGUSR1, &sa, NULL);
-        /* Don't touch SIGUSR2 as IPRT could be using it for RTThreadPoke(). */
-
-#else /* RT_OS_WINDOWS */
+        ::SetUpSignalHandlers();
+#else 
         /*
          * Register windows console signal handler to react to Ctrl-C,
          * Ctrl-Break, Close, non-interactive session termination.
@@ -1364,6 +1493,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LogRel(("VBoxHeadless: starting event loop\n"));
         for (;;)
         {
+            if (g_fTerminateFE)
+            {
+                LogRel(("VBoxHeadless: processEventQueue: %Rrc, termination requested\n", vrc));
+                break;
+            }
+
             vrc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
 
             /*
