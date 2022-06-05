@@ -44,6 +44,7 @@
      || defined(RT_OS_FREEBSD) \
      || defined(RT_OS_NETBSD) \
      || defined(RT_OS_OPENBSD) )
+# undef setjmp /* /Library/Developer/CommandLineTools/usr/bin/../include/c++/v1/setjmp.h defines it on macOS. */
 # define setjmp  _setjmp
 # define longjmp _longjmp
 #endif
