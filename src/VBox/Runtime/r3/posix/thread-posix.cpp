@@ -250,6 +250,11 @@ static void rtThreadPosixBlockSignals(PRTTHREADINT pThread)
     {
         sigset_t SigSet;
         sigfillset(&SigSet);
+        sigdelset(&SigSet, SIGILL);  /* On the m1 we end up spinning on UDF ... */
+        sigdelset(&SigSet, SIGTRAP); /* ... and BRK instruction if these signals are masked. */ 
+        sigdelset(&SigSet, SIGFPE);  /* Just adding the rest here to be on the safe side. */
+        sigdelset(&SigSet, SIGBUS);
+        sigdelset(&SigSet, SIGSEGV);
         int rc = sigprocmask(SIG_BLOCK, &SigSet, NULL);
         AssertMsg(rc == 0, ("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno)); RT_NOREF(rc);
     }
