@@ -1170,7 +1170,12 @@ svga_screen_create(struct svga_winsys_screen *sws)
       /* Maximum number of constant buffers */
       svgascreen->max_const_buffers =
          get_uint_cap(sws, SVGA3D_DEVCAP_DX_MAX_CONSTANT_BUFFERS, 1);
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
       assert(svgascreen->max_const_buffers <= SVGA_MAX_CONST_BUFS);
+#else
+      svgascreen->max_const_buffers = MIN2(svgascreen->max_const_buffers,
+                                           SVGA_MAX_CONST_BUFS);
+#endif
    }
    else {
       /* VGPU9 */
