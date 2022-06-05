@@ -915,9 +915,9 @@ RTDECL(const char *) RTThreadSelfName(void)
         PRTTHREADINT pThread = rtThreadGet(Thread);
         if (pThread)
         {
-            const char *szName = pThread->szName;
+            const char *pszName = pThread->szName;
             rtThreadRelease(pThread);
-            return szName;
+            return pszName;
         }
     }
     return NULL;
