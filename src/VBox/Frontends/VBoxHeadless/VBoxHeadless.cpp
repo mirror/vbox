@@ -422,7 +422,7 @@ static void HandleSignal(int sig)
         aSegs[cSegs++].iov_base = (char *)"\n";
     for (int i = 0; i < cSegs; i++)
         aSegs[i].iov_len = strlen((const char *)aSegs[i].iov_base);
-    writev(2, aSegs, cSegs);
+    (void)writev(2, aSegs, cSegs);
 # else
     LogRel(("VBoxHeadless: received signal %d\n", sig)); /** @todo r=bird: This is not at all safe. */
 # endif    
