@@ -495,7 +495,6 @@ static DECLCALLBACK(int) SigThreadProc(RTTHREAD hThreadSelf, void *pvUser)
             g_fTerminateFE = true;
         }
 
-        /** @todo this is a little bit racy...   */
         if (g_fTerminateFE && g_fEventQueueSafe && gEventQ != NULL)
             gEventQ->interruptEventQueueProcessing();
     }
