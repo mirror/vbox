@@ -16,6 +16,10 @@
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #endif
+#ifdef RT_OS_DARWIN                     /* VBOX */
+# include <pthread.h>                   /* VBOX */
+# define sigprocmask pthread_sigmask    /* On xnu sigprocmask works on the process, not the calling thread as elsewhere. */
+#endif                                  /* VBOX */
 #include "internal/cryptlib.h"
 
 #include "arm_arch.h"
