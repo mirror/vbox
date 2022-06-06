@@ -3581,8 +3581,14 @@ struct inode_operations vbsf_reg_iops = {
  * Needed for mmap and reads+writes when the file is mmapped in a
  * shared+writeable fashion.
  */
+#if RTLNX_VER_MIN(5,19,0)
+static int vbsf_read_folio(struct file *file, struct folio *folio)
+{
+    struct page *page = &folio->page;
+#else
 static int vbsf_readpage(struct file *file, struct page *page)
 {
+#endif
     struct inode *inode = VBSF_GET_F_DENTRY(file)->d_inode;
     int           err;
 
@@ -3728,8 +3734,7 @@ static int vbsf_writepage(struct page *page)
 /**
  * Called when writing thru the page cache (which we shouldn't be doing).
  */
-int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
-                     unsigned len, unsigned flags, struct page **pagep, void **fsdata)
+static inline void vbsf_write_begin_warn(loff_t pos, unsigned len, unsigned flags)
 {
     /** @todo r=bird: We shouldn't ever get here, should we?  Because we don't use
      *        the page cache for any writes AFAIK.  We could just as well use
@@ -3745,8 +3750,24 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
         WARN_ON(1);
 # endif
     }
+}
+
+# if RTLNX_VER_MIN(5,19,0)
+int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
+                     unsigned len, struct page **pagep, void **fsdata)
+{
+    vbsf_write_begin_warn(pos, len, 0);
+    return simple_write_begin(file, mapping, pos, len, pagep, fsdata);
+}
+# else
+int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
+                     unsigned len, unsigned flags, struct page **pagep, void **fsdata)
+{
+    vbsf_write_begin_warn(pos, len, flags);
     return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
+# endif
+
 #endif /* KERNEL_VERSION >= 2.6.24 */
 
 #if RTLNX_VER_MIN(5,14,0)
@@ -3820,7 +3841,11 @@ static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *buf, unsig
  * @todo the FsPerf touch/flush (mmap) test fails on 4.4.0 (ubuntu 16.04 lts).
  */
 struct address_space_operations vbsf_reg_aops = {
+#if RTLNX_VER_MIN(5,19,0)
+    .read_folio     = vbsf_read_folio,
+#else
     .readpage       = vbsf_readpage,
+#endif
     .writepage      = vbsf_writepage,
     /** @todo Need .writepages if we want msync performance...  */
 #if RTLNX_VER_MIN(5,18,0)
@@ -3842,4 +3867,3 @@ struct address_space_operations vbsf_reg_aops = {
     .direct_IO      = vbsf_direct_IO,
 #endif
 };
-
