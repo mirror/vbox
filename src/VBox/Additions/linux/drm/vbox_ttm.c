@@ -320,8 +320,10 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_buffer_object *bo,
 	if (ttm_tt_init(tt, bdev, size, page_flags, dummy_read_page)) {
 #elif RTLNX_VER_MAX(5,11,0) && !RTLNX_RHEL_RANGE(8,5, 8,99)
 	if (ttm_tt_init(tt, bo, page_flags)) {
-#else
+#elif RTLNX_VER_MAX(5,19,0)
 	if (ttm_tt_init(tt, bo, page_flags, ttm_write_combined)) {
+#else
+	if (ttm_tt_init(tt, bo, page_flags, ttm_write_combined, 0)) {
 #endif
 		kfree(tt);
 		return NULL;
