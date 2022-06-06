@@ -980,9 +980,10 @@
     <title>Creating Your First Virtual Machine</title>
 
     <para>
-      Click <emphasis role="bold">New</emphasis> in the VirtualBox
-      Manager window. A wizard is shown, to guide you through setting up
-      a new virtual machine (VM).
+      Selecting <emphasis role="bold">New</emphasis> menu item from
+      <emphasis role="bold">Machine</emphasis> menu of the Manager Window
+      shows a wizard which guides you through setting up a new virtual
+      machine (VM).
     </para>
 
     <figure id="fig-new-vm-name">
@@ -1002,60 +1003,96 @@
     </para>
 
     <orderedlist>
-
       <listitem>
         <para>
-          The <emphasis role="bold">Name</emphasis> of the VM you choose
-          is shown in the machine list of the VirtualBox Manager window
-          and is also used for the VM's files on disk.
+          The first page lets you specify name, location, and guest
+          operating system type. Additionally you can enable the unattended
+          guest operating system install feature (<xref linkend="gui-wizard-unattended"/>.).
         </para>
-
+        <itemizedlist>
+          <listitem>
+            <para>
+              The <emphasis role="bold">Name</emphasis> of the VM you choose
+              is shown in the machine list of the VirtualBox Manager window
+              and is also used for the VM's files on disk.
+            </para>
+            <para>
+              Be sure to assign each VM an informative name that describes
+              the OS and software running on the VM. For example,
+              <literal>Windows 10 with Visio</literal>.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The <emphasis role="bold">Folder</emphasis> is the location
+              where VMs are stored on your computer. The default folder
+              location is shown.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The <emphasis role="bold">ISO Image</emphasis> is ISO file which
+              may be used to install the guest operating system or to be attached
+              to DVD drive of the new virtual machine. Note that selecting
+              an ISO image is optional. Please see the section <xref linkend="gui-wizard-unattended"/>.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              For <emphasis role="bold">Type</emphasis>,
+              select the OS that you want to install. The supported OSes are
+              grouped. If you want to install something very unusual that is
+              not listed, select <emphasis role="bold">Other</emphasis>.
+              Depending on your selection, &product-name; will enable or
+              disable certain VM settings that your guest OS may require.
+              This is particularly important for 64-bit guests. See
+              <xref linkend="intro-64bitguests" />. It is therefore
+              recommended to always set it to the correct value. Also note
+              that if an ISO image is selected and &product-name; is able to detect
+              an operating system from that ISO, <emphasis role="bold">Type</emphasis>
+              and <emphasis role="bold">Version</emphasis> controls are populated
+              accordingly and disabled.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The checkox <emphasis role="bold">Skip Unattended Installation</emphasis>
+              can be used to disable unattended guest OS installation even if an ISO
+              image is selected that supports unattended install. In that case the
+              selected ISO image is inserted DVD drive of the new virtual machine.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
         <para>
-          Be sure to assign each VM an informative name that describes
-          the OS and software running on the VM. For example,
-          <literal>Windows 10 with Visio</literal>.
+          If unattended install is enabled then the second page of the wizard
+          will show some controls which can be used to input values needed during
+          unattended installation. These include username, password, host name,
+          product key (only applies to some guest operating system type), etc.
+          If for some reason unattended install is not enabled, this page is
+          skipped.
         </para>
       </listitem>
-
       <listitem>
         <para>
-          The <emphasis role="bold">Machine Folder</emphasis> is the
-          location where VMs are stored on your computer. The default
-          folder location is shown.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          For <emphasis role="bold">Operating System Type</emphasis>,
-          select the OS that you want to install. The supported OSes are
-          grouped. If you want to install something very unusual that is
-          not listed, select <emphasis role="bold">Other</emphasis>.
-          Depending on your selection, &product-name; will enable or
-          disable certain VM settings that your guest OS may require.
-          This is particularly important for 64-bit guests. See
-          <xref linkend="intro-64bitguests" />. It is therefore
-          recommended to always set it to the correct value.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          On the next page, select the <emphasis role="bold">Memory
-          (RAM)</emphasis> that &product-name; should allocate every
+          On the next page, select the <emphasis role="bold">Base Memory
+          </emphasis> that &product-name; should allocate every
           time the virtual machine is started. The amount of memory
           given here will be taken away from your host machine and
           presented to the guest OS, which will report this size as the
-          virtual computer's installed RAM.
+          virtual computer's installed RAM. <emphasis role="bold">Processor(s)
+          </emphasis> control determines how many virtual processors are to be
+          assigned to new virtual machine.
         </para>
-
         <caution>
           <para>
             Choose this setting carefully. The memory you give to the VM
             will not be available to your host OS while the VM is
             running, so do not specify more than you can spare.
+            Also note that it is not advised to assign more than
+            half of the processor threads the host machine has.
           </para>
-
           <para>
             For example, if your host machine has 4 GB of RAM and you
             enter 2048 MB as the amount of RAM for a particular virtual
@@ -1065,7 +1102,6 @@
             for the second VM, which may not even be able to start if
             that memory is not available.
           </para>
-
           <para>
             On the other hand, you should specify as much as your guest
             OS and your applications will require to run properly. A
@@ -1074,26 +1110,22 @@
             be required.
           </para>
         </caution>
-
         <para>
           Always ensure that the host OS has enough RAM remaining. If
           insufficient RAM remains, the system might excessively swap
           memory to the hard disk, which effectively brings the host
           system to a standstill.
         </para>
-
         <para>
           As with the other settings, you can change this setting later,
           after you have created the VM.
         </para>
       </listitem>
-
-      <listitem>
+       <listitem>
         <para>
           Next, you must specify a <emphasis role="bold">Virtual Hard
           Disk</emphasis> for your VM.
         </para>
-
         <para>
           There are many and potentially complicated ways in which
           &product-name; can provide hard disk space to a VM, see
@@ -1104,11 +1136,9 @@
           you can even copy it to another host and use it with another
           &product-name; installation.
         </para>
-
         <para>
-          The wizard displays the following window:
+          The wizard displays the following page:
         </para>
-
         <figure id="fig-new-vm-hard-disk">
           <title>Creating a New Virtual Machine: Hard Disk</title>
         <mediaobject>
@@ -1118,24 +1148,55 @@
             </imageobject>
           </mediaobject>
         </figure>
-
         <para>
           At this screen, you have the following options:
         </para>
-
         <itemizedlist>
-
-          <listitem>
+        <listitem>
+          <para>
+            To create a new, empty virtual hard disk, please select
+            <emphasis role="bold">Create a Virtual Hard Disk Now</emphasis>.
+            This will create a new disk image file in the new virtual
+            machine's folder.
+          </para>
+          <para>
+            The checkbox <emphasis role="bold">Pre-allocate Full Size</emphasis>
+            is initially not checked. This results in having a so called
+            <emphasis role="bold">dynamically allocated file</emphasis>
+            which only grows in size when the guest actually
+            stores data on its virtual hard disk. Therefore, this file
+            is small initially. As the drive is filled with data, the
+            file grows to the specified size. When the mentioned checkbox
+            is checked then &product-name; creates a
+            <emphasis role="bold">fixed-size file</emphasis> which
+            immediately occupies the file specified, even if only a
+            fraction of that virtual hard disk space is actually in
+            use. While occupying much more space, a fixed-size file
+            incurs less overhead and is therefore slightly faster than
+            a dynamically allocated file.
+          </para>
+          <para>
+            For more details on the differences between
+            <emphasis role="bold">dynamically allocated file</emphasis> and
+            <emphasis role="bold">fixed-size file</emphasis> please  see
+            <xref linkend="vdidetails" />.
+          </para>
+          <para>
+            To prevent your physical hard disk (host OS) from filling up,
+            &product-name; limits the size of the image file. But the
+            image file must be large enough to hold the contents of the
+            guest OS and the applications you want to install. For a
+            Windows or Linux guest, you will probably need several
+            gigabytes for any serious use. The limit of the image file
+            size can be changed later, see
+            <xref linkend="vboxmanage-modifymedium"/>.
+          </para>
+        </listitem>
+        <listitem>
             <para>
-              To create a new, empty virtual hard disk, click the
-              <emphasis role="bold">Create</emphasis> button.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              You can pick an <emphasis>existing</emphasis> disk image
-              file.
+              You can pick an existing disk image
+              file by selecting <emphasis role="bold">Use
+              a Existing Virtual Hard Disk File </emphasis>.
             </para>
 
             <para>
@@ -1153,94 +1214,38 @@
               disk image file on your host disk.
             </para>
           </listitem>
-
-        </itemizedlist>
-
+          <listitem>
+            <para>
+              You can skip attaching a virtual hard disk file to the
+              new virtual machine you are creating. Note that you will
+              need to attach an hard disk later on in order to install a
+              guest operating system.
+            </para>
+          </listitem>
+      </itemizedlist>
         <para>
           If you are using &product-name; for the first time, you will
-          want to create a new disk image. Click the
-          <emphasis role="bold">Create</emphasis> button.
+          want to create a new disk image. Select
+          <emphasis role="bold">Create a Virtual Hard Disk Now</emphasis> button.
         </para>
-
-        <para>
-          This displays another window, the <emphasis role="bold">Create
-          Virtual Hard Disk Wizard</emphasis> wizard. This wizard helps
-          you to create a new disk image file in the new virtual
-          machine's folder.
-        </para>
-
-        <para>
-          &product-name; supports the following types of image files:
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              A <emphasis role="bold">dynamically allocated
-              file</emphasis> only grows in size when the guest actually
-              stores data on its virtual hard disk. Therefore, this file
-              is small initially. As the drive is filled with data, the
-              file grows to the specified size.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              A <emphasis role="bold">fixed-size file</emphasis>
-              immediately occupies the file specified, even if only a
-              fraction of that virtual hard disk space is actually in
-              use. While occupying much more space, a fixed-size file
-              incurs less overhead and is therefore slightly faster than
-              a dynamically allocated file.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-
-        <para>
-          For details about the differences, see
-          <xref linkend="vdidetails" />.
-        </para>
-
-        <para>
-          To prevent your physical hard disk (host OS) from filling up,
-          &product-name; limits the size of the image file. But the
-          image file must be large enough to hold the contents of the
-          guest OS and the applications you want to install. For a
-          Windows or Linux guest, you will probably need several
-          gigabytes for any serious use. The limit of the image file
-          size can be changed later, see
-          <xref linkend="vboxmanage-modifymedium"/>.
-        </para>
-
-        <figure id="fig-new-vm-vdi">
-          <title>Creating a New Virtual Machine: File Location and Size</title>
-        <mediaobject>
-            <imageobject>
-              <imagedata align="center" fileref="images/create-vdi-1.png"
-                         width="10cm" />
-            </imageobject>
-          </mediaobject>
-        </figure>
-
         <para>
           After having selected or created your image file, click
           <emphasis role="bold">Next</emphasis> to go to the next page.
         </para>
       </listitem>
-
       <listitem>
+        <para>The next page summarizes several attributes of the virtual
+        machine to be created. If you are not appy if any of them you
+        can use <emphasis role="bold">Back</emphasis> button to go
+        back to corresponding page to modify it.</para>
         <para>
-          Click <emphasis role="bold">Create</emphasis>, to create your
-          new virtual machine. The virtual machine is displayed in the
-          list on the left side of the VirtualBox Manager window, with
+          Alternatively you can click <emphasis role="bold">Finish</emphasis>,
+          to create your new virtual machine. The virtual machine is displayed
+          in the list on the left side of the VirtualBox Manager window, with
           the name that you entered initially.
         </para>
       </listitem>
-
     </orderedlist>
-
     <note>
       <para>
         After becoming familiar with the use of wizards, consider using
@@ -1249,7 +1254,23 @@
         wizards.
       </para>
     </note>
-
+    <sect2 id="gui-wizard-unattended">
+      <title>Unattended Install</title>
+      <para>
+        When supported by the selected ISO &product-name; attempts to install
+        the guest OS without any user input. When an ISO image is selected
+        &product-name; tries to determine type of the OS. If this succeeds and
+        if the selected OS is supported for the unattended install then the
+        newly created virtual machine is started after this wizard is closed
+        and OS install kicks off. Note that it is also possible to skip the
+        unattended install by ticking the checkbox "Skip unattended installation".
+        In this case the selected ISO is inserted to DVD drive of the new vm. The
+        guest OS will need to be installed manually. If OS cannot be determined
+        from the selected ISO or determined OS is not supported for the unattended
+        installation then again ISO is inserted to the DVD drive of the new virtual
+        machine and a manual guest OS install will be necessary.
+      </para>
+    </sect2>
   </sect1>
 
   <sect1 id="intro-running">
