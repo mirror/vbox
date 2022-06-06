@@ -86,7 +86,7 @@
 
 #if !defined(IPRT_USE_PAM) \
  && !defined(IPRT_WITHOUT_PAM) \
- && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) )
+ && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) || defined(RT_OS_SOLARIS) )
 # define IPRT_USE_PAM
 #endif
 #ifdef IPRT_USE_PAM
@@ -215,7 +215,11 @@ static int rtProcPosixCreateInner(const char *pszExec, const char * const *papsz
  * @param   ppaResponses    Where to put our responses.
  * @param   pvAppData       Pointer to RTPROCPAMARGS.
  */
+#if defined(RT_OS_SOLARIS)
+static int rtPamConv(int cMessages, struct pam_message **papMessages, struct pam_response **ppaResponses, void *pvAppData)
+#else
 static int rtPamConv(int cMessages, const struct pam_message **papMessages, struct pam_response **ppaResponses, void *pvAppData)
+#endif
 {
     LogFlow(("rtPamConv: cMessages=%d\n", cMessages));
     PRTPROCPAMARGS pArgs = (PRTPROCPAMARGS)pvAppData;
