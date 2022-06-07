@@ -36,6 +36,7 @@ class UIBootOrderEditor;
 class UIChipsetEditor;
 class UIExecutionCapEditor;
 class UIMotherboardFeaturesEditor;
+class UIParavirtProviderEditor;
 class UIPointingHIDEditor;
 class UIProcessorFeaturesEditor;
 class UIVirtualCPUEditor;
@@ -129,12 +130,6 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Repopulates Paravirtualization Provider type combo-box. */
-    void repopulateComboParavirtProviderType();
-
-    /** Retranslates Paravirtualization providers combo-box. */
-    void retranslateComboParavirtProvider();
-
     /** Saves existing data from cache. */
     bool saveData();
     /** Saves existing 'Motherboard' data from cache. */
@@ -178,17 +173,15 @@ private:
         UIProcessorFeaturesEditor *m_pEditorProcessorFeatures;
 
         /** Holds the 'Acceleration' tab instance. */
-        QWidget   *m_pTabAcceleration;
-        /** Holds the paravirtualization provider label instance. */
-        QLabel    *m_pLabelParavirtProvider;
-        /** Holds the paravirtualization provider combo instance. */
-        QComboBox *m_pComboParavirtProvider;
+        QWidget                  *m_pTabAcceleration;
+        /** Holds the paravirtualization provider editor instance. */
+        UIParavirtProviderEditor *m_pEditorParavirtProvider;
         /** Holds the virtualization label instance. */
-        QLabel    *m_pLabelVirtualization;
+        QLabel                   *m_pLabelVirtualization;
         /** Holds the virtualization check-box instance. */
-        QCheckBox *m_pCheckBoxVirtualization;
+        QCheckBox                *m_pCheckBoxVirtualization;
         /** Holds the nested paging check-box instance. */
-        QCheckBox *m_pCheckBoxNestedPaging;
+        QCheckBox                *m_pCheckBoxNestedPaging;
    /** @} */
 };
 

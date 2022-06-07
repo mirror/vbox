@@ -32,6 +32,7 @@
 #include "UIExecutionCapEditor.h"
 #include "UIMachineSettingsSystem.h"
 #include "UIMotherboardFeaturesEditor.h"
+#include "UIParavirtProviderEditor.h"
 #include "UIPointingHIDEditor.h"
 #include "UIProcessorFeaturesEditor.h"
 #include "UITranslator.h"
@@ -161,8 +162,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorExecCap(0)
     , m_pEditorProcessorFeatures(0)
     , m_pTabAcceleration(0)
-    , m_pLabelParavirtProvider(0)
-    , m_pComboParavirtProvider(0)
+    , m_pEditorParavirtProvider(0)
     , m_pLabelVirtualization(0)
     , m_pCheckBoxVirtualization(0)
     , m_pCheckBoxNestedPaging(0)
@@ -295,10 +295,6 @@ void UIMachineSettingsSystem::getFromCache()
     /* Get old data from cache: */
     const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
 
-    /* We are doing that *now* because these combos have
-     * dynamical content which depends on cashed value: */
-    repopulateComboParavirtProviderType();
-
     /* Load old 'Motherboard' data from cache: */
     if (m_pEditorBaseMemory)
         m_pEditorBaseMemory->setValue(oldSystemData.m_iMemorySize);
@@ -327,11 +323,8 @@ void UIMachineSettingsSystem::getFromCache()
     }
 
     /* Load old 'Acceleration' data from cache: */
-    if (m_pComboParavirtProvider)
-    {
-        const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
-        m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
-    }
+    if (m_pEditorParavirtProvider)
+        m_pEditorParavirtProvider->setValue(oldSystemData.m_paravirtProvider);
     if (m_pCheckBoxVirtualization)
         m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
     if (m_pCheckBoxNestedPaging)
@@ -389,8 +382,8 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
-    if (m_pComboParavirtProvider)
-        newSystemData.m_paravirtProvider = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
+    if (m_pEditorParavirtProvider)
+        newSystemData.m_paravirtProvider = m_pEditorParavirtProvider->value();
     /* Enable HW Virt Ex automatically if it's supported and
      * 1. multiple CPUs, 2. Nested Paging or 3. Nested HW Virt Ex is requested. */
     if (m_pEditorVCPU)
@@ -611,10 +604,10 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     /* Configure navigation for 'processor' tab: */
     setTabOrder(m_pEditorVCPU, m_pEditorExecCap);
     setTabOrder(m_pEditorExecCap, m_pEditorProcessorFeatures);
-    setTabOrder(m_pEditorProcessorFeatures, m_pComboParavirtProvider);
+    setTabOrder(m_pEditorProcessorFeatures, m_pEditorParavirtProvider);
 
     /* Configure navigation for 'acceleration' tab: */
-    setTabOrder(m_pComboParavirtProvider, m_pCheckBoxVirtualization);
+    setTabOrder(m_pEditorParavirtProvider, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
 }
 
@@ -627,9 +620,6 @@ void UIMachineSettingsSystem::retranslateUi()
                                         "Move items up and down to change the device order."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
-    m_pLabelParavirtProvider->setText(tr("&Paravirtualization Interface:"));
-    m_pComboParavirtProvider->setToolTip(tr("Selects the paravirtualization guest interface provider to be used by this "
-                                            "virtual machine."));
     m_pLabelVirtualization->setText(tr("Hardware Virtualization:"));
     m_pCheckBoxVirtualization->setToolTip(tr("When checked, the virtual machine will try to make use of the host CPU's hardware "
                                              "virtualization extensions such as Intel VT-x and AMD-V."));
@@ -638,9 +628,6 @@ void UIMachineSettingsSystem::retranslateUi()
                                            "extension of Intel VT-x and AMD-V."));
     m_pCheckBoxNestedPaging->setText(tr("Enable Nested Pa&ging"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
-
-    /* Retranslate combo-boxes: */
-    retranslateComboParavirtProvider();
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
@@ -684,14 +671,13 @@ void UIMachineSettingsSystem::polishPage()
                                                                            || systemData.m_fEnabledNestedHwVirtEx));
 
     /* Polish 'Acceleration' availability: */
+    m_pEditorParavirtProvider->setEnabled(isMachineOffline());
+    m_pLabelVirtualization->setEnabled(isMachineOffline());
     m_pCheckBoxVirtualization->setEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
                                           || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
     m_pCheckBoxNestedPaging->setEnabled(   m_pCheckBoxVirtualization->isChecked()
                                         && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
                                             || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
-    m_pLabelParavirtProvider->setEnabled(isMachineOffline());
-    m_pComboParavirtProvider->setEnabled(isMachineOffline());
-    m_pLabelVirtualization->setEnabled(isMachineOffline());
 }
 
 void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
@@ -829,24 +815,10 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             pLayoutAcceleration->setColumnStretch(2, 1);
             pLayoutAcceleration->setRowStretch(3, 1);
 
-            /* Prepare paravirtualization provider label: */
-            m_pLabelParavirtProvider = new QLabel(m_pTabAcceleration);
-            if (m_pLabelParavirtProvider)
-            {
-                m_pLabelParavirtProvider->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAcceleration->addWidget(m_pLabelParavirtProvider, 0, 0);
-            }
-            /* Prepare paravirtualization provider combo: */
-            m_pComboParavirtProvider = new QComboBox(m_pTabAcceleration);
-            if (m_pComboParavirtProvider)
-            {
-                if (m_pLabelParavirtProvider)
-                    m_pLabelParavirtProvider->setBuddy(m_pComboParavirtProvider);
-                m_pComboParavirtProvider->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-                m_pComboParavirtProvider->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-
-                pLayoutAcceleration->addWidget(m_pComboParavirtProvider, 0, 1, 1, 2);
-            }
+            /* Prepare paravirtualization provider editor: */
+            m_pEditorParavirtProvider = new UIParavirtProviderEditor(m_pTabAcceleration);
+            if (m_pEditorParavirtProvider)
+                pLayoutAcceleration->addWidget(m_pEditorParavirtProvider, 0, 0, 1, 3);
 
             /* Prepare virtualization label layout: */
             QVBoxLayout *pLayoutVirtualizationLabel = new QVBoxLayout;
@@ -933,38 +905,6 @@ void UIMachineSettingsSystem::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
-}
-
-void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
-{
-    AssertPtrReturnVoid(m_pComboParavirtProvider);
-    {
-        /* Clear combo first of all: */
-        m_pComboParavirtProvider->clear();
-
-        /* Load currently supported paravirtualization provider types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KParavirtProvider> supportedProviderTypes = comProperties.GetSupportedParavirtProviders();
-        /* Take into account currently cached value: */
-        const KParavirtProvider enmCachedValue = m_pCache->base().m_paravirtProvider;
-        if (!supportedProviderTypes.contains(enmCachedValue))
-            supportedProviderTypes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KParavirtProvider &enmProvider, supportedProviderTypes)
-            m_pComboParavirtProvider->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
-    }
-}
-
-void UIMachineSettingsSystem::retranslateComboParavirtProvider()
-{
-    /* For each the element in m_pComboParavirtProvider: */
-    for (int iIndex = 0; iIndex < m_pComboParavirtProvider->count(); ++iIndex)
-    {
-        /* Apply retranslated text: */
-        const KParavirtProvider enmType = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
-        m_pComboParavirtProvider->setItemText(iIndex, gpConverter->toString(enmType));
-    }
 }
 
 bool UIMachineSettingsSystem::saveData()
