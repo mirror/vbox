@@ -797,6 +797,52 @@
           correctly, see <xref linkend="guestxorgsetup" />.
         </para>
 
+        <para>
+          Starting from &product-name; 7, Linux guest screen resize
+          functionality for guests running VMSVGA graphics configuration
+          has been changed. Since then, this functionality consists
+          of a standalone daemon called VBoxDRMClient and its Desktop
+          Environment helper counterpart.
+        </para>
+
+        <para>
+          VBoxDRMClient is running as a root process and, in fact, is
+          a bridge between host and guest's vmwgfx driver. This means that
+          VBoxDRMClient listens to screen resize hints from host and
+          forwards them to vmwgfx driver. This allows to make guest screen resize
+          functionality available before user performed graphical log-in.
+        </para>
+
+        <para>
+          In order to perform Desktop Environment specific actions, such
+          as setting primary screen in multi monitor setup, a Desktop Environment
+          helper is used. Once user performed graphical log-in operation,
+          helper daemon starts in scope of user session and attempts to
+          connect to VBoxDRMClient using IPC connection. Once VBoxDRMClient received
+          corresponding command from host, it is forwarded to helper daemon
+          over IPC and action then performed.
+        </para>
+
+        <para>
+          By default, VBoxDRMClient allows any process to connect to its IPC
+          socket. This can be restricted once two actions are taken. Starting
+          from &product-name; 7, Guest Additions Linux installer will also
+          create 'vboxdrmipc' user group. Corresponding user needs to be added
+          into this group. The last action is to set the following guest property:
+
+<screen>VBoxManage guestproperty set "VM name" /VirtualBox/GuestAdd/DRMIpcRestricted 1 \
+--flags RDONLYGUEST</screen>
+        </para>
+
+        <para>
+          Note, it is important to set RDONLYGUEST flag to the property, so
+          it cannot be changed from inside guest. All actions are required. If one of
+          them is missing, all processes will have access to IPC socket. Restricted
+          mode can be disabled by deleting guest property:
+
+<screen>VBoxManage guestproperty unset "VM name" /VirtualBox/GuestAdd/DRMIpcRestricted</screen>
+        </para>
+
       </sect3>
 
       <sect3 id="additions-linux-updating">
