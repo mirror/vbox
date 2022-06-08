@@ -1,0 +1,53 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2006-2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_rsa
+crypto_rsa_TEMPLATE = SUBLIBCRYPTO
+crypto_rsa_DEFS = OPENSSL_NO_DEPRECATED
+crypto_rsa_SOURCES = \
+	rsa_ameth.c \
+	rsa_asn1.c \
+	rsa_backend.c \
+	rsa_chk.c \
+	rsa_crpt.c \
+	rsa_depr.c \
+	rsa_err.c \
+	rsa_gen.c \
+	rsa_lib.c \
+	rsa_meth.c \
+	rsa_mp.c \
+	rsa_mp_names.c \
+	rsa_none.c \
+	rsa_oaep.c \
+	rsa_ossl.c \
+	rsa_pk1.c \
+	rsa_pmeth.c \
+	rsa_prn.c \
+	rsa_pss.c \
+	rsa_saos.c \
+	rsa_schemes.c \
+	rsa_sign.c \
+	rsa_sp800_56b_check.c \
+	rsa_sp800_56b_gen.c \
+	rsa_x931.c \
+	rsa_x931g.c
+$(evalcall VBOX_OPENSSL_X86,crypto_rsa)
+
+include $(FILE_KBUILD_SUB_FOOTER)

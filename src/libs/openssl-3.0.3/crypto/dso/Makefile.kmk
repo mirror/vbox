@@ -1,0 +1,34 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2019-2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_dso
+crypto_dso_TEMPLATE = SUBLIBCRYPTO
+crypto_dso_DEFS = OPENSSL_NO_DEPRECATED
+crypto_dso_SOURCES = \
+	dso_dl.c \
+	dso_dlfcn.c \
+	dso_err.c \
+	dso_lib.c \
+	dso_openssl.c \
+	dso_vms.c \
+	dso_win32.c
+$(evalcall VBOX_OPENSSL_X86,crypto_dso)
+
+include $(FILE_KBUILD_SUB_FOOTER)
