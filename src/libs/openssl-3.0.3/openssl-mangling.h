@@ -11365,12 +11365,48 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_2_client_method
+#  define DTLSv1_2_client_method OPENSSL_MANGLER(DTLSv1_2_client_method)
+# endif
+#else
+# ifndef _DTLSv1_2_client_method
+#  define _DTLSv1_2_client_method OPENSSL_MANGLER_ASM(DTLSv1_2_client_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef DTLSv1_2_enc_data
 #  define DTLSv1_2_enc_data OPENSSL_MANGLER(DTLSv1_2_enc_data)
 # endif
 #else
 # ifndef _DTLSv1_2_enc_data
 #  define _DTLSv1_2_enc_data OPENSSL_MANGLER_ASM(DTLSv1_2_enc_data)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_2_method
+#  define DTLSv1_2_method OPENSSL_MANGLER(DTLSv1_2_method)
+# endif
+#else
+# ifndef _DTLSv1_2_method
+#  define _DTLSv1_2_method OPENSSL_MANGLER_ASM(DTLSv1_2_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_2_server_method
+#  define DTLSv1_2_server_method OPENSSL_MANGLER(DTLSv1_2_server_method)
+# endif
+#else
+# ifndef _DTLSv1_2_server_method
+#  define _DTLSv1_2_server_method OPENSSL_MANGLER_ASM(DTLSv1_2_server_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_client_method
+#  define DTLSv1_client_method OPENSSL_MANGLER(DTLSv1_client_method)
+# endif
+#else
+# ifndef _DTLSv1_client_method
+#  define _DTLSv1_client_method OPENSSL_MANGLER_ASM(DTLSv1_client_method)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -11389,6 +11425,24 @@
 #else
 # ifndef _DTLSv1_listen
 #  define _DTLSv1_listen OPENSSL_MANGLER_ASM(DTLSv1_listen)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_method
+#  define DTLSv1_method OPENSSL_MANGLER(DTLSv1_method)
+# endif
+#else
+# ifndef _DTLSv1_method
+#  define _DTLSv1_method OPENSSL_MANGLER_ASM(DTLSv1_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef DTLSv1_server_method
+#  define DTLSv1_server_method OPENSSL_MANGLER(DTLSv1_server_method)
+# endif
+#else
+# ifndef _DTLSv1_server_method
+#  define _DTLSv1_server_method OPENSSL_MANGLER_ASM(DTLSv1_server_method)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -25531,15 +25585,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef OPENSSL_cleanse
-#  define OPENSSL_cleanse OPENSSL_MANGLER(OPENSSL_cleanse)
-# endif
-#else
-# ifndef _OPENSSL_cleanse
-#  define _OPENSSL_cleanse OPENSSL_MANGLER_ASM(OPENSSL_cleanse)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef OPENSSL_cleanup
 #  define OPENSSL_cleanup OPENSSL_MANGLER(OPENSSL_cleanup)
 # endif
@@ -25981,6 +26026,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef OPENSSL_strcasecmp
+#  define OPENSSL_strcasecmp OPENSSL_MANGLER(OPENSSL_strcasecmp)
+# endif
+#else
+# ifndef _OPENSSL_strcasecmp
+#  define _OPENSSL_strcasecmp OPENSSL_MANGLER_ASM(OPENSSL_strcasecmp)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef OPENSSL_strlcat
 #  define OPENSSL_strlcat OPENSSL_MANGLER(OPENSSL_strlcat)
 # endif
@@ -25996,6 +26050,15 @@
 #else
 # ifndef _OPENSSL_strlcpy
 #  define _OPENSSL_strlcpy OPENSSL_MANGLER_ASM(OPENSSL_strlcpy)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef OPENSSL_strncasecmp
+#  define OPENSSL_strncasecmp OPENSSL_MANGLER(OPENSSL_strncasecmp)
+# endif
+#else
+# ifndef _OPENSSL_strncasecmp
+#  define _OPENSSL_strncasecmp OPENSSL_MANGLER_ASM(OPENSSL_strncasecmp)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -41056,6 +41119,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef SSL_set_debug
+#  define SSL_set_debug OPENSSL_MANGLER(SSL_set_debug)
+# endif
+#else
+# ifndef _SSL_set_debug
+#  define _SSL_set_debug OPENSSL_MANGLER_ASM(SSL_set_debug)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef SSL_set_default_passwd_cb
 #  define SSL_set_default_passwd_cb OPENSSL_MANGLER(SSL_set_default_passwd_cb)
 # endif
@@ -41875,12 +41947,48 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_1_client_method
+#  define TLSv1_1_client_method OPENSSL_MANGLER(TLSv1_1_client_method)
+# endif
+#else
+# ifndef _TLSv1_1_client_method
+#  define _TLSv1_1_client_method OPENSSL_MANGLER_ASM(TLSv1_1_client_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef TLSv1_1_enc_data
 #  define TLSv1_1_enc_data OPENSSL_MANGLER(TLSv1_1_enc_data)
 # endif
 #else
 # ifndef _TLSv1_1_enc_data
 #  define _TLSv1_1_enc_data OPENSSL_MANGLER_ASM(TLSv1_1_enc_data)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_1_method
+#  define TLSv1_1_method OPENSSL_MANGLER(TLSv1_1_method)
+# endif
+#else
+# ifndef _TLSv1_1_method
+#  define _TLSv1_1_method OPENSSL_MANGLER_ASM(TLSv1_1_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_1_server_method
+#  define TLSv1_1_server_method OPENSSL_MANGLER(TLSv1_1_server_method)
+# endif
+#else
+# ifndef _TLSv1_1_server_method
+#  define _TLSv1_1_server_method OPENSSL_MANGLER_ASM(TLSv1_1_server_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_2_client_method
+#  define TLSv1_2_client_method OPENSSL_MANGLER(TLSv1_2_client_method)
+# endif
+#else
+# ifndef _TLSv1_2_client_method
+#  define _TLSv1_2_client_method OPENSSL_MANGLER_ASM(TLSv1_2_client_method)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -41893,6 +42001,24 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_2_method
+#  define TLSv1_2_method OPENSSL_MANGLER(TLSv1_2_method)
+# endif
+#else
+# ifndef _TLSv1_2_method
+#  define _TLSv1_2_method OPENSSL_MANGLER_ASM(TLSv1_2_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_2_server_method
+#  define TLSv1_2_server_method OPENSSL_MANGLER(TLSv1_2_server_method)
+# endif
+#else
+# ifndef _TLSv1_2_server_method
+#  define _TLSv1_2_server_method OPENSSL_MANGLER_ASM(TLSv1_2_server_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef TLSv1_3_enc_data
 #  define TLSv1_3_enc_data OPENSSL_MANGLER(TLSv1_3_enc_data)
 # endif
@@ -41902,12 +42028,39 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_client_method
+#  define TLSv1_client_method OPENSSL_MANGLER(TLSv1_client_method)
+# endif
+#else
+# ifndef _TLSv1_client_method
+#  define _TLSv1_client_method OPENSSL_MANGLER_ASM(TLSv1_client_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef TLSv1_enc_data
 #  define TLSv1_enc_data OPENSSL_MANGLER(TLSv1_enc_data)
 # endif
 #else
 # ifndef _TLSv1_enc_data
 #  define _TLSv1_enc_data OPENSSL_MANGLER_ASM(TLSv1_enc_data)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_method
+#  define TLSv1_method OPENSSL_MANGLER(TLSv1_method)
+# endif
+#else
+# ifndef _TLSv1_method
+#  define _TLSv1_method OPENSSL_MANGLER_ASM(TLSv1_method)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef TLSv1_server_method
+#  define TLSv1_server_method OPENSSL_MANGLER(TLSv1_server_method)
+# endif
+#else
+# ifndef _TLSv1_server_method
+#  define _TLSv1_server_method OPENSSL_MANGLER_ASM(TLSv1_server_method)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -50839,15 +50992,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_add_words
-#  define bn_add_words OPENSSL_MANGLER(bn_add_words)
-# endif
-#else
-# ifndef _bn_add_words
-#  define _bn_add_words OPENSSL_MANGLER_ASM(bn_add_words)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef bn_cmp_part_words
 #  define bn_cmp_part_words OPENSSL_MANGLER(bn_cmp_part_words)
 # endif
@@ -50899,15 +51043,6 @@
 #else
 # ifndef _bn_div_fixed_top
 #  define _bn_div_fixed_top OPENSSL_MANGLER_ASM(bn_div_fixed_top)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_div_words
-#  define bn_div_words OPENSSL_MANGLER(bn_div_words)
-# endif
-#else
-# ifndef _bn_div_words
-#  define _bn_div_words OPENSSL_MANGLER_ASM(bn_div_words)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -51037,39 +51172,12 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_mul_add_words
-#  define bn_mul_add_words OPENSSL_MANGLER(bn_mul_add_words)
-# endif
-#else
-# ifndef _bn_mul_add_words
-#  define _bn_mul_add_words OPENSSL_MANGLER_ASM(bn_mul_add_words)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef bn_mul_comba4
 #  define bn_mul_comba4 OPENSSL_MANGLER(bn_mul_comba4)
 # endif
 #else
 # ifndef _bn_mul_comba4
 #  define _bn_mul_comba4 OPENSSL_MANGLER_ASM(bn_mul_comba4)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_mul_comba4
-#  define bn_mul_comba4 OPENSSL_MANGLER(bn_mul_comba4)
-# endif
-#else
-# ifndef _bn_mul_comba4
-#  define _bn_mul_comba4 OPENSSL_MANGLER_ASM(bn_mul_comba4)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_mul_comba8
-#  define bn_mul_comba8 OPENSSL_MANGLER(bn_mul_comba8)
-# endif
-#else
-# ifndef _bn_mul_comba8
-#  define _bn_mul_comba8 OPENSSL_MANGLER_ASM(bn_mul_comba8)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -51172,15 +51280,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_mul_words
-#  define bn_mul_words OPENSSL_MANGLER(bn_mul_words)
-# endif
-#else
-# ifndef _bn_mul_words
-#  define _bn_mul_words OPENSSL_MANGLER_ASM(bn_mul_words)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef bn_power5
 #  define bn_power5 OPENSSL_MANGLER(bn_power5)
 # endif
@@ -51253,24 +51352,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_sqr_comba4
-#  define bn_sqr_comba4 OPENSSL_MANGLER(bn_sqr_comba4)
-# endif
-#else
-# ifndef _bn_sqr_comba4
-#  define _bn_sqr_comba4 OPENSSL_MANGLER_ASM(bn_sqr_comba4)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_sqr_comba8
-#  define bn_sqr_comba8 OPENSSL_MANGLER(bn_sqr_comba8)
-# endif
-#else
-# ifndef _bn_sqr_comba8
-#  define _bn_sqr_comba8 OPENSSL_MANGLER_ASM(bn_sqr_comba8)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef bn_sqr_comba8
 #  define bn_sqr_comba8 OPENSSL_MANGLER(bn_sqr_comba8)
 # endif
@@ -51316,30 +51397,12 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_sqr_words
-#  define bn_sqr_words OPENSSL_MANGLER(bn_sqr_words)
-# endif
-#else
-# ifndef _bn_sqr_words
-#  define _bn_sqr_words OPENSSL_MANGLER_ASM(bn_sqr_words)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef bn_sub_part_words
 #  define bn_sub_part_words OPENSSL_MANGLER(bn_sub_part_words)
 # endif
 #else
 # ifndef _bn_sub_part_words
 #  define _bn_sub_part_words OPENSSL_MANGLER_ASM(bn_sub_part_words)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef bn_sub_words
-#  define bn_sub_words OPENSSL_MANGLER(bn_sub_words)
-# endif
-#else
-# ifndef _bn_sub_words
-#  define _bn_sub_words OPENSSL_MANGLER_ASM(bn_sub_words)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -60901,6 +60964,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_c_locale
+#  define ossl_c_locale OPENSSL_MANGLER(ossl_c_locale)
+# endif
+#else
+# ifndef _ossl_c_locale
+#  define _ossl_c_locale OPENSSL_MANGLER_ASM(ossl_c_locale)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_camellia128cbc_cts_functions
 #  define ossl_camellia128cbc_cts_functions OPENSSL_MANGLER(ossl_camellia128cbc_cts_functions)
 # endif
@@ -63403,6 +63475,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_deinit_casecmp
+#  define ossl_deinit_casecmp OPENSSL_MANGLER(ossl_deinit_casecmp)
+# endif
+#else
+# ifndef _ossl_deinit_casecmp
+#  define _ossl_deinit_casecmp OPENSSL_MANGLER_ASM(ossl_deinit_casecmp)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_des_cbc_functions
 #  define ossl_des_cbc_functions OPENSSL_MANGLER(ossl_des_cbc_functions)
 # endif
@@ -64057,15 +64138,6 @@
 #else
 # ifndef _ossl_digest_md_to_nid
 #  define _ossl_digest_md_to_nid OPENSSL_MANGLER_ASM(ossl_digest_md_to_nid)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_digest_rsa_sign_get_md_nid
-#  define ossl_digest_rsa_sign_get_md_nid OPENSSL_MANGLER(ossl_digest_rsa_sign_get_md_nid)
-# endif
-#else
-# ifndef _ossl_digest_rsa_sign_get_md_nid
-#  define _ossl_digest_rsa_sign_get_md_nid OPENSSL_MANGLER_ASM(ossl_digest_rsa_sign_get_md_nid)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -67396,6 +67468,15 @@
 #else
 # ifndef _ossl_ifc_ffc_compute_security_bits
 #  define _ossl_ifc_ffc_compute_security_bits OPENSSL_MANGLER_ASM(ossl_ifc_ffc_compute_security_bits)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_init_casecmp
+#  define ossl_init_casecmp OPENSSL_MANGLER(ossl_init_casecmp)
+# endif
+#else
+# ifndef _ossl_init_casecmp
+#  define _ossl_init_casecmp OPENSSL_MANGLER_ASM(ossl_init_casecmp)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -71566,15 +71647,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_securitycheck_enabled
-#  define ossl_securitycheck_enabled OPENSSL_MANGLER(ossl_securitycheck_enabled)
-# endif
-#else
-# ifndef _ossl_securitycheck_enabled
-#  define _ossl_securitycheck_enabled OPENSSL_MANGLER_ASM(ossl_securitycheck_enabled)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_seed128cbc_functions
 #  define ossl_seed128cbc_functions OPENSSL_MANGLER(ossl_seed128cbc_functions)
 # endif
@@ -74392,6 +74464,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ssl_cert_get_cert_store
+#  define ssl_cert_get_cert_store OPENSSL_MANGLER(ssl_cert_get_cert_store)
+# endif
+#else
+# ifndef _ssl_cert_get_cert_store
+#  define _ssl_cert_get_cert_store OPENSSL_MANGLER_ASM(ssl_cert_get_cert_store)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ssl_cert_is_disabled
 #  define ssl_cert_is_disabled OPENSSL_MANGLER(ssl_cert_is_disabled)
 # endif
@@ -75577,6 +75658,15 @@
 #else
 # ifndef _tls13_save_handshake_digest_for_pha
 #  define _tls13_save_handshake_digest_for_pha OPENSSL_MANGLER_ASM(tls13_save_handshake_digest_for_pha)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef tls13_set_encoded_pub_key
+#  define tls13_set_encoded_pub_key OPENSSL_MANGLER(tls13_set_encoded_pub_key)
+# endif
+#else
+# ifndef _tls13_set_encoded_pub_key
+#  define _tls13_set_encoded_pub_key OPENSSL_MANGLER_ASM(tls13_set_encoded_pub_key)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
