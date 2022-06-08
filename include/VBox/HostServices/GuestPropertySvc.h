@@ -40,7 +40,7 @@
 /** Maximum length for property names. */
 #define GUEST_PROP_MAX_NAME_LEN             64
 /** Maximum length for property values. */
-#define GUEST_PROP_MAX_VALUE_LEN            128
+#define GUEST_PROP_MAX_VALUE_LEN            1024
 /** Maximum number of properties per guest. */
 #define GUEST_PROP_MAX_PROPS                256
 /** Maximum size for enumeration patterns. */
@@ -92,6 +92,9 @@ DECLINLINE(int) GuestPropValidateName(const char *pszName, uint32_t cbName)
  * Check a string fits our criteria for the value of a guest property.
  *
  * @returns IPRT status code
+ * @retval  VINF_SUCCESS if guest property value corresponds to all criteria.
+ * @retval  VERR_TOO_MUCH_DATA if guest property value size exceeds limits.
+ * @retval  VERR_INVALID_PARAMETER if guest property does not correspond to all other criteria.
  * @param   pszValue  the string to check, must be valid Utf8
  * @param   cbValue   the length in bytes of @a pszValue, including the
  *                    terminator
@@ -103,7 +106,7 @@ DECLINLINE(int) GuestPropValidateValue(const char *pszValue, uint32_t cbValue)
 
     /* Zero-length values are possible, however buffer should contain terminating character at least. */
     AssertReturn(cbValue > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cbValue < GUEST_PROP_MAX_VALUE_LEN, VERR_INVALID_PARAMETER);
+    AssertReturn(cbValue < GUEST_PROP_MAX_VALUE_LEN, VERR_TOO_MUCH_DATA);
 
     return VINF_SUCCESS;
 }
