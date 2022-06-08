@@ -292,20 +292,26 @@ void UIBaseMemoryEditor::retranslateUi()
 {
     if (m_pLabelMemory)
         m_pLabelMemory->setText(tr("Base &Memory:"));
-    if (m_pLabelMemoryMin)
-        m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_pSlider->minRAM()));
-    if (m_pLabelMemoryMax)
-        m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_pSlider->maxRAM()));
 
-    QString strToolTip(tr("Specifies the amount of RAM the virtual machine will have"));
-
+    const QString strToolTip(tr("Holds the amount of base memory the virtual machine will have."));
+    if (m_pSlider)
+        m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)
     {
         m_pSpinBox->setSuffix(QString(" %1").arg(tr("MB")));
         m_pSpinBox->setToolTip(strToolTip);
     }
-    if (m_pSlider)
-        m_pSlider->setToolTip(strToolTip);
+
+    if (m_pLabelMemoryMin)
+    {
+        m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_pSlider->minRAM()));
+        m_pLabelMemoryMin->setToolTip(tr("Minimum possible base memory size."));
+    }
+    if (m_pLabelMemoryMax)
+    {
+        m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_pSlider->maxRAM()));
+        m_pLabelMemoryMax->setToolTip(tr("Maximum possible base memory size."));
+    }
 }
 
 void UIBaseMemoryEditor::sltHandleSliderChange()

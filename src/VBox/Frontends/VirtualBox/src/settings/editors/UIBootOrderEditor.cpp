@@ -480,10 +480,14 @@ void UIBootOrderEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Boot Order:"));
+    if (m_pTable)
+        m_pTable->setWhatsThis(tr("Defines the boot device order. Use the "
+                                  "checkboxes on the left to enable or disable individual boot devices."
+                                  "Move items up and down to change the device order."));
     if (m_pMoveUp)
-        m_pMoveUp->setText(tr("Move Up"));
+        m_pMoveUp->setToolTip(tr("Moves selected boot item up."));
     if (m_pMoveDown)
-        m_pMoveDown->setText(tr("Move Down"));
+        m_pMoveDown->setToolTip(tr("Moves selected boot item down."));
 }
 
 void UIBootOrderEditor::sltHandleCurrentBootItemChange()

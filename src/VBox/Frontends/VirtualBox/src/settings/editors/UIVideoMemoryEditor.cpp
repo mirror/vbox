@@ -166,7 +166,10 @@ void UIVideoMemoryEditor::retranslateUi()
     if (m_pSlider)
         m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)
+    {
+        m_pSpinBox->setSuffix(QString(" %1").arg(tr("MB")));
         m_pSpinBox->setToolTip(strToolTip);
+    }
 
     if (m_pLabelMemoryMin)
     {
@@ -178,9 +181,6 @@ void UIVideoMemoryEditor::retranslateUi()
         m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
         m_pLabelMemoryMax->setToolTip(tr("Maximum possible video memory size."));
     }
-
-    if (m_pSpinBox)
-        m_pSpinBox->setSuffix(QString(" %1").arg(tr("MB")));
 }
 
 void UIVideoMemoryEditor::sltHandleSliderChange()

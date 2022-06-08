@@ -73,10 +73,9 @@ void UIExecutionCapEditor::retranslateUi()
     if (m_pLabelExecCap)
         m_pLabelExecCap->setText(tr("&Execution Cap:"));
 
-    QString strToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
-                          "Each virtual CPU will be allowed to use up to this percentage of the processing "
-                          "time available on one physical CPU. The execution cap can be disabled by setting "
-                          "it to 100%. Setting the cap too low can make the machine feel slow to respond."));
+    const QString strToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
+                                "Each virtual CPU will be allowed to use up to this percentage of the processing "
+                                "time available on one physical CPU."));
     if (m_pSlider)
         m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)

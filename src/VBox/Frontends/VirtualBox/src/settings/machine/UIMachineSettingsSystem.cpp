@@ -25,7 +25,6 @@
 #include "UIBootOrderEditor.h"
 #include "UIChipsetEditor.h"
 #include "UICommon.h"
-//#include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExecutionCapEditor.h"
 #include "UIMachineSettingsSystem.h"
@@ -607,11 +606,6 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsSystem::retranslateUi()
 {
-    m_pEditorBaseMemory->setToolTip(tr("Controls the amount of memory provided to the virtual machine. "
-                                       "If you assign too much, the machine might not start."));
-    m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
-                                        "checkboxes on the left to enable or disable individual boot devices. "
-                                        "Move items up and down to change the device order."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
