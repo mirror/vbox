@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QDir>
+#include <QRegularExpression>
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"

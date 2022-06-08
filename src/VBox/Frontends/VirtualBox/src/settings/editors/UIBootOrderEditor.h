@@ -21,9 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QListWidget>
-
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
