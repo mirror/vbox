@@ -4855,6 +4855,7 @@ static DECLCALLBACK(int) vmsvga3dBackShaderSetConst(PVGASTATECC pThisCC, uint32_
  * Destroy backend specific surface bits (part of SVGA_3D_CMD_SURFACE_DESTROY).
  *
  * @param   pThisCC             The device context.
+ * @param   fClearCOTableEntry  Whether to clear the corresponding COTable entry.
  * @param   pSurface            The surface being destroyed.
  */
 static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool fClearCOTableEntry, PVMSVGA3DSURFACE pSurface)

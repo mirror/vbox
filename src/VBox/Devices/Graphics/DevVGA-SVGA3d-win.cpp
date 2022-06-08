@@ -1119,6 +1119,7 @@ D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount)
  * Destroy backend specific surface bits (part of SVGA_3D_CMD_SURFACE_DESTROY).
  *
  * @param   pThisCC             The device state.
+ * @param   fClearCOTableEntry  Not relevant for this backend.
  * @param   pSurface            The surface being destroyed.
  */
 static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool fClearCOTableEntry, PVMSVGA3DSURFACE pSurface)
