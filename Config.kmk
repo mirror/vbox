@@ -600,6 +600,12 @@ endif
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_MESA3D = 1
 endif
+# VGPU10 UMD driver for Vista+ guests in the guest additions installer
+ifdef VBOX_WITH_VMSVGA3D_DX
+ if1of ($(KBUILD_TARGET), win)
+  VBOX_WITH_WDDM_DX = 1
+ endif
+endif
 # Disable the Intel PXE ROM (uses Etherboot).
 VBOX_WITH_INTEL_PXE =
 # Enable EFI support
