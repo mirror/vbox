@@ -94,6 +94,10 @@ class GaDrvEnvWddm
         static DECLCALLBACK(void) gaEnvWddmRegionDestroy(void *pvEnv,
                                                          uint32_t u32GmrId,
                                                          void *pvMap);
+
+        /* VGPU10 */
+        static DECLCALLBACK(int) gaEnvWddmGBSurfaceDefine(void *pvEnv,
+                                                          SVGAGBSURFCREATE *pCreateParms);
 };
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_GaDrvEnvWddm_h */

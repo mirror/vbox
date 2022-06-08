@@ -981,7 +981,7 @@ static NTSTATUS gaRenderGA3D(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pRender
             GAHWRENDERDATA *pHwRenderData = NULL;
             if (cbTarget > GA_DMA_MIN_SUBMIT_SIZE)
             {
-                Status = SvgaRenderCommands(pGaDevExt->hw.pSvga, pvTarget, cbTarget, pvSource, cbSource,
+                Status = SvgaRenderCommands(pGaDevExt->hw.pSvga, pContext->pSvgaContext, pvTarget, cbTarget, pvSource, cbSource,
                                             &u32TargetLength, &u32ProcessedLength, &pHwRenderData);
             }
             else
@@ -1957,6 +1957,54 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
 
             VBOXDISPIFESCAPE_GAFENCEUNREF *pFenceUnref = (VBOXDISPIFESCAPE_GAFENCEUNREF *)pEscapeHdr;
             Status = GaFenceDelete(pDevExt->pGa, pFenceUnref->u32FenceHandle);
+            break;
+        }
+        case VBOXESC_SVGAGBSURFACEDEFINE:
+        {
+            if (pEscape->PrivateDriverDataSize < sizeof(VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE))
+            {
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE *pSurfaceDefine = (VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE *)pEscapeHdr;
+
+            VBOXWDDM_EXT_VMSVGA *pSvga = pDevExt->pGa->hw.pSvga;
+            Status = SvgaGBSurfaceCreate(pSvga, pDevice, &pSurfaceDefine->CreateParms);
+            break;
+        }
+        case VBOXESC_SVGAGETSID:
+        {
+            if (pEscape->PrivateDriverDataSize < sizeof(VBOXDISPIFESCAPE_SVGAGETSID))
+            {
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            VBOXDISPIFESCAPE_SVGAGETSID *pGetSid = (VBOXDISPIFESCAPE_SVGAGETSID *)pEscapeHdr;
+
+            DXGKARGCB_GETHANDLEDATA GetHandleData;
+            GetHandleData.hObject = (D3DKMT_HANDLE)pGetSid->hAllocation;
+            GetHandleData.Type = DXGK_HANDLE_ALLOCATION;
+            GetHandleData.Flags.Value = 0;
+
+            PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDevExt->u.primary.DxgkInterface.DxgkCbGetHandleData(&GetHandleData);
+            if (!pAllocation)
+            {
+                WARN(("failed to get allocation from handle"));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            if (pAllocation->enmType != VBOXWDDM_ALLOC_TYPE_D3D)
+            {
+                WARN(("Unexpected allocation type %d", pAllocation->enmType));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            pGetSid->u32Sid = pAllocation->dx.sid;
+            Status = STATUS_SUCCESS;
             break;
         }
         default:

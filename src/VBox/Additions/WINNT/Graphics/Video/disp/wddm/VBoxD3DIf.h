@@ -51,6 +51,11 @@ DECLINLINE(IUnknown*) vboxD3DIfGet(PVBOXWDDMDISP_ALLOCATION pAlloc)
     if (pAlloc->pD3DIf)
         return pAlloc->pD3DIf;
 
+#ifdef VBOX_WITH_VMSVGA3D_DX9
+    if (pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+        return pAlloc->pRc->pDevice->pfnCreateSharedPrimary(pAlloc);
+#endif
+
     if (pAlloc->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
     {
         WARN(("dynamic creation is supported for VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE only!, current type is %d", pAlloc->enmType));

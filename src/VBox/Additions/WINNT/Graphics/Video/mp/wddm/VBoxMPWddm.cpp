@@ -3460,6 +3460,14 @@ DxgkDdiEscape(
                     break;
                 }
 
+                if (pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+                {
+                    pSetHostID->EscapeHdr.u32CmdSpecific = pAlloc->dx.sid;
+                    pSetHostID->rc = VERR_NOT_EQUAL;
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
+
                 if (pAlloc->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
                 {
                     WARN(("setHostID: invalid allocation type: %d", pAlloc->enmType));

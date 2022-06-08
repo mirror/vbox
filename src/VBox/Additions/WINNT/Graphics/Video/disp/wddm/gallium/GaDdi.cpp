@@ -2146,22 +2146,52 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
             pAllocation->pRc    = pRc;
 
             D3DDDI_OPENALLOCATIONINFO *pOAI = &pResource->pOpenAllocationInfo[i];
-            if (pOAI->PrivateDriverDataSize != sizeof (VBOXWDDM_ALLOCINFO))
+            if (pOAI->PrivateDriverDataSize == sizeof(VBOXWDDM_ALLOCINFO))
+            {
+                Assert(pOAI->pPrivateDriverData);
+                PVBOXWDDM_ALLOCINFO pWddmAllocInfo = (PVBOXWDDM_ALLOCINFO)pOAI->pPrivateDriverData;
+                pAllocation->hAllocation   = pOAI->hAllocation;
+                pAllocation->enmType       = pWddmAllocInfo->enmType;
+                pAllocation->hSharedHandle = (HANDLE)pWddmAllocInfo->hSharedHandle;
+                pAllocation->SurfDesc      = pWddmAllocInfo->SurfDesc;
+                pAllocation->pvMem         = NULL;
+
+                Assert(!pAllocation->hSharedHandle == (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE));
+            }
+#ifdef VBOX_WITH_VMSVGA3D_DX9
+            else if (pOAI->PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC))
+            {
+                Assert(pOAI->pPrivateDriverData);
+                VBOXDXALLOCATIONDESC *pAllocDesc = (VBOXDXALLOCATIONDESC *)pOAI->pPrivateDriverData;
+                pAllocation->hAllocation   = pOAI->hAllocation;
+                pAllocation->enmType       = VBOXWDDM_ALLOC_TYPE_D3D;
+                pAllocation->hSharedHandle = 0; /* This is should be a sid of the allocation. Not needed here. */
+                pAllocation->AllocDesc     = *pAllocDesc;
+                pAllocation->pvMem         = NULL;
+                RT_ZERO(pAllocation->SurfDesc);
+                pAllocation->SurfDesc.width = pAllocation->AllocDesc.surfaceInfo.size.width;
+                pAllocation->SurfDesc.height = pAllocation->AllocDesc.surfaceInfo.size.height;
+                pAllocation->SurfDesc.format = pAllocation->AllocDesc.enmDDIFormat;
+                pAllocation->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pAllocation->AllocDesc.enmDDIFormat);
+                pAllocation->SurfDesc.pitch = vboxWddmCalcPitch(pAllocation->AllocDesc.surfaceInfo.size.width, pAllocation->AllocDesc.enmDDIFormat);
+                pAllocation->SurfDesc.depth = pAllocation->AllocDesc.surfaceInfo.size.depth;
+                pAllocation->SurfDesc.slicePitch = 0;
+                pAllocation->SurfDesc.d3dWidth = pAllocation->SurfDesc.width;
+                pAllocation->SurfDesc.cbSize = pAllocation->AllocDesc.cbAllocation;
+                if (pAllocation->AllocDesc.fPrimary)
+                {
+                    pAllocation->SurfDesc.VidPnSourceId = pAllocation->AllocDesc.PrimaryDesc.VidPnSourceId;
+                    pAllocation->SurfDesc.RefreshRate.Numerator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Numerator;
+                    pAllocation->SurfDesc.RefreshRate.Denominator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Denominator;
+                }
+            }
+#endif
+            else
             {
                 AssertFailed();
                 hr = E_INVALIDARG;
                 break;
             }
-            Assert(pOAI->pPrivateDriverData);
-
-            PVBOXWDDM_ALLOCINFO pWddmAllocInfo = (PVBOXWDDM_ALLOCINFO)pOAI->pPrivateDriverData;
-            pAllocation->hAllocation   = pOAI->hAllocation;
-            pAllocation->enmType       = pWddmAllocInfo->enmType;
-            pAllocation->hSharedHandle = (HANDLE)pWddmAllocInfo->hSharedHandle;
-            pAllocation->SurfDesc      = pWddmAllocInfo->SurfDesc;
-            pAllocation->pvMem         = NULL;
-
-            Assert(!pAllocation->hSharedHandle == (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE));
         }
 
         if (!pResource->pPrivateDriverData || !pResource->PrivateDriverDataSize)
@@ -2193,7 +2223,7 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
             D3DDDI_OPENALLOCATIONINFO *pOAI = &pResource->pOpenAllocationInfo[0];
             Assert(pOAI->pPrivateDriverData);
             Assert(pOAI->PrivateDriverDataSize >= sizeof(VBOXWDDM_ALLOCINFO));
-            if (pOAI->pPrivateDriverData && pOAI->PrivateDriverDataSize >= sizeof(VBOXWDDM_ALLOCINFO))
+            if (pOAI->pPrivateDriverData && pOAI->PrivateDriverDataSize == sizeof(VBOXWDDM_ALLOCINFO))
             {
                 PVBOXWDDM_ALLOCINFO pWddmAllocInfo = (PVBOXWDDM_ALLOCINFO)pOAI->pPrivateDriverData;
                 switch (pWddmAllocInfo->enmType)
@@ -2211,6 +2241,22 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
                         hr = E_INVALIDARG;
                 }
             }
+#ifdef VBOX_WITH_VMSVGA3D_DX9
+            else if (pOAI->pPrivateDriverData && pOAI->PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC))
+            {
+                VBOXDXALLOCATIONDESC *pAllocDesc = (VBOXDXALLOCATIONDESC *)pOAI->pPrivateDriverData;
+                pRc->RcDesc.fFlags.Primary = pAllocDesc->fPrimary;
+                pRc->RcDesc.fFlags.RenderTarget = 1;
+                //pRc->RcDesc.fFlags.NotLockable = 1;
+                pRc->RcDesc.enmFormat      = pAllocDesc->enmDDIFormat;
+                if (pAllocDesc->fPrimary)
+                {
+                   pRc->RcDesc.VidPnSourceId  = pAllocDesc->PrimaryDesc.VidPnSourceId;
+                   pRc->RcDesc.RefreshRate.Numerator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Numerator;
+                   pRc->RcDesc.RefreshRate.Denominator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Denominator;
+                }
+            }
+#endif
             else
                 hr = E_INVALIDARG;
         }

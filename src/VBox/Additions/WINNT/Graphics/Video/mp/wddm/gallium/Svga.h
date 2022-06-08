@@ -326,6 +326,8 @@ typedef struct SURFACEOBJECT
      * Equal to the AVL node key for non-shared surfaces.
      */
     uint32_t u32SharedSid;
+
+    uint32_t mobid;
 } SURFACEOBJECT;
 AssertCompile(RT_OFFSETOF(SURFACEOBJECT, ho) == 0);
 
@@ -382,6 +384,9 @@ NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                            GASURFSIZE *paSizes,
                            uint32_t cSizes,
                            uint32_t *pu32Sid);
+NTSTATUS SvgaGBSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
+                             void *pvOwner,
+                             SVGAGBSURFCREATE *pCreateParms);
 NTSTATUS SvgaSurfaceUnref(VBOXWDDM_EXT_VMSVGA *pSvga,
                           uint32_t u32Sid);
 SURFACEOBJECT *SvgaSurfaceObjectQuery(VBOXWDDM_EXT_VMSVGA *pSvga,
@@ -406,13 +411,10 @@ NTSTATUS SvgaSurfaceIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t *pu32Sid);
 NTSTATUS SvgaSurfaceIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32Sid);
-NTSTATUS SvgaGMRIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
-                        uint32_t *pu32GMRId);
-NTSTATUS SvgaGMRIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
-                       uint32_t u32GMRId);
 
 
 NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
+                            struct VMSVGACONTEXT *pSvgaContext,
                             void *pvTarget,
                             uint32_t cbTarget,
                             const void *pvSource,
@@ -557,6 +559,10 @@ NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                           uint32_t u32NumPages,
                           uint32_t *pu32GmrId,
                           uint64_t *pu64UserAddress);
+NTSTATUS SvgaRegionUserAddressAndSize(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                      uint32_t u32GmrId,
+                                      uint64_t *pu64UserAddress,
+                                      uint32_t *pu32Size);
 NTSTATUS SvgaRegionDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
                            uint32_t u32GmrId);
 void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
@@ -603,6 +609,9 @@ NTSTATUS SvgaGboFillPageTableForMDL(PVMSVGAGBO pGbo,
                                     uint32_t MdlOffset);
 NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
                                        RTR0MEMOBJ hMemObj);
+NTSTATUS SvgaGboFillPageTableForArray(PVMSVGAGBO pGbo,
+                                      uint32_t u32NumPages,
+                                      RTHCPHYS *paPhys);
 
 void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
                  PVMSVGAMOB pMob);

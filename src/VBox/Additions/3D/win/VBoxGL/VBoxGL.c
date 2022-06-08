@@ -28,6 +28,8 @@
 
 #include <common/wddm/VBoxMPIf.h>
 
+#include <Psapi.h>
+
 static const char *g_pszSvgaDll =
 #ifdef VBOX_WOW64
     "VBoxSVGA-x86.dll"
@@ -102,7 +104,7 @@ static NTSTATUS vboxKmtPresent(D3DKMT_HANDLE hContext, HWND hwnd, D3DKMT_HANDLE 
     return Status;
 }
 
-NTSTATUS vboxKmtOpenSharedSurface(D3DKMT_HANDLE hDevice, D3DKMT_HANDLE hSharedSurface, struct stw_shared_surface *pSurf)
+NTSTATUS vboxKmtOpenSharedSurface(D3DKMT_HANDLE hAdapter, D3DKMT_HANDLE hDevice, D3DKMT_HANDLE hSharedSurface, struct stw_shared_surface *pSurf)
 {
     D3DKMTFUNCTIONS const *d3dkmt = D3DKMTFunctions();
 
@@ -156,11 +158,42 @@ NTSTATUS vboxKmtOpenSharedSurface(D3DKMT_HANDLE hDevice, D3DKMT_HANDLE hSharedSu
             Status = d3dkmt->pfnD3DKMTOpenResource(&OpenResourceData);
             if (Status == STATUS_SUCCESS)
             {
-                Assert(OpenAllocationInfoData.PrivateDriverDataSize == sizeof(VBOXWDDM_ALLOCINFO));
-                VBOXWDDM_ALLOCINFO *pVBoxAllocInfo = (VBOXWDDM_ALLOCINFO *)OpenAllocationInfoData.pPrivateDriverData;
-                pSurf->hResource = OpenResourceData.hResource;
-                pSurf->hSurface = OpenAllocationInfoData.hAllocation;
-                pSurf->u32Sid = pVBoxAllocInfo->hostID;
+                if (OpenAllocationInfoData.PrivateDriverDataSize == sizeof(VBOXWDDM_ALLOCINFO))
+                {
+                    VBOXWDDM_ALLOCINFO *pVBoxAllocInfo = (VBOXWDDM_ALLOCINFO *)OpenAllocationInfoData.pPrivateDriverData;
+                    pSurf->hResource = OpenResourceData.hResource;
+                    pSurf->hSurface = OpenAllocationInfoData.hAllocation;
+                    pSurf->u32Sid = pVBoxAllocInfo->hostID;
+                }
+                else if (OpenAllocationInfoData.PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC))
+                {
+                    //VBOXDXALLOCATIONDESC *pAllocDesc = (VBOXDXALLOCATIONDESC *)OpenAllocationInfoData.PrivateDriverDataSize;
+                    pSurf->hResource = OpenResourceData.hResource;
+                    pSurf->hSurface = OpenAllocationInfoData.hAllocation;
+
+                    VBOXDISPIFESCAPE_SVGAGETSID data;
+                    memset(&data, 0, sizeof(data));
+                    data.EscapeHdr.escapeCode = VBOXESC_SVGAGETSID;
+                    data.hAllocation = OpenAllocationInfoData.hAllocation;
+                    // data.u32Sid = 0;
+
+                    D3DKMT_ESCAPE EscapeData;
+                    memset(&EscapeData, 0, sizeof(EscapeData));
+                    EscapeData.hAdapter              = hAdapter;
+                    EscapeData.hDevice               = hDevice;
+                    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+                    // EscapeData.Flags.HardwareAccess  = 0;
+                    EscapeData.pPrivateDriverData    = &data;
+                    EscapeData.PrivateDriverDataSize = sizeof(data);
+                    // EscapeData.hContext              = 0;
+                    Status = d3dkmt->pfnD3DKMTEscape(&EscapeData);
+                    if (Status == STATUS_SUCCESS)
+                        pSurf->u32Sid = data.u32Sid;
+                    else
+                        Assert(0);
+                }
+                else
+                    Assert(0);
             }
         }
 
@@ -270,8 +303,9 @@ wddm_shared_surface_open(struct pipe_screen *screen,
         surface = (struct stw_shared_surface *)malloc(sizeof(struct stw_shared_surface));
         if (surface)
         {
+            D3DKMT_HANDLE hAdapter = GaDrvEnvKmtAdapterHandle(pEnv);
             D3DKMT_HANDLE hDevice = GaDrvEnvKmtDeviceHandle(pEnv);
-            NTSTATUS Status = vboxKmtOpenSharedSurface(hDevice, (D3DKMT_HANDLE)(uintptr_t)hSharedSurface, surface);
+            NTSTATUS Status = vboxKmtOpenSharedSurface(hAdapter, hDevice, (D3DKMT_HANDLE)(uintptr_t)hSharedSurface, surface);
             if (Status != STATUS_SUCCESS)
             {
                 free(surface);
@@ -355,6 +389,107 @@ static const struct stw_winsys stw_winsys = {
    wddm_compose
 };
 
+#ifdef DEBUG
+typedef BOOL WINAPI FNGetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb);
+typedef FNGetModuleInformation *PFNGetModuleInformation;
+
+static PFNGetModuleInformation g_pfnGetModuleInformation = NULL;
+static HMODULE g_hModPsapi = NULL;
+static PVOID g_VBoxWDbgVEHandler = NULL;
+
+static bool vboxVDbgIsAddressInModule(PVOID pv, const char *pszModuleName)
+{
+    HMODULE hMod = GetModuleHandleA(pszModuleName);
+    if (!hMod)
+        return false;
+
+    if (!g_pfnGetModuleInformation)
+        return false;
+
+    HANDLE hProcess = GetCurrentProcess();
+    MODULEINFO ModuleInfo = {0};
+    if (!g_pfnGetModuleInformation(hProcess, hMod, &ModuleInfo, sizeof(ModuleInfo)))
+        return false;
+
+    return    (uintptr_t)ModuleInfo.lpBaseOfDll <= (uintptr_t)pv
+           && (uintptr_t)pv < (uintptr_t)ModuleInfo.lpBaseOfDll + ModuleInfo.SizeOfImage;
+}
+
+static bool vboxVDbgIsExceptionIgnored(PEXCEPTION_RECORD pExceptionRecord)
+{
+    /* Module (dll) names for GetModuleHandle.
+     * Exceptions originated from these modules will be ignored.
+     */
+    static const char *apszIgnoredModuleNames[] =
+    {
+        NULL
+    };
+
+    int i = 0;
+    while (apszIgnoredModuleNames[i])
+    {
+        if (vboxVDbgIsAddressInModule(pExceptionRecord->ExceptionAddress, apszIgnoredModuleNames[i]))
+            return true;
+
+        ++i;
+    }
+
+    return false;
+}
+
+static LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo) RT_NOTHROW_DEF
+{
+    static volatile bool g_fAllowIgnore = true; /* Might be changed in kernel debugger. */
+
+    PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
+    /* PCONTEXT pContextRecord = pExceptionInfo->ContextRecord; */
+
+    switch (pExceptionRecord->ExceptionCode)
+    {
+        default:
+            break;
+        case EXCEPTION_BREAKPOINT:
+        case EXCEPTION_ACCESS_VIOLATION:
+        case EXCEPTION_STACK_OVERFLOW:
+        case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+        case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+        case EXCEPTION_FLT_INVALID_OPERATION:
+        case EXCEPTION_INT_DIVIDE_BY_ZERO:
+        case EXCEPTION_ILLEGAL_INSTRUCTION:
+            if (g_fAllowIgnore && vboxVDbgIsExceptionIgnored(pExceptionRecord))
+                break;
+            ASMBreakpoint();
+            break;
+        case 0x40010006: /* OutputDebugStringA? */
+        case 0x4001000a: /* OutputDebugStringW? */
+            break;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static void vboxVDbgVEHandlerRegister(void)
+{
+    Assert(!g_VBoxWDbgVEHandler);
+    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1, vboxVDbgVectoredHandler);
+    Assert(g_VBoxWDbgVEHandler);
+
+    g_hModPsapi = GetModuleHandleA("Psapi.dll"); /* Usually already loaded. */
+    if (g_hModPsapi)
+        g_pfnGetModuleInformation = (PFNGetModuleInformation)GetProcAddress(g_hModPsapi, "GetModuleInformation");
+}
+
+static void vboxVDbgVEHandlerUnregister(void)
+{
+    Assert(g_VBoxWDbgVEHandler);
+    ULONG uResult = RemoveVectoredExceptionHandler(g_VBoxWDbgVEHandler);
+    Assert(uResult); RT_NOREF(uResult);
+    g_VBoxWDbgVEHandler = NULL;
+
+    g_hModPsapi = NULL;
+    g_pfnGetModuleInformation = NULL;
+}
+#endif /* DEBUG */
+
 BOOL WINAPI DllMain(HINSTANCE hDLLInst,
                     DWORD fdwReason,
                     LPVOID lpvReserved)
@@ -364,12 +499,18 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst,
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
+#ifdef DEBUG
+            vboxVDbgVEHandlerRegister();
+#endif
             D3DKMTLoad();
             stw_init(&stw_winsys);
             stw_init_thread();
             break;
 
         case DLL_PROCESS_DETACH:
+#ifdef DEBUG
+            vboxVDbgVEHandlerUnregister();
+#endif
             break;
 
         case DLL_THREAD_ATTACH:

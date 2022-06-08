@@ -18,6 +18,7 @@
 #define GALOG_GROUP GALOG_GROUP_HOSTOBJECTS
 
 #include "Svga.h"
+#include "SvgaFifo.h"
 
 #include <iprt/asm.h>
 
@@ -260,8 +261,22 @@ static DECLCALLBACK(NTSTATUS) svgaSurfaceObjectDestroy(SVGAHOSTOBJECT *pHO)
     VBOXWDDM_EXT_VMSVGA *pSvga = pHO->pSvga;
     uint32_t const u32Sid = pHO->u.avl.core.Key;
 
+    SURFACEOBJECT *pSO = (SURFACEOBJECT *)pHO;
+
     /* Delete the surface. */
     GALOG(("deleted sid=%u\n", u32Sid));
+
+    if (pSO->mobid != SVGA3D_INVALID_ID)
+    {
+        void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_BIND_GB_SURFACE, sizeof(SVGA3dCmdBindGBSurface), SVGA3D_INVALID_ID);
+        if (pvCmd)
+        {
+            SVGA3dCmdBindGBSurface *pCmd = (SVGA3dCmdBindGBSurface *)pvCmd;
+            pCmd->sid = u32Sid;
+            pCmd->mobid = SVGA3D_INVALID_ID;
+            SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdBindGBSurface));
+        }
+    }
 
     NTSTATUS Status = SvgaSurfaceDestroy(pSvga, u32Sid);
     if (NT_SUCCESS(Status))
@@ -365,6 +380,7 @@ NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
             if (NT_SUCCESS(Status))
             {
                 pSO->u32SharedSid = u32Sid; /* Initially. The user mode driver can change this for shared surfaces. */
+                pSO->mobid = SVGA3D_INVALID_ID;
 
                 Status = svgaHostObjectInit(pSvga, &pSO->ho, SVGA_HOST_OBJECT_SURFACE, u32Sid, svgaSurfaceObjectDestroy);
                 if (NT_SUCCESS(Status))
@@ -381,6 +397,117 @@ NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                  * Cleanup on error.
                  */
                 SvgaSurfaceDestroy(pSvga, u32Sid);
+            }
+            SvgaSurfaceIdFree(pSvga, u32Sid);
+        }
+        GaMemFree(pSO);
+    }
+    else
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+
+    return Status;
+}
+
+
+static NTSTATUS svgaGBSurfaceDefine(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                    uint32_t u32Sid,
+                                    SVGAGBSURFCREATE *pCreateParms,
+                                    uint32_t mobid)
+{
+    void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_SURFACE_V4, sizeof(SVGA3dCmdDefineGBSurface_v4), SVGA3D_INVALID_ID);
+    if (pvCmd)
+    {
+        SVGA3dCmdDefineGBSurface_v4 *pCmd = (SVGA3dCmdDefineGBSurface_v4 *)pvCmd;
+        pCmd->sid              = u32Sid;
+        pCmd->surfaceFlags     = pCreateParms->s.flags;
+        pCmd->format           = pCreateParms->s.format;
+        pCmd->numMipLevels     = pCreateParms->s.numMipLevels;
+        pCmd->multisampleCount = pCreateParms->s.sampleCount;
+        pCmd->autogenFilter    = SVGA3D_TEX_FILTER_NONE;
+        pCmd->size             = pCreateParms->s.size;
+        pCmd->arraySize        = pCreateParms->s.numFaces;
+        pCmd->bufferByteStride = 0;
+        SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBSurface_v4));
+    }
+    else
+        AssertFailedReturn(STATUS_INSUFFICIENT_RESOURCES);
+
+    pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_BIND_GB_SURFACE, sizeof(SVGA3dCmdBindGBSurface), SVGA3D_INVALID_ID);
+    if (pvCmd)
+    {
+        SVGA3dCmdBindGBSurface *pCmd = (SVGA3dCmdBindGBSurface *)pvCmd;
+        pCmd->sid = u32Sid;
+        pCmd->mobid = mobid;
+        SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdBindGBSurface));
+    }
+    else
+        AssertFailedReturn(STATUS_INSUFFICIENT_RESOURCES);
+
+    return STATUS_SUCCESS;
+}
+
+
+static void svgaGBSurfaceDestroy(VBOXWDDM_EXT_VMSVGA *pSvga, uint32_t u32Sid)
+{
+    SvgaSurfaceDestroy(pSvga, u32Sid);
+}
+
+
+NTSTATUS SvgaGBSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
+                             void *pvOwner,
+                             SVGAGBSURFCREATE *pCreateParms)
+{
+    NTSTATUS Status = svgaHostObjectsProcessPending(pSvga);
+    AssertReturn(Status == STATUS_SUCCESS, Status);
+
+    GALOGG(GALOG_GROUP_SVGA, ("gmrid = %u\n", pCreateParms->gmrid));
+
+    uint32_t cbGB = 0;
+    uint64_t u64UserAddress = 0;
+    /* Allocate GMR, if not already supplied. */
+    if (pCreateParms->gmrid == SVGA3D_INVALID_ID)
+    {
+        uint32_t u32NumPages = (pCreateParms->cbGB + PAGE_SIZE - 1) >> PAGE_SHIFT;
+        Status = SvgaRegionCreate(pSvga, pvOwner, u32NumPages, &pCreateParms->gmrid, &u64UserAddress);
+        AssertReturn(NT_SUCCESS(Status), Status);
+        cbGB = u32NumPages * PAGE_SIZE;
+    }
+    else
+    {
+        Status = SvgaRegionUserAddressAndSize(pSvga, pCreateParms->gmrid, &u64UserAddress, &cbGB);
+        AssertReturn(NT_SUCCESS(Status), Status);
+    }
+
+    SURFACEOBJECT *pSO = (SURFACEOBJECT *)GaMemAllocZero(sizeof(SURFACEOBJECT));
+    if (pSO)
+    {
+        uint32_t u32Sid;
+        Status = SvgaSurfaceIdAlloc(pSvga, &u32Sid);
+        if (NT_SUCCESS(Status))
+        {
+            Status = svgaGBSurfaceDefine(pSvga, u32Sid, pCreateParms, pCreateParms->gmrid);
+            if (NT_SUCCESS(Status))
+            {
+                pSO->u32SharedSid = u32Sid; /* Initially. The user mode driver can change this for shared surfaces. */
+                pSO->mobid = pCreateParms->gmrid;
+
+                Status = svgaHostObjectInit(pSvga, &pSO->ho, SVGA_HOST_OBJECT_SURFACE, u32Sid, svgaSurfaceObjectDestroy);
+                if (NT_SUCCESS(Status))
+                {
+                    pCreateParms->cbGB = cbGB;
+                    pCreateParms->u64UserAddress = u64UserAddress;
+                    pCreateParms->u32Sid = u32Sid;
+
+                    GALOG(("created sid=%u\n", u32Sid));
+                    return STATUS_SUCCESS;
+                }
+
+                AssertFailed();
+
+                /*
+                 * Cleanup on error.
+                 */
+                svgaGBSurfaceDestroy(pSvga, u32Sid);
             }
             SvgaSurfaceIdFree(pSvga, u32Sid);
         }

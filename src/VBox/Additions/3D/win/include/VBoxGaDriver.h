@@ -70,6 +70,9 @@ typedef struct WDDMGalliumDriverEnv
     DECLCALLBACKMEMBER(void, pfnRegionDestroy,(void *pvEnv,
                                                uint32_t u32GmrId,
                                                void *pvMap));
+    /* VGPU10 */
+    DECLCALLBACKMEMBER(int, pfnGBSurfaceDefine,(void *pvEnv,
+                                                SVGAGBSURFCREATE *pCreateParms));
 } WDDMGalliumDriverEnv;
 
 struct pipe_context;

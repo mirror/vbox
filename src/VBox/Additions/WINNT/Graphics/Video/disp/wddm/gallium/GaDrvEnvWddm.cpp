@@ -702,6 +702,40 @@ GaDrvEnvWddm::gaEnvWddmRegionDestroy(void *pvEnv,
 }
 
 
+/* static */ DECLCALLBACK(int)
+GaDrvEnvWddm::gaEnvWddmGBSurfaceDefine(void *pvEnv,
+                                       SVGAGBSURFCREATE *pCreateParms)
+{
+    GaDrvEnvWddm *pThis = (GaDrvEnvWddm *)pvEnv;
+
+    HRESULT                           hr;
+    D3DDDICB_ESCAPE                   ddiEscape;
+    VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE data;
+    data.EscapeHdr.escapeCode     = VBOXESC_SVGAGBSURFACEDEFINE;
+    data.EscapeHdr.u32CmdSpecific = 0;
+    data.CreateParms              = *pCreateParms;
+
+    ddiEscape.hDevice               = 0; // pThis->mWddmCallbacks.hDevice;
+    ddiEscape.Flags.Value           = 0;
+    ddiEscape.Flags.HardwareAccess  = 1; // Required, otherwise graphics corruption can happen. No idea why.
+                                         // Eventually we probably have to create allocations for surfaces,
+                                         // as a WDDM driver should do. Then the Escape hack will be removed.
+    ddiEscape.pPrivateDriverData    = &data;
+    ddiEscape.PrivateDriverDataSize = sizeof(data);
+    ddiEscape.hContext              = 0;
+
+    hr = pThis->mWddmCallbacks.DeviceCallbacks.pfnEscapeCb(pThis->mWddmCallbacks.hAdapter, &ddiEscape);
+    if (FAILED(hr))
+        return -1;
+
+    pCreateParms->gmrid = data.CreateParms.gmrid;
+    pCreateParms->cbGB = data.CreateParms.cbGB;
+    pCreateParms->u64UserAddress = data.CreateParms.u64UserAddress;
+    pCreateParms->u32Sid = data.CreateParms.u32Sid;
+    return 0;
+}
+
+
 GaDrvEnvWddm::GaDrvEnvWddm()
     :
     mContextTree(0)
@@ -747,6 +781,8 @@ const WDDMGalliumDriverEnv *GaDrvEnvWddm::Env()
         mEnv.pfnRegionCreate   = gaEnvWddmRegionCreate;
         mEnv.pfnRegionDestroy  = gaEnvWddmRegionDestroy;
         mEnv.pHWInfo           = &mHWInfo;
+        /* VGPU10 */
+        mEnv.pfnGBSurfaceDefine  = gaEnvWddmGBSurfaceDefine;
     }
 
     return &mEnv;

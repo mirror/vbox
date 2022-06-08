@@ -160,6 +160,10 @@ VBoxDispD3D_SOURCES  += \
 	wddm/gallium/VBoxGaD3DDevice9Ex.cpp \
 	wddm/gallium/VBoxD3DAdapter9.c
 
+ ifdef VBOX_WITH_VMSVGA3D_DX
+VBoxDispD3D_DEFS     += VBOX_WITH_VMSVGA3D_DX9
+ endif
+
  ifdef VBOX_WITH_MESA3D_D3DTEST
 VBoxDispD3D_DEFS     += VBOX_WITH_MESA3D_D3DTEST
 VBoxDispD3D_SOURCES  += \

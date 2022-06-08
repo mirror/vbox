@@ -34,6 +34,7 @@ endif
 VBoxICD_INCS     = \
 	$(VBOX_PATH_3D)/win/include \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video \
+	$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include \
 	$(VBOX_GRAPHICS_INCS)
 VBoxICD_SOURCES  = \
 	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \

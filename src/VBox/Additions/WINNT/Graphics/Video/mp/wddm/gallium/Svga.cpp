@@ -88,7 +88,7 @@ static VMSVGAOTINFO const s_aOTInfo[SVGA_OTABLE_DX_MAX] =
 {
     { sizeof(SVGAOTableMobEntry),          SVGA3D_MAX_MOBS },               /* SVGA_OTABLE_MOB */
     { sizeof(SVGAOTableSurfaceEntry),      SVGA3D_MAX_SURFACE_IDS },        /* SVGA_OTABLE_SURFACE */
-    { sizeof(SVGAOTableContextEntry),      0 /* not used */ },              /* SVGA_OTABLE_CONTEXT */
+    { sizeof(SVGAOTableContextEntry),      SVGA3D_MAX_CONTEXT_IDS },        /* SVGA_OTABLE_CONTEXT */
     { sizeof(SVGAOTableShaderEntry),       0 /* not used */ },              /* SVGA_OTABLE_SHADER */
     { sizeof(SVGAOTableScreenTargetEntry), 64 /*VBOX_VIDEO_MAX_SCREENS*/ }, /* SVGA_OTABLE_SCREENTARGET */
     { sizeof(SVGAOTableDXContextEntry),    SVGA3D_MAX_CONTEXT_IDS },        /* SVGA_OTABLE_DXCONTEXT */
@@ -612,20 +612,6 @@ NTSTATUS SvgaSurfaceIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
                             SVGA_OTABLE_SURFACE, u32Sid);
 }
 
-NTSTATUS SvgaGMRIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
-                        uint32_t *pu32GMRId)
-{
-    return svgaIdAlloc(pSvga, pSvga->pu32GMRBits, pSvga->cbGMRBits,
-                       pSvga->u32GmrMaxIds, pu32GMRId);
-}
-
-NTSTATUS SvgaGMRIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
-                       uint32_t u32GMRId)
-{
-    return svgaIdFree(pSvga, pSvga->pu32GMRBits, pSvga->cbGMRBits,
-                      pSvga->u32GmrMaxIds, u32GMRId);
-}
-
 NTSTATUS SvgaContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32Cid)
 {
@@ -759,9 +745,11 @@ NTSTATUS SvgaSharedSidInsert(VBOXWDDM_EXT_VMSVGA *pSvga,
     /* The surface must not be redirected yet. */
     AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) == pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
 
-    /* The surface object to be mapped to. */
-    SURFACEOBJECT *pSharedSO = SvgaSurfaceObjectQuery(pSvga, u32SharedSid);
-    AssertReturnStmt(pSharedSO, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
+    /* The surface object to be mapped to. Query it to reference it.
+     * If the surface id (u32SharedSid) is not in the surface objects, then it is OK.
+     * It means that it is most likely from _D3D context.
+     */
+    SvgaSurfaceObjectQuery(pSvga, u32SharedSid);
 
     pSO->u32SharedSid = u32SharedSid;
 
@@ -782,17 +770,21 @@ NTSTATUS SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
     /* The surface must be redirected. */
     AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) != pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
 
-    /* The shared surface object, which the u32Sid was mapped to. */
+    /* The shared surface object, which the u32Sid was mapped to.
+     * If the surface id (u32SharedSid) is not in the surface objects, then it is OK.
+     * It means that it is most likely from _D3D context.
+     */
     SURFACEOBJECT *pSharedSO = SvgaSurfaceObjectQuery(pSvga, pSO->u32SharedSid);
-    AssertReturnStmt(pSharedSO, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
 
     pSO->u32SharedSid = SVGAHOSTOBJECTID(&pSO->ho);
 
     /* Remove the reference which was added by SvgaSharedSidInsert. */
-    SvgaSurfaceObjectRelease(pSharedSO);
+    if (pSharedSO)
+        SvgaSurfaceObjectRelease(pSharedSO);
 
     /* Release both surface objects. */
-    SvgaSurfaceObjectRelease(pSharedSO);
+    if (pSharedSO)
+        SvgaSurfaceObjectRelease(pSharedSO);
     SvgaSurfaceObjectRelease(pSO);
     return STATUS_SUCCESS;
 }
@@ -836,9 +828,7 @@ NTSTATUS SvgaProcessSurface(VBOXWDDM_EXT_VMSVGA *pSvga,
             }
             else
             {
-                GALOGREL(32, ("WDDM: no surface for sid %u\n", u32Sid));
-                AssertFailed();
-                /* Ignore the error. */
+                /* Ignore the error. This is most likely a sid from _D3D context.*/
                 return STATUS_SUCCESS;
             }
         }
@@ -1019,13 +1009,9 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
         case SVGA_3D_CMD_BIND_GB_SURFACE:
         case SVGA_3D_CMD_BIND_GB_SURFACE_WITH_PITCH:
         case SVGA_3D_CMD_COND_BIND_GB_SURFACE:
-        case SVGA_3D_CMD_UPDATE_GB_SURFACE:
         case SVGA_3D_CMD_READBACK_GB_SURFACE:
-        case SVGA_3D_CMD_INVALIDATE_GB_SURFACE:
-        case SVGA_3D_CMD_UPDATE_GB_IMAGE:
         case SVGA_3D_CMD_READBACK_GB_IMAGE:
         case SVGA_3D_CMD_READBACK_GB_IMAGE_PARTIAL:
-        case SVGA_3D_CMD_INVALIDATE_GB_IMAGE:
         case SVGA_3D_CMD_INVALIDATE_GB_IMAGE_PARTIAL:
         case SVGA_3D_CMD_BIND_GB_SCREENTARGET:
         case SVGA_3D_CMD_SET_OTABLE_BASE:
@@ -1034,11 +1020,27 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
         case SVGA_3D_CMD_DRAW_INDEXED:
             AssertFailed();
             break;
+        case SVGA_3D_CMD_UPDATE_GB_IMAGE:
+        case SVGA_3D_CMD_UPDATE_GB_SURFACE:
+        case SVGA_3D_CMD_INVALIDATE_GB_IMAGE:
+        case SVGA_3D_CMD_INVALIDATE_GB_SURFACE:
+            break;
+        case SVGA_3D_CMD_DX_SET_SINGLE_CONSTANT_BUFFER:
+        {
+            SVGA3dCmdDXSetSingleConstantBuffer *p = (SVGA3dCmdDXSetSingleConstantBuffer *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
+        } break;
+        case SVGA_3D_CMD_DX_PRED_COPY_REGION:
+        {
+            SVGA3dCmdDXPredCopyRegion *p = (SVGA3dCmdDXPredCopyRegion *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->srcSid, pHOA);
+            if (Status == STATUS_SUCCESS)
+                Status = SvgaProcessSurface(pSvga, &p->dstSid, pHOA);
+        } break;
         default:
             if (SVGA_3D_CMD_DX_MIN <= u32CmdId && u32CmdId <= SVGA_3D_CMD_DX_MAX)
             {
-                /** @todo  Also do not support DX commands for now, they are not supported by the host. */
-                AssertFailed();
+                /** @todo Implement. */
             }
             break;
     }
@@ -1059,6 +1061,7 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
  *    - a command contains a shared surface id, which will be replaced by the original surface id.
  *
  * @param pSvga .
+ * @param pSvgaContext .
  * @param pvTarget .
  * @param cbTarget .
  * @param pvSource .
@@ -1068,6 +1071,7 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
  * @param ppvHwPrivate The hardware private data. SVGA stores information about host objects there.
  */
 NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
+                            struct VMSVGACONTEXT *pSvgaContext,
                             void *pvTarget,
                             uint32_t cbTarget,
                             const void *pvSource,
@@ -1079,19 +1083,24 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
     /* All commands consist of 32 bit dwords. */
     AssertReturn(cbSource % sizeof(uint32_t) == 0, STATUS_ILLEGAL_INSTRUCTION);
 
+    NTSTATUS Status = SvgaRenderCommandsD3D(pSvga,
+                                            pSvgaContext,
+                                            pvTarget,
+                                            cbTarget,
+                                            pvSource,
+                                            cbSource,
+                                            pu32TargetLength,
+                                            pu32ProcessedLength);
+    AssertReturn(NT_SUCCESS(Status), Status);
+
     SVGAHOSTOBJECTARRAY *pHO = (SVGAHOSTOBJECTARRAY *)GaMemAlloc(sizeof(SVGAHOSTOBJECTARRAY));
     if (!pHO)
         return STATUS_INSUFFICIENT_RESOURCES;
     pHO->cObjects = 0;
     pHO->u32Reserved = 0;
 
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    const uint8_t *pu8Src = (uint8_t *)pvSource;
-    const uint8_t *pu8SrcEnd = (uint8_t *)pvSource + cbSource;
-    uint8_t *pu8Dst = (uint8_t *)pvTarget;
-    uint8_t *pu8DstEnd = (uint8_t *)pvTarget + cbTarget;
-
+    uint8_t *pu8Src = (uint8_t *)pvTarget;
+    uint8_t *pu8SrcEnd = (uint8_t *)pvTarget + (*pu32TargetLength);
     while (pu8SrcEnd > pu8Src)
     {
         const uint32_t cbSrcLeft = pu8SrcEnd - pu8Src;
@@ -1118,17 +1127,8 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
             AssertBreakStmt(0, Status = STATUS_ILLEGAL_INSTRUCTION);
         }
 
-        const uint32_t cbDstLeft = pu8DstEnd - pu8Dst;
-        if (cbCmd > cbDstLeft)
-        {
-            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-            break;
-        }
-
-        memcpy(pu8Dst, pu8Src, cbCmd);
-
-        /* Update the command in dst place if necessary. */
-        Status = svgaUpdateCommand(pSvga, u32CmdId, pu8Dst, cbCmd, pHO);
+        /* Update the command in source place if necessary. */
+        Status = svgaUpdateCommand(pSvga, u32CmdId, pu8Src, cbCmd, pHO);
         if (Status != STATUS_SUCCESS)
         {
             Assert(Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
@@ -1136,14 +1136,11 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
         }
 
         pu8Src += cbCmd;
-        pu8Dst += cbCmd;
     }
 
     if (   Status == STATUS_SUCCESS
         || Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER)
     {
-        *pu32TargetLength = pu8Dst - (uint8_t *)pvTarget;
-        *pu32ProcessedLength = pu8Src - (uint8_t *)pvSource;
         if (pHO->cObjects)
             *ppHwRenderData = &pHO->hdr;
         else
@@ -1792,13 +1789,70 @@ typedef struct GAWDDMREGION
     RTR0MEMOBJ MapObjR3;
     RTR0PTR    pvR0;
     RTR3PTR    pvR3;
-    /* The Guest Memory Region ID. */
-    uint32_t   u32GmrId;
+    /* A corresponding MOB, which provides the Guest Memory Region ID. */
+    PVMSVGAMOB pMob;
     /* The allocated size in pages. */
     uint32_t   u32NumPages;
     /* Physical addresses of the pages. */
     RTHCPHYS   aPhys[1];
 } GAWDDMREGION;
+
+static void svgaFreeGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, PVMSVGAMOB pMob)
+{
+    if (pMob)
+    {
+        if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+        {
+            void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
+            if (pvCmd)
+            {
+                SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
+                pCmd->mobid = VMSVGAMOB_ID(pMob);
+                SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDestroyGBMob));
+            }
+        }
+
+        SvgaMobFree(pSvga, pMob);
+    }
+}
+
+static NTSTATUS svgaCreateGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
+{
+    /* Allocate a new mob. */
+    NTSTATUS Status = SvgaMobCreate(pSvga, &pRegion->pMob, pRegion->u32NumPages, 0);
+    Assert(NT_SUCCESS(Status));
+    if (NT_SUCCESS(Status))
+    {
+        Status = SvgaGboFillPageTableForArray(&pRegion->pMob->gbo, pRegion->u32NumPages, pRegion->aPhys);
+        Assert(NT_SUCCESS(Status));
+        if (NT_SUCCESS(Status))
+        {
+            if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+            {
+                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_MOB64, sizeof(SVGA3dCmdDefineGBMob64), SVGA3D_INVALID_ID);
+                if (pvCmd)
+                {
+                    SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
+                    pCmd->mobid       = VMSVGAMOB_ID(pRegion->pMob);
+                    pCmd->ptDepth     = pRegion->pMob->gbo.enmMobFormat;
+                    pCmd->base        = pRegion->pMob->gbo.base;
+                    pCmd->sizeInBytes = pRegion->pMob->gbo.cbGbo;
+                    SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBMob64));
+                }
+                else
+                    AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+            }
+
+            if (NT_SUCCESS(Status))
+                return STATUS_SUCCESS;
+        }
+    }
+
+    svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
+    pRegion->pMob = NULL;
+    return Status;
+}
+
 
 static void gmrFree(GAWDDMREGION *pRegion)
 {
@@ -1851,7 +1905,7 @@ static void gaRegionFree(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
 {
     Assert(pRegion);
     gmrFree(pRegion);
-    SvgaGMRIdFree(pSvga, pRegion->u32GmrId);
+    svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
     GaMemFree(pRegion);
 }
 
@@ -1872,7 +1926,7 @@ static DECLCALLBACK(int) gaRegionsDestroyCb(PAVLU32NODECORE pNode, void *pvUser)
         || (uintptr_t)pCtx->pvOwner == (uintptr_t)pRegion->pvOwner)
     {
         AssertReturn(pCtx->cIds < pCtx->cMaxIds, -1);
-        pCtx->au32Ids[pCtx->cIds++] = pRegion->u32GmrId;
+        pCtx->au32Ids[pCtx->cIds++] = VMSVGAMOB_ID(pRegion->pMob);
     }
     return 0;
 }
@@ -1903,9 +1957,9 @@ void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
 
         if (pRegion)
         {
-            Assert(pRegion->u32GmrId == pCtx->au32Ids[i]);
+            Assert(VMSVGAMOB_ID(pRegion->pMob) == pCtx->au32Ids[i]);
             GALOG(("Deallocate gmrId %d, pv %p, aPhys[0] %RHp\n",
-                   pRegion->u32GmrId, pRegion->pvR3, pRegion->aPhys[0]));
+                   VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
 
             gaRegionFree(pSvga, pRegion);
         }
@@ -1929,10 +1983,39 @@ NTSTATUS SvgaRegionDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     if (pRegion)
     {
-        Assert(pRegion->u32GmrId == u32GmrId);
+        Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
         GALOG(("Freed gmrId %d, pv %p, aPhys[0] %RHp\n",
-               pRegion->u32GmrId, pRegion->pvR3, pRegion->aPhys[0]));
+               VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
         gaRegionFree(pSvga, pRegion);
+        return STATUS_SUCCESS;
+    }
+
+    AssertFailed();
+    return STATUS_INVALID_PARAMETER;
+}
+
+NTSTATUS SvgaRegionUserAddressAndSize(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                      uint32_t u32GmrId,
+                                      uint64_t *pu64UserAddress,
+                                      uint32_t *pu32Size)
+{
+    AssertReturn(u32GmrId <= pSvga->u32GmrMaxIds, STATUS_INVALID_PARAMETER);
+
+    GALOG(("[%p] gmrId %d\n", pSvga, u32GmrId));
+
+    ExAcquireFastMutex(&pSvga->SvgaMutex);
+
+    GAWDDMREGION *pRegion = (GAWDDMREGION *)RTAvlU32Get(&pSvga->GMRTree, u32GmrId);
+
+    ExReleaseFastMutex(&pSvga->SvgaMutex);
+
+    if (pRegion)
+    {
+        Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
+        GALOG(("Get gmrId %d, UserAddress 0x%p\n",
+               VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3));
+        *pu64UserAddress = (uintptr_t)pRegion->pvR3;
+        *pu32Size = pRegion->u32NumPages * PAGE_SIZE;
         return STATUS_SUCCESS;
     }
 
@@ -1956,27 +2039,30 @@ NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
     GAWDDMREGION *pRegion = (GAWDDMREGION *)GaMemAllocZero(cbAlloc);
     if (pRegion)
     {
-        Status = SvgaGMRIdAlloc(pSvga, &pRegion->u32GmrId);
+        /* Region id and VGPU10+ mobid are the same. So a mob is allocated along with the gmr.
+         * The mob provides an id and also reported to the host on VGPU10.
+         */
+        pRegion->pvOwner = pvOwner;
+        pRegion->u32NumPages = u32NumPages;
+        pRegion->MemObj = NIL_RTR0MEMOBJ;
+        pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
+
+        Status = gmrAlloc(pRegion);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
-            if (pRegion->u32GmrId < pSvga->u32GmrMaxIds)
+            Status = svgaCreateGBMobForGMR(pSvga, pRegion);
+            Assert(NT_SUCCESS(Status));
+            if (NT_SUCCESS(Status))
             {
-                pRegion->pvOwner = pvOwner;
-                pRegion->u32NumPages = u32NumPages;
-                pRegion->MemObj = NIL_RTR0MEMOBJ;
-                pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
-
-                Status = gmrAlloc(pRegion);
-                Assert(NT_SUCCESS(Status));
-                if (NT_SUCCESS(Status))
+                if (VMSVGAMOB_ID(pRegion->pMob) < pSvga->u32GmrMaxIds)
                 {
                     GALOG(("Allocated gmrId %d, pv %p, aPhys[0] %RHp\n",
-                           pRegion->u32GmrId, pRegion->pvR3, pRegion->aPhys[0]));
+                           VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
 
                     /* Report the GMR to the host vmsvga device. */
                     Status = SvgaGMRReport(pSvga,
-                                           pRegion->u32GmrId,
+                                           VMSVGAMOB_ID(pRegion->pMob),
                                            SVGA_REMAP_GMR2_PPN32,
                                            pRegion->u32NumPages,
                                            &pRegion->aPhys[0]);
@@ -1986,28 +2072,28 @@ NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                         /* Add to the container. */
                         ExAcquireFastMutex(&pSvga->SvgaMutex);
 
-                        pRegion->Core.Key = pRegion->u32GmrId;
+                        pRegion->Core.Key = VMSVGAMOB_ID(pRegion->pMob);
                         RTAvlU32Insert(&pSvga->GMRTree, &pRegion->Core);
 
                         ExReleaseFastMutex(&pSvga->SvgaMutex);
 
-                        *pu32GmrId = pRegion->u32GmrId;
+                        *pu32GmrId = VMSVGAMOB_ID(pRegion->pMob);
                         *pu64UserAddress = (uint64_t)pRegion->pvR3;
 
                         /* Everything OK. */
                         return STATUS_SUCCESS;
                     }
-
-                    gmrFree(pRegion);
                 }
-            }
-            else
-            {
-                AssertFailed();
-                Status = STATUS_INSUFFICIENT_RESOURCES;
+                else
+                {
+                    AssertFailed();
+                    Status = STATUS_INSUFFICIENT_RESOURCES;
+                }
+
+                svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
             }
 
-            SvgaGMRIdFree(pSvga, pRegion->u32GmrId);
+            gmrFree(pRegion);
         }
 
         GaMemFree(pRegion);
@@ -2197,6 +2283,37 @@ NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
         /* Store page numbers into the level 1 description pages. */
         for (unsigned i = 0; i < pGbo->cbGbo >> PAGE_SHIFT; ++i)
             paPpnGbo[i] = RTR0MemObjGetPagePhysAddr(hMemObj, i) >> PAGE_SHIFT;
+    }
+    return STATUS_SUCCESS;
+}
+
+
+NTSTATUS SvgaGboFillPageTableForArray(PVMSVGAGBO pGbo,
+                                      uint32_t u32NumPages,
+                                      RTHCPHYS *paPhys)
+{
+    if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_0)
+    {
+        Assert(u32NumPages == 1);
+        pGbo->base = paPhys[0] >> PAGE_SHIFT;
+    }
+    else
+    {
+        /* The first of pages is alway the base. It is either the level 2 page or the single level 1 page */
+        pGbo->base = RTR0MemObjGetPagePhysAddr(pGbo->hMemObjPT, 0) >> PAGE_SHIFT;
+
+        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pGbo->hMemObjPT);
+        PPN64 *paPpnGbo;
+        if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_2)
+            paPpnGbo = &paPpn[PAGE_SIZE / sizeof(PPN64)]; /* Level 1 pages follow the level 2 page. */
+        else if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_1)
+            paPpnGbo = paPpn;
+        else
+            AssertFailedReturn(STATUS_INVALID_PARAMETER);
+
+        /* Store page numbers into the level 1 description pages. */
+        for (unsigned i = 0; i < u32NumPages; ++i)
+            paPpnGbo[i] = paPhys[i] >> PAGE_SHIFT;
     }
     return STATUS_SUCCESS;
 }

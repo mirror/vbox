@@ -34,6 +34,10 @@
 #include <VBoxUhgsmi.h>
 #include <VBox/VBoxGuestCoreTypes.h> /* for VBGLIOCHGCMCALL */
 
+#if defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT)
+#include <VBoxGaTypes.h>
+#endif
+
 /* One would increase this whenever definitions in this file are changed */
 #define VBOXVIDEOIF_VERSION 22
 
@@ -70,7 +74,7 @@ AssertCompileSize(VBOXVIDEO_HWTYPE, 4);
 #endif
 
 
-#ifdef VBOX_WITH_VMSVGA3D_DX
+#if defined(VBOX_WITH_VMSVGA3D_DX) || defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT) || defined(VBOXGL)
 /*
  * Structures for the new D3D user mode driver.
  */
@@ -97,12 +101,12 @@ typedef struct VBOXDXALLOCATIONDESC
     uint32_t               cbAllocation;
     struct
     {
-        SVGA3dSurfaceAllFlags surfaceFlags;
+        uint64 surfaceFlags; /*SVGA3dSurfaceAllFlags*/ /** @todo Restore types after Mesa update. */
         SVGA3dSurfaceFormat format;
         uint32 numMipLevels;
         uint32 multisampleCount;
-        SVGA3dMSPattern multisamplePattern;
-        SVGA3dMSQualityLevel qualityLevel;
+        uint32 multisamplePattern; /*SVGA3dMSPattern*/
+        uint32 qualityLevel; /*SVGA3dMSQualityLevel*/
         SVGA3dTextureFilter autogenFilter;
         SVGA3dSize size;
         uint32 arraySize;
@@ -121,7 +125,7 @@ typedef struct VBOXDXALLOCATIONDESC
         UINT                    DecoderBufferType;          /* D3D11_1DDI_VIDEO_DECODER_BUFFER_TYPE */
     } resourceInfo;
 } VBOXDXALLOCATIONDESC, *PVBOXDXALLOCATIONDESC;
-#endif /* VBOX_WITH_VMSVGA3D_DX */
+#endif /* defined(VBOX_WITH_VMSVGA3D_DX) || defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT) || defined(VBOXGL) */
 
 /* create allocation func */
 typedef enum
@@ -135,9 +139,7 @@ typedef enum
     /* custom allocation types requested from user-mode d3d module will go here */
     , VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
     , VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER
-#ifdef VBOX_WITH_VMSVGA3D_DX
     , VBOXWDDM_ALLOC_TYPE_D3D /* Direct3D UMD driver allocation. Actual type is a VBOXDXALLOCATIONTYPE value. */
-#endif /* VBOX_WITH_VMSVGA3D_DX */
 } VBOXWDDM_ALLOC_TYPE;
 
 /* usage */
@@ -504,6 +506,8 @@ typedef struct VBOXDISPIFESCAPE_SETALLOCHOSTID
 #define VBOXESC_GAFENCEQUERY        0xA0000021
 #define VBOXESC_GAFENCEWAIT         0xA0000022
 #define VBOXESC_GAFENCEUNREF        0xA0000023
+#define VBOXESC_SVGAGBSURFACEDEFINE 0xA0010001
+#define VBOXESC_SVGAGETSID          0xA0010002
 
 /* Get Gallium context id (cid) of the WDDM context. */
 typedef struct VBOXDISPIFESCAPE_GAGETCID
@@ -544,6 +548,23 @@ typedef struct VBOXDISPIFESCAPE_GASURFACEDEFINE
     /* GASURFCREATE */
     /* GASURFSIZE[cSizes] */
 } VBOXDISPIFESCAPE_GASURFACEDEFINE;
+
+#if defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT) || defined(VBOXGL)
+/* Create a GB host surface. */
+typedef struct VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    SVGAGBSURFCREATE CreateParms;
+} VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE;
+
+/* Get SVGA surface id (sid) of the allocation. */
+typedef struct VBOXDISPIFESCAPE_SVGAGETSID
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint64_t hAllocation;
+    uint32_t u32Sid;
+} VBOXDISPIFESCAPE_SVGAGETSID;
+#endif /* defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT) || defined(VBOXGL) */
 
 /* Delete a host surface. */
 typedef struct VBOXDISPIFESCAPE_GASURFACEDESTROY

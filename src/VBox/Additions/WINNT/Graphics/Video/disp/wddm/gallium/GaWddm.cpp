@@ -388,6 +388,8 @@ HRESULT GaD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
 
     PVBOXWDDMDISP_DEVICE pDevice = pRc->pDevice;
     IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+    AssertReturn(pDevice9If, E_FAIL);
+
     HRESULT hr = E_FAIL;
 
     const DWORD d3dUsage                     = GaDDI2D3DUsage(pRc->RcDesc.fFlags);
@@ -508,6 +510,20 @@ HRESULT GaD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                 AssertBreak(SUCCEEDED(hr) && pD3D9Surf);
 
             }
+#ifdef VBOX_WITH_VMSVGA3D_DX9
+            else if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_D3D)
+            {
+                hr = pDevice9If->CreateRenderTarget(pAllocation->AllocDesc.surfaceInfo.size.width,
+                                                    pAllocation->AllocDesc.surfaceInfo.size.height,
+                                                    d3dFormat,
+                                                    d3dMultiSample,
+                                                    d3dMultisampleQuality,
+                                                    d3dLockable,
+                                                    &pD3D9Surf,
+                                                    NULL);
+                AssertBreak(SUCCEEDED(hr) && pD3D9Surf);
+            }
+#endif
             else
             {
                 WARN(("unexpected alloc type %d", pAllocation->enmType));
@@ -754,7 +770,12 @@ IUnknown *GaD3DIfCreateSharedPrimary(struct VBOXWDDMDISP_ALLOCATION *pAlloc)
                  * The resource has been already opened by someone else or there is a bug.
                  * In both cases we need a warning, because this is something unusual.
                  */
+
+#ifndef VBOX_WITH_VMSVGA3D_DX9
                 WARN(("another hostId %d is in use, using it instead", usedHostId));
+#else
+                /* This is most likely a _D3D surface, which is used as actual destination of the shared primary. */
+#endif
 
                 Assert(hostID != usedHostId);
                 Assert(usedHostId);

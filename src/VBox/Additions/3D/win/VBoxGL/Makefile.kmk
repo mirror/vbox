@@ -25,6 +25,7 @@ DLLS       += VBoxGL
 DLLS.amd64 += VBoxGL-x86
 
 VBoxGL_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
+VBoxGL_DEFS     = VBOXGL
 # -wd4005: '__useHeader' : redefinition
 VBoxGL_CFLAGS  := -wd4005
 if "$(VBOX_NEWER_VCC_TOOL_STEM)" >= "VCC140"

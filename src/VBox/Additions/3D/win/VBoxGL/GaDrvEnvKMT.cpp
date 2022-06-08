@@ -148,6 +148,10 @@ class GaDrvEnvKmt
                                                      uint32_t u32GmrId,
                                                      void *pvMap);
 
+        /* VGPU10 */
+        static DECLCALLBACK(int) gaEnvGBSurfaceDefine(void *pvEnv,
+                                                      SVGAGBSURFCREATE *pCreateParms);
+
         /*
          * Internal.
          */
@@ -384,6 +388,11 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_R5G6B5:         return D3DDDIFMT_R5G6B5;
         case SVGA3D_ARGB_S10E5:     return D3DDDIFMT_A16B16G16R16F;
         case SVGA3D_ARGB_S23E8:     return D3DDDIFMT_A32B32G32R32F;
+        case SVGA3D_B8G8R8A8_UNORM: return D3DDDIFMT_A8R8G8B8;
+        case SVGA3D_B8G8R8X8_UNORM: return D3DDDIFMT_X8R8G8B8;
+        case SVGA3D_R8_UNORM:       /* R8->A8 conversion is not correct, but it does not matter here,
+                                     * because the D3DDDIFMT_ value is used only to compute bpp, pitch, etc. */
+        case SVGA3D_A8_UNORM:       return D3DDDIFMT_A8;
         default: break;
     }
 
@@ -1062,6 +1071,126 @@ GaDrvEnvKmt::gaEnvRegionDestroy(void *pvEnv,
     }
 }
 
+/* static */ DECLCALLBACK(int)
+GaDrvEnvKmt::gaEnvGBSurfaceDefine(void *pvEnv,
+                                  SVGAGBSURFCREATE *pCreateParms)
+{
+    GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
+
+    VBOXDISPIFESCAPE_SVGAGBSURFACEDEFINE data;
+    data.EscapeHdr.escapeCode     = VBOXESC_SVGAGBSURFACEDEFINE;
+    data.EscapeHdr.u32CmdSpecific = 0;
+    data.CreateParms              = *pCreateParms;
+
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pThis->mKmtCallbacks.hAdapter;
+    EscapeData.hDevice               = pThis->mKmtCallbacks.hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    EscapeData.Flags.HardwareAccess  = 1;
+    EscapeData.pPrivateDriverData    = &data;
+    EscapeData.PrivateDriverDataSize = sizeof(data);
+    // EscapeData.hContext              = 0;
+
+    NTSTATUS Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTEscape(&EscapeData);
+    if (Status == STATUS_SUCCESS)
+    {
+        pCreateParms->gmrid = data.CreateParms.gmrid;
+        pCreateParms->cbGB = data.CreateParms.cbGB;
+        pCreateParms->u64UserAddress = data.CreateParms.u64UserAddress;
+        pCreateParms->u32Sid = data.CreateParms.u32Sid;
+
+        /* Create a kernel mode allocation for render targets,
+         * because we will need kernel mode handles for Present.
+         */
+        if (pCreateParms->s.flags & SVGA3D_SURFACE_HINT_RENDERTARGET)
+        {
+            /* First check if the format is supported. */
+            D3DDDIFORMAT const ddiFormat = svgaToD3DDDIFormat((SVGA3dSurfaceFormat)pCreateParms->s.format);
+            if (ddiFormat != D3DDDIFMT_UNKNOWN)
+            {
+                GAWDDMSURFACEINFO *pSurfaceInfo = (GAWDDMSURFACEINFO *)malloc(sizeof(GAWDDMSURFACEINFO));
+                if (pSurfaceInfo)
+                {
+                    memset(pSurfaceInfo, 0, sizeof(GAWDDMSURFACEINFO));
+
+                    VBOXWDDM_ALLOCINFO wddmAllocInfo;
+                    memset(&wddmAllocInfo, 0, sizeof(wddmAllocInfo));
+
+                    wddmAllocInfo.enmType             = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+                    wddmAllocInfo.fFlags.RenderTarget = 1;
+                    wddmAllocInfo.hSharedHandle       = 0;
+                    wddmAllocInfo.hostID              = pCreateParms->u32Sid;
+                    wddmAllocInfo.SurfDesc.slicePitch = 0;
+                    wddmAllocInfo.SurfDesc.depth      = pCreateParms->s.size.depth;
+                    wddmAllocInfo.SurfDesc.width      = pCreateParms->s.size.width;
+                    wddmAllocInfo.SurfDesc.height     = pCreateParms->s.size.height;
+                    wddmAllocInfo.SurfDesc.format     = ddiFormat;
+                    wddmAllocInfo.SurfDesc.VidPnSourceId = 0;
+                    wddmAllocInfo.SurfDesc.bpp        = vboxWddmCalcBitsPerPixel(wddmAllocInfo.SurfDesc.format);
+                    wddmAllocInfo.SurfDesc.pitch      = vboxWddmCalcPitch(wddmAllocInfo.SurfDesc.width,
+                                                                          wddmAllocInfo.SurfDesc.format);
+                    wddmAllocInfo.SurfDesc.cbSize     = vboxWddmCalcSize(wddmAllocInfo.SurfDesc.pitch,
+                                                                         wddmAllocInfo.SurfDesc.height,
+                                                                         wddmAllocInfo.SurfDesc.format);
+                    wddmAllocInfo.SurfDesc.d3dWidth   = vboxWddmCalcWidthForPitch(wddmAllocInfo.SurfDesc.pitch,
+                                                                                  wddmAllocInfo.SurfDesc.format);
+
+                    D3DDDI_ALLOCATIONINFO AllocationInfo;
+                    memset(&AllocationInfo, 0, sizeof(AllocationInfo));
+                    // AllocationInfo.hAllocation           = NULL;
+                    // AllocationInfo.pSystemMem            = NULL;
+                    AllocationInfo.pPrivateDriverData    = &wddmAllocInfo;
+                    AllocationInfo.PrivateDriverDataSize = sizeof(wddmAllocInfo);
+
+                    D3DKMT_CREATEALLOCATION CreateAllocation;
+                    memset(&CreateAllocation, 0, sizeof(CreateAllocation));
+                    CreateAllocation.hDevice         = pThis->mKmtCallbacks.hDevice;
+                    CreateAllocation.NumAllocations  = 1;
+                    CreateAllocation.pAllocationInfo = &AllocationInfo;
+
+                    Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTCreateAllocation(&CreateAllocation);
+                    if (Status == STATUS_SUCCESS)
+                    {
+                        pSurfaceInfo->Core.Key    = pCreateParms->u32Sid;
+                        pSurfaceInfo->hAllocation = AllocationInfo.hAllocation;
+                        if (!RTAvlU32Insert(&pThis->mSurfaceTree, &pSurfaceInfo->Core))
+                        {
+                            Status = STATUS_NOT_SUPPORTED;
+                        }
+                    }
+
+                    if (Status != STATUS_SUCCESS)
+                    {
+                        free(pSurfaceInfo);
+                    }
+                }
+                else
+                {
+                    Status = STATUS_NOT_SUPPORTED;
+                }
+            }
+            else
+            {
+                /* Unsupported render target format. */
+                Assert(0);
+                Status = STATUS_NOT_SUPPORTED;
+            }
+        }
+
+        if (Status != STATUS_SUCCESS)
+        {
+            gaEnvSurfaceDestroy(pvEnv, pCreateParms->u32Sid);
+        }
+    }
+
+    if (Status == STATUS_SUCCESS)
+        return 0;
+
+    Assert(0);
+    return -1;
+}
+
 GaDrvEnvKmt::GaDrvEnvKmt()
     :
     mContextTree(0),
@@ -1128,6 +1257,8 @@ const WDDMGalliumDriverEnv *GaDrvEnvKmt::Env()
         mEnv.pfnFenceWait      = gaEnvFenceWait;
         mEnv.pfnRegionCreate   = gaEnvRegionCreate;
         mEnv.pfnRegionDestroy  = gaEnvRegionDestroy;
+        /* VGPU10 */
+        mEnv.pfnGBSurfaceDefine  = gaEnvGBSurfaceDefine;
     }
 
     return &mEnv;
