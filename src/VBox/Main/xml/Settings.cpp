@@ -83,6 +83,9 @@
 #include <iprt/stream.h>
 #include <iprt/uri.h>
 
+// Guest Properties validation.
+#include "VBox/HostServices/GuestPropertySvc.h"
+
 // generated header
 #include "SchemaDefs.h"
 
@@ -4643,11 +4646,53 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
     while ((pelmProp = nl1.forAllNodes()))
     {
         GuestProperty prop;
+        int rc;
+
         pelmProp->getAttributeValue("name", prop.strName);
         pelmProp->getAttributeValue("value", prop.strValue);
 
         pelmProp->getAttributeValue("timestamp", prop.timestamp);
         pelmProp->getAttributeValue("flags", prop.strFlags);
+
+        /* Check guest property 'name' and 'value' for correctness before
+         * placing it to local cache. */
+
+        rc = GuestPropValidateName(prop.strName.c_str(), (uint32_t)prop.strName.length() + 1  /* '\0' */);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("WARNING: Guest property with invalid name (%s) present in VM configuration file. Guest property will be dropped.\n",
+                    prop.strName.c_str()));
+            continue;
+        }
+
+        rc = GuestPropValidateValue(prop.strValue.c_str(), (uint32_t)prop.strValue.length() + 1  /* '\0' */);
+        if (rc == VERR_TOO_MUCH_DATA)
+        {
+            LogRel(("WARNING: Guest property '%s' present in VM configuration file and has too long value. Guest property value will be truncated.\n",
+                    prop.strName.c_str()));
+
+            /* In order to pass validation, guest property value length (including '\0') in bytes
+             * should be less than GUEST_PROP_MAX_VALUE_LEN. Reallocate it to corresponding size. */
+            rc = prop.strValue.reserveNoThrow(GUEST_PROP_MAX_VALUE_LEN - 1);
+            if (RT_SUCCESS(rc))
+            {
+                prop.strValue.mutableRaw()[GUEST_PROP_MAX_VALUE_LEN - 2] = '\0';
+                prop.strValue.jolt();
+            }
+            else
+            {
+                LogRel(("WARNING: Unable to truncate guest property '%s' valuem rc=%Rrc. Guest property value will be skipped.\n",
+                        prop.strName.c_str(), rc));
+                continue;
+            }
+        }
+        else if (RT_FAILURE(rc))
+        {
+            LogRel(("WARNING: Guest property '%s' present in VM configuration file and has invalid value. Guest property will be dropped.\n",
+                    prop.strName.c_str()));
+            continue;
+        }
+
         hw.llGuestProperties.push_back(prop);
     }
 }
