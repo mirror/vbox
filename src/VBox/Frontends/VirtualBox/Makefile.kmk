@@ -892,6 +892,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
+	src/settings/editors/UIAccelerationFeaturesEditor.h \
 	src/settings/editors/UIAudioControllerEditor.h \
 	src/settings/editors/UIAudioFeaturesEditor.h \
 	src/settings/editors/UIAudioHostDriverEditor.h \
@@ -1468,6 +1469,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
+	src/settings/editors/UIAccelerationFeaturesEditor.cpp \
 	src/settings/editors/UIAudioControllerEditor.cpp \
 	src/settings/editors/UIAudioFeaturesEditor.cpp \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \

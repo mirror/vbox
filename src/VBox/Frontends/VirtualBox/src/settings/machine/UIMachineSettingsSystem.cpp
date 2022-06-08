@@ -16,18 +16,16 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QComboBox>
-#include <QLabel>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QITabWidget.h"
+#include "UIAccelerationFeaturesEditor.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
 #include "UIChipsetEditor.h"
 #include "UICommon.h"
-#include "UIConverter.h"
+//#include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExecutionCapEditor.h"
 #include "UIMachineSettingsSystem.h"
@@ -163,17 +161,13 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorProcessorFeatures(0)
     , m_pTabAcceleration(0)
     , m_pEditorParavirtProvider(0)
-    , m_pLabelVirtualization(0)
-    , m_pCheckBoxVirtualization(0)
-    , m_pCheckBoxNestedPaging(0)
+    , m_pEditorAccelerationFeatures(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIMachineSettingsSystem::~UIMachineSettingsSystem()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -185,7 +179,7 @@ bool UIMachineSettingsSystem::isHWVirtExSupported() const
 
 bool UIMachineSettingsSystem::isHWVirtExEnabled() const
 {
-    return m_pCheckBoxVirtualization->isChecked();
+    return m_pEditorAccelerationFeatures->isEnabledVirtualization();
 }
 
 bool UIMachineSettingsSystem::isNestedPagingSupported() const
@@ -196,7 +190,7 @@ bool UIMachineSettingsSystem::isNestedPagingSupported() const
 
 bool UIMachineSettingsSystem::isNestedPagingEnabled() const
 {
-    return m_pCheckBoxNestedPaging->isChecked();
+    return m_pEditorAccelerationFeatures->isEnabledNestedPaging();
 }
 
 bool UIMachineSettingsSystem::isNestedHWVirtExSupported() const
@@ -325,10 +319,11 @@ void UIMachineSettingsSystem::getFromCache()
     /* Load old 'Acceleration' data from cache: */
     if (m_pEditorParavirtProvider)
         m_pEditorParavirtProvider->setValue(oldSystemData.m_paravirtProvider);
-    if (m_pCheckBoxVirtualization)
-        m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
-    if (m_pCheckBoxNestedPaging)
-        m_pCheckBoxNestedPaging->setChecked(oldSystemData.m_fEnabledNestedPaging);
+    if (m_pEditorAccelerationFeatures)
+    {
+        m_pEditorAccelerationFeatures->setEnableVirtualization(oldSystemData.m_fEnabledHwVirtEx);
+        m_pEditorAccelerationFeatures->setEnableNestedPaging(oldSystemData.m_fEnabledNestedPaging);
+    }
 
     /* Polish page finally: */
     polishPage();
@@ -395,8 +390,8 @@ void UIMachineSettingsSystem::putToCache()
     /* Enable Nested Paging automatically if it's supported and
      * Nested HW Virt Ex is requested. */
     newSystemData.m_fEnabledNestedPaging =    isNestedPagingEnabled()
-                                     || (   isNestedPagingSupported()
-                                         && isNestedHWVirtExEnabled());
+                                           || (   isNestedPagingSupported()
+                                               && isNestedHWVirtExEnabled());
 
     /* Cache new data: */
     m_pCache->cacheCurrentData(newSystemData);
@@ -607,8 +602,7 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorProcessorFeatures, m_pEditorParavirtProvider);
 
     /* Configure navigation for 'acceleration' tab: */
-    setTabOrder(m_pEditorParavirtProvider, m_pCheckBoxVirtualization);
-    setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
+    setTabOrder(m_pEditorParavirtProvider, m_pEditorAccelerationFeatures);
 }
 
 void UIMachineSettingsSystem::retranslateUi()
@@ -620,13 +614,6 @@ void UIMachineSettingsSystem::retranslateUi()
                                         "Move items up and down to change the device order."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
-    m_pLabelVirtualization->setText(tr("Hardware Virtualization:"));
-    m_pCheckBoxVirtualization->setToolTip(tr("When checked, the virtual machine will try to make use of the host CPU's hardware "
-                                             "virtualization extensions such as Intel VT-x and AMD-V."));
-    m_pCheckBoxVirtualization->setText(tr("Enable &VT-x/AMD-V"));
-    m_pCheckBoxNestedPaging->setToolTip(tr("When checked, the virtual machine will try to make use of the nested paging "
-                                           "extension of Intel VT-x and AMD-V."));
-    m_pCheckBoxNestedPaging->setText(tr("Enable Nested Pa&ging"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
 
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
@@ -648,6 +635,11 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pEditorVCPU->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorExecCap->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorProcessorFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+    iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorParavirtProvider->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAccelerationFeatures->minimumLabelHorizontalHint());
+    m_pEditorParavirtProvider->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorAccelerationFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -672,21 +664,21 @@ void UIMachineSettingsSystem::polishPage()
 
     /* Polish 'Acceleration' availability: */
     m_pEditorParavirtProvider->setEnabled(isMachineOffline());
-    m_pLabelVirtualization->setEnabled(isMachineOffline());
-    m_pCheckBoxVirtualization->setEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
-                                          || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
-    m_pCheckBoxNestedPaging->setEnabled(   m_pCheckBoxVirtualization->isChecked()
-                                        && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
-                                            || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
+    m_pEditorAccelerationFeatures->setEnabled(isMachineOffline());
+    m_pEditorAccelerationFeatures->setEnableVirtualizationAvailable(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
+                                                                    || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
+    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   m_pEditorAccelerationFeatures->isEnabledVirtualization()
+                                                                  && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
+                                                                      || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
 }
 
 void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
 {
     /* Update Nested Paging checkbox: */
     AssertPtrReturnVoid(m_pCache);
-    m_pCheckBoxNestedPaging->setEnabled(   m_pCheckBoxVirtualization->isChecked()
-                                        && (   (m_pCache->base().m_fSupportedNestedPaging && isMachineOffline())
-                                            || (m_pCache->base().m_fEnabledNestedPaging && isMachineOffline())));
+    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   m_pEditorAccelerationFeatures->isEnabledVirtualization()
+                                                                  && (   (m_pCache->base().m_fSupportedNestedPaging && isMachineOffline())
+                                                                      || (m_pCache->base().m_fEnabledNestedPaging && isMachineOffline())));
 
     /* Revalidate: */
     revalidate();
@@ -818,55 +810,12 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             /* Prepare paravirtualization provider editor: */
             m_pEditorParavirtProvider = new UIParavirtProviderEditor(m_pTabAcceleration);
             if (m_pEditorParavirtProvider)
-                pLayoutAcceleration->addWidget(m_pEditorParavirtProvider, 0, 0, 1, 3);
+                pLayoutAcceleration->addWidget(m_pEditorParavirtProvider, 0, 0, 1, 2);
 
-            /* Prepare virtualization label layout: */
-            QVBoxLayout *pLayoutVirtualizationLabel = new QVBoxLayout;
-            if (pLayoutVirtualizationLabel)
-            {
-                /* Prepare virtualization label: */
-                m_pLabelVirtualization = new QLabel(m_pTabAcceleration);
-                if (m_pLabelVirtualization)
-                {
-                    m_pLabelVirtualization->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutVirtualizationLabel->addWidget(m_pLabelVirtualization);
-                }
-                /* Prepare placeholder: */
-                QWidget *pWidgetPlaceholder = new QWidget(m_pTabAcceleration);
-                if (pWidgetPlaceholder)
-                {
-#ifndef VBOX_WITH_RAW_MODE
-                    /* Hide placeholder when raw-mode is not supported: */
-                    pWidgetPlaceholder->setVisible(false);
-#endif
-
-                    pLayoutVirtualizationLabel->addWidget(pWidgetPlaceholder);
-                }
-
-                pLayoutAcceleration->addLayout(pLayoutVirtualizationLabel, 1, 0);
-            }
-            /* Prepare virtualization stuff layout: */
-            QVBoxLayout *pLayoutVirtualizationStuff = new QVBoxLayout;
-            if (pLayoutVirtualizationStuff)
-            {
-                /* Prepare virtualization check-box: */
-                m_pCheckBoxVirtualization = new QCheckBox(m_pTabAcceleration);
-                if (m_pCheckBoxVirtualization)
-                {
-#ifndef VBOX_WITH_RAW_MODE
-                    /* Hide HW Virt Ex checkbox when raw-mode is not supported: */
-                    m_pCheckBoxVirtualization->setVisible(false);
-#endif
-
-                    pLayoutVirtualizationStuff->addWidget(m_pCheckBoxVirtualization);
-                }
-                /* Prepare nested paging check-box: */
-                m_pCheckBoxNestedPaging = new QCheckBox(m_pTabAcceleration);
-                if (m_pCheckBoxNestedPaging)
-                    pLayoutVirtualizationStuff->addWidget(m_pCheckBoxNestedPaging);
-
-                pLayoutAcceleration->addLayout(pLayoutVirtualizationStuff, 1, 1);
-            }
+            /* Prepare acceleration features editor: */
+            m_pEditorAccelerationFeatures = new UIAccelerationFeaturesEditor(m_pTabAcceleration);
+            if (m_pEditorAccelerationFeatures)
+                pLayoutAcceleration->addWidget(m_pEditorAccelerationFeatures, 1, 0);
 
             m_pTabWidget->addTab(m_pTabAcceleration, QString());
         }
@@ -894,9 +843,9 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */
-    connect(m_pCheckBoxVirtualization, &QCheckBox::stateChanged,
+    connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedVirtualization,
             this, &UIMachineSettingsSystem::sltHandleHwVirtExToggle);
-    connect(m_pCheckBoxNestedPaging, &QCheckBox::stateChanged,
+    connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
             this, &UIMachineSettingsSystem::revalidate);
 }
 

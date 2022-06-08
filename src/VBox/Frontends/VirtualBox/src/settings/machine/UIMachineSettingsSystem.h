@@ -27,10 +27,8 @@
 /* Forward declarations: */
 struct UIDataSettingsMachineSystem;
 typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSystem;
-class QCheckBox;
-class QComboBox;
-class QLabel;
 class QITabWidget;
+class UIAccelerationFeaturesEditor;
 class UIBaseMemoryEditor;
 class UIBootOrderEditor;
 class UIChipsetEditor;
@@ -173,15 +171,11 @@ private:
         UIProcessorFeaturesEditor *m_pEditorProcessorFeatures;
 
         /** Holds the 'Acceleration' tab instance. */
-        QWidget                  *m_pTabAcceleration;
+        QWidget                      *m_pTabAcceleration;
         /** Holds the paravirtualization provider editor instance. */
-        UIParavirtProviderEditor *m_pEditorParavirtProvider;
-        /** Holds the virtualization label instance. */
-        QLabel                   *m_pLabelVirtualization;
-        /** Holds the virtualization check-box instance. */
-        QCheckBox                *m_pCheckBoxVirtualization;
-        /** Holds the nested paging check-box instance. */
-        QCheckBox                *m_pCheckBoxNestedPaging;
+        UIParavirtProviderEditor     *m_pEditorParavirtProvider;
+        /** Holds the acceleration features editor instance. */
+        UIAccelerationFeaturesEditor *m_pEditorAccelerationFeatures;
    /** @} */
 };
 
