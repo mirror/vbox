@@ -11,10 +11,8 @@
 #define OSSL_CRYPTO_CHACHA_H
 # pragma once
 
-#if 0
-#if defined(VBOX) && !defined(RT_OS_WINDOWS)
+#if defined(VBOX) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
 # include "openssl-mangling.h"
-#endif
 #endif
 #include <stddef.h>
 
