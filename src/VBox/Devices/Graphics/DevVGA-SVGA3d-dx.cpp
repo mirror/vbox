@@ -103,8 +103,6 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
     #define DX_STATE_SAMPLERS          0x00000004
     #define DX_STATE_INPUTLAYOUT       0x00000008
     #define DX_STATE_TOPOLOGY          0x00000010
-    #define DX_STATE_VERTEXBUFFER      0x00000020
-    #define DX_STATE_INDEXBUFFER       0x00000040
     #define DX_STATE_BLENDSTATE        0x00000080
     #define DX_STATE_DEPTHSTENCILSTATE 0x00000100
     #define DX_STATE_SOTARGETS         0x00000200
@@ -113,15 +111,12 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
     #define DX_STATE_RASTERIZERSTATE   0x00001000
     #define DX_STATE_RENDERTARGETS     0x00002000
     #define DX_STATE_GS                0x00004000
-    #define DX_STATE_CONSTANTBUFFERS   0x00008000
     uint32_t u32TrackedState = 0
         | DX_STATE_VS
         | DX_STATE_PS
         | DX_STATE_SAMPLERS
         | DX_STATE_INPUTLAYOUT
         | DX_STATE_TOPOLOGY
-        | DX_STATE_VERTEXBUFFER
-        | DX_STATE_INDEXBUFFER
         | DX_STATE_BLENDSTATE
         | DX_STATE_DEPTHSTENCILSTATE
         | DX_STATE_SOTARGETS
@@ -130,7 +125,6 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         | DX_STATE_RASTERIZERSTATE
         | DX_STATE_RENDERTARGETS
         | DX_STATE_GS
-        | DX_STATE_CONSTANTBUFFERS
         ;
 
     LogFunc(("cid = %d, state = 0x%08X\n", cid, u32TrackedState));
@@ -215,41 +209,6 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
 
         if (topology != SVGA3D_PRIMITIVE_INVALID)
             rc = pSvgaR3State->pFuncsDX->pfnDXSetTopology(pThisCC, pDXContext, topology);
-        AssertRC(rc);
-    }
-
-
-    if (u32TrackedState & DX_STATE_VERTEXBUFFER)
-    {
-        u32TrackedState &= ~DX_STATE_VERTEXBUFFER;
-
-        /** @todo Track which vertex buffers were modified and update only the corresponding slots.
-         * 32 bits mask is enough.
-         */
-        uint32_t startBuffer = 0;
-        uint32_t cVertexBuffer = SVGA3D_DX_MAX_VERTEXBUFFERS;
-        SVGA3dVertexBuffer aVertexBuffer[SVGA3D_DX_MAX_VERTEXBUFFERS];
-        for (uint32_t i = 0; i < SVGA3D_DX_MAX_VERTEXBUFFERS; ++i)
-        {
-            aVertexBuffer[i].sid = pDXContext->svgaDXContext.inputAssembly.vertexBuffers[i].bufferId;
-            aVertexBuffer[i].stride = pDXContext->svgaDXContext.inputAssembly.vertexBuffers[i].stride;
-            aVertexBuffer[i].offset = pDXContext->svgaDXContext.inputAssembly.vertexBuffers[i].offset;
-        }
-
-        rc = pSvgaR3State->pFuncsDX->pfnDXSetVertexBuffers(pThisCC, pDXContext, startBuffer, cVertexBuffer, aVertexBuffer);
-        AssertRC(rc);
-    }
-
-
-    if (u32TrackedState & DX_STATE_INDEXBUFFER)
-    {
-        u32TrackedState &= ~DX_STATE_INDEXBUFFER;
-
-        SVGA3dSurfaceId const sid = pDXContext->svgaDXContext.inputAssembly.indexBufferSid;
-        SVGA3dSurfaceFormat const format = (SVGA3dSurfaceFormat)pDXContext->svgaDXContext.inputAssembly.indexBufferFormat;
-        uint32_t const offset = pDXContext->svgaDXContext.inputAssembly.indexBufferOffset;
-
-        rc = pSvgaR3State->pFuncsDX->pfnDXSetIndexBuffer(pThisCC, pDXContext, sid, format, offset);
         AssertRC(rc);
     }
 
@@ -344,31 +303,6 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
 
         rc = pSvgaR3State->pFuncsDX->pfnDXSetRenderTargets(pThisCC, pDXContext, depthStencilViewId, cRenderTargetViewId, paRenderTargetViewId);
         AssertRC(rc);
-    }
-
-
-    if (u32TrackedState & DX_STATE_CONSTANTBUFFERS)
-    {
-        u32TrackedState &= ~DX_STATE_CONSTANTBUFFERS;
-
-        for (int i = SVGA3D_SHADERTYPE_MIN; i < SVGA3D_SHADERTYPE_MAX; ++i)
-        {
-            SVGA3dShaderType const shaderType = (SVGA3dShaderType)i;
-            uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
-
-            /** @todo Track which constant buffers were modified and update only the corresponding slots.
-             * 32 bit mask is enough.
-             */
-            for (int iSlot = 0; iSlot < SVGA3D_DX_MAX_CONSTBUFFERS; ++iSlot)
-            {
-                SVGA3dConstantBufferBinding *pCBB = &pDXContext->svgaDXContext.shaderState[idxShaderState].constantBuffers[iSlot];
-                if (pCBB->sid == SVGA3D_INVALID_ID) // This will not be necessary when constant buffers slots will be tracked.
-                    continue;
-
-                rc = pSvgaR3State->pFuncsDX->pfnDXSetSingleConstantBuffer(pThisCC, pDXContext, iSlot, shaderType, pCBB->sid, pCBB->offsetInBytes, pCBB->sizeInBytes);
-                AssertRC(rc);
-            }
-        }
     }
 
     Assert(u32TrackedState == 0);

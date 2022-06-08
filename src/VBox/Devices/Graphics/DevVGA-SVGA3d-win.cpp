@@ -1121,9 +1121,9 @@ D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount)
  * @param   pThisCC             The device state.
  * @param   pSurface            The surface being destroyed.
  */
-static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface)
+static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool fClearCOTableEntry, PVMSVGA3DSURFACE pSurface)
 {
-    RT_NOREF(pThisCC);
+    RT_NOREF(pThisCC, fClearCOTableEntry);
 
     RTAvlU32Destroy(&pSurface->pSharedObjectTree, vmsvga3dSharedSurfaceDestroyTree, pSurface);
     Assert(pSurface->pSharedObjectTree == NULL);

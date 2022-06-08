@@ -438,7 +438,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid)
 
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     if (pSvgaR3State->pFuncs3D)
-        pSvgaR3State->pFuncs3D->pfnSurfaceDestroy(pThisCC, pSurface);
+        pSvgaR3State->pFuncs3D->pfnSurfaceDestroy(pThisCC, true, pSurface);
 
     if (pSurface->paMipmapLevels)
     {
@@ -1150,7 +1150,7 @@ int vmsvga3dSurfaceInvalidate(PVGASTATECC pThisCC, uint32_t sid, uint32_t face, 
         /* This is a notification that "All images can be lost", i.e. the backend surface is not needed anymore. */
         PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
         if (pSvgaR3State->pFuncs3D)
-            pSvgaR3State->pFuncs3D->pfnSurfaceDestroy(pThisCC, pSurface);
+            pSvgaR3State->pFuncs3D->pfnSurfaceDestroy(pThisCC, false, pSurface);
 
         for (uint32_t i = 0; i < pSurface->cLevels * pSurface->surfaceDesc.numArrayElements; ++i)
         {
