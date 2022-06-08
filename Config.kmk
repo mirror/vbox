@@ -4822,7 +4822,7 @@ SDK_VBOX_SOFTFLOATR0_LIBS       = \
 ifdef VBOX_WITH_LIBSSH
  SDK_VBOX_SSH                  := libssh for dll linking.
  SDK_VBOX_SSH_DEFS             ?= LIBSSH_STATIC=1
- SDK_VBOX_SSH_INCS             ?= $(PATH_ROOT)/src/libs/libssh-0.9.5/include
+ SDK_VBOX_SSH_INCS             ?= $(PATH_ROOT)/src/libs/libssh-0.9.6/include
  SDK_VBOX_SSH_LIBS             ?= \
  	$(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
 endif
