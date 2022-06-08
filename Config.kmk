@@ -947,12 +947,6 @@ VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 
 ## @name Misc
 ## @{
-# Enable to compile with OpenSSL 1.0 (only relevant for Windows, see src/VBox/Runtime/Makefile.kmk)
-#VBOX_WITH_OPENSSL_PRE_1_1 = 1
-# Enable openssl 3.0.1 (temporary to not break everything at once @bugref{10128}).
-if1of ($(KBUILD_TARGET), solaris linux darwin win)
- VBOX_WITH_OPENSSL3 = 1
-endif
 # Enables all the doxgen bits.
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
@@ -1421,8 +1415,6 @@ ifdef VBOX_OSE
  VBOX_WITH_VMSVGA3D_DX=
  VBOX_WITH_DXVK=
  VBOX_WITH_3D_ACCELERATION=
- # openssl 3 support not available in OSE yet
- VBOX_WITH_OPENSSL3=
  if1of ($(KBUILD_TARGET), win)
   # tar/gzip uncommon on Windows
   VBOX_WITH_EXTPACK_VBOXDTRACE=
@@ -4765,11 +4757,7 @@ endif
 
 # openssl
 SDK_VBOX_OPENSSL                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
-if defined(VBOX_WITH_OPENSSL3)
- SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
-else
- SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS     := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
-endif
+SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS      := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
 SDK_VBOX_OPENSSL_INCS                   ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
 if  !defined(VBOX_ONLY_SDK) \
@@ -4783,11 +4771,7 @@ SDK_VBOX_OPENSSL_LIBS                   ?= \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
 SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
-if defined(VBOX_WITH_OPENSSL3)
- SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
-else
- SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-1.1.1-headers/include
-endif
+SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
 SDK_VBOX_OPENSSL-x86_INCS               ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
 if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" || defined(VBOX_NEED_EXTPACK_OPENSSL))
