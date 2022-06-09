@@ -39,6 +39,7 @@ endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  VBox-libxml2_CFLAGS.win   += -wd4777 # timsort.h(326): warning C4777: 'fprintf' : format string '%lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'unsigned int'
  VBox-libxml2_CFLAGS.win   += -wd4477 # timsort.h(326): warning C4477: 'fprintf' : format string '%lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'size_t'
+ VBox-libxml2_CFLAGS.win   += -wd4723 # xpath.c(505) : warning C4723: potential divide by 0
 endif
 ifn1of ($(KBUILD_TARGET), win)
  VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes -Wno-format-extra-args $(VBOX_GCC_Wno-tautological-pointer-compare)
