@@ -1180,6 +1180,9 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUse
      * The first EMT switches the state to suspending.  If this fails because
      * something was racing us in one way or the other, there will be no more
      * calls and thus the state assertion below is not going to annoy anyone.
+     *
+     * Note! Changes to the state transition here needs to be reflected in the
+     *       checks in vmR3SetRuntimeErrorCommon!
      */
     if (pVCpu->idCpu == pVM->cCpus - 1)
     {
@@ -4017,7 +4020,15 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
         rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3SetRuntimeErrorChangeState, NULL);
     else if (fFlags & VMSETRTERR_FLAGS_SUSPEND)
-        rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RUNTIME_ERROR);
+    {
+        /* Make sure we don't call VMR3Suspend when we shouldn't.  As seen in
+           @bugref{10111} multiple runtime error may be flagged when we run out
+           of disk space or similar, so don't freak out VMR3Suspend by calling
+           it in an invalid VM state. */
+        VMSTATE enmStateCur = pVM->enmVMState;
+        if (enmStateCur == VMSTATE_RUNNING || enmStateCur == VMSTATE_RUNNING_LS)
+            rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RUNTIME_ERROR);
+    }
     else
         rc = VINF_SUCCESS;
 
