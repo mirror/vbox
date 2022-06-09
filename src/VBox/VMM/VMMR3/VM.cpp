@@ -4028,6 +4028,8 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
         VMSTATE enmStateCur = pVM->enmVMState;
         if (enmStateCur == VMSTATE_RUNNING || enmStateCur == VMSTATE_RUNNING_LS)
             rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RUNTIME_ERROR);
+        else
+            rc = VINF_SUCCESS;
     }
     else
         rc = VINF_SUCCESS;
