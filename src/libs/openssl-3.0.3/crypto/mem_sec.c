@@ -20,10 +20,10 @@
 
 #include <string.h>
 
+#if defined(VBOX)
+# include <iprt/memsafer.h>
+#else
 #ifndef OPENSSL_NO_SECURE_MEMORY
-# if defined(VBOX)
-#  include <iprt/memsafer.h>
-# else
 # if defined(_WIN32)
 #  include <windows.h>
 # endif
@@ -52,8 +52,8 @@
 # endif
 # include <sys/stat.h>
 # include <fcntl.h>
-# endif /* !VBOX */
 #endif
+#endif /* !VBOX */
 
 #define CLEAR(p, s) OPENSSL_cleanse(p, s)
 #ifndef PAGE_SIZE
