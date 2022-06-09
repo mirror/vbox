@@ -102,8 +102,8 @@ endif
 
 # zlib is used by the IPRT compression code, libpng and others.
 if  !defined(VBOX_ONLY_SDK) \
- && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.11"
- include $(PATH_SUB_CURRENT)/zlib-1.2.11/Makefile.kmk
+ && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.12"
+ include $(PATH_SUB_CURRENT)/zlib-1.2.12/Makefile.kmk
 endif
 
 
