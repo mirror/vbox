@@ -646,7 +646,7 @@ static int nemR3LnxUpdateCpuIdsLeaves(PVM pVM, PVMCPU pVCpu)
 
     for (uint32_t i = 0; i < cLeaves; i++)
     {
-        CPUMGetGuestCpuId(pVCpu, paLeaves[i].uLeaf, paLeaves[i].uSubLeaf,
+        CPUMGetGuestCpuId(pVCpu, paLeaves[i].uLeaf, paLeaves[i].uSubLeaf, -1 /*f64BitMode*/,
                           &pReq->entries[i].eax,
                           &pReq->entries[i].ebx,
                           &pReq->entries[i].ecx,

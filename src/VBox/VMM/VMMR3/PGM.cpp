@@ -1723,7 +1723,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      * Update: More recent intel manuals specifies 40 bits just like AMD.
      */
     uint32_t u32Dummy, u32Features;
-    CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, 0, -1 /*f64BitMode*/, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
     if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(RT_MAX(36, cMaxPhysAddrWidth)) - 1;
     else

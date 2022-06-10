@@ -7652,7 +7652,7 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
         }
         uint32_t fMWaitFeatures = 0;
         uint32_t uIgnore = 0;
-        CPUMGetGuestCpuId(pVCpu, 5, 0, &uIgnore, &uIgnore, &fMWaitFeatures, &uIgnore);
+        CPUMGetGuestCpuId(pVCpu, 5, 0, -1 /*f64BitMode*/, &uIgnore, &uIgnore, &fMWaitFeatures, &uIgnore);
         if (    (fMWaitFeatures & (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
             !=                    (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
         {
@@ -7755,7 +7755,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx,
+    CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.cs.Attr.n.u1Long,
                       &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
     pVCpu->cpum.GstCtx.rax &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rbx &= UINT32_C(0xffffffff);

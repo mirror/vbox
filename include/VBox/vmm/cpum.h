@@ -1536,7 +1536,7 @@ VMMDECL(uint64_t)       CPUMGetGuestDR3(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestDR6(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestDR7(PCVMCPU pVCpu);
 VMMDECL(int)            CPUMGetGuestDRx(PCVMCPU pVCpu, uint32_t iReg, uint64_t *pValue);
-VMMDECL(void)           CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t iLeaf, uint32_t iSubLeaf,
+VMMDECL(void)           CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t iLeaf, uint32_t iSubLeaf, int f64BitMode,
                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint64_t)       CPUMGetGuestEFER(PCVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32FeatCtrl(PCVMCPUCC pVCpu);
@@ -1590,6 +1590,7 @@ VMMDECL(void)          CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val);
 VMMR3_INT_DECL(void)   CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMR3_INT_DECL(void)   CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMR3_INT_DECL(bool)   CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMR3_INT_DECL(void)   CPUMR3CpuIdEnable64BitGuests(PVM pVM);
 VMMDECL(bool)          CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible);
 VMMDECL(void)          CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPUCC pVCpu, uint64_t uValue);

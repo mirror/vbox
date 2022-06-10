@@ -208,26 +208,8 @@ VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
     int rc = VINF_SUCCESS;
     if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
     {
-        /*
-         * Enable CPU features making general ASSUMPTIONS (there are two similar
-         * blocks of code in HM.cpp), to avoid duplicating this code.  The
-         * native backend can make check capabilities and adjust as needed.
-         */
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-        if (   CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_AMD
-            || CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_HYGON)
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
         if (pVM->nem.s.fAllow64BitGuests)
-        {
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-        }
-        /* Turn on NXE if PAE has been enabled. */
-        else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+            CPUMR3CpuIdEnable64BitGuests(pVM);
 
         /*
          * Do native after-CPUM init.

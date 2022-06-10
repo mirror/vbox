@@ -1501,7 +1501,7 @@ IEM_CIMPL_DEF_0(iemCImpl_skinit)
 
     uint32_t uIgnore;
     uint32_t fFeaturesECX;
-    CPUMGetGuestCpuId(pVCpu, 0x80000001, 0 /* iSubLeaf */, &uIgnore, &uIgnore, &fFeaturesECX, &uIgnore);
+    CPUMGetGuestCpuId(pVCpu, 0x80000001, 0 /* iSubLeaf */, -1 /*f64BitMode*/, &uIgnore, &uIgnore, &fFeaturesECX, &uIgnore);
     if (!(fFeaturesECX & X86_CPUID_AMD_FEATURE_ECX_SKINIT))
         return iemRaiseUndefinedOpcode(pVCpu);
 

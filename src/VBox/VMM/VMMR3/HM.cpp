@@ -1740,18 +1740,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /*
      * Change the CPU features.
      */
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
     if (pVM->hm.s.fAllow64BitGuestsCfg)
-    {
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* (Long mode only on Intel CPUs.) */
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-    }
-    /* Given that we're on a long mode host, we can simply enable NX for PAE capable guests. */
-    else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+        CPUMR3CpuIdEnable64BitGuests(pVM);
 
     /*
      * Log configuration details.
@@ -1961,18 +1951,8 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     /*
      * Change the CPU features.
      */
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
     if (pVM->hm.s.fAllow64BitGuestsCfg)
-    {
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
-    }
-    /* Turn on NXE if PAE has been enabled. */
-    else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
-        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+        CPUMR3CpuIdEnable64BitGuests(pVM);
 
     LogRel((pVM->hm.s.fTprPatchingAllowed ? "HM: Enabled TPR patching\n"
                                           : "HM: Disabled TPR patching\n"));

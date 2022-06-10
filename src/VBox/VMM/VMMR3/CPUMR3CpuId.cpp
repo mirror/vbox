@@ -1345,8 +1345,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | X86_CPUID_FEATURE_EDX_CX8
                            //| X86_CPUID_FEATURE_EDX_APIC  - set by the APIC device if present.
                            //| RT_BIT_32(10)               - not defined
-                           /* Note! we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see @bugref{1757}) */
-                           //| X86_CPUID_FEATURE_EDX_SEP
+                           | X86_CPUID_FEATURE_EDX_SEP
                            | X86_CPUID_FEATURE_EDX_MTRR
                            | X86_CPUID_FEATURE_EDX_PGE
                            | X86_CPUID_FEATURE_EDX_MCA
@@ -1433,7 +1432,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, CLFSH,  X86_CPUID_FEATURE_EDX_CLFSH);
         PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, CMOV,   X86_CPUID_FEATURE_EDX_CMOV);
 
-        Assert(!(pStdFeatureLeaf->uEdx & (  X86_CPUID_FEATURE_EDX_SEP
+        Assert(!(pStdFeatureLeaf->uEdx & (  X86_CPUID_FEATURE_EDX_SEP ///??
                                           | X86_CPUID_FEATURE_EDX_PSN
                                           | X86_CPUID_FEATURE_EDX_DS
                                           | X86_CPUID_FEATURE_EDX_ACPI
@@ -1565,9 +1564,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                | X86_CPUID_AMD_FEATURE_EDX_CX8
                                //| X86_CPUID_AMD_FEATURE_EDX_APIC   - set by the APIC device if present.
                                //| RT_BIT_32(10)                    - reserved
-                               /* Note! We don't report sysenter/sysexit support due to our inability to keep the IOPL part of
-                                        eflags in sync while in ring 1 (see @bugref{1757}). HM enables them later. */
-                               //| X86_CPUID_EXT_FEATURE_EDX_SYSCALL
+                               | X86_CPUID_EXT_FEATURE_EDX_SYSCALL
                                | X86_CPUID_AMD_FEATURE_EDX_MTRR
                                | X86_CPUID_AMD_FEATURE_EDX_PGE
                                | X86_CPUID_AMD_FEATURE_EDX_MCA
@@ -1576,7 +1573,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                | X86_CPUID_AMD_FEATURE_EDX_PSE36
                                //| RT_BIT_32(18)                    - reserved
                                //| RT_BIT_32(19)                    - reserved
-                               //| X86_CPUID_EXT_FEATURE_EDX_NX     - enabled later by PGM
+                               | X86_CPUID_EXT_FEATURE_EDX_NX
                                //| RT_BIT_32(21)                    - reserved
                                | PASSTHRU_FEATURE(pConfig->enmAmdExtMmx, pHstFeat->fAmdMmxExts, X86_CPUID_AMD_FEATURE_EDX_AXMMX)
                                | X86_CPUID_AMD_FEATURE_EDX_MMX
@@ -3637,6 +3634,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled x2APIC\n"));
             break;
 
+#if 0
         case CPUMCPUIDFEATURE_PAE:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
@@ -3672,7 +3670,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             pVM->cpum.s.GuestFeatures.fLahfSahf = 0;
             break;
-
+#endif
         case CPUMCPUIDFEATURE_RDTSCP:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (pLeaf)
@@ -3681,6 +3679,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled RDTSCP!\n"));
             break;
 
+#if 0
         case CPUMCPUIDFEATURE_HVP:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
@@ -3695,7 +3694,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps &= ~MSR_IA32_ARCH_CAP_F_IBRS_ALL);
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled speculation control!\n"));
             break;
-
+#endif
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
@@ -3708,6 +3707,24 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
     }
 }
 
+
+/**
+ * Enables 64-bit guest support for the CPU.
+ *
+ * @param   pVM                 The cross context VM structure.
+ */
+VMMR3_INT_DECL(void) CPUMR3CpuIdEnable64BitGuests(PVM pVM)
+{
+    /* In case of a CPU upgrade: */
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);      /* (Long mode only on Intel CPUs.) */
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+
+    /* The actual feature: */
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+}
 
 
 /*
@@ -3933,6 +3950,9 @@ static int cpumR3LoadGuestCpuIdArray(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
 int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPUMMSRS pMsrs)
 {
     AssertMsgReturn(uVersion >= CPUM_SAVED_STATE_VERSION_VER3_2, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
+    AssertMsgFailed("Port me!");
+#endif
 
     /*
      * Continue loading the state into stack buffers.

@@ -896,12 +896,16 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bo
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   uLeaf       The CPUID leaf to get.
  * @param   uSubLeaf    The CPUID sub-leaf to get, if applicable.
+ * @param   f64BitMode  A tristate indicate if the caller is in 64-bit mode or
+ *                      not: 1=true, 0=false, 1=whatever.  This affect how the
+ *                      X86_CPUID_EXT_FEATURE_EDX_SYSCALL flag is returned on
+ *                      Intel CPUs, where it's only returned in 64-bit mode.
  * @param   pEax        Where to store the EAX value.
  * @param   pEbx        Where to store the EBX value.
  * @param   pEcx        Where to store the ECX value.
  * @param   pEdx        Where to store the EDX value.
  */
-VMMDECL(void) CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
+VMMDECL(void) CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t uLeaf, uint32_t uSubLeaf, int f64BitMode,
                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     bool            fExactSubLeafHit;
@@ -963,6 +967,16 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t uLeaf, uint32_t uSubLea
                 else
                     AssertMsgFailed(("uLeaf=%#x\n", uLeaf));
             }
+
+            /* Intel CPUs supresses the SYSCALL bit when not executing in 64-bit mode: */
+            if (   uLeaf == UINT32_C(0x80000001)
+                && f64BitMode == false
+                && (*pEdx & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
+                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
+                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_VIA /*?*/
+                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_SHANGHAI /*?*/ ) )
+                *pEdx &= ~X86_CPUID_EXT_FEATURE_EDX_SYSCALL;
+
         }
         /*
          * Out of range sub-leaves aren't quite as easy and pretty as we emulate
