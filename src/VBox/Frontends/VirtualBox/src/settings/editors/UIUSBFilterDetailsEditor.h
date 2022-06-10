@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineSettingsUSBFilterDetails class declaration.
+ * VBox Qt GUI - UIUSBFilterDetailsEditor class declaration.
  */
 
 /*
@@ -15,15 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h
-#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIUSBFilterDetailsEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIUSBFilterDetailsEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
-#include "UIMachineSettingsUSB.h"
+#include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class QComboBox;
@@ -31,13 +31,60 @@ class QLabel;
 class QLineEdit;
 class QIDialogButtonBox;
 
-class SHARED_LIBRARY_STUFF UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>
+/** QIDialog subclass used as a USB filter editor. */
+class SHARED_LIBRARY_STUFF UIUSBFilterDetailsEditor : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    UIMachineSettingsUSBFilterDetails(QWidget *pParent = 0);
+    /** Constructs editor passing @a pParent to the base-class. */
+    UIUSBFilterDetailsEditor(QWidget *pParent = 0);
+
+    /** Defines @a strName. */
+    void setName(const QString &strName);
+    /** Returns name. */
+    QString name() const;
+
+    /** Defines @a strVendorID. */
+    void setVendorID(const QString &strVendorID);
+    /** Returns vendor ID. */
+    QString vendorID() const;
+
+    /** Defines @a strProductID. */
+    void setProductID(const QString &strProductID);
+    /** Returns product ID. */
+    QString productID() const;
+
+    /** Defines @a strRevision. */
+    void setRevision(const QString &strRevision);
+    /** Returns revision. */
+    QString revision() const;
+
+    /** Defines @a strManufacturer. */
+    void setManufacturer(const QString &strManufacturer);
+    /** Returns manufacturer. */
+    QString manufacturer() const;
+
+    /** Defines @a strProduct. */
+    void setProduct(const QString &strProduct);
+    /** Returns product. */
+    QString product() const;
+
+    /** Defines @a strSerialNo. */
+    void setSerialNo(const QString &strSerialNo);
+    /** Returns serial no. */
+    QString serialNo() const;
+
+    /** Defines @a strPort. */
+    void setPort(const QString &strPort);
+    /** Returns port. */
+    QString port() const;
+
+    /** Defines @a enmRemoteMode. */
+    void setRemoteMode(const UIRemoteMode &enmRemoteMode);
+    /** Returns port. */
+    UIRemoteMode remoteMode() const;
 
 protected:
 
@@ -52,6 +99,9 @@ private:
     void prepareWidgets();
     /** Prepares connections. */
     void prepareConnections();
+
+    /** Wipes out @a strString if it's empty. */
+    static QString wiped(const QString &strString);
 
     /** @name Widgets
      * @{ */
@@ -94,8 +144,6 @@ private:
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
     /** @} */
-
-    friend class UIMachineSettingsUSB;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIUSBFilterDetailsEditor_h */

@@ -35,11 +35,11 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsUSB.h"
-#include "UIMachineSettingsUSBFilterDetails.h"
 #include "UIErrorString.h"
 #include "QIToolBar.h"
 #include "UICommon.h"
 #include "UIUSBControllerEditor.h"
+#include "UIUSBFilterDetailsEditor.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -732,41 +732,41 @@ void UIMachineSettingsUSB::sltEditFilter()
     AssertPtrReturnVoid(pItem);
 
     /* Configure USB filter details dialog: */
-    UIMachineSettingsUSBFilterDetails dlgFilterDetails(this);
-    dlgFilterDetails.m_pEditorName->setText(pItem->m_strName);
-    dlgFilterDetails.m_pEditorVendorID->setText(pItem->m_strVendorId);
-    dlgFilterDetails.m_pEditorProductID->setText(pItem->m_strProductId);
-    dlgFilterDetails.m_pEditorRevision->setText(pItem->m_strRevision);
-    dlgFilterDetails.m_pEditorPort->setText(pItem->m_strPort);
-    dlgFilterDetails.m_pEditorManufacturer->setText(pItem->m_strManufacturer);
-    dlgFilterDetails.m_pEditorProduct->setText(pItem->m_strProduct);
-    dlgFilterDetails.m_pEditorSerialNo->setText(pItem->m_strSerialNumber);
+    UIUSBFilterDetailsEditor dlgFilterDetails(this);
+    dlgFilterDetails.setName(pItem->m_strName);
+    dlgFilterDetails.setVendorID(pItem->m_strVendorId);
+    dlgFilterDetails.setProductID(pItem->m_strProductId);
+    dlgFilterDetails.setRevision(pItem->m_strRevision);
+    dlgFilterDetails.setManufacturer(pItem->m_strManufacturer);
+    dlgFilterDetails.setProduct(pItem->m_strProduct);
+    dlgFilterDetails.setSerialNo(pItem->m_strSerialNumber);
+    dlgFilterDetails.setPort(pItem->m_strPort);
     const QString strRemote = pItem->m_strRemote.toLower();
+    UIRemoteMode enmRemoteMode = UIRemoteMode_Any;
     if (strRemote == "yes" || strRemote == "true" || strRemote == "1")
-        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeOn);
+        enmRemoteMode = UIRemoteMode_On;
     else if (strRemote == "no" || strRemote == "false" || strRemote == "0")
-        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeOff);
-    else
-        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeAny);
+        enmRemoteMode = UIRemoteMode_Off;
+    dlgFilterDetails.setRemoteMode(enmRemoteMode);
 
     /* Run USB filter details dialog: */
     if (dlgFilterDetails.exec() == QDialog::Accepted)
     {
         /* Update edited tree-widget item: */
-        pItem->m_strName = dlgFilterDetails.m_pEditorName->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorName->text();
-        pItem->m_strVendorId = dlgFilterDetails.m_pEditorVendorID->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorVendorID->text();
-        pItem->m_strProductId = dlgFilterDetails.m_pEditorProductID->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorProductID->text();
-        pItem->m_strRevision = dlgFilterDetails.m_pEditorRevision->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorRevision->text();
-        pItem->m_strManufacturer = dlgFilterDetails.m_pEditorManufacturer->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorManufacturer->text();
-        pItem->m_strProduct = dlgFilterDetails.m_pEditorProduct->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorProduct->text();
-        pItem->m_strSerialNumber = dlgFilterDetails.m_pEditorSerialNo->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorSerialNo->text();
-        pItem->m_strPort = dlgFilterDetails.m_pEditorPort->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorPort->text();
-        switch (dlgFilterDetails.m_pComboRemote->currentIndex())
+        pItem->m_strName = dlgFilterDetails.name();
+        pItem->m_strVendorId = dlgFilterDetails.vendorID();
+        pItem->m_strProductId = dlgFilterDetails.productID();
+        pItem->m_strRevision = dlgFilterDetails.revision();
+        pItem->m_strManufacturer = dlgFilterDetails.manufacturer();
+        pItem->m_strProduct = dlgFilterDetails.product();
+        pItem->m_strSerialNumber = dlgFilterDetails.serialNo();
+        pItem->m_strPort = dlgFilterDetails.port();
+        switch (dlgFilterDetails.remoteMode())
         {
-            case ModeAny: pItem->m_strRemote = QString(); break;
-            case ModeOn:  pItem->m_strRemote = QString::number(1); break;
-            case ModeOff: pItem->m_strRemote = QString::number(0); break;
-            default: AssertMsgFailed(("Invalid combo box index"));
+            case UIRemoteMode_Any: pItem->m_strRemote = QString(); break;
+            case UIRemoteMode_On:  pItem->m_strRemote = QString::number(1); break;
+            case UIRemoteMode_Off: pItem->m_strRemote = QString::number(0); break;
+            default: break;
         }
         pItem->updateFields();
     }

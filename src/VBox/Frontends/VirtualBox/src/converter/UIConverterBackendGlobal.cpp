@@ -70,6 +70,7 @@ template<> bool canConvert<UIDiskEncryptionCipherType>() { return true; }
 template<> bool canConvert<GUIFeatureType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
+template<> bool canConvert<UIRemoteMode>() { return true; }
 template<> bool canConvert<WizardType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
@@ -2183,6 +2184,24 @@ template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();
+}
+
+/* QString <= UIRemoteMode: */
+template<> QString toString(const UIRemoteMode &enmMode)
+{
+    QString strResult;
+    switch (enmMode)
+    {
+        case UIRemoteMode_Any: strResult = QApplication::translate("UICommon", "Any", "USB filter remote"); break;
+        case UIRemoteMode_On:  strResult = QApplication::translate("UICommon", "Yes", "USB filter remote"); break;
+        case UIRemoteMode_Off: strResult = QApplication::translate("UICommon", "No",  "USB filter remote"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for USB filter remote mode=%d", enmMode));
+            break;
+        }
+    }
+    return strResult;
 }
 
 /* QString <= WizardType: */

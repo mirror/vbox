@@ -883,6 +883,16 @@ enum UISharedFolderType
 };
 
 
+/** Remote mode types. */
+enum UIRemoteMode
+{
+    UIRemoteMode_Any,
+    UIRemoteMode_On,
+    UIRemoteMode_Off
+};
+Q_DECLARE_METATYPE(UIRemoteMode);
+
+
 /** Common UI: Wizard types. */
 enum WizardType
 {

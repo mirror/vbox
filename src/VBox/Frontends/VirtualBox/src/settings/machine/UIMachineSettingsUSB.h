@@ -45,9 +45,6 @@ class SHARED_LIBRARY_STUFF UIMachineSettingsUSB : public UISettingsPageMachine
 
 public:
 
-    /** Remote mode types. */
-    enum { ModeAny, ModeOn, ModeOff };
-
     /** Constructs USB settings page. */
     UIMachineSettingsUSB();
     /** Destructs USB settings page. */

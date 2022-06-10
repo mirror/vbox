@@ -115,6 +115,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIDiskEncryptionCipherType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GUIFeatureType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GlobalSettingsPageType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MachineSettingsPageType>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIRemoteMode>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<WizardType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<IndicatorType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MachineCloseAction>();
@@ -255,6 +256,7 @@ template<> SHARED_LIBRARY_STUFF QPixmap toWarningPixmap(const GlobalSettingsPage
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const MachineSettingsPageType &machineSettingsPageType);
 template<> SHARED_LIBRARY_STUFF MachineSettingsPageType fromInternalString<MachineSettingsPageType>(const QString &strMachineSettingsPageType);
 template<> SHARED_LIBRARY_STUFF QPixmap toWarningPixmap(const MachineSettingsPageType &machineSettingsPageType);
+template<> SHARED_LIBRARY_STUFF QString toString(const UIRemoteMode &enmMode);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const WizardType &wizardType);
 template<> SHARED_LIBRARY_STUFF WizardType fromInternalString<WizardType>(const QString &strWizardType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const IndicatorType &indicatorType);
