@@ -39,6 +39,7 @@
 #include "UIErrorString.h"
 #include "QIToolBar.h"
 #include "UICommon.h"
+#include "UIUSBControllerEditor.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -135,7 +136,7 @@ struct UIDataSettingsMachineUSB
     /** Constructs data. */
     UIDataSettingsMachineUSB()
         : m_fUSBEnabled(false)
-        , m_USBControllerType(KUSBControllerType_Null)
+        , m_enmUSBControllerType(KUSBControllerType_Null)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -143,7 +144,7 @@ struct UIDataSettingsMachineUSB
     {
         return true
                && (m_fUSBEnabled == other.m_fUSBEnabled)
-               && (m_USBControllerType == other.m_USBControllerType)
+               && (m_enmUSBControllerType == other.m_enmUSBControllerType)
                ;
     }
 
@@ -153,9 +154,9 @@ struct UIDataSettingsMachineUSB
     bool operator!=(const UIDataSettingsMachineUSB &other) const { return !equal(other); }
 
     /** Holds whether the USB is enabled. */
-    bool m_fUSBEnabled;
+    bool                m_fUSBEnabled;
     /** Holds the USB controller type. */
-    KUSBControllerType m_USBControllerType;
+    KUSBControllerType  m_enmUSBControllerType;
 };
 
 
@@ -336,9 +337,7 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     : m_pCache(0)
     , m_pCheckBoxUSB(0)
     , m_pWidgetUSBSettings(0)
-    , m_pRadioButtonUSB1(0)
-    , m_pRadioButtonUSB2(0)
-    , m_pRadioButtonUSB3(0)
+    , m_pEditorController(0)
     , m_pLabelSeparatorFilters(0)
     , m_pLayoutFilters(0)
     , m_pTreeWidgetFilters(0)
@@ -351,13 +350,11 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     , m_pActionMoveDown(0)
     , m_pMenuUSBDevices(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIMachineSettingsUSB::~UIMachineSettingsUSB()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -388,10 +385,10 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
 
     /* Gather old USB data: */
     oldUsbData.m_fUSBEnabled = !m_machine.GetUSBControllers().isEmpty();
-    oldUsbData.m_USBControllerType = m_machine.GetUSBControllerCountByType(KUSBControllerType_XHCI) > 0 ? KUSBControllerType_XHCI :
-                                     m_machine.GetUSBControllerCountByType(KUSBControllerType_EHCI) > 0 ? KUSBControllerType_EHCI :
-                                     m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI) > 0 ? KUSBControllerType_OHCI :
-                                     KUSBControllerType_Null;
+    oldUsbData.m_enmUSBControllerType = m_machine.GetUSBControllerCountByType(KUSBControllerType_XHCI) > 0 ? KUSBControllerType_XHCI
+                                      : m_machine.GetUSBControllerCountByType(KUSBControllerType_EHCI) > 0 ? KUSBControllerType_EHCI
+                                      : m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI) > 0 ? KUSBControllerType_OHCI
+                                      : KUSBControllerType_Null;
 
     /* Check whether controller is valid: */
     const CUSBDeviceFilters &comFiltersObject = m_machine.GetUSBDeviceFilters();
@@ -446,46 +443,11 @@ void UIMachineSettingsUSB::getFromCache()
     /* Get old USB data from cache: */
     const UIDataSettingsMachineUSB &oldUsbData = m_pCache->base();
 
-    /* Load currently supported USB controllers: */
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-    QVector<KUSBControllerType> supportedTypes = comProperties.GetSupportedUSBControllerTypes();
-    /* Take currently requested type into account if it's sane: */
-    if (!supportedTypes.contains(oldUsbData.m_USBControllerType) && oldUsbData.m_USBControllerType != KUSBControllerType_Null)
-        supportedTypes.prepend(oldUsbData.m_USBControllerType);
-
-    /* Adjust radio-button visibility: */
-    if (m_pRadioButtonUSB1)
-        m_pRadioButtonUSB1->setVisible(supportedTypes.contains(KUSBControllerType_OHCI));
-    if (m_pRadioButtonUSB2)
-        m_pRadioButtonUSB2->setVisible(supportedTypes.contains(KUSBControllerType_EHCI));
-    if (m_pRadioButtonUSB3)
-        m_pRadioButtonUSB3->setVisible(supportedTypes.contains(KUSBControllerType_XHCI));
-
     /* Load old USB data from cache: */
     if (m_pCheckBoxUSB)
         m_pCheckBoxUSB->setChecked(oldUsbData.m_fUSBEnabled);
-    switch (oldUsbData.m_USBControllerType)
-    {
-        default:
-        case KUSBControllerType_OHCI:
-        {
-            if (m_pRadioButtonUSB1)
-                m_pRadioButtonUSB1->setChecked(true);
-            break;
-        }
-        case KUSBControllerType_EHCI:
-        {
-            if (m_pRadioButtonUSB2)
-                m_pRadioButtonUSB2->setChecked(true);
-            break;
-        }
-        case KUSBControllerType_XHCI:
-        {
-            if (m_pRadioButtonUSB3)
-                m_pRadioButtonUSB3->setChecked(true);
-            break;
-        }
-    }
+    if (m_pEditorController)
+        m_pEditorController->setValue(oldUsbData.m_enmUSBControllerType);
 
     /* For each filter => load it from cache: */
     for (int iFilterIndex = 0; iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
@@ -516,20 +478,8 @@ void UIMachineSettingsUSB::putToCache()
     /* Gather new USB data: */
     if (m_pCheckBoxUSB)
         newUsbData.m_fUSBEnabled = m_pCheckBoxUSB->isChecked();
-    if (!newUsbData.m_fUSBEnabled)
-        newUsbData.m_USBControllerType = KUSBControllerType_Null;
-    else
-    {
-        if (   m_pRadioButtonUSB1
-            && m_pRadioButtonUSB1->isChecked())
-            newUsbData.m_USBControllerType = KUSBControllerType_OHCI;
-        else if (   m_pRadioButtonUSB2
-                 && m_pRadioButtonUSB2->isChecked())
-            newUsbData.m_USBControllerType = KUSBControllerType_EHCI;
-        else if (   m_pRadioButtonUSB3
-                 && m_pRadioButtonUSB3->isChecked())
-            newUsbData.m_USBControllerType = KUSBControllerType_XHCI;
-    }
+    if (m_pEditorController)
+        newUsbData.m_enmUSBControllerType = newUsbData.m_fUSBEnabled ? m_pEditorController->value() : KUSBControllerType_Null;
 
     /* For each filter: */
     QTreeWidgetItem *pMainRootItem = m_pTreeWidgetFilters->invisibleRootItem();
@@ -565,7 +515,8 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 
     /* USB 2.0/3.0 Extension Pack presence test: */
     if (   m_pCheckBoxUSB->isChecked()
-        && (m_pRadioButtonUSB2->isChecked() || m_pRadioButtonUSB3->isChecked()))
+        && (   m_pEditorController->value() == KUSBControllerType_EHCI
+            || m_pEditorController->value() == KUSBControllerType_XHCI))
     {
         CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
         if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
@@ -590,25 +541,14 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pCheckBoxUSB);
-    setTabOrder(m_pCheckBoxUSB, m_pRadioButtonUSB1);
-    setTabOrder(m_pRadioButtonUSB1, m_pRadioButtonUSB2);
-    setTabOrder(m_pRadioButtonUSB2, m_pRadioButtonUSB3);
-    setTabOrder(m_pRadioButtonUSB3, m_pTreeWidgetFilters);
+    setTabOrder(m_pCheckBoxUSB, m_pEditorController);
+    setTabOrder(m_pEditorController, m_pTreeWidgetFilters);
 }
 
 void UIMachineSettingsUSB::retranslateUi()
 {
     m_pCheckBoxUSB->setToolTip(tr("When checked, enables the virtual USB controller of this machine."));
     m_pCheckBoxUSB->setText(tr("Enable &USB Controller"));
-    m_pRadioButtonUSB1->setToolTip(tr("When chosen, enables the virtual USB OHCI controller of "
-                                      "this machine. The USB OHCI controller provides USB 1.0 support."));
-    m_pRadioButtonUSB1->setText(tr("USB &1.1 (OHCI) Controller"));
-    m_pRadioButtonUSB2->setToolTip(tr("When chosen, enables the virtual USB OHCI and EHCI "
-                                      "controllers of this machine. Together they provide USB 2.0 support."));
-    m_pRadioButtonUSB2->setText(tr("USB &2.0 (OHCI + EHCI) Controller"));
-    m_pRadioButtonUSB3->setToolTip(tr("When chosen, enables the virtual USB xHCI controller of "
-                                      "this machine. The USB xHCI controller provides USB 3.0 support."));
-    m_pRadioButtonUSB3->setText(tr("USB &3.0 (xHCI) Controller"));
     m_pLabelSeparatorFilters->setText(tr("USB Device &Filters"));
     QTreeWidgetItem *pQtreewidgetitem = m_pTreeWidgetFilters->headerItem();
     pQtreewidgetitem->setText(0, tr("[filter]"));
@@ -647,18 +587,14 @@ void UIMachineSettingsUSB::polishPage()
     /* Polish USB page availability: */
     m_pCheckBoxUSB->setEnabled(isMachineOffline());
     m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && m_pCheckBoxUSB->isChecked());
-    m_pRadioButtonUSB1->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
-    m_pRadioButtonUSB2->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
-    m_pRadioButtonUSB3->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
+    m_pEditorController->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
 }
 
 void UIMachineSettingsUSB::sltHandleUsbAdapterToggle(bool fEnabled)
 {
     /* Enable/disable USB children: */
     m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && fEnabled);
-    m_pRadioButtonUSB1->setEnabled(isMachineOffline() && fEnabled);
-    m_pRadioButtonUSB2->setEnabled(isMachineOffline() && fEnabled);
-    m_pRadioButtonUSB3->setEnabled(isMachineOffline() && fEnabled);
+    m_pEditorController->setEnabled(isMachineOffline() && fEnabled);
     if (fEnabled)
     {
         /* If there is no chosen item but there is something to choose => choose it: */
@@ -922,18 +858,20 @@ void UIMachineSettingsUSB::prepareWidgets()
         if (m_pWidgetUSBSettings)
         {
             /* Prepare USB settings widget layout: */
-            m_pLayoutUSBSettings = new QVBoxLayout(m_pWidgetUSBSettings);
-            if (m_pLayoutUSBSettings)
+            QVBoxLayout *pLayoutUSBSettings = new QVBoxLayout(m_pWidgetUSBSettings);
+            if (pLayoutUSBSettings)
             {
-                m_pLayoutUSBSettings->setContentsMargins(0, 0, 0, 0);
+                pLayoutUSBSettings->setContentsMargins(0, 0, 0, 0);
 
-                /* Prepare USB radio-buttons: */
-                prepareRadioButtons();
+                /* Prepare USB controller editor: */
+                m_pEditorController = new UIUSBControllerEditor(m_pWidgetUSBSettings);
+                if (m_pEditorController)
+                    pLayoutUSBSettings->addWidget(m_pEditorController);
 
                 /* Prepare separator: */
                 m_pLabelSeparatorFilters = new QILabelSeparator(m_pWidgetUSBSettings);
                 if (m_pLabelSeparatorFilters)
-                    m_pLayoutUSBSettings->addWidget(m_pLabelSeparatorFilters);
+                    pLayoutUSBSettings->addWidget(m_pLabelSeparatorFilters);
 
                 /* Prepare USB filters layout: */
                 m_pLayoutFilters = new QHBoxLayout;
@@ -947,37 +885,12 @@ void UIMachineSettingsUSB::prepareWidgets()
                     /* Prepare USB filters toolbar: */
                     prepareFiltersToolbar();
 
-                    m_pLayoutUSBSettings->addLayout(m_pLayoutFilters);
+                    pLayoutUSBSettings->addLayout(m_pLayoutFilters);
                 }
             }
 
             pLayoutMain->addWidget(m_pWidgetUSBSettings, 1, 1, 1, 2);
         }
-    }
-}
-
-void UIMachineSettingsUSB::prepareRadioButtons()
-{
-    /* Prepare USB1 radio-button: */
-    m_pRadioButtonUSB1 = new QRadioButton(m_pWidgetUSBSettings);
-    if (m_pRadioButtonUSB1)
-    {
-        m_pRadioButtonUSB1->setVisible(false);
-        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB1);
-    }
-    /* Prepare USB2 radio-button: */
-    m_pRadioButtonUSB2 = new QRadioButton(m_pWidgetUSBSettings);
-    if (m_pRadioButtonUSB2)
-    {
-        m_pRadioButtonUSB2->setVisible(false);
-        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB2);
-    }
-    /* Prepare USB3 radio-button: */
-    m_pRadioButtonUSB3 = new QRadioButton(m_pWidgetUSBSettings);
-    if (m_pRadioButtonUSB3)
-    {
-        m_pRadioButtonUSB3->setVisible(false);
-        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB3);
     }
 }
 
@@ -1059,10 +972,10 @@ void UIMachineSettingsUSB::prepareFiltersToolbar()
 void UIMachineSettingsUSB::prepareConnections()
 {
     /* Configure validation connections: */
-    connect(m_pCheckBoxUSB, &QCheckBox::stateChanged, this, &UIMachineSettingsUSB::revalidate);
-    connect(m_pRadioButtonUSB1, &QRadioButton::toggled, this, &UIMachineSettingsUSB::revalidate);
-    connect(m_pRadioButtonUSB2, &QRadioButton::toggled, this, &UIMachineSettingsUSB::revalidate);
-    connect(m_pRadioButtonUSB3, &QRadioButton::toggled, this, &UIMachineSettingsUSB::revalidate);
+    connect(m_pCheckBoxUSB, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsUSB::revalidate);
+    connect(m_pEditorController, &UIUSBControllerEditor::sigValueChanged,
+            this, &UIMachineSettingsUSB::revalidate);
 
     /* Configure widget connections: */
     connect(m_pCheckBoxUSB, &QCheckBox::toggled,
@@ -1149,7 +1062,7 @@ bool UIMachineSettingsUSB::saveData()
 
             /* Create/update USB controllers: */
             if (newUsbData.m_fUSBEnabled)
-                fSuccess = createUSBControllers(newUsbData.m_USBControllerType);
+                fSuccess = createUSBControllers(newUsbData.m_enmUSBControllerType);
         }
 
         /* Save USB filters data: */

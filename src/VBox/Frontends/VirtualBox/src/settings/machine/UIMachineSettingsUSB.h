@@ -27,13 +27,12 @@
 /* Forward declarations: */
 class QCheckBox;
 class QHBoxLayout;
-class QRadioButton;
-class QVBoxLayout;
 class QTreeWidgetItem;
 class QILabelSeparator;
+class QIToolBar;
 class QITreeWidget;
 class VBoxUSBMenu;
-class QIToolBar;
+class UIUSBControllerEditor;
 struct UIDataSettingsMachineUSB;
 struct UIDataSettingsMachineUSBFilter;
 typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUSBFilter;
@@ -121,8 +120,6 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares radio-buttons. */
-    void prepareRadioButtons();
     /** Prepares filters tree-widget. */
     void prepareFiltersTreeWidget();
     /** Prepares filters toolbar. */
@@ -155,39 +152,33 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the USB check-box instance. */
-        QCheckBox        *m_pCheckBoxUSB;
+        QCheckBox             *m_pCheckBoxUSB;
         /** Holds the USB settings widget instance. */
-        QWidget          *m_pWidgetUSBSettings;
-        /** Holds the USB settings widget layout instance. */
-        QVBoxLayout      *m_pLayoutUSBSettings;
-        /** Holds the USB1 radio-button instance. */
-        QRadioButton     *m_pRadioButtonUSB1;
-        /** Holds the USB2 radio-button instance. */
-        QRadioButton     *m_pRadioButtonUSB2;
-        /** Holds the USB3 radio-button instance. */
-        QRadioButton     *m_pRadioButtonUSB3;
+        QWidget               *m_pWidgetUSBSettings;
+        /** Holds the USB controller editor instance. */
+        UIUSBControllerEditor *m_pEditorController;
         /** Holds the USB widget separator instance. */
-        QILabelSeparator *m_pLabelSeparatorFilters;
+        QILabelSeparator      *m_pLabelSeparatorFilters;
         /** Holds the USB filters layout instance. */
-        QHBoxLayout      *m_pLayoutFilters;
+        QHBoxLayout           *m_pLayoutFilters;
         /** Holds the USB filters tree-widget instance. */
-        QITreeWidget     *m_pTreeWidgetFilters;
+        QITreeWidget          *m_pTreeWidgetFilters;
         /** Holds the USB filters toolbar instance. */
-        QIToolBar        *m_pToolbarFilters;
+        QIToolBar             *m_pToolbarFilters;
         /** Holds the New action instance. */
-        QAction          *m_pActionNew;
+        QAction               *m_pActionNew;
         /** Holds the Add action instance. */
-        QAction          *m_pActionAdd;
+        QAction               *m_pActionAdd;
         /** Holds the Edit action instance. */
-        QAction          *m_pActionEdit;
+        QAction               *m_pActionEdit;
         /** Holds the Remove action instance. */
-        QAction          *m_pActionRemove;
+        QAction               *m_pActionRemove;
         /** Holds the Move Up action instance. */
-        QAction          *m_pActionMoveUp;
+        QAction               *m_pActionMoveUp;
         /** Holds the Move Down action instance. */
-        QAction          *m_pActionMoveDown;
+        QAction               *m_pActionMoveDown;
         /** Holds the USB devices menu instance. */
-        VBoxUSBMenu      *m_pMenuUSBDevices;
+        VBoxUSBMenu           *m_pMenuUSBDevices;
     /** @} */
 };
 
