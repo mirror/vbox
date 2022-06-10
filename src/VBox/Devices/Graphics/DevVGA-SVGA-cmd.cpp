@@ -3685,7 +3685,7 @@ static int vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable 
     RT_NOREF(cbCmd);
     return vmsvga3dDXGrowCOTable(pThisCC, pCmd);
 #else
-    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    RT_NOREF(pThisCC, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
 #endif
 }
