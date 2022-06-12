@@ -45,18 +45,6 @@ class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 
     Q_OBJECT;
 
-signals:
-
-    void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
-    void sigFindInPageWidgetToogle(bool fVisible);
-    void sigFontPointSizeChanged(int iFontPointSize);
-    void sigGoBackward();
-    void sigGoForward();
-    void sigGoHome();
-    void sigAddBookmark();
-    void sigZoomPercentageChanged(int iPercentage);
-    void sigMouseOverImage(const QString &strImageName);
-
 public:
 
     enum ZoomOperation
@@ -67,6 +55,20 @@ public:
         ZoomOperation_Max
     };
 
+signals:
+
+    void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
+    void sigFindInPageWidgetToogle(bool fVisible);
+    void sigFontPointSizeChanged(int iFontPointSize);
+    void sigGoBackward();
+    void sigGoForward();
+    void sigGoHome();
+    void sigAddBookmark();
+    void sigMouseOverImage(const QString &strImageName);
+    void sigZoomRequest(ZoomOperation enmZoomOperation);
+
+public:
+
     UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) RT_OVERRIDE;
     void emitHistoryChangedSignal();
@@ -75,8 +77,6 @@ public:
 #endif
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
-    void zoom(ZoomOperation enmZoomOperation);
-    int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
     bool hasSelectedText() const;
@@ -154,8 +154,6 @@ private:
     int m_iInitialFontPointSize;
     /** A container to store the original image sizes/positions in the document. key is image name value is DocumentImage. */
     QHash<QString, DocumentImage> m_imageMap;
-    /** As percentage. */
-    int m_iZoomPercentage;
     /** Used to change th document cursor back from m_handCursor. */
     QCursor m_defaultCursor;
     QCursor m_handCursor;
@@ -166,6 +164,7 @@ private:
     bool m_fCursorChanged;
     QLabel *m_pOverlayLabel;
     QGraphicsBlurEffect *m_pOverlayBlurEffect;
+    int m_iZoomPercentage;
 };
 
 #endif /* #ifdef VBOX_WITH_QHELP_VIEWER */

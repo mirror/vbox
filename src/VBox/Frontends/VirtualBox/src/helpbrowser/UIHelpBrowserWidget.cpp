@@ -73,6 +73,8 @@ Q_DECLARE_METATYPE(HelpBrowserTabs);
 
 static const int iBookmarkUrlDataType = 6;
 
+static int iZoomPercentageStep = 20;
+const QPair<int, int> zoomPercentageMinMax = QPair<int, int>(20, 300);
 
 /*********************************************************************************************************************************
 *   UIZoomMenuAction definition.                                                                                                 *
@@ -195,10 +197,10 @@ signals:
 #else
     void sigLinkHighlighted(const QString &strLink);
 #endif
-    void sigZoomPercentageChanged(int iPercentage);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
     void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
     void sigMouseOverImage(const QString &strImageName);
+    void sigZoomRequest(UIHelpViewer::ZoomOperation enmZoomOperation);
 
 public:
 
@@ -210,8 +212,6 @@ public:
     QString documentTitle() const;
     void setToolBarVisible(bool fVisible);
     void print(QPrinter &printer);
-    void zoom(UIHelpViewer::ZoomOperation enmZoomOperation);
-    int zoomPercentage() const;
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
     void copySelectedText() const;
@@ -301,9 +301,7 @@ public:
     void setToolBarVisible(bool fVisible);
     void printCurrent(QPrinter &printer);
     void switchToTab(int iIndex);
-    /** Returns the zoom percentage of 0th tab. */
     int zoomPercentage() const;
-    /** Sets the zoom percentage of all tabs. */
     void setZoomPercentage(int iZoomPercentage);
     void setHelpFileList(const QList<QUrl> &helpFileList);
     void copySelectedText() const;
@@ -317,12 +315,12 @@ public slots:
 
     void sltCloseCurrentTab();
     void sltCloseOtherTabs();
-    void sltZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation);
     void sltHomeAction();
     void sltAddBookmarkAction();
     void sltForwardAction();
     void sltBackwardAction();
     void sltReloadPageAction();
+    void sltHandleZoomRequest(UIHelpViewer::ZoomOperation enmOperation);
 
 private slots:
 
@@ -355,6 +353,8 @@ private:
     bool m_fToolBarVisible;
     QStringList m_tabTitleList;
     QList<QUrl> m_helpFileList;
+    /** As percentage. */
+    int m_iZoomPercentage;
 };
 
 
@@ -623,12 +623,6 @@ void UIHelpBrowserTab::print(QPrinter &printer)
         m_pContentViewer->print(&printer);
 }
 
-void UIHelpBrowserTab::zoom(UIHelpViewer::ZoomOperation enmZoomOperation)
-{
-    if (m_pContentViewer)
-        m_pContentViewer->zoom(enmZoomOperation);
-}
-
 void UIHelpBrowserTab::setZoomPercentage(int iZoomPercentage)
 {
     if (m_pContentViewer)
@@ -673,13 +667,6 @@ void UIHelpBrowserTab::findPrevious()
         return m_pContentViewer->sltSelectPreviousMatch();
 }
 
-int UIHelpBrowserTab::zoomPercentage() const
-{
-    if (m_pContentViewer)
-        return m_pContentViewer->zoomPercentage();
-    return 100;
-}
-
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
 {
     m_pMainLayout = new QVBoxLayout(this);
@@ -722,14 +709,14 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
 #endif
-    connect(m_pContentViewer, &UIHelpViewer::sigZoomPercentageChanged,
-            this, &UIHelpBrowserTab::sigZoomPercentageChanged);
     connect(m_pContentViewer, &UIHelpViewer::copyAvailable,
             this, &UIHelpBrowserTab::sigCopyAvailableChanged);
     connect(m_pContentViewer, &UIHelpViewer::sigFindInPageWidgetToogle,
             this, &UIHelpBrowserTab::sltFindInPageWidgetVisibilityChanged);
     connect(m_pContentViewer, &UIHelpViewer::sigMouseOverImage,
             this, &UIHelpBrowserTab::sigMouseOverImage);
+    connect(m_pContentViewer, &UIHelpViewer::sigZoomRequest,
+            this, &UIHelpBrowserTab::sigZoomRequest);
 
     m_pContentViewer->setSource(initialUrl);
 }
@@ -928,6 +915,7 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
     , m_savedUrlList(urlList)
     , m_fSwitchToNewTab(true)
     , m_fToolBarVisible(true)
+    , m_iZoomPercentage(100)
 {
     Q_UNUSED(m_fSwitchToNewTab);
     prepare();
@@ -955,8 +943,6 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sltOpenLinkInNewTab);
     connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
             this, &UIHelpBrowserTabManager::sigAddBookmark);
-    connect(pTabWidget, &UIHelpBrowserTab::sigZoomPercentageChanged,
-            this, &UIHelpBrowserTabManager::sigZoomPercentageChanged);
     connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
             this, &UIHelpBrowserTabManager::sigLinkHighlighted);
     connect(pTabWidget, &UIHelpBrowserTab::sigCopyAvailableChanged,
@@ -967,12 +953,14 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground
             this, &UIHelpBrowserTabManager::sigHistoryChanged);
    connect(pTabWidget, &UIHelpBrowserTab::sigMouseOverImage,
             this, &UIHelpBrowserTabManager::sigMouseOverImage);
+   connect(pTabWidget, &UIHelpBrowserTab::sigZoomRequest,
+            this, &UIHelpBrowserTabManager::sltHandleZoomRequest);
 
    pTabWidget->setZoomPercentage(zoomPercentage());
-    pTabWidget->setHelpFileList(m_helpFileList);
-    setFocusProxy(pTabWidget);
-    if (!fBackground)
-        setCurrentIndex(index);
+   pTabWidget->setHelpFileList(m_helpFileList);
+   setFocusProxy(pTabWidget);
+   if (!fBackground)
+       setCurrentIndex(index);
 }
 
 void UIHelpBrowserTabManager::updateTabUrlTitleList()
@@ -1109,20 +1097,7 @@ void UIHelpBrowserTabManager::switchToTab(int iIndex)
 
 int UIHelpBrowserTabManager::zoomPercentage() const
 {
-    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(0));
-    if (pTab)
-        return pTab->zoomPercentage();
-    return 100;
-}
-
-void UIHelpBrowserTabManager::setZoomPercentage(int iZoomPercentage)
-{
-    for (int i = 0; i < count(); ++i)
-    {
-        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
-        if (pTab)
-            pTab->setZoomPercentage(iZoomPercentage);
-    }
+    return m_iZoomPercentage;
 }
 
 void UIHelpBrowserTabManager::setHelpFileList(const QList<QUrl> &helpFileList)
@@ -1255,16 +1230,6 @@ void UIHelpBrowserTabManager::sltCurrentChanged(int iTabIndex)
     emit sigSourceChanged(currentSource());
 }
 
-void UIHelpBrowserTabManager::sltZoomOperation(UIHelpViewer::ZoomOperation enmZoomOperation)
-{
-    for (int i = 0; i < count(); ++i)
-    {
-        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
-        if (pTab)
-            pTab->zoom(enmZoomOperation);
-    }
-}
-
 void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
 {
     if (!tabBar())
@@ -1307,6 +1272,43 @@ void UIHelpBrowserTabManager::sltBackwardAction()
     UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
     if (pTab)
         pTab->sltBackwardAction();
+}
+
+void UIHelpBrowserTabManager::sltHandleZoomRequest(UIHelpViewer::ZoomOperation enmOperation)
+{
+    int iZoomPercentage = m_iZoomPercentage;
+    switch (enmOperation)
+    {
+        case UIHelpViewer::ZoomOperation_In:
+            iZoomPercentage += iZoomPercentageStep;
+            break;
+        case UIHelpViewer::ZoomOperation_Out:
+            iZoomPercentage -= iZoomPercentageStep;
+            break;
+        case UIHelpViewer::ZoomOperation_Reset:
+        default:
+            iZoomPercentage = 100;
+            break;
+    }
+    setZoomPercentage(iZoomPercentage);
+}
+
+void UIHelpBrowserTabManager::setZoomPercentage(int iZoomPercentage)
+{
+
+    if (iZoomPercentage > zoomPercentageMinMax.second ||
+        iZoomPercentage < zoomPercentageMinMax.first)
+        return;
+
+    m_iZoomPercentage = iZoomPercentage;
+
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (pTab)
+            pTab->setZoomPercentage(m_iZoomPercentage);
+    }
+    emit sigZoomPercentageChanged(m_iZoomPercentage);
 }
 
 void UIHelpBrowserTabManager::sltReloadPageAction()
@@ -2223,7 +2225,7 @@ void UIHelpBrowserWidget::sltZoomActions(int iZoomOperation)
     if (iZoomOperation >= (int) UIHelpViewer::ZoomOperation_Max)
         return;
     UIHelpViewer::ZoomOperation enmOperation = (UIHelpViewer::ZoomOperation)(iZoomOperation);
-    m_pTabManager->sltZoomOperation(enmOperation);
+    m_pTabManager->sltHandleZoomRequest(enmOperation);
 }
 
 void UIHelpBrowserWidget::sltTabListChanged(const QStringList &titleList)

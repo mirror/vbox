@@ -54,10 +54,6 @@
 
 #ifdef VBOX_WITH_QHELP_VIEWER
 
-static int iZoomPercentageStep = 20;
-const QPair<int, int> UIHelpViewer::zoomPercentageMinMax = QPair<int, int>(20, 300);
-
-
 /*********************************************************************************************************************************
 *   UIContextMenuNavigationAction definition.                                                                                    *
 *********************************************************************************************************************************/
@@ -401,10 +397,10 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     , m_iMarginForFindWidget(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
-    , m_iZoomPercentage(100)
     , m_fOverlayMode(false)
     , m_fCursorChanged(false)
     , m_pOverlayLabel(0)
+    , m_iZoomPercentage(100)
 {
     m_iInitialFontPointSize = font().pointSize();
     setUndoRedoEnabled(true);
@@ -545,37 +541,12 @@ bool UIHelpViewer::isFindInPageWidgetVisible() const
     return false;
 }
 
-void UIHelpViewer::zoom(ZoomOperation enmZoomOperation)
-{
-    clearOverlay();
-    int iPrevZoom = m_iZoomPercentage;
-    switch (enmZoomOperation)
-    {
-        case ZoomOperation_In:
-            iPrevZoom += iZoomPercentageStep;
-            break;
-        case ZoomOperation_Out:
-            iPrevZoom -= iZoomPercentageStep;
-            break;
-        case ZoomOperation_Reset:
-        default:
-            iPrevZoom = 100;
-            break;
-    }
-    setZoomPercentage(iPrevZoom);
-}
-
 void UIHelpViewer::setZoomPercentage(int iZoomPercentage)
 {
-    if (iZoomPercentage > zoomPercentageMinMax.second ||
-        iZoomPercentage < zoomPercentageMinMax.first ||
-        m_iZoomPercentage == iZoomPercentage)
-        return;
-
     m_iZoomPercentage = iZoomPercentage;
+    clearOverlay();
     scaleFont();
     scaleImages();
-    emit sigZoomPercentageChanged(m_iZoomPercentage);
 }
 
 void UIHelpViewer::setHelpFileList(const QList<QUrl> &helpFileList)
@@ -589,11 +560,6 @@ void UIHelpViewer::setHelpFileList(const QList<QUrl> &helpFileList)
 bool UIHelpViewer::hasSelectedText() const
 {
     return textCursor().hasSelection();
-}
-
-int UIHelpViewer::zoomPercentage() const
-{
-    return m_iZoomPercentage;
 }
 
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
@@ -689,9 +655,9 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
     else if (pEvent->modifiers() & Qt::ControlModifier)
     {
         if (pEvent->angleDelta().y() > 0)
-            zoom(ZoomOperation_In);
+            emit sigZoomRequest(ZoomOperation_In);
         else if (pEvent->angleDelta().y() < 0)
-            zoom(ZoomOperation_Out);
+            emit sigZoomRequest(ZoomOperation_Out);
     }
 }
 
@@ -803,13 +769,13 @@ void UIHelpViewer::keyPressEvent(QKeyEvent *pEvent)
         switch (pEvent->key())
         {
             case Qt::Key_Equal:
-                zoom(ZoomOperation_In);
+                emit sigZoomRequest(ZoomOperation_In);
                 break;
             case Qt::Key_Minus:
-                zoom(ZoomOperation_Out);
+                emit sigZoomRequest(ZoomOperation_Out);
                 break;
             case Qt::Key_0:
-                zoom(ZoomOperation_Reset);
+                emit sigZoomRequest(ZoomOperation_Reset);
                 break;
             default:
                 break;
