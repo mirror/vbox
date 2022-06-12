@@ -609,9 +609,6 @@ NTSTATUS SvgaGboFillPageTableForMDL(PVMSVGAGBO pGbo,
                                     uint32_t MdlOffset);
 NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
                                        RTR0MEMOBJ hMemObj);
-NTSTATUS SvgaGboFillPageTableForArray(PVMSVGAGBO pGbo,
-                                      uint32_t u32NumPages,
-                                      RTHCPHYS *paPhys);
 
 void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
                  PVMSVGAMOB pMob);

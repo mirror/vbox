@@ -2165,7 +2165,30 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
                 VBOXDXALLOCATIONDESC *pAllocDesc = (VBOXDXALLOCATIONDESC *)pOAI->pPrivateDriverData;
                 pAllocation->hAllocation   = pOAI->hAllocation;
                 pAllocation->enmType       = VBOXWDDM_ALLOC_TYPE_D3D;
-                pAllocation->hSharedHandle = 0; /* This is should be a sid of the allocation. Not needed here. */
+
+                /* 'hSharedHandle' a sid of the allocation. */
+                IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+                IGaDirect3DDevice9Ex *pGaD3DDevice9Ex = NULL;
+                HRESULT hr2 = pDevice9If->QueryInterface(IID_IGaDirect3DDevice9Ex, (void**)&pGaD3DDevice9Ex);
+                Assert(SUCCEEDED(hr2));
+                if (SUCCEEDED(hr2))
+                {
+                    Assert(pGaD3DDevice9Ex);
+
+                    VBOXDISPIFESCAPE_SVGAGETSID data;
+                    memset(&data, 0, sizeof(data));
+                    data.EscapeHdr.escapeCode = VBOXESC_SVGAGETSID;
+                    data.hAllocation = pOAI->hAllocation;
+                    // data.u32Sid = 0;
+                    hr2 = pGaD3DDevice9Ex->EscapeCb(&data, sizeof(data), /* fHardwareAccess= */ false);
+                    if (SUCCEEDED(hr2))
+                        pAllocation->hSharedHandle = (HANDLE)(uintptr_t)data.u32Sid;
+                    else
+                        pAllocation->hSharedHandle = 0;
+
+                    pGaD3DDevice9Ex->Release();
+                }
+
                 pAllocation->AllocDesc     = *pAllocDesc;
                 pAllocation->pvMem         = NULL;
                 RT_ZERO(pAllocation->SurfDesc);
@@ -2244,16 +2267,52 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
 #ifdef VBOX_WITH_VMSVGA3D_DX9
             else if (pOAI->pPrivateDriverData && pOAI->PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC))
             {
+                /* This is D3D UMD (VBoxDX) resource. Do the same as for "generic" resource branch below. */
                 VBOXDXALLOCATIONDESC *pAllocDesc = (VBOXDXALLOCATIONDESC *)pOAI->pPrivateDriverData;
+
+                pRc->fFlags.Generic = 1;
+                pRc->cAllocations   = 1;
                 pRc->RcDesc.fFlags.Primary = pAllocDesc->fPrimary;
                 pRc->RcDesc.fFlags.RenderTarget = 1;
-                //pRc->RcDesc.fFlags.NotLockable = 1;
                 pRc->RcDesc.enmFormat      = pAllocDesc->enmDDIFormat;
                 if (pAllocDesc->fPrimary)
                 {
                    pRc->RcDesc.VidPnSourceId  = pAllocDesc->PrimaryDesc.VidPnSourceId;
                    pRc->RcDesc.RefreshRate.Numerator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Numerator;
                    pRc->RcDesc.RefreshRate.Denominator = pAllocDesc->PrimaryDesc.ModeDesc.RefreshRate.Denominator;
+                }
+
+                hr = GaD3DIfCreateForRc(pRc);
+                if (SUCCEEDED(hr))
+                {
+                   /* Get the just created surface id and inform the miniport that the surface id
+                    * should be replaced with the original surface id.
+                    */
+                   IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+                   IGaDirect3DDevice9Ex *pGaD3DDevice9Ex = NULL;
+                   HRESULT hr2 = pDevice9If->QueryInterface(IID_IGaDirect3DDevice9Ex, (void**)&pGaD3DDevice9Ex);
+                   if (SUCCEEDED(hr2))
+                   {
+                       Assert(pGaD3DDevice9Ex);
+                       PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0]; /* First allocation is enough. */
+                       uint32_t u32Sid;
+                       hr2 = pGaD3DDevice9Ex->GaSurfaceId(pAllocation->pD3DIf, &u32Sid);
+                       if (SUCCEEDED(hr2))
+                       {
+                           /* Inform the miniport. */
+                           Assert(pAllocation->hSharedHandle);
+
+                           pAllocation->hostID = u32Sid;
+
+                           VBOXDISPIFESCAPE_GASHAREDSID data;
+                           RT_ZERO(data);
+                           data.EscapeHdr.escapeCode = VBOXESC_GASHAREDSID;
+                           data.u32Sid = u32Sid;
+                           data.u32SharedSid = (uint32_t)(uintptr_t)pAllocation->hSharedHandle;
+                           hr2 = pGaD3DDevice9Ex->EscapeCb(&data, sizeof(data), /* fHardwareAccess= */ false);
+                       }
+                       pGaD3DDevice9Ex->Release();
+                   }
                 }
             }
 #endif

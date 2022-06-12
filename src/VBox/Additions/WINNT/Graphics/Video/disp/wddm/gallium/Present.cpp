@@ -265,9 +265,12 @@ HRESULT WINAPI WDDMPresent::GetPresentStats(D3DPRESENTSTATS *pStats)
 
 HRESULT WINAPI WDDMPresent::GetCursorPos(POINT *pPoint)
 {
-    RT_NOREF(pPoint);
-    TRAPNOTIMPL;
-    return D3DERR_INVALIDCALL;
+    if (!::GetCursorPos(pPoint))
+    {
+        pPoint->x = 0;
+        pPoint->y = 0;
+    }
+    return S_OK;
 }
 
 HRESULT WINAPI WDDMPresent::SetCursorPos(POINT *pPoint)

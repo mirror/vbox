@@ -1037,6 +1037,16 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
             if (Status == STATUS_SUCCESS)
                 Status = SvgaProcessSurface(pSvga, &p->dstSid, pHOA);
         } break;
+        case SVGA_3D_CMD_DX_DEFINE_RENDERTARGET_VIEW:
+        {
+            SVGA3dCmdDXDefineRenderTargetView *p = (SVGA3dCmdDXDefineRenderTargetView *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
+        } break;
+        case SVGA_3D_CMD_DX_DEFINE_SHADERRESOURCE_VIEW:
+        {
+            SVGA3dCmdDXDefineShaderResourceView *p = (SVGA3dCmdDXDefineShaderResourceView *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
+        } break;
         default:
             if (SVGA_3D_CMD_DX_MIN <= u32CmdId && u32CmdId <= SVGA_3D_CMD_DX_MAX)
             {
@@ -1823,7 +1833,7 @@ static NTSTATUS svgaCreateGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *
     Assert(NT_SUCCESS(Status));
     if (NT_SUCCESS(Status))
     {
-        Status = SvgaGboFillPageTableForArray(&pRegion->pMob->gbo, pRegion->u32NumPages, pRegion->aPhys);
+        Status = SvgaGboFillPageTableForMemObj(&pRegion->pMob->gbo, pRegion->MemObj);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
@@ -1872,8 +1882,8 @@ static void gmrFree(GAWDDMREGION *pRegion)
 
 static NTSTATUS gmrAlloc(GAWDDMREGION *pRegion)
 {
-    int rc = RTR0MemObjAllocLowTag(&pRegion->MemObj, pRegion->u32NumPages << PAGE_SHIFT,
-                                   false /* executable R0 mapping */, "WDDMGA");
+    int rc = RTR0MemObjAllocPageTag(&pRegion->MemObj, pRegion->u32NumPages << PAGE_SHIFT,
+                                    false /* executable R0 mapping */, "VMSVGAGMR");
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -2063,7 +2073,7 @@ NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                     /* Report the GMR to the host vmsvga device. */
                     Status = SvgaGMRReport(pSvga,
                                            VMSVGAMOB_ID(pRegion->pMob),
-                                           SVGA_REMAP_GMR2_PPN32,
+                                           SVGA_REMAP_GMR2_PPN64,
                                            pRegion->u32NumPages,
                                            &pRegion->aPhys[0]);
                     Assert(NT_SUCCESS(Status));
@@ -2283,37 +2293,6 @@ NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
         /* Store page numbers into the level 1 description pages. */
         for (unsigned i = 0; i < pGbo->cbGbo >> PAGE_SHIFT; ++i)
             paPpnGbo[i] = RTR0MemObjGetPagePhysAddr(hMemObj, i) >> PAGE_SHIFT;
-    }
-    return STATUS_SUCCESS;
-}
-
-
-NTSTATUS SvgaGboFillPageTableForArray(PVMSVGAGBO pGbo,
-                                      uint32_t u32NumPages,
-                                      RTHCPHYS *paPhys)
-{
-    if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_0)
-    {
-        Assert(u32NumPages == 1);
-        pGbo->base = paPhys[0] >> PAGE_SHIFT;
-    }
-    else
-    {
-        /* The first of pages is alway the base. It is either the level 2 page or the single level 1 page */
-        pGbo->base = RTR0MemObjGetPagePhysAddr(pGbo->hMemObjPT, 0) >> PAGE_SHIFT;
-
-        PPN64 *paPpn = (PPN64 *)RTR0MemObjAddress(pGbo->hMemObjPT);
-        PPN64 *paPpnGbo;
-        if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_2)
-            paPpnGbo = &paPpn[PAGE_SIZE / sizeof(PPN64)]; /* Level 1 pages follow the level 2 page. */
-        else if (pGbo->enmMobFormat == SVGA3D_MOBFMT_PTDEPTH64_1)
-            paPpnGbo = paPpn;
-        else
-            AssertFailedReturn(STATUS_INVALID_PARAMETER);
-
-        /* Store page numbers into the level 1 description pages. */
-        for (unsigned i = 0; i < u32NumPages; ++i)
-            paPpnGbo[i] = paPhys[i] >> PAGE_SHIFT;
     }
     return STATUS_SUCCESS;
 }

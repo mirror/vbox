@@ -116,6 +116,9 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDispD3D_DEFS   += VBOX_WITH_VIDEOHWACCEL
 endif
+# Avoid "src\VBox\Additions\3D\mesa\mesa-21.3.8\include\c99_compat.h(99): warning C4668: '__STDC_VERSION__'
+# is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'"
+VBoxDispD3D_DEFS    += __STDC_VERSION__=0
 VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \
