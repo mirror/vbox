@@ -76,6 +76,7 @@ static const int iBookmarkUrlDataType = 6;
 static int iZoomPercentageStep = 20;
 const QPair<int, int> zoomPercentageMinMax = QPair<int, int>(20, 300);
 
+
 /*********************************************************************************************************************************
 *   UIZoomMenuAction definition.                                                                                                 *
 *********************************************************************************************************************************/
