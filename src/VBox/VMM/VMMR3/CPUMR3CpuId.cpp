@@ -3952,7 +3952,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
 {
     AssertMsgReturn(uVersion >= CPUM_SAVED_STATE_VERSION_VER3_2, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
-    AssertMsgFailed("Port me!");
+    AssertMsgFailed(("Port me!"));
 #endif
 
     /*
