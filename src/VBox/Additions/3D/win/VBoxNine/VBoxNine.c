@@ -74,21 +74,24 @@ d3dadapter9_context_wddm_create(struct d3dadapter9_context_wddm **ppCtx, struct 
 
     if (!ctx) { return E_OUTOFMEMORY; }
 
-    ctx->base.destroy = wddm_destroy;
-
-    ctx->base.linear_framebuffer = 1;
-
-    ctx->base.hal = s;
-
-    ctx->base.throttling = FALSE;
-    ctx->base.throttling_value = 0;
-
-    ctx->base.vblank_mode = 1;
-
-    ctx->base.thread_submit = 0;
-
+    ctx->base.hal                        = s;
     /** @todo Need software device here. Currently assigned to hw device to prevent NineDevice9_ctor crash. */
-    ctx->base.ref = ctx->base.hal;
+    ctx->base.ref                        = ctx->base.hal;
+    // D3DADAPTER_IDENTIFIER9 identifier;
+    ctx->base.linear_framebuffer         = TRUE;
+    ctx->base.throttling                 = FALSE;
+    ctx->base.throttling_value           = 0;
+    ctx->base.vblank_mode                = 1;
+    ctx->base.thread_submit              = FALSE;
+    ctx->base.discard_delayed_release    = FALSE;
+    ctx->base.tearfree_discard           = FALSE;
+    ctx->base.csmt_force                 = FALSE;
+    ctx->base.dynamic_texture_workaround = FALSE;
+    ctx->base.shader_inline_constants    = FALSE;
+    ctx->base.memfd_virtualsizelimit     = -1;
+    ctx->base.override_vram_size         = -1;
+    ctx->base.destroy                    = wddm_destroy;
+
 
     /* read out PCI info */
     /// @todo read_descriptor(&ctx->base, fd);

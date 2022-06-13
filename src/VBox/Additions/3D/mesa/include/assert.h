@@ -28,6 +28,10 @@
 #include <iprt/asm.h>
 
 #undef assert
+#ifdef DEBUG
 #define assert(_e) (void)( (!!(_e)) || (ASMBreakpoint(), 0) )
+#else
+#define assert(_e) (void)(0)
+#endif
 
 #endif /* !GA_INCLUDED_3D_MESA_assert_h */

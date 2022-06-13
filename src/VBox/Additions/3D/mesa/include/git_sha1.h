@@ -23,6 +23,6 @@
 # pragma once
 #endif
 
-/* Nothing. */
+#define MESA_GIT_SHA1 ""
 
 #endif /* !GA_INCLUDED_3D_MESA_git_sha1_h */

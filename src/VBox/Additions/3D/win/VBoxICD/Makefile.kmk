@@ -18,7 +18,7 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_GL_ICD_DEF_FILE = $(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.mingw.def
+VBOX_GL_ICD_DEF_FILE = $(PATH_ROOT)/src/VBox/Additions/3D/win/VBoxICD/opengl32.mingw.def
 
 DLLS       += VBoxICD
 DLLS.amd64 += VBoxICD-x86
@@ -37,7 +37,7 @@ VBoxICD_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include \
 	$(VBOX_GRAPHICS_INCS)
 VBoxICD_SOURCES  = \
-	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
+	opengl32.def \
 	$(VBoxICD_0_OUTDIR)/forwarders.asm \
 	$(VBoxICD_0_OUTDIR)/pfns.c \
 	VBoxICD.c \

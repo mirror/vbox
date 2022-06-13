@@ -236,8 +236,9 @@ NTSTATUS vboxKmtCloseSharedSurface(D3DKMT_HANDLE hDevice, struct stw_shared_surf
 
 
 static struct pipe_screen *
-wddm_screen_create(void)
+wddm_screen_create(HDC hDC)
 {
+    RT_NOREF(hDC); /** @todo Use it? */
     struct pipe_screen *screen = NULL;
 
     if (gaDrvLoadSVGA(&g_drvfuncs))
@@ -255,9 +256,11 @@ wddm_screen_create(void)
 
 static void
 wddm_present(struct pipe_screen *screen,
+             struct pipe_context *context,
              struct pipe_resource *res,
              HDC hDC)
 {
+    RT_NOREF(context);
     struct stw_context *ctx = stw_current_context();
     struct pipe_context *pipe = ctx->st->pipe;
 
@@ -279,8 +282,10 @@ wddm_present(struct pipe_screen *screen,
 
 static boolean
 wddm_get_adapter_luid(struct pipe_screen *screen,
+                      HDC hDC,
                       LUID *pAdapterLuid)
 {
+    RT_NOREF(hDC); /** @todo Use it? */
     const WDDMGalliumDriverEnv *pEnv = g_drvfuncs.pfnGaDrvGetWDDMEnv(screen);
     if (pEnv)
     {
@@ -380,13 +385,29 @@ wddm_compose(struct pipe_screen *screen,
     }
 }
 
+static unsigned
+wddm_get_pfd_flags(struct pipe_screen *screen)
+{
+    (void)screen;
+    return stw_pfd_gdi_support | stw_pfd_double_buffer;
+}
+
+static const char *
+wddm_get_name(void)
+{
+   return "VBoxGL";
+}
+
 static const struct stw_winsys stw_winsys = {
    wddm_screen_create,
    wddm_present,
    wddm_get_adapter_luid,
    wddm_shared_surface_open,
    wddm_shared_surface_close,
-   wddm_compose
+   wddm_compose,
+   wddm_get_pfd_flags,
+   NULL, /* create_framebuffer */
+   wddm_get_name,
 };
 
 #ifdef DEBUG

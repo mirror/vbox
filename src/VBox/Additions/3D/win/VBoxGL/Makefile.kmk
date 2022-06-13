@@ -18,26 +18,24 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# Define this to build software OpenGL driver
-#VBOX_WITH_MESA3D_GL_SOFTWARE = 1
-
 DLLS       += VBoxGL
 DLLS.amd64 += VBoxGL-x86
 
 VBoxGL_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
 VBoxGL_DEFS     = VBOXGL
 # -wd4005: '__useHeader' : redefinition
-VBoxGL_CFLAGS  := -wd4005
-if "$(VBOX_NEWER_VCC_TOOL_STEM)" >= "VCC140"
+VBOXGL_DISABLED_WARNINGS := -wd4005
 # -wd4204: nonstandard extension used: non-constant aggregate initializer
+# -wd4267: 'initializing': conversion from 'size_t' to 'unsigned int', possible loss of data
 # -wd4459: stw_device.h(102): warning C4459: declaration of 'stw_dev' hides global declaration
 # -wd4668: c99_compat.h(99): warning C4668: '__STDC_VERSION__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-VBoxGL_CFLAGS  += -wd4204 -wd4459 -wd4668
-endif
+VBOXGL_DISABLED_WARNINGS += -wd4204 -wd4267 -wd4459 -wd4668
+VBoxGL_CFLAGS   = $(VBOXGL_DISABLED_WARNINGS)
+VBoxGL_CXXFLAGS = $(VBOXGL_DISABLED_WARNINGS)
 VBoxGL_INCS     = \
 	$(VBOX_PATH_3D)/win/include \
 	$(VBOX_PATH_MESA)/include/GL \
-	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl \
+	$(VBOX_PATH_MESA)/src/gallium/frontends/wgl \
 	$(VBOX_PATH_MESA)/src/gallium/winsys/sw \
 	$(VBOX_PATH_MESA)/src/gallium/drivers \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video \
@@ -45,52 +43,11 @@ VBoxGL_INCS     = \
 	$(VBOX_PATH_VMSVGA_INC) \
 	$(VBOX_GRAPHICS_INCS)
 VBoxGL_SOURCES  = \
-	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
+	$(VBOX_PATH_MESA)/src/gallium/targets/libgl-gdi/opengl32.def \
 	VBoxGL.rc
-ifndef VBOX_WITH_MESA3D_GL_SOFTWARE
 VBoxGL_SOURCES += \
 	GaDrvEnvKMT.cpp \
 	VBoxGL.c
-else
-VBoxGL_SOURCES += \
-	$(VBOX_PATH_MESA)/src/gallium/targets/libgl-gdi/libgl_gdi.c
-VBoxGL_SOURCES += \
-	$(VBOX_PATH_MESA)/src/gallium/winsys/sw/gdi/gdi_sw_winsys.c
-VBoxGL_SOURCES += \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_buffer.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_clear.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_context.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_compute.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_draw_arrays.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_fence.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_flush.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_fs_exec.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_image.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_prim_vbuf.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_blend.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_depth_test.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_fs.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_pipe.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_stipple.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_query.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_screen.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_setup.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_blend.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_clip.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_derived.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_image.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_rasterizer.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_sampler.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_shader.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_so.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_surface.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_vertex.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_surface.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tex_sample.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tex_tile_cache.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_texture.c \
-	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tile_cache.c
-endif
 VBoxGL_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib$(VBOX_SUFF_LIB) \
