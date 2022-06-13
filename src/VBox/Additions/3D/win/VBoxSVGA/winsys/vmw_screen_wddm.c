@@ -39,7 +39,6 @@
 #include "pipe/p_compiler.h"
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
-#include "util/u_format.h"
 
 #include "vmw_context.h"
 #include "vmw_screen.h"
@@ -48,7 +47,7 @@
 #include "svga_drm_public.h"
 #include "svga3d_surfacedefs.h"
 
-#include "state_tracker/drm_driver.h"
+#include "frontend/drm_driver.h"
 
 #include "vmwgfx_drm.h"
 
@@ -144,11 +143,11 @@ vmw_drm_surface_get_handle(struct svga_winsys_screen *sws,
     whandle->offset = 0;
 
     switch (whandle->type) {
-    case DRM_API_HANDLE_TYPE_SHARED:
-    case DRM_API_HANDLE_TYPE_KMS:
+    case WINSYS_HANDLE_TYPE_SHARED:
+    case WINSYS_HANDLE_TYPE_KMS:
        whandle->handle = vsrf->sid;
        break;
-    case DRM_API_HANDLE_TYPE_FD:
+    case WINSYS_HANDLE_TYPE_FD:
        whandle->handle = vsrf->sid; /// @todo will this be enough for WDDM?
        break;
     default:
@@ -158,4 +157,11 @@ vmw_drm_surface_get_handle(struct svga_winsys_screen *sws,
     }
 
     return TRUE;
+}
+
+void
+vmw_svga_winsys_host_log(struct svga_winsys_screen *sws, const char *log)
+{
+   (void)sws;
+   _debug_printf("%s\n", log);
 }

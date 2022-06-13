@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Oracle Corporation
+ * Copyright (C) 2016-2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,14 +36,15 @@
  **********************************************************/
 
 
-#include "vmw_screen.h"
+#include "../wddm_screen.h"
 #include "vmw_fence.h"
 #include "vmw_context.h"
+#include "vmwgfx_drm.h"
 
+#include "util/os_file.h"
 #include "util/u_memory.h"
 #include "pipe/p_compiler.h"
-
-#include "../wddm_screen.h"
+#include "util/u_hash_table.h"
 
 /* Called from vmw_drm_create_screen(), creates and initializes the
  * vmw_winsys_screen structure, which is the main entity in this
@@ -56,48 +57,53 @@
 struct vmw_winsys_screen_wddm *
 vmw_winsys_create_wddm(const WDDMGalliumDriverEnv *pEnv)
 {
-   struct vmw_winsys_screen_wddm *vws;
+   struct vmw_winsys_screen_wddm *vws_wddm;
+   struct vmw_winsys_screen *vws;
 
    if (   pEnv->pHWInfo == NULL
        || pEnv->pHWInfo->u32HwType != VBOX_GA_HW_TYPE_VMSVGA)
-       return NULL;
+      return NULL;
 
-   vws = CALLOC_STRUCT(vmw_winsys_screen_wddm);
+   vws_wddm = CALLOC_STRUCT(vmw_winsys_screen_wddm);
+   vws = &vws_wddm->base;
    if (!vws)
       goto out_no_vws;
 
-   vws->pEnv = pEnv;
-   vws->HwInfo = pEnv->pHWInfo->u.svga;
+   vws_wddm->pEnv = pEnv;
+   vws_wddm->HwInfo = pEnv->pHWInfo->u.svga;
 
-   vws->base.device = 0; /* not used */
-   vws->base.open_count = 1;
-   vws->base.ioctl.drm_fd = -1; /* not used */
-   vws->base.base.have_gb_dma = TRUE;
-   vws->base.base.need_to_rebind_resources = FALSE;
-
-   if (!vmw_ioctl_init(&vws->base))
+   vws->device = 0; /* not used */
+   vws->open_count = 1;
+   vws->ioctl.drm_fd = -1; /* not used */
+   vws->force_coherent = FALSE;
+   if (!vmw_ioctl_init(vws))
       goto out_no_ioctl;
 
-   vws->base.fence_ops = vmw_fence_ops_create(&vws->base);
-   if (!vws->base.fence_ops)
+   vws->base.have_gb_dma = !vws->force_coherent;
+   vws->base.need_to_rebind_resources = FALSE;
+   vws->base.have_transfer_from_buffer_cmd = vws->base.have_vgpu10;
+   vws->base.have_constant_buffer_offset_cmd = FALSE;
+   vws->cache_maps = FALSE;
+   vws->fence_ops = vmw_fence_ops_create(vws);
+   if (!vws->fence_ops)
       goto out_no_fence_ops;
 
-   if(!vmw_pools_init(&vws->base))
+   if(!vmw_pools_init(vws))
       goto out_no_pools;
 
-   if (!vmw_winsys_screen_init_svga(&vws->base))
+   if (!vmw_winsys_screen_init_svga(vws))
       goto out_no_svga;
 
-   cnd_init(&vws->base.cs_cond);
-   mtx_init(&vws->base.cs_mutex, mtx_plain);
+   cnd_init(&vws->cs_cond);
+   mtx_init(&vws->cs_mutex, mtx_plain);
 
-   return vws;
+   return vws_wddm;
 out_no_svga:
-   vmw_pools_cleanup(&vws->base);
+   vmw_pools_cleanup(vws);
 out_no_pools:
-   vws->base.fence_ops->destroy(vws->base.fence_ops);
+   vws->fence_ops->destroy(vws->fence_ops);
 out_no_fence_ops:
-   vmw_ioctl_cleanup(&vws->base);
+   vmw_ioctl_cleanup(vws);
 out_no_ioctl:
    FREE(vws);
 out_no_vws:
@@ -107,8 +113,6 @@ out_no_vws:
 void
 vmw_winsys_destroy(struct vmw_winsys_screen *vws)
 {
-   struct vmw_winsys_screen_wddm *vws_wddm = (struct vmw_winsys_screen_wddm *)vws;
-   RT_NOREF(vws_wddm);
    if (--vws->open_count == 0) {
       vmw_pools_cleanup(vws);
       vws->fence_ops->destroy(vws->fence_ops);
