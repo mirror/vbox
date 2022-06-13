@@ -1213,11 +1213,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         {
             /* Indicate whether 64-bit guests are supported or not. */
             InsertConfigInteger(pHM, "64bitEnabled", fIsGuest64Bit);
-#if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
-            PCFGMNODE pREM;
-            InsertConfigNode(pRoot, "REM", &pREM);
-            InsertConfigInteger(pREM, "64bitEnabled", 1);
-#endif
 
             /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better,
                 but that requires quite a bit of API change in Main. */
