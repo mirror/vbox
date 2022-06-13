@@ -141,7 +141,8 @@ VBoxDispD3D_LIBS     = \
 ifdef VBOX_WITH_VMSVGA
 VBoxDispD3D_DEFS     += VBOX_WITH_VMSVGA
 VBoxDispD3D_INCS     += \
-	$(PATH_ROOT)/src/VBox/Additions/3D/win/include
+	$(PATH_ROOT)/src/VBox/Additions/3D/win/include \
+	$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include
 endif
 
 ifdef VBOX_WITH_MESA3D
@@ -150,9 +151,7 @@ VBoxDispD3D_INCS     += \
 	$(VBOX_PATH_MESA)/src/gallium/include \
 	$(VBOX_PATH_MESA)/src \
 	$(VBOX_PATH_MESA)/include/c99 \
-	$(VBOX_PATH_MESA)/include \
-	$(VBOX_PATH_3D)/win/include \
-	$(VBOX_PATH_VMSVGA_INC)
+	$(VBOX_PATH_MESA)/include
 VBoxDispD3D_SOURCES  += \
 	wddm/gallium/GaDxva.cpp \
 	wddm/gallium/GaDrvEnvWddm.cpp \
