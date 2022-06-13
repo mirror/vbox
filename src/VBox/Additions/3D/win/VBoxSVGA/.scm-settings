@@ -17,3 +17,4 @@
 
 
 --filter-out-dirs  "*/winsys/."
+--filter-out-dirs  "*/winsys_21/."
