@@ -37,7 +37,11 @@ PROGRAMS.linux += VBoxDRMClient
 
 VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
-VBoxClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBoxClient_DEFS += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+else
+ VBoxClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+endif
 ifdef VBOX_WITH_DBUS
  VBoxClient_DEFS += VBOX_WITH_DBUS
 endif
@@ -52,7 +56,11 @@ VBoxClient_SOURCES = \
 	logging.cpp
 
 VBoxDRMClient_TEMPLATE = NewVBoxGuestR3Exe
-VBoxDRMClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBoxDRMClient_DEFS += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+else
+ VBoxDRMClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+endif
 VBoxDRMClient_SOURCES = \
     display-drm.cpp \
     display-ipc.cpp \
@@ -199,7 +207,11 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
           testcase/tstSeamlessX11.cpp \
           seamless.cpp \
           seamless-x11.cpp
-  tstSeamlessX11_DEFS   += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   tstSeamlessX11_DEFS  += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+  else
+   tstSeamlessX11_DEFS  += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+  endif
   tstSeamlessX11_LIBPATH = \
           $(VBOX_LIBPATH_X11)
   tstSeamlessX11_LIBS = \

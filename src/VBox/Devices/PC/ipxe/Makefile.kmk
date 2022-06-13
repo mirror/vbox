@@ -165,9 +165,12 @@ endif
 	VERSION_MAJOR=1 \
 	VERSION_MINOR=0 \
 	VERSION_PATCH=0 \
-	VERSION=\"1.0.0+\" \
 	_build_id=0xaffeaffe
-
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  TEMPLATE_iPxe_DEFS += VERSION="1.0.0+"
+ else
+  TEMPLATE_iPxe_DEFS += VERSION=\"1.0.0+\"
+ endif
 
  #
  # iPxeBaseBin - The iPXE ROM base binary.

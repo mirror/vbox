@@ -37,8 +37,12 @@ include $(KBUILD_PATH)/subheader.kmk
 SYSMODS.solaris        += virtionet
 virtionet_NAME.solaris  = virtnet
 virtionet_TEMPLATE      = VBOXGUESTR0
-virtionet_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
-virtionet_DEPS         += $(VBOX_SVN_REV_KMK)
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ virtionet_DEFS         = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_VERSION_STRING="$(VBOX_VERSION_STRING)"
+else
+ virtionet_DEFS         = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
+endif
+virtionet_DEPS          = $(VBOX_SVN_REV_KMK)
 virtionet_INCS         := .
 virtionet_SOURCES       = \
 	Virtio-solaris.c \

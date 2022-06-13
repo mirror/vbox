@@ -33,16 +33,26 @@ PROGRAMS += rdesktop-vrdp
 rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
 rdesktop-vrdp_SDKS = VBOX_OPENSSL2
 rdesktop-vrdp_DEFS = \
-	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.8.4\" \
-	PACKAGE_STRING=\"rdesktop\ 1.8.4\" PACKAGE_BUGREPORT=\"\" STDC_HEADERS=1 L_ENDIAN=1 \
 	HAVE_SYS_TYPES_H=1 HAVE_SYS_STAT_H=1 HAVE_STDLIB_H=1 HAVE_STRING_H=1 HAVE_MEMORY_H=1 \
 	HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_SYS_SELECT_H=1 \
 	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 \
-	EGD_SOCKET=\"/var/run/egd-pool\" WITH_RDPSND=1 HAVE_DIRENT_H=1 \
 	HAVE_ICONV=1 HAVE_SYS_STATVFS_H=1 \
 	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
-	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(CDEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox\")\"/rdesktop-vrdp-keymaps\" \
+	HAVE_DIRENT_H=1 WITH_RDPSND=1 STDC_HEADERS=1 L_ENDIAN=1 \
 	RDESKTOP=1
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ rdesktop-vrdp_DEFS += \
+ 	PACKAGE_NAME="rdesktop-vrdp" PACKAGE_TARNAME="rdesktop-vrdp" PACKAGE_VERSION="1.8.4" \
+ 	PACKAGE_STRING="rdesktop\ 1.8.4" PACKAGE_BUGREPORT="" \
+ 	EGD_SOCKET="/var/run/egd-pool"  \
+ 	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(CDEFS)),RTPATH_APP_PRIVATE,"/opt/VirtualBox")"/rdesktop-vrdp-keymaps"
+else
+ rdesktop-vrdp_DEFS += \
+ 	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.8.4\" \
+ 	PACKAGE_STRING=\"rdesktop\ 1.8.4\" PACKAGE_BUGREPORT=\"\" \
+ 	EGD_SOCKET=\"/var/run/egd-pool\" \
+ 	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(CDEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox\")\"/rdesktop-vrdp-keymaps\"
+endif
 ifdef WITH_BIRD_VD_HACKS
  rdesktop-vrdp_DEFS += WITH_BIRD_VD_HACKS
 endif

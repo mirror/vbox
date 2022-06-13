@@ -38,9 +38,15 @@ endif
 
 PROGRAMS += UsbTestService
 UsbTestService_TEMPLATE = VBoxValidationKitR3
-UsbTestService_DEFS = \
-	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
-	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ UsbTestService_DEFS = \
+ 	KBUILD_TARGET="$(KBUILD_TARGET)" \
+ 	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"
+else
+ UsbTestService_DEFS = \
+ 	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
+ 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
+endif
 UsbTestService_SOURCES = \
 	UsbTestService.cpp \
 	UsbTestServiceGadgetCfg.cpp \
