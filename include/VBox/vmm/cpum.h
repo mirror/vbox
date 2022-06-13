@@ -1590,7 +1590,6 @@ VMMDECL(void)          CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val);
 VMMR3_INT_DECL(void)   CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMR3_INT_DECL(void)   CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMR3_INT_DECL(bool)   CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-VMMR3_INT_DECL(void)   CPUMR3CpuIdEnable64BitGuests(PVM pVM);
 VMMDECL(bool)          CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible);
 VMMDECL(void)          CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPUCC pVCpu, uint64_t uValue);

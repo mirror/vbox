@@ -3152,6 +3152,9 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
          * as constructing VMX capabilities MSRs rely on CPU feature bits like long mode,
          * unrestricted-guest execution, CR4 feature bits and possibly more in the future.
          */
+        /** @todo r=bird: given that long mode never used to be enabled before the
+         *        VMINITCOMPLETED_RING0 state, and we're a lot earlier here in ring-3
+         *        init, the above comment cannot be entirely accurate. */
         if (pVM->cpum.s.GuestFeatures.fVmx)
         {
             Assert(Config.fNestedHWVirt);
@@ -3171,17 +3174,34 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
          * via the CPUMR3SetGuestCpuIdFeature API.
          */
 
+        /* Check if 64-bit guest supported was enabled. */
+        bool fEnable64bit;
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "Enable64bit", &fEnable64bit, false);
+        AssertRCReturn(rc, rc);
+        if (fEnable64bit)
+        {
+            /* In case of a CPU upgrade: */
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);      /* (Long mode only on Intel CPUs.) */
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+
+            /* The actual feature: */
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+        }
+
         /* Check if PAE was explicitely enabled by the user. */
         bool fEnable;
-        rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, false);
+        rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, fEnable64bit);
         AssertRCReturn(rc, rc);
-        if (fEnable)
+        if (fEnable && !pVM->cpum.s.GuestFeatures.fPae)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 
         /* We don't normally enable NX for raw-mode, so give the user a chance to force it on. */
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableNX", &fEnable, false);
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableNX", &fEnable, fEnable64bit);
         AssertRCReturn(rc, rc);
-        if (fEnable)
+        if (fEnable && !pVM->cpum.s.GuestFeatures.fNoExecute)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
         /* Check if speculation control is enabled. */
@@ -3705,25 +3725,6 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
     }
-}
-
-
-/**
- * Enables 64-bit guest support for the CPU.
- *
- * @param   pVM                 The cross context VM structure.
- */
-VMMR3_INT_DECL(void) CPUMR3CpuIdEnable64BitGuests(PVM pVM)
-{
-    /* In case of a CPU upgrade: */
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);      /* (Long mode only on Intel CPUs.) */
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-
-    /* The actual feature: */
-    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
 }
 
 
