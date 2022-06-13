@@ -37,9 +37,9 @@ VBoxSVGA_INCS     = \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/svga/include \
 	$(VBOX_PATH_MESA)/src/gallium/winsys/svga/drm
 VBoxSVGA_SOURCES  = \
-	winsys_21/vmw_screen.c \
-	winsys_21/vmw_screen_wddm.c \
-	winsys_21/vmw_screen_ioctl.c \
+	winsys/vmw_screen.c \
+	winsys/vmw_screen_wddm.c \
+	winsys/vmw_screen_ioctl.c \
 	VBoxSVGA.c \
 	VBoxSVGA.rc \
 	VBoxSVGA.def
