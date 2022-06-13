@@ -90,6 +90,7 @@ crypto-headers_SOURCES = \
 	include/openssl/conftypes.h=>conftypes.h \
 	include/openssl/core.h=>core.h \
 	include/openssl/core_dispatch.h=>core_dispatch.h \
+	include/openssl/core_names.h=>core_names.h \
 	include/openssl/cryptoerr.h=>cryptoerr.h \
 	include/openssl/cryptoerr_legacy.h=>cryptoerr_legacy.h \
 	include/openssl/cterr.h=>cterr.h \
