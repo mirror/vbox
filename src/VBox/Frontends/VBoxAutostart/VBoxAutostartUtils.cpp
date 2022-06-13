@@ -262,7 +262,7 @@ DECLHIDDEN(RTEXITCODE) autostartSvcDisplayGetOptError(const char *pszAction, int
     return RTEXITCODE_SYNTAX;
 }
 
-DECLHIDDEN(int) autostartSetup()
+DECLHIDDEN(int) autostartSetup(void)
 {
     autostartSvcOsLogStr("Setting up ...\n", AUTOSTARTLOGTYPE_VERBOSE);
 
@@ -276,12 +276,15 @@ DECLHIDDEN(int) autostartSetup()
     {
         char szHome[RTPATH_MAX] = "";
         com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-               "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+        autostartSvcLogError("Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+        return VERR_COM_FILE_ERROR;
     }
 # endif
     if (FAILED(hrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM (%Rhrc)!", hrc);
+    {
+        autostartSvcLogError("Failed to initialize COM (%Rhrc)!", hrc);
+        return VERR_COM_UNEXPECTED;
+    }
 
     hrc = g_pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
     if (FAILED(hrc))
@@ -291,33 +294,33 @@ DECLHIDDEN(int) autostartSetup()
         if (!info.isFullAvailable() && !info.isBasicAvailable())
         {
             com::GluePrintRCMessage(hrc);
-            RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
+            autostartSvcLogError("Most likely, the VirtualBox COM server is not running or failed to start.");
         }
         else
             com::GluePrintErrorInfo(info);
-        return RTEXITCODE_FAILURE;
+        return VERR_COM_UNEXPECTED;
     }
 
     /*
      * Setup VirtualBox + session interfaces.
      */
-    HRESULT rc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
-    if (SUCCEEDED(rc))
+    hrc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        rc = g_pSession.createInprocObject(CLSID_Session);
-        if (FAILED(rc))
-            RTMsgError("Failed to create a session object (rc=%Rhrc)!", rc);
+        hrc = g_pSession.createInprocObject(CLSID_Session);
+        if (FAILED(hrc))
+            autostartSvcLogError("Failed to create a session object (rc=%Rhrc)!", hrc);
     }
     else
-        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", rc);
+        autostartSvcLogError("Failed to get VirtualBox object (rc=%Rhrc)!", hrc);
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
         return VERR_COM_OBJECT_NOT_FOUND;
 
     return VINF_SUCCESS;
 }
 
-DECLHIDDEN(void) autostartShutdown()
+DECLHIDDEN(void) autostartShutdown(void)
 {
     autostartSvcOsLogStr("Shutting down ...\n", AUTOSTARTLOGTYPE_VERBOSE);
 
