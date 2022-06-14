@@ -360,6 +360,13 @@ ifdef VBOX_WITH_DOCS_PACKING
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
 		     '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/VirtualBox_$(lang).chm)"></File>')
  endif
+ ifdef VBOX_WITH_DOCS_QHELP_PACKING
+	$(APPEND) $@ '	<File Id="file_UserManual.qch" Name="UserManual.qch" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual.qch)"></File>'
+	$(APPEND) $@ '	<File Id="file_UserManual.qhc" Name="UserManual.qhc" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual.qhc)"></File>'
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+		     '	<File Id="file_UserManual_$(lang).qch" Name="UserManual_$(lang).qch" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual_$(lang).qch)"></File>' \
+		     '	<File Id="file_UserManual_$(lang).qhc" Name="UserManual_$(lang).qhc" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual_$(lang).qhc)"></File>')
+ endif
 endif
 	$(APPEND) $@ '</Include>'
 
