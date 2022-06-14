@@ -241,15 +241,6 @@ typedef struct USBHID
     uint32_t u32LastTouchScanTime;
     bool fTouchReporting;
     bool fTouchStateUpdated;
-
-    struct
-    {
-        MTCONTACT aCurrentContactState[TPAD_CONTACT_MAX_COUNT];
-        MTCONTACT aReportingContactState[TPAD_CONTACT_MAX_COUNT];
-        uint32_t u32LastTouchScanTime;
-        bool fTouchReporting;
-        bool fTouchStateUpdated;
-    } tpad;
 } USBHID;
 /** Pointer to the USB HID instance data. */
 typedef USBHID *PUSBHID;
@@ -317,20 +308,12 @@ typedef struct USBHIDMT_REPORT_POINTER
 
 /**
  * The USB HID report structure for the touchpad device.
+ * It is a superset of the multi-touch report.
  */
 typedef struct USBHIDTP_REPORT
 {
-    uint8_t     idReport;
-    uint8_t     cContacts;
-    struct
-    {
-        uint8_t     fContact;
-        uint8_t     cContact;
-        uint16_t    x;
-        uint16_t    y;
-    } aContacts[MT_CONTACTS_PER_REPORT];
-    uint32_t    u32ScanTime;
-    uint8_t     buttons;
+    USBHIDMT_REPORT mt;
+    uint8_t         buttons;    /* Required by Win10, not used. */
 } USBHIDTP_REPORT, *PUSBHIDTP_REPORT;
 
 typedef union USBHIDALL_REPORT
@@ -1518,7 +1501,6 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     pThis->enmState = USBHIDREQSTATE_READY;
     pThis->fHasPendingChanges = false;
     pThis->fTouchStateUpdated = false;
-    pThis->tpad.fTouchStateUpdated = false;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
@@ -1623,6 +1605,9 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
      */
     uint8_t cContacts = 0;
 
+    uint8_t cMaxContacts = pThis->enmMode == USBHIDMODE_MT_RELATIVE ? TPAD_CONTACT_MAX_COUNT  : MT_CONTACT_MAX_COUNT;
+    size_t  cbReport     = pThis->enmMode == USBHIDMODE_MT_RELATIVE ? sizeof(USBHIDTP_REPORT) : sizeof(USBHIDMT_REPORT);
+
     Assert(pThis->fHasPendingChanges);
 
     if (!pThis->fTouchReporting)
@@ -1634,7 +1619,7 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
          * Also mark all active contacts in reporting state as dirty,
          * that is they must be reported to the guest.
          */
-        for (i = 0; i < MT_CONTACT_MAX_COUNT; i++)
+        for (i = 0; i < cMaxContacts; i++)
         {
             pRepContact = &pThis->aReportingContactState[i];
             pCurContact = &pThis->aCurrentContactState[i];
@@ -1685,12 +1670,13 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
     }
 
     /* Report current state. */
-    USBHIDMT_REPORT r;
-    USBHIDMT_REPORT *p = &r;
+    USBHIDTP_REPORT r;
+    USBHIDTP_REPORT *p = &r;
     RT_ZERO(*p);
 
-    p->idReport = REPORTID_TOUCH_EVENT;
-    p->cContacts = cContacts;
+    p->mt.idReport = REPORTID_TOUCH_EVENT;
+    p->mt.cContacts = cContacts;
+    p->buttons = 0; /* Not currently used. */
 
     uint8_t iReportedContact;
     for (iReportedContact = 0; iReportedContact < MT_CONTACTS_PER_REPORT; iReportedContact++)
@@ -1718,13 +1704,18 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
             pRepContact->status &= ~MT_CONTACT_S_DIRTY;
         }
 
-        p->aContacts[iReportedContact].fContact = pRepContact->flags;
-        p->aContacts[iReportedContact].cContact = pRepContact->id;
-        p->aContacts[iReportedContact].x = pRepContact->x >> pThis->u8CoordShift;
-        p->aContacts[iReportedContact].y = pRepContact->y >> pThis->u8CoordShift;
+        p->mt.aContacts[iReportedContact].fContact = pRepContact->flags;
+        p->mt.aContacts[iReportedContact].cContact = pRepContact->id;
+        p->mt.aContacts[iReportedContact].x = pRepContact->x >> pThis->u8CoordShift;
+        p->mt.aContacts[iReportedContact].y = pRepContact->y >> pThis->u8CoordShift;
+
+        if (pThis->enmMode == USBHIDMODE_MT_RELATIVE) {
+            /** @todo Parse touch confidence in Qt frontend */
+            p->mt.aContacts[iReportedContact].fContact |= MT_CONTACT_F_CONFIDENCE;
+        }
     }
 
-    p->u32ScanTime = pThis->u32LastTouchScanTime * 10;
+    p->mt.u32ScanTime = pThis->u32LastTouchScanTime * 10;
 
     Assert(iReportedContact > 0);
 
@@ -1743,147 +1734,10 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
         pThis->fHasPendingChanges = true;
     }
 
-    LogRel3(("usbHid: reporting touch contact:\n%.*Rhxd\n", sizeof(USBHIDMT_REPORT), p));
-    return usbHidCompleteOk(pThis, pUrb, p, sizeof(USBHIDMT_REPORT));
+    LogRel3(("usbHid: reporting touch contact:\n%.*Rhxd\n", cbReport, p));
+    return usbHidCompleteOk(pThis, pUrb, p, cbReport);
 }
 
-
-static int usbHidSendTouchPadReport(PUSBHID pThis, PVUSBURB pUrb)
-{
-    uint8_t i;
-    MTCONTACT *pRepContact;
-    MTCONTACT *pCurContact;
-
-    /* Number of contacts to be reported. In hybrid mode the first report contains
-     * total number of contacts and subsequent reports contain 0.
-     */
-    uint8_t cContacts = 0;
-
-    Assert(pThis->fHasPendingChanges);
-
-    if (!pThis->tpad.fTouchReporting)
-    {
-        pThis->tpad.fTouchReporting = true;
-        pThis->tpad.fTouchStateUpdated = false;
-
-        /* Update the reporting state with the new current state.
-         * Also mark all active contacts in reporting state as dirty,
-         * that is they must be reported to the guest.
-         */
-        for (i = 0; i < TPAD_CONTACT_MAX_COUNT; i++)
-        {
-            pRepContact = &pThis->tpad.aReportingContactState[i];
-            pCurContact = &pThis->tpad.aCurrentContactState[i];
-
-            if (pCurContact->status & MT_CONTACT_S_ACTIVE)
-            {
-                if (pCurContact->status & MT_CONTACT_S_REUSED)
-                {
-                    pCurContact->status &= ~MT_CONTACT_S_REUSED;
-
-                    /* Keep x,y. Will report lost contact at this point. */
-                    pRepContact->id     = pCurContact->oldId;
-                    pRepContact->flags  = 0;
-                    pRepContact->status = MT_CONTACT_S_REUSED;
-                }
-                else if (pThis->tpad.aCurrentContactState[i].status & MT_CONTACT_S_CANCELLED)
-                {
-                    pCurContact->status &= ~(MT_CONTACT_S_CANCELLED | MT_CONTACT_S_ACTIVE);
-
-                    /* Keep x,y. Will report lost contact at this point. */
-                    pRepContact->id     = pCurContact->id;
-                    pRepContact->flags  = 0;
-                    pRepContact->status = 0;
-                }
-                else
-                {
-                    if (pCurContact->flags == 0)
-                    {
-                        pCurContact->status &= ~MT_CONTACT_S_ACTIVE; /* Contact disapeared. */
-                    }
-
-                    pRepContact->x      = pCurContact->x;
-                    pRepContact->y      = pCurContact->y;
-                    pRepContact->id     = pCurContact->id;
-                    pRepContact->flags  = pCurContact->flags;
-                    pRepContact->status = 0;
-                }
-
-                cContacts++;
-
-                pRepContact->status |= MT_CONTACT_S_DIRTY;
-            }
-            else
-            {
-                pRepContact->status = 0;
-            }
-        }
-    }
-
-    /* Report current state. */
-    USBHIDTP_REPORT r;
-    USBHIDTP_REPORT *p = &r;
-    RT_ZERO(*p);
-
-    p->idReport = REPORTID_TOUCH_EVENT;
-    p->cContacts = cContacts;
-    p->buttons = 0;
-
-    uint8_t iReportedContact;
-    for (iReportedContact = 0; iReportedContact < MT_CONTACTS_PER_REPORT; iReportedContact++)
-    {
-        /* Find the next not reported contact. */
-        pRepContact = usbHidFindMTContact(pThis->tpad.aReportingContactState, RT_ELEMENTS(pThis->tpad.aReportingContactState),
-                                          MT_CONTACT_S_DIRTY, MT_CONTACT_S_DIRTY);
-
-        if (!pRepContact)
-        {
-            LogRel3(("usbHid: no more touch contacts to report\n"));
-            break;
-        }
-
-        if (pRepContact->status & MT_CONTACT_S_REUSED)
-        {
-            /* Do not clear DIRTY flag for contacts which were reused.
-             * Because two reports must be generated:
-             * one for old contact off, and the second for new contact on.
-             */
-            pRepContact->status &= ~MT_CONTACT_S_REUSED;
-        }
-        else
-        {
-            pRepContact->status &= ~MT_CONTACT_S_DIRTY;
-        }
-
-        /** @todo Parse touch confidence in Qt frontend */
-        p->aContacts[iReportedContact].fContact = pRepContact->flags | MT_CONTACT_F_CONFIDENCE;
-        p->aContacts[iReportedContact].cContact = pRepContact->id;
-        p->aContacts[iReportedContact].x = pRepContact->x >> pThis->u8CoordShift;
-        p->aContacts[iReportedContact].y = pRepContact->y >> pThis->u8CoordShift;
-    }
-
-    p->u32ScanTime = pThis->tpad.u32LastTouchScanTime * 10;
-
-    Assert(iReportedContact > 0);
-
-    /* Reset TouchReporting if all contacts reported. */
-    pRepContact = usbHidFindMTContact(pThis->tpad.aReportingContactState, RT_ELEMENTS(pThis->tpad.aReportingContactState),
-                                      MT_CONTACT_S_DIRTY, MT_CONTACT_S_DIRTY);
-
-    if (!pRepContact)
-    {
-        LogRel3(("usbHid: all touch contacts reported\n"));
-        pThis->tpad.fTouchReporting = false;
-        pThis->fHasPendingChanges = pThis->tpad.fTouchStateUpdated;
-    }
-    else
-    {
-        pThis->fHasPendingChanges = true;
-    }
-
-    LogRel3(("usbHid: reporting touch contact:\n%.*Rhxd\n", sizeof(USBHIDTP_REPORT), p));
-    return usbHidCompleteOk(pThis, pUrb, p, sizeof(USBHIDTP_REPORT));
-}
 
 /**
  * Sends a state report to the host if there is a pending URB.
@@ -1892,18 +1746,11 @@ static int usbHidSendReport(PUSBHID pThis)
 {
     PVUSBURB    pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
 
-    if (pThis->enmMode == USBHIDMODE_MT_ABSOLUTE)
+    if (pThis->enmMode == USBHIDMODE_MT_ABSOLUTE || pThis->enmMode == USBHIDMODE_MT_RELATIVE)
     {
-        /* This device uses a different reporting method and fHasPendingChanges maintenance. */
+        /* These modes use a different reporting method and maintain fHasPendingChanges. */
         if (pUrb)
             return usbHidSendMultiTouchReport(pThis, pUrb);
-        return VINF_SUCCESS;
-    }
-    if (pThis->enmMode == USBHIDMODE_MT_RELATIVE)
-    {
-        /* This device uses a different reporting method and fHasPendingChanges maintenance. */
-        if (pUrb)
-            return usbHidSendTouchPadReport(pThis, pUrb);
         return VINF_SUCCESS;
     }
 
@@ -1995,7 +1842,7 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchScreen}
  */
-static DECLCALLBACK(int) usbHidMousePutEventTouchScreen(PPDMIMOUSEPORT pInterface,
+static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PUSBHID pThis,
                                                        uint8_t cContacts,
                                                        const uint64_t *pau64Contacts,
                                                        uint32_t u32ScanTime)
@@ -2015,22 +1862,29 @@ static DECLCALLBACK(int) usbHidMousePutEventTouchScreen(PPDMIMOUSEPORT pInterfac
         paNewContacts[i].x      = (uint16_t)u32Lo;
         paNewContacts[i].y      = (uint16_t)(u32Lo >> 16);
         paNewContacts[i].id     = RT_BYTE1(u32Hi);
-        paNewContacts[i].flags  = RT_BYTE2(u32Hi) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
+        paNewContacts[i].flags  = RT_BYTE2(u32Hi);
         paNewContacts[i].status = MT_CONTACT_S_DIRTY;
         paNewContacts[i].oldId  = 0; /* Not used. */
-        if (paNewContacts[i].flags & MT_CONTACT_F_IN_CONTACT)
+
+        if (pThis->enmMode == USBHIDMODE_MT_ABSOLUTE)
         {
-            paNewContacts[i].flags |= MT_CONTACT_F_IN_RANGE;
+            paNewContacts[i].flags &= MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE;
+            if (paNewContacts[i].flags & MT_CONTACT_F_IN_CONTACT)
+            {
+                paNewContacts[i].flags |= MT_CONTACT_F_IN_RANGE;
+            }
+        }
+        else
+        {
+            Assert(pThis->enmMode == USBHIDMODE_MT_RELATIVE);
+            paNewContacts[i].flags &= MT_CONTACT_F_IN_CONTACT;
         }
     }
 
-    PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     MTCONTACT *pCurContact = NULL;
     MTCONTACT *pNewContact = NULL;
 
     RTCritSectEnter(&pThis->CritSect);
-
-    Assert(pThis->enmMode == USBHIDMODE_MT_ABSOLUTE);
 
     /* Maintain a state of all current contacts.
      * Intr URBs will be completed according to the state.
@@ -2166,6 +2020,21 @@ static DECLCALLBACK(int) usbHidMousePutEventTouchScreen(PPDMIMOUSEPORT pInterfac
 }
 
 /**
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchScreen}
+ */
+static DECLCALLBACK(int) usbHidMousePutEventTouchScreen(PPDMIMOUSEPORT pInterface,
+                                                       uint8_t cContacts,
+                                                       const uint64_t *pau64Contacts,
+                                                       uint32_t u32ScanTime)
+{
+    PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+
+    Assert(pThis->enmMode == USBHIDMODE_MT_ABSOLUTE);
+
+    return usbHidMousePutEventMultiTouch(pThis, cContacts, pau64Contacts, u32ScanTime);
+}
+
+/**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchPad}
  */
 static DECLCALLBACK(int) usbHidMousePutEventTouchPad(PPDMIMOUSEPORT pInterface,
@@ -2173,165 +2042,11 @@ static DECLCALLBACK(int) usbHidMousePutEventTouchPad(PPDMIMOUSEPORT pInterface,
                                                        const uint64_t *pau64Contacts,
                                                        uint32_t u32ScanTime)
 {
-    uint8_t i;
-    uint8_t j;
-
-    /* Make a copy of new contacts */
-    MTCONTACT *paNewContacts = (MTCONTACT *)RTMemTmpAlloc(sizeof(MTCONTACT) * cContacts);
-    if (!paNewContacts)
-        return VERR_NO_MEMORY;
-
-    for (i = 0; i < cContacts; i++)
-    {
-        uint32_t u32Lo = RT_LO_U32(pau64Contacts[i]);
-        uint32_t u32Hi = RT_HI_U32(pau64Contacts[i]);
-        paNewContacts[i].x      = (uint16_t)u32Lo;
-        paNewContacts[i].y      = (uint16_t)(u32Lo >> 16);
-        paNewContacts[i].id     = RT_BYTE1(u32Hi);
-        paNewContacts[i].flags  = RT_BYTE2(u32Hi) & MT_CONTACT_F_IN_CONTACT;
-        paNewContacts[i].status = MT_CONTACT_S_DIRTY;
-        paNewContacts[i].oldId  = 0; /* Not used. */
-    }
-
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-    MTCONTACT *pCurContact = NULL;
-    MTCONTACT *pNewContact = NULL;
-
-    RTCritSectEnter(&pThis->CritSect);
 
     Assert(pThis->enmMode == USBHIDMODE_MT_RELATIVE);
 
-    /* Maintain a state of all current contacts.
-     * Intr URBs will be completed according to the state.
-     */
-
-    /* Mark all existing contacts as dirty. */
-    for (i = 0; i < RT_ELEMENTS(pThis->tpad.aCurrentContactState); i++)
-        pThis->tpad.aCurrentContactState[i].status |= MT_CONTACT_S_DIRTY;
-
-    /* Update existing contacts and mark new contacts. */
-    for (i = 0; i < cContacts; i++)
-    {
-        pNewContact = &paNewContacts[i];
-
-        /* Find existing contact with the same id. */
-        pCurContact = NULL;
-        for (j = 0; j < RT_ELEMENTS(pThis->tpad.aCurrentContactState); j++)
-        {
-            if (   (pThis->tpad.aCurrentContactState[j].status & MT_CONTACT_S_ACTIVE) != 0
-                && pThis->tpad.aCurrentContactState[j].id == pNewContact->id)
-            {
-                pCurContact = &pThis->tpad.aCurrentContactState[j];
-                break;
-            }
-        }
-
-        if (pCurContact)
-        {
-            pNewContact->status &= ~MT_CONTACT_S_DIRTY;
-
-            pCurContact->x = pNewContact->x;
-            pCurContact->y = pNewContact->y;
-            if (pCurContact->flags == 0) /* Contact disappeared already. */
-            {
-                if ((pCurContact->status & MT_CONTACT_S_REUSED) == 0)
-                {
-                    pCurContact->status |= MT_CONTACT_S_REUSED; /* Report to the guest that the contact not in touch. */
-                    pCurContact->oldId = pCurContact->id;
-                }
-            }
-            pCurContact->flags = pNewContact->flags;
-            pCurContact->status &= ~MT_CONTACT_S_DIRTY;
-        }
-    }
-
-    /* Append new contacts (the dirty one in the paNewContacts). */
-    for (i = 0; i < cContacts; i++)
-    {
-        pNewContact = &paNewContacts[i];
-
-        if (pNewContact->status & MT_CONTACT_S_DIRTY)
-        {
-            /* It is a new contact, copy is to one of not ACTIVE or not updated existing contacts. */
-            pCurContact = usbHidFindMTContact(pThis->tpad.aCurrentContactState, RT_ELEMENTS(pThis->tpad.aCurrentContactState),
-                                              MT_CONTACT_S_ACTIVE, 0);
-
-            if (pCurContact)
-            {
-                *pCurContact = *pNewContact;
-                pCurContact->status = MT_CONTACT_S_ACTIVE; /* Reset status. */
-            }
-            else
-            {
-                /* Dirty existing contacts can be reused. */
-                pCurContact = usbHidFindMTContact(pThis->tpad.aCurrentContactState, RT_ELEMENTS(pThis->tpad.aCurrentContactState),
-                                                  MT_CONTACT_S_ACTIVE | MT_CONTACT_S_DIRTY,
-                                                  MT_CONTACT_S_ACTIVE | MT_CONTACT_S_DIRTY);
-
-                if (pCurContact)
-                {
-                    pCurContact->x = pNewContact->x;
-                    pCurContact->y = pNewContact->y;
-                    if ((pCurContact->status & MT_CONTACT_S_REUSED) == 0)
-                    {
-                        pCurContact->status |= MT_CONTACT_S_REUSED; /* Report to the guest that the contact not in touch. */
-                        pCurContact->oldId = pCurContact->id;
-                    }
-                    pCurContact->flags = pNewContact->flags;
-                    pCurContact->status &= ~MT_CONTACT_S_DIRTY;
-                }
-                else
-                {
-                    LogRel3(("usbHid: dropped new contact: %d,%d id %d flags %RX8 status %RX8 oldId %d\n",
-                             pNewContact->x,
-                             pNewContact->y,
-                             pNewContact->id,
-                             pNewContact->flags,
-                             pNewContact->status,
-                             pNewContact->oldId
-                           ));
-                }
-            }
-        }
-    }
-
-    /* Mark still dirty existing contacts as cancelled, because a new set of contacts does not include them. */
-    for (i = 0; i < RT_ELEMENTS(pThis->tpad.aCurrentContactState); i++)
-    {
-        pCurContact = &pThis->tpad.aCurrentContactState[i];
-        if (pCurContact->status & MT_CONTACT_S_DIRTY)
-        {
-            pCurContact->status |= MT_CONTACT_S_CANCELLED;
-            pCurContact->status &= ~MT_CONTACT_S_DIRTY;
-        }
-    }
-
-    pThis->tpad.u32LastTouchScanTime = u32ScanTime;
-
-    LogRel3(("usbHid: scanTime (ms): %d\n", pThis->tpad.u32LastTouchScanTime));
-    for (i = 0; i < RT_ELEMENTS(pThis->tpad.aCurrentContactState); i++)
-    {
-        LogRel3(("usbHid: contact state[%d]: %d,%d id %d flags %RX8 status %RX8 oldId %d\n",
-                  i,
-                  pThis->tpad.aCurrentContactState[i].x,
-                  pThis->tpad.aCurrentContactState[i].y,
-                  pThis->tpad.aCurrentContactState[i].id,
-                  pThis->tpad.aCurrentContactState[i].flags,
-                  pThis->tpad.aCurrentContactState[i].status,
-                  pThis->tpad.aCurrentContactState[i].oldId
-                ));
-    }
-
-    pThis->tpad.fTouchStateUpdated = true;
-    pThis->fHasPendingChanges = true;
-
-    /* Send a report if possible. */
-    usbHidSendReport(pThis);
-
-    RTCritSectLeave(&pThis->CritSect);
-
-    RTMemTmpFree(paNewContacts);
-    return VINF_SUCCESS;
+    return usbHidMousePutEventMultiTouch(pThis, cContacts, pau64Contacts, u32ScanTime);
 }
 
 /**
@@ -2560,7 +2275,7 @@ static int usbHidRequestClass(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                             USBHIDTP_REPORT *p = (USBHIDTP_REPORT *)&abData;
                             /* The actual state should be reported here. */
                             RT_ZERO(*p);
-                            p->idReport = REPORTID_TOUCH_EVENT;
+                            p->mt.idReport = REPORTID_TOUCH_EVENT;
                             cbData = sizeof(USBHIDTP_REPORT);
                             break;
                         }
