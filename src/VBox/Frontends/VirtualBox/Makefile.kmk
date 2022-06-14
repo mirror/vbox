@@ -934,6 +934,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UISnapshotFolderEditor.h \
 	src/settings/editors/UIUSBControllerEditor.h \
 	src/settings/editors/UIUSBFilterDetailsEditor.h \
+	src/settings/editors/UIUSBFiltersEditor.h \
 	src/settings/editors/UIVideoMemoryEditor.h \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
@@ -1090,10 +1091,10 @@ UICommon_QT_MOCSRCS = \
 	src/settings/editors/UILanguageSettingsEditor.cpp \
 	src/settings/editors/UISharedFoldersEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
+	src/settings/editors/UIUSBFiltersEditor.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
@@ -1512,6 +1513,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UISnapshotFolderEditor.cpp \
 	src/settings/editors/UIUSBControllerEditor.cpp \
 	src/settings/editors/UIUSBFilterDetailsEditor.cpp \
+	src/settings/editors/UIUSBFiltersEditor.cpp \
 	src/settings/editors/UIVideoMemoryEditor.cpp \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \

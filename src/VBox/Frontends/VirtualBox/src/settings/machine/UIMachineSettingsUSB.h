@@ -26,13 +26,8 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QHBoxLayout;
-class QTreeWidgetItem;
-class QILabelSeparator;
-class QIToolBar;
-class QITreeWidget;
-class VBoxUSBMenu;
 class UIUSBControllerEditor;
+class UIUSBFiltersEditor;
 struct UIDataSettingsMachineUSB;
 struct UIDataSettingsMachineUSBFilter;
 typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUSBFilter;
@@ -89,45 +84,16 @@ private slots:
     /** Handles whether USB adapted is @a fEnabled. */
     void sltHandleUsbAdapterToggle(bool fEnabled);
 
-    /** Handles USB filter tree @a pCurrentItem change. */
-    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
-    /** Handles context menu request for @a position of USB filter tree. */
-    void sltHandleContextMenuRequest(const QPoint &position);
-    /** Handles USB filter tree activity state change for @a pChangedItem. */
-    void sltHandleActivityStateChange(QTreeWidgetItem *pChangedItem);
-
-    /** Handles command to add new USB filter. */
-    void sltNewFilter();
-    /** Handles command to add existing USB filter. */
-    void sltAddFilter();
-    /** Handles command to edit USB filter. */
-    void sltEditFilter();
-    /** Handles command to confirm add of existing USB filter defined by @a pAction. */
-    void sltAddFilterConfirmed(QAction *pAction);
-    /** Handles command to remove chosen USB filter. */
-    void sltRemoveFilter();
-    /** Handles command to move chosen USB filter up. */
-    void sltMoveFilterUp();
-    /** Handles command to move chosen USB filter down. */
-    void sltMoveFilterDown();
-
 private:
 
     /** Prepares all. */
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares filters tree-widget. */
-    void prepareFiltersTreeWidget();
-    /** Prepares filters toolbar. */
-    void prepareFiltersToolbar();
     /** Prepares connections. */
     void prepareConnections();
     /** Cleanups all. */
     void cleanup();
-
-    /** Adds USB filter item based on a given @a filterData, fChoose if requested. */
-    void addUSBFilterItem(const UIDataSettingsMachineUSBFilter &filterData, bool fChoose);
 
     /** Saves existing data from cache. */
     bool saveData();
@@ -140,9 +106,6 @@ private:
     /** Creates USB filter at passed @a iPosition of the @a filtersObject using the @a filterData. */
     bool createUSBFilter(CUSBDeviceFilters &comFiltersObject, int iPosition, const UIDataSettingsMachineUSBFilter &filterData);
 
-    /** Holds the "New Filter %1" translation tag. */
-    QString  m_strTrUSBFilterName;
-
     /** Holds the page data cache instance. */
     UISettingsCacheMachineUSB *m_pCache;
 
@@ -154,28 +117,8 @@ private:
         QWidget               *m_pWidgetUSBSettings;
         /** Holds the USB controller editor instance. */
         UIUSBControllerEditor *m_pEditorController;
-        /** Holds the USB widget separator instance. */
-        QILabelSeparator      *m_pLabelSeparatorFilters;
-        /** Holds the USB filters layout instance. */
-        QHBoxLayout           *m_pLayoutFilters;
-        /** Holds the USB filters tree-widget instance. */
-        QITreeWidget          *m_pTreeWidgetFilters;
-        /** Holds the USB filters toolbar instance. */
-        QIToolBar             *m_pToolbarFilters;
-        /** Holds the New action instance. */
-        QAction               *m_pActionNew;
-        /** Holds the Add action instance. */
-        QAction               *m_pActionAdd;
-        /** Holds the Edit action instance. */
-        QAction               *m_pActionEdit;
-        /** Holds the Remove action instance. */
-        QAction               *m_pActionRemove;
-        /** Holds the Move Up action instance. */
-        QAction               *m_pActionMoveUp;
-        /** Holds the Move Down action instance. */
-        QAction               *m_pActionMoveDown;
-        /** Holds the USB devices menu instance. */
-        VBoxUSBMenu           *m_pMenuUSBDevices;
+        /** Holds the USB filters editor instance. */
+        UIUSBFiltersEditor    *m_pEditorFilters;
     /** @} */
 };
 
