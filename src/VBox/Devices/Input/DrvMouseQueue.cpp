@@ -173,13 +173,22 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 
-static DECLCALLBACK(int) drvMouseQueuePutEventMultiTouch(PPDMIMOUSEPORT pInterface,
+static DECLCALLBACK(int) drvMouseQueuePutEventMTAbs(PPDMIMOUSEPORT pInterface,
                                                          uint8_t cContacts,
                                                          const uint64_t *pau64Contacts,
                                                          uint32_t u32ScanTime)
 {
     PDRVMOUSEQUEUE pThis = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
-    return pThis->pUpPort->pfnPutEventMultiTouch(pThis->pUpPort, cContacts, pau64Contacts, u32ScanTime);
+    return pThis->pUpPort->pfnPutEventTouchScreen(pThis->pUpPort, cContacts, pau64Contacts, u32ScanTime);
+}
+
+static DECLCALLBACK(int) drvMouseQueuePutEventMTRel(PPDMIMOUSEPORT pInterface,
+                                                         uint8_t cContacts,
+                                                         const uint64_t *pau64Contacts,
+                                                         uint32_t u32ScanTime)
+{
+    PDRVMOUSEQUEUE pThis = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
+    return pThis->pUpPort->pfnPutEventTouchPad(pThis->pUpPort, cContacts, pau64Contacts, u32ScanTime);
 }
 
 /* -=-=-=-=- IConnector -=-=-=-=- */
@@ -194,12 +203,13 @@ static DECLCALLBACK(int) drvMouseQueuePutEventMultiTouch(PPDMIMOUSEPORT pInterfa
  * @param   pInterface  Pointer to the mouse connector interface structure.
  * @param   fRel        Is relative reporting supported?
  * @param   fAbs        Is absolute reporting supported?
- * @param   fMT         Is multi-touch reporting supported?
+ * @param   fMTAbs      Is absolute multi-touch reporting supported?
+ * @param   fMTRel         Is relative multi-touch reporting supported?
  */
-static DECLCALLBACK(void) drvMousePassThruReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMT)
+static DECLCALLBACK(void) drvMousePassThruReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMTAbs, bool fMTRel)
 {
     PDRVMOUSEQUEUE pDrv = PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface);
-    pDrv->pDownConnector->pfnReportModes(pDrv->pDownConnector, fRel, fAbs, fMT);
+    pDrv->pDownConnector->pfnReportModes(pDrv->pDownConnector, fRel, fAbs, fMTAbs, fMTRel);
 }
 
 
@@ -350,7 +360,8 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IMousePort. */
     pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
     pDrv->IPort.pfnPutEventAbs              = drvMouseQueuePutEventAbs;
-    pDrv->IPort.pfnPutEventMultiTouch       = drvMouseQueuePutEventMultiTouch;
+    pDrv->IPort.pfnPutEventTouchScreen      = drvMouseQueuePutEventMTAbs;
+    pDrv->IPort.pfnPutEventTouchPad         = drvMouseQueuePutEventMTRel;
 
     /*
      * Get the IMousePort interface of the above driver/device.

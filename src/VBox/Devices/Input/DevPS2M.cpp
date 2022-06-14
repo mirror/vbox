@@ -212,7 +212,7 @@ static void ps2mR3SetDriverState(PPS2MR3 pThisCC, bool fEnabled)
 {
     PPDMIMOUSECONNECTOR pDrv = pThisCC->Mouse.pDrv;
     if (pDrv)
-        pDrv->pfnReportModes(pDrv, fEnabled, false, false);
+        pDrv->pfnReportModes(pDrv, fEnabled, false, false, false);
 }
 
 /* Reset the pointing device. */
@@ -894,10 +894,20 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEventAbs(PPDMIMOUSEPORT pInterface, 
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMultiTouch}
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchScreen}
  */
-static DECLCALLBACK(int) ps2mR3MousePort_PutEventMT(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
-                                                    const uint64_t *pau64Contacts, uint32_t u32ScanTime)
+static DECLCALLBACK(int) ps2mR3MousePort_PutEventMTAbs(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
+                                                       const uint64_t *pau64Contacts, uint32_t u32ScanTime)
+{
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+    NOREF(pInterface); NOREF(cContacts); NOREF(pau64Contacts); NOREF(u32ScanTime);
+}
+
+/**
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchPad}
+ */
+static DECLCALLBACK(int) ps2mR3MousePort_PutEventMTRel(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
+                                                       const uint64_t *pau64Contacts, uint32_t u32ScanTime)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
     NOREF(pInterface); NOREF(cContacts); NOREF(pau64Contacts); NOREF(u32ScanTime);
@@ -1071,11 +1081,12 @@ int PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC)
     /*
      * Initialize the state.
      */
-    pThisCC->pDevIns                           = pDevIns;
-    pThisCC->Mouse.IBase.pfnQueryInterface     = ps2mR3QueryInterface;
-    pThisCC->Mouse.IPort.pfnPutEvent           = ps2mR3MousePort_PutEvent;
-    pThisCC->Mouse.IPort.pfnPutEventAbs        = ps2mR3MousePort_PutEventAbs;
-    pThisCC->Mouse.IPort.pfnPutEventMultiTouch = ps2mR3MousePort_PutEventMT;
+    pThisCC->pDevIns                            = pDevIns;
+    pThisCC->Mouse.IBase.pfnQueryInterface      = ps2mR3QueryInterface;
+    pThisCC->Mouse.IPort.pfnPutEvent            = ps2mR3MousePort_PutEvent;
+    pThisCC->Mouse.IPort.pfnPutEventAbs         = ps2mR3MousePort_PutEventAbs;
+    pThisCC->Mouse.IPort.pfnPutEventTouchScreen = ps2mR3MousePort_PutEventMTAbs;
+    pThisCC->Mouse.IPort.pfnPutEventTouchPad    = ps2mR3MousePort_PutEventMTRel;
 
     /*
      * Create the input rate throttling timer. Does not use virtual time!

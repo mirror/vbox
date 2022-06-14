@@ -329,7 +329,7 @@ typedef struct PDMIMOUSEPORT
                                               int32_t dz, int32_t dw,
                                               uint32_t fButtons));
     /**
-     * Puts a multi-touch event.
+     * Puts a multi-touch absolute (touchscreen) event.
      *
      * @returns VBox status code. Return VERR_TRY_AGAIN if you cannot process the
      *          event now and want it to be repeated at a later point.
@@ -349,13 +349,38 @@ typedef struct PDMIMOUSEPORT
      * @param   u32ScanTime         Timestamp of this event in milliseconds. Only relative
      *                              time between event is important.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventMultiTouch,(PPDMIMOUSEPORT pInterface,
-                                                     uint8_t cContacts,
-                                                     const uint64_t *pau64Contacts,
-                                                     uint32_t u32ScanTime));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventTouchScreen,(PPDMIMOUSEPORT pInterface,
+                                                      uint8_t cContacts,
+                                                      const uint64_t *pau64Contacts,
+                                                      uint32_t u32ScanTime));
+
+    /**
+     * Puts a multi-touch relative (touchpad) event.
+     *
+     * @returns VBox status code. Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   cContacts           How many touch contacts in this event.
+     * @param   pau64Contacts       Pointer to array of packed contact information.
+     *                              Each 64bit element contains:
+     *                              Bits 0..15:  Normalized X coordinate (range: 0 - 0xffff).
+     *                              Bits 16..31: Normalized Y coordinate (range: 0 - 0xffff).
+     *                              Bits 32..39: contact identifier.
+     *                              Bit 40:      "in contact" flag, which indicates that
+     *                                           there is a contact with the touch surface.
+     *                              All other bits are reserved for future use and must be set to 0.
+     * @param   u32ScanTime         Timestamp of this event in milliseconds. Only relative
+     *                              time between event is important.
+     */
+
+    DECLR3CALLBACKMEMBER(int, pfnPutEventTouchPad,(PPDMIMOUSEPORT pInterface,
+                                                   uint8_t cContacts,
+                                                   const uint64_t *pau64Contacts,
+                                                   uint32_t u32ScanTime));
 } PDMIMOUSEPORT;
 /** PDMIMOUSEPORT interface ID. */
-#define PDMIMOUSEPORT_IID                       "359364f0-9fa3-4490-a6b4-7ed771901c93"
+#define PDMIMOUSEPORT_IID                       "d2bb54b7-d877-441b-9d25-d2d3329465c2"
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
  * @{ */
@@ -382,9 +407,10 @@ typedef struct PDMIMOUSECONNECTOR
      * @param   pInterface      Pointer to this interface structure.
      * @param   fRelative       Whether relative mode is currently supported.
      * @param   fAbsolute       Whether absolute mode is currently supported.
-     * @param   fMultiTouch     Whether multi-touch mode is currently supported.
+     * @param   fMTAbsolute     Whether absolute multi-touch mode is currently supported.
+     * @param   fMTRelative     Whether relative multi-touch mode is currently supported.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReportModes,(PPDMIMOUSECONNECTOR pInterface, bool fRelative, bool fAbsolute, bool fMultiTouch));
+    DECLR3CALLBACKMEMBER(void, pfnReportModes,(PPDMIMOUSECONNECTOR pInterface, bool fRelative, bool fAbsolute, bool fMTAbsolute, bool fMTRelative));
 
     /**
      * Flushes the mouse queue if it contains pending events.

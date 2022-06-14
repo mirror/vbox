@@ -188,8 +188,10 @@ enum
     MOUSE_DEVCAP_RELATIVE = 1,
     /** The mouse device can do absolute reporting */
     MOUSE_DEVCAP_ABSOLUTE = 2,
-    /** The mouse device can do absolute reporting */
-    MOUSE_DEVCAP_MULTI_TOUCH = 4
+    /** The mouse device can do absolute multi-touch reporting */
+    MOUSE_DEVCAP_MT_ABSOLUTE = 4,
+    /** The mouse device can do relative multi-touch reporting */
+    MOUSE_DEVCAP_MT_RELATIVE = 8,
 };
 /** @} */
 
@@ -572,7 +574,7 @@ HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
         for (i = 0; i < MOUSE_MAX_DEVICES; ++i)
         {
             if (   mpDrv[i]
-                && (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MULTI_TOUCH))
+                && (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_ABSOLUTE))
             {
                 pUpPort = mpDrv[i]->pUpPort;
                 break;
@@ -582,7 +584,7 @@ HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
 
     if (pUpPort)
     {
-        int vrc = pUpPort->pfnPutEventMultiTouch(pUpPort, cContacts, pau64Contacts, u32ScanTime);
+        int vrc = pUpPort->pfnPutEventTouchScreen(pUpPort, cContacts, pau64Contacts, u32ScanTime);
         if (RT_FAILURE(vrc))
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                tr("Could not send the multi-touch event to the virtual device (%Rrc)"),
@@ -1078,7 +1080,7 @@ void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
                fAbsDev = true;
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                fRelDev = true;
-           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MULTI_TOUCH)
+           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_ABSOLUTE)
                fMTDev  = true;
         }
     if (pfAbs)
@@ -1164,7 +1166,7 @@ void Mouse::i_sendMouseCapsNotifications(void)
  * A virtual device is notifying us about its current state and capabilities
  */
 DECLCALLBACK(void) Mouse::i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRelative,
-                                             bool fAbsolute, bool fMultiTouch)
+                                             bool fAbsolute, bool fMTAbsolute, bool fMTRelative)
 {
     PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
     if (fRelative)
@@ -1175,10 +1177,14 @@ DECLCALLBACK(void) Mouse::i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, boo
         pDrv->u32DevCaps |= MOUSE_DEVCAP_ABSOLUTE;
     else
         pDrv->u32DevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
-    if (fMultiTouch)
-        pDrv->u32DevCaps |= MOUSE_DEVCAP_MULTI_TOUCH;
+    if (fMTAbsolute)
+        pDrv->u32DevCaps |= MOUSE_DEVCAP_MT_ABSOLUTE;
     else
-        pDrv->u32DevCaps &= ~MOUSE_DEVCAP_MULTI_TOUCH;
+        pDrv->u32DevCaps &= ~MOUSE_DEVCAP_MT_ABSOLUTE;
+    if (fMTRelative)
+        pDrv->u32DevCaps |= MOUSE_DEVCAP_MT_RELATIVE;
+    else
+        pDrv->u32DevCaps &= ~MOUSE_DEVCAP_MT_RELATIVE;
 
     pDrv->pMouse->i_sendMouseCapsNotifications();
 }
