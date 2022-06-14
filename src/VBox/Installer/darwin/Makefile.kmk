@@ -551,6 +551,11 @@ endif
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_DI_VBAPP_MISC_FILES += \
  	MacOS/UserManual.pdf
+ ifdef VBOX_WITH_DOCS_QHELP_PACKING
+  VBOX_DI_VBAPP_MISC_FILES += \
+ 	MacOS/UserManual.qch \
+ 	MacOS/UserManual.qhc
+ endif
 endif
 ifdef VBOX_WITH_ADDITIONS_PACKING
  ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/VBoxGuestAdditions.iso),)
