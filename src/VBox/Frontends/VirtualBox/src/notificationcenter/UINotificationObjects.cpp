@@ -83,7 +83,7 @@ void UINotificationMessage::cannotFindHelpFile(const QString &strLocation)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't find help file ..."),
-        QApplication::translate("UIMessageCenter", "Failed to find the following help file:")
+        QApplication::translate("UIMessageCenter", "Failed to find the following help file: <b>%1</b>")
                                                    .arg(strLocation));
 }
 
