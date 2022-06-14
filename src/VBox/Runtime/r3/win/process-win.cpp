@@ -1611,7 +1611,8 @@ static int rtProcWinTokenToUsername(HANDLE hToken, PRTUTF16 *ppwszUser)
 static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                   RTENV hEnv, DWORD dwCreationFlags,
                                   STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
-                                  uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession)
+                                  uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession,
+                                  HANDLE hUserToken)
 {
     /*
      * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
@@ -1641,8 +1642,10 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
      */
     DWORD   dwErr       = NO_ERROR;
     HANDLE  hTokenLogon = INVALID_HANDLE_VALUE;
-    int rc;
-    if (fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)
+    int rc = VINF_SUCCESS;
+    if (fFlags & RTPROC_FLAGS_TOKEN_SUPPLIED)
+        hTokenLogon = hUserToken;
+    else if (fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)
         rc = rtProcWinGetThreadTokenHandle(GetCurrentThread(), &hTokenLogon);
     else if (pwszUser == NULL)
         rc = rtProcWinGetProcessTokenHandle(GetCurrentProcess(), &hTokenLogon);
@@ -1849,7 +1852,8 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 
         if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
             CloseHandle(hTokenUserDesktop);
-        if (hTokenLogon != INVALID_HANDLE_VALUE)
+        if (   !(fFlags & RTPROC_FLAGS_TOKEN_SUPPLIED)
+            && hTokenLogon != INVALID_HANDLE_VALUE)
             CloseHandle(hTokenLogon);
 
         if (rc == VERR_UNRESOLVED_ERROR)
@@ -2087,7 +2091,8 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                  RTENV hEnv, DWORD dwCreationFlags,
                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
-                                 uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession)
+                                 uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession,
+                                 HANDLE hUserToken)
 {
     /*
      * If we run as a service CreateProcessWithLogon will fail, so don't even
@@ -2095,7 +2100,7 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
      * we should use, we also have to have to skip over this approach.
      * Note! This method is very slow on W2K.
      */
-    if (!(fFlags & (RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)))
+    if (!(fFlags & (RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN | RTPROC_FLAGS_TOKEN_SUPPLIED)))
     {
         AssertPtr(pwszUser);
         int rc = rtProcWinCreateAsUser1(pwszUser, pwszPassword, ppwszExec, pwszCmdLine,
@@ -2103,8 +2108,8 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
         if (RT_SUCCESS(rc))
             return rc;
     }
-    return rtProcWinCreateAsUser2(pwszUser, pwszPassword, ppwszExec, pwszCmdLine,
-                                  hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags, pszExec, idDesiredSession);
+    return rtProcWinCreateAsUser2(pwszUser, pwszPassword, ppwszExec, pwszCmdLine, hEnv, dwCreationFlags,
+                                  pStartupInfo, pProcInfo, fFlags, pszExec, idDesiredSession, hUserToken);
 }
 
 
@@ -2281,12 +2286,18 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     else
         AssertReturn(!(fFlags & RTPROC_FLAGS_DESIRED_SESSION_ID), VERR_INVALID_FLAGS);
 
+    HANDLE hUserToken = NULL;
+    if (fFlags & RTPROC_FLAGS_TOKEN_SUPPLIED)
+        hUserToken = *(HANDLE *)pvExtraData;
+
     /*
      * Initialize the globals.
      */
     int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL);
     AssertRCReturn(rc, rc);
-    if (pszAsUser || (fFlags & (RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)))
+    if (   pszAsUser
+        || (fFlags & (RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN
+                      | RTPROC_FLAGS_TOKEN_SUPPLIED)))
     {
         rc = RTOnce(&g_rtProcWinResolveOnce, rtProcWinResolveOnce, NULL);
         AssertRCReturn(rc, rc);
@@ -2444,7 +2455,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
              * the more advanced version in rtProcWinCreateAsUser().
              */
             if (   pszAsUser == NULL
-                && !(fFlags & (RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)))
+                && !(fFlags & (RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN | RTPROC_FLAGS_TOKEN_SUPPLIED)))
             {
                 /* Create the environment block first. */
                 PRTUTF16 pwszzBlock;
@@ -2482,9 +2493,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     rc = RTStrToUtf16(pszPassword ? pszPassword : "", &pwszPassword);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = rtProcWinCreateAsUser(pwszUser, pwszPassword,
-                                                   &pwszExec, pwszCmdLine, hEnv, dwCreationFlags,
-                                                   &StartupInfo, &ProcInfo, fFlags, pszExec, idDesiredSession);
+                        rc = rtProcWinCreateAsUser(pwszUser, pwszPassword, &pwszExec, pwszCmdLine, hEnv, dwCreationFlags,
+                                                   &StartupInfo, &ProcInfo, fFlags, pszExec, idDesiredSession,
+                                                   hUserToken);
 
                         if (pwszPassword && *pwszPassword)
                             RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword), 5);

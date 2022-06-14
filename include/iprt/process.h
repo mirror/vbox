@@ -229,7 +229,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #define RTPROC_FLAGS_NO_WAIT                RT_BIT(10)
 /** For use with RTPROC_FLAGS_SERVICE to specify a desired session ID
  * (Windows only, ignored elsewhere).  The @a pvExtraData argument points to
- * a uint32_t containing the session ID, UINT32_MAX means any session. */
+ * a uint32_t containing the session ID, UINT32_MAX means any session.
+ * Can not be set with RTPROC_FLAGS_TOKEN_SUPPLIED */
 #define RTPROC_FLAGS_DESIRED_SESSION_ID     RT_BIT(11)
 /** This is a modifier to RTPROC_FLAGS_PROFILE on unix systems that makes it
  * skip trying to dump the environment of a login shell. */
@@ -237,8 +238,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 /** Don't translate arguments to the (guessed) child process codeset.
  * This is ignored on Windows as it is using UTF-16. */
 #define RTPROC_FLAGS_UTF8_ARGV              RT_BIT_32(13)
+/** Create process using supplied token. The @a pvExtraData argument points to
+ * a HANDLE containing the token used as user credentials for process creation.
+ * Can not be set with RTPROC_FLAGS_DESIRED_SESSION_ID.
+ * Windows only flag, ignored everywhere else. */
+#define RTPROC_FLAGS_TOKEN_SUPPLIED         RT_BIT(14)
+
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x3fff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x7fff)
 /** @}  */
 
 

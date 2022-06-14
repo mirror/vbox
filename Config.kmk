@@ -778,6 +778,8 @@ VBOX_WITH_VBOXSDL =
 ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much work with freetype and all that.
 VBOX_WITH_SECURELABEL = 1
 endif
+# Start VBoxSVC in windows session 0 (services session).
+VBOX_WITH_VBOXSVC_SESSION_0 =
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
 # Enable the build of VRDP server.

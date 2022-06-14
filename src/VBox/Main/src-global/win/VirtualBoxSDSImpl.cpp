@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOXSDS
 #include <VBox/com/VirtualBox.h>
+#include <VBox/com/utils.h>
 #include "VirtualBoxSDSImpl.h"
 
 #include "AutoCaller.h"
@@ -30,7 +31,10 @@
 #include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
+#include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/system.h>
 
@@ -70,6 +74,8 @@ public:
     ComPtr<IVBoxSVCRegistration>    m_ptrTheChosenOne;
     /** The PID of the chosen one. */
     RTPROCESS                       m_pidTheChosenOne;
+    /** The tick count when the process in Windows session 0 started */
+    uint32_t                        m_tickTheChosenOne;
     /** The current watcher thread index, UINT32_MAX if not watched. */
     uint32_t                        m_iWatcher;
     /** The chosen one revision number.
@@ -88,6 +94,7 @@ public:
         : m_strUserSid(a_rStrUserSid)
         , m_strUsername(a_rStrUsername)
         , m_pidTheChosenOne(NIL_RTPROCESS)
+        , m_tickTheChosenOne(0)
 #ifdef WITH_WATCHER
         , m_iWatcher(UINT32_MAX)
         , m_iTheChosenOneRevision(0)
@@ -145,6 +152,7 @@ public:
             }
         }
         m_pidTheChosenOne = NIL_RTPROCESS;
+        m_tickTheChosenOne = 0;
     }
 
 };
@@ -249,7 +257,6 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
         && (intptr_t)CallAttribs.ClientPID == aPid)
     {
         *aExistingVirtualBox = NULL;
-
         /*
          * Get the client user SID and name.
          */
@@ -262,14 +269,18 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
             {
                 /*
                  * If there already is a chosen one, ask it for a IVirtualBox instance
-                 * to return to the caller.  Should it be dead or unresponsive, the caller
+                 * to return to the caller. Should it be dead or unresponsive, the caller
                  * takes its place.
-                 */
+                */
                 if (pUserData->m_ptrTheChosenOne.isNotNull())
                 {
                     try
                     {
                         hrc = pUserData->m_ptrTheChosenOne->GetVirtualBox(aExistingVirtualBox);
+                        /* seems the VBoxSVC in windows session 0 is not yet finished object creation.
+                         * Give it a time. */
+                        if (FAILED(hrc) && GetTickCount() - pUserData->m_tickTheChosenOne < 60 * 1000)
+                            hrc = E_PENDING;
                     }
                     catch (...)
                     {
@@ -283,51 +294,159 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                         i_stopWatching(pUserData, pUserData->m_pidTheChosenOne);
 #endif
                         pUserData->i_unchooseTheOne(true /*fIrregular*/);
+                        hrc = S_OK;
                     }
                 }
                 else
                     hrc = S_OK;
 
-                /*
-                 * No chosen one?  Make the caller the new chosen one!
-                 */
-                if (pUserData->m_ptrTheChosenOne.isNull())
+                /* No chosen one?  Make the caller the new chosen one! */
+                if (SUCCEEDED(hrc) && pUserData->m_ptrTheChosenOne.isNull())
                 {
-                    LogRel(("registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
-                            aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
-#ifdef WITH_WATCHER
-                    /* Open the process so we can watch it. */
-                    HANDLE hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE /*fInherit*/, aPid);
-                    if (hProcess == NULL)
-                        hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE /*fInherit*/, aPid);
-                    if (hProcess == NULL)
-                        hProcess = OpenProcess(SYNCHRONIZE, FALSE /*fInherit*/, aPid);
-                    if (hProcess != NULL)
+#ifdef VBOX_WITH_VBOXSVC_SESSION_0
+                    /* Get user token. */
+                    HANDLE hThreadToken = NULL;
+                    hrc = CoImpersonateClient();
+                    if (SUCCEEDED(hrc))
                     {
-                        if (i_watchIt(pUserData, hProcess, aPid))
-#endif
+                        hrc = E_FAIL;
+                        if (OpenThreadToken(GetCurrentThread(),
+                                              TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE
+                                            | TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
+                                            TRUE /* OpenAsSelf - for impersonation at SecurityIdentification level */,
+                                            &hThreadToken))
                         {
-                            /* Make it official... */
-                            pUserData->m_ptrTheChosenOne = aVBoxSVC;
-                            pUserData->m_pidTheChosenOne = aPid;
-                            hrc = S_OK;
+                            HANDLE hNewToken;
+                            if (DuplicateTokenEx(hThreadToken, MAXIMUM_ALLOWED, NULL /*SecurityAttribs*/,
+                                                    SecurityIdentification, TokenPrimary, &hNewToken))
+                            {
+                                CloseHandle(hThreadToken);
+                                hThreadToken = hNewToken;
+                                hrc = S_OK;
+                            }
+                            else
+                                LogRel(("registerVBoxSVC: DuplicateTokenEx failed: %ld\n", GetLastError()));
                         }
-#ifdef WITH_WATCHER
                         else
-                        {
+                            LogRel(("registerVBoxSVC: OpenThreadToken failed: %ld\n", GetLastError()));
 
-                            LogRel(("registerVBoxSVC: i_watchIt failed!\n"));
-                            hrc = RPC_E_OUT_OF_RESOURCES;
-                        }
+                        CoRevertToSelf();
                     }
                     else
+                        LogRel(("registerVBoxSVC: CoImpersonateClient failed: %Rhrc\n", hrc));
+
+                    /* check windows session */
+                    DWORD dwSessionId = 0;
+                    if (SUCCEEDED(hrc) && hThreadToken != NULL)
                     {
-                        LogRel(("registerVBoxSVC: OpenProcess failed: %u\n", GetLastError()));
-                        hrc = E_ACCESSDENIED;
+                        hrc = E_FAIL;
+                        DWORD cbSessionId = sizeof(DWORD);
+                        if (GetTokenInformation(hThreadToken, TokenSessionId, (LPVOID)&dwSessionId, cbSessionId, &cbSessionId))
+                        {
+                            if (cbSessionId == sizeof(DWORD))
+                                hrc = S_OK;
+                            else
+                                LogRel(("registerVBoxSVC: GetTokenInformation return value has invalid size\n"));
+                        }
+                        else
+                            LogRel(("registerVBoxSVC: GetTokenInformation failed: %ld\n", GetLastError()));
+                    }
+                    if (SUCCEEDED(hrc) && dwSessionId != 0)
+                    {
+                        /* if VBoxSVC in the Windows session 0 is not started or if it did not
+                            * registered during a minute, start new one */
+                        if (   pUserData->m_pidTheChosenOne == NIL_RTPROCESS
+                            || GetTickCount() - pUserData->m_tickTheChosenOne > 60 * 1000)
+                        {
+                            uint32_t uSessionId = 0;
+                            if (SetTokenInformation(hThreadToken, TokenSessionId, &uSessionId, sizeof(uint32_t)))
+                            {
+                                /* start VBoxSVC process */
+                                /* Get the path to the executable directory w/ trailing slash: */
+                                char szPath[RTPATH_MAX];
+                                int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+                                AssertRCReturn(vrc, vrc);
+                                size_t cbBufLeft = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath));
+                                AssertReturn(cbBufLeft > 0, VERR_FILENAME_TOO_LONG);
+                                char *pszNamePart = &szPath[cbBufLeft]; NOREF(pszNamePart);
+                                cbBufLeft = sizeof(szPath) - cbBufLeft;
+                                static const char s_szVirtualBox_exe[] = "VBoxSVC.exe";
+                                vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
+                                AssertRCReturn(vrc, vrc);
+                                const char *apszArgs[] =
+                                {
+                                    szPath,
+                                    "--registervbox",
+                                    NULL
+                                };
+
+                                RTPROCESS pid;
+                                vrc = RTProcCreateEx(szPath,
+                                                     apszArgs,
+                                                     RTENV_DEFAULT,
+                                                     RTPROC_FLAGS_TOKEN_SUPPLIED,
+                                                     NULL, NULL, NULL, NULL, NULL, &hThreadToken, &pid);
+
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    pUserData->m_pidTheChosenOne = pid;
+                                    pUserData->m_tickTheChosenOne = GetTickCount();
+                                    hrc = E_PENDING;
+                                }
+                                else
+                                    LogRel(("registerVBoxSVC: Create VBoxSVC process failed: %Rrc\n", vrc));
+                            }
+                            else
+                            {
+                                hrc = E_FAIL;
+                                LogRel(("registerVBoxSVC: SetTokenInformation failed: %ld\n", GetLastError()));
+                            }
+                        }
+                        else /* the VBoxSVC in Windows session 0 already started */
+                            hrc = E_PENDING;
+                    }
+                    CloseHandle(hThreadToken);
+
+                    if (SUCCEEDED(hrc) && dwSessionId == 0)
+                    {
+#endif
+                        LogRel(("registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
+                                aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
+#ifdef WITH_WATCHER
+                        /* Open the process so we can watch it. */
+                        HANDLE hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE /*fInherit*/, aPid);
+                        if (hProcess == NULL)
+                            hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE /*fInherit*/, aPid);
+                        if (hProcess == NULL)
+                            hProcess = OpenProcess(SYNCHRONIZE, FALSE /*fInherit*/, aPid);
+                        if (hProcess != NULL)
+                        {
+                            if (i_watchIt(pUserData, hProcess, aPid))
+#endif
+                            {
+                                /* Make it official... */
+                                pUserData->m_ptrTheChosenOne = aVBoxSVC;
+                                pUserData->m_pidTheChosenOne = aPid;
+                                hrc = S_OK;
+                            }
+#ifdef WITH_WATCHER
+                            else
+                            {
+
+                                LogRel(("registerVBoxSVC: i_watchIt failed!\n"));
+                                hrc = RPC_E_OUT_OF_RESOURCES;
+                            }
+                        }
+                        else
+                        {
+                            LogRel(("registerVBoxSVC: OpenProcess() failed: %ld\n", GetLastError()));
+                            hrc = E_ACCESSDENIED;
+                        }
+#endif
+#ifdef VBOX_WITH_VBOXSVC_SESSION_0
                     }
 #endif
                 }
-
                 pUserData->i_unlock();
                 pUserData->i_release();
             }
@@ -473,7 +592,6 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
     a_pStrSid->setNull();
     a_pStrUsername->setNull();
 
-    CoInitializeEx(NULL, COINIT_MULTITHREADED); // is this necessary?
     HRESULT hrc = CoImpersonateClient();
     if (SUCCEEDED(hrc))
     {
@@ -554,7 +672,6 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
     }
     else
         LogRel(("i_GetClientUserSID: CoImpersonateClient failed: %Rhrc\n", hrc));
-    CoUninitialize();
     return fRet;
 }
 

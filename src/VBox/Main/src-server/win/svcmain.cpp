@@ -332,17 +332,40 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
                                    (void **)m_ptrVirtualBoxSDS.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        /*
-         * Create VBoxSVCRegistration object and hand that to VBoxSDS.
-         */
-        m_pVBoxSVC = new VBoxSVCRegistration(this);
-        hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
+        /* By default the RPC_C_IMP_LEVEL_IDENTIFY is used for impersonation the client. It allows
+           ACL checking but restricts an access to system objects e.g. files. Call to CoSetProxyBlanket
+           elevates the impersonation level up to RPC_C_IMP_LEVEL_IMPERSONATE allowing the VBoxSDS
+           service to access the files. */
+        hrc = CoSetProxyBlanket(m_ptrVirtualBoxSDS,
+                                RPC_C_AUTHN_DEFAULT,
+                                RPC_C_AUTHZ_DEFAULT,
+                                COLE_DEFAULT_PRINCIPAL,
+                                RPC_C_AUTHN_LEVEL_DEFAULT,
+                                RPC_C_IMP_LEVEL_IMPERSONATE,
+                                NULL,
+                                EOAC_DEFAULT);
         if (SUCCEEDED(hrc))
         {
-            g_fRegisteredWithVBoxSDS = !*ppOtherVirtualBox;
-            return hrc;
+            /*
+             * Create VBoxSVCRegistration object and hand that to VBoxSDS.
+             */
+            m_pVBoxSVC = new VBoxSVCRegistration(this);
+            hrc = E_PENDING;
+            /* we try to register IVirtualBox 10 times */
+            for (int regTimes = 0; hrc == E_PENDING && regTimes < 10;  --regTimes)
+            {
+                hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
+                if (SUCCEEDED(hrc))
+                {
+                    g_fRegisteredWithVBoxSDS = !*ppOtherVirtualBox;
+                    return hrc;
+                }
+                /* sleep to give a time for windows session 0 registration */
+                if (hrc == E_PENDING)
+                    RTThreadSleep(1000);
+            }
+            m_pVBoxSVC->Release();
         }
-        m_pVBoxSVC->Release();
     }
     m_ptrVirtualBoxSDS.setNull();
     m_pVBoxSVC = NULL;
@@ -686,7 +709,6 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
             }
             break;
         }
-
         case WM_DESTROY:
         {
             ShutdownBlockReasonDestroyAPI(hwnd);
@@ -825,6 +847,30 @@ extern "C" DECLEXPORT(void) VBOXCALL Is_VirtualBox_service_process_like_VBoxSDS_
 }
 
 
+/* thread for registering the VBoxSVC started in session 0 */
+static DWORD WINAPI threadRegisterVirtualBox(LPVOID lpParam) throw()
+{
+    HANDLE hEvent = (HANDLE)lpParam;
+    HRESULT hrc = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (SUCCEEDED(hrc))
+    {
+        /* create IVirtualBox instance */
+        ComPtr<IVirtualBox> pVirtualBox;
+        hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_INPROC_SERVER /*CLSCTX_LOCAL_SERVER */, IID_IVirtualBox,
+                               (void **)pVirtualBox.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            /* wait a minute allowing clients to connect to the instance */
+            WaitForSingleObject(hEvent, 60 * 1000);
+            /* remove reference. If anybody connected to IVirtualBox it will stay alive. */
+            pVirtualBox.setNull();
+        }
+        CoUninitialize();
+    }
+    return 0L;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
@@ -890,6 +936,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         { "--loginterval",  'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "-loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "/loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "--registervbox", 'b',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "-registervbox",  'b',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "/registervbox",  'b',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
     };
 
     bool            fRun = true;
@@ -900,6 +949,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     uint32_t        cHistory = 10;                  // enable log rotation, 10 files
     uint32_t        uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
     uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
+    bool            fRegisterVBox = false;
 
     RTGETOPTSTATE   GetOptState;
     int vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
@@ -979,6 +1029,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
                 fRun = false;
                 return 0;
             }
+
+            case 'b':
+                fRegisterVBox = true;
+                break;
 
             default:
                 /** @todo this assumes that stderr is visible, which is not
@@ -1100,6 +1154,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         else
             Log(("SVCMain: Failed to create main window\n"));
 
+        /* create thread to register IVirtualBox in VBoxSDS
+         * It is used for starting the VBoxSVC in the windows
+         * session 0. */
+        HANDLE hWaitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        HANDLE hRegisterVBoxThread = NULL;
+        if (fRegisterVBox)
+        {
+            DWORD  dwThreadId = 0;
+            hRegisterVBoxThread = CreateThread(NULL, 0, threadRegisterVirtualBox, (LPVOID)hWaitEvent,
+                                               0, &dwThreadId);
+        }
+
         MSG msg;
         while (GetMessage(&msg, 0, 0, 0) > 0)
         {
@@ -1108,6 +1174,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         }
 
         DestroyMainWindow();
+
+        if (fRegisterVBox)
+        {
+            SetEvent(hWaitEvent);
+            WaitForSingleObject(hRegisterVBoxThread, INFINITE);
+            CloseHandle(hRegisterVBoxThread);
+            CloseHandle(hWaitEvent);
+        }
 
         g_pModule->RevokeClassObjects();
     }

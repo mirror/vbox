@@ -29869,7 +29869,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
 
       <method name="registerVBoxSVC">
-        <desc>Registers a VBoxSVC instance with the SDS.</desc>
+        <desc>
+          Registers a VBoxSVC instance with VBoxSDS. If the caller is not running
+          in a Windows 0 session, the method attempts to run VBoxSVC in that
+          session.
+          <result name="E_PENDING">
+            The caller is not running in a Windows session 0 and no VBoxSVC
+            is registered. VBoxSVC registration begins in Windows session 0.
+            You should call this method again later.
+          </result>
+        </desc>
         <param name="vboxSVC" type="IVBoxSVCRegistration" dir="in">
           <desc>Interface implemented by the VirtualBox class factory.</desc>
         </param>
