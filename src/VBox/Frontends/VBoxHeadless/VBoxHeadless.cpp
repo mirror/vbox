@@ -48,8 +48,11 @@ using namespace com;
 
 #ifdef VBOX_WITH_RECORDING
 # include <cstdlib>
-# include <cerrno>
 # include <iprt/process.h>
+#endif
+
+#ifdef RT_OS_LINUX
+# include <cerrno>
 #endif
 
 #ifdef RT_OS_DARWIN
