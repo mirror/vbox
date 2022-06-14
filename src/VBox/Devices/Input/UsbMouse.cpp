@@ -1840,7 +1840,8 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventTouchScreen}
+ * Worker for usbHidMousePutEventTouchScreen and
+ * usbHidMousePutEventTouchPad.
  */
 static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PUSBHID pThis,
                                                        uint8_t cContacts,
