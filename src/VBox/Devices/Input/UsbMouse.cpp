@@ -1855,7 +1855,7 @@ static int usbHidSendTouchPadReport(PUSBHID pThis, PVUSBURB pUrb)
             pRepContact->status &= ~MT_CONTACT_S_DIRTY;
         }
 
-        /* TODO: Parse touch confidence in Qt frontend */
+        /** @todo Parse touch confidence in Qt frontend */
         p->aContacts[iReportedContact].fContact = pRepContact->flags | MT_CONTACT_F_CONFIDENCE;
         p->aContacts[iReportedContact].cContact = pRepContact->id;
         p->aContacts[iReportedContact].x = pRepContact->x >> pThis->u8CoordShift;
