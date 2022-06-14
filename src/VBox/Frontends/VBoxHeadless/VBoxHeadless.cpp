@@ -51,7 +51,7 @@ using namespace com;
 # include <iprt/process.h>
 #endif
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
 # include <cerrno>
 #endif
 
