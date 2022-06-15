@@ -801,6 +801,7 @@ static uint32_t vbe_read_cfg(PVGASTATE pThis)
         case VBE_DISPI_CFG_ID_3D:        val = pThis->f3DEnabled; break;
 # ifdef VBOX_WITH_VMSVGA
         case VBE_DISPI_CFG_ID_VMSVGA:    val = pThis->fVMSVGAEnabled; break;
+        case VBE_DISPI_CFG_ID_VMSVGA_DX: val = pThis->fVMSVGA10; break;
 # endif
         default:
            return 0; /* Not supported. */
