@@ -232,8 +232,6 @@ void UIMachineSettingsSF::prepareWidgets()
         m_pEditorSharedFolders = new UISharedFoldersEditor;
         if (m_pEditorSharedFolders)
             pLayout->addWidget(m_pEditorSharedFolders);
-
-        pLayout->addStretch();
     }
 }
 

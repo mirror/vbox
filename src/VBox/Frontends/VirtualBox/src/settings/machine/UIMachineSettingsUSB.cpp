@@ -37,9 +37,8 @@
 #include "UIErrorString.h"
 #include "QIToolBar.h"
 #include "UICommon.h"
-#include "UIUSBControllerEditor.h"
-#include "UIUSBFilterDetailsEditor.h"
 #include "UIUSBFiltersEditor.h"
+#include "UIUSBSettingsEditor.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -105,10 +104,7 @@ struct UIDataSettingsMachineUSB
 
 UIMachineSettingsUSB::UIMachineSettingsUSB()
     : m_pCache(0)
-    , m_pCheckBoxUSB(0)
-    , m_pWidgetUSBSettings(0)
-    , m_pEditorController(0)
-    , m_pEditorFilters(0)
+    , m_pEditorUsbSettings(0)
 {
     prepare();
 }
@@ -120,7 +116,7 @@ UIMachineSettingsUSB::~UIMachineSettingsUSB()
 
 bool UIMachineSettingsUSB::isUSBEnabled() const
 {
-    return m_pCheckBoxUSB->isChecked();
+    return m_pEditorUsbSettings->isFeatureEnabled();
 }
 
 bool UIMachineSettingsUSB::changed() const
@@ -206,12 +202,11 @@ void UIMachineSettingsUSB::getFromCache()
     const UIDataSettingsMachineUSB &oldUsbData = m_pCache->base();
 
     /* Load old USB data from cache: */
-    if (m_pCheckBoxUSB)
-        m_pCheckBoxUSB->setChecked(oldUsbData.m_fUSBEnabled);
-    if (m_pEditorController)
-        m_pEditorController->setValue(oldUsbData.m_enmUSBControllerType);
-    if (m_pEditorFilters)
+    if (m_pEditorUsbSettings)
     {
+        m_pEditorUsbSettings->setFeatureEnabled(oldUsbData.m_fUSBEnabled);
+        m_pEditorUsbSettings->setUsbControllerType(oldUsbData.m_enmUSBControllerType);
+
         /* For each filter => load it from cache: */
         QList<UIDataUSBFilter> filters;
         for (int iFilterIndex = 0; iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
@@ -230,12 +225,8 @@ void UIMachineSettingsUSB::getFromCache()
             filter.m_enmRemoteMode = oldUsbFilterData.m_guiData.m_enmRemoteMode;
             filters << filter;
         }
-        m_pEditorFilters->setValue(filters);
+        m_pEditorUsbSettings->setUsbFilters(filters);
     }
-
-    /* Update widget availability: */
-    if (m_pCheckBoxUSB)
-        sltHandleUsbAdapterToggle(m_pCheckBoxUSB->isChecked());
 
     /* Polish page finally: */
     polishPage();
@@ -247,22 +238,21 @@ void UIMachineSettingsUSB::getFromCache()
 void UIMachineSettingsUSB::putToCache()
 {
     /* Sanity check: */
-    if (   !m_pCache
-        || !m_pEditorFilters)
+    if (!m_pCache)
         return;
 
     /* Prepare new USB data: */
     UIDataSettingsMachineUSB newUsbData;
 
     /* Gather new USB data: */
-    if (m_pCheckBoxUSB)
-        newUsbData.m_fUSBEnabled = m_pCheckBoxUSB->isChecked();
-    if (m_pEditorController)
-        newUsbData.m_enmUSBControllerType = newUsbData.m_fUSBEnabled ? m_pEditorController->value() : KUSBControllerType_Null;
-    if (m_pEditorFilters)
+    if (m_pEditorUsbSettings)
     {
+        newUsbData.m_fUSBEnabled = m_pEditorUsbSettings->isFeatureEnabled();
+        newUsbData.m_enmUSBControllerType = newUsbData.m_fUSBEnabled
+                                          ? m_pEditorUsbSettings->usbControllerType()
+                                          : KUSBControllerType_Null;
         /* For each filter => save it to cache: */
-        const QList<UIDataUSBFilter> filters = m_pEditorFilters->value();
+        const QList<UIDataUSBFilter> filters = m_pEditorUsbSettings->usbFilters();
         for (int iFilterIndex = 0; iFilterIndex < filters.size(); ++iFilterIndex)
         {
             /* Gather and cache new data: */
@@ -305,9 +295,10 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
     bool fPass = true;
 
     /* USB 2.0/3.0 Extension Pack presence test: */
-    if (   m_pCheckBoxUSB->isChecked()
-        && (   m_pEditorController->value() == KUSBControllerType_EHCI
-            || m_pEditorController->value() == KUSBControllerType_XHCI))
+    if (   m_pEditorUsbSettings
+        && m_pEditorUsbSettings->isFeatureEnabled()
+        && (   m_pEditorUsbSettings->usbControllerType() == KUSBControllerType_EHCI
+            || m_pEditorUsbSettings->usbControllerType() == KUSBControllerType_XHCI))
     {
         CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
         if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
@@ -331,30 +322,19 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 
 void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder(pWidget, m_pCheckBoxUSB);
-    setTabOrder(m_pCheckBoxUSB, m_pEditorController);
-    setTabOrder(m_pEditorController, m_pEditorFilters);
+    setTabOrder(pWidget, m_pEditorUsbSettings);
 }
 
 void UIMachineSettingsUSB::retranslateUi()
 {
-    m_pCheckBoxUSB->setToolTip(tr("When checked, enables the virtual USB controller of this machine."));
-    m_pCheckBoxUSB->setText(tr("Enable &USB Controller"));
 }
 
 void UIMachineSettingsUSB::polishPage()
 {
     /* Polish USB page availability: */
-    m_pCheckBoxUSB->setEnabled(isMachineOffline());
-    m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && m_pCheckBoxUSB->isChecked());
-    m_pEditorController->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
-}
-
-void UIMachineSettingsUSB::sltHandleUsbAdapterToggle(bool fEnabled)
-{
-    /* Enable/disable USB children: */
-    m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && fEnabled);
-    m_pEditorController->setEnabled(isMachineOffline() && fEnabled);
+    m_pEditorUsbSettings->setFeatureAvailable(isMachineOffline());
+    m_pEditorUsbSettings->setUsbControllerOptionAvailable(isMachineOffline());
+    m_pEditorUsbSettings->setUsbFiltersOptionAvailable(isMachineInValidMode());
 }
 
 void UIMachineSettingsUSB::prepare()
@@ -374,61 +354,21 @@ void UIMachineSettingsUSB::prepare()
 void UIMachineSettingsUSB::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setRowStretch(2, 1);
-        pLayoutMain->setColumnStretch(1, 1);
-
-        /* Prepare USB check-box: */
-        m_pCheckBoxUSB = new QCheckBox;
-        if (m_pCheckBoxUSB)
-            pLayoutMain->addWidget(m_pCheckBoxUSB, 0, 0, 1, 2);
-
-        /* Prepare 20-px shifting spacer: */
-        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-        if (pSpacerItem)
-            pLayoutMain->addItem(pSpacerItem, 1, 0);
-
-        /* Prepare USB settings widget: */
-        m_pWidgetUSBSettings = new QWidget(this);
-        if (m_pWidgetUSBSettings)
-        {
-            /* Prepare USB settings widget layout: */
-            QVBoxLayout *pLayoutUSBSettings = new QVBoxLayout(m_pWidgetUSBSettings);
-            if (pLayoutUSBSettings)
-            {
-                pLayoutUSBSettings->setContentsMargins(0, 0, 0, 0);
-
-                /* Prepare USB controller editor: */
-                m_pEditorController = new UIUSBControllerEditor(m_pWidgetUSBSettings);
-                if (m_pEditorController)
-                    pLayoutUSBSettings->addWidget(m_pEditorController);
-
-                /* Prepare USB filters editor: */
-                m_pEditorFilters = new UIUSBFiltersEditor(m_pWidgetUSBSettings);
-                if (m_pEditorFilters)
-                    pLayoutUSBSettings->addWidget(m_pEditorFilters);
-            }
-
-            pLayoutMain->addWidget(m_pWidgetUSBSettings, 1, 1, 1, 2);
-        }
+        /* Prepare settings editor: */
+        m_pEditorUsbSettings = new UIUSBSettingsEditor(this);
+        if (m_pEditorUsbSettings)
+            pLayout->addWidget(m_pEditorUsbSettings);
     }
 }
 
 void UIMachineSettingsUSB::prepareConnections()
 {
     /* Configure validation connections: */
-    connect(m_pCheckBoxUSB, &QCheckBox::stateChanged,
+    connect(m_pEditorUsbSettings, &UIUSBSettingsEditor::sigValueChanged,
             this, &UIMachineSettingsUSB::revalidate);
-    connect(m_pEditorController, &UIUSBControllerEditor::sigValueChanged,
-            this, &UIMachineSettingsUSB::revalidate);
-    connect(m_pEditorFilters, &UIUSBFiltersEditor::sigValueChanged,
-            this, &UIMachineSettingsUSB::revalidate);
-
-    /* Configure widget connections: */
-    connect(m_pCheckBoxUSB, &QCheckBox::toggled,
-            this, &UIMachineSettingsUSB::sltHandleUsbAdapterToggle);
 }
 
 void UIMachineSettingsUSB::cleanup()
