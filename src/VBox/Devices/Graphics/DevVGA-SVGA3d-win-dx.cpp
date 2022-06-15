@@ -4582,7 +4582,13 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUpdateHeapBuffers(PVGASTATECC pThisC
 }
 
 
-#if 0 /*unused*/
+/*
+ *
+ * VGPU9 callbacks. Not implemented.
+ *
+ */
+/** @todo later */
+
 /**
  * Create a new 3d context
  *
@@ -4597,7 +4603,7 @@ static DECLCALLBACK(int) vmsvga3dBackContextDefine(PVGASTATECC pThisCC, uint32_t
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -4616,7 +4622,7 @@ static DECLCALLBACK(int) vmsvga3dBackContextDestroy(PVGASTATECC pThisCC, uint32_
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4628,7 +4634,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetTransform(PVGASTATECC pThisCC, uint32_t 
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4640,7 +4646,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetZRange(PVGASTATECC pThisCC, uint32_t cid
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4652,7 +4658,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetRenderState(PVGASTATECC pThisCC, uint32_
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4664,7 +4670,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetRenderTarget(PVGASTATECC pThisCC, uint32
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4676,7 +4682,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetTextureState(PVGASTATECC pThisCC, uint32
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4688,7 +4694,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetMaterial(PVGASTATECC pThisCC, uint32_t c
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4700,7 +4706,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetLightData(PVGASTATECC pThisCC, uint32_t 
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4712,7 +4718,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetLightEnabled(PVGASTATECC pThisCC, uint32
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4724,7 +4730,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetViewPort(PVGASTATECC pThisCC, uint32_t c
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4736,7 +4742,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetClipPlane(PVGASTATECC pThisCC, uint32_t 
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4757,7 +4763,7 @@ static DECLCALLBACK(int) vmsvga3dBackCommandClear(PVGASTATECC pThisCC, uint32_t 
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4771,7 +4777,7 @@ static DECLCALLBACK(int) vmsvga3dBackDrawPrimitives(PVGASTATECC pThisCC, uint32_
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4783,7 +4789,7 @@ static DECLCALLBACK(int) vmsvga3dBackSetScissorRect(PVGASTATECC pThisCC, uint32_
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4795,7 +4801,7 @@ static DECLCALLBACK(int) vmsvga3dBackGenerateMipmaps(PVGASTATECC pThisCC, uint32
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4808,7 +4814,7 @@ static DECLCALLBACK(int) vmsvga3dBackShaderDefine(PVGASTATECC pThisCC, uint32_t 
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4820,7 +4826,7 @@ static DECLCALLBACK(int) vmsvga3dBackShaderDestroy(PVGASTATECC pThisCC, uint32_t
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4832,7 +4838,7 @@ static DECLCALLBACK(int) vmsvga3dBackShaderSet(PVGASTATECC pThisCC, PVMSVGA3DCON
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
 
@@ -4845,10 +4851,44 @@ static DECLCALLBACK(int) vmsvga3dBackShaderSetConst(PVGASTATECC pThisCC, uint32_
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    AssertFailed();
+    DEBUG_BREAKPOINT_TEST();
     return VINF_SUCCESS;
 }
-#endif
+
+static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryCreate(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
+{
+    RT_NOREF(pThisCC, pContext);
+    DEBUG_BREAKPOINT_TEST();
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryDelete(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
+{
+    RT_NOREF(pThisCC, pContext);
+    DEBUG_BREAKPOINT_TEST();
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryBegin(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
+{
+    RT_NOREF(pThisCC, pContext);
+    DEBUG_BREAKPOINT_TEST();
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryEnd(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
+{
+    RT_NOREF(pThisCC, pContext);
+    DEBUG_BREAKPOINT_TEST();
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryGetData(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels)
+{
+    RT_NOREF(pThisCC, pContext, pu32Pixels);
+    DEBUG_BREAKPOINT_TEST();
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -5242,49 +5282,6 @@ static DECLCALLBACK(int) vmsvga3dBackCreateTexture(PVGASTATECC pThisCC, PVMSVGA3
     AssertFailed();
     return VINF_SUCCESS;
 }
-
-
-#if 0 /*unused*/
-static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryCreate(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
-{
-    RT_NOREF(pThisCC, pContext);
-    AssertFailed();
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryBegin(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
-{
-    RT_NOREF(pThisCC, pContext);
-    AssertFailed();
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryEnd(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
-{
-    RT_NOREF(pThisCC, pContext);
-    AssertFailed();
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryGetData(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels)
-{
-    RT_NOREF(pThisCC, pContext);
-    *pu32Pixels = 0;
-    AssertFailed();
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryDelete(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
-{
-    RT_NOREF(pThisCC, pContext);
-    AssertFailed();
-    return VINF_SUCCESS;
-}
-#endif
 
 
 /*
@@ -9723,6 +9720,46 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDestroyScreen            = vmsvga3dBackDestroyScreen;
                 p->pfnSurfaceBlitToScreen      = vmsvga3dBackSurfaceBlitToScreen;
                 p->pfnSurfaceUpdateHeapBuffers = vmsvga3dBackSurfaceUpdateHeapBuffers;
+            }
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (RTStrCmp(pszInterfaceName, VMSVGA3D_BACKEND_INTERFACE_NAME_VGPU9) == 0)
+    {
+        if (cbInterfaceFuncs == sizeof(VMSVGA3DBACKENDFUNCSVGPU9))
+        {
+            if (pvInterfaceFuncs)
+            {
+                VMSVGA3DBACKENDFUNCSVGPU9 *p = (VMSVGA3DBACKENDFUNCSVGPU9 *)pvInterfaceFuncs;
+                p->pfnContextDefine            = vmsvga3dBackContextDefine;
+                p->pfnContextDestroy           = vmsvga3dBackContextDestroy;
+                p->pfnSetTransform             = vmsvga3dBackSetTransform;
+                p->pfnSetZRange                = vmsvga3dBackSetZRange;
+                p->pfnSetRenderState           = vmsvga3dBackSetRenderState;
+                p->pfnSetRenderTarget          = vmsvga3dBackSetRenderTarget;
+                p->pfnSetTextureState          = vmsvga3dBackSetTextureState;
+                p->pfnSetMaterial              = vmsvga3dBackSetMaterial;
+                p->pfnSetLightData             = vmsvga3dBackSetLightData;
+                p->pfnSetLightEnabled          = vmsvga3dBackSetLightEnabled;
+                p->pfnSetViewPort              = vmsvga3dBackSetViewPort;
+                p->pfnSetClipPlane             = vmsvga3dBackSetClipPlane;
+                p->pfnCommandClear             = vmsvga3dBackCommandClear;
+                p->pfnDrawPrimitives           = vmsvga3dBackDrawPrimitives;
+                p->pfnSetScissorRect           = vmsvga3dBackSetScissorRect;
+                p->pfnGenerateMipmaps          = vmsvga3dBackGenerateMipmaps;
+                p->pfnShaderDefine             = vmsvga3dBackShaderDefine;
+                p->pfnShaderDestroy            = vmsvga3dBackShaderDestroy;
+                p->pfnShaderSet                = vmsvga3dBackShaderSet;
+                p->pfnShaderSetConst           = vmsvga3dBackShaderSetConst;
+                p->pfnOcclusionQueryCreate     = vmsvga3dBackOcclusionQueryCreate;
+                p->pfnOcclusionQueryDelete     = vmsvga3dBackOcclusionQueryDelete;
+                p->pfnOcclusionQueryBegin      = vmsvga3dBackOcclusionQueryBegin;
+                p->pfnOcclusionQueryEnd        = vmsvga3dBackOcclusionQueryEnd;
+                p->pfnOcclusionQueryGetData    = vmsvga3dBackOcclusionQueryGetData;
             }
         }
         else

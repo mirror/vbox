@@ -650,7 +650,7 @@ DECLINLINE(uint32_t) vmsvgaR3MobId(PVMSVGAMOB pMob)
     return SVGA_ID_INVALID;
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_sunlover
 #define DEBUG_BREAKPOINT_TEST() do { ASMBreakpoint(); } while (0)
 #else
 #define DEBUG_BREAKPOINT_TEST() do { } while (0)
