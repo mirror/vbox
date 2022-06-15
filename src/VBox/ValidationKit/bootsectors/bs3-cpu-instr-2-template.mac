@@ -82,7 +82,66 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_idiv_xBX_ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr2_idiv_xBX_ud2
 
+;
+; RORX - VEX instruction with a couple of questions about non-standard encodings.
+;
+%define icebp ud2
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp, BS3_PBC_NEAR
+%if TMPL_BITS != 16
+        rorx    ebx, edx, 2
+%else
+        db 0C4h,0E3h,07Bh,0F0h,0DAh,002h    ; wrong nasm mode, whatever
+%endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp
 
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_RBX_RDX_2_icebp, BS3_PBC_NEAR
+%if TMPL_BITS == 64
+        rorx    rbx, rdx, 2
+%else
+        db 0C4h,0E3h,0FBh,0F0h,0DAh,002h    ; 32-bit ignores VEX.W=1 (10980xe)
+%endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_RBX_RDX_2_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp_L1, BS3_PBC_NEAR
+        db 0C4h, 0E3h, 07Bh | 4h, 0F0h, 0DAh, 002h          ; VEX.L=1 should #UD according to the docs
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp_L1
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V1, BS3_PBC_NEAR
+        db 0C4h, 0E3h, 003h | ~(1 << 3), 0F0h, 0DAh, 002h   ; VEX.VVVV=1 - behaviour is undocumented - 10980xe #UD
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V1
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V15, BS3_PBC_NEAR
+        db 0C4h, 0E3h, 003h | ~(15 << 3), 0F0h, 0DAh, 002h  ; VEX.VVVV=15 - behaviour is not documented - 10980xe #UD
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V15
+
+ %if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp_X1, BS3_PBC_NEAR
+        db 0C4h, 0E3h & ~40h, 07Bh, 0F0h, 0DAh, 002h        ; VEX.X=0 - behaviour is not documented - ignored by 10980xe
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp_X1
+ %endif
+
+
+;
+;
+;
  %if TMPL_BITS == 64
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_cmpxchg16b_rdi_ud2, BS3_PBC_NEAR
         cmpxchg16b [rdi]

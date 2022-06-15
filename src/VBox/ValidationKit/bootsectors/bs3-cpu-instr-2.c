@@ -38,6 +38,7 @@ BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_mul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_imul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_div);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_idiv);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_rorx);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_cmpxchg16b);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrfsbase);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrgsbase);
@@ -54,6 +55,7 @@ static const BS3TESTMODEENTRY g_aModeTests[] =
     BS3TESTMODEENTRY_CMN("imul", bs3CpuInstr2_imul),
     BS3TESTMODEENTRY_CMN("div", bs3CpuInstr2_div),
     BS3TESTMODEENTRY_CMN("idiv", bs3CpuInstr2_idiv),
+    BS3TESTMODEENTRY_CMN("rorx", bs3CpuInstr2_rorx),
     BS3TESTMODEENTRY_CMN_64("cmpxchg16b", bs3CpuInstr2_cmpxchg16b),
     BS3TESTMODEENTRY_CMN_64("wrfsbase", bs3CpuInstr2_wrfsbase),
     BS3TESTMODEENTRY_CMN_64("wrgsbase", bs3CpuInstr2_wrgsbase),

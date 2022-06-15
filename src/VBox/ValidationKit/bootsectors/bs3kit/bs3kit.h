@@ -2555,6 +2555,13 @@ typedef union BS3REG
     uint16_t    au16[4];
     /** 32-bit view. */
     uint32_t    au32[2];
+    /** Unsigned integer, depending on compiler context.
+     * This generally follows ARCH_BITS. */
+    RTCCUINTREG  uCcReg;
+    /** Extended unsigned integer, depending on compiler context.
+     * This is 32-bit in 16-bit and 32-bit compiler contexts, and 64-bit in
+     * 64-bit. */
+    RTCCUINTXREG uCcXReg;
 } BS3REG;
 /** Pointer to an integer register. */
 typedef BS3REG BS3_FAR *PBS3REG;
