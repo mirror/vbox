@@ -1970,42 +1970,14 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
                         /* Copy the screen target surface to the backend's screen. */
                         pSvgaR3State->pFuncsGBO->pfnScreenTargetUpdate(pThisCC, pScreen, &targetRect);
                     }
-                    else if (pScreen->pvScreenBitmap)
+                    else
                     {
-                        /* Copy the screen target surface to the memory buffer. */
-                        SVGA3dBox box; /* SurfaceMap will clip the box as necessary. */
-                        box.x = pCmd->rect.x;
-                        box.y = pCmd->rect.y;
-                        box.z = 0;
-                        box.w = pCmd->rect.w;
-                        box.h = pCmd->rect.h;
-                        box.d = 1;
-
-                        VMSVGA3D_MAPPED_SURFACE map;
-                        rc = vmsvga3dSurfaceMap(pThisCC, &entryScreenTarget.image, &box, VMSVGA3D_SURFACE_MAP_READ, &map);
-                        if (RT_SUCCESS(rc))
-                        {
-                            VMSGA3D_BOX_DIMENSIONS dims;
-                            rc = vmsvga3dGetBoxDimensions(pThisCC, &entryScreenTarget.image, &map.box, &dims);
-                            if (RT_SUCCESS(rc))
-                            {
-                                uint8_t const *pu8Src = (uint8_t *)map.pvData;
-                                uint8_t *pu8Dst = (uint8_t *)pScreen->pvScreenBitmap + dims.offSubresource + dims.offBox;
-                                for (uint32_t iRow = 0; iRow < map.cRows; ++iRow)
-                                {
-                                    memcpy(pu8Dst, pu8Src, dims.cbRow);
-
-                                    pu8Src += map.cbRowPitch;
-                                    pu8Dst += dims.cbPitch;
-                                }
-                            }
-
-                            vmsvga3dSurfaceUnmap(pThisCC, &entryScreenTarget.image, &map, /* fWritten =  */ false);
-
-                            vmsvgaR3UpdateScreen(pThisCC, pScreen, map.box.x, map.box.y, map.box.w, map.box.h);
-                        }
-                        else
-                            AssertFailed();
+                        SVGASignedRect r;
+                        r.left   = pCmd->rect.x;
+                        r.top    = pCmd->rect.y;
+                        r.right  = pCmd->rect.x + pCmd->rect.w;
+                        r.bottom = pCmd->rect.y + pCmd->rect.h;
+                        vmsvga3dScreenUpdate(pThisCC, pCmd->stid, r, entryScreenTarget.image, r, 0, NULL);
                     }
                 }
             }
