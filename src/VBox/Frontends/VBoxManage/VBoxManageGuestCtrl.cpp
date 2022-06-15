@@ -3601,11 +3601,6 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
 {
     AssertPtr(pArg);
 
-#ifdef DEBUG_andy_disabled
-    if (RT_FAILURE(tstTranslatePath()))
-        return RTEXITCODE_FAILURE;
-#endif
-
     /*
      * Command definitions.
      */
