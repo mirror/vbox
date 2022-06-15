@@ -14,7 +14,7 @@
 -->
 <installer-gui-script minSpecVersion="1.0">
     <title>VirtualBox_title</title>
-    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true" hostArchitectures="@VBOX_ARCH_LIST@"/>
+    <options customize="allow" rootVolumeOnly="true" hostArchitectures="@VBOX_ARCH_LIST@"/>
     <installation-check script="checkPrerequisite()"></installation-check>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
     <script>
@@ -54,41 +54,20 @@
 
        try
        {
-           /* The following shell script uses tools which were added in 10.8
-              (Mountain Lion) and later, in particular pgrep and pkill. */
-           if (system.compareVersions(system.version['ProductVersion'], '10.8') >= 0)
+           /* Embedded scripts are not available here. Instead, run command to check for running VMs or running VBOX instance */
+           runAppArr = system.applications.all()
+           for (let i = 0; i < runAppArr.length; i++)
            {
-               /* Embedded scripts are not available here. So, just do a
-                  command line checking if any VBoxXPCOMIPCD has more than one
-                  client, and if there are none, kill all the usual suspects to
-                  get a clean slate. This is done because the VirtualBox event
-                  handling had a bug which allowed no longer present passive
-                  event listeners to block VBoxSVC processes from exiting until
-                  the waiting time was elapsed. In the extreme case this was
-                  infinitely long, blocking updates. */
-               system.run('/bin/sh', '-c', 'pids=`/usr/bin/pgrep VBoxXPCOMIPCD` rc=0; [ -z "$pids" ] && rc=1; for i in $pids; do c=`/usr/sbin/lsof -p $i | /usr/bin/grep -E \'^[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +unix\' | wc -l`; [ $c -le 2 ] || rc=1; done; if [ $rc -eq 0 ]; then /usr/bin/pkill -KILL \'^(VirtualBox)|(VBoxNetDHCP)|(VBoxNetNAT)|(VBoxHeadless)|(VBoxXPCOMIPCD)|(VBoxSVC)$\'; sleep 1; fi');
+                if (runAppArr[i]["FileCreator"] == "VBOX" || runAppArr[i]["FileCreator"] == "VBVM")
+                {
+                    result = false;
+                }
            }
-       } catch (e) { system.log(e); }
-
-       try
-       {
-           /* Embedded scripts are not available here. So, just do a command
-              line checking for running VMs instead. */
-           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E \'[V]irtualBox.*startvm|[V]BoxNetDHCP|[V]BoxNetNAT|[V]BoxHeadless|[V]BoxSVC\'');
-           result = (rcScript != 0);
-           system.log("system.run /bin/sh .. returned: " + rcScript + " result=" + result);
+           system.log("system.applications check => result=" + result);
        } catch (e) { system.log(e); result = false; }
 
        if (!result)
        {
-           /* Temporary instrumentation for finding out with some probability
-            * who keeps VBoxSVC busy (unix socket to VBoxXPCOMIPCD open). Needs
-            * very little time (unlike a full lsof) and causes bearable amount
-            * of messages to install.log so that it can stay in for a while. */
-           try
-           {
-               system.run('/usr/sbin/lsof', '-l', '-U');
-           } catch (e) { system.log(e); }
 
            my.result.type = 'Fatal';
            my.result.title = system.localizedString('RUNNING_VMS_TLE');
