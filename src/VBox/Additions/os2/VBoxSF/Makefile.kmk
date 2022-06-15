@@ -66,14 +66,14 @@ TOOL_VBoxNasmDot_COMPILE_AS_DEPORD =
 define TOOL_VBoxNasmDot_COMPILE_AS_CMDS
 ifdef TOOL_VBoxNasmDot_USE_KSUBMIT
 	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasmDot_AS)\
-		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		$(flags) ,$(qaddprefix sh,-i, $(addsuffix /,$(incs))) $(qaddprefix sh,-D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
                -MD "$(dep)" -MP\
 		$(abspath $(source))
 else
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasmDot_AS)\
-		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		$(flags) ,$(qaddprefix sh,-i, $(addsuffix /$(incs))) $(qaddprefix sh,-D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
                -MD "$(dep)" -MP\
