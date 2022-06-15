@@ -62,7 +62,8 @@ static NTSTATUS svgaCreateSurfaceForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOX
 
         if (NT_SUCCESS(Status))
         {
-            if (pAllocation->dx.SegmentId == 3)
+            if (   pAllocation->dx.SegmentId == 3
+                || pAllocation->dx.desc.fPrimary)
             {
                 pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_BIND_GB_SURFACE, sizeof(SVGA3dCmdBindGBSurface), SVGA3D_INVALID_ID);
                 if (pvCmd)
@@ -87,7 +88,7 @@ static NTSTATUS svgaCreateSurfaceForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOX
 
 static void svgaFreeGBMobForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    AssertReturnVoid(pAllocation->dx.SegmentId == 3);
+    AssertReturnVoid(pAllocation->dx.SegmentId == 3 || pAllocation->dx.desc.fPrimary);
 
     void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
     if (pvCmd)
@@ -115,7 +116,7 @@ static void svgaFreeGBMobForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWDDM_ALL
 
 static NTSTATUS svgaCreateGBMobForAllocation(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    AssertReturn(pAllocation->dx.SegmentId == 3, STATUS_INVALID_PARAMETER);
+    AssertReturn(pAllocation->dx.SegmentId == 3 || pAllocation->dx.desc.fPrimary, STATUS_INVALID_PARAMETER);
 
     uint32_t const cbGB = RT_ALIGN_32(pAllocation->dx.desc.cbAllocation, PAGE_SIZE);
 
@@ -171,18 +172,17 @@ static NTSTATUS svgaCreateAllocationSurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_AL
         & (SVGA3D_SURFACE_HINT_INDIRECT_UPDATE | SVGA3D_SURFACE_HINT_STATIC))
     {
         /* USAGE_DEFAULT */
-/// @todo Might need to put primaries in a CPU visible segment for readback.
-//        if (pAllocation->dx.desc.fPrimary)
-//        {
-//            /* Put primaries to the CPU visible segment. */
-//            pAllocationInfo->PreferredSegment.Value      = 0;
-//            pAllocationInfo->SupportedReadSegmentSet     = 1; /* VRAM */
-//            pAllocationInfo->SupportedWriteSegmentSet    = 1; /* VRAM */
-//            pAllocationInfo->Flags.CpuVisible            = 1;
-//
-//            pAllocation->dx.SegmentId = 1;
-//        }
-//        else
+        if (pAllocation->dx.desc.fPrimary)
+        {
+            /* Put primaries to the CPU visible segment. Because VidPn code currently assumes that they are there. */
+            pAllocationInfo->PreferredSegment.Value      = 0;
+            pAllocationInfo->SupportedReadSegmentSet     = 1; /* VRAM */
+            pAllocationInfo->SupportedWriteSegmentSet    = 1; /* VRAM */
+            pAllocationInfo->Flags.CpuVisible            = 1;
+
+            pAllocation->dx.SegmentId = 1;
+        }
+        else
         {
             pAllocationInfo->PreferredSegment.Value      = 0;
             pAllocationInfo->SupportedReadSegmentSet     = 4; /* Host */
@@ -225,7 +225,7 @@ static NTSTATUS svgaCreateAllocationSurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_AL
 
     /* Allocations in the host VRAM still need guest backing. */
     NTSTATUS Status;
-    if (pAllocation->dx.SegmentId == 3)
+    if (pAllocation->dx.SegmentId == 3 || pAllocation->dx.desc.fPrimary)
     {
         Status = svgaCreateGBMobForAllocation(pSvga, pAllocation);
         if (NT_SUCCESS(Status))
@@ -269,7 +269,7 @@ static NTSTATUS svgaDestroyAllocationSurface(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWD
     if (pAllocation->dx.sid != SVGA3D_INVALID_ID)
     {
         void *pvCmd;
-        if (pAllocation->dx.SegmentId == 3)
+        if (pAllocation->dx.SegmentId == 3 || pAllocation->dx.desc.fPrimary)
         {
             pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_BIND_GB_SURFACE, sizeof(SVGA3dCmdBindGBSurface), SVGA3D_INVALID_ID);
             if (pvCmd)
@@ -291,7 +291,7 @@ static NTSTATUS svgaDestroyAllocationSurface(VBOXWDDM_EXT_VMSVGA *pSvga, PVBOXWD
 
         Status = SvgaSurfaceIdFree(pSvga, pAllocation->dx.sid);
 
-        if (pAllocation->dx.SegmentId == 3)
+        if (pAllocation->dx.SegmentId == 3 || pAllocation->dx.desc.fPrimary)
             svgaFreeGBMobForAllocation(pSvga, pAllocation);
 
         pAllocation->dx.sid = SVGA3D_INVALID_ID;
@@ -357,6 +357,14 @@ NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(
     else
         Status = STATUS_INVALID_PARAMETER;
     AssertReturnStmt(NT_SUCCESS(Status), GaMemFree(pAllocation), Status);
+
+    /* Legacy fields for VidPn code. */
+    pAllocation->AllocData.SurfDesc.VidPnSourceId = pAllocation->dx.desc.fPrimary
+                                                  ? pAllocation->dx.desc.PrimaryDesc.VidPnSourceId
+                                                  : 0;
+    pAllocation->AllocData.hostID = pAllocation->dx.sid;
+    pAllocation->AllocData.Addr.SegmentId = pAllocation->dx.SegmentId;
+    pAllocation->AllocData.Addr.offVram = VBOXVIDEOOFFSET_VOID;
 
     return Status;
 }
@@ -597,12 +605,16 @@ static NTSTATUS svgaPagingFill(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER
     {
         case 1: /* VRAM */
         {
-            uint64_t const offVRAM = pBuildPagingBuffer->Fill.Destination.SegmentAddress.QuadPart;
-            AssertReturn(   offVRAM < pDevExt->cbVRAMCpuVisible
-                         && pBuildPagingBuffer->Fill.FillSize <= pDevExt->cbVRAMCpuVisible - offVRAM, STATUS_INVALID_PARAMETER);
-            ASMMemFill32((uint8_t *)pDevExt->pvVisibleVram + offVRAM, pBuildPagingBuffer->Fill.FillSize, pBuildPagingBuffer->Fill.FillPattern);
-            break;
+            if (!pAllocation->dx.desc.fPrimary)
+            {
+                uint64_t const offVRAM = pBuildPagingBuffer->Fill.Destination.SegmentAddress.QuadPart;
+                AssertReturn(   offVRAM < pDevExt->cbVRAMCpuVisible
+                             && pBuildPagingBuffer->Fill.FillSize <= pDevExt->cbVRAMCpuVisible - offVRAM, STATUS_INVALID_PARAMETER);
+                ASMMemFill32((uint8_t *)pDevExt->pvVisibleVram + offVRAM, pBuildPagingBuffer->Fill.FillSize, pBuildPagingBuffer->Fill.FillPattern);
+                break;
+            }
         }
+        RT_FALL_THRU();
         case 2: /* Aperture */
         case 3: /* Host */
         {
@@ -610,7 +622,7 @@ static NTSTATUS svgaPagingFill(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER
                 break;
 
             void *pvDst;
-            if (pBuildPagingBuffer->Fill.Destination.SegmentId == 3)
+            if (pBuildPagingBuffer->Fill.Destination.SegmentId == 3 || pAllocation->dx.desc.fPrimary)
             {
                 AssertReturn(pAllocation->dx.gb.hMemObjGB != NIL_RTR0MEMOBJ, STATUS_INVALID_PARAMETER);
                 pvDst = RTR0MemObjAddress(pAllocation->dx.gb.hMemObjGB);
