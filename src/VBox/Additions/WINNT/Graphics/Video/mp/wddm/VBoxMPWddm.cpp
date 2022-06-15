@@ -5283,7 +5283,16 @@ DriverEntry(
             {
                 enmHwType = VBOXVIDEO_HWTYPE_VMSVGA;
             }
-            LOGREL(("WDDM: VGA configuration: 3D %d, hardware type %d", f3DSupported, enmHwType));
+
+            BOOL fVGPU10 = FALSE;
+            VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA_DX, &u32, 0);
+            if (u32)
+            {
+                fVGPU10 = TRUE;
+            }
+            LOGREL(("WDDM: VGA configuration: 3D %d, hardware type %d, VGPU10 %d", f3DSupported, enmHwType, fVGPU10));
+            if (!fVGPU10)
+                f3DSupported = FALSE;
         }
 
         if (enmHwType == VBOXVIDEO_HWTYPE_VBOX)
