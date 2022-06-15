@@ -662,7 +662,7 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
     }
 }
 
-void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
+void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
     bool fOverlayMode = m_fOverlayMode;
     clearOverlay();
@@ -694,9 +694,9 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
         loadImageAtPosition(pEvent->globalPos());
 }
 
-void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
+void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
 {
-    QIWithRetranslateUI<QTextBrowser>::mouseReleaseEvent(pEvent);
+    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
 }
 
 void UIHelpViewer::setImageOverCursor(QPoint globalPosition)
