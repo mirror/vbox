@@ -179,10 +179,17 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     RT_NOREF1(u32ClientID);
-    int rc = VINF_SUCCESS;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    Log(("SharedFolders host service: disconnected, u32ClientID = %u\n", u32ClientID));
+    /* When a client disconnects, make sure that outstanding change waits are being canceled.
+     *
+     * Usually this will be done actively by VBoxService on the guest side when shutting down,
+     * but the VM could be reset without having VBoxService the chance of cancelling those waits.
+     *
+     * This in turn will eat up the call completion handle restrictions on the HGCM host side, throwing assertions. */
+    int rc = vbsfMappingsCancelChangesWaits(pClient);
+
+    Log(("SharedFolders host service: disconnected, u32ClientID = %u, rc = %Rrc\n", u32ClientID, rc));
 
     vbsfDisconnect(pClient);
     return rc;
