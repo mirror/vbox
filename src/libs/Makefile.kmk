@@ -49,7 +49,7 @@ endif
 # libjpeg for VRDP video redirection and ExtPack's DrvHostWebcam.
 if  (defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK_PUEL)) \
  && !defined(VBOX_ONLY_ADDITIONS)
- include $(PATH_SUB_CURRENT)/jpeg-9b/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libjpeg-turbo-2.1.3/Makefile.kmk
 endif
 
 

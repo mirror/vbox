@@ -2959,7 +2959,7 @@ VBOX_PATH_X11_ROOT      = $(PATH_ROOT)/src/VBox/Additions/x11/x11include
 # Miscellaneous includes
 #
 VBOX_GRAPHICS_INCS = $(PATH_ROOT)/include/VBox/Graphics
-VBOX_JPEG_INCS     = $(PATH_ROOT)/src/libs/jpeg-9b
+VBOX_JPEG_INCS     = $(PATH_ROOT)/src/libs/libjpeg-turbo-2.1.3
 
 
 # The icons to use.
