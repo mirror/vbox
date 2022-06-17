@@ -85,13 +85,9 @@ BS3_PROC_END_CMN   bs3CpuInstr2_idiv_xBX_ud2
 ;
 ; RORX - VEX instruction with a couple of questions about non-standard encodings.
 ;
-%define icebp ud2
+;;%define icebp ud2
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp, BS3_PBC_NEAR
-%if TMPL_BITS != 16
         rorx    ebx, edx, 2
-%else
-        db 0C4h,0E3h,07Bh,0F0h,0DAh,002h    ; wrong nasm mode, whatever
-%endif
 .again:
         icebp
         jmp     .again
@@ -101,7 +97,7 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_RBX_RDX_2_icebp, BS3_PBC_NEAR
 %if TMPL_BITS == 64
         rorx    rbx, rdx, 2
 %else
-        db 0C4h,0E3h,0FBh,0F0h,0DAh,002h    ; 32-bit ignores VEX.W=1 (10980xe)
+        db      0C4h,0E3h,0FBh,0F0h,0DAh,002h    ; 32-bit ignores VEX.W=1 (10980xe)
 %endif
 .again:
         icebp
@@ -137,6 +133,27 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_EDX_2_icebp_X1, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_EDX_2_icebp_X1
  %endif
+
+; A couple of memory variants
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_EBX_DSxDI_36_icebp, BS3_PBC_NEAR
+        rorx    ebx, [xDI], 36
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_EBX_DSxDI_36_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_RBX_DSxDI_68_icebp, BS3_PBC_NEAR
+ %if TMPL_BITS == 64
+        rorx    rbx, [xDI], 68
+ %elif TMPL_BITS == 32
+        db      0C4h,0E3h,07Bh,0F0h,01Fh,044h   ; 16-bit ignores VEX.W=1 (10980xe)
+ %else
+        db      0C4h,0E3h,0FBh,0F0h,01Dh,044h   ; 16-bit ignores VEX.W=1 (10980xe)
+ %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_rorx_RBX_DSxDI_68_icebp
 
 
 ;
@@ -255,45 +272,45 @@ BS3_PROC_END_CMN   bs3CpuInstr2_wrgsbase_ebx_ud2
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2, BS3_PBC_NEAR
         wrfsbase rbx
-        xor      rbx, rbx
+        mov      ebx, 0
         rdfsbase rcx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 13)
+AssertCompile(.again - BS3_LAST_LABEL == 15)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2, BS3_PBC_NEAR
         wrfsbase ebx
-        xor      ebx, ebx
+        mov      ebx, 0
         rdfsbase ecx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 10)
+AssertCompile(.again - BS3_LAST_LABEL == 13)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2, BS3_PBC_NEAR
         wrgsbase rbx
-        xor      rbx, rbx
+        mov      ebx, 0
         rdgsbase rcx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 13)
+AssertCompile(.again - BS3_LAST_LABEL == 15)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2, BS3_PBC_NEAR
         wrgsbase ebx
-        xor      ebx, ebx
+        mov      ebx, 0
         rdgsbase ecx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 10)
+AssertCompile(.again - BS3_LAST_LABEL == 13)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfgbase_ebx_rdgsbase_ecx_ud2
 
 
