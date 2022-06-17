@@ -55,7 +55,6 @@ VBoxWddm.sys
 ;dispdx VBoxDX.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxNine.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxSVGA.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
-;mesa3d VBoxICD.dll,,,0x00004000      ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxGL.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 ;amd64 [VBoxVideo.Display_wow64]
@@ -63,7 +62,6 @@ VBoxWddm.sys
 ;amd64 ;dispdx VBoxDX-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxNine-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxSVGA-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;mesa3d VBoxICD-x86.dll,,,0x00004000      ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxGL-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo_SoftwareDeviceSettings]
@@ -73,8 +71,8 @@ VBoxWddm.sys
 ;dispdx         HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D, VBoxDX, VBoxDX
 ;dispdx         HKR,, UserModeDriverName,      %REG_MULTI_SZ%, VBoxDispD3D.dll, VBoxDX.dll, VBoxDX.dll
 ;amd64 ;dispdx  HKR,, UserModeDriverNameWow,   %REG_MULTI_SZ%, VBoxDispD3D-x86.dll, VBoxDX-x86.dll, VBoxDX-x86.dll
-;mesa3d         HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxICD
-;amd64 ;mesa3d  HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxICD-x86
+;mesa3d         HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxGL
+;amd64 ;mesa3d  HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxGL-x86
 ;mesa3d         HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
 ;amd64 ;mesa3d  HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
 ;mesa3d         HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
@@ -110,13 +108,11 @@ VBoxWddm.sys = 1
 ;amd64 ;dispdx VBoxDX-x86.dll = 1
 ;amd64 ;mesa3d VBoxNine-x86.dll = 1
 ;amd64 ;mesa3d VBoxSVGA-x86.dll = 1
-;amd64 ;mesa3d VBoxICD-x86.dll = 1
 ;amd64 ;mesa3d VBoxGL-x86.dll = 1
 ;dispd3d VBoxDispD3D.dll = 1
 ;dispdx  VBoxDX.dll = 1
 ;mesa3d VBoxNine.dll = 1
 ;mesa3d VBoxSVGA.dll = 1
-;mesa3d VBoxICD.dll = 1
 ;mesa3d VBoxGL.dll = 1
 
 [Strings]

@@ -120,7 +120,6 @@ DRIVER_FILES += \
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxNine.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxICD.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL.dll
  endif
  ifdef VBOX_SIGN_ADDITIONS
@@ -139,7 +138,6 @@ DRIVER_FILES += \
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxNine-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA-x86.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxICD-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL-x86.dll
   endif
  endif
