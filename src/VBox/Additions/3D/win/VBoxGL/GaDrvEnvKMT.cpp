@@ -393,6 +393,7 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_R8_UNORM:       /* R8->A8 conversion is not correct, but it does not matter here,
                                      * because the D3DDDIFMT_ value is used only to compute bpp, pitch, etc. */
         case SVGA3D_A8_UNORM:       return D3DDDIFMT_A8;
+        case SVGA3D_B5G5R5A1_UNORM: return D3DDDIFMT_A1R5G5B5;
         default: break;
     }
 
