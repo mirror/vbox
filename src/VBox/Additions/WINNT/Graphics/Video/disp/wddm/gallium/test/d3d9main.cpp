@@ -348,6 +348,8 @@ int D3D9Test::Run()
 
             /* Time in seconds since the previous render step. */
             float dt = fFirst ? 0.0f : (float)(CurrTS.QuadPart - PrevTS.QuadPart) * PerfPeriod;
+            if (dt > 0.1f)
+                dt = 0.1f;
             if (mpRender)
             {
                 mpRender->TimeAdvance(dt);
