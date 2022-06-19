@@ -62,6 +62,62 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xCX_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_div_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_idiv_xBX_ud2);
 
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_FSxBX_ud2);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_BX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_EBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_RBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_FSxBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_FSxBX_ud2);
+
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_RBX_RDX_2_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp_L1);
@@ -633,6 +689,493 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_idiv)(uint8_t bMode)
 }
 
 
+/*
+ * BSF/BSR (386+) & TZCNT/LZCNT (BMI1,ABM)
+ */
+
+typedef struct BS3CPUINSTR2_SUBTEST_BITSCAN_T
+{
+    RTCCUINTXREG    uSrc;
+    RTCCUINTXREG    uOut;
+    bool            fOutNotSet;
+    uint16_t        fEflOut;
+} BS3CPUINSTR2_SUBTEST_BITSCAN_T;
+
+typedef struct BS3CPUINSTR2_TEST_BITSCAN_T
+{
+    FPFNBS3FAR      pfnWorker;
+    bool            fMemSrc;
+    uint8_t         cbInstr;
+    uint8_t         cOpBits;
+    uint16_t        fEflCheck;
+    uint8_t         cSubTests;
+    BS3CPUINSTR2_SUBTEST_BITSCAN_T const *paSubTests;
+} BS3CPUINSTR2_TEST_BITSCAN_T;
+
+static uint8_t bs3CpuInstr2_BitScan(uint8_t bMode, BS3CPUINSTR2_TEST_BITSCAN_T const *paTests, unsigned cTests)
+{
+    BS3REGCTX       Ctx;
+    BS3TRAPFRAME    TrapFrame;
+    unsigned        i, j, k;
+
+    /* Ensure the structures are allocated before we sample the stack pointer. */
+    Bs3MemSet(&Ctx, 0, sizeof(Ctx));
+    Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
+
+    /*
+     * Create test context.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 512);
+
+    /*
+     * Do the tests twice, first with all flags set, then once again with
+     * flags cleared.  The flags are not supposed to be touched at all.
+     */
+    Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+    for (j = 0; j < 2; j++)
+    {
+        for (i = 0; i < cTests; i++)
+        {
+            for (k = 0; k < paTests[i].cSubTests; k++)
+            {
+                uint64_t      uExpectRax, uExpectRip;
+                RTCCUINTXREG  uMemSrc, uMemSrcExpect;
+
+                Ctx.rax.uCcXReg = RTCCUINTXREG_MAX * 1019;
+                if (!paTests[i].fMemSrc)
+                {
+                    Ctx.rbx.uCcXReg         = paTests[i].paSubTests[k].uSrc;
+                    uMemSrcExpect = uMemSrc = ~paTests[i].paSubTests[k].uSrc;
+                }
+                else
+                {
+                    uMemSrcExpect = uMemSrc = paTests[i].paSubTests[k].uSrc;
+                    Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, &Ctx.fs, &uMemSrc);
+                }
+                Bs3RegCtxSetRipCsFromCurPtr(&Ctx, paTests[i].pfnWorker);
+                if (paTests[i].paSubTests[k].fOutNotSet)
+                    uExpectRax = Ctx.rax.u;
+                else if (paTests[i].cOpBits != 16)
+                    uExpectRax = paTests[i].paSubTests[k].uOut;
+                else
+                    uExpectRax = paTests[i].paSubTests[k].uOut | (Ctx.rax.u & UINT64_C(0xffffffffffff0000));
+                uExpectRip = Ctx.rip.u + paTests[i].cbInstr;
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+
+                if (   TrapFrame.bXcpt != X86_XCPT_UD
+                    || TrapFrame.Ctx.rip.u != uExpectRip
+                    || TrapFrame.Ctx.rbx.u != Ctx.rbx.u
+                    || TrapFrame.Ctx.rax.u != uExpectRax
+                    ||    (TrapFrame.Ctx.rflags.u16 & paTests[i].fEflCheck)
+                       != (paTests[i].paSubTests[k].fEflOut & paTests[i].fEflCheck)
+                    /* check that nothing else really changed: */
+                    || TrapFrame.Ctx.rcx.u != Ctx.rcx.u
+                    || TrapFrame.Ctx.rdx.u != Ctx.rdx.u
+                    || TrapFrame.Ctx.rsp.u != Ctx.rsp.u
+                    || TrapFrame.Ctx.rbp.u != Ctx.rbp.u
+                    || TrapFrame.Ctx.rsi.u != Ctx.rsi.u
+                    || TrapFrame.Ctx.rdi.u != Ctx.rdi.u
+                    || uMemSrc != uMemSrcExpect
+                   )
+                {
+                    Bs3TestFailedF("test #%i/%i failed: input %#" RTCCUINTXREG_XFMT,
+                                   i, k, paTests[i].paSubTests[k].uSrc);
+                    if (TrapFrame.bXcpt != X86_XCPT_UD)
+                        Bs3TestFailedF("Expected bXcpt = %#x, got %#x", X86_XCPT_UD, TrapFrame.bXcpt);
+                    if (TrapFrame.Ctx.rip.u != uExpectRip)
+                        Bs3TestFailedF("Expected RIP = %#06RX64, got %#06RX64", uExpectRip, TrapFrame.Ctx.rip.u);
+                    if (TrapFrame.Ctx.rax.u != uExpectRax)
+                        Bs3TestFailedF("Expected RAX = %#06RX64, got %#06RX64", uExpectRax, TrapFrame.Ctx.rax.u);
+                    if (TrapFrame.Ctx.rcx.u != Ctx.rcx.u)
+                        Bs3TestFailedF("Expected RCX = %#06RX64, got %#06RX64", Ctx.rcx.u, TrapFrame.Ctx.rcx.u);
+                    if (TrapFrame.Ctx.rbx.u != Ctx.rbx.u)
+                        Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64 (dst)", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
+                    if (   (TrapFrame.Ctx.rflags.u16 & paTests[i].fEflCheck)
+                        != (paTests[i].paSubTests[k].fEflOut & paTests[i].fEflCheck))
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (output)",
+                                       paTests[i].paSubTests[k].fEflOut & paTests[i].fEflCheck,
+                                       TrapFrame.Ctx.rflags.u16 & paTests[i].fEflCheck);
+
+                    if (TrapFrame.Ctx.rdx.u != Ctx.rdx.u)
+                        Bs3TestFailedF("Expected RDX = %#06RX64, got %#06RX64 (src)", Ctx.rdx.u, TrapFrame.Ctx.rdx.u);
+                    if (TrapFrame.Ctx.rsp.u != Ctx.rsp.u)
+                        Bs3TestFailedF("Expected RSP = %#06RX64, got %#06RX64", Ctx.rsp.u, TrapFrame.Ctx.rsp.u);
+                    if (TrapFrame.Ctx.rbp.u != Ctx.rbp.u)
+                        Bs3TestFailedF("Expected RBP = %#06RX64, got %#06RX64", Ctx.rbp.u, TrapFrame.Ctx.rbp.u);
+                    if (TrapFrame.Ctx.rsi.u != Ctx.rsi.u)
+                        Bs3TestFailedF("Expected RSI = %#06RX64, got %#06RX64", Ctx.rsi.u, TrapFrame.Ctx.rsi.u);
+                    if (TrapFrame.Ctx.rdi.u != Ctx.rdi.u)
+                        Bs3TestFailedF("Expected RDI = %#06RX64, got %#06RX64", Ctx.rdi.u, TrapFrame.Ctx.rdi.u);
+                    if (uMemSrc != uMemSrcExpect)
+                        Bs3TestFailedF("Expected uMemSrc = %#06RX64, got %#06RX64", (uint64_t)uMemSrcExpect, (uint64_t)uMemSrc);
+                }
+            }
+        }
+        Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
+    }
+
+    return 0;
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bsf_tzcnt)(uint8_t bMode)
+{
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsf16[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)UINT16_MAX,      /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsTzCnt16[] =
+    {
+        {   0,                              /* -> */    16, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)UINT16_MAX,      /* -> */    16, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsf32[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+#if ARCH_BITS == 64
+        {   ~(RTCCUINTXREG)UINT32_MAX,      /* -> */    0,  true,  X86_EFL_ZF },
+#endif
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    21, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsTzCnt32[] =
+    {
+        {   0,                              /* -> */    32, false, X86_EFL_CF },
+#if ARCH_BITS == 64
+        {   ~(RTCCUINTXREG)UINT32_MAX,      /* -> */    32, false, X86_EFL_CF },
+#endif
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    21, false, 0 },
+    };
+#if ARCH_BITS == 64
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsf64[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    21, false, 0 },
+        {   UINT64_C(0x8000000000000000),   /* -> */    63, false, 0 },
+        {   UINT64_C(0x4560000000000000),   /* -> */    53, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsTzCnt64[] =
+    {
+        {   0,                              /* -> */    64, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    5,  false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    21, false, 0 },
+        {   UINT64_C(0x8000000000000000),   /* -> */    63, false, 0 },
+        {   UINT64_C(0x4560000000000000),   /* -> */    53, false, 0 },
+    };
+#endif
+    static BS3CPUINSTR2_TEST_BITSCAN_T s_aTests[] =
+    {
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_AX_BX_ud2),         false,  3 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf16), s_aSubTestsBsf16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_AX_FSxBX_ud2),      true,   4 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf16), s_aSubTestsBsf16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_EBX_ud2),       false,  3 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf32), s_aSubTestsBsf32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_FSxBX_ud2),     true,   4 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf32), s_aSubTestsBsf32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_RBX_ud2),       false,  4,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf64), s_aSubTestsBsf64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_FSxBX_ud2),     true,   5,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf64), s_aSubTestsBsf64 },
+#endif
+        /* f2 prefixed variant: */
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_BX_ud2),      false,  4 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf16), s_aSubTestsBsf16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_FSxBX_ud2),   true,   5 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf16), s_aSubTestsBsf16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_EBX_ud2),    false,  4 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf32), s_aSubTestsBsf32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_FSxBX_ud2),  true,   5 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf32), s_aSubTestsBsf32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_RBX_ud2),    false,  5,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf64), s_aSubTestsBsf64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_FSxBX_ud2),  true,   6,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsf64), s_aSubTestsBsf64 },
+#endif
+
+        /* tzcnt: */
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_BX_ud2),       false,  4 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt16), s_aSubTestsTzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_FSxBX_ud2),    true,   5 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt16), s_aSubTestsTzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_EBX_ud2),     false,  4 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt32), s_aSubTestsTzCnt32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_FSxBX_ud2),   true,   5 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt32), s_aSubTestsTzCnt32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_RBX_ud2),     false,  5,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt64), s_aSubTestsTzCnt64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_FSxBX_ud2),   true,   6,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt64), s_aSubTestsTzCnt64 },
+#endif
+        /* f2 prefixed tzcnt variant (last prefix (f3) should prevail): */
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_BX_ud2),    false,  5 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt16), s_aSubTestsTzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_FSxBX_ud2), true,   6 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt16), s_aSubTestsTzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_EBX_ud2),  false,  5 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt32), s_aSubTestsTzCnt32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_FSxBX_ud2),true,   6 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt32), s_aSubTestsTzCnt32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_RBX_ud2),  false,  6,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt64), s_aSubTestsTzCnt64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_FSxBX_ud2),true,   7,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsTzCnt64), s_aSubTestsTzCnt64 },
+#endif
+    };
+
+    uint32_t uStdExtFeatEbx = 0;
+    if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        ASMCpuIdExSlow(7, 0, 0, 0, NULL, &uStdExtFeatEbx, NULL, NULL);
+    if (!(uStdExtFeatEbx & X86_CPUID_STEXT_FEATURE_EBX_BMI1))
+    {
+        unsigned i = RT_ELEMENTS(s_aTests);
+        while (i-- > 0)
+            if (s_aTests[i].fEflCheck & X86_EFL_CF)
+            {
+                s_aTests[i].fEflCheck = X86_EFL_ZF;
+                switch (s_aTests[i].cOpBits)
+                {
+                    case 16:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsf16);
+                        s_aTests[i].paSubTests = s_aSubTestsBsf16;
+                        break;
+                    case 32:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsf32);
+                        s_aTests[i].paSubTests = s_aSubTestsBsf32;
+                        break;
+#if ARCH_BITS == 64
+                    case 64:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsf64);
+                        s_aTests[i].paSubTests = s_aSubTestsBsf64;
+                        break;
+#endif
+                }
+            }
+        Bs3TestPrintf("tzcnt not supported\n");
+    }
+
+    return bs3CpuInstr2_BitScan(bMode, s_aTests, RT_ELEMENTS(s_aTests));
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bsr_lzcnt)(uint8_t bMode)
+{
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsr16[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)UINT16_MAX,      /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    15, false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    15, false, 0 },
+        {   UINT16_C(0x0001),               /* -> */    0,  false, 0 },
+        {   UINT16_C(0x0002),               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    14, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsLzCnt16[] =
+    {
+        {   0,                              /* -> */    16, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)UINT16_MAX,      /* -> */    16, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    0,  false, X86_EFL_ZF },
+        {   UINT16_C(0x8000),               /* -> */    0,  false, X86_EFL_ZF },
+        {   UINT16_C(0x4560),               /* -> */    1,  false, 0 },
+        {   UINT16_C(0x003f),               /* -> */    10, false, 0 },
+        {   UINT16_C(0x0001),               /* -> */    15, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsr32[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+#if ARCH_BITS == 64
+        {   ~(RTCCUINTXREG)UINT32_MAX,      /* -> */    0,  true,  X86_EFL_ZF },
+#endif
+        {   ~(RTCCUINTXREG)0,               /* -> */    31, false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    31, false, 0 },
+        {   1,                              /* -> */    0,  false, 0 },
+        {   2,                              /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    14, false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    30, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsLzCnt32[] =
+    {
+        {   0,                              /* -> */    32, false, X86_EFL_CF },
+#if ARCH_BITS == 64
+        {   ~(RTCCUINTXREG)UINT32_MAX,      /* -> */    32, false, X86_EFL_CF },
+#endif
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    0,  false, X86_EFL_ZF },
+        {   1,                              /* -> */    31, false, 0 },
+        {   2,                              /* -> */    30, false, 0},
+        {   UINT16_C(0x8000),               /* -> */    16, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    17, false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    0,  false, X86_EFL_ZF },
+        {   UINT32_C(0x45600000),           /* -> */    1,  false, 0 },
+        {   UINT32_C(0x0000ffff),           /* -> */    16, false, 0 },
+    };
+#if ARCH_BITS == 64
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsBsr64[] =
+    {
+        {   0,                              /* -> */    0,  true,  X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    63, false, 0 },
+        {   ~(RTCCUINTXREG)1,               /* -> */    63, false, 0 },
+        {   1,                              /* -> */    0,  false, 0 },
+        {   2,                              /* -> */    1,  false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    15, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    14, false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    31, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    30, false, 0 },
+        {   UINT64_C(0x8000000000000000),   /* -> */    63, false, 0 },
+        {   UINT64_C(0x0045600000000000),   /* -> */    54, false, 0 },
+    };
+    static BS3CPUINSTR2_SUBTEST_BITSCAN_T const s_aSubTestsLzCnt64[] =
+    {
+        {   0,                              /* -> */    64, false, X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,               /* -> */    0,  false, X86_EFL_ZF },
+        {   ~(RTCCUINTXREG)1,               /* -> */    0,  false, X86_EFL_ZF },
+        {   1,                              /* -> */    63, false, 0 },
+        {   2,                              /* -> */    62, false, 0 },
+        {   UINT16_C(0x8000),               /* -> */    48, false, 0 },
+        {   UINT16_C(0x4560),               /* -> */    49, false, 0 },
+        {   UINT32_C(0x80000000),           /* -> */    32, false, 0 },
+        {   UINT32_C(0x45600000),           /* -> */    33, false, 0 },
+        {   UINT64_C(0x8000000000000000),   /* -> */    0,  false, X86_EFL_ZF },
+        {   UINT64_C(0x4560000000000000),   /* -> */    1,  false, 0 },
+        {   UINT64_C(0x0045600000000000),   /* -> */    9,  false, 0 },
+    };
+#endif
+    static BS3CPUINSTR2_TEST_BITSCAN_T s_aTests[] =
+    {
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_AX_BX_ud2),         false,  3 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr16), s_aSubTestsBsr16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_AX_FSxBX_ud2),      true,   4 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr16), s_aSubTestsBsr16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_EBX_ud2),       false,  3 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr32), s_aSubTestsBsr32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_FSxBX_ud2),     true,   4 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr32), s_aSubTestsBsr32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_RBX_ud2),       false,  4,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr64), s_aSubTestsBsr64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_FSxBX_ud2),     true,   5,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr64), s_aSubTestsBsr64 },
+#endif
+        /* f2 prefixed variant: */
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_BX_ud2),      false,  4 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr16), s_aSubTestsBsr16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_FSxBX_ud2),   true,   5 + (ARCH_BITS != 16), 16, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr16), s_aSubTestsBsr16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_EBX_ud2),    false,  4 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr32), s_aSubTestsBsr32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_FSxBX_ud2),  true,   5 + (ARCH_BITS == 16), 32, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr32), s_aSubTestsBsr32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_RBX_ud2),    false,  5,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr64), s_aSubTestsBsr64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_FSxBX_ud2),  true,   6,                     64, X86_EFL_ZF,
+            RT_ELEMENTS(s_aSubTestsBsr64), s_aSubTestsBsr64 },
+#endif
+
+        /* lzcnt: */
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_BX_ud2),       false,  4 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt16), s_aSubTestsLzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_FSxBX_ud2),    true,   5 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt16), s_aSubTestsLzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_EBX_ud2),     false,  4 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt32), s_aSubTestsLzCnt32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_FSxBX_ud2),   true,   5 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt32), s_aSubTestsLzCnt32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_RBX_ud2),     false,  5,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt64), s_aSubTestsLzCnt64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_FSxBX_ud2),   true,   6,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt64), s_aSubTestsLzCnt64 },
+#endif
+        /* f2 prefixed lzcnt variant (last prefix (f3) should prevail): */
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_BX_ud2),    false,  5 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt16), s_aSubTestsLzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_FSxBX_ud2), true,   6 + (ARCH_BITS != 16), 16, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt16), s_aSubTestsLzCnt16 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_EBX_ud2),  false,  5 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt32), s_aSubTestsLzCnt32 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_FSxBX_ud2),true,   6 + (ARCH_BITS == 16), 32, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt32), s_aSubTestsLzCnt32 },
+#if ARCH_BITS == 64
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_RBX_ud2),  false,  6,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt64), s_aSubTestsLzCnt64 },
+        {   BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_FSxBX_ud2),true,   7,                     64, X86_EFL_ZF | X86_EFL_CF,
+            RT_ELEMENTS(s_aSubTestsLzCnt64), s_aSubTestsLzCnt64 },
+#endif
+    };
+
+    uint32_t uExtFeatEcx = 0;
+    if (g_uBs3CpuDetected & BS3CPU_F_CPUID_EXT_LEAVES)
+        ASMCpuIdExSlow(UINT32_C(0x80000001), 0, 0, 0, NULL, NULL, &uExtFeatEcx, NULL);
+    if (!(uExtFeatEcx & X86_CPUID_AMD_FEATURE_ECX_ABM))
+    {
+        unsigned i = RT_ELEMENTS(s_aTests);
+        while (i-- > 0)
+            if (s_aTests[i].fEflCheck & X86_EFL_CF)
+            {
+                s_aTests[i].fEflCheck = X86_EFL_ZF;
+                switch (s_aTests[i].cOpBits)
+                {
+                    case 16:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsr16);
+                        s_aTests[i].paSubTests = s_aSubTestsBsr16;
+                        break;
+                    case 32:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsr32);
+                        s_aTests[i].paSubTests = s_aSubTestsBsr32;
+                        break;
+#if ARCH_BITS == 64
+                    case 64:
+                        s_aTests[i].cSubTests  = RT_ELEMENTS(s_aSubTestsBsr64);
+                        s_aTests[i].paSubTests = s_aSubTestsBsr64;
+                        break;
+#endif
+                }
+            }
+        Bs3TestPrintf("lzcnt not supported\n");
+    }
+
+    return bs3CpuInstr2_BitScan(bMode, s_aTests, RT_ELEMENTS(s_aTests));
+}
+
+
+/**
+ * RORX
+ */
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_rorx)(uint8_t bMode)
 {
     static const struct

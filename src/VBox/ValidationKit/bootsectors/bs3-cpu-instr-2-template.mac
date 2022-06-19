@@ -82,6 +82,75 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_idiv_xBX_ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr2_idiv_xBX_ud2
 
+
+;
+; BSF / BSR / TZCNT / LZCNT
+;
+%ifndef EMIT_BITSCAN_DEFINED
+%define EMIT_BITSCAN_DEFINED
+%macro EMIT_BITSCAN 3
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _AX_BX_ud2, BS3_PBC_NEAR
+        %2
+        %1      ax, bx
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _AX_BX_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _AX_FSxBX_ud2, BS3_PBC_NEAR
+        %2
+        %1      ax, [fs:xBX]
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _AX_FSxBX_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _EAX_EBX_ud2, BS3_PBC_NEAR
+        %2
+        %1      eax, ebx
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _EAX_EBX_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _EAX_FSxBX_ud2, BS3_PBC_NEAR
+        %2
+        %1      eax, [fs:xBX]
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _EAX_FSxBX_ud2
+
+ %if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _RAX_RBX_ud2, BS3_PBC_NEAR
+        %2
+        %1      rax, rbx
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _RAX_RBX_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %3 %+ _RAX_FSxBX_ud2, BS3_PBC_NEAR
+        %2
+        %1      rax, [fs:xBX]
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %3 %+ _RAX_FSxBX_ud2
+ %endif
+%endmacro
+%endif
+
+EMIT_BITSCAN bsf,   .ignored:, bsf
+EMIT_BITSCAN bsr,   .ignored:, bsr
+EMIT_BITSCAN tzcnt, .ignored:, tzcnt
+EMIT_BITSCAN lzcnt, .ignored:, lzcnt
+EMIT_BITSCAN bsf,   db 0f2h,   f2_bsf
+EMIT_BITSCAN bsr,   db 0f2h,   f2_bsr
+EMIT_BITSCAN tzcnt, db 0f2h,   f2_tzcnt
+EMIT_BITSCAN lzcnt, db 0f2h,   f2_lzcnt
+
+
 ;
 ; RORX - VEX instruction with a couple of questions about non-standard encodings.
 ;
