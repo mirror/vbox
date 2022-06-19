@@ -2559,6 +2559,8 @@ typedef RTCCINTXREG const RT_FAR *PCRTCCINTXREG;
  * Generic IPRT format specifier for RTCCINTXREG. */
 /** @def RTCCINTXREG_XFMT
  * Generic IPRT format specifier for RTCCINTXREG, hexadecimal. */
+/** @def RTCCINTXREG_BITS
+ * The width of RTCCINTXREG in bits (32 or 64). */
 #if ARCH_BITS == 16 && defined(RT_ARCH_X86)
 # define RTCCUINTXREG_C(a_Value)    UINT32_C(a_Value)
 # define RTCCUINTXREG_MAX           UINT32_MAX
@@ -2569,6 +2571,7 @@ typedef RTCCINTXREG const RT_FAR *PCRTCCINTXREG;
 # define RTCCINTXREG_MIN            INT32_MIN
 # define RTCCINTXREG_FMT            "RI32"
 # define RTCCINTXREG_XFMT           "RX32"
+# define RTCCINTXREG_BITS           32
 #else
 # define RTCCUINTXREG_C(a_Value)    RTCCUINTREG_C(a_Value)
 # define RTCCUINTXREG_MAX           RTCCUINTREG_MAX
@@ -2579,6 +2582,7 @@ typedef RTCCINTXREG const RT_FAR *PCRTCCINTXREG;
 # define RTCCINTXREG_MIN            RTCCINTREG_MIN
 # define RTCCINTXREG_FMT            RTCCINTREG_FMT
 # define RTCCINTXREG_XFMT           RTCCINTREG_XFMT
+# define RTCCINTXREG_BITS           ARCH_BITS
 #endif
 /** @} */
 
