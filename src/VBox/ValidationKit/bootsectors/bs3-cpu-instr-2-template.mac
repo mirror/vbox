@@ -155,6 +155,102 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_rorx_RBX_DSxDI_68_icebp, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr2_rorx_RBX_DSxDI_68_icebp
 
+;
+; ANDN (BMI1)
+;
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_andn_RAX_RCX_RBX_icebp, BS3_PBC_NEAR
+%if TMPL_BITS == 64
+        andn    rax, rcx, rbx
+%else
+        db      0C4h,0E2h,0F0h,0F2h,0C3h    ; 32-bit & 16-bit ignores VEX.W=1 (10980xe)
+%endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_andn_RAX_RCX_RBX_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_andn_EAX_ECX_EBX_icebp, BS3_PBC_NEAR
+        andn    eax, ecx, ebx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_andn_EAX_ECX_EBX_icebp
+
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_andn_RAX_RCX_FSxBX_icebp, BS3_PBC_NEAR
+%if TMPL_BITS == 64
+        andn    rax, rcx, [fs:rbx]
+%elif TMPL_BITS == 32
+        db      064h,0C4h,0E2h,0F0h,0F2h,003h   ; andn    rax, rcx, [fs:ebx]
+%else
+        db      064h,0C4h,0E2h,0F0h,0F2h,007h   ; andn    rax, rcx, [fs:bx]
+%endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_andn_RAX_RCX_FSxBX_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_andn_EAX_ECX_FSxBX_icebp, BS3_PBC_NEAR
+        andn    eax, ecx, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_andn_EAX_ECX_FSxBX_icebp
+
+
+;
+; BEXTR / SHLX / SARX / SHRX - BMI1
+; These are encoded in the exact same way, only the VEX.pp differs.
+;
+%ifndef SHLX_SARX_SHRX_DEFINED
+%define SHLX_SARX_SHRX_DEFINED
+%macro SHLX_SARX_SHRX 2
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %1 %+ _RAX_RBX_RCX_icebp, BS3_PBC_NEAR
+ %if TMPL_BITS == 64
+        %1      rax, rbx, rcx                   ; SHLX=C4E2F1F7C3
+ %else
+        db      0C4h,0E2h,0F0h|%2,0F7h,0C3h     ; 32-bit & 16-bit ignores VEX.W=1 (10980xe)
+ %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %1 %+ _RAX_RBX_RCX_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %1 %+ _EAX_EBX_ECX_icebp, BS3_PBC_NEAR
+        %1      eax, ebx, ecx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %1 %+ _EAX_EBX_ECX_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %1 %+ _RAX_FSxBX_RCX_icebp, BS3_PBC_NEAR
+ %if TMPL_BITS == 64
+        %1      rax, [fs:rbx], rcx              ; SHLX=64C4E2F1F703
+ %elif TMPL_BITS == 32
+        db      064h,0C4h,0E2h,0F0h|%2,0F7h,003h
+ %else
+        db      064h,0C4h,0E2h,0F0h|%2,0F7h,007h
+ %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %1 %+ _RAX_FSxBX_RCX_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_ %+ %1 %+ _EAX_FSxBX_ECX_icebp, BS3_PBC_NEAR
+        %1      eax, [fs:xBX], ecx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_ %+ %1 %+ _EAX_FSxBX_ECX_icebp
+
+%endmacro
+%endif
+
+SHLX_SARX_SHRX bextr, 0 ; none
+SHLX_SARX_SHRX shlx,  1 ; 66h
+SHLX_SARX_SHRX sarx,  2 ; f3h
+SHLX_SARX_SHRX shrx,  3 ; f2h
 
 ;
 ;

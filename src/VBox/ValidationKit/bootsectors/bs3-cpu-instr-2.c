@@ -39,6 +39,11 @@ BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_imul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_div);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_idiv);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_rorx);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_andn);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_bextr);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_shlx);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_sarx);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_shrx);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_cmpxchg16b);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrfsbase);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrgsbase);
@@ -51,16 +56,27 @@ BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_rdgsbase);
 *********************************************************************************************************************************/
 static const BS3TESTMODEENTRY g_aModeTests[] =
 {
+#if 1
     BS3TESTMODEENTRY_CMN("mul", bs3CpuInstr2_mul),
     BS3TESTMODEENTRY_CMN("imul", bs3CpuInstr2_imul),
     BS3TESTMODEENTRY_CMN("div", bs3CpuInstr2_div),
     BS3TESTMODEENTRY_CMN("idiv", bs3CpuInstr2_idiv),
-    BS3TESTMODEENTRY_CMN("rorx", bs3CpuInstr2_rorx),
+#endif
+#if 1 /* BMI1 & BMI2 */
+    BS3TESTMODEENTRY_CMN("rorx",  bs3CpuInstr2_rorx),
+    BS3TESTMODEENTRY_CMN("andn",  bs3CpuInstr2_andn),
+    BS3TESTMODEENTRY_CMN("bextr", bs3CpuInstr2_bextr),
+    BS3TESTMODEENTRY_CMN("shlx",  bs3CpuInstr2_shlx),
+    BS3TESTMODEENTRY_CMN("sarx",  bs3CpuInstr2_sarx),
+    BS3TESTMODEENTRY_CMN("shrx",  bs3CpuInstr2_shrx),
+#endif
+#if 1
     BS3TESTMODEENTRY_CMN_64("cmpxchg16b", bs3CpuInstr2_cmpxchg16b),
     BS3TESTMODEENTRY_CMN_64("wrfsbase", bs3CpuInstr2_wrfsbase),
     BS3TESTMODEENTRY_CMN_64("wrgsbase", bs3CpuInstr2_wrgsbase),
     BS3TESTMODEENTRY_CMN_64("rdfsbase", bs3CpuInstr2_rdfsbase),
     BS3TESTMODEENTRY_CMN_64("rdgsbase", bs3CpuInstr2_rdgsbase),
+#endif
 };
 
 
