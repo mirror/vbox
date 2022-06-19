@@ -8003,18 +8003,178 @@ FNIEMOP_DEF(iemOp_btc_Ev_Gv)
 }
 
 
+/**
+ * Common worker for BSF and BSR instructions.
+ *
+ * These cannot use iemOpHlpBinaryOperator_rv_rm because they don't always write
+ * the destination register, which means that for 32-bit operations the high
+ * bits must be left alone.
+ *
+ * @param   pImpl       Pointer to the instruction implementation (assembly).
+ */
+FNIEMOP_DEF_1(iemOpHlpBitScanOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    /*
+     * If rm is denoting a register, no more instruction bytes.
+     */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        switch (pVCpu->iem.s.enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint16_t *, pu16Dst, 0);
+                IEM_MC_ARG(uint16_t,   u16Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_FETCH_GREG_U16(u16Src, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+                IEM_MC_REF_GREG_U16(pu16Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint32_t *, pu32Dst, 0);
+                IEM_MC_ARG(uint32_t,   u32Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_FETCH_GREG_U32(u32Src, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+                IEM_MC_REF_GREG_U32(pu32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
+                IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_ENDIF();
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint64_t *, pu64Dst, 0);
+                IEM_MC_ARG(uint64_t,   u64Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_FETCH_GREG_U64(u64Src, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+                IEM_MC_REF_GREG_U64(pu64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+        }
+    }
+    else
+    {
+        /*
+         * We're accessing memory.
+         */
+        switch (pVCpu->iem.s.enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint16_t *, pu16Dst, 0);
+                IEM_MC_ARG(uint16_t,   u16Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U16(u16Src, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+                IEM_MC_REF_GREG_U16(pu16Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint32_t *, pu32Dst, 0);
+                IEM_MC_ARG(uint32_t,   u32Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U32(u32Src, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+                IEM_MC_REF_GREG_U32(pu32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
+
+                IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_ENDIF();
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint64_t *, pu64Dst, 0);
+                IEM_MC_ARG(uint64_t,   u64Src,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U64(u64Src, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+                IEM_MC_REF_GREG_U64(pu64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0xbc. */
 FNIEMOP_DEF(iemOp_bsf_Gv_Ev)
 {
     IEMOP_MNEMONIC(bsf_Gv_Ev, "bsf Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsf_eflags));
+    return FNIEMOP_CALL_1(iemOpHlpBitScanOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsf_eflags));
 }
 
 
 /** Opcode 0xf3 0x0f 0xbc - TZCNT Gv, Ev */
-FNIEMOP_STUB(iemOp_tzcnt_Gv_Ev);
+FNIEMOP_DEF(iemOp_tzcnt_Gv_Ev)
+{
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1)
+        return FNIEMOP_CALL(iemOp_bsf_Gv_Ev);
+    IEMOP_MNEMONIC2(RM, TZCNT, tzcnt, Gv, Ev, DISOPTYPE_HARMLESS, 0);
+
+#ifndef TST_IEM_CHECK_MC
+    static const IEMOPBINSIZES s_iemAImpl_tzcnt =
+    {   NULL, NULL,     iemAImpl_tzcnt_u16, NULL,       iemAImpl_tzcnt_u32, NULL,       iemAImpl_tzcnt_u64, NULL };
+    static const IEMOPBINSIZES s_iemAImpl_tzcnt_amd =
+    {   NULL, NULL,     iemAImpl_tzcnt_u16_amd, NULL,   iemAImpl_tzcnt_u32_amd, NULL,   iemAImpl_tzcnt_u64_amd, NULL };
+    static const IEMOPBINSIZES s_iemAImpl_tzcnt_intel =
+    {   NULL, NULL,     iemAImpl_tzcnt_u16_intel, NULL, iemAImpl_tzcnt_u32_intel, NULL, iemAImpl_tzcnt_u64_intel, NULL };
+    static const IEMOPBINSIZES * const s_iemAImpl_tzcnt_eflags[2][4] =
+    {
+        { &s_iemAImpl_tzcnt_intel, &s_iemAImpl_tzcnt_intel, &s_iemAImpl_tzcnt_amd, &s_iemAImpl_tzcnt_intel },
+        { &s_iemAImpl_tzcnt,       &s_iemAImpl_tzcnt_intel, &s_iemAImpl_tzcnt_amd, &s_iemAImpl_tzcnt }
+    };
+#endif
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm,
+                          IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_tzcnt_eflags, IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1));
+}
 
 
 /** Opcode 0x0f 0xbd. */
@@ -8023,12 +8183,35 @@ FNIEMOP_DEF(iemOp_bsr_Gv_Ev)
     IEMOP_MNEMONIC(bsr_Gv_Ev, "bsr Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsr_eflags));
+    return FNIEMOP_CALL_1(iemOpHlpBitScanOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsr_eflags));
 }
 
 
 /** Opcode 0xf3 0x0f 0xbd - LZCNT Gv, Ev */
-FNIEMOP_STUB(iemOp_lzcnt_Gv_Ev);
+FNIEMOP_DEF(iemOp_lzcnt_Gv_Ev)
+{
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1)
+        return FNIEMOP_CALL(iemOp_bsr_Gv_Ev);
+    IEMOP_MNEMONIC2(RM, LZCNT, lzcnt, Gv, Ev, DISOPTYPE_HARMLESS, 0);
+
+#ifndef TST_IEM_CHECK_MC
+    static const IEMOPBINSIZES s_iemAImpl_lzcnt =
+    {   NULL, NULL,     iemAImpl_lzcnt_u16, NULL,       iemAImpl_lzcnt_u32, NULL,       iemAImpl_lzcnt_u64, NULL };
+    static const IEMOPBINSIZES s_iemAImpl_lzcnt_amd =
+    {   NULL,  NULL,    iemAImpl_lzcnt_u16_amd, NULL,   iemAImpl_lzcnt_u32_amd, NULL,   iemAImpl_lzcnt_u64_amd, NULL };
+    static const IEMOPBINSIZES s_iemAImpl_lzcnt_intel =
+    {   NULL,  NULL,    iemAImpl_lzcnt_u16_intel, NULL, iemAImpl_lzcnt_u32_intel, NULL, iemAImpl_lzcnt_u64_intel, NULL };
+    static const IEMOPBINSIZES * const s_iemAImpl_lzcnt_eflags[2][4] =
+    {
+        { &s_iemAImpl_lzcnt_intel, &s_iemAImpl_lzcnt_intel, &s_iemAImpl_lzcnt_amd, &s_iemAImpl_lzcnt_intel },
+        { &s_iemAImpl_lzcnt,       &s_iemAImpl_lzcnt_intel, &s_iemAImpl_lzcnt_amd, &s_iemAImpl_lzcnt }
+    };
+#endif
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm,
+                          IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_lzcnt_eflags, IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1));
+}
+
 
 
 /** Opcode 0x0f 0xbe. */

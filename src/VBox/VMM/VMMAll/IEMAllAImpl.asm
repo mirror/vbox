@@ -530,16 +530,158 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
  %endif ; locked
 %endmacro
 
-;            instr,lock,modified-flags.
+;            instr,lock, modified-flags,                                                               undefined flags
 IEMIMPL_BIN_OP add,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
 IEMIMPL_BIN_OP adc,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
 IEMIMPL_BIN_OP sub,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
 IEMIMPL_BIN_OP sbb,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
-IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
-IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
+IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
+IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
+IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
 IEMIMPL_BIN_OP cmp,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
+IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
+
+
+;;
+; Macro for implementing a binary operator, VEX variant with separate input/output.
+;
+; This will generate code for the 32 and 64 bit accesses, except on 32-bit system
+; where the 64-bit accesses requires hand coding.
+;
+; All the functions takes a pointer to the destination memory operand in A0,
+; the first source register operand in A1, the second source register operand
+; in A2 and a pointer to eflags in A3.
+;
+; @param        1       The instruction mnemonic.
+; @param        2       The modified flags.
+; @param        3       The undefined flags.
+;
+%macro IEMIMPL_VEX_BIN_OP 3
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A3, %2, %3
+        %1      T0_32, A1_32, A2_32
+        mov     [A0], T0_32
+        IEM_SAVE_FLAGS                 A3, %2, %3
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A3, %2, %3
+        %1      T0, A1, A2
+        mov     [A0], T0
+        IEM_SAVE_FLAGS                 A3, %2, %3
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %endif ; RT_ARCH_AMD64
+%endmacro
+
+;                 instr,  modified-flags,                                                                undefined-flags
+IEMIMPL_VEX_BIN_OP andn,  (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF),                           (X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_VEX_BIN_OP bextr, (X86_EFL_OF | X86_EFL_ZF | X86_EFL_CF),                                        (X86_EFL_SF | X86_EFL_AF | X86_EFL_PF)
+
+
+;;
+; Macro for implementing a binary operator w/o flags, VEX variant with separate input/output.
+;
+; This will generate code for the 32 and 64 bit accesses, except on 32-bit system
+; where the 64-bit accesses requires hand coding.
+;
+; All the functions takes a pointer to the destination memory operand in A0,
+; the first source register operand in A1, the second source register operand
+; in A2 and a pointer to eflags in A3.
+;
+; @param        1       The instruction mnemonic.
+;
+%macro IEMIMPL_VEX_BIN_OP_NOEFL 2
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
+        PROLOGUE_3_ARGS
+        %1      T0_32, A1_32, A2_32
+        mov     [A0], T0_32
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_fallback, 12
+        PROLOGUE_3_ARGS
+ %ifdef ASM_CALL64_GCC
+        mov     cl, A2_8
+        %2      A1_32, cl
+        mov     [A0], A1_32
+ %else
+        xchg    A2, A0
+        %2      A1_32, cl
+        mov     [A2], A1_32
+ %endif
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u32_fallback
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
+        PROLOGUE_3_ARGS
+        %1      T0, A1, A2
+        mov     [A0], T0
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_fallback, 12
+        PROLOGUE_3_ARGS
+ %ifdef ASM_CALL64_GCC
+        mov     cl, A2_8
+        %2      A1, cl
+        mov     [A0], A1_32
+ %else
+        xchg    A2, A0
+        %2      A1, cl
+        mov     [A2], A1_32
+ %endif
+        mov     [A0], A1
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u64_fallback
+ %endif ; RT_ARCH_AMD64
+%endmacro
+
+;                           instr, fallback instr
+IEMIMPL_VEX_BIN_OP_NOEFL    sarx,  sar
+IEMIMPL_VEX_BIN_OP_NOEFL    shlx,  shl
+IEMIMPL_VEX_BIN_OP_NOEFL    shrx,  shr
+
+
+;
+; RORX uses a immediate byte for the shift count, so we only do
+; fallback implementation of that one.
+;
+BEGINPROC_FASTCALL iemAImpl_rorx_u32, 12
+        PROLOGUE_3_ARGS
+ %ifdef ASM_CALL64_GCC
+        mov     cl, A2_8
+        ror     A1_32, cl
+        mov     [A0], A1_32
+ %else
+        xchg    A2, A0
+        ror     A1_32, cl
+        mov     [A2], A1_32
+ %endif
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_rorx_u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_rorx_u64, 12
+        PROLOGUE_3_ARGS
+ %ifdef ASM_CALL64_GCC
+        mov     cl, A2_8
+        ror     A1, cl
+        mov     [A0], A1_32
+ %else
+        xchg    A2, A0
+        ror     A1, cl
+        mov     [A2], A1_32
+ %endif
+        mov     [A0], A1
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_rorx_u64
+ %endif ; RT_ARCH_AMD64
 
 
 ;;
@@ -637,14 +779,17 @@ IEMIMPL_BIT_OP btr, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86
 ; @param        1       The instruction mnemonic.
 ; @param        2       The modified flags.
 ; @param        3       The undefined flags.
+; @param        4       Non-zero if destination isn't written when ZF=1.  Zero if always written.
 ;
-%macro IEMIMPL_BIT_OP 3
+%macro IEMIMPL_BIT_OP2 4
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0_16, A1_16
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0_16
 .unchanged_dst:
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -654,7 +799,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ _intel, 12
         PROLOGUE_3_ARGS
         %1      T1_16, A1_16
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T1_16
         IEM_ADJUST_FLAGS_WITH_PARITY    A2, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_CF | X86_EFL_ZF, 0, T1
         EPILOGUE_3_ARGS
@@ -666,7 +813,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16_intel
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ _amd, 12
         PROLOGUE_3_ARGS
         %1      T0_16, A1_16
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0_16
 .unchanged_dst:
         IEM_SAVE_AND_ADJUST_FLAGS       A2, %2, 0, 0    ; Only the ZF flag is modified on AMD Zen 2.
@@ -678,7 +827,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0_32, A1_32
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0_32
 .unchanged_dst:
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -688,7 +839,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ _intel, 12
         PROLOGUE_3_ARGS
         %1      T1_32, A1_32
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T1_32
         IEM_ADJUST_FLAGS_WITH_PARITY    A2, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_CF | X86_EFL_ZF, 0, T1
         EPILOGUE_3_ARGS
@@ -700,7 +853,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32_intel
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ _amd, 12
         PROLOGUE_3_ARGS
         %1      T0_32, A1_32
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0_32
 .unchanged_dst:
         IEM_SAVE_AND_ADJUST_FLAGS       A2, %2, 0, 0    ; Only the ZF flag is modified on AMD Zen 2.
@@ -714,7 +869,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0, A1
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0
 .unchanged_dst:
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -725,7 +882,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ _intel, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T1, A1
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T1
         IEM_ADJUST_FLAGS_WITH_PARITY    A2, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_CF | X86_EFL_ZF, 0, T1
         EPILOGUE_3_ARGS
@@ -737,7 +896,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64_intel
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ _amd, 16
         PROLOGUE_3_ARGS
         %1      T0, A1
+%if %4 != 0
         jz      .unchanged_dst
+%endif
         mov     [A0], T0
 .unchanged_dst:
         IEM_SAVE_AND_ADJUST_FLAGS       A2, %2, 0, 0    ; Only the ZF flag is modified on AMD Zen 2.
@@ -747,8 +908,10 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64_amd
  %endif ; RT_ARCH_AMD64
 %endmacro
 
-IEMIMPL_BIT_OP bsf, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
-IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
+IEMIMPL_BIT_OP2 bsf,   (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1
+IEMIMPL_BIT_OP2 bsr,   (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1
+IEMIMPL_BIT_OP2 tzcnt, (X86_EFL_ZF | X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF), 0
+IEMIMPL_BIT_OP2 lzcnt, (X86_EFL_ZF | X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF), 0
 
 
 ;

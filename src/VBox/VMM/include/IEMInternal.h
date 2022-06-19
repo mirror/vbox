@@ -114,7 +114,7 @@ typedef struct IEMINSTRSTATS IEMINSTRSTATS;
 typedef IEMINSTRSTATS *PIEMINSTRSTATS;
 
 
-/** @name IEMTARGETCPU_EFL_BEHAVIOR_XXX - IEMCPU::idxTargetCpuEflFlavour
+/** @name IEMTARGETCPU_EFL_BEHAVIOR_XXX - IEMCPU::aidxTargetCpuEflFlavour
  * @{ */
 #define IEMTARGETCPU_EFL_BEHAVIOR_NATIVE      0     /**< Native x86 EFLAGS result; Intel EFLAGS when on non-x86 hosts. */
 #define IEMTARGETCPU_EFL_BEHAVIOR_INTEL       1     /**< Intel EFLAGS result. */
@@ -124,8 +124,39 @@ typedef IEMINSTRSTATS *PIEMINSTRSTATS;
 /** Selects the right variant from a_aArray.
  * pVCpu is implicit in the caller context. */
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray) \
-    (a_aArray[pVCpu->iem.s.idxTargetCpuEflFlavour & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+    (a_aArray[pVCpu->iem.s.aidxTargetCpuEflFlavour[1] & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+/** Variation of IEMTARGETCPU_EFL_BEHAVIOR_SELECT for when no native worker can
+ * be used because the host CPU does not support the operation. */
+#define IEMTARGETCPU_EFL_BEHAVIOR_SELECT_NON_NATIVE(a_aArray) \
+    (a_aArray[pVCpu->iem.s.aidxTargetCpuEflFlavour[0] & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+/** Variation of IEMTARGETCPU_EFL_BEHAVIOR_SELECT for a two dimentional
+ *  array paralleling IEMCPU::aidxTargetCpuEflFlavour and a single bit index
+ *  into the two.
+ * @sa IEM_SELECT_NATIVE_OR_FALLBACK */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(a_aaArray, a_fNative) \
+    (a_aaArray[a_fNative][pVCpu->iem.s.aidxTargetCpuEflFlavour[a_fNative] & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+#else
+# define IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(a_aaArray, a_fNative) \
+    (a_aaArray[0][pVCpu->iem.s.aidxTargetCpuEflFlavour[0] & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+#endif
 /** @} */
+
+/**
+ * Picks @a a_pfnNative or @a a_pfnFallback according to the host CPU feature
+ * indicator given by @a a_fCpumFeatureMember (CPUMFEATURES member).
+ *
+ * On non-x86 hosts, this will shortcut to the fallback w/o checking the
+ * indicator.
+ *
+ * @sa IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX
+ */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define IEM_SELECT_HOST_OR_FALLBACK(a_fCpumFeatureMember, a_pfnNative, a_pfnFallback) \
+    (g_CpumHostFeatures.s.a_fCpumFeatureMember ? a_pfnNative : a_pfnFallback)
+#else
+# define IEM_SELECT_HOST_OR_FALLBACK(a_fCpumFeatureMember, a_pfnNative, a_pfnFallback) (a_pfnFallback)
+#endif
 
 
 /**
@@ -653,9 +684,14 @@ typedef struct IEMCPU
     uint8_t                 bTargetCpuPadding;
 #endif
     /** For selecting assembly works matching the target CPU EFLAGS behaviour, see
-     *  IEMTARGETCPU_EFL_BEHAVIOR_XXX for values.  This is for instance used for the
-     *  BSF & BSR instructions where AMD and Intel CPUs produce different EFLAGS. */
-    uint8_t                 idxTargetCpuEflFlavour;
+     * IEMTARGETCPU_EFL_BEHAVIOR_XXX for values, with the 1st entry for when no
+     * native host support and the 2nd for when there is.
+     *
+     * The two values are typically indexed by a g_CpumHostFeatures bit.
+     *
+     * This is for instance used for the BSF & BSR instructions where AMD and
+     * Intel CPUs produce different EFLAGS. */
+    uint8_t                 aidxTargetCpuEflFlavour[2];
 
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmCpuVendor;
@@ -939,8 +975,20 @@ typedef struct IEM
 #define IEMOPFORM_VEX_RVM_REG   (IEMOPFORM_VEX_RVM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, vvvv, r/m (memory). */
 #define IEMOPFORM_VEX_RVM_MEM   (IEMOPFORM_VEX_RVM | IEMOPFORM_NOT_MOD3)
+/** VEX+ModR/M: reg, r/m, vvvv */
+#define IEMOPFORM_VEX_RMV       9
+/** VEX+ModR/M: reg, r/m, vvvv (register). */
+#define IEMOPFORM_VEX_RMV_REG   (IEMOPFORM_VEX_RMV | IEMOPFORM_MOD3)
+/** VEX+ModR/M: reg, r/m, vvvv (memory). */
+#define IEMOPFORM_VEX_RMV_MEM   (IEMOPFORM_VEX_RMV | IEMOPFORM_NOT_MOD3)
+/** VEX+ModR/M: reg, r/m, imm8 */
+#define IEMOPFORM_VEX_RMI       10
+/** VEX+ModR/M: reg, r/m, imm8 (register). */
+#define IEMOPFORM_VEX_RMI_REG   (IEMOPFORM_VEX_RMI | IEMOPFORM_MOD3)
+/** VEX+ModR/M: reg, r/m, imm8 (memory). */
+#define IEMOPFORM_VEX_RMI_MEM   (IEMOPFORM_VEX_RMI | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg */
-#define IEMOPFORM_VEX_MVR       9
+#define IEMOPFORM_VEX_MVR       11
 /** VEX+ModR/M: r/m, vvvv, reg (register) */
 #define IEMOPFORM_VEX_MVR_REG   (IEMOPFORM_VEX_MVR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg (memory) */
@@ -970,6 +1018,8 @@ typedef struct IEM
 #define IEMOPHINT_VEX_L_IGNORED     RT_BIT_32(12)
 /** The VEX.L value must be zero (i.e. 128-bit width only). */
 #define IEMOPHINT_VEX_L_ZERO        RT_BIT_32(13)
+/** The VEX.V value must be zero. */
+#define IEMOPHINT_VEX_V_ZERO        RT_BIT_32(14)
 
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)
@@ -1181,6 +1231,42 @@ FNIEMAIMPLBINU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
 FNIEMAIMPLBINU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
 /** @}  */
 
+/** @name Arithmetic three operand operations on double words (binary).
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU32, (uint32_t *pu32Dst, uint32_t u32Src1, uint32_t u32Src2, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINVEXU32 *PFNIEMAIMPLBINVEXU32;
+FNIEMAIMPLBINVEXU32 iemAImpl_andn_u32, iemAImpl_andn_u32_fallback;
+FNIEMAIMPLBINVEXU32 iemAImpl_bextr_u32, iemAImpl_bextr_u32_fallback;
+/** @}  */
+
+/** @name Arithmetic three operand operations on quad words (binary).
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU64, (uint64_t *pu64Dst, uint64_t u64Src1, uint64_t u64Src2, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINVEXU64 *PFNIEMAIMPLBINVEXU64;
+FNIEMAIMPLBINVEXU64 iemAImpl_andn_u64, iemAImpl_andn_u64_fallback;
+FNIEMAIMPLBINVEXU64 iemAImpl_bextr_u64, iemAImpl_bextr_u64_fallback;
+/** @}  */
+
+/** @name Arithmetic three operand operations on double words w/o EFLAGS (binary).
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU32NOEFL, (uint32_t *pu32Dst, uint32_t u32Src1, uint32_t u32Src2));
+typedef FNIEMAIMPLBINVEXU32NOEFL *PFNIEMAIMPLBINVEXU32NOEFL;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_sarx_u32, iemAImpl_sarx_u32_fallback;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_shlx_u32, iemAImpl_shlx_u32_fallback;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_shrx_u32, iemAImpl_shrx_u32_fallback;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_rorx_u32;
+/** @}  */
+
+/** @name Arithmetic three operand operations on quad words w/o EFLAGS (binary).
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU64NOEFL, (uint64_t *pu64Dst, uint64_t u64Src1, uint64_t u64Src2));
+typedef FNIEMAIMPLBINVEXU64NOEFL *PFNIEMAIMPLBINVEXU64NOEFL;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_sarx_u64, iemAImpl_sarx_u64_fallback;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_shlx_u64, iemAImpl_shlx_u64_fallback;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_shrx_u64, iemAImpl_shrx_u64_fallback;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_rorx_u64;
+/** @}  */
+
 /** @name Exchange memory with register operations.
  * @{ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
@@ -1271,6 +1357,12 @@ FNIEMAIMPLBINU64 iemAImpl_bsf_u64, iemAImpl_bsf_u64_amd, iemAImpl_bsf_u64_intel;
 FNIEMAIMPLBINU16 iemAImpl_bsr_u16, iemAImpl_bsr_u16_amd, iemAImpl_bsr_u16_intel;
 FNIEMAIMPLBINU32 iemAImpl_bsr_u32, iemAImpl_bsr_u32_amd, iemAImpl_bsr_u32_intel;
 FNIEMAIMPLBINU64 iemAImpl_bsr_u64, iemAImpl_bsr_u64_amd, iemAImpl_bsr_u64_intel;
+FNIEMAIMPLBINU16 iemAImpl_lzcnt_u16, iemAImpl_lzcnt_u16_amd, iemAImpl_lzcnt_u16_intel;
+FNIEMAIMPLBINU32 iemAImpl_lzcnt_u32, iemAImpl_lzcnt_u32_amd, iemAImpl_lzcnt_u32_intel;
+FNIEMAIMPLBINU64 iemAImpl_lzcnt_u64, iemAImpl_lzcnt_u64_amd, iemAImpl_lzcnt_u64_intel;
+FNIEMAIMPLBINU16 iemAImpl_tzcnt_u16, iemAImpl_tzcnt_u16_amd, iemAImpl_tzcnt_u16_intel;
+FNIEMAIMPLBINU32 iemAImpl_tzcnt_u32, iemAImpl_tzcnt_u32_amd, iemAImpl_tzcnt_u32_intel;
+FNIEMAIMPLBINU64 iemAImpl_tzcnt_u64, iemAImpl_tzcnt_u64_amd, iemAImpl_tzcnt_u64_intel;
 /** @}  */
 
 /** @name Signed multiplication operations (thrown in with the binary ops).
@@ -2274,6 +2366,20 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  * Check if the address is canonical.
  */
 #define IEM_IS_CANONICAL(a_u64Addr)         X86_IS_CANONICAL(a_u64Addr)
+
+
+/**
+ * Gets the register (reg) part of a ModR/M encoding, with REX.R added in.
+ *
+ * For use during decoding.
+ */
+#define IEM_GET_MODRM_REG(a_pVCpu, a_bRm) ( (((a_bRm) >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | (a_pVCpu)->iem.s.uRexReg )
+/**
+ * Gets the r/m part of a ModR/M encoding as a register index, with REX.B added in.
+ *
+ * For use during decoding.
+ */
+#define IEM_GET_MODRM_RM(a_pVCpu, a_bRm)  ( ((a_bRm) & X86_MODRM_RM_MASK) | (a_pVCpu)->iem.s.uRexB )
 
 /**
  * Gets the effective VEX.VVVV value.
