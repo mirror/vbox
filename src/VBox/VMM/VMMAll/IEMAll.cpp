@@ -6089,12 +6089,20 @@ VBOXSTRICTRC iemMemCommitAndUnmap(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess)
 void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem, uint32_t fAccess) RT_NOEXCEPT
 {
     /*
-     * Check the input and figure out which mapping entry to use.
+     * Check the input, check segment access and adjust address
+     * with segment base.
      */
     Assert(cbMem <= 64 || cbMem == 512 || cbMem == 108 || cbMem == 104 || cbMem == 94); /* 512 is the max! */
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
     Assert(pVCpu->iem.s.cActiveMappings < RT_ELEMENTS(pVCpu->iem.s.aMemMappings));
 
+    VBOXSTRICTRC rcStrict = iemMemApplySegment(pVCpu, fAccess, iSegReg, cbMem, &GCPtrMem);
+    if (rcStrict == VINF_SUCCESS) { /*likely*/ }
+    else longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+
+    /*
+     * Figure out which mapping entry to use.
+     */
     unsigned iMemMap = pVCpu->iem.s.iNextMapping;
     if (   iMemMap >= RT_ELEMENTS(pVCpu->iem.s.aMemMappings)
         || pVCpu->iem.s.aMemMappings[iMemMap].fAccess != IEM_ACCESS_INVALID)
@@ -6108,14 +6116,8 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     }
 
     /*
-     * Map the memory, checking that we can actually access it.  If something
-     * slightly complicated happens, fall back on bounce buffering.
+     * Crossing a page boundary?
      */
-    VBOXSTRICTRC rcStrict = iemMemApplySegment(pVCpu, fAccess, iSegReg, cbMem, &GCPtrMem);
-    if (rcStrict == VINF_SUCCESS) { /*likely*/ }
-    else longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
-
-    /* Crossing a page boundary? */
     if ((GCPtrMem & GUEST_PAGE_OFFSET_MASK) + cbMem <= GUEST_PAGE_SIZE)
     { /* No (likely). */ }
     else
@@ -6582,7 +6584,7 @@ VBOXSTRICTRC iemMemFetchDataU32_ZX_U64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-static uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
+uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
     uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
     uint32_t const  u32Ret  = *pu32Src;
@@ -6651,8 +6653,14 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles. */
     Log10(("iemMemFetchDataU32Jmp: %u:%RGv fallback\n", iSegReg, GCPtrMem));
-# endif
     return iemMemFetchDataU32SafeJmp(pVCpu, iSegReg, GCPtrMem);
+
+# else
+    uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    uint32_t const  u32Ret  = *pu32Src;
+    iemMemCommitAndUnmapJmp(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+    return u32Ret;
+# endif
 }
 #endif
 
