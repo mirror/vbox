@@ -2484,7 +2484,7 @@ static size_t ParseGrp17(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     RT_NOREF_PV(pParam);
 
     uint8_t const bRm = disReadByte(pDis, offInstr);
-    pOp = &g_aMapX86_Group17[MODRM_REG(bRm)];
+    pOp = &g_aMapX86_Group17[(MODRM_REG(bRm) << 1) | (pDis->bVexDestReg & 1)];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }

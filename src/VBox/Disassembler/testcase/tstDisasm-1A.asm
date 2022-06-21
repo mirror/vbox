@@ -426,6 +426,7 @@ BEGINPROC TestProc64
         blsr rax, rbx
         blsi eax, [rbx]
         blsi rax, [rbx]
+        db 0c4h, 0e2h, 0f8h | 4, 0f3h, 01bh ; blsi rax, [rbx] with VEX.L=1 - should be invalid
         blsmsk eax, [rbx+rdi*2]
         blsmsk rax, [rbx+rdi*2]
         blsmsk r8, [rbx+rdi*2]

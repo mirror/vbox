@@ -3784,16 +3784,25 @@ static const DISOPCODE g_aDisasVexMap1F3[] =
 };
 const DISOPMAPDESC g_DisasVexMap1F3Range = { &g_aDisasVexMap1F3[0], 0x10, RT_ELEMENTS(g_aDisasVexMap1F3) };
 
-const DISOPCODE g_aMapX86_Group17[8] =
+/** Indexed by: (/r << 1) | VEX.L */
+const DISOPCODE g_aMapX86_Group17[8*2] =
 {
-    INVALID_OPCODE,
+    INVALID_OPCODE_MOD_RM(0x00),
+    INVALID_OPCODE_MOD_RM(0x01),
     OPVEX("blsr %By,%Ey",        IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSR,      OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x03),
     OPVEX("blsmsk %By,%Ey",      IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSMSK,    OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x05),
     OPVEX("blsi %By,%Ey",        IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSI,      OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
-    INVALID_OPCODE,
-    INVALID_OPCODE,
-    INVALID_OPCODE,
-    INVALID_OPCODE,
+    INVALID_OPCODE_MOD_RM(0x07),
+    INVALID_OPCODE_MOD_RM(0x08),
+    INVALID_OPCODE_MOD_RM(0x09),
+    INVALID_OPCODE_MOD_RM(0x0a),
+    INVALID_OPCODE_MOD_RM(0x0b),
+    INVALID_OPCODE_MOD_RM(0x0c),
+    INVALID_OPCODE_MOD_RM(0x0d),
+    INVALID_OPCODE_MOD_RM(0x0e),
+    INVALID_OPCODE_MOD_RM(0x0f),
 };
 
 static const DISOPCODE g_aDisasVexMap2[] =

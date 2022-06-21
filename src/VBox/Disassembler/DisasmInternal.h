@@ -186,7 +186,7 @@ extern const DISOPCODE g_aMapX86_Group14[8*2];
 extern const DISOPCODE g_aMapX86_Group15_mem[8];
 extern const DISOPCODE g_aMapX86_Group15_mod11_rm000[8];
 extern const DISOPCODE g_aMapX86_Group16[8];
-extern const DISOPCODE g_aMapX86_Group17[8];
+extern const DISOPCODE g_aMapX86_Group17[8*2];
 extern const DISOPCODE g_aMapX86_NopPause[2];
 /** @} */
 
