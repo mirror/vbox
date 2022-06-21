@@ -6332,7 +6332,7 @@ HRESULT Console::i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG6
         char szBuffer[GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN];
 
         parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[0].u.pointer.addr = (void*)aName.c_str();
+        parm[0].u.pointer.addr = (void *)aName.c_str();
         parm[0].u.pointer.size = (uint32_t)aName.length() + 1; /* The + 1 is the null terminator */
 
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
