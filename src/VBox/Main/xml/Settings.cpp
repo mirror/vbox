@@ -4672,11 +4672,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
 
             /* In order to pass validation, guest property value length (including '\0') in bytes
              * should be less than GUEST_PROP_MAX_VALUE_LEN. Chop it down to an appropriate length. */
-            /** @todo r=bird: Should add a RTCString method for this, as this may create a
-             *        invalid UTF-8 encoding if we chop up a UTF-8 sequence. */
-            Assert(prop.strValue.length() + 1 > GUEST_PROP_MAX_VALUE_LEN);
-            prop.strValue.mutableRaw()[GUEST_PROP_MAX_VALUE_LEN - 1] = '\0';
-            prop.strValue.jolt();
+            prop.strValue.truncate(GUEST_PROP_MAX_VALUE_LEN - 1 /*terminator*/);
         }
         else if (RT_FAILURE(rc))
         {
