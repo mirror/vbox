@@ -18,13 +18,5 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
- ifeq ($(KBUILD_TARGET),linux)
-  ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
-   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
-  endif
- endif
-endif
-
 include $(FILE_KBUILD_SUB_FOOTER)
 

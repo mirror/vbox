@@ -271,19 +271,6 @@
 
       <listitem>
         <para>
-          &product-name; ships with the application tunctl (shipped as
-          VBoxTunctl) from the User-mode Linux suite which is governed
-          by the license in
-          <xref linkend="licGPL" xrefstyle="template: %n" /> and
-        </para>
-
-        <para>
-          Copyright (C) 2002 Jeff Dike.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
           &product-name; contains code from Chromium, an OpenGL
           implementation, which is goverened by the licenses in
           <xref
