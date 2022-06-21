@@ -223,6 +223,7 @@ private:
         AssertReturn(nsTimestamp != 0, VERR_INVALID_PARAMETER);
         AssertPtrReturn(pProp, VERR_INVALID_POINTER);
         int rc = getOldNotificationInternal(pszPatterns, nsTimestamp, pProp);
+
 #ifdef VBOX_STRICT
         /*
          * ENSURE that pProp is the first event in the notification queue that:
@@ -1046,18 +1047,16 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     if (RT_SUCCESS(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        char szWasDeleted[2] = { fWasDeleted ? '1' : '0', '\0' };
-
         rc = GuestPropWriteFlags(rProp.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&paParms[1], rProp.mTimestamp);
 
-            size_t const cbFlags  = strlen(szFlags) + 1;
-            size_t const cbName   = rProp.mName.length() + 1;
-            size_t const cbValue  = rProp.mValue.length() + 1;
-            size_t const cbWasDeleted  = strlen(szWasDeleted) + 1;
-            size_t const cbNeeded = cbName + cbValue + cbFlags + cbWasDeleted;
+            size_t const cbFlags      = strlen(szFlags) + 1;
+            size_t const cbName       = rProp.mName.length() + 1;
+            size_t const cbValue      = rProp.mValue.length() + 1;
+            size_t const cbWasDeleted = 2;
+            size_t const cbNeeded     = cbName + cbValue + cbFlags + cbWasDeleted;
             HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
             if (cbNeeded <= cbBuf)
             {
@@ -1068,7 +1067,8 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 pchBuf += cbValue;
                 memcpy(pchBuf, szFlags, cbFlags);
                 pchBuf += cbFlags;
-                memcpy(pchBuf, szWasDeleted, cbWasDeleted);
+                *pchBuf++ = fWasDeleted ? '1' : '0';
+                *pchBuf++ = '\0';
             }
             else
                 rc = VERR_BUFFER_OVERFLOW;
@@ -1702,18 +1702,20 @@ int Service::initialize()
     int rc = setHostVersionProps();
     AssertRCReturn(rc, rc);
 
-    /* Sysprep execution by VBoxService (host is allowed to change these). */
-    uint64_t nsNow = getCurrentTimestamp();
-    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-    AssertRCReturn(rc, rc);
-    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-    AssertRCReturn(rc, rc);
+    uint64_t nsNow = getCurrentTimestamp(); /* Must increment this for each property to avoid asserting in getOldNotification. */
 
     /* Resume and reset counters. */
-    rc = setPropertyInternal("/VirtualBox/VMInfo/ResumeCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-    AssertRCReturn(rc, rc);
     rc = setPropertyInternal("/VirtualBox/VMInfo/ResetCounter",  "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
     AssertRCReturn(rc, rc);
+    rc = setPropertyInternal("/VirtualBox/VMInfo/ResumeCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, ++nsNow);
+    AssertRCReturn(rc, rc);
+
+    /* Sysprep execution by VBoxService (host is allowed to change these). */
+    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, ++nsNow);
+    AssertRCReturn(rc, rc);
+    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, ++nsNow);
+    AssertRCReturn(rc, rc);
+
 
     /* The host notification thread and queue. */
     rc = RTReqQueueCreate(&mhReqQNotifyHost);
