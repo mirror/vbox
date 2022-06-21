@@ -769,7 +769,7 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
     HGCMSvcSetPv(&g_AsyncNotification.aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
     HGCMSvcSetU64(&g_AsyncNotification.aParms[1], 0);
     HGCMSvcSetPv(&g_AsyncNotification.aParms[2], (void *)g_AsyncNotification.abBuffer,
-                                             sizeof(g_AsyncNotification.abBuffer));
+                 sizeof(g_AsyncNotification.abBuffer));
     g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
     pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
                     GUEST_PROP_FN_GET_NOTIFICATION, 4, g_AsyncNotification.aParms, 0);
