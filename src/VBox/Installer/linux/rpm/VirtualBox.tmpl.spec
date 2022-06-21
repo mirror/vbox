@@ -161,13 +161,6 @@ unset old_path
 %endif
 rm -r src
 %endif
-%if %{?is_ose:0}%{!?is_ose:1}
-  for i in rdesktop-vrdp.tar.gz rdesktop-vrdp-keymaps; do
-    mv $i $RPM_BUILD_ROOT/usr/share/virtualbox; done
-  # Very little needed tool causing python compatibility trouble. Do not ship.
-  rm -f $RPM_BUILD_ROOT/usr/share/virtualbox/rdesktop-vrdp-keymaps/convert-map
-  mv rdesktop-vrdp $RPM_BUILD_ROOT/usr/bin
-%endif
 for i in additions/VBoxGuestAdditions.iso; do
   mv $i $RPM_BUILD_ROOT/usr/share/virtualbox; done
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox

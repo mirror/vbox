@@ -177,14 +177,6 @@ ifdef VBOX_WITH_VRDP
  VBOX_FBSD_STRIP_BIN += \
 	VBoxVRDP.so \
 	VBoxAuth.so
- VBOX_FBSD_NO_STRIP += \
-	rdesktop-vrdp.tar.gz
- ifdef VBOX_WITH_VRDP_RDESKTOP
-#  VBOX_FBSD_NO_STRIP += \
-#	rdesktop-vrdp-keymaps
-  VBOX_FBSD_STRIP_BIN += \
-	rdesktop-vrdp
- endif
 endif
 
 # Headless

@@ -283,9 +283,7 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	    fi \
 	    done)
 	dh_installdocs $(addprefix $(archdir)/,UserManual*.pdf LICENSE)
-	mv $(addprefix $(archdir)/,$(if $(HEADLESS),,rdesktop-vrdp.tar.gz) additions/VBoxGuestAdditions.iso) $(prefix)/usr/share/$(package)
-	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp $(prefix)/usr/bin)
-	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp-keymaps $(prefix)/usr/share/$(package))
+	mv $(addprefix $(archdir)/,additions/VBoxGuestAdditions.iso) $(prefix)/usr/share/$(package)
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	if [ -f $(prefix)/usr/lib/$(package)/libQt5CoreVBox.so.5 ]; then \
 	    $(vboxroot)/tools/linux.$(chrarch)/bin/chrpath \

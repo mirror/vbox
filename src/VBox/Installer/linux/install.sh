@@ -348,7 +348,6 @@ if [ "$ACTION" = "install" ]; then
     if [ -d /usr/share/mime/packages/ ]; then
         ln -sf $INSTALLATION_DIR/virtualbox.xml /usr/share/mime/packages/virtualbox.xml
     fi
-    ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp
     ln -sf $INSTALLATION_DIR/src/vboxhost /usr/src/vboxhost-_VERSION_
 
     # Convenience symlinks. The creation fails if the FS is not case sensitive

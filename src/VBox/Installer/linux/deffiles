@@ -602,45 +602,4 @@ DEFAULT_FILE_NAMES=" \
     sdk/samples/API/makefile.tstVBoxAPILinux \
     sdk/samples/API/tstVBoxAPILinux \
     additions/VBoxGuestAdditions.iso \
-    UserManual.pdf \
-    rdesktop-vrdp.tar.gz \
-    rdesktop-vrdp-keymaps/ar \
-    rdesktop-vrdp-keymaps/common \
-    rdesktop-vrdp-keymaps/convert-map \
-    rdesktop-vrdp-keymaps/cs \
-    rdesktop-vrdp-keymaps/da \
-    rdesktop-vrdp-keymaps/de \
-    rdesktop-vrdp-keymaps/de-ch \
-    rdesktop-vrdp-keymaps/en-dv \
-    rdesktop-vrdp-keymaps/en-gb \
-    rdesktop-vrdp-keymaps/en-us \
-    rdesktop-vrdp-keymaps/es \
-    rdesktop-vrdp-keymaps/et \
-    rdesktop-vrdp-keymaps/fi \
-    rdesktop-vrdp-keymaps/fo \
-    rdesktop-vrdp-keymaps/fr \
-    rdesktop-vrdp-keymaps/fr-be \
-    rdesktop-vrdp-keymaps/fr-ca \
-    rdesktop-vrdp-keymaps/fr-ch \
-    rdesktop-vrdp-keymaps/he \
-    rdesktop-vrdp-keymaps/hr \
-    rdesktop-vrdp-keymaps/hu \
-    rdesktop-vrdp-keymaps/is \
-    rdesktop-vrdp-keymaps/it \
-    rdesktop-vrdp-keymaps/ja \
-    rdesktop-vrdp-keymaps/ko \
-    rdesktop-vrdp-keymaps/lt \
-    rdesktop-vrdp-keymaps/lv \
-    rdesktop-vrdp-keymaps/mk \
-    rdesktop-vrdp-keymaps/modifiers \
-    rdesktop-vrdp-keymaps/nl \
-    rdesktop-vrdp-keymaps/nl-be \
-    rdesktop-vrdp-keymaps/no \
-    rdesktop-vrdp-keymaps/pl \
-    rdesktop-vrdp-keymaps/pt \
-    rdesktop-vrdp-keymaps/pt-br \
-    rdesktop-vrdp-keymaps/ru \
-    rdesktop-vrdp-keymaps/sl \
-    rdesktop-vrdp-keymaps/sv \
-    rdesktop-vrdp-keymaps/th \
-    rdesktop-vrdp-keymaps/tr "
+    UserManual.pdf "

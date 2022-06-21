@@ -150,19 +150,6 @@
 
       <listitem>
         <para>
-          &product-name; may ship with a modified copy of rdesktop which
-          is governed by the license in
-          <xref linkend="licGPL"
-        xrefstyle="template: %n" /> and
-        </para>
-
-        <para>
-          Copyright (C) Matthew Chapman and others.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
           &product-name; may ship with a copy of kchmviewer which is
           governed by the license in
           <xref linkend="licGPL" xrefstyle="template: %n" /> and
