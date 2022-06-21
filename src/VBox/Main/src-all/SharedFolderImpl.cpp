@@ -292,7 +292,7 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
             return setError(E_INVALIDARG, tr("Shared folder path '%s' is not absolute"), hostPath.c_str());
 
         RTFSOBJINFO ObjInfo;
-        vrc = RTPathQueryInfo(hostPathFull, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        vrc = RTPathQueryInfoEx(hostPathFull, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
         if (RT_FAILURE(vrc))
             return setError(E_INVALIDARG, tr("RTPathQueryInfo failed on shared folder path '%s': %Rrc"), hostPathFull, vrc);
 
