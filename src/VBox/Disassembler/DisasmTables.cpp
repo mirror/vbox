@@ -3784,11 +3784,23 @@ static const DISOPCODE g_aDisasVexMap1F3[] =
 };
 const DISOPMAPDESC g_DisasVexMap1F3Range = { &g_aDisasVexMap1F3[0], 0x10, RT_ELEMENTS(g_aDisasVexMap1F3) };
 
+const DISOPCODE g_aMapX86_Group17[8] =
+{
+    INVALID_OPCODE,
+    OPVEX("blsr %By,%Ey",        IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSR,      OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("blsmsk %By,%Ey",      IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSMSK,    OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("blsi %By,%Ey",        IDX_ParseVexDest,  IDX_ParseModRM,     0,                           0,  OP_BLSI,      OP_PARM_By,   OP_PARM_Ey,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+};
+
 static const DISOPCODE g_aDisasVexMap2[] =
 {
     /** @todo vsha1nexte at 0xc8 + ? */
     OPVEX("andn %Gy,%By,%Ey",    IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_ANDN,      OP_PARM_Gy,   OP_PARM_By,   OP_PARM_Ey,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    OPVEX("vgroup17",            IDX_ParseGrp17,    0,                  0,                           0,  OP_GRP17,     OP_PARM_NONE, OP_PARM_NONE, OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     OPVEX("bzhi %Gy,%By,%Ey",    IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_BZHI,      OP_PARM_Gy,   OP_PARM_By,   OP_PARM_Ey,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
@@ -3798,14 +3810,12 @@ const DISOPMAPDESC g_DisasVexMap2Range = { &g_aDisasVexMap2[0], 0xf2, RT_ELEMENT
 
 static const DISOPCODE g_aDisasVexMap2F3[] =
 {
-    /* 0xf3: */
-    INVALID_OPCODE, /** @todo vgrp17 */
-    INVALID_OPCODE,
+    /* 0xf5: */
     OPVEX("pext %Gy,%By,%Ey",    IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PEXT,      OP_PARM_Gy,   OP_PARM_By,   OP_PARM_Ey,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     OPVEX("sarx %Gy,%By,%Ey",    IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_SARX,      OP_PARM_Gy,   OP_PARM_By,   OP_PARM_Ey,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
 };
-const DISOPMAPDESC g_DisasVexMap2F3Range = { &g_aDisasVexMap2F3[0], 0xf3, RT_ELEMENTS(g_aDisasVexMap2F3) };
+const DISOPMAPDESC g_DisasVexMap2F3Range = { &g_aDisasVexMap2F3[0], 0xf5, RT_ELEMENTS(g_aDisasVexMap2F3) };
 
 static const DISOPCODE g_aDisasVexMap2F2[] =
 {

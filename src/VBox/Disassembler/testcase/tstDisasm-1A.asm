@@ -226,6 +226,12 @@ BEGINPROC   TestProc32
 
         vfmaddsub132pd ymm1, ymm2, ymm3
 
+        blsr eax, ebx
+        blsi eax, [ebx]
+        db 0c4h, 0e2h, 0f8h, 0f3h, 01bh ;  blsi rax, dword [ebx] - but VEX.W=1 is ignored, so same as previous
+        blsmsk eax, [ebx+edi*2]
+        shlx eax, ebx, ecx
+
 ENDPROC   TestProc32
 
 
@@ -415,6 +421,17 @@ BEGINPROC TestProc64
         movlps xmm0, [eax + ebx]
         movlps xmm10, [rax + rbx]
         movhlps xmm0, xmm1
+
+        blsr eax, ebx
+        blsr rax, rbx
+        blsi eax, [rbx]
+        blsi rax, [rbx]
+        blsmsk eax, [rbx+rdi*2]
+        blsmsk rax, [rbx+rdi*2]
+        blsmsk r8, [rbx+rdi*2]
+
+        shlx   eax, ebx, ecx
+        shlx   r8, rax, r15
 
         ret
 ENDPROC   TestProc64

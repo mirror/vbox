@@ -98,6 +98,7 @@ static FNDISPARSE ParseGrp13;
 static FNDISPARSE ParseGrp14;
 static FNDISPARSE ParseGrp15;
 static FNDISPARSE ParseGrp16;
+static FNDISPARSE ParseGrp17;
 static FNDISPARSE ParseModFence;
 static FNDISPARSE ParseNopPause;
 static FNDISPARSE ParseVex2b;
@@ -149,6 +150,7 @@ static PFNDISPARSE const g_apfnFullDisasm[IDX_ParseMax] =
     ParseGrp14,
     ParseGrp15,
     ParseGrp16,
+    ParseGrp17,
     ParseModFence,
     ParseYv,
     ParseYb,
@@ -199,6 +201,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
     ParseGrp14,
     ParseGrp15,
     ParseGrp16,
+    ParseGrp17,
     ParseModFence,
     ParseYv,
     ParseYb,
@@ -836,8 +839,7 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
     if (fRegAddr)
         subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
-    else
-    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE || subtype == OP_PARM_y)
+    else if (subtype == OP_PARM_v || subtype == OP_PARM_NONE || subtype == OP_PARM_y)
     {
         switch (pDis->uOpMode)
         {
@@ -848,7 +850,7 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
             subtype = OP_PARM_q;
             break;
         case DISCPUMODE_16BIT:
-            if (subtype != OP_PARM_y)
+            if (subtype != OP_PARM_y) /** @todo r=bird: This cannot be right! OP_PARM_y should translate to OP_PARM_d (32-bit), shouldn't it? */
                 subtype = OP_PARM_w;
             break;
         default:
@@ -1950,29 +1952,29 @@ static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
     RT_NOREF_PV(pOp);
 
     unsigned type = OP_PARM_VTYPE(pParam->fParam);
-
     switch (type)
     {
         case OP_PARM_H: //XMM or YMM register
-        if (VEXREG_IS256B(pDis->bVexDestReg))
-        {
-            pParam->fUse |= DISUSE_REG_YMM;
-            pParam->Base.idxYmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
-        }
-        else
-        {
-            pParam->fUse |= DISUSE_REG_XMM;
-            pParam->Base.idxXmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
-        }
-        break;
+            if (VEXREG_IS256B(pDis->bVexDestReg))
+            {
+                pParam->fUse |= DISUSE_REG_YMM;
+                pParam->Base.idxYmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
+            }
+            else
+            {
+                pParam->fUse |= DISUSE_REG_XMM;
+                pParam->Base.idxXmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
+            }
+            break;
+
         case OP_PARM_B: // Always OP_PARM_By. Change if it is not so.
-            if ((pDis->fPrefix & DISPREFIX_REX) && (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W))
+            if (pDis->bVexWFlag && pDis->uCpuMode == DISCPUMODE_64BIT)
                 pParam->fUse |= DISUSE_REG_GEN64;
             else
                 pParam->fUse |= DISUSE_REG_GEN32;
             /// @todo Check if the register number is correct
             pParam->Base.idxGenReg = (pDis->bVexDestReg >> 1) ^ 0xf;
-        break;
+            break;
     }
 
     return offInstr;
@@ -2472,6 +2474,22 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
+
+
+/**
+ * Parses (vex) group 17.
+ */
+static size_t ParseGrp17(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    RT_NOREF_PV(pParam);
+
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    pOp = &g_aMapX86_Group17[MODRM_REG(bRm)];
+
+    return disParseInstruction(offInstr, pOp, pDis);
+}
+
+
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
@@ -2510,25 +2528,28 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t byte1 = disReadByte(pDis, offInstr++);
     uint8_t byte2 = disReadByte(pDis, offInstr++);
     pDis->bOpCode = disReadByte(pDis, offInstr++);
-
-    pDis->bVexDestReg = VEX_2B2INT(byte2);
-    uint8_t implOpcode = (byte1 & 0x1f);
-
-    // REX.RXB
-    /** @todo Check this! was weird: ~(byte1 & 0xe0) */
-    if (pDis->uCpuMode == DISCPUMODE_64BIT && !(byte1 & 0xe0))
-        pDis->fRexPrefix |= (byte1 >> 5) ^ 7;
+    pDis->bVexDestReg = VEX_2B2INT(byte2); /** @todo r=bird: why on earth ~vvvv + L; this is obfuscation non-sense. Either split the shit up or just store byte2 raw here! */
 
     // VEX.W
-    pDis->bVexWFlag = !(byte2 & 0x80);
+    pDis->bVexWFlag = !!(byte2 & 0x80); /** @todo r=bird: why a whole byte for this one flag? bVexWFlag and bVexDestReg makes little sense. */
 
-    if (pDis->fRexPrefix)
-        pDis->fPrefix |= DISPREFIX_REX;
+    /* Hack alert! Assume VEX.W rules over any 66h prefix and that no VEX
+       encoded instructions ever uses the regular uOpMode w/o VEX.W. */
+    pDis->uOpMode = (byte2 & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT ? DISCPUMODE_64BIT : DISCPUMODE_32BIT;
+
+    // VEX.~R~X~B => REX.RXB
+    if (pDis->uCpuMode == DISCPUMODE_64BIT)
+    {
+        pDis->fRexPrefix |= (byte1 >> 5) ^ 7;
+        if (pDis->fRexPrefix)
+            pDis->fPrefix |= DISPREFIX_REX;
+    }
 
     PCDISOPCODE pOpCode;
-    if (implOpcode < RT_ELEMENTS(g_aapVexOpcodesMapRanges[byte2 & 3]))
+    uint8_t const idxVexMap = byte1 & 0x1f;
+    if (idxVexMap < RT_ELEMENTS(g_aapVexOpcodesMapRanges[byte2 & 3]))
     {
-        PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte2 & 3][implOpcode];
+        PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte2 & 3][idxVexMap];
         unsigned  const      idxOpcode = pDis->bOpCode - pRange->idxFirst;
         if (idxOpcode < pRange->cOpcodes)
             pOpCode = &pRange->papOpcodes[idxOpcode];

@@ -641,7 +641,8 @@ typedef struct DISSTATE
     uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         cbInstr;
-    /** VEX presence flag, destination register and size */
+    /** VEX presence flag, destination register and size
+     * @todo r=bird: There is no VEX presence flage here, just ~vvvv and L.  */
     uint8_t         bVexDestReg;
     /** VEX.W flag */
     uint8_t         bVexWFlag;
