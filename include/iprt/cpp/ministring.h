@@ -852,6 +852,18 @@ public:
     int replaceNoThrow(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement) RT_NOEXCEPT;
 
     /**
+     * Truncates the string to a max length of @a cchMax.
+     *
+     * If the string is shorter than @a cchMax characters, no change is made.
+     *
+     * If the @a cchMax is not at the start of a UTF-8 sequence, it will be adjusted
+     * down to the start of the UTF-8 sequence.  Thus, after a truncation, the
+     * length() may be smaller than @a cchMax.
+     *
+     */
+    RTCString &truncate(size_t cchMax) RT_NOEXCEPT;
+
+    /**
      * Index operator.
      *
      * Returns the byte at the given index, or a null byte if the index is not

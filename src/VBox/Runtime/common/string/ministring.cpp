@@ -773,6 +773,40 @@ int RTCString::replaceWorkerNoThrow(size_t offStart, size_t cchLength, const cha
 }
 
 
+RTCString &RTCString::truncate(size_t cchMax) RT_NOEXCEPT
+{
+    if (cchMax < m_cch)
+    {
+        /*
+         * Make sure the truncated string ends with a correctly encoded
+         * codepoint and is not missing a few bytes.
+         */
+        if (cchMax > 0)
+        {
+            char chTail = m_psz[cchMax];
+            if (   (chTail & 0x80) == 0         /* single byte codepoint */
+                || (chTail & 0xc0) == 0xc0)     /* first byte of codepoint sequence. */
+            { /* likely */ }
+            else
+            {
+                /* We need to find the start of the codepoint sequence: */
+                do
+                    cchMax -= 1;
+                while (   cchMax > 0
+                       && (m_psz[cchMax] & 0xc0) != 0xc0);
+            }
+        }
+
+        /*
+         * Do the truncating.
+         */
+        m_psz[cchMax] = '\0';
+        m_cch = cchMax;
+    }
+    return *this;
+}
+
+
 size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const RT_NOEXCEPT
 {
     if (offStart < length())

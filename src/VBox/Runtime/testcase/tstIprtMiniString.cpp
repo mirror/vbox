@@ -361,6 +361,32 @@ static void test1(RTTEST hTest)
         RTTESTI_CHECK(StrAssign.length() == 0);
     }
 
+    /* truncation */
+    RTCString StrTruncate1("abcdef");
+    RTTESTI_CHECK(StrTruncate1.length() == 6);
+    for (int i = 5; i >= 0; i--)
+    {
+        StrTruncate1.truncate(i);
+        RTTESTI_CHECK(StrTruncate1.length() == (size_t)i);
+    }
+
+    RTCString StrTruncate2("01ßä6");
+    CHECK_EQUAL(StrTruncate2, "01ßä6");
+    StrTruncate2.truncate(6);
+    CHECK_EQUAL(StrTruncate2, "01ßä");
+    StrTruncate2.truncate(5);
+    CHECK_EQUAL(StrTruncate2, "01ß");
+    StrTruncate2.truncate(10);
+    CHECK_EQUAL(StrTruncate2, "01ß");
+    StrTruncate2.truncate(4);
+    CHECK_EQUAL(StrTruncate2, "01ß");
+    StrTruncate2.truncate(3);
+    CHECK_EQUAL(StrTruncate2, "01");
+    StrTruncate2.truncate(1);
+    CHECK_EQUAL(StrTruncate2, "0");
+    StrTruncate2.truncate(0);
+    CHECK_EQUAL(StrTruncate2, "");
+
 #undef CHECK
 #undef CHECK_DUMP
 #undef CHECK_DUMP_I
