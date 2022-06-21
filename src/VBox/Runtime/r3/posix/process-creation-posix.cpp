@@ -370,29 +370,29 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
         LogRel2(("rtProcPosixAuthenticateUsingPam(%s): pam_setitem/PAM_RUSER: %s\n", pszPamService, pszUser));
         if (rc == PAM_SUCCESS)
         {
-            RTENV hEnv = RTENV_DEFAULT;
-
             /*
              * Secure TTY fun ahead (for pam_securetty).
              *
-             * We also need to set PAM_TTY (if available) to make PAM stacks work which
-             * require a secure TTY via pam_securetty (Debian 10 + 11, for example). See @bugref{10225}.
+             * We need to set PAM_TTY (if available) to make PAM stacks work which
+             * require a secure TTY via pam_securetty (Debian 10 + 11, for example). This
+             * is typically an issue when launching as 'root'.  See @bugref{10225}.
              *
-             * Note! We only can try (or better: guess) to a certain amount, as it really depends on the
-             *       distribution or Administrator which has set up the system which (and how) things are allowed
-             *       (see /etc/securetty).
+             * Note! We only can try (or better: guess) to a certain amount, as it really
+             *       depends on the distribution or Administrator which has set up the
+             *       system which (and how) things are allowed (see /etc/securetty).
+             *
+             * Note! We don't acctually try or guess anything about the distro like
+             *       suggested by the above note, we just try determine the TTY of
+             *       the _parent_ process and hope for the best. (bird)
              */
-            char szTTY[64] = { 0 };
-            int rc2 = RTEnvGetEx(hEnv, "DISPLAY", szTTY, sizeof(szTTY), NULL);
+            char szTTY[64];
+            int rc2 = RTEnvGetEx(RTENV_DEFAULT, "DISPLAY", szTTY, sizeof(szTTY), NULL);
             if (RT_FAILURE(rc2))
             {
-                char szTTYNr[4];
-                rc2 = RTEnvGetEx(hEnv, "XDG_VTNR", szTTYNr, sizeof(szTTYNr), NULL); /* Virtual terminal hint given? */
-                if (RT_SUCCESS(rc2))
-                {
-                    if (RTStrPrintf2(szTTY, sizeof(szTTY), "tty%s", szTTYNr) <= 0)
-                        rc2 = VERR_BUFFER_OVERFLOW;
-                }
+                /* Virtual terminal hint given? */
+                static char const s_szPrefix[] = "tty";
+                memcpy(szTTY, s_szPrefix, sizeof(s_szPrefix));
+                rc2 = RTEnvGetEx(RTENV_DEFAULT, "XDG_VTNR", &szTTY[sizeof(s_szPrefix) - 1], sizeof(s_szPrefix) - 1, NULL);
             }
 
             /** @todo Should we - distinguished from the login service - also set the hostname as PAM_TTY?
@@ -400,35 +400,29 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
              *        (see PAM_TTY_KLUDGE). */
 #ifdef IPRT_WITH_PAM_TTY_KLUDGE
             if (RT_FAILURE(rc2))
-            {
                 if (!RTStrICmp(pszPamService, "access")) /* Access management needed? */
                 {
                     int err = gethostname(szTTY, sizeof(szTTY));
                     if (err == 0)
                         rc2 = VINF_SUCCESS;
                 }
-            }
 #endif
             /* As a last resort, try stdin's TTY name instead (if any). */
             if (RT_FAILURE(rc2))
             {
-                if (RTStrPrintf2(szTTY, sizeof(szTTY), "%s", ttyname(STDIN_FILENO)) > 0)
-                    rc2 = VINF_SUCCESS;
-                else
-                    rc2 = VERR_BUFFER_OVERFLOW;
+                rc2 = ttyname_r(0 /*stdin*/, szTTY, sizeof(szTTY));
+                if (rc2 != 0)
+                    rc2 = RTErrConvertFromErrno(rc2);
             }
 
-            LogRel2(("rtProcPosixAuthenticateUsingPam(%s): pam_setitem/PAM_TTY: %s, rc=%Rrc\n", pszPamService, szTTY, rc2));
-            if (!strlen(szTTY))
+            LogRel2(("rtProcPosixAuthenticateUsingPam(%s): pam_setitem/PAM_TTY: %s, rc2=%Rrc\n", pszPamService, szTTY, rc2));
+            if (szTTY[0] == '\0')
                 LogRel2(("rtProcPosixAuthenticateUsingPam(%s): Hint: Looks like running as a non-interactive user (no TTY/PTY).\n"
-                         "Authentication requiring a secure terminal might fail.\n",
-                         pszPamService));
+                         "Authentication requiring a secure terminal might fail.\n", pszPamService));
 
             if (   RT_SUCCESS(rc2)
-                && strlen(szTTY)) /* Only try using PAM_TTY if we have something to set. */
-            {
+                && szTTY[0] != '\0') /* Only try using PAM_TTY if we have something to set. */
                 rc = pam_set_item(hPam, PAM_TTY, szTTY);
-            }
 
             if (rc == PAM_SUCCESS)
             {
