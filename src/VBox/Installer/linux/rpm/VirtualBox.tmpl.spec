@@ -120,7 +120,6 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 %if %{?is_ose:0}%{!?is_ose:1}
 %if "%BUILDREL%" == "el7"
 # For el7 we use gcc from devtoolset-4, which is not suitable for kernel work.

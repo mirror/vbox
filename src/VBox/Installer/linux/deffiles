@@ -45,7 +45,6 @@ DEFAULT_FILE_NAMES=" \
     VirtualBox \
     VirtualBoxVM \
     VirtualBox.so \
-    VBoxTunctl \
     VBoxSettings.so \
     VBoxSharedFolders.so \
     VBoxSharedClipboard.so \

@@ -268,7 +268,6 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	if [ -r $(archdir)/VBoxDTrace ]; then \
 	    mv $(archdir)/VBoxDTrace $(prefix)/usr/bin; \
 	fi
-	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko ]; then \
 	        install -D -g 0 -o 0 -m 0644 \
