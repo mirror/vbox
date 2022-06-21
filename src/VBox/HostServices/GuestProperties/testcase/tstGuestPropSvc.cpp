@@ -46,6 +46,21 @@ struct VBOXHGCMCALLHANDLE_TYPEDEF
     int32_t rc;
 };
 
+/** Dummy helper callback. */
+static DECLCALLBACK(int) tstHlpInfoDeregister(void *pvInstance, const char *pszName)
+{
+    RT_NOREF(pvInstance, pszName);
+    return VINF_SUCCESS;
+}
+
+/** Dummy helper callback. */
+static DECLCALLBACK(int) tstHlpInfoRegister(void *pvInstance, const char *pszName, const char *pszDesc,
+                                            PFNDBGFHANDLEREXT pfnHandler, void *pvUser)
+{
+    RT_NOREF(pvInstance, pszName, pszDesc, pfnHandler, pvUser);
+    return VINF_SUCCESS;
+}
+
 /** Call completion callback for guest calls. */
 static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
@@ -60,9 +75,14 @@ static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
  */
 void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
-    pTable->cbSize              = sizeof (VBOXHGCMSVCFNTABLE);
-    pTable->u32Version          = VBOX_HGCM_SVC_VERSION;
+    RT_ZERO(*pHelpers);
     pHelpers->pfnCallComplete   = callComplete;
+    pHelpers->pfnInfoRegister   = tstHlpInfoRegister;
+    pHelpers->pfnInfoDeregister = tstHlpInfoDeregister;
+
+    RT_ZERO(*pTable);
+    pTable->cbSize              = sizeof(VBOXHGCMSVCFNTABLE);
+    pTable->u32Version          = VBOX_HGCM_SVC_VERSION;
     pTable->pHelpers            = pHelpers;
 }
 
@@ -234,6 +254,7 @@ static void testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_SET_PROPS, 4, &aParms[0]), VINF_SUCCESS);
 }
 
+#if 0
 /** Result strings for zeroth enumeration test */
 static const char *g_apchEnumResult0[] =
 {
@@ -263,6 +284,7 @@ static const uint32_t g_cbEnumBuffer0 =
            "test name\0test value\0""999\0TRANSIENT, READONLY\0"
            "TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
            "/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
+#endif
 
 /** Result strings for first and second enumeration test */
 static const char *g_apchEnumResult1[] =
@@ -292,8 +314,8 @@ static const struct enumStringStruct
 {
     /** The enumeration pattern to test */
     const char     *pszPatterns;
-    /** The size of the pattern string */
-    const uint32_t  cchPatterns;
+    /** The size of the pattern string (including terminator) */
+    const uint32_t  cbPatterns;
     /** The expected enumeration output strings */
     const char    **papchResult;
     /** The size of the output strings */
@@ -302,20 +324,22 @@ static const struct enumStringStruct
     const uint32_t  cbBuffer;
 }   g_aEnumStrings[] =
 {
+#if 0 /* unpredictable automatic variables set by the service now */
     {
         "", sizeof(""),
         g_apchEnumResult0,
         g_acbEnumResult0,
         g_cbEnumBuffer0
     },
+#endif
     {
-        "/*\0?E*", sizeof("/*\0?E*"),
+        "/t*\0?E*", sizeof("/t*\0?E*"),
         g_apchEnumResult1,
         g_acbEnumResult1,
         g_cbEnumBuffer1
     },
     {
-        "/*|?E*", sizeof("/*|?E*"),
+        "/t*|?E*", sizeof("/t*|?E*"),
         g_apchEnumResult1,
         g_acbEnumResult1,
         g_cbEnumBuffer1
@@ -339,7 +363,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         RTTESTI_CHECK_RETV(g_aEnumStrings[i].cbBuffer < sizeof(abBuffer));
 
         /* Check that we get buffer overflow with a too small buffer. */
-        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cbPatterns);
         HGCMSvcSetPv(&aParms[1], (void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
         memset(abBuffer, 0x55, sizeof(abBuffer));
         int rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
@@ -349,13 +373,13 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
             RTTESTI_CHECK_RC(rc2 = HGCMSvcGetU32(&aParms[2], &cbNeeded), VINF_SUCCESS);
             if (RT_SUCCESS(rc2))
                 RTTESTI_CHECK_MSG(cbNeeded == g_aEnumStrings[i].cbBuffer,
-                                  ("expected %u, got %u, pattern %d\n", g_aEnumStrings[i].cbBuffer, cbNeeded, i));
+                                  ("expected %#x, got %#x, pattern %d\n", g_aEnumStrings[i].cbBuffer, cbNeeded, i));
         }
         else
             RTTestIFailed("ENUM_PROPS_HOST returned %Rrc instead of VERR_BUFFER_OVERFLOW on too small buffer, pattern number %d.", rc2, i);
 
         /* Make a successfull call. */
-        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cbPatterns);
         HGCMSvcSetPv(&aParms[1], (void *)abBuffer, g_aEnumStrings[i].cbBuffer);
         memset(abBuffer, 0x55, sizeof(abBuffer));
         rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
@@ -365,11 +389,8 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
             for (unsigned j = 0; g_aEnumStrings[i].papchResult[j] != NULL; ++j)
             {
                 bool found = false;
-                for (unsigned k = 0; !found && k <   g_aEnumStrings[i].cbBuffer
-                                                   - g_aEnumStrings[i].pacchResult[j];
-                     ++k)
-                    if (memcmp(abBuffer + k, g_aEnumStrings[i].papchResult[j],
-                        g_aEnumStrings[i].pacchResult[j]) == 0)
+                for (unsigned k = 0; !found && k < g_aEnumStrings[i].cbBuffer - g_aEnumStrings[i].pacchResult[j]; ++k)
+                    if (memcmp(abBuffer + k, g_aEnumStrings[i].papchResult[j], g_aEnumStrings[i].pacchResult[j]) == 0)
                         found = true;
                 if (!found)
                     RTTestIFailed("ENUM_PROPS_HOST did not produce the expected output for pattern %d.", i);
@@ -398,6 +419,8 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
                   const char *pcszValue, const char *pcszFlags, bool isHost,
                   bool useSetProp)
 {
+    RTThreadSleep(1); /* stupid, stupid timestamp fudge to avoid asserting in getOldNotification() */
+
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     int command = GUEST_PROP_FN_SET_PROP_VALUE;
     if (isHost)
@@ -533,8 +556,7 @@ static void testDelProp(VBOXHGCMSVCFNTABLE *pTable)
         bool isHost;
         /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
         bool isAllowed;
-    }
-    s_aDelProperties[] =
+    } s_aDelProperties[] =
     {
         { "Red", false, true },
         { "Amber", true, true },
@@ -548,8 +570,7 @@ static void testDelProp(VBOXHGCMSVCFNTABLE *pTable)
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aDelProperties); ++i)
     {
-        int rc = doDelProp(pTable, s_aDelProperties[i].pcszName,
-                           s_aDelProperties[i].isHost);
+        int rc = doDelProp(pTable, s_aDelProperties[i].pcszName, s_aDelProperties[i].isHost);
         if (s_aDelProperties[i].isAllowed && RT_FAILURE(rc))
             RTTestIFailed("Deleting property '%s' failed with rc=%Rrc.",
                           s_aDelProperties[i].pcszName, rc);
@@ -665,18 +686,19 @@ static const struct
 }
 g_aGetNotifications[] =
 {
-    { "Red\0Stop!\0TRANSIENT", sizeof("Red\0Stop!\0TRANSIENT") },
-    { "Amber\0Caution!\0", sizeof("Amber\0Caution!\0") },
-    { "Green\0Go!\0READONLY", sizeof("Green\0Go!\0READONLY") },
-    { "Blue\0What on earth...?\0", sizeof("Blue\0What on earth...?\0") },
-    { "/VirtualBox/GuestAdd/SomethingElse\0test\0",
-      sizeof("/VirtualBox/GuestAdd/SomethingElse\0test\0") },
-    { "/VirtualBox/GuestAdd/SharedFolders/MountDir\0test\0RDONLYGUEST",
-      sizeof("/VirtualBox/GuestAdd/SharedFolders/MountDir\0test\0RDONLYGUEST") },
-    { "/VirtualBox/HostInfo/VRDP/Client/1/Name\0test\0TRANSIENT, RDONLYGUEST, TRANSRESET",
-      sizeof("/VirtualBox/HostInfo/VRDP/Client/1/Name\0test\0TRANSIENT, RDONLYGUEST, TRANSRESET") },
-    { "Red\0\0", sizeof("Red\0\0") },
-    { "Amber\0\0", sizeof("Amber\0\0") },
+    // Name\0Value\0Flags\0fWasDeleted\0
+#define STR_AND_SIZE(a_sz) { a_sz, sizeof(a_sz) }
+    STR_AND_SIZE("Red\0Stop!\0TRANSIENT\0" "0"), /* first test is used by testAsyncNotification, - testGetNotification skips it. (mess) */
+    STR_AND_SIZE("Red\0Stop!\0TRANSIENT\0" "1"),
+    STR_AND_SIZE("Amber\0Caution!\0\0" "1"),
+    STR_AND_SIZE("Green\0Go!\0READONLY\0" "0"),
+    STR_AND_SIZE("Blue\0What on earth...?\0\0" "0"),
+    STR_AND_SIZE("/VirtualBox/GuestAdd/SomethingElse\0test\0\0" "0"),
+    STR_AND_SIZE("/VirtualBox/GuestAdd/SharedFolders/MountDir\0test\0RDONLYGUEST\0" "0"),
+    STR_AND_SIZE("/VirtualBox/HostInfo/VRDP/Client/1/Name\0test\0TRANSIENT, RDONLYGUEST, TRANSRESET\0" "0"),
+    STR_AND_SIZE("Red\0\0\0" "1"),
+    STR_AND_SIZE("Amber\0\0\0" "1"),
+#undef STR_AND_SIZE
 };
 
 /**
@@ -689,46 +711,44 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     RTTestISub("GET_NOTIFICATION");
 
     /* Test "buffer too small" */
-    static char                 s_szPattern[] = "";
+    static char                 s_szPattern[] = "/VirtualBox/GuestAdd/*|/VirtualBox/HostInfo/VRDP/Client*|Red*|Amber*|Green*|Blue*";
     VBOXHGCMCALLHANDLE_TYPEDEF  callHandle = { VINF_SUCCESS };
     VBOXHGCMSVCPARM             aParms[4];
-    uint32_t                    cbRetNeeded;
+    uint32_t                    cbRetNeeded = 0;
 
     for (uint32_t cbBuf = 1;
-         cbBuf < g_aGetNotifications[0].cbBuffer - 1;
+         cbBuf < g_aGetNotifications[1].cbBuffer - 1;
          cbBuf++)
     {
         void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
         RTTESTI_CHECK_BREAK(pvBuf);
         memset(pvBuf, 0x55, cbBuf);
 
-        HGCMSvcSetPv(&aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+        HGCMSvcSetStr(&aParms[0], s_szPattern);
         HGCMSvcSetU64(&aParms[1], 1);
         HGCMSvcSetPv(&aParms[2], pvBuf, cbBuf);
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
 
         if (   callHandle.rc != VERR_BUFFER_OVERFLOW
             || RT_FAILURE(HGCMSvcGetU32(&aParms[3], &cbRetNeeded))
-            || cbRetNeeded != g_aGetNotifications[0].cbBuffer
+            || cbRetNeeded != g_aGetNotifications[1].cbBuffer
            )
-        {
-            RTTestIFailed("Getting notification for property '%s' with a too small buffer did not fail correctly: %Rrc",
-                          g_aGetNotifications[0].pchBuffer, callHandle.rc);
-        }
+            RTTestIFailed("Getting notification for property '%s' with a too small buffer did not fail correctly: rc=%Rrc, cbRetNeeded=%#x (expected %#x)",
+                          g_aGetNotifications[1].pchBuffer, callHandle.rc, cbRetNeeded, g_aGetNotifications[1].cbBuffer);
         RTTestGuardedFree(g_hTest, pvBuf);
     }
 
     /* Test successful notification queries.  Start with an unknown timestamp
      * to get the oldest available notification. */
     uint64_t u64Timestamp = 1;
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aGetNotifications); ++i)
+    for (unsigned i = 1; i < RT_ELEMENTS(g_aGetNotifications); ++i)
     {
         uint32_t cbBuf = g_aGetNotifications[i].cbBuffer + _1K;
         void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
         RTTESTI_CHECK_BREAK(pvBuf);
         memset(pvBuf, 0x55, cbBuf);
 
-        HGCMSvcSetPv(&aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+        HGCMSvcSetStr(&aParms[0], s_szPattern);
         HGCMSvcSetU64(&aParms[1], u64Timestamp);
         HGCMSvcSetPv(&aParms[2], pvBuf, cbBuf);
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
@@ -740,8 +760,11 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
             || memcmp(pvBuf, g_aGetNotifications[i].pchBuffer, cbRetNeeded) != 0
            )
         {
-            RTTestIFailed("Failed to get notification for property '%s' (rc=%Rrc).",
-                          g_aGetNotifications[i].pchBuffer, callHandle.rc);
+            RTTestIFailed("Failed to get notification for property '%s' (#%u): rc=%Rrc (expected %Rrc), cbRetNeeded=%#x (expected %#x)\n"
+                          "%.*Rhxd\n---expected:---\n%.*Rhxd",
+                          g_aGetNotifications[i].pchBuffer, i, callHandle.rc, i == 0 ? VWRN_NOT_FOUND : VINF_SUCCESS,
+                          cbRetNeeded, g_aGetNotifications[i].cbBuffer, RT_MIN(cbRetNeeded, cbBuf), pvBuf,
+                          g_aGetNotifications[i].cbBuffer, g_aGetNotifications[i].pchBuffer);
         }
         RTTestGuardedFree(g_hTest, pvBuf);
     }
@@ -766,10 +789,9 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
     RTTestISub("Async GET_NOTIFICATION without notifications");
     static char s_szPattern[] = "";
 
-    HGCMSvcSetPv(&g_AsyncNotification.aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+    HGCMSvcSetStr(&g_AsyncNotification.aParms[0], s_szPattern);
     HGCMSvcSetU64(&g_AsyncNotification.aParms[1], 0);
-    HGCMSvcSetPv(&g_AsyncNotification.aParms[2], (void *)g_AsyncNotification.abBuffer,
-                 sizeof(g_AsyncNotification.abBuffer));
+    HGCMSvcSetPv(&g_AsyncNotification.aParms[2], g_AsyncNotification.abBuffer, sizeof(g_AsyncNotification.abBuffer));
     g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
     pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
                     GUEST_PROP_FN_GET_NOTIFICATION, 4, g_AsyncNotification.aParms, 0);
@@ -786,16 +808,19 @@ static void testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
     RT_NOREF1(pTable);
     uint64_t u64Timestamp;
-    uint32_t u32Size;
+    uint32_t cb;
     if (   g_AsyncNotification.callHandle.rc != VINF_SUCCESS
         || RT_FAILURE(HGCMSvcGetU64(&g_AsyncNotification.aParms[1], &u64Timestamp))
-        || RT_FAILURE(HGCMSvcGetU32(&g_AsyncNotification.aParms[3], &u32Size))
-        || u32Size != g_aGetNotifications[0].cbBuffer
-        || memcmp(g_AsyncNotification.abBuffer, g_aGetNotifications[0].pchBuffer, u32Size) != 0
+        || RT_FAILURE(HGCMSvcGetU32(&g_AsyncNotification.aParms[3], &cb))
+        || cb != g_aGetNotifications[0].cbBuffer
+        || memcmp(g_AsyncNotification.abBuffer, g_aGetNotifications[0].pchBuffer, cb) != 0
        )
     {
-        RTTestIFailed("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc.",
-                      g_AsyncNotification.callHandle.rc);
+        RTTestIFailed("Asynchronous GET_NOTIFICATION call did not complete as expected: rc=%Rrc, cb=%#x (expected %#x)\n"
+                      "abBuffer=%.*Rhxs\n"
+                      "expected=%.*Rhxs",
+                      g_AsyncNotification.callHandle.rc, cb, g_aGetNotifications[0].cbBuffer,
+                      cb, g_AsyncNotification.abBuffer, g_aGetNotifications[0].cbBuffer, g_aGetNotifications[0].pchBuffer);
     }
 }
 
