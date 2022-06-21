@@ -658,13 +658,12 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  */
 int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
-    int rc = VINF_SUCCESS;
     const char *pcszName = NULL;        /* shut up gcc */
     const char *pcszValue = NULL;       /* ditto */
     const char *pcszFlags = NULL;
-    uint32_t cchName = 0;               /* ditto */
-    uint32_t cchValue = 0;              /* ditto */
-    uint32_t cchFlags = 0;
+    uint32_t cbName = 0;                /* ditto */
+    uint32_t cbValue = 0;               /* ditto */
+    uint32_t cbFlags = 0;
     uint32_t fFlags = GUEST_PROP_F_NILFLAG;
     uint64_t u64TimeNano = getCurrentTimestamp();
 
@@ -673,13 +672,13 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     /*
      * General parameter correctness checking.
      */
-    if (   RT_SUCCESS(rc)
-        && (   (cParms < 2) || (cParms > 3)  /* Hardcoded value as the next lines depend on it. */
-            || RT_FAILURE(HGCMSvcGetCStr(&paParms[0], &pcszName, &cchName))  /* name */
-            || RT_FAILURE(HGCMSvcGetCStr(&paParms[1], &pcszValue, &cchValue))  /* value */
-            || (   (3 == cParms)
-                && RT_FAILURE(HGCMSvcGetCStr(&paParms[2], &pcszFlags, &cchFlags)) /* flags */
-               )
+    int rc = VINF_SUCCESS;
+    if (   cParms < 2  /* Hardcoded value as the next lines depend on it these range checks. */
+        || cParms > 3
+        || RT_FAILURE(HGCMSvcGetCStr(&paParms[0], &pcszName, &cbName))  /* name */
+        || RT_FAILURE(HGCMSvcGetCStr(&paParms[1], &pcszValue, &cbValue))  /* value */
+        || (   cParms == 3
+            && RT_FAILURE(HGCMSvcGetCStr(&paParms[2], &pcszFlags, &cbFlags)) /* flags */
            )
        )
         rc = VERR_INVALID_PARAMETER;
@@ -688,13 +687,10 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      * Check the values passed in the parameters for correctness.
      */
     if (RT_SUCCESS(rc))
-        rc = GuestPropValidateName(pcszName, cchName);
+        rc = GuestPropValidateName(pcszName, cbName);
     if (RT_SUCCESS(rc))
-        rc = GuestPropValidateValue(pcszValue, cchValue);
-    if ((3 == cParms) && RT_SUCCESS(rc))
-        rc = RTStrValidateEncodingEx(pcszFlags, cchFlags,
-                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
-    if ((3 == cParms) && RT_SUCCESS(rc))
+        rc = GuestPropValidateValue(pcszValue, cbValue);
+    if (cParms == 3 && RT_SUCCESS(rc))
         rc = GuestPropValidateFlags(pcszFlags, &fFlags);
     if (RT_FAILURE(rc))
     {
