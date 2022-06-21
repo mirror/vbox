@@ -808,7 +808,7 @@ static void testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
     RT_NOREF1(pTable);
     uint64_t u64Timestamp;
-    uint32_t cb;
+    uint32_t cb = 0;
     if (   g_AsyncNotification.callHandle.rc != VINF_SUCCESS
         || RT_FAILURE(HGCMSvcGetU64(&g_AsyncNotification.aParms[1], &u64Timestamp))
         || RT_FAILURE(HGCMSvcGetU32(&g_AsyncNotification.aParms[3], &cb))
