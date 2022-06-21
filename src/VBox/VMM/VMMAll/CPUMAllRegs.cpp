@@ -3094,9 +3094,9 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPhysPage  The guest-physical address to check.
  *
- * @remarks This function does not assume the guest is not executing in VMX non-root
- *          mode or even in VMX root-mode. However, it does assert that the VMCS has
- *          been initialized and the virtual-APIC access VM-execution control was
+ * @remarks This function does not assume the guest is executing in VMX non-root
+ *          mode or in VMX root-mode. However, it does assert that the VMCS has
+ *          been initialized and the virtual-APIC access VM-execution control is
  *          enabled.
  * @note    This is meant to be used by PGM while syncing the page-table entry for
  *          the APIC-access page. All other queries for the APIC-access page address
