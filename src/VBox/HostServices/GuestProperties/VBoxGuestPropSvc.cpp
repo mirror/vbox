@@ -57,6 +57,7 @@
 #include <iprt/time.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/version.h>
+#include <VBox/AssertGuest.h>
 
 #include <list>
 
@@ -959,10 +960,20 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < cbPatterns - 1; ++i)
+        {
+            char ch = pchPatterns[i];
             if (pchPatterns[i] != '\0')
-                szPatterns[i] = pchPatterns[i];
+            { /* likely*/ }
             else
-                szPatterns[i] = '|';
+            {
+                /* Since the RTStrValidateEncodingEx call in HGCMSvcGetCStr stops at the
+                   first terminator, we have to validate all subsequent pattern strings. */
+                rc = RTStrValidateEncodingEx(&pchPatterns[i + 1], cbPatterns - i -1, RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                ASSERT_GUEST_RC_BREAK(rc);
+                ch = '|';
+            }
+            szPatterns[i] = ch;
+        }
         szPatterns[cbPatterns - 1] = '\0';
     }
 
