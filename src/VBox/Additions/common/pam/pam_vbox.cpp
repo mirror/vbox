@@ -416,7 +416,7 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
      * property and the guest updating it, we loop a few times here and
      * hope.  Actually this should never go wrong, as we are generous
      * enough with buffer space. */
-    for (unsigned i = 0; i < 10; i++)
+    for (unsigned i = 0; ; i++)
     {
         void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
         if (pvTmpBuf)
@@ -425,25 +425,16 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
             rc = VbglR3GuestPropRead(uClientID, pszKey, pvBuf, cbBuf,
                                      &pszValTemp, &u64Timestamp, &pszFlags,
                                      &cbBuf);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        switch (rc)
-        {
-            case VERR_BUFFER_OVERFLOW:
+            if (rc == VERR_BUFFER_OVERFLOW && i < 10)
             {
                 /* Buffer too small, try it with a bigger one next time. */
                 cbBuf += _1K;
                 continue; /* Try next round. */
             }
-
-            default:
-                break;
         }
-
-        /* Everything except VERR_BUFFER_OVERLOW makes us bail out ... */
-        break;
+        else
+            rc = VERR_NO_MEMORY;
+        break; /* Everything except VERR_BUFFER_OVERFLOW makes us bail out ... */
     }
 
     if (RT_SUCCESS(rc))
@@ -456,15 +447,13 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
             {
                 /* If we want a property which is read-only on the guest
                  * and it is *not* marked as such, deny access! */
-                pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" should be read-only on guest but it is not\n",
-                               pszKey);
+                pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" should be read-only on guest but it is not\n", pszKey);
                 rc = VERR_ACCESS_DENIED;
             }
         }
         else /* No flags, no access! */
         {
-            pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" contains no/wrong flags (%s)\n",
-                           pszKey, pszFlags);
+            pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" contains no/wrong flags (%s)\n", pszKey, pszFlags);
             rc = VERR_ACCESS_DENIED;
         }
 
@@ -473,17 +462,16 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
             /* If everything went well copy property value to our destination buffer. */
             if (!RTStrPrintf(pszValue, cbValue, "%s", pszValTemp))
             {
-                pam_vbox_error(hPAM, "pam_vbox_read_prop: could not store value of key \"%s\"\n",
-                               pszKey);
+                pam_vbox_error(hPAM, "pam_vbox_read_prop: could not store value of key \"%s\"\n", pszKey);
                 rc = VERR_INVALID_PARAMETER;
             }
 
             if (RT_SUCCESS(rc))
-                pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\"=\"%s\"\n",
-                             pszKey, pszValue);
+                pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\"=\"%s\"\n", pszKey, pszValue);
         }
     }
 
+    RTMemFree(pvBuf);
     pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\" with rc=%Rrc\n",
                  pszKey, rc);
     return rc;
