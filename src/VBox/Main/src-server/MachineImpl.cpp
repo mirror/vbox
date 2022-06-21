@@ -6009,8 +6009,12 @@ HRESULT Machine::setGuestProperty(const com::Utf8Str &aProperty, const com::Utf8
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    AssertReturn(RT_SUCCESS(GuestPropValidateName(aProperty.c_str(), (uint32_t)aProperty.length() + 1 /* '\0' */)), E_INVALIDARG);
-    AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValue.c_str(), (uint32_t)aValue.length() + 1  /* '\0' */)), E_INVALIDARG);
+
+    int vrc = GuestPropValidateName(aProperty.c_str(), aProperty.length() + 1 /* '\0' */);
+    AssertRCReturn(rc, setErrorBoth(E_INVALIDARG, vrc));
+
+    vrc = GuestPropValidateValue(aValue.c_str(), aValue.length() + 1  /* '\0' */);
+    AssertRCReturn(rc, setErrorBoth(E_INVALIDARG, vrc));
 
     HRESULT rc = i_setGuestPropertyToVM(aProperty, aValue, aFlags, /* fDelete = */ false);
     if (rc == E_ACCESSDENIED)
@@ -6082,7 +6086,6 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
     aTimestamps.resize(cEntries);
     aFlags.resize(cEntries);
 
-    char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
     size_t i = 0;
     for (HWData::GuestPropertyMap::const_iterator
          it = propMap.begin();
@@ -6090,13 +6093,18 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
          ++it, ++i)
     {
         aNames[i] = it->first;
-        aValues[i] = it->second.strValue;
-        aTimestamps[i] = it->second.mTimestamp;
-        GuestPropWriteFlags(it->second.mFlags, szFlags);
-        aFlags[i] = Utf8Str(szFlags);
+        int vrc = GuestPropValidateName(aNames[i].c_str(), aNames[i].length() + 1 /* '\0' */);
+        AssertRCReturn(vrc, setErrorBoth(E_INVALIDARG /*bad choice for internal error*/, vrc));
 
-        AssertReturn(RT_SUCCESS(GuestPropValidateName(aNames[i].c_str(), (uint32_t)aNames[i].length() + 1 /* '\0' */)), E_INVALIDARG);
-        AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValues[i].c_str(), (uint32_t)aValues[i].length() + 1 /* '\0' */)), E_INVALIDARG);
+        aValues[i] = it->second.strValue;
+        vrc = GuestPropValidateValue(aValues[i].c_str(), aValues[i].length() + 1 /* '\0' */);
+        AssertRCReturn(vrc, setErrorBoth(E_INVALIDARG /*bad choice for internal error*/, vrc));
+
+        aTimestamps[i] = it->second.mTimestamp;
+
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
+        GuestPropWriteFlags(it->second.mFlags, szFlags);
+        aFlags[i] = szFlags;
     }
 
     return S_OK;
@@ -14070,22 +14078,25 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
          it != mHWData->mGuestProperties.end();
          ++it, ++i)
     {
-        char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
         aNames[i] = it->first;
+        int vrc = GuestPropValidateName(aNames[i].c_str(), aNames[i].length() + 1 /* '\0' */);
+        AssertRCReturn(vrc, setErrorBoth(E_INVALIDARG /* bad choice */, vrc));
+
         aValues[i] = it->second.strValue;
+        vrc = GuestPropValidateValue(aValues[i].c_str(), aValues[i].length() + 1 /* '\0' */);
+        AssertRCReturn(vrc, setErrorBoth(E_INVALIDARG /* bad choice */, vrc));
+
         aTimestamps[i] = it->second.mTimestamp;
 
         /* If it is NULL, keep it NULL. */
         if (it->second.mFlags)
         {
+            char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
             GuestPropWriteFlags(it->second.mFlags, szFlags);
             aFlags[i] = szFlags;
         }
         else
             aFlags[i] = "";
-
-        AssertReturn(RT_SUCCESS(GuestPropValidateName(aNames[i].c_str(), (uint32_t)aNames[i].length() + 1 /* '\0' */)), E_INVALIDARG);
-        AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValues[i].c_str(), (uint32_t)aValues[i].length() + 1 /* '\0' */)), E_INVALIDARG);
     }
     return S_OK;
 #else

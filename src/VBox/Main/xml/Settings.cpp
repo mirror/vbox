@@ -4656,7 +4656,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
         /* Check guest property 'name' and 'value' for correctness before
          * placing it to local cache. */
 
-        int rc = GuestPropValidateName(prop.strName.c_str(), (uint32_t)prop.strName.length() + 1  /* '\0' */);
+        int rc = GuestPropValidateName(prop.strName.c_str(), prop.strName.length() + 1  /* '\0' */);
         if (RT_FAILURE(rc))
         {
             LogRel(("WARNING: Guest property with invalid name (%s) present in VM configuration file. Guest property will be dropped.\n",
@@ -4664,7 +4664,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
             continue;
         }
 
-        rc = GuestPropValidateValue(prop.strValue.c_str(), (uint32_t)prop.strValue.length() + 1  /* '\0' */);
+        rc = GuestPropValidateValue(prop.strValue.c_str(), prop.strValue.length() + 1  /* '\0' */);
         if (rc == VERR_TOO_MUCH_DATA)
         {
             LogRel(("WARNING: Guest property '%s' present in VM configuration file and has too long value. Guest property value will be truncated.\n",

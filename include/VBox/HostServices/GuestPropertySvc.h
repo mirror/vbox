@@ -70,10 +70,11 @@
  * Check that a string fits our criteria for a property name.
  *
  * @returns IPRT status code
- * @param   pszName   the string to check, must be valid Utf8
- * @param   cbName    the number of bytes @a pszName points to, including the terminating character.
+ * @param   pszName   The string to check, must be valid Utf8
+ * @param   cbName    The number of bytes @a pszName points to, including the
+ *                    terminating character.
  */
-DECLINLINE(int) GuestPropValidateName(const char *pszName, uint32_t cbName)
+DECLINLINE(int) GuestPropValidateName(const char *pszName, size_t cbName)
 {
     /* Property name is expected to be at least 1 charecter long plus terminating character. */
     AssertReturn(cbName >= 2, VERR_INVALID_PARAMETER);
@@ -95,12 +96,12 @@ DECLINLINE(int) GuestPropValidateName(const char *pszName, uint32_t cbName)
  * @retval  VINF_SUCCESS if guest property value corresponds to all criteria.
  * @retval  VERR_TOO_MUCH_DATA if guest property value size exceeds limits.
  * @retval  VERR_INVALID_PARAMETER if guest property does not correspond to all other criteria.
- * @param   pszValue  the string to check, must be valid Utf8
- * @param   cbValue   the length in bytes of @a pszValue, including the
- *                    terminator
+ * @param   pszValue  The string to check, must be valid utf-8.
+ * @param   cbValue   The size of of @a pszValue in bytes, including the
+ *                    terminator.
  * @thread  HGCM
  */
-DECLINLINE(int) GuestPropValidateValue(const char *pszValue, uint32_t cbValue)
+DECLINLINE(int) GuestPropValidateValue(const char *pszValue, size_t cbValue)
 {
     AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
 
