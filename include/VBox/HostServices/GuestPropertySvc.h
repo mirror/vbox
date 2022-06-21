@@ -37,13 +37,13 @@
 #include <iprt/string.h>
 
 
-/** Maximum length for property names. */
+/** Maximum size for property names (including the terminator). */
 #define GUEST_PROP_MAX_NAME_LEN             64
-/** Maximum length for property values. */
+/** Maximum size for property values (including the terminator). */
 #define GUEST_PROP_MAX_VALUE_LEN            1024
 /** Maximum number of properties per guest. */
 #define GUEST_PROP_MAX_PROPS                256
-/** Maximum size for enumeration patterns. */
+/** Maximum size for enumeration patterns (including the terminators). */
 #define GUEST_PROP_MAX_PATTERN_LEN          1024
 /** Maximum number of changes we remember for guest notifications. */
 #define GUEST_PROP_MAX_GUEST_NOTIFICATIONS  256
@@ -77,7 +77,7 @@ DECLINLINE(int) GuestPropValidateName(const char *pszName, uint32_t cbName)
 {
     /* Property name is expected to be at least 1 charecter long plus terminating character. */
     AssertReturn(cbName >= 2, VERR_INVALID_PARAMETER);
-    AssertReturn(cbName < GUEST_PROP_MAX_NAME_LEN, VERR_INVALID_PARAMETER);
+    AssertReturn(cbName <= GUEST_PROP_MAX_NAME_LEN, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
@@ -106,7 +106,7 @@ DECLINLINE(int) GuestPropValidateValue(const char *pszValue, uint32_t cbValue)
 
     /* Zero-length values are possible, however buffer should contain terminating character at least. */
     AssertReturn(cbValue > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cbValue < GUEST_PROP_MAX_VALUE_LEN, VERR_TOO_MUCH_DATA);
+    AssertReturn(cbValue <= GUEST_PROP_MAX_VALUE_LEN, VERR_TOO_MUCH_DATA);
 
     return VINF_SUCCESS;
 }
