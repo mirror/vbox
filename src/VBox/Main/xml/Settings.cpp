@@ -4646,7 +4646,6 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
     while ((pelmProp = nl1.forAllNodes()))
     {
         GuestProperty prop;
-        int rc;
 
         pelmProp->getAttributeValue("name", prop.strName);
         pelmProp->getAttributeValue("value", prop.strValue);
@@ -4657,7 +4656,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
         /* Check guest property 'name' and 'value' for correctness before
          * placing it to local cache. */
 
-        rc = GuestPropValidateName(prop.strName.c_str(), (uint32_t)prop.strName.length() + 1  /* '\0' */);
+        int rc = GuestPropValidateName(prop.strName.c_str(), (uint32_t)prop.strName.length() + 1  /* '\0' */);
         if (RT_FAILURE(rc))
         {
             LogRel(("WARNING: Guest property with invalid name (%s) present in VM configuration file. Guest property will be dropped.\n",
@@ -4672,19 +4671,12 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
                     prop.strName.c_str()));
 
             /* In order to pass validation, guest property value length (including '\0') in bytes
-             * should be less than GUEST_PROP_MAX_VALUE_LEN. Reallocate it to corresponding size. */
-            rc = prop.strValue.reserveNoThrow(GUEST_PROP_MAX_VALUE_LEN - 1);
-            if (RT_SUCCESS(rc))
-            {
-                prop.strValue.mutableRaw()[GUEST_PROP_MAX_VALUE_LEN - 2] = '\0';
-                prop.strValue.jolt();
-            }
-            else
-            {
-                LogRel(("WARNING: Unable to truncate guest property '%s' valuem rc=%Rrc. Guest property value will be skipped.\n",
-                        prop.strName.c_str(), rc));
-                continue;
-            }
+             * should be less than GUEST_PROP_MAX_VALUE_LEN. Chop it down to an appropriate length. */
+            /** @todo r=bird: Should add a RTCString method for this, as this may create a
+             *        invalid UTF-8 encoding if we chop up a UTF-8 sequence. */
+            Assert(prop.strValue.length() + 1 >= GUEST_PROP_MAX_VALUE_LEN);
+            prop.strValue.mutableRaw()[GUEST_PROP_MAX_VALUE_LEN - 2] = '\0';
+            prop.strValue.jolt();
         }
         else if (RT_FAILURE(rc))
         {
