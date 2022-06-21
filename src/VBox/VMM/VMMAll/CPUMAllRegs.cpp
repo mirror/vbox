@@ -3086,3 +3086,35 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu)
     return CPUMGetGuestVmxApicAccessPageAddrEx(&pVCpu->cpum.s.Guest);
 }
 
+
+/**
+ * Returns whether the given page is the active APIC-access page.
+ *
+ * @returns @c true if the page is the active APIC-access page, @c false otherwises.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCPhysPage  The guest-physical address to check.
+ *
+ * @remarks This function does not assume the guest is not executing in VMX non-root
+ *          mode or even in VMX root-mode. However, it does assert that the VMCS has
+ *          been initialized and the virtual-APIC access VM-execution control was
+ *          enabled.
+ * @note    This is meant to be used by PGM while syncing the page-table entry for
+ *          the APIC-access page. All other queries for the APIC-access page address
+ *          should almost certainly use CPUMGetGuestVmxApicAccessPageAddr() instead!
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu, RTGCPHYS GCPhysPage)
+{
+    PCVMXVVMCS pVmcs = &pVCpu->cpum.s.Guest.hwvirt.vmx.Vmcs;
+    if (   pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx                  /* VMX CPU feature is enabled for the guest. */
+        && (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))         /* Virtual-APIC access VM-execution control is set. */
+    {
+        Assert(pVmcs->fVmcsState & (  VMX_V_VMCS_LAUNCH_STATE_LAUNCHED
+                                    | VMX_V_VMCS_LAUNCH_STATE_CURRENT
+                                    | VMX_V_VMCS_LAUNCH_STATE_ACTIVE));     /* VMCS has been initialized. */
+        Assert(!(pVmcs->u64AddrApicAccess.u & X86_PAGE_4K_OFFSET_MASK));    /* Intel spec. mandates that this is 4K aligned. */
+        Assert(!(GCPhysPage & GUEST_PAGE_OFFSET_MASK));                     /* Caller must be passing us an aligned page. */
+        return pVmcs->u64AddrApicAccess.u == GCPhysPage;
+    }
+    return false;
+}
+
