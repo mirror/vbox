@@ -1518,39 +1518,38 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
     void *pvBuf = NULL;
-    uint32_t cbBuf = GUEST_PROP_MAX_NAME_LEN + GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + 1024;
+    uint32_t cbBuf = GUEST_PROP_MAX_NAME_LEN + GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + _1K;
     /* Because there is a race condition between our reading the size of a
      * property and the guest updating it, we loop a few times here and
      * hope.  Actually this should never go wrong, as we are generous
      * enough with buffer space. */
-    bool fFinished = false;
-    for (unsigned i = 0; (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW) && !fFinished && i < 10; i++)
+    for (unsigned iTry = 0; ; iTry++)
     {
-        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
-        if (NULL == pvTmpBuf)
+        pvBuf = RTMemRealloc(pvBuf, cbBuf);
+        if (pvBuf != NULL)
         {
-            rc = VERR_NO_MEMORY;
-            VBoxControlError("Out of memory\n");
-        }
-        else
-        {
-            pvBuf = pvTmpBuf;
             rc = VbglR3GuestPropWait(u32ClientId, pszPatterns, pvBuf, cbBuf,
                                      u64TimestampIn, u32Timeout,
                                      &pszName, &pszValue, &u64TimestampOut,
                                      &pszFlags, &cbBuf, &fWasDeleted);
+            if (rc == VERR_BUFFER_OVERFLOW && iTry < 10)
+            {
+                cbBuf += _1K; /* Add a bit of extra space to be on the safe side. */
+                continue;
+            }
+            if (rc == VERR_TOO_MUCH_DATA)
+                VBoxControlError("Temporarily unable to get a notification\n");
+            else if (rc == VERR_INTERRUPTED)
+                VBoxControlError("The request timed out or was interrupted\n");
+            else if (RT_FAILURE(rc) && rc != VERR_NOT_FOUND)
+                VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
         }
-        if (VERR_BUFFER_OVERFLOW == rc)
-            /* Leave a bit of extra space to be safe */
-            cbBuf += 1024;
         else
-            fFinished = true;
-        if (rc == VERR_TOO_MUCH_DATA)
-            VBoxControlError("Temporarily unable to get a notification\n");
-        else if (rc == VERR_INTERRUPTED)
-            VBoxControlError("The request timed out or was interrupted\n");
-        else if (RT_FAILURE(rc) && rc != VERR_NOT_FOUND)
-            VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
+        {
+            VBoxControlError("Out of memory\n");
+            rc = VERR_NO_MEMORY;
+        }
+        break;
     }
 
     /*
