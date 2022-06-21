@@ -502,7 +502,7 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
     void *pvBuf = NULL;
     uint32_t cbBuf = GUEST_PROP_MAX_NAME_LEN + GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + _1K;
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; ; i++)
     {
         void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
         if (pvTmpBuf)
@@ -517,21 +517,18 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
                                      0 /* Last timestamp; just wait for next event */, uTimeoutMS,
                                      &pszName, &pszValue, &u64TimestampOut,
                                      &pszFlags, &cbBuf, NULL /* pfWasDeleted */);
+            if (rc == VERR_BUFFER_OVERFLOW && i < 10)
+            {
+                cbBuf += _1K; /* Buffer too small, try it with a bigger one more time. */
+                continue;
+            }
         }
         else
             rc = VERR_NO_MEMORY;
-
-        if (rc == VERR_BUFFER_OVERFLOW)
-        {
-            /* Buffer too small, try it with a bigger one next time. */
-            cbBuf += _1K;
-            continue; /* Try next round. */
-        }
-
-        /* Everything except VERR_BUFFER_OVERLOW makes us bail out ... */
         break;
     }
 
+    RTMemFree(pvBuf);
     return rc;
 }
 
