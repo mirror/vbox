@@ -1324,12 +1324,30 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   m_strTableName, FileManagerLogType_Info);
 
-        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-            initFileTable();
-        else
+        printf("session status %d\n", m_comGuestSession.GetStatus());
+        switch (m_comGuestSession.GetStatus())
         {
-            cleanupGuestSessionListener();
-            closeGuestSession();
+            case KGuestSessionStatus_Started:
+            {
+                initFileTable();
+                break;
+            }
+            case KGuestSessionStatus_Terminating:
+            case KGuestSessionStatus_Terminated:
+            case KGuestSessionStatus_TimedOutKilled:
+            case KGuestSessionStatus_TimedOutAbnormally:
+            case KGuestSessionStatus_Down:
+            case KGuestSessionStatus_Error:
+            {
+                cleanupGuestSessionListener();
+                closeGuestSession();
+                break;
+            }
+            case KGuestSessionStatus_Undefined:
+            case KGuestSessionStatus_Starting:
+            case KGuestSessionStatus_Max:
+            default:
+                break;
         }
     }
     else
