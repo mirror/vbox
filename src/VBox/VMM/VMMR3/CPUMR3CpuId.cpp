@@ -1592,7 +1592,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
-                               | PASSTHRU_FEATURE_TODO(pConfig->enmAbm,        X86_CPUID_AMD_FEATURE_ECX_ABM)
+                               | PASSTHRU_FEATURE_TODO(pConfig->enmAbm,       X86_CPUID_AMD_FEATURE_ECX_ABM)
                                | PASSTHRU_FEATURE_TODO(pConfig->enmSse4A,     X86_CPUID_AMD_FEATURE_ECX_SSE4A)
                                | PASSTHRU_FEATURE_TODO(pConfig->enmMisAlnSse, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE)
                                | PASSTHRU_FEATURE(pConfig->enm3dNowPrf, pHstFeat->f3DNowPrefetch, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF)
@@ -1818,12 +1818,12 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                | PASSTHRU_FEATURE(pConfig->enmFsGsBase, pHstFeat->fFsGsBase, X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE)
                                //| X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT(1)
                                //| X86_CPUID_STEXT_FEATURE_EBX_SGX               RT_BIT(2)
-                               //| X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT(3)
+                               | X86_CPUID_STEXT_FEATURE_EBX_BMI1
                                //| X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT(4)
                                | PASSTHRU_FEATURE(pConfig->enmAvx2, pHstFeat->fAvx2, X86_CPUID_STEXT_FEATURE_EBX_AVX2)
                                | X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY
                                //| X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT(7)
-                               //| X86_CPUID_STEXT_FEATURE_EBX_BMI2              RT_BIT(8)
+                               | X86_CPUID_STEXT_FEATURE_EBX_BMI2
                                //| X86_CPUID_STEXT_FEATURE_EBX_ERMS              RT_BIT(9)
                                | PASSTHRU_FEATURE(pConfig->enmInvpcid, pHstFeat->fInvpcid, X86_CPUID_STEXT_FEATURE_EBX_INVPCID)
                                //| X86_CPUID_STEXT_FEATURE_EBX_RTM               RT_BIT(11)
@@ -2952,12 +2952,10 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 
     /* AMD: */
 
-    /** @cfgm{/CPUM/IsaExts/ABM, isaextcfg, depends}
-     * Whether to expose the AMD ABM instructions to the guest.  For the time
-     * being the default is to only do this for VMs with nested paging and AMD-V or
-     * unrestricted guest mode.
+    /** @cfgm{/CPUM/IsaExts/ABM, isaextcfg, true}
+     * Whether to expose the AMD ABM instructions to the guest.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ABM", &pConfig->enmAbm, fNestedPagingAndFullGuestExec);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ABM", &pConfig->enmAbm, CPUMISAEXTCFG_ENABLED_SUPPORTED);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/IsaExts/SSE4A, isaextcfg, depends}
