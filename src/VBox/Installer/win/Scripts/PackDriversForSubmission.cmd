@@ -285,6 +285,7 @@ rem echo %_MY_OPT_GADIR%\VBoxVideo.inf>>                                        
 rem echo %_MY_OPT_GADIR%\VBoxVideo.sys>>                                                    "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxWddm.inf>>                                                     "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxWddm.sys>>                                                     "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxdx.dll>>                                                       "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxdisp.dll>>                                                     "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxdispd3d.dll>>                                                  "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxnine.dll>>                                                     "%_MY_OPT_DDF_FILE%"
@@ -293,6 +294,7 @@ echo %_MY_OPT_GADIR%\vboxgl.dll>>                                               
 echo %_MY_OPT_GADIR%\VBoxMRXNP.dll>>                                                    "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxSF.sys>>                                                       "%_MY_OPT_DDF_FILE%"
 if ".%_MY_OPT_ARCH%" == ".x86" goto skip_amd64_files
+echo %_MY_OPT_GADIR%\vboxdx-x86.dll>>                                                   "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxdispd3d-x86.dll>>                                              "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxnine-x86.dll>>                                                 "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\vboxsvga-x86.dll>>                                                 "%_MY_OPT_DDF_FILE%"
