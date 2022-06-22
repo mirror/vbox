@@ -2177,6 +2177,28 @@ EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags),          
 #  endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 # endif /* !DOXYGEN_RUNNING */
 
+/*
+ * MULX
+ */
+# define EMIT_MULX(a_cBitsWidth, a_cBitsWidth2x, a_uType, a_fnMul, a_Suffix) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_mulx_u,a_cBitsWidth,a_Suffix), \
+    (a_uType *puDst1, a_uType *puDst2, a_uType uSrc1, a_uType uSrc2)) \
+{ \
+    RTUINT ## a_cBitsWidth2x ## U Result; \
+    a_fnMul(Result, uSrc1, uSrc2, a_cBitsWidth2x); \
+    *puDst2 = Result.s.Lo; /* Lower part first, as we should return the high part when puDst2 == puDst1. */ \
+    *puDst1 = Result.s.Hi; \
+} \
+
+# ifndef DOXYGEN_RUNNING /* this totally confuses doxygen for some reason */
+EMIT_MULX(64, 128, uint64_t, MULDIV_MUL_U128, RT_NOTHING)
+EMIT_MULX(64, 128, uint64_t, MULDIV_MUL_U128, _fallback)
+#  if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_MULX(32, 64,  uint32_t, MULDIV_MUL, RT_NOTHING)
+EMIT_MULX(32, 64,  uint32_t, MULDIV_MUL, _fallback)
+#  endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+# endif /* !DOXYGEN_RUNNING */
+
 
 /*
  * IMUL

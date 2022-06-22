@@ -187,6 +187,7 @@ g_kdOpLocations = {
     # fixed registers.
     'AL':       [],
     'rAX':      [],
+    'rDX':      [],
     'rSI':      [],
     'rDI':      [],
     'rFLAGS':   [],
@@ -332,6 +333,7 @@ g_kdOpTypes = {
     # Fixed registers.
     'AL':           ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  '',      ),
     'rAX':          ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', '',      ),
+    'rDX':          ( 'IDX_ParseFixedReg',  'rDX',    '%eDX', 'REG_EDX', '',      ),
     'CS':           ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  '',      ), # 8086: push CS
     'DS':           ( 'IDX_ParseFixedReg',  'DS',     'ds',   'REG_DS',  '',      ),
     'ES':           ( 'IDX_ParseFixedReg',  'ES',     'es',   'REG_ES',  '',      ),
@@ -3279,7 +3281,7 @@ class SimpleParser(object):
 
             # Check the parameter locations for the encoding.
             if g_kdIemForms[sForm][1] is not None:
-                if len(g_kdIemForms[sForm][1]) != len(oInstr.aoOperands):
+                if len(g_kdIemForms[sForm][1]) > len(oInstr.aoOperands):
                     self.error('%s: The a_Form=%s has a different operand count: %s (form) vs %s'
                                % (sMacro, sForm, len(g_kdIemForms[sForm][1]), len(oInstr.aoOperands) ));
                 else:
@@ -3295,6 +3297,14 @@ class SimpleParser(object):
                                                          or sForm.replace('VEX','').find('V') < 0) ):
                             self.error('%s: current instruction @op%u and a_Form type does not match: %s/%s vs %s'
                                        % (sMacro, iOperand + 1, oInstr.aoOperands[iOperand].sType, sOpFormMatch, sForm, ));
+                    if len(g_kdIemForms[sForm][1]) < len(oInstr.aoOperands):
+                        for iOperand in range(len(g_kdIemForms[sForm][1]), len(oInstr.aoOperands)):
+                            if    oInstr.aoOperands[iOperand].sType != 'FIXED' \
+                              and g_kdOpTypes[oInstr.aoOperands[iOperand].sType][0] != 'IDX_ParseFixedReg':
+                                self.error('%s: Expected FIXED type operand #%u following operands given by a_Form=%s: %s (%s)'
+                                           % (sMacro, iOperand, sForm, oInstr.aoOperands[iOperand].sType,
+                                              oInstr.aoOperands[iOperand].sWhere));
+
 
             # Check @opcodesub
             if oInstr.sSubOpcode \

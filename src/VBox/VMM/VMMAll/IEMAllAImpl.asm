@@ -735,6 +735,87 @@ ENDPROC iemAImpl_rorx_u64
  %endif ; RT_ARCH_AMD64
 
 
+;
+; MULX
+;
+BEGINPROC_FASTCALL iemAImpl_mulx_u32, 16
+        PROLOGUE_4_ARGS
+%ifdef ASM_CALL64_GCC
+        ; A2_32 is EDX - prefect
+        mulx    T0_32, T1_32, A3_32
+        mov     [A1], T1_32 ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], T0_32
+%else
+        ; A1 is xDX - must switch A1 and A2, so EDX=uSrc1
+        xchg    A1, A2
+        mulx    T0_32, T1_32, A3_32
+        mov     [A2], T1_32 ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], T0_32
+%endif
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_mulx_u32
+
+
+BEGINPROC_FASTCALL iemAImpl_mulx_u32_fallback, 16
+        PROLOGUE_4_ARGS
+%ifdef ASM_CALL64_GCC
+        ; A2_32 is EDX, T0_32 is EAX
+        mov     eax, A3_32
+        mul     A2_32
+        mov     [A1], eax ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], edx
+%else
+        ; A1 is xDX, T0_32 is EAX - must switch A1 and A2, so EDX=uSrc1
+        xchg    A1, A2
+        mov     eax, A3_32
+        mul     A2_32
+        mov     [A2], eax ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], edx
+%endif
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_mulx_u32_fallback
+
+%ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_mulx_u64, 16
+        PROLOGUE_4_ARGS
+%ifdef ASM_CALL64_GCC
+        ; A2 is RDX - prefect
+        mulx    T0, T1, A3
+        mov     [A1], T1 ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], T0
+%else
+        ; A1 is xDX - must switch A1 and A2, so RDX=uSrc1
+        xchg    A1, A2
+        mulx    T0, T1, A3
+        mov     [A2], T1 ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], T0
+%endif
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_mulx_u64
+
+
+BEGINPROC_FASTCALL iemAImpl_mulx_u64_fallback, 16
+        PROLOGUE_4_ARGS
+%ifdef ASM_CALL64_GCC
+        ; A2 is RDX, T0 is RAX
+        mov     rax, A3
+        mul     A2
+        mov     [A1], rax ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], rdx
+%else
+        ; A1 is xDX, T0 is RAX - must switch A1 and A2, so RDX=uSrc1
+        xchg    A1, A2
+        mov     rax, A3
+        mul     A2
+        mov     [A2], rax ; Low value first, as we should return the high part if same destination registers.
+        mov     [A0], rdx
+%endif
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_mulx_u64_fallback
+
+%endif
+
+
 ;;
 ; Macro for implementing a bit operator.
 ;

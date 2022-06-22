@@ -1285,6 +1285,18 @@ FNIEMAIMPLBINVEXU64NOEFL iemAImpl_shrx_u64, iemAImpl_shrx_u64_fallback;
 FNIEMAIMPLBINVEXU64NOEFL iemAImpl_rorx_u64;
 /** @}  */
 
+/** @name MULX 32-bit and 64-bit.
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMULXVEXU32, (uint32_t *puDst1, uint32_t *puDst2, uint32_t uSrc1, uint32_t uSrc2));
+typedef FNIEMAIMPLMULXVEXU32 *PFNIEMAIMPLMULXVEXU32;
+FNIEMAIMPLMULXVEXU32 iemAImpl_mulx_u32, iemAImpl_mulx_u32_fallback;
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMULXVEXU64, (uint64_t *puDst1, uint64_t *puDst2, uint64_t uSrc1, uint64_t uSrc2));
+typedef FNIEMAIMPLMULXVEXU64 *PFNIEMAIMPLMULXVEXU64;
+FNIEMAIMPLMULXVEXU64 iemAImpl_mulx_u64, iemAImpl_mulx_u64_fallback;
+/** @}  */
+
+
 /** @name Exchange memory with register operations.
  * @{ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));

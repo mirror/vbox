@@ -1092,8 +1092,104 @@ FNIEMOP_DEF(iemOp_pdep_Gy_By_Ey)
 /*  Opcode VEX.0F38 0xf6 - invalid. */
 /*  Opcode VEX.66.0F38 0xf6 - invalid (legacy only). */
 /*  Opcode VEX.F3.0F38 0xf6 - invalid (legacy only). */
-/*  Opcode VEX.F2.0F38 0xf6 - invalid (vex only). */
-FNIEMOP_STUB(iemOp_mulx_By_Gy_rDX_Ey);
+
+
+/** Opcode VEX.F2.0F38 0xf6 (vex only) */
+FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
+{
+    IEMOP_MNEMONIC4(VEX_RVM, MULX, mulx, Gy, By, Ey, rDX, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi2)
+        return iemOp_InvalidNeedRM(pVCpu);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_VEX_DECODING_L0();
+        if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        {
+            IEM_MC_BEGIN(4, 0);
+            IEM_MC_ARG(uint64_t *,          pDst1,   0);
+            IEM_MC_ARG(uint64_t *,          pDst2,   1);
+            IEM_MC_ARG(uint64_t,            uSrc1,   2);
+            IEM_MC_ARG(uint64_t,            uSrc2,   3);
+            IEM_MC_REF_GREG_U64(pDst1,   IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_GREG_U64(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_FETCH_GREG_U64(uSrc1, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U64(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u64, iemAImpl_mulx_u64_fallback),
+                                     pDst1, pDst2, uSrc1, uSrc2);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(4, 0);
+            IEM_MC_ARG(uint32_t *,          pDst1,   0);
+            IEM_MC_ARG(uint32_t *,          pDst2,   1);
+            IEM_MC_ARG(uint32_t,            uSrc1,   2);
+            IEM_MC_ARG(uint32_t,            uSrc2,   3);
+            IEM_MC_REF_GREG_U32(pDst1,   IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_GREG_U32(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_FETCH_GREG_U32(uSrc1, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U32(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u32, iemAImpl_mulx_u32_fallback),
+                                     pDst1, pDst2, uSrc1, uSrc2);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst2);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst1);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        {
+            IEM_MC_BEGIN(4, 1);
+            IEM_MC_ARG(uint64_t *,          pDst1,   0);
+            IEM_MC_ARG(uint64_t *,          pDst2,   1);
+            IEM_MC_ARG(uint64_t,            uSrc1,   2);
+            IEM_MC_ARG(uint64_t,            uSrc2,   3);
+            IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEM_MC_FETCH_MEM_U64(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_FETCH_GREG_U64(uSrc1, X86_GREG_xDX);
+            IEM_MC_REF_GREG_U64(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_REF_GREG_U64(pDst1,   IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u64, iemAImpl_mulx_u64_fallback),
+                                     pDst1, pDst2, uSrc1, uSrc2);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(4, 1);
+            IEM_MC_ARG(uint32_t *,          pDst1,   0);
+            IEM_MC_ARG(uint32_t *,          pDst2,   1);
+            IEM_MC_ARG(uint32_t,            uSrc1,   2);
+            IEM_MC_ARG(uint32_t,            uSrc2,   3);
+            IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEM_MC_FETCH_MEM_U32(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_FETCH_GREG_U32(uSrc1, X86_GREG_xDX);
+            IEM_MC_REF_GREG_U32(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_REF_GREG_U32(pDst1,   IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u32, iemAImpl_mulx_u32_fallback),
+                                     pDst1, pDst2, uSrc1, uSrc2);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst2);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst1);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode VEX.0F38 0xf7 (vex only). */
