@@ -139,6 +139,21 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_RAX_FSxBX_RCX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_EAX_EBX_ECX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_EAX_FSxBX_ECX_icebp);
 
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_RBX_RCX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_FSxBX_RCX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_EBX_ECX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_FSxBX_ECX_icebp);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_RBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_FSxBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_EBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_FSxBX_icebp);
+
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_RBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_FSxBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_EBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_FSxBX_icebp);
+
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_RAX_RBX_RCX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_RAX_FSxBX_RCX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_EAX_EBX_ECX_icebp);
@@ -807,7 +822,7 @@ static uint8_t bs3CpuInstr2_BitScan(uint8_t bMode, BS3CPUINSTR2_TEST_BITSCAN_T c
                         Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64 (dst)", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
                     if (   (TrapFrame.Ctx.rflags.u16 & paTests[i].fEflCheck)
                         != (paTests[i].paSubTests[k].fEflOut & paTests[i].fEflCheck))
-                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (output)",
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (output)",
                                        paTests[i].paSubTests[k].fEflOut & paTests[i].fEflCheck,
                                        TrapFrame.Ctx.rflags.u16 & paTests[i].fEflCheck);
 
@@ -1453,11 +1468,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_andn)(uint8_t bMode)
                     Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64 (dst)", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
                 if (   (TrapFrame.Ctx.rflags.u16 & ANDN_CHECK_EFLAGS)
                     != ((fOkay ? s_aTests[i].fEFlags : Ctx.rflags.u16) & ANDN_CHECK_EFLAGS))
-                    Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (output)",
+                    Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (output)",
                                    (fOkay ? s_aTests[i].fEFlags : Ctx.rflags.u16) & ANDN_CHECK_EFLAGS, TrapFrame.Ctx.rflags.u16 & ANDN_CHECK_EFLAGS);
                 if (   (TrapFrame.Ctx.rflags.u16 & ~(ANDN_CHECK_EFLAGS | ANDN_IGNORE_EFLAGS) & X86_EFL_STATUS_BITS)
                     != (Ctx.rflags.u16           & ~(ANDN_CHECK_EFLAGS | ANDN_IGNORE_EFLAGS) & X86_EFL_STATUS_BITS))
-                    Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (immutable)",
+                    Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (immutable)",
                                    Ctx.rflags.u16           & ~(ANDN_CHECK_EFLAGS | ANDN_IGNORE_EFLAGS) & X86_EFL_STATUS_BITS,
                                    TrapFrame.Ctx.rflags.u16 & ~(ANDN_CHECK_EFLAGS | ANDN_IGNORE_EFLAGS) & X86_EFL_STATUS_BITS);
 
@@ -1590,12 +1605,12 @@ static uint8_t bs3CpuInstr2_Common_Gy_Ey_By(uint8_t bMode, BS3CPUINSTR2_TEST_Gy_
                         Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
                     if (   (TrapFrame.Ctx.rflags.u16 & fEflCheck)
                         != ((fOkay ? paTests[i].paSubTests[k].fEflOut : Ctx.rflags.u16) & fEflCheck))
-                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (output)",
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (output)",
                                        (fOkay ? paTests[i].paSubTests[k].fEflOut : Ctx.rflags.u16) & fEflCheck,
                                        TrapFrame.Ctx.rflags.u16 & fEflCheck);
                     if (   (TrapFrame.Ctx.rflags.u16 & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS)
                         != (Ctx.rflags.u16           & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS))
-                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (immutable)",
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (immutable)",
                                        Ctx.rflags.u16           & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS,
                                        TrapFrame.Ctx.rflags.u16 & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS);
 
@@ -1652,6 +1667,130 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bextr)(uint8_t bMode)
     };
     return bs3CpuInstr2_Common_Gy_Ey_By(bMode, s_aTests, RT_ELEMENTS(s_aTests), X86_CPUID_STEXT_FEATURE_EBX_BMI1,
                                         X86_EFL_STATUS_BITS, X86_EFL_AF | X86_EFL_SF | X86_EFL_PF);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bzhi)(uint8_t bMode)
+{
+    /* 64 bits register width (32 bits in 32- and 16-bit modes): */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests64[] =
+    {
+        {   0,                  0,                      /* -> */ 0,                     X86_EFL_ZF },
+        {   0,                  ~(RTCCUINTXREG)255,     /* -> */ 0,                     X86_EFL_ZF },
+        {   0,                  64,                     /* -> */ 0,                     X86_EFL_ZF | X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,   64,                     /* -> */ ~(RTCCUINTXREG)0,      X86_EFL_CF | X86_EFL_SF },
+        {   ~(RTCCUINTXREG)0,   63,
+        /* -> */ ARCH_BITS >= 64 ? ~(RTCCUINTXREG)0 >> 1 : ~(RTCCUINTXREG)0, ARCH_BITS >= 64 ? 0 : X86_EFL_CF | X86_EFL_SF },
+        {   ~(RTCCUINTXREG)0 << 31 | UINT32_C(0x63849607), 24, /* -> */ UINT32_C(0x00849607), 0 },
+        {   ~(RTCCUINTXREG)0 << 31 | UINT32_C(0x63849607), 33,
+        /* -> */ ARCH_BITS >= 64 ? UINT64_C(0x1e3849607) : UINT32_C(0xe3849607), ARCH_BITS >= 64 ? 0 : X86_EFL_CF | X86_EFL_SF },
+    };
+
+    /* 32-bit register width */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests32[] =
+    {
+        {   0,                  0,                      /* -> */ 0,                     X86_EFL_ZF },
+        {   0,                  ~(RTCCUINTXREG)255,     /* -> */ 0,                     X86_EFL_ZF },
+        {   0,                  32,                     /* -> */ 0,                     X86_EFL_ZF | X86_EFL_CF },
+        {   ~(RTCCUINTXREG)0,   32,                     /* -> */ UINT32_MAX,            X86_EFL_CF | X86_EFL_SF },
+        {   ~(RTCCUINTXREG)0,   31,                     /* -> */ UINT32_MAX >> 1,       0 },
+        {   UINT32_C(0x1230fd34), 15,                   /* -> */ UINT32_C(0x00007d34),  0 },
+    };
+
+    static BS3CPUINSTR2_TEST_Gy_Ey_By_T const s_aTests[] =
+    {
+        { BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_RBX_RCX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_FSxBX_RCX_icebp), true,  6, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_EBX_ECX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+        { BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_FSxBX_ECX_icebp), true,  6, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+    };
+    return bs3CpuInstr2_Common_Gy_Ey_By(bMode, s_aTests, RT_ELEMENTS(s_aTests), X86_CPUID_STEXT_FEATURE_EBX_BMI2,
+                                        X86_EFL_STATUS_BITS, 0);
+}
+
+
+/** @note This is a Gy_By_Ey format instruction, so we're switching the two
+ *        source registers around when calling bs3CpuInstr2_Common_Gy_Ey_By.
+ *        Sorry for the confusion, but it saves some unnecessary code dup. */
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_pdep)(uint8_t bMode)
+{
+    /* 64 bits register width (32 bits in 32- and 16-bit modes): */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests64[] =
+    {   /*  Mask (RBX/[FS:xBX]), source=RCX */
+        {   0,                  0,                      /* -> */ 0,                     0 },
+        {   0,                  ~(RTCCUINTXREG)0,       /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   0,                      /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   ~(RTCCUINTXREG)0,       /* -> */ ~(RTCCUINTXREG)0,      0 },
+#if ARCH_BITS >= 64
+        {   UINT64_C(0x3586049947589201), ~(RTCCUINTXREG)0,         /* -> */ UINT64_C(0x3586049947589201),  0 },
+        {   UINT64_C(0x3586049947589201), ~(RTCCUINTXREG)7,         /* -> */ UINT64_C(0x3586049947588000),  0 },
+#endif
+        {           UINT32_C(0x47589201), ~(RTCCUINTXREG)0,         /* -> */         UINT32_C(0x47589201),  0 },
+        {           UINT32_C(0x47589201), ~(RTCCUINTXREG)7,         /* -> */         UINT32_C(0x47588000),  0 },
+    };
+
+    /* 32-bit register width */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests32[] =
+    {   /*  Mask (EBX/[FS:xBX]), source=ECX */
+        {   0,                  0,                      /* -> */ 0,                     0 },
+        {   0,                  ~(RTCCUINTXREG)0,       /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   0,                      /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   ~(RTCCUINTXREG)0,       /* -> */ UINT32_MAX,            0 },
+        {   UINT32_C(0x01010101), ~(RTCCUINTXREG)0,     /* -> */ UINT32_C(0x01010101),  0 },
+        {   UINT32_C(0x01010101), ~(RTCCUINTXREG)3,     /* -> */ UINT32_C(0x01010000),  0 },
+        {   UINT32_C(0x47589201), ~(RTCCUINTXREG)0,     /* -> */ UINT32_C(0x47589201),  0 },
+    };
+
+    static BS3CPUINSTR2_TEST_Gy_Ey_By_T const s_aTests[] =
+    {
+        { BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_RBX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_FSxBX_icebp), true,  6, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_EBX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+        { BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_FSxBX_icebp), true,  6, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+    };
+    return bs3CpuInstr2_Common_Gy_Ey_By(bMode, s_aTests, RT_ELEMENTS(s_aTests), X86_CPUID_STEXT_FEATURE_EBX_BMI2, 0, 0);
+}
+
+
+/** @note Same note as for bs3CpuInstr2_pdep */
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_pext)(uint8_t bMode)
+{
+    /* 64 bits register width (32 bits in 32- and 16-bit modes): */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests64[] =
+    {   /*  Mask (RBX/[FS:xBX]), source=RCX */
+        {   0,                  0,                      /* -> */ 0,                     0 },
+        {   0,                  ~(RTCCUINTXREG)0,       /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   0,                      /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   ~(RTCCUINTXREG)0,       /* -> */ ~(RTCCUINTXREG)0,      0 },
+#if ARCH_BITS >= 64
+        {   UINT64_C(0x3586049947589201), ~(RTCCUINTXREG)0,         /* -> */ UINT64_C(0x00000000007fffff),  0 },
+        {   UINT64_C(0x3586049947589201), ~(RTCCUINTXREG)7,         /* -> */ UINT64_C(0x00000000007ffffe),  0 },
+#endif
+        {           UINT32_C(0x47589201), ~(RTCCUINTXREG)0,         /* -> */         UINT32_C(0x000007ff),  0 },
+        {           UINT32_C(0x47589201), ~(RTCCUINTXREG)7,         /* -> */         UINT32_C(0x000007fe),  0 },
+    };
+
+    /* 32-bit register width */
+    static BS3CPUINSTR2_SUBTEST_Gy_Ey_By_T const s_aSubTests32[] =
+    {   /*  Mask (EBX/[FS:xBX]), source=ECX */
+        {   0,                  0,                      /* -> */ 0,                     0 },
+        {   0,                  ~(RTCCUINTXREG)0,       /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   0,                      /* -> */ 0,                     0 },
+        {   ~(RTCCUINTXREG)0,   ~(RTCCUINTXREG)0,       /* -> */ UINT32_MAX,            0 },
+        {   UINT32_C(0x01010101), ~(RTCCUINTXREG)0,     /* -> */ UINT32_C(0x0000000f),  0 },
+        {   UINT32_C(0x01010101), ~(RTCCUINTXREG)3,     /* -> */ UINT32_C(0x0000000e),  0 },
+        {   UINT32_C(0x47589201), ~(RTCCUINTXREG)0,     /* -> */ UINT32_C(0x000007ff),  0 },
+        {   UINT32_C(0x47589201), ~(RTCCUINTXREG)7,     /* -> */ UINT32_C(0x000007fe),  0 },
+    };
+
+    static BS3CPUINSTR2_TEST_Gy_Ey_By_T const s_aTests[] =
+    {
+        { BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_RBX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_FSxBX_icebp), true,  6, RT_ELEMENTS(s_aSubTests64), s_aSubTests64 },
+        { BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_EBX_icebp),   false, 5, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+        { BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_FSxBX_icebp), true,  6, RT_ELEMENTS(s_aSubTests32), s_aSubTests32 },
+    };
+    return bs3CpuInstr2_Common_Gy_Ey_By(bMode, s_aTests, RT_ELEMENTS(s_aTests), X86_CPUID_STEXT_FEATURE_EBX_BMI2, 0, 0);
 }
 
 
@@ -1865,12 +2004,12 @@ static uint8_t bs3CpuInstr2_Common_By_Ey(uint8_t bMode, BS3CPUINSTR2_TEST_By_Ey_
                         Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64 (dst)", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
                     if (   (TrapFrame.Ctx.rflags.u16 & fEflCheck)
                         != ((fOkay ? paTests[i].paSubTests[k].fEflOut : Ctx.rflags.u16) & fEflCheck))
-                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (output)",
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (output)",
                                        (fOkay ? paTests[i].paSubTests[k].fEflOut : Ctx.rflags.u16) & fEflCheck,
                                        TrapFrame.Ctx.rflags.u16 & fEflCheck);
                     if (   (TrapFrame.Ctx.rflags.u16 & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS)
                         != (Ctx.rflags.u16           & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS))
-                        Bs3TestFailedF("Expected EFLAGS = %#06RX64, got %#06RX64 (immutable)",
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32 (immutable)",
                                        Ctx.rflags.u16           & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS,
                                        TrapFrame.Ctx.rflags.u16 & ~(fEflCheck | fEflIgnore) & X86_EFL_STATUS_BITS);
 

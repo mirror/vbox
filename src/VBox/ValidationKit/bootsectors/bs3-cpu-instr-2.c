@@ -45,6 +45,9 @@ BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_bextr);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_blsr);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_blsmsk);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_blsi);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_bzhi);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_pdep);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_pext);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_rorx);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_shlx);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_sarx);
@@ -79,6 +82,9 @@ static const BS3TESTMODEENTRY g_aModeTests[] =
     BS3TESTMODEENTRY_CMN("blsi",    bs3CpuInstr2_blsi),
 #endif
 #if 1 /* BMI2 */
+    BS3TESTMODEENTRY_CMN("bzhi",  bs3CpuInstr2_bzhi),
+    BS3TESTMODEENTRY_CMN("pdep",  bs3CpuInstr2_pdep),
+    BS3TESTMODEENTRY_CMN("pext",  bs3CpuInstr2_pext),
     BS3TESTMODEENTRY_CMN("rorx",  bs3CpuInstr2_rorx),
     BS3TESTMODEENTRY_CMN("shlx",  bs3CpuInstr2_shlx),
     BS3TESTMODEENTRY_CMN("sarx",  bs3CpuInstr2_sarx),
