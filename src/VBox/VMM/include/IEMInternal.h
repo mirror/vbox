@@ -1249,6 +1249,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU32, (uint32_t *pu32Dst, uint32
 typedef FNIEMAIMPLBINVEXU32 *PFNIEMAIMPLBINVEXU32;
 FNIEMAIMPLBINVEXU32 iemAImpl_andn_u32, iemAImpl_andn_u32_fallback;
 FNIEMAIMPLBINVEXU32 iemAImpl_bextr_u32, iemAImpl_bextr_u32_fallback;
+FNIEMAIMPLBINVEXU32 iemAImpl_bzhi_u32, iemAImpl_bzhi_u32_fallback;
 /** @}  */
 
 /** @name Arithmetic three operand operations on quad words (binary).
@@ -1257,6 +1258,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU64, (uint64_t *pu64Dst, uint64
 typedef FNIEMAIMPLBINVEXU64 *PFNIEMAIMPLBINVEXU64;
 FNIEMAIMPLBINVEXU64 iemAImpl_andn_u64, iemAImpl_andn_u64_fallback;
 FNIEMAIMPLBINVEXU64 iemAImpl_bextr_u64, iemAImpl_bextr_u64_fallback;
+FNIEMAIMPLBINVEXU64 iemAImpl_bzhi_u64, iemAImpl_bzhi_u64_fallback;
 /** @}  */
 
 /** @name Arithmetic three operand operations on double words w/o EFLAGS (binary).

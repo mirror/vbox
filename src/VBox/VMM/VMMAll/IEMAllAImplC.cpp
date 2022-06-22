@@ -1765,6 +1765,39 @@ EMIT_BLSI(64, uint64_t, RT_NOTHING)
 EMIT_BLSI(32, uint32_t, RT_NOTHING)
 #endif
 
+/*
+ * BZHI (BMI2 instruction)
+ */
+#define EMIT_BZHI(a_cBits, a_Type, a_Suffix) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_bzhi_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc1, \
+                                                                      a_Type uSrc2, uint32_t *pfEFlags)) \
+{ \
+    /* uSrc1 is considered virtually zero extended to 512 bits width. */ \
+    uint32_t      fEfl      = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+    a_Type        uResult; \
+    uint8_t const iFirstBit = (uint8_t)uSrc2; \
+    if (iFirstBit < a_cBits) \
+        uResult = uSrc1 & (((a_Type)1 << iFirstBit) - 1); \
+    else \
+    { \
+        uResult = uSrc1; \
+        fEfl   |= X86_EFL_CF; \
+    } \
+    *puDst = uResult; \
+    fEfl |= X86_EFL_CALC_ZF(uResult); \
+    fEfl |= X86_EFL_CALC_SF(uResult, a_cBits); \
+    *pfEFlags = fEfl; \
+}
+
+EMIT_BZHI(64, uint64_t, _fallback)
+EMIT_BZHI(32, uint32_t, _fallback)
+#if defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_BZHI(64, uint64_t, RT_NOTHING)
+#endif
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_BZHI(32, uint32_t, RT_NOTHING)
+#endif
+
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 
 /*

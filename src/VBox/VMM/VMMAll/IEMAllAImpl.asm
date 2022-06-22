@@ -581,6 +581,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 ;                 instr,  modified-flags,                                                                undefined-flags
 IEMIMPL_VEX_BIN_OP andn,  (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF),                           (X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_VEX_BIN_OP bextr, (X86_EFL_OF | X86_EFL_ZF | X86_EFL_CF),                                        (X86_EFL_SF | X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_VEX_BIN_OP bzhi,  (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF),                           (X86_EFL_AF | X86_EFL_PF)
 
 ;;
 ; Macro for implementing BLSR, BLCMSK and BLSI (fallbacks implemented in C).
