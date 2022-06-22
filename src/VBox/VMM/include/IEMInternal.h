@@ -993,6 +993,12 @@ typedef struct IEM
 #define IEMOPFORM_VEX_MVR_REG   (IEMOPFORM_VEX_MVR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg (memory) */
 #define IEMOPFORM_VEX_MVR_MEM   (IEMOPFORM_VEX_MVR | IEMOPFORM_NOT_MOD3)
+/** VEX+ModR/M+/n: vvvv, r/m */
+#define IEMOPFORM_VEX_VM        12
+/** VEX+ModR/M+/n: vvvv, r/m (register) */
+#define IEMOPFORM_VEX_VM_REG    (IEMOPFORM_VEX_VM | IEMOPFORM_MOD3)
+/** VEX+ModR/M+/n: vvvv, r/m (memory) */
+#define IEMOPFORM_VEX_VM_MEM    (IEMOPFORM_VEX_VM | IEMOPFORM_NOT_MOD3)
 
 /** Fixed register instruction, no R/M. */
 #define IEMOPFORM_FIXED         16
@@ -1184,6 +1190,9 @@ FNIEMAIMPLBINU32 iemAImpl_sbb_u32, iemAImpl_sbb_u32_locked;
 FNIEMAIMPLBINU32  iemAImpl_or_u32,  iemAImpl_or_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_xor_u32, iemAImpl_xor_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_and_u32, iemAImpl_and_u32_locked;
+FNIEMAIMPLBINU32 iemAImpl_blsi_u32, iemAImpl_blsi_u32_fallback;
+FNIEMAIMPLBINU32 iemAImpl_blsr_u32, iemAImpl_blsr_u32_fallback;
+FNIEMAIMPLBINU32 iemAImpl_blsmsk_u32, iemAImpl_blsmsk_u32_fallback;
 /** @}  */
 
 /** @name Arithmetic assignment operations on quad words (binary).
@@ -1197,6 +1206,9 @@ FNIEMAIMPLBINU64 iemAImpl_sbb_u64, iemAImpl_sbb_u64_locked;
 FNIEMAIMPLBINU64  iemAImpl_or_u64,  iemAImpl_or_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_xor_u64, iemAImpl_xor_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_and_u64, iemAImpl_and_u64_locked;
+FNIEMAIMPLBINU64 iemAImpl_blsi_u64, iemAImpl_blsi_u64_fallback;
+FNIEMAIMPLBINU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
+FNIEMAIMPLBINU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
 /** @}  */
 
 /** @name Compare operations (thrown in with the binary ops).

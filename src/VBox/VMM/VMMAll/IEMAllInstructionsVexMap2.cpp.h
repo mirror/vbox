@@ -640,17 +640,127 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 /*  Opcode VEX.0F38 0xf3 - invalid. */
 /*  Opcode VEX.66.0F38 0xf3 - invalid. */
 
-/*  Opcode VEX.F3.0F38 0xf3 /0 - invalid). */
-/*  Opcode VEX.F3.0F38 0xf3 /1). */
-FNIEMOP_STUB_1(iemOp_VGrp17_blsr_By_Ey, uint8_t, bRm);
-/*  Opcode VEX.F3.0F38 0xf3 /2). */
-FNIEMOP_STUB_1(iemOp_VGrp17_blsmsk_By_Ey, uint8_t, bRm);
-/*  Opcode VEX.F3.0F38 0xf3 /3). */
-FNIEMOP_STUB_1(iemOp_VGrp17_blsi_By_Ey, uint8_t, bRm);
-/*  Opcode VEX.F3.0F38 0xf3 /4 - invalid). */
-/*  Opcode VEX.F3.0F38 0xf3 /5 - invalid). */
-/*  Opcode VEX.F3.0F38 0xf3 /6 - invalid). */
-/*  Opcode VEX.F3.0F38 0xf3 /7 - invalid). */
+/*  Opcode VEX.F3.0F38 0xf3 /0 - invalid. */
+
+/** Body for the vex group 17 instructions. */
+#define IEMOP_BODY_By_Ey(a_Instr) \
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1) \
+        return iemOp_InvalidWithRM(pVCpu, bRm); /* decode memory variant? */ \
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF); \
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) \
+    { \
+        /* \
+         * Register, register. \
+         */ \
+        IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+        if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
+        { \
+            IEM_MC_BEGIN(3, 0); \
+            IEM_MC_ARG(uint64_t *,          pDst,    0); \
+            IEM_MC_ARG(uint64_t,            uSrc,    1); \
+            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_REF_GREG_U64(pDst,   IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_FETCH_GREG_U64(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
+                                                                 iemAImpl_ ## a_Instr ## _u64_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            IEM_MC_BEGIN(3, 0); \
+            IEM_MC_ARG(uint32_t *,          pDst,    0); \
+            IEM_MC_ARG(uint32_t,            uSrc,    1); \
+            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_REF_GREG_U32(pDst,   IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_FETCH_GREG_U32(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
+                                                                 iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+    } \
+    else \
+    { \
+        /* \
+         * Register, memory. \
+         */ \
+        if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
+        { \
+            IEM_MC_BEGIN(3, 1); \
+            IEM_MC_ARG(uint64_t *,          pDst,    0); \
+            IEM_MC_ARG(uint64_t,            uSrc,    1); \
+            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_REF_GREG_U64(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
+                                                                 iemAImpl_ ## a_Instr ## _u64_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            IEM_MC_BEGIN(3, 1); \
+            IEM_MC_ARG(uint32_t *,          pDst,    0); \
+            IEM_MC_ARG(uint32_t,            uSrc,    1); \
+            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_REF_GREG_U32(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
+                                                                 iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+    } \
+    return VINF_SUCCESS
+
+
+/*  Opcode VEX.F3.0F38 0xf3 /1. */
+/** @opcode  /1
+ *  @opmaps  vexgrp17 */
+FNIEMOP_DEF_1(iemOp_VGrp17_blsr_By_Ey, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(VEX_VM, BLSR, blsr, By, Ey, DISOPTYPE_HARMLESS, 0);
+    IEMOP_BODY_By_Ey(blsr);
+}
+
+
+/*  Opcode VEX.F3.0F38 0xf3 /2. */
+/** @opcode  /2
+ *  @opmaps  vexgrp17 */
+FNIEMOP_DEF_1(iemOp_VGrp17_blsmsk_By_Ey, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(VEX_VM, BLSMSK, blsmsk, By, Ey, DISOPTYPE_HARMLESS, 0);
+    IEMOP_BODY_By_Ey(blsmsk);
+}
+
+
+/*  Opcode VEX.F3.0F38 0xf3 /3. */
+/** @opcode  /3
+ *  @opmaps  vexgrp17 */
+FNIEMOP_DEF_1(iemOp_VGrp17_blsi_By_Ey, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(VEX_VM, BLSI, blsi, By, Ey, DISOPTYPE_HARMLESS, 0);
+    IEMOP_BODY_By_Ey(blsi);
+}
+
+
+/*  Opcode VEX.F3.0F38 0xf3 /4 - invalid. */
+/*  Opcode VEX.F3.0F38 0xf3 /5 - invalid. */
+/*  Opcode VEX.F3.0F38 0xf3 /6 - invalid. */
+/*  Opcode VEX.F3.0F38 0xf3 /7 - invalid. */
 
 /**
  * Group 17 jump table for the VEX.F3 variant.
@@ -1216,7 +1326,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap2[] =
     /* 0xf0 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xf1 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xf2 */  iemOp_andn_Gy_By_Ey,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf3 */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_VGrp17_f3,            iemOp_InvalidNeedRM,
+    /* 0xf3 */  iemOp_VGrp17_f3,            iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xf4 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xf5 */  iemOp_bzhi_Gy_Ey_By,        iemOp_InvalidNeedRM,        iemOp_pext_Gy_By_Ey,        iemOp_pdep_Gy_By_Ey,
     /* 0xf6 */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_mulx_By_Gy_rDX_Ey,

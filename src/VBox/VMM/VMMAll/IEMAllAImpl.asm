@@ -582,6 +582,48 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 IEMIMPL_VEX_BIN_OP andn,  (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF),                           (X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_VEX_BIN_OP bextr, (X86_EFL_OF | X86_EFL_ZF | X86_EFL_CF),                                        (X86_EFL_SF | X86_EFL_AF | X86_EFL_PF)
 
+;;
+; Macro for implementing BLSR, BLCMSK and BLSI (fallbacks implemented in C).
+;
+; This will generate code for the 32 and 64 bit accesses, except on 32-bit system
+; where the 64-bit accesses requires hand coding.
+;
+; All the functions takes a pointer to the destination memory operand in A0,
+; the source register operand in A1 and a pointer to eflags in A2.
+;
+; @param        1       The instruction mnemonic.
+; @param        2       The modified flags.
+; @param        3       The undefined flags.
+;
+%macro IEMIMPL_VEX_BIN_OP_2 3
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        mov     T0_32, [A0]
+        %1      T0_32, A1_32
+        mov     [A0], T0_32
+        IEM_SAVE_FLAGS                 A2, %2, %3
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        mov     T0, [A0]
+        %1      T0, A1
+        mov     [A0], T0
+        IEM_SAVE_FLAGS                 A2, %2, %3
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %endif ; RT_ARCH_AMD64
+%endmacro
+
+;                  instr,  modified-flags,                                      undefined-flags
+IEMIMPL_VEX_BIN_OP_2 blsr,   (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_VEX_BIN_OP_2 blsmsk, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_VEX_BIN_OP_2 blsi,   (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
+
 
 ;;
 ; Macro for implementing a binary operator w/o flags, VEX variant with separate input/output.
