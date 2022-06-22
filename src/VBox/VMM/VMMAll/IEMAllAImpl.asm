@@ -637,8 +637,10 @@ IEMIMPL_VEX_BIN_OP_2 blsi,   (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF)
 ; in A2 and a pointer to eflags in A3.
 ;
 ; @param        1       The instruction mnemonic.
+; @param        2       Fallback instruction if applicable.
+; @param        3       Whether to emit fallback or not.
 ;
-%macro IEMIMPL_VEX_BIN_OP_NOEFL 2
+%macro IEMIMPL_VEX_BIN_OP_NOEFL 3
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         %1      T0_32, A1_32, A2_32
@@ -646,19 +648,21 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
+ %if %3
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_fallback, 12
         PROLOGUE_3_ARGS
- %ifdef ASM_CALL64_GCC
+  %ifdef ASM_CALL64_GCC
         mov     cl, A2_8
         %2      A1_32, cl
         mov     [A0], A1_32
- %else
+  %else
         xchg    A2, A0
         %2      A1_32, cl
         mov     [A2], A1_32
- %endif
+  %endif
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32_fallback
+ %endif
 
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
@@ -668,27 +672,31 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
 
+ %if %3
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_fallback, 12
         PROLOGUE_3_ARGS
- %ifdef ASM_CALL64_GCC
+  %ifdef ASM_CALL64_GCC
         mov     cl, A2_8
         %2      A1, cl
         mov     [A0], A1_32
- %else
+  %else
         xchg    A2, A0
         %2      A1, cl
         mov     [A2], A1_32
- %endif
+  %endif
         mov     [A0], A1
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64_fallback
+  %endif
  %endif ; RT_ARCH_AMD64
 %endmacro
 
-;                           instr, fallback instr
-IEMIMPL_VEX_BIN_OP_NOEFL    sarx,  sar
-IEMIMPL_VEX_BIN_OP_NOEFL    shlx,  shl
-IEMIMPL_VEX_BIN_OP_NOEFL    shrx,  shr
+;                           instr, fallback instr, emit fallback
+IEMIMPL_VEX_BIN_OP_NOEFL    sarx,  sar,            1
+IEMIMPL_VEX_BIN_OP_NOEFL    shlx,  shl,            1
+IEMIMPL_VEX_BIN_OP_NOEFL    shrx,  shr,            1
+IEMIMPL_VEX_BIN_OP_NOEFL    pdep,  nop,            0
+IEMIMPL_VEX_BIN_OP_NOEFL    pext,  nop,            0
 
 
 ;

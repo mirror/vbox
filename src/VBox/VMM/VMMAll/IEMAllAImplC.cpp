@@ -3381,7 +3381,6 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shlx_u,a_cBitsWidth,a_Suffix),(a_uTy
 EMIT_SHLX(64, uint64_t, RT_NOTHING)
 EMIT_SHLX(64, uint64_t, _fallback)
 #endif
-
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHLX(32, uint32_t, RT_NOTHING)
 EMIT_SHLX(32, uint32_t, _fallback)
@@ -3402,7 +3401,6 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrx_u,a_cBitsWidth,a_Suffix),(a_uTy
 EMIT_SHRX(64, uint64_t, RT_NOTHING)
 EMIT_SHRX(64, uint64_t, _fallback)
 #endif
-
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHRX(32, uint32_t, RT_NOTHING)
 EMIT_SHRX(32, uint32_t, _fallback)
@@ -3423,11 +3421,61 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sarx_u,a_cBitsWidth,a_Suffix),(a_uTy
 EMIT_SARX(64, uint64_t, int64_t, RT_NOTHING)
 EMIT_SARX(64, uint64_t, int64_t, _fallback)
 #endif
-
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SARX(32, uint32_t, int32_t, RT_NOTHING)
 EMIT_SARX(32, uint32_t, int32_t, _fallback)
 #endif
+
+
+/*
+ * PDEP (BMI2)
+ */
+#define EMIT_PDEP(a_cBitsWidth, a_uType, a_Suffix) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_pdep_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, a_uType fMask)) \
+{ \
+    a_uType uResult = 0; \
+    for (unsigned iMaskBit = 0, iBit = 0; iMaskBit < a_cBitsWidth; iMaskBit++) \
+        if (fMask & ((a_uType)1 << iMaskBit)) \
+        { \
+            uResult |= ((uSrc >> iBit) & 1) << iMaskBit; \
+            iBit++; \
+        } \
+    *puDst = uResult; \
+}
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_PDEP(64, uint64_t, RT_NOTHING)
+#endif
+EMIT_PDEP(64, uint64_t, _fallback)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_PDEP(32, uint32_t, RT_NOTHING)
+#endif
+EMIT_PDEP(32, uint32_t, _fallback)
+
+/*
+ * PEXT (BMI2)
+ */
+#define EMIT_PEXT(a_cBitsWidth, a_uType, a_Suffix) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_pext_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, a_uType fMask)) \
+{ \
+    a_uType uResult = 0; \
+    for (unsigned iMaskBit = 0, iBit = 0; iMaskBit < a_cBitsWidth; iMaskBit++) \
+        if (fMask & ((a_uType)1 << iMaskBit)) \
+        { \
+            uResult |= ((uSrc >> iMaskBit) & 1) << iBit; \
+            iBit++; \
+        } \
+    *puDst = uResult; \
+}
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_PEXT(64, uint64_t, RT_NOTHING)
+#endif
+EMIT_PEXT(64, uint64_t, _fallback)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_PEXT(32, uint32_t, RT_NOTHING)
+#endif
+EMIT_PEXT(32, uint32_t, _fallback)
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)

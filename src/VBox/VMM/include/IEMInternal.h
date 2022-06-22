@@ -1265,6 +1265,8 @@ FNIEMAIMPLBINVEXU64 iemAImpl_bzhi_u64, iemAImpl_bzhi_u64_fallback;
  * @{ */
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU32NOEFL, (uint32_t *pu32Dst, uint32_t u32Src1, uint32_t u32Src2));
 typedef FNIEMAIMPLBINVEXU32NOEFL *PFNIEMAIMPLBINVEXU32NOEFL;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_pdep_u32, iemAImpl_pdep_u32_fallback;
+FNIEMAIMPLBINVEXU32NOEFL iemAImpl_pext_u32, iemAImpl_pext_u32_fallback;
 FNIEMAIMPLBINVEXU32NOEFL iemAImpl_sarx_u32, iemAImpl_sarx_u32_fallback;
 FNIEMAIMPLBINVEXU32NOEFL iemAImpl_shlx_u32, iemAImpl_shlx_u32_fallback;
 FNIEMAIMPLBINVEXU32NOEFL iemAImpl_shrx_u32, iemAImpl_shrx_u32_fallback;
@@ -1275,6 +1277,8 @@ FNIEMAIMPLBINVEXU32NOEFL iemAImpl_rorx_u32;
  * @{ */
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINVEXU64NOEFL, (uint64_t *pu64Dst, uint64_t u64Src1, uint64_t u64Src2));
 typedef FNIEMAIMPLBINVEXU64NOEFL *PFNIEMAIMPLBINVEXU64NOEFL;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_pdep_u64, iemAImpl_pdep_u64_fallback;
+FNIEMAIMPLBINVEXU64NOEFL iemAImpl_pext_u64, iemAImpl_pext_u64_fallback;
 FNIEMAIMPLBINVEXU64NOEFL iemAImpl_sarx_u64, iemAImpl_sarx_u64_fallback;
 FNIEMAIMPLBINVEXU64NOEFL iemAImpl_shlx_u64, iemAImpl_shlx_u64_fallback;
 FNIEMAIMPLBINVEXU64NOEFL iemAImpl_shrx_u64, iemAImpl_shrx_u64_fallback;
