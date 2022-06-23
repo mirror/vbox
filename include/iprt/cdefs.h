@@ -1288,6 +1288,65 @@
 # define RT_NOEXCEPT_EX(a_Expr)
 #endif
 
+/** @def RT_ALIGNAS_VAR
+ * Wrapper for the C++ alignas keyword when used on variables.
+ *
+ * This must be put before the storage class and type.
+ *
+ * @param   a_cbAlign   The alignment.  Must be power of two.
+ * @note    If C++11 is not enabled/detectable, alternatives will be used where
+ *          available. */
+/** @def RT_ALIGNAS_TYPE
+ * Wrapper for the C++ alignas keyword when used on types.
+ *
+ * When using struct, this must follow the struct keyword.
+ *
+ * @param   a_cbAlign   The alignment.  Must be power of two.
+ * @note    If C++11 is not enabled/detectable, alternatives will be used where
+ *          available. */
+/** @def RT_ALIGNAS_MEMB
+ * Wrapper for the C++ alignas keyword when used on structure members.
+ *
+ * This must be put before the variable type.
+ *
+ * @param   a_cbAlign   The alignment.  Must be power of two.
+ * @note    If C++11 is not enabled/detectable, alternatives will be used where
+ *          available. */
+#ifdef __cplusplus
+# if __cplusplus >= 201100 || defined(DOXYGEN_RUNNING)
+#  define RT_ALIGNAS_VAR(a_cbAlign)     alignas(a_cbAlign)
+#  define RT_ALIGNAS_TYPE(a_cbAlign)    alignas(a_cbAlign)
+#  define RT_ALIGNAS_MEMB(a_cbAlign)    alignas(a_cbAlign)
+# endif
+#endif
+#ifndef RT_ALIGNAS_VAR
+# ifdef _MSC_VER
+#  define RT_ALIGNAS_VAR(a_cbAlign)     __declspec(align(a_cbAlign))
+#  define RT_ALIGNAS_TYPE(a_cbAlign)    __declspec(align(a_cbAlign))
+#  define RT_ALIGNAS_MEMB(a_cbAlign)    __declspec(align(a_cbAlign))
+# elif defined(__GNUC__)
+#  define RT_ALIGNAS_VAR(a_cbAlign)     __attribute__((__aligned__(a_cbAlign)))
+#  define RT_ALIGNAS_TYPE(a_cbAlign)    __attribute__((__aligned__(a_cbAlign)))
+#  define RT_ALIGNAS_MEMB(a_cbAlign)    __attribute__((__aligned__(a_cbAlign)))
+# else
+#  define RT_ALIGNAS_VAR(a_cbAlign)
+#  define RT_ALIGNAS_TYPE(a_cbAlign)
+#  define RT_ALIGNAS_MEMB(a_cbAlign)
+# endif
+#endif
+
+/** @def RT_CACHELINE_SIZE
+ * The typical cache line size for the target architecture.
+ * @see RT_ALIGNAS_VAR, RT_ALIGNAS_TYPE, RT_ALIGNAS_MEMB
+ */
+#if  defined(RT_ARCH_X86)     || defined(RT_ARCH_AMD64) \
+  || defined(RT_ARCH_ARM32)   || defined(RT_ARCH_ARM64) \
+  || defined(RT_ARCH_SPARC32) || defined(RT_ARCH_SPARC64) \
+  || defined(DOXYGEN_RUNNING)
+# define RT_CACHELINE_SIZE  64
+#else
+# define RT_CACHELINE_SIZE  128     /* better overdo it */
+#endif
 
 /** @def RT_FALL_THROUGH
  * Tell the compiler that we're falling through to the next case in a switch.
