@@ -3104,13 +3104,12 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu)
  */
 VMM_INT_DECL(bool) CPUMIsGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu, RTGCPHYS GCPhysPage)
 {
-    PCVMXVVMCS pVmcs = &pVCpu->cpum.s.Guest.hwvirt.vmx.Vmcs;
+    PCCPUMCTX  pCtx  = &pVCpu->cpum.s.Guest;
+    PCVMXVVMCS pVmcs = &pCtx->hwvirt.vmx.Vmcs;
     if (   pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx                  /* VMX CPU feature is enabled for the guest. */
+        && pCtx->hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS                      /* A VMCS is currently active. */
         && (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))         /* Virtual-APIC access VM-execution control is set. */
     {
-        Assert(pVmcs->fVmcsState & (  VMX_V_VMCS_LAUNCH_STATE_LAUNCHED
-                                    | VMX_V_VMCS_LAUNCH_STATE_CURRENT
-                                    | VMX_V_VMCS_LAUNCH_STATE_ACTIVE));     /* VMCS has been initialized. */
         Assert(!(pVmcs->u64AddrApicAccess.u & X86_PAGE_4K_OFFSET_MASK));    /* Intel spec. mandates that this is 4K aligned. */
         Assert(!(GCPhysPage & GUEST_PAGE_OFFSET_MASK));                     /* Caller must be passing us an aligned page. */
         return pVmcs->u64AddrApicAccess.u == GCPhysPage;
