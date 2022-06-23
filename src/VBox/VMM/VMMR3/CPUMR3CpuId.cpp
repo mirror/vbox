@@ -1390,7 +1390,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | PASSTHRU_FEATURE(pConfig->enmSse42, pHstFeat->fSse42, X86_CPUID_FEATURE_ECX_SSE4_2)
                            //| X86_CPUID_FEATURE_ECX_X2APIC - turned on later by the device if enabled.
                            | PASSTHRU_FEATURE_TODO(pConfig->enmMovBe, X86_CPUID_FEATURE_ECX_MOVBE)
-                           | PASSTHRU_FEATURE_TODO(pConfig->enmPopCnt, X86_CPUID_FEATURE_ECX_POPCNT)
+                           | PASSTHRU_FEATURE(pConfig->enmPopCnt, pHstFeat->fPopCnt, X86_CPUID_FEATURE_ECX_POPCNT)
                            //| X86_CPUID_FEATURE_ECX_TSCDEADL - not implemented yet.
                            | PASSTHRU_FEATURE_TODO(pConfig->enmAesNi, X86_CPUID_FEATURE_ECX_AES)
                            | PASSTHRU_FEATURE(pConfig->enmXSave, pHstFeat->fXSaveRstor, X86_CPUID_FEATURE_ECX_XSAVE)
@@ -1592,7 +1592,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
-                               | PASSTHRU_FEATURE_TODO(pConfig->enmAbm,       X86_CPUID_AMD_FEATURE_ECX_ABM)
+                               | PASSTHRU_FEATURE(pConfig->enmAbm,       pHstFeat->fAbm, X86_CPUID_AMD_FEATURE_ECX_ABM)
                                | PASSTHRU_FEATURE_TODO(pConfig->enmSse4A,     X86_CPUID_AMD_FEATURE_ECX_SSE4A)
                                | PASSTHRU_FEATURE_TODO(pConfig->enmMisAlnSse, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE)
                                | PASSTHRU_FEATURE(pConfig->enm3dNowPrf, pHstFeat->f3DNowPrefetch, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF)
@@ -2872,12 +2872,10 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "PCLMUL", &pConfig->enmPClMul, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/IsaExts/POPCNT, isaextcfg, depends}
-     * Whether to expose the POPCNT instructions to the guest.  For the time
-     * being the default is to only do this for VMs with nested paging and AMD-V or
-     * unrestricted guest mode.
+    /** @cfgm{/CPUM/IsaExts/POPCNT, isaextcfg, true}
+     * Whether to expose the POPCNT instructions to the guest.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "POPCNT", &pConfig->enmPopCnt, fNestedPagingAndFullGuestExec);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "POPCNT", &pConfig->enmPopCnt, CPUMISAEXTCFG_ENABLED_SUPPORTED);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/IsaExts/MOVBE, isaextcfg, depends}
