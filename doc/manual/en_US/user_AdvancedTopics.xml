@@ -7613,8 +7613,8 @@ $ usbip list -l
 
     <para>
       The feature is disabled by default and can be enabled by adding the key
-      <literal>ServerSession0</literal> to 
-      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> in the 
+      <literal>ServerSession0</literal> to
+      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> in the
       Windows registry. The value has to be of type <literal>REG_DWORD</literal>,
       whereas <literal>1</literal> enables the feature, anything else will disable
       the feature again.
@@ -7628,8 +7628,8 @@ $ usbip list -l
         <listitem>
           <para>
             Due to different Windows sessions having their own set of resources,
-            there might be some issues with accessing network shares created in 
-           the interactive user session when at least one of &product-name; 
+            there might be some issues with accessing network shares created in
+           the interactive user session when at least one of &product-name;
             processes are running in session 0.
           </para>
           <para>
@@ -7637,7 +7637,7 @@ $ usbip list -l
             is to establish permanent access to the share and restart the host after that.
             This might change in the future, however.
           </para>
-        </listitem> 
+        </listitem>
       </itemizedlist>
     </sect2>
 
