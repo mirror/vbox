@@ -3107,7 +3107,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu, RTGCPHYS GC
     PCCPUMCTX  pCtx  = &pVCpu->cpum.s.Guest;
     PCVMXVVMCS pVmcs = &pCtx->hwvirt.vmx.Vmcs;
     if (   pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx                  /* VMX CPU feature is enabled for the guest. */
-        && pCtx->hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS                      /* A VMCS is currently active. */
+        && CPUMIsGuestVmxCurrentVmcsValid(pCtx)                             /* A VMCS is currently active. */
         && (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))         /* Virtual-APIC access VM-execution control is set. */
     {
         Assert(!(pVmcs->u64AddrApicAccess.u & X86_PAGE_4K_OFFSET_MASK));    /* Intel spec. mandates that this is 4K aligned. */
