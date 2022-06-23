@@ -70,6 +70,12 @@ Rules for adding a changelog entry to make them look more uniform:
           make it possible to wait for a guest to reach a certain run level</para>
       </listitem>
 
+      <listitem>
+        <para>Windows hosts: Added experimental support of running autostarted VMs
+          in session 0, to allow running VMS even when a usser is not being logged
+          in (disabled by default, please consult the manual)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
