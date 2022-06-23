@@ -4170,7 +4170,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicAccess(PVMCPUCC pVCpu, PCVMXVEXIT
     VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-
 }
 
 
@@ -7133,10 +7132,17 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
         {
             PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-            int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
+            int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess | X86_PAGE_4K_OFFSET_MASK,
                                                 pVM->iem.s.hVmxApicAccessPage, 0 /*uUser*/, NULL /*pszDesc*/);
             if (RT_SUCCESS(rc))
-            { /* likely */ }
+            {
+                /*
+                 * This to make double sure we trigger EPT violations (rather than EPT misconfigs)
+                 * in case we somehow managed to sync the page when CPUMIsGuestVmxApicAccessPageAddr
+                 * returned false while sycing its PTE in (SyncHandlerPte).
+                 */
+                PGMShwMakePageNotPresent(pVCpu, GCPhysApicAccess, 0 /* fOpFlags */);
+            }
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
         }
@@ -9929,24 +9935,24 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
              * Query the source VM-exit (from the execution engine) that caused this access
              * within the APIC-access page. Currently only HM is supported.
              */
-            AssertMsgReturn(VM_IS_HM_ENABLED(pVM),
-                            ("VM-exit auxiliary info. fetching not supported for execution engine %d\n",
-                             pVM->bMainExecutionEngine), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+            AssertMsg(VM_IS_HM_ENABLED(pVM), ("VM-exit auxiliary info. fetching not supported for execution engine %d\n",
+                                              pVM->bMainExecutionEngine));
             HMEXITAUX HmExitAux;
             RT_ZERO(HmExitAux);
             int const rc = HMR0GetExitAuxInfo(pVCpu, &HmExitAux, HMVMX_READ_EXIT_INSTR_LEN
                                                                | HMVMX_READ_EXIT_QUALIFICATION
                                                                | HMVMX_READ_IDT_VECTORING_INFO
                                                                | HMVMX_READ_IDT_VECTORING_ERROR_CODE);
-            AssertRCReturn(rc, rc);
+            AssertRC(rc);
 
             /*
              * Verify the VM-exit reason must be an EPT violation.
              * Other accesses should go through the other handler (iemVmxApicAccessPageHandler).
+             * Refer to @bugref{10092#c33s} for a more detailed explanation.
              */
-            AssertLogRelMsgReturn(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
-                                  ("Unexpected call to the VMX APIC-access page #PF handler for %#RGp (Nested=%#RGp, GCPhysAddr%#RGp) off=%u uReason=%u\n",
-                                   GCPhysPage, GCPhysNestedFault, HmExitAux.Vmx.u64GuestPhysAddr, offAccess, HmExitAux.Vmx.uReason), VERR_IEM_IPE_9);
+            AssertMsg(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
+                      ("Unexpected call to APIC-access page #PF handler for %#RGp off=%u uErr=%#RGx uReason=%u\n",
+                       GCPhysPage, offAccess, uErr, HmExitAux.Vmx.uReason));
 
             /*
              * Construct the virtual APIC-access VM-exit.
@@ -9999,7 +10005,7 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
          *
          * This requires emulating the instruction because we need the bytes being
          * read/written by the instruction not just the offset being accessed within
-         * the APIC-access (which we derive from the faulting address).
+         * the APIC-access page (which we derive from the faulting address).
          */
         return VINF_EM_RAW_EMULATE_INSTR;
     }
