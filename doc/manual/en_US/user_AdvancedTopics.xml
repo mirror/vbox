@@ -7612,12 +7612,12 @@ $ usbip list -l
     </para>
 
     <para>
-      The feature is disabled by default and can be enabled by adding the key
-      <literal>ServerSession0</literal> to
-      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> in the
-      Windows registry. The value has to be of type <literal>REG_DWORD</literal>,
-      whereas <literal>1</literal> enables the feature, anything else will disable
-      the feature again.
+      The feature is disabled by default and can be enabled by creating a REG_DWORD
+      value <literal>ServerSession0</literal> in the key
+      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> of the
+      Windows registry. Specifying <literal>1</literal> as the value's data to
+      enable the feature, or <literal>0</literal> to disable the feature again.
+      A host reboot is needed in order to make the change effective.
     </para>
 
     <sect2 id="vboxsvc-session-0-known-issues">
