@@ -238,6 +238,9 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(a_aaArray, a_fNative)   NULL
 
+#undef  IEM_SELECT_HOST_OR_FALLBACK
+#define IEM_SELECT_HOST_OR_FALLBACK(a_fCpumFeatureMember, a_pfnNative, a_pfnFallback)   NULL
+
 #define iemAImpl_fpu_r32_to_r80         NULL
 #define iemAImpl_fcom_r80_by_r32        NULL
 #define iemAImpl_fadd_r80_by_r32        NULL

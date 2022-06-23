@@ -1772,7 +1772,6 @@ EMIT_BLSI(32, uint32_t, RT_NOTHING)
 IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_bzhi_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc1, \
                                                                       a_Type uSrc2, uint32_t *pfEFlags)) \
 { \
-    /* uSrc1 is considered virtually zero extended to 512 bits width. */ \
     uint32_t      fEfl      = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
     a_Type        uResult; \
     uint8_t const iFirstBit = (uint8_t)uSrc2; \
@@ -1797,6 +1796,80 @@ EMIT_BZHI(64, uint64_t, RT_NOTHING)
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_BZHI(32, uint32_t, RT_NOTHING)
 #endif
+
+/*
+ * POPCNT
+ */
+RT_ALIGNAS_VAR(64) static uint8_t const g_abBitCounts6[64] =
+{
+    0, 1, 1, 2,  1, 2, 2, 3,  1, 2, 2, 3,  2, 3, 3, 4,
+    1, 2, 2, 3,  2, 3, 3, 4,  2, 3, 3, 4,  3, 4, 4, 5,
+    1, 2, 2, 3,  2, 3, 3, 4,  2, 3, 3, 4,  3, 4, 4, 5,
+    2, 3, 3, 4,  3, 4, 4, 5,  3, 4, 4, 5,  4, 5, 5, 6,
+};
+
+/** @todo Use native popcount where possible and employ some more efficient
+ *        algorithm here (or in asm.h fallback)! */
+
+DECLINLINE(uint8_t) iemPopCountU16(uint16_t u16)
+{
+    return g_abBitCounts6[ u16        & 0x3f]
+        +  g_abBitCounts6[(u16 >> 6)  & 0x3f]
+        +  g_abBitCounts6[(u16 >> 12) & 0x3f];
+}
+
+DECLINLINE(uint8_t) iemPopCountU32(uint32_t u32)
+{
+    return g_abBitCounts6[ u32        & 0x3f]
+        +  g_abBitCounts6[(u32 >> 6)  & 0x3f]
+        +  g_abBitCounts6[(u32 >> 12) & 0x3f]
+        +  g_abBitCounts6[(u32 >> 18) & 0x3f]
+        +  g_abBitCounts6[(u32 >> 24) & 0x3f]
+        +  g_abBitCounts6[(u32 >> 30) & 0x3f];
+}
+
+DECLINLINE(uint8_t) iemPopCountU64(uint64_t u64)
+{
+    return g_abBitCounts6[ u64        & 0x3f]
+        +  g_abBitCounts6[(u64 >> 6)  & 0x3f]
+        +  g_abBitCounts6[(u64 >> 12) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 18) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 24) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 30) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 36) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 42) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 48) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 54) & 0x3f]
+        +  g_abBitCounts6[(u64 >> 60) & 0x3f];
+}
+
+#define EMIT_POPCNT(a_cBits, a_Type, a_Suffix) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_popcnt_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc, uint32_t *pfEFlags)) \
+{ \
+    uint32_t    fEfl = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+    a_Type      uResult; \
+    if (uSrc) \
+        uResult = iemPopCountU ## a_cBits(uSrc); \
+    else \
+    { \
+        fEfl |= X86_EFL_ZF; \
+        uResult = 0; \
+    } \
+    *puDst    = uResult; \
+    *pfEFlags = fEfl; \
+}
+
+EMIT_POPCNT(64, uint64_t, _fallback)
+EMIT_POPCNT(32, uint32_t, _fallback)
+EMIT_POPCNT(16, uint16_t, _fallback)
+#if defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_POPCNT(64, uint64_t, RT_NOTHING)
+#endif
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_POPCNT(32, uint32_t, RT_NOTHING)
+EMIT_POPCNT(16, uint16_t, RT_NOTHING)
+#endif
+
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 

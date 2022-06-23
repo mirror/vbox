@@ -7800,8 +7800,24 @@ FNIEMOP_DEF(iemOp_movzx_Gv_Ew)
 
 /** Opcode      0x0f 0xb8 - JMPE (reserved for emulator on IPF) */
 FNIEMOP_UD_STUB(iemOp_jmpe);
+
+
 /** Opcode 0xf3 0x0f 0xb8 - POPCNT Gv, Ev */
-FNIEMOP_STUB(iemOp_popcnt_Gv_Ev);
+FNIEMOP_DEF(iemOp_popcnt_Gv_Ev)
+{
+    IEMOP_MNEMONIC2(RM, POPCNT, popcnt, Gv, Ev, DISOPTYPE_HARMLESS, 0);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fPopCnt)
+        return iemOp_InvalidNeedRM(pVCpu);
+#ifndef TST_IEM_CHECK_MC
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    static const IEMOPBINSIZES s_Native =
+    {   NULL, NULL, iemAImpl_popcnt_u16, NULL, iemAImpl_popcnt_u32, NULL, iemAImpl_popcnt_u64, NULL };
+# endif
+    static const IEMOPBINSIZES s_Fallback =
+    {   NULL, NULL, iemAImpl_popcnt_u16_fallback, NULL, iemAImpl_popcnt_u32_fallback, NULL, iemAImpl_popcnt_u64_fallback, NULL };
+#endif
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEM_SELECT_HOST_OR_FALLBACK(fPopCnt, &s_Native, &s_Fallback));
+}
 
 
 /**
