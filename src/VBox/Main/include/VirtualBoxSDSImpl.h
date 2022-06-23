@@ -107,6 +107,14 @@ private:
     static bool i_getClientUserSid(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername);
 
     /**
+     * Returns whether a VBoxSDS feature is enabled or not.
+     *
+     * @returns \c true if enabled, \c false if not.
+     * @param   a_rStrFeature   Feature to check enabled status for.
+     */
+    static bool i_isFeatureEnabled(com::Utf8Str const &a_rStrFeature);
+
+    /**
      * Looks up the given user.
      *
      * @returns Pointer to the LOCKED per user data.  NULL if not found.

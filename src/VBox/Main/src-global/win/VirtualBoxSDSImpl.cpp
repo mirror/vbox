@@ -225,6 +225,34 @@ void VirtualBoxSDS::FinalRelease()
     LogRelFlowThisFuncLeave();
 }
 
+/* static */
+bool VirtualBoxSDS::i_isFeatureEnabled(com::Utf8Str const &a_rStrFeature)
+{
+    HKEY hKey;
+    LSTATUS lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\Oracle\\VirtualBox\\VBoxSDS", 0, KEY_READ, &hKey);
+    /* Treat any errors as the feature is off. Because the actual error value doesn't matter. */
+    if (lrc != ERROR_SUCCESS)
+        return false;
+
+    PRTUTF16 pwszFeature;
+    int rc = RTStrToUtf16(a_rStrFeature.c_str(), &pwszFeature);
+    AssertRCReturn(rc, false);
+
+    DWORD dwType = 0;
+    DWORD dwValue = 0;
+    DWORD cbValue = sizeof(DWORD);
+    lrc = RegQueryValueExW(hKey, pwszFeature, NULL, &dwType, (LPBYTE)&dwValue, &cbValue);
+
+    RTUtf16Free(pwszFeature);
+
+    bool const fEnabled =    lrc     == ERROR_SUCCESS
+                          && dwType  == REG_DWORD
+                          /* A lot of people are used to putting 0xFF or similar to DWORDs for enabling stuff. */
+                          && dwValue >= 1;
+
+    RegCloseKey(hKey);
+    return fEnabled;
+}
 
 
 /*********************************************************************************************************************************
@@ -304,108 +332,113 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                 if (SUCCEEDED(hrc) && pUserData->m_ptrTheChosenOne.isNull())
                 {
 #ifdef VBOX_WITH_VBOXSVC_SESSION_0
-                    /* Get user token. */
-                    HANDLE hThreadToken = NULL;
-                    hrc = CoImpersonateClient();
-                    if (SUCCEEDED(hrc))
-                    {
-                        hrc = E_FAIL;
-                        if (OpenThreadToken(GetCurrentThread(),
-                                              TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE
-                                            | TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
-                                            TRUE /* OpenAsSelf - for impersonation at SecurityIdentification level */,
-                                            &hThreadToken))
-                        {
-                            HANDLE hNewToken;
-                            if (DuplicateTokenEx(hThreadToken, MAXIMUM_ALLOWED, NULL /*SecurityAttribs*/,
-                                                    SecurityIdentification, TokenPrimary, &hNewToken))
-                            {
-                                CloseHandle(hThreadToken);
-                                hThreadToken = hNewToken;
-                                hrc = S_OK;
-                            }
-                            else
-                                LogRel(("registerVBoxSVC: DuplicateTokenEx failed: %ld\n", GetLastError()));
-                        }
-                        else
-                            LogRel(("registerVBoxSVC: OpenThreadToken failed: %ld\n", GetLastError()));
-
-                        CoRevertToSelf();
-                    }
-                    else
-                        LogRel(("registerVBoxSVC: CoImpersonateClient failed: %Rhrc\n", hrc));
-
-                    /* check windows session */
                     DWORD dwSessionId = 0;
-                    if (SUCCEEDED(hrc) && hThreadToken != NULL)
+                    if (VirtualBoxSDS::i_isFeatureEnabled("ServerSession0"))
                     {
-                        hrc = E_FAIL;
-                        DWORD cbSessionId = sizeof(DWORD);
-                        if (GetTokenInformation(hThreadToken, TokenSessionId, (LPVOID)&dwSessionId, cbSessionId, &cbSessionId))
+                        /* Get user token. */
+                        HANDLE hThreadToken = NULL;
+                        hrc = CoImpersonateClient();
+                        if (SUCCEEDED(hrc))
                         {
-                            if (cbSessionId == sizeof(DWORD))
-                                hrc = S_OK;
-                            else
-                                LogRel(("registerVBoxSVC: GetTokenInformation return value has invalid size\n"));
-                        }
-                        else
-                            LogRel(("registerVBoxSVC: GetTokenInformation failed: %ld\n", GetLastError()));
-                    }
-                    if (SUCCEEDED(hrc) && dwSessionId != 0)
-                    {
-                        /* if VBoxSVC in the Windows session 0 is not started or if it did not
-                            * registered during a minute, start new one */
-                        if (   pUserData->m_pidTheChosenOne == NIL_RTPROCESS
-                            || GetTickCount() - pUserData->m_tickTheChosenOne > 60 * 1000)
-                        {
-                            uint32_t uSessionId = 0;
-                            if (SetTokenInformation(hThreadToken, TokenSessionId, &uSessionId, sizeof(uint32_t)))
+                            hrc = E_FAIL;
+                            if (OpenThreadToken(GetCurrentThread(),
+                                                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE
+                                                | TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
+                                                TRUE /* OpenAsSelf - for impersonation at SecurityIdentification level */,
+                                                &hThreadToken))
                             {
-                                /* start VBoxSVC process */
-                                /* Get the path to the executable directory w/ trailing slash: */
-                                char szPath[RTPATH_MAX];
-                                int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
-                                AssertRCReturn(vrc, vrc);
-                                size_t cbBufLeft = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath));
-                                AssertReturn(cbBufLeft > 0, VERR_FILENAME_TOO_LONG);
-                                char *pszNamePart = &szPath[cbBufLeft]; NOREF(pszNamePart);
-                                cbBufLeft = sizeof(szPath) - cbBufLeft;
-                                static const char s_szVirtualBox_exe[] = "VBoxSVC.exe";
-                                vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
-                                AssertRCReturn(vrc, vrc);
-                                const char *apszArgs[] =
+                                HANDLE hNewToken;
+                                if (DuplicateTokenEx(hThreadToken, MAXIMUM_ALLOWED, NULL /*SecurityAttribs*/,
+                                                        SecurityIdentification, TokenPrimary, &hNewToken))
                                 {
-                                    szPath,
-                                    "--registervbox",
-                                    NULL
-                                };
-
-                                RTPROCESS pid;
-                                vrc = RTProcCreateEx(szPath,
-                                                     apszArgs,
-                                                     RTENV_DEFAULT,
-                                                     RTPROC_FLAGS_TOKEN_SUPPLIED,
-                                                     NULL, NULL, NULL, NULL, NULL, &hThreadToken, &pid);
-
-                                if (RT_SUCCESS(vrc))
-                                {
-                                    pUserData->m_pidTheChosenOne = pid;
-                                    pUserData->m_tickTheChosenOne = GetTickCount();
-                                    hrc = E_PENDING;
+                                    CloseHandle(hThreadToken);
+                                    hThreadToken = hNewToken;
+                                    hrc = S_OK;
                                 }
                                 else
-                                    LogRel(("registerVBoxSVC: Create VBoxSVC process failed: %Rrc\n", vrc));
+                                    LogRel(("registerVBoxSVC: DuplicateTokenEx failed: %ld\n", GetLastError()));
                             }
                             else
-                            {
-                                hrc = E_FAIL;
-                                LogRel(("registerVBoxSVC: SetTokenInformation failed: %ld\n", GetLastError()));
-                            }
+                                LogRel(("registerVBoxSVC: OpenThreadToken failed: %ld\n", GetLastError()));
+
+                            CoRevertToSelf();
                         }
-                        else /* the VBoxSVC in Windows session 0 already started */
-                            hrc = E_PENDING;
-                    }
-                    CloseHandle(hThreadToken);
+                        else
+                            LogRel(("registerVBoxSVC: CoImpersonateClient failed: %Rhrc\n", hrc));
+
+                        /* check windows session */
+                        if (SUCCEEDED(hrc) && hThreadToken != NULL)
+                        {
+                            hrc = E_FAIL;
+                            DWORD cbSessionId = sizeof(DWORD);
+                            if (GetTokenInformation(hThreadToken, TokenSessionId, (LPVOID)&dwSessionId, cbSessionId, &cbSessionId))
+                            {
+                                if (cbSessionId == sizeof(DWORD))
+                                    hrc = S_OK;
+                                else
+                                    LogRel(("registerVBoxSVC: GetTokenInformation return value has invalid size\n"));
+                            }
+                            else
+                                LogRel(("registerVBoxSVC: GetTokenInformation failed: %ld\n", GetLastError()));
+                        }
+                        /* Either the "VBoxSVC in windows session 0" feature is off or the request from VBoxSVC running
+                         * in windows session 0. */
+                        if (SUCCEEDED(hrc) && dwSessionId != 0)
+                        {
+                            /* if VBoxSVC in the Windows session 0 is not started or if it did not
+                                * registered during a minute, start new one */
+                            if (   pUserData->m_pidTheChosenOne == NIL_RTPROCESS
+                                || GetTickCount() - pUserData->m_tickTheChosenOne > 60 * 1000)
+                            {
+                                uint32_t uSessionId = 0;
+                                if (SetTokenInformation(hThreadToken, TokenSessionId, &uSessionId, sizeof(uint32_t)))
+                                {
+                                    /* start VBoxSVC process */
+                                    /* Get the path to the executable directory w/ trailing slash: */
+                                    char szPath[RTPATH_MAX];
+                                    int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+                                    AssertRCReturn(vrc, vrc);
+                                    size_t cbBufLeft = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath));
+                                    AssertReturn(cbBufLeft > 0, VERR_FILENAME_TOO_LONG);
+                                    char *pszNamePart = &szPath[cbBufLeft]; NOREF(pszNamePart);
+                                    cbBufLeft = sizeof(szPath) - cbBufLeft;
+                                    static const char s_szVirtualBox_exe[] = "VBoxSVC.exe";
+                                    vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
+                                    AssertRCReturn(vrc, vrc);
+                                    const char *apszArgs[] =
+                                    {
+                                        szPath,
+                                        "--registervbox",
+                                        NULL
+                                    };
+
+                                    RTPROCESS pid;
+                                    vrc = RTProcCreateEx(szPath,
+                                                        apszArgs,
+                                                        RTENV_DEFAULT,
+                                                        RTPROC_FLAGS_TOKEN_SUPPLIED,
+                                                        NULL, NULL, NULL, NULL, NULL, &hThreadToken, &pid);
+
+                                    if (RT_SUCCESS(vrc))
+                                    {
+                                        pUserData->m_pidTheChosenOne = pid;
+                                        pUserData->m_tickTheChosenOne = GetTickCount();
+                                        hrc = E_PENDING;
+                                    }
+                                    else
+                                        LogRel(("registerVBoxSVC: Create VBoxSVC process failed: %Rrc\n", vrc));
+                                }
+                                else
+                                {
+                                    hrc = E_FAIL;
+                                    LogRel(("registerVBoxSVC: SetTokenInformation failed: %ld\n", GetLastError()));
+                                }
+                            }
+                            else /* the VBoxSVC in Windows session 0 already started */
+                                hrc = E_PENDING;
+                        }
+                        CloseHandle(hThreadToken);
+                    } /* Feature enabled */
 
                     if (SUCCEEDED(hrc) && dwSessionId == 0)
                     {

@@ -6178,6 +6178,14 @@ alice = {
 
 <screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled off</screen>
 
+      <note>
+        <para>
+          On Windows hosts, starting VMs via the autostart service might cause some
+          issues, as the virtual machines are starting within the same session as
+          VBoxSVC. For more information see <xref linkend="vboxsvc-session-0" />.
+        </para>
+      </note>
+
     </sect2>
 
   </sect1>
@@ -7587,6 +7595,51 @@ $ usbip list -l
       </listitem>
 
     </itemizedlist>
+
+  </sect1>
+
+  <sect1 id="vboxsvc-session-0">
+
+    <title>VBoxSVC running in Windows session 0</title>
+
+    <para>
+      &product-name; supports executing the VBoxSVC in Windows session 0.
+      This allows VBoxSVC to run like a regular Windows service, which in turn
+      enables headless VMs to continue running even if the user logs out.
+      <note>
+        <para>This feature currently is marked as being <emphasis role="bold">experimental</emphasis>!</para>
+      </note>
+    </para>
+
+    <para>
+      The feature is disabled by default and can be enabled by adding the key
+      <literal>ServerSession0</literal> to 
+      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> in the 
+      Windows registry. The value has to be of type <literal>REG_DWORD</literal>,
+      whereas <literal>1</literal> enables the feature, anything else will disable
+      the feature again.
+    </para>
+
+    <sect2 id="vboxsvc-session-0-known-issues">
+
+      <title>Known issues</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>
+            Due to different Windows sessions having their own set of resources,
+            there might be some issues with accessing network shares created in 
+           the interactive user session when at least one of &product-name; 
+            processes are running in session 0.
+          </para>
+          <para>
+            For accessing network shares within session 0, a possible workaround
+            is to establish permanent access to the share and restart the host after that.
+            This might change in the future, however.
+          </para>
+        </listitem> 
+      </itemizedlist>
+    </sect2>
 
   </sect1>
 
