@@ -1109,6 +1109,8 @@ typedef struct CPUMFEATURES
     /** Support BMI2 instructions (BZHI, MULX, PDEP, PEXT, RORX, SARX, SHRX,
      * and SHLX). */
     uint32_t        fBmi2 : 1;
+    /** Support POPCNT instruction. */
+    uint32_t        fPopCnt : 1;
     /** Support RDRAND instruction. */
     uint32_t        fRdRand : 1;
     /** Support RDSEED instruction. */
@@ -1173,8 +1175,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 1;
-    uint32_t        fPadding1;
+    uint32_t        fPadding0;
 
 
     /** @name SVM
