@@ -2529,8 +2529,7 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCCPUMCTX pCtx, uint8_t i
  */
 DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCCPUMCTX pCtx)
 {
-    RTGCPHYS const GCPhysVmcs = pCtx->hwvirt.vmx.GCPhysVmcs;
-    return RT_BOOL(GCPhysVmcs != NIL_RTGCPHYS);
+    return pCtx->hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS;
 }
 
 # endif /* !IN_RC */
