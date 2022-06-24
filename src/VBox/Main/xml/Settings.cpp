@@ -81,6 +81,9 @@
 #include <iprt/ldr.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/system.h> /* For RTSystemGetNtVersion() / RTSYSTEM_MAKE_NT_VERSION. */
+#endif
 #include <iprt/uri.h>
 
 // Guest Properties validation.
