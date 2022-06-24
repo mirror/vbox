@@ -229,7 +229,7 @@ void UIMachineSettingsSF::prepareWidgets()
     if (pLayout)
     {
         /* Prepare settings editor: */
-        m_pEditorSharedFolders = new UISharedFoldersEditor;
+        m_pEditorSharedFolders = new UISharedFoldersEditor(this);
         if (m_pEditorSharedFolders)
             pLayout->addWidget(m_pEditorSharedFolders);
     }
