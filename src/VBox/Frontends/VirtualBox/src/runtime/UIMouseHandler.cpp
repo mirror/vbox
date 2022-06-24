@@ -1194,7 +1194,14 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
 
     LONG xShift = 0, yShift = 0;
-    if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+
+#ifdef VBOX_IS_QT6_OR_LATER
+    bool fTouchScreen = (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen);
+#else
+    bool fTouchScreen = (pTouchEvent->device()->type() == QTouchDevice::TouchScreen);
+#endif
+
+    if (fTouchScreen)
     {
         ULONG dummy;
         KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
@@ -1213,14 +1220,14 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
             case Qt::TouchPointMoved:
             case Qt::TouchPointStationary:
                 iTouchPointState = KTouchContactState_InContact;
-                if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+                if (fTouchScreen)
                     iTouchPointState |= KTouchContactState_InRange;
                 break;
             default:
                 break;
         }
 
-        if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+        if (fTouchScreen)
         {
             /* Get absolute touch-point origin: */
             QPoint currentTouchPoint = touchPoint.pos().toPoint();
@@ -1255,7 +1262,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     mouse().PutEventMultiTouch(pTouchEvent->touchPoints().size(),
                                contacts,
-                               pTouchEvent->device()->type() == QTouchDevice::TouchScreen,
+                               fTouchScreen,
                                (ULONG)RTTimeMilliTS());
 
     /* Eat by default? */

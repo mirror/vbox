@@ -2260,7 +2260,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             /* Virtual USB Mouse/Tablet */
             if (   aPointingHID == PointingHIDType_USBMouse
                 || aPointingHID == PointingHIDType_USBTablet
-                || aPointingHID == PointingHIDType_USBMultiTouch)
+                || aPointingHID == PointingHIDType_USBMultiTouch
+                || aPointingHID == PointingHIDType_USBMultiTouchScreenPlusPad)
             {
                 InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
                 InsertConfigNode(pDev,     "0", &pInst);
@@ -2278,12 +2279,27 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                 InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                 InsertConfigString(pLunL1, "Driver",        "MainMouse");
             }
-            if (aPointingHID == PointingHIDType_USBMultiTouch)
+            if (   aPointingHID == PointingHIDType_USBMultiTouch
+                || aPointingHID == PointingHIDType_USBMultiTouchScreenPlusPad)
             {
                 InsertConfigNode(pDev,     "1", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
 
                 InsertConfigString(pCfg,   "Mode", "multitouch");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+            }
+            if (aPointingHID == PointingHIDType_USBMultiTouchScreenPlusPad)
+            {
+                InsertConfigNode(pDev,     "2", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigString(pCfg,   "Mode", "touchpad");
                 InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver",        "MouseQueue");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);

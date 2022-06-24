@@ -1191,13 +1191,23 @@ bool Mouse::i_supportsAbs(void)
 }
 
 
-/** Can we currently send absolute events to the guest? */
+/** Can we currently send multi-touch events (touchscreen variant) to the guest? */
 bool Mouse::i_supportsTS(void)
 {
     bool fTSDev;
 
     i_getDeviceCaps(NULL, NULL, &fTSDev, NULL);
     return fTSDev;
+}
+
+
+/** Can we currently send multi-touch events (touchpad variant) to the guest? */
+bool Mouse::i_supportsTP(void)
+{
+    bool fTPDev;
+
+    i_getDeviceCaps(NULL, NULL, NULL, &fTPDev);
+    return fTPDev;
 }
 
 
