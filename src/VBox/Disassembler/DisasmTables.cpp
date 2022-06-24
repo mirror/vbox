@@ -3003,7 +3003,7 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm000[8] =
     INVALID_OPCODE,
     OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg, IDX_ParseFixedReg, IDX_ParseFixedReg,          OP_MONITOR,         OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX,    DISOPTYPE_HARMLESS ),
     INVALID_OPCODE,
-    INVALID_OPCODE,
+    OP("xgetbv",             0,                  0,          0,          OP_XGETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
     OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
@@ -3016,7 +3016,7 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
     /* 0F 01 MOD=11b */
     OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,   OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX,OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
-    INVALID_OPCODE, /* xsetbv */
+    OP("xsetbv",             0,                  0,          0,          OP_XSETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
     OP("vmmcall",            0,                  0,          0,          OP_VMMCALL, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
