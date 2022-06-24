@@ -843,15 +843,17 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     systemProperties->COMGETTER(DefaultAudioDriver)(&enmAudio);
     switch (enmAudio)
     {
-        case AudioDriverType_Null:          psz = List::tr("Null"); break;
-        case AudioDriverType_WinMM:         psz = "WinMM";          break;
-        case AudioDriverType_OSS:           psz = "OSS";            break;
-        case AudioDriverType_ALSA:          psz = "ALSA";           break;
-        case AudioDriverType_DirectSound:   psz = "DirectSound";    break;
-        case AudioDriverType_CoreAudio:     psz = "CoreAudio";      break;
-        case AudioDriverType_MMPM:          psz = "MMPM";           break;
-        case AudioDriverType_Pulse:         psz = "Pulse";          break;
-        case AudioDriverType_SolAudio:      psz = "SolAudio";       break;
+        case AudioDriverType_Default:       psz = List::tr("Default");     break;
+        case AudioDriverType_Null:          psz = List::tr("Null");        break;
+        case AudioDriverType_OSS:           psz = "OSS";                   break;
+        case AudioDriverType_ALSA:          psz = "ALSA";                  break;
+        case AudioDriverType_Pulse:         psz = "PulseAudio";            break;
+        case AudioDriverType_WinMM:         psz = "WinMM";                 break;
+        case AudioDriverType_DirectSound:   psz = "DirectSound";           break;
+        case AudioDriverType_WAS:           psz = "Windows Audio Session"; break;
+        case AudioDriverType_CoreAudio:     psz = "CoreAudio";             break;
+        case AudioDriverType_SolAudio:      psz = "SolAudio";              break;
+        case AudioDriverType_MMPM:          psz = "MMPM";                  break;
         default:                            psz = List::tr("Unknown");
     }
     RTPrintf(List::tr("Default audio driver:            %s\n"), psz);

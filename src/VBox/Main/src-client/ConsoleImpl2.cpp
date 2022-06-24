@@ -74,6 +74,7 @@
 #include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <VBox/settings.h> /* For MachineConfigFile::getHostDefaultAudioDriver(). */
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
 #include <VBox/vmm/pdmdev.h> /* For PDMAPICMODE enum. */
@@ -3199,8 +3200,24 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             {
                 AudioDriverType_T enmAudioDriver;
                 hrc = audioAdapter->COMGETTER(AudioDriver)(&enmAudioDriver);                    H();
+
+                /* The "Default" audio driver needs special treatment, as we need to figure out which driver to use
+                 * by default on the current platform. */
+                bool const fUseDefaultDrv = enmAudioDriver == AudioDriverType_Default;
+
+                AudioDriverType_T const enmDefaultAudioDriver = settings::MachineConfigFile::getHostDefaultAudioDriver();
+
+                if (fUseDefaultDrv)
+                {
+                    enmAudioDriver = enmDefaultAudioDriver;
+                    if (enmAudioDriver == AudioDriverType_Null)
+                        LogRel(("Audio: Warning: No default driver detected for current platform -- defaulting to Null audio backend\n"));
+                }
+
                 switch (enmAudioDriver)
                 {
+                    case AudioDriverType_Default: /* Can't happen, but handle it anyway. */
+                        RT_FALL_THROUGH();
                     case AudioDriverType_Null:
                         pszAudioDriver = "NullAudio";
                         break;
@@ -3211,25 +3228,43 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                         break;
 # endif
                     case AudioDriverType_DirectSound:
-                        /* Use the windows audio session (WAS) API rather than Direct Sound on windows
+                        /* Use the Windows Audio Session (WAS) API rather than Direct Sound on Windows
                            versions we've tested it on (currently W7+).  Since Vista, Direct Sound has
                            been emulated on top of WAS according to the docs, so better use WAS directly.
 
-                           Set extradata value "VBoxInternal2/Audio/WindowsDrv" "dsound" to no use WasAPI. */
-                        pszAudioDriver = "DSoundAudio";
+                           Set extradata value "VBoxInternal2/Audio/WindowsDrv" "dsound" to no use WasAPI.
+
+                           Keep this hack for backwards compatibility (introduced < 7.0).
+                        */
                         GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/WindowsDrv", &strTmp); H();
-                        if (   RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,1,0)
+                        if (   enmDefaultAudioDriver == AudioDriverType_WAS
                             && (   strTmp.isEmpty()
                                 || strTmp.equalsIgnoreCase("was")
                                 || strTmp.equalsIgnoreCase("wasapi")) )
+                        {
+                            /* Nothing to do here, fall through to WAS driver. */
+                        }
+                        else
+                        {
+                            pszAudioDriver = "DSoundAudio";
+                            break;
+                        }
+                        RT_FALL_THROUGH();
+                    case AudioDriverType_WAS:
+                        if (enmDefaultAudioDriver == AudioDriverType_WAS) /* WAS supported? */
                             pszAudioDriver = "HostAudioWas";
+                        else if (enmDefaultAudioDriver == AudioDriverType_DirectSound)
+                        {
+                            LogRel(("Audio: Warning: Windows Audio Session (WAS) not supported, defaulting to DirectSound backend\n"));
+                            pszAudioDriver = "DSoundAudio";
+                        }
                         break;
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_SOLARIS
                     case AudioDriverType_SolAudio:
                         /* Should not happen, as the Solaris Audio backend is not around anymore.
                          * Remove this sometime later. */
-                        LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
+                        LogRel(("Audio: Warning: Solaris Audio is deprecated, please switch to OSS!\n"));
                         LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
 
                         /* Manually set backend to OSS for now. */
@@ -3260,6 +3295,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                         pszAudioDriver = "oops";
                         AssertFailedBreak();
                 }
+
+                if (fUseDefaultDrv)
+                    LogRel(("Audio: Detected default audio driver type is '%s'\n", pszAudioDriver));
             }
 
             BOOL fAudioEnabledIn = FALSE;

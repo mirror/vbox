@@ -1792,10 +1792,12 @@ HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverTy
 {
     static const AudioDriverType_T aAudioDriverTypes[] =
     {
+        AudioDriverType_Default,
 #ifdef RT_OS_WINDOWS
 # if 0 /* deprecated for many years now */
         AudioDriverType_WinMM,
 # endif
+        AudioDriverType_WAS,
         AudioDriverType_DirectSound,
 #endif
 #ifdef RT_OS_DARWIN

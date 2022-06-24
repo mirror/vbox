@@ -4604,8 +4604,12 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
     {
         // settings before 1.3 used lower case so make sure this is case-insensitive
         strTemp.toUpper();
-        if (strTemp == "NULL")
+        if (strTemp == "DEFAULT")
+            aa.driverType = AudioDriverType_Default;
+        else if (strTemp == "NULL")
             aa.driverType = AudioDriverType_Null;
+        else if (strTemp == "WAS")
+            aa.driverType = AudioDriverType_WAS;
         else if (strTemp == "WINMM")
             aa.driverType = AudioDriverType_WinMM;
         else if ( (strTemp == "DIRECTSOUND") || (strTemp == "DSOUND") )
@@ -4620,7 +4624,7 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
             aa.driverType = AudioDriverType_OSS;
         else if (strTemp == "COREAUDIO")
             aa.driverType = AudioDriverType_CoreAudio;
-        else if (strTemp == "MMPM")
+        else if (strTemp == "MMPM") /* Deprecated; only kept for backwards compatibility. */
             aa.driverType = AudioDriverType_MMPM;
         else
             throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
@@ -7313,13 +7317,15 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         const char *pcszDriver;
         switch (hw.audioAdapter.driverType)
         {
+            case AudioDriverType_Default: pcszDriver = "Default"; break;
             case AudioDriverType_WinMM: pcszDriver = "WinMM"; break;
             case AudioDriverType_DirectSound: pcszDriver = "DirectSound"; break;
-            case AudioDriverType_SolAudio: pcszDriver = "SolAudio"; break;
+            case AudioDriverType_WAS: pcszDriver = "WAS"; break;
             case AudioDriverType_ALSA: pcszDriver = "ALSA"; break;
-            case AudioDriverType_Pulse: pcszDriver = "Pulse"; break;
             case AudioDriverType_OSS: pcszDriver = "OSS"; break;
+            case AudioDriverType_Pulse: pcszDriver = "Pulse"; break;
             case AudioDriverType_CoreAudio: pcszDriver = "CoreAudio"; break;
+            case AudioDriverType_SolAudio: pcszDriver = "SolAudio"; break;
             case AudioDriverType_MMPM: pcszDriver = "MMPM"; break;
             default: /*case AudioDriverType_Null:*/ pcszDriver = "Null"; break;
         }
@@ -8235,16 +8241,24 @@ void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
  * Returns true only if the given AudioDriverType is supported on
  * the current host platform. For example, this would return false
  * for AudioDriverType_DirectSound when compiled on a Linux host.
- * @param drv AudioDriverType_* enum to test.
- * @return true only if the current host supports that driver.
+ *
+*  @return \c true if the current host supports the driver, \c false if not.
+ * @param enmDrvType            AudioDriverType_* enum to test.
  */
 /*static*/
-bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
+bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T enmDrvType)
 {
-    switch (drv)
+    switch (enmDrvType)
     {
+        case AudioDriverType_Default:
+            RT_FALL_THROUGH();
         case AudioDriverType_Null:
 #ifdef RT_OS_WINDOWS
+        case AudioDriverType_WAS:
+            /* We only support WAS on systems we tested so far (Vista+). */
+            if (RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(6,1,0))
+                break;
+            RT_FALL_THROUGH();
         case AudioDriverType_DirectSound:
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
@@ -8274,12 +8288,17 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
  * host platform. On Linux, this will check at runtime whether PulseAudio
  * or ALSA are actually supported on the first call.
  *
+ * When more than one supported audio stack is available, choose the most suited
+ * (probably newest in most cases) one.
+ *
  * @return Default audio driver type for this host platform.
  */
 /*static*/
 AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
 {
 #if defined(RT_OS_WINDOWS)
+    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,1,0))
+        return AudioDriverType_WAS;
     return AudioDriverType_DirectSound;
 
 #elif defined(RT_OS_LINUX)
@@ -8300,9 +8319,11 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
             /* Check if we can load the ALSA library */
              if (RTLdrIsLoadable("libasound.so.2"))
                 s_enmLinuxDriver = AudioDriverType_ALSA;
-        else
 # endif /* VBOX_WITH_AUDIO_ALSA */
-            s_enmLinuxDriver = AudioDriverType_OSS;
+# ifdef VBOX_WITH_AUDIO_OSS
+             else
+                s_enmLinuxDriver = AudioDriverType_OSS;
+# endif /* VBOX_WITH_AUDIO_OSS */
     }
     return s_enmLinuxDriver;
 

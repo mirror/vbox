@@ -2575,11 +2575,15 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
  * between systems with different setup. The driver doesn't leave any traces in
  * saved state. The GUI also might learn this trick if it doesn't use it
  * already. */
-
                 /* disable? */
                 if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "default"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Default));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "null"))
                 {
@@ -2597,6 +2601,11 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "dsound"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "was"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_was));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif /* RT_OS_WINDOWS */

@@ -2158,23 +2158,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             hrc = AudioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
             switch (enmDrvType)
             {
+                case AudioDriverType_Default:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszDrv = "default";
+                    else
+                        pszDrv = Info::tr("Default");
+                    break;
                 case AudioDriverType_Null:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "null";
                     else
                         pszDrv = Info::tr("Null");
-                    break;
-                case AudioDriverType_WinMM:
-                    if (details == VMINFO_MACHINEREADABLE)
-                        pszDrv = "winmm";
-                    else
-                        pszDrv = "WINMM";
-                    break;
-                case AudioDriverType_DirectSound:
-                    if (details == VMINFO_MACHINEREADABLE)
-                        pszDrv = "dsound";
-                    else
-                        pszDrv = "DSOUND";
                     break;
                 case AudioDriverType_OSS:
                     if (details == VMINFO_MACHINEREADABLE)
@@ -2193,6 +2187,24 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         pszDrv = "pulse";
                     else
                         pszDrv = "PulseAudio";
+                    break;
+                case AudioDriverType_WinMM:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszDrv = "winmm";
+                    else
+                        pszDrv = "WINMM";
+                    break;
+                case AudioDriverType_DirectSound:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszDrv = "dsound";
+                    else
+                        pszDrv = "DirectSound";
+                    break;
+                case AudioDriverType_WAS:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszDrv = "was";
+                    else
+                        pszDrv = "Windows Audio Session (WAS)";
                     break;
                 case AudioDriverType_CoreAudio:
                     if (details == VMINFO_MACHINEREADABLE)

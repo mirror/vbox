@@ -23013,17 +23013,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="AudioDriverType"
-    uuid="4bcc3d73-c2fe-40db-b72f-0c2ca9d68496"
+    uuid="32b4acfd-79ab-4b7e-9a1c-92e99f4e000b"
     >
     <desc>
       Host audio driver type.
     </desc>
 
-    <const name="Null"          value="0">
-      <desc>Null value, also means "dummy audio driver".</desc>
+    <const name="Default"       value="0">
+      <desc>Use the default audio driver automatically determined for the host
+        that this VirtualBox instance is running on.
+        Useful for VMs which need to run on different host OSes.
+        <note>
+          Currently not implemented yet; the Null audio driver will be used instead.
+        </note>
+      </desc>
     </const>
-    <const name="WinMM"         value="1">
-        <desc>Windows multimedia (Windows hosts only, not supported at the moment).</desc>
+    <!-- When changing the enum anyway, keep the enum grouped per platforms, starting
+         from oldest audio stack to newest one (if possible). -->
+    <const name="Null"          value="1">
+      <desc>Null value, also means "dummy audio driver".</desc>
     </const>
     <const name="OSS"           value="2">
         <desc>Open Sound System (Linux / Unix hosts only).</desc>
@@ -23031,20 +23039,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="ALSA"          value="3">
         <desc>Advanced Linux Sound Architecture (Linux hosts only).</desc>
     </const>
-    <const name="DirectSound"   value="4">
-        <desc>DirectSound (Windows hosts only).</desc>
-    </const>
-    <const name="CoreAudio"     value="5">
-        <desc>CoreAudio (Mac hosts only).</desc>
-    </const>
-    <const name="MMPM"          value="6">
-        <desc>Reserved for historical reasons.</desc>
-    </const>
-    <const name="Pulse"         value="7">
+    <const name="Pulse"         value="4">
         <desc>PulseAudio (Linux hosts only).</desc>
     </const>
-    <const name="SolAudio"      value="8">
-        <desc>Solaris audio (Solaris hosts only, not supported at the moment).</desc>
+    <const name="WinMM"         value="5">
+        <desc>Windows multimedia (Windows hosts only, not supported at the moment).</desc>
+    </const>
+    <const name="DirectSound"   value="6">
+        <desc>DirectSound (Windows hosts only).</desc>
+    </const>
+    <const name="WAS"           value="7">
+        <desc>Windows Audio Session (Windows hosts only).</desc>
+    </const>
+    <const name="CoreAudio"     value="8">
+        <desc>CoreAudio (Mac hosts only).</desc>
+    </const>
+    <const name="MMPM"          value="9">
+        <desc>Reserved for historical reasons.</desc>
+    </const>
+    <const name="SolAudio"      value="10">
+        <desc>Reserved for historical reasons.</desc>
     </const>
   </enum>
 

@@ -529,14 +529,16 @@ template<> QString toString(const KAudioDriverType &type)
 {
     switch (type)
     {
+        case KAudioDriverType_Default:     return QApplication::translate("UICommon", "Default", "AudioDriverType");
         case KAudioDriverType_Null:        return QApplication::translate("UICommon", "Null Audio", "AudioDriverType");
-        case KAudioDriverType_WinMM:       return QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType");
         case KAudioDriverType_OSS:         return QApplication::translate("UICommon", "OSS Audio", "AudioDriverType");
         case KAudioDriverType_ALSA:        return QApplication::translate("UICommon", "ALSA Audio", "AudioDriverType");
+        case KAudioDriverType_Pulse:       return QApplication::translate("UICommon", "PulseAudio", "AudioDriverType");
+        case KAudioDriverType_WinMM:       return QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType");
         case KAudioDriverType_DirectSound: return QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType");
+        case KAudioDriverType_WAS:         return QApplication::translate("UICommon", "Windows Audio Session", "AudioDriverType");
         case KAudioDriverType_CoreAudio:   return QApplication::translate("UICommon", "Core Audio", "AudioDriverType");
         // case KAudioDriverType_MMPM:
-        case KAudioDriverType_Pulse:       return QApplication::translate("UICommon", "PulseAudio", "AudioDriverType");
         case KAudioDriverType_SolAudio:    return QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
@@ -547,15 +549,17 @@ template<> QString toString(const KAudioDriverType &type)
 template<> KAudioDriverType fromString<KAudioDriverType>(const QString &strType)
 {
     QHash<QString, KAudioDriverType> list;
-    list.insert(QApplication::translate("UICommon", "Null Audio", "AudioDriverType"),          KAudioDriverType_Null);
-    list.insert(QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType"),  KAudioDriverType_WinMM);
-    list.insert(QApplication::translate("UICommon", "OSS Audio", "AudioDriverType"),           KAudioDriverType_OSS);
-    list.insert(QApplication::translate("UICommon", "ALSA Audio", "AudioDriverType"),          KAudioDriverType_ALSA);
-    list.insert(QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType"), KAudioDriverType_DirectSound);
-    list.insert(QApplication::translate("UICommon", "Core Audio", "AudioDriverType"),          KAudioDriverType_CoreAudio);
+    list.insert(QApplication::translate("UICommon", "Default", "AudioDriverType"),              KAudioDriverType_Default);
+    list.insert(QApplication::translate("UICommon", "Null Audio", "AudioDriverType"),            KAudioDriverType_Null);
+    list.insert(QApplication::translate("UICommon", "OSS Audio", "AudioDriverType"),             KAudioDriverType_OSS);
+    list.insert(QApplication::translate("UICommon", "ALSA Audio", "AudioDriverType"),            KAudioDriverType_ALSA);
+    list.insert(QApplication::translate("UICommon", "PulseAudio", "AudioDriverType"),            KAudioDriverType_Pulse);
+    list.insert(QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType"),    KAudioDriverType_WinMM);
+    list.insert(QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType"),   KAudioDriverType_DirectSound);
+    list.insert(QApplication::translate("UICommon", "Windows Audio Session", "AudioDriverType"), KAudioDriverType_WAS);
+    list.insert(QApplication::translate("UICommon", "Core Audio", "AudioDriverType"),            KAudioDriverType_CoreAudio);
     // list.insert(..., KAudioDriverType_MMPM);
-    list.insert(QApplication::translate("UICommon", "PulseAudio", "AudioDriverType"),          KAudioDriverType_Pulse);
-    list.insert(QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType"),       KAudioDriverType_SolAudio);
+    list.insert(QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType"),         KAudioDriverType_SolAudio);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));

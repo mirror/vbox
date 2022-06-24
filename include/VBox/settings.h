@@ -1426,7 +1426,7 @@ public:
                          uint32_t fl,
                          std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
 
-    static bool isAudioDriverAllowedOnThisHost(AudioDriverType_T drv);
+    static bool isAudioDriverAllowedOnThisHost(AudioDriverType_T enmDrvType);
     static AudioDriverType_T getHostDefaultAudioDriver();
 
 private:
