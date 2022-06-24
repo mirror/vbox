@@ -23023,9 +23023,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Use the default audio driver automatically determined for the host
         that this VirtualBox instance is running on.
         Useful for VMs which need to run on different host OSes.
-        <note>
-          Currently not implemented yet; the Null audio driver will be used instead.
-        </note>
       </desc>
     </const>
     <!-- When changing the enum anyway, keep the enum grouped per platforms, starting
