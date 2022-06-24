@@ -138,6 +138,14 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
     }
     else if (uSyscallNo == BS3_SYSCALL_GET_LDTR)
         pTrapFrame->Ctx.rax.u16 = ASMGetLDTR();
+    else if (uSyscallNo == BS3_SYSCALL_SET_XCR0)
+        ASMSetXcr0(RT_MAKE_U64(pTrapFrame->Ctx.rsi.u32, pTrapFrame->Ctx.rdx.u32));
+    else if (uSyscallNo == BS3_SYSCALL_GET_XCR0)
+    {
+        uint64_t const uValue = ASMGetXcr0();
+        pTrapFrame->Ctx.rax.u32 = (uint32_t)uValue;
+        pTrapFrame->Ctx.rdx.u32 = (uint32_t)(uValue >> 32);
+    }
     else
         Bs3Panic();
 }

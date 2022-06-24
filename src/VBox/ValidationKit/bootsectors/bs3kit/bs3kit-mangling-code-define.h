@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2022 Oracle Corporation
+ * Copyright (C) 2007-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,6 +107,7 @@
 #define Bs3RegGetDrX BS3_CMN_MANGLER(Bs3RegGetDrX)
 #define Bs3RegGetLdtr BS3_CMN_MANGLER(Bs3RegGetLdtr)
 #define Bs3RegGetTr BS3_CMN_MANGLER(Bs3RegGetTr)
+#define Bs3RegGetXcr0 BS3_CMN_MANGLER(Bs3RegGetXcr0)
 #define Bs3RegSetCr0 BS3_CMN_MANGLER(Bs3RegSetCr0)
 #define Bs3RegSetCr2 BS3_CMN_MANGLER(Bs3RegSetCr2)
 #define Bs3RegSetCr3 BS3_CMN_MANGLER(Bs3RegSetCr3)
@@ -120,6 +121,7 @@
 #define Bs3RegSetDrX BS3_CMN_MANGLER(Bs3RegSetDrX)
 #define Bs3RegSetLdtr BS3_CMN_MANGLER(Bs3RegSetLdtr)
 #define Bs3RegSetTr BS3_CMN_MANGLER(Bs3RegSetTr)
+#define Bs3RegSetXcr0 BS3_CMN_MANGLER(Bs3RegSetXcr0)
 #define Bs3SelFar32ToFlat32 BS3_CMN_MANGLER(Bs3SelFar32ToFlat32)
 #define Bs3SelFar32ToFlat32NoClobber BS3_CMN_MANGLER(Bs3SelFar32ToFlat32NoClobber)
 #define Bs3SelFlatCodeToProtFar16 BS3_CMN_MANGLER(Bs3SelFlatCodeToProtFar16)

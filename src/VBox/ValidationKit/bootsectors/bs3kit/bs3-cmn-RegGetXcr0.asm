@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3RegSetCr4
+; BS3Kit - Bs3RegGetXcr0
 ;
 
 ;
@@ -35,19 +35,18 @@ TMPL_BEGIN_TEXT
 
 
 ;;
-; @cproto   BS3_CMN_PROTO_STUB(void, Bs3RegSetCr4,(RTCCUINTXREG uValue));
+; @cproto   BS3_CMN_PROTO_STUB(uint64_t, Bs3RegGetXcr0,(void));
 ;
-; @param    uValue      The value to set.
-
+; @returns  Register value.
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-; @uses     No GPRs.
+; @uses     No GPRs, though 16-bit mode the upper 48-bits of rax and rdx are cleared.
 ;
-BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
-        BS3_CALL_CONV_PROLOG 1
+BS3_PROC_BEGIN_CMN Bs3RegGetXcr0, BS3_PBC_HYBRID_SAFE
+        BS3_CALL_CONV_PROLOG 0
         push    xBP
         mov     xBP, xSP
-        push    sSI
+TONLY64 push    rdx
 
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
@@ -57,30 +56,37 @@ BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
         je      .direct_access
 %endif
         ; If not in ring-0, we have to make a system call.
-        mov     si, ss
-        and     si, X86_SEL_RPL
+        mov     ax, ss
+        and     ax, X86_SEL_RPL
         jnz     .via_system_call
 
 .direct_access:
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     cr4, sSI
+TNOT16  push    sCX
+        xor     ecx, ecx
+        xgetbv
+TNOT16  pop     sCX
         jmp     .return
 
 .via_system_call:
-        push    xDX
-        push    xAX
-
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     xAX, BS3_SYSCALL_SET_CRX
-        mov     dl, 4
+        mov     xAX, BS3_SYSCALL_GET_XCR0
         call    Bs3Syscall
-        pop     xAX
-        pop     xDX
 
 .return:
-        pop     sSI
+%if TMPL_BITS == 16
+        ; value [dx cx bx ax]
+        ror     eax, 16
+        mov     bx, ax
+        mov     cx, dx
+        shr     eax, 16
+        shr     edx, 16
+%elif TMPL_BITS == 64
+        mov     eax, eax
+        shr     rdx, 32
+        or      rax, rdx
+        pop     rdx
+%endif
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
+        BS3_CALL_CONV_EPILOG 0
         BS3_HYBRID_RET
-BS3_PROC_END_CMN   Bs3RegSetCr4
+BS3_PROC_END_CMN   Bs3RegGetXcr0
 

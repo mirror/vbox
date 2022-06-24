@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3RegSetCr4
+; BS3Kit - Bs3RegSetXcr0
 ;
 
 ;
@@ -35,19 +35,26 @@ TMPL_BEGIN_TEXT
 
 
 ;;
-; @cproto   BS3_CMN_PROTO_STUB(void, Bs3RegSetCr4,(RTCCUINTXREG uValue));
+; @cproto   BS3_CMN_PROTO_STUB(void, Bs3RegSetXcr0,(uint64_t uValue));
 ;
 ; @param    uValue      The value to set.
 
-; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode,
+;           only 8 bytes for dumping rcx.
 ;
 ; @uses     No GPRs.
 ;
-BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
+BS3_PROC_BEGIN_CMN Bs3RegSetXcr0, BS3_PBC_HYBRID_SAFE
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
         push    sSI
+        push    sDX
+        push    sAX
+
+        ; Load the value
+        mov     sAX, [xBP + xCB + cbCurRetAddr]
+        mov     sDX, [xBP + xCB + cbCurRetAddr + 4]
 
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
@@ -62,25 +69,23 @@ BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
         jnz     .via_system_call
 
 .direct_access:
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     cr4, sSI
+        push    sCX
+        xor     ecx, ecx
+        xsetbv
+        pop     sCX
         jmp     .return
 
 .via_system_call:
-        push    xDX
-        push    xAX
-
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     xAX, BS3_SYSCALL_SET_CRX
-        mov     dl, 4
+        xchg    esi, eax
+        mov     xAX, BS3_SYSCALL_SET_XCR0
         call    Bs3Syscall
-        pop     xAX
-        pop     xDX
 
 .return:
+        pop     sAX
+        pop     sDX
         pop     sSI
         pop     xBP
         BS3_CALL_CONV_EPILOG 1
         BS3_HYBRID_RET
-BS3_PROC_END_CMN   Bs3RegSetCr4
+BS3_PROC_END_CMN   Bs3RegSetXcr0
 

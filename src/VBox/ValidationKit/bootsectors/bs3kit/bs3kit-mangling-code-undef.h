@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2022 Oracle Corporation
+ * Copyright (C) 2007-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,6 +107,7 @@
 #undef Bs3RegGetDrX
 #undef Bs3RegGetLdtr
 #undef Bs3RegGetTr
+#undef Bs3RegGetXcr0
 #undef Bs3RegSetCr0
 #undef Bs3RegSetCr2
 #undef Bs3RegSetCr3
@@ -120,6 +121,7 @@
 #undef Bs3RegSetDrX
 #undef Bs3RegSetLdtr
 #undef Bs3RegSetTr
+#undef Bs3RegSetXcr0
 #undef Bs3SelFar32ToFlat32
 #undef Bs3SelFar32ToFlat32NoClobber
 #undef Bs3SelFlatCodeToProtFar16

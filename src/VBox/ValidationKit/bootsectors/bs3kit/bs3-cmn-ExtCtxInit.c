@@ -36,23 +36,35 @@
 BS3_CMN_DEF(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExtCtx, uint64_t fFlags))
 {
     Bs3MemSet(pExtCtx, 0, cbExtCtx);
+
     if (cbExtCtx >= RT_UOFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FXSTATE) + sizeof(X86XSAVEHDR))
     {
         BS3_ASSERT(fFlags & XSAVE_C_X87);
         pExtCtx->enmMethod = BS3EXTCTXMETHOD_XSAVE;
         pExtCtx->Ctx.x.Hdr.bmXState = fFlags;
+
+        /* Setting bit 6 (0x40) here as it kept sneaking in when loading/saving state in 16-bit and v8086 mode. */
+        pExtCtx->Ctx.x.x87.FCW        = X86_FCW_RC_NEAREST | X86_FCW_PC_64 /* go figure:*/ | RT_BIT(6);
+        pExtCtx->Ctx.x.x87.MXCSR      = X86_MXCSR_RC_NEAREST;
+        pExtCtx->Ctx.x.x87.MXCSR_MASK = 0xffff;
     }
     else if (cbExtCtx >= RT_UOFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FXSTATE))
     {
         BS3_ASSERT(fFlags == 0);
         pExtCtx->enmMethod = BS3EXTCTXMETHOD_FXSAVE;
+        pExtCtx->Ctx.x87.FCW          = X86_FCW_RC_NEAREST | X86_FCW_PC_64 /* go figure:*/ | RT_BIT(6);
+        pExtCtx->Ctx.x87.MXCSR        = X86_MXCSR_RC_NEAREST;
+        pExtCtx->Ctx.x87.MXCSR_MASK   = 0xffff;
     }
     else
     {
         BS3_ASSERT(fFlags == 0);
         BS3_ASSERT(cbExtCtx >= RT_UOFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FPUSTATE));
         pExtCtx->enmMethod = BS3EXTCTXMETHOD_ANCIENT;
+        pExtCtx->Ctx.Ancient.FCW      = X86_FCW_RC_NEAREST | X86_FCW_PC_64 /* go figure:*/ | RT_BIT(6);
+        pExtCtx->Ctx.Ancient.FTW      = UINT16_MAX;  /* all registers empty */
     }
+
     pExtCtx->cb             = cbExtCtx;
     pExtCtx->u16Magic       = BS3EXTCTX_MAGIC;
     pExtCtx->fXcr0Nominal   = fFlags;

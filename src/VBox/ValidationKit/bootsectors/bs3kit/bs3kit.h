@@ -846,8 +846,12 @@ typedef uint32_t            PFNBS3FARADDRCONV;
 #define BS3_SYSCALL_SET_LDTR    UINT16_C(0x000e)
 /** Get the LDT register (value returned in ax). */
 #define BS3_SYSCALL_GET_LDTR    UINT16_C(0x000f)
+/** Set XCR0 register (value in edx:esi). */
+#define BS3_SYSCALL_SET_XCR0    UINT16_C(0x0010)
+/** Get XCR0 register (value returned in edx:eax). */
+#define BS3_SYSCALL_GET_XCR0    UINT16_C(0x0011)
 /** The last system call value. */
-#define BS3_SYSCALL_LAST        BS3_SYSCALL_GET_LDTR
+#define BS3_SYSCALL_LAST        BS3_SYSCALL_GET_XCR0
 /** @} */
 
 
@@ -2905,6 +2909,7 @@ BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr3,(void));
 BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr4,(void));
 BS3_CMN_PROTO_NOSB(uint16_t, Bs3RegGetTr,(void));
 BS3_CMN_PROTO_NOSB(uint16_t, Bs3RegGetLdtr,(void));
+BS3_CMN_PROTO_NOSB(uint64_t, Bs3RegGetXcr0,(void));
 
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr0,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr2,(RTCCUINTXREG uValue));
@@ -2912,6 +2917,7 @@ BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr3,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr4,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetTr,(uint16_t uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetLdtr,(uint16_t uValue));
+BS3_CMN_PROTO_NOSB(void, Bs3RegSetXcr0,(uint64_t uValue));
 /** @} */
 
 
@@ -3375,7 +3381,8 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list
  * @param   idTestStep      Test step identifier.
  */
 BS3_CMN_PROTO_STUB(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
-                                               int16_t cbSpAdjust, uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep));
+                                               int16_t cbSpAdjust, uint32_t fExtraEfl,
+                                               const char BS3_FAR *pszMode, uint16_t idTestStep));
 
 /**
  * Performs the testing for the given mode.

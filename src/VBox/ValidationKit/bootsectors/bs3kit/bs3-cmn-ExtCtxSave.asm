@@ -26,6 +26,8 @@
 
 %include "bs3kit-template-header.mac"
 
+extern BS3_CMN_NM(Bs3RegSetXcr0)
+extern BS3_CMN_NM(Bs3RegGetXcr0Asm)
 
 ;;
 ; Saves the extended CPU context (FPU, SSE, AVX, ++).
@@ -61,19 +63,23 @@ BONLY16 push    es
         jmp     .return
 
 .do_16_xsave:
-        xor     ecx, ecx
-        xgetbv
+        call    BS3_CMN_NM(Bs3RegGetXcr0Asm)
         mov     [es:bx + BS3EXTCTX.fXcr0Saved], eax
         mov     [es:bx + BS3EXTCTX.fXcr0Saved + 4], edx
+
+        push    dword [es:bx + BS3EXTCTX.fXcr0Nominal + 4]
+        push    dword [es:bx + BS3EXTCTX.fXcr0Nominal]
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
+
         mov     eax, [es:bx + BS3EXTCTX.fXcr0Nominal]
         mov     edx, [es:bx + BS3EXTCTX.fXcr0Nominal + 4]
-        xsetbv
-
         xsave   [es:bx + BS3EXTCTX.Ctx]
 
-        mov     eax, [es:bx + BS3EXTCTX.fXcr0Saved]
-        mov     edx, [es:bx + BS3EXTCTX.fXcr0Saved + 4]
-        xsetbv
+        push    dword [es:bx + BS3EXTCTX.fXcr0Saved + 4]
+        push    dword [es:bx + BS3EXTCTX.fXcr0Saved]
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
+
+        add     xSP, 4 * 2 * 2          ; clean up both calls
         ;jmp     .return
 
 %else
@@ -99,20 +105,38 @@ BONLY64 fxsave64 [xBX + BS3EXTCTX.Ctx]
         jmp     .return
 
 .do_xsave:
-        xor     ecx, ecx
-        xgetbv
+        call    BS3_CMN_NM(Bs3RegGetXcr0Asm)
         mov     [xBX + BS3EXTCTX.fXcr0Saved], eax
         mov     [xBX + BS3EXTCTX.fXcr0Saved + 4], edx
+
+ %if ARCH_BITS == 32
+        push    dword [xBX + BS3EXTCTX.fXcr0Nominal + 4]
+        push    dword [xBX + BS3EXTCTX.fXcr0Nominal]
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
+
         mov     eax, [xBX + BS3EXTCTX.fXcr0Nominal]
         mov     edx, [xBX + BS3EXTCTX.fXcr0Nominal + 4]
-        xsetbv
+        xsave   [xBX + BS3EXTCTX.Ctx]
 
-BONLY32 xsave   [xBX + BS3EXTCTX.Ctx]
-BONLY64 xsave64 [xBX + BS3EXTCTX.Ctx]
+        push    dword [xBX + BS3EXTCTX.fXcr0Saved + 4]
+        push    dword [xBX + BS3EXTCTX.fXcr0Saved]
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
 
-        mov     eax, [xBX + BS3EXTCTX.fXcr0Saved]
-        mov     edx, [xBX + BS3EXTCTX.fXcr0Saved + 4]
-        xsetbv
+        add     xSP, 4 * 2 * 2          ; clean up both calls
+ %else
+        mov     rcx, [xBX + BS3EXTCTX.fXcr0Nominal]
+        push    rcx                     ; only to reserve necessary stack space for the Bs3RegSetXcr0 param dump.
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
+
+        mov     eax, [xBX + BS3EXTCTX.fXcr0Nominal]
+        mov     edx, [xBX + BS3EXTCTX.fXcr0Nominal + 4]
+        xsave64 [xBX + BS3EXTCTX.Ctx]
+
+        mov     rcx, [xBX + BS3EXTCTX.fXcr0Saved]
+        call    BS3_CMN_NM(Bs3RegSetXcr0)
+
+        add     xSP, 8h                 ; clean up
+ %endif
         ;jmp     .return
 
 %endif

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3RegSetCr4
+; BS3Kit - Bs3RegGetXcr0
 ;
 
 ;
@@ -35,19 +35,16 @@ TMPL_BEGIN_TEXT
 
 
 ;;
-; @cproto   BS3_CMN_PROTO_STUB(void, Bs3RegSetCr4,(RTCCUINTXREG uValue));
+; Only callable from assembly.
 ;
-; @param    uValue      The value to set.
-
+; @returns  Register value in edx:eax in all modes
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+; @uses     No GPRs other than return registers.
 ;
-; @uses     No GPRs.
-;
-BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
-        BS3_CALL_CONV_PROLOG 1
+BS3_PROC_BEGIN_CMN Bs3RegGetXcr0Asm, BS3_PBC_HYBRID_SAFE
+        BS3_CALL_CONV_PROLOG 0
         push    xBP
         mov     xBP, xSP
-        push    sSI
 
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
@@ -57,30 +54,24 @@ BS3_PROC_BEGIN_CMN Bs3RegSetCr4, BS3_PBC_HYBRID_SAFE
         je      .direct_access
 %endif
         ; If not in ring-0, we have to make a system call.
-        mov     si, ss
-        and     si, X86_SEL_RPL
+        mov     ax, ss
+        and     ax, X86_SEL_RPL
         jnz     .via_system_call
 
 .direct_access:
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     cr4, sSI
+TNOT16  push    sCX
+        xor     ecx, ecx
+        xgetbv
+TNOT16  pop     sCX
         jmp     .return
 
 .via_system_call:
-        push    xDX
-        push    xAX
-
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-        mov     xAX, BS3_SYSCALL_SET_CRX
-        mov     dl, 4
+        mov     xAX, BS3_SYSCALL_GET_XCR0
         call    Bs3Syscall
-        pop     xAX
-        pop     xDX
 
 .return:
-        pop     sSI
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
+        BS3_CALL_CONV_EPILOG 0
         BS3_HYBRID_RET
-BS3_PROC_END_CMN   Bs3RegSetCr4
+BS3_PROC_END_CMN   Bs3RegGetXcr0Asm
 
