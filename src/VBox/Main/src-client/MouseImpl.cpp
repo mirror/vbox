@@ -396,14 +396,27 @@ HRESULT Mouse::getRelativeSupported(BOOL *aRelativeSupported)
 
 /**
  * Returns whether the currently active device portfolio can accept multi-touch
- * mouse events.
+ * touchscreen events.
  *
  * @returns COM status code
- * @param aMultiTouchSupported address of result variable
+ * @param aTouchScreenSupported address of result variable
  */
-HRESULT Mouse::getMultiTouchSupported(BOOL *aMultiTouchSupported)
+HRESULT Mouse::getTouchScreenSupported(BOOL *aTouchScreenSupported)
 {
-    *aMultiTouchSupported = i_supportsMT();
+    *aTouchScreenSupported = i_supportsTS();
+    return S_OK;
+}
+
+/**
+ * Returns whether the currently active device portfolio can accept multi-touch
+ * touchpad events.
+ *
+ * @returns COM status code
+ * @param aTouchPadSupported address of result variable
+ */
+HRESULT Mouse::getTouchPadSupported(BOOL *aTouchPadSupported)
+{
+    *aTouchPadSupported = i_supportsTP();
     return S_OK;
 }
 
@@ -562,10 +575,12 @@ HRESULT Mouse::i_reportAbsEventToMouseDev(int32_t x, int32_t y,
 
 HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
                                                const uint64_t *pau64Contacts,
+                                               bool fTouchScreen,
                                                uint32_t u32ScanTime)
 {
     HRESULT hrc = S_OK;
 
+    int match = fTouchScreen ? MOUSE_DEVCAP_MT_ABSOLUTE : MOUSE_DEVCAP_MT_RELATIVE;
     PPDMIMOUSEPORT pUpPort = NULL;
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
@@ -574,7 +589,7 @@ HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
         for (i = 0; i < MOUSE_MAX_DEVICES; ++i)
         {
             if (   mpDrv[i]
-                && (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_ABSOLUTE))
+                && (mpDrv[i]->u32DevCaps & match))
             {
                 pUpPort = mpDrv[i]->pUpPort;
                 break;
@@ -706,6 +721,7 @@ void Mouse::i_fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
 
 void Mouse::i_fireMultiTouchEvent(uint8_t cContacts,
                                   const LONG64 *paContacts,
+                                  bool fTouchScreen,
                                   uint32_t u32ScanTime)
 {
     com::SafeArray<SHORT> xPositions(cContacts);
@@ -725,7 +741,7 @@ void Mouse::i_fireMultiTouchEvent(uint8_t cContacts,
     }
 
     ::FireGuestMultiTouchEvent(mEventSource, cContacts, ComSafeArrayAsInParam(xPositions), ComSafeArrayAsInParam(yPositions),
-                               ComSafeArrayAsInParam(contactIds), ComSafeArrayAsInParam(contactFlags), u32ScanTime);
+                               ComSafeArrayAsInParam(contactIds), ComSafeArrayAsInParam(contactFlags), fTouchScreen, u32ScanTime);
 }
 
 /**
@@ -894,10 +910,12 @@ HRESULT Mouse::putMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
  * @returns COM status code.
  * @param aCount     Number of contacts.
  * @param aContacts  Information about each contact.
+ * @param aIsTouchscreen Distinguishes between touchscreen and touchpad events.
  * @param aScanTime  Timestamp.
  */
 HRESULT Mouse::putEventMultiTouch(LONG aCount,
                                   const std::vector<LONG64> &aContacts,
+                                  BOOL aIsTouchscreen,
                                   ULONG aScanTime)
 {
     LogRel3(("%s: aCount %d(actual %d), aScanTime %u\n",
@@ -909,7 +927,7 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
     {
         const LONG64 *paContacts = aCount > 0? &aContacts.front(): NULL;
 
-        hrc = i_putEventMultiTouch(aCount, paContacts, aScanTime);
+        hrc = i_putEventMultiTouch(aCount, paContacts, aIsTouchscreen, aScanTime);
     }
     else
     {
@@ -925,15 +943,18 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
  * @returns COM status code.
  * @param aCount     Number of contacts.
  * @param aContacts  Information about each contact.
+ * @param aIsTouchscreen Distinguishes between touchscreen and touchpad events.
  * @param aScanTime  Timestamp.
  */
 HRESULT Mouse::putEventMultiTouchString(LONG aCount,
                                         const com::Utf8Str &aContacts,
+                                        BOOL aIsTouchscreen,
                                         ULONG aScanTime)
 {
     /** @todo implement: convert the string to LONG64 array and call putEventMultiTouch. */
     NOREF(aCount);
     NOREF(aContacts);
+    NOREF(aIsTouchscreen);
     NOREF(aScanTime);
     return E_NOTIMPL;
 }
@@ -945,6 +966,7 @@ HRESULT Mouse::putEventMultiTouchString(LONG aCount,
 /* Used by PutEventMultiTouch and PutEventMultiTouchString. */
 HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
                                     const LONG64 *paContacts,
+                                    BOOL aIsTouchscreen,
                                     ULONG aScanTime)
 {
     if (aCount >= 256)
@@ -952,22 +974,28 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
          return E_INVALIDARG;
     }
 
-    DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
-    ComAssertRet(pDisplay, E_FAIL);
+    HRESULT hrc = S_OK;
 
-    /* Touch events are mapped to the primary monitor, because the emulated USB
-     * touchscreen device is associated with one (normally the primary) screen in the guest.
-     */
+    /* Touch events in the touchscreen variant are currently mapped to the
+     * primary monitor, because the emulated USB touchscreen device is
+     * associated with one (normally the primary) screen in the guest.
+     * In the future this could/should be extended to multi-screen support. */
     ULONG uScreenId = 0;
 
     ULONG cWidth  = 0;
     ULONG cHeight = 0;
-    ULONG cBPP    = 0;
     LONG  xOrigin = 0;
     LONG  yOrigin = 0;
-    HRESULT hrc = pDisplay->i_getScreenResolution(uScreenId, &cWidth, &cHeight, &cBPP, &xOrigin, &yOrigin);
-    NOREF(cBPP);
-    ComAssertComRCRetRC(hrc);
+
+    if (aIsTouchscreen)
+    {
+        DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
+        ComAssertRet(pDisplay, E_FAIL);
+        ULONG cBPP    = 0;
+        hrc = pDisplay->i_getScreenResolution(uScreenId, &cWidth, &cHeight, &cBPP, &xOrigin, &yOrigin);
+        NOREF(cBPP);
+        ComAssertComRCRetRC(hrc);
+    }
 
     uint64_t* pau64Contacts = NULL;
     uint8_t cContacts = 0;
@@ -979,53 +1007,77 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
         pau64Contacts = (uint64_t *)RTMemTmpAlloc(aCount * sizeof(uint64_t));
         if (pau64Contacts)
         {
-            int32_t x1 = xOrigin;
-            int32_t y1 = yOrigin;
-            int32_t x2 = x1 + cWidth;
-            int32_t y2 = y1 + cHeight;
-
-            LogRel3(("%s: screen [%d] %d,%d %d,%d\n",
-                     __FUNCTION__, uScreenId, x1, y1, x2, y2));
-
-            LONG i;
-            for (i = 0; i < aCount; i++)
+            if (aIsTouchscreen)
             {
-                uint32_t u32Lo = RT_LO_U32(paContacts[i]);
-                uint32_t u32Hi = RT_HI_U32(paContacts[i]);
-                int32_t x = (int16_t)u32Lo;
-                int32_t y = (int16_t)(u32Lo >> 16);
-                uint8_t contactId =  RT_BYTE1(u32Hi);
-                bool fInContact   = (RT_BYTE2(u32Hi) & 0x1) != 0;
-                bool fInRange     = (RT_BYTE2(u32Hi) & 0x2) != 0;
+                int32_t x1 = xOrigin;
+                int32_t y1 = yOrigin;
+                int32_t x2 = x1 + cWidth;
+                int32_t y2 = y1 + cHeight;
 
-                LogRel3(("%s: [%d] %d,%d id %d, inContact %d, inRange %d\n",
-                         __FUNCTION__, i, x, y, contactId, fInContact, fInRange));
+                LogRel3(("%s: screen [%d] %d,%d %d,%d\n",
+                         __FUNCTION__, uScreenId, x1, y1, x2, y2));
 
-                /* x1,y1 are inclusive and x2,y2 are exclusive,
-                 * while x,y start from 1 and are inclusive.
-                 */
-                if (x <= x1 || x > x2 || y <= y1 || y > y2)
+                LONG i;
+                for (i = 0; i < aCount; i++)
                 {
-                    /* Out of range. Skip the contact. */
-                    continue;
+                    uint32_t u32Lo = RT_LO_U32(paContacts[i]);
+                    uint32_t u32Hi = RT_HI_U32(paContacts[i]);
+                    int32_t x = (int16_t)u32Lo;
+                    int32_t y = (int16_t)(u32Lo >> 16);
+                    uint8_t contactId =  RT_BYTE1(u32Hi);
+                    bool fInContact   = (RT_BYTE2(u32Hi) & 0x1) != 0;
+                    bool fInRange     = (RT_BYTE2(u32Hi) & 0x2) != 0;
+
+                    LogRel3(("%s: touchscreen [%d] %d,%d id %d, inContact %d, inRange %d\n",
+                             __FUNCTION__, i, x, y, contactId, fInContact, fInRange));
+
+                    /* x1,y1 are inclusive and x2,y2 are exclusive,
+                     * while x,y start from 1 and are inclusive.
+                     */
+                    if (x <= x1 || x > x2 || y <= y1 || y > y2)
+                    {
+                        /* Out of range. Skip the contact. */
+                        continue;
+                    }
+
+                    int32_t xAdj = x1 < x2? ((x - 1 - x1) * VMMDEV_MOUSE_RANGE) / (x2 - x1) : 0;
+                    int32_t yAdj = y1 < y2? ((y - 1 - y1) * VMMDEV_MOUSE_RANGE) / (y2 - y1) : 0;
+
+                    bool fValid = (   xAdj >= VMMDEV_MOUSE_RANGE_MIN
+                                   && xAdj <= VMMDEV_MOUSE_RANGE_MAX
+                                   && yAdj >= VMMDEV_MOUSE_RANGE_MIN
+                                   && yAdj <= VMMDEV_MOUSE_RANGE_MAX);
+
+                    if (fValid)
+                    {
+                        uint8_t fu8 = (uint8_t)(  (fInContact? 0x01: 0x00)
+                                                | (fInRange?   0x02: 0x00));
+                        pau64Contacts[cContacts] = RT_MAKE_U64_FROM_U16((uint16_t)xAdj,
+                                                                        (uint16_t)yAdj,
+                                                                        RT_MAKE_U16(contactId, fu8),
+                                                                        0);
+                        cContacts++;
+                    }
                 }
-
-                int32_t xAdj = x1 < x2? ((x - 1 - x1) * VMMDEV_MOUSE_RANGE) / (x2 - x1) : 0;
-                int32_t yAdj = y1 < y2? ((y - 1 - y1) * VMMDEV_MOUSE_RANGE) / (y2 - y1) : 0;
-
-                bool fValid = (   xAdj >= VMMDEV_MOUSE_RANGE_MIN
-                               && xAdj <= VMMDEV_MOUSE_RANGE_MAX
-                               && yAdj >= VMMDEV_MOUSE_RANGE_MIN
-                               && yAdj <= VMMDEV_MOUSE_RANGE_MAX);
-
-                if (fValid)
+            } else {
+                LONG i;
+                for (i = 0; i < aCount; i++)
                 {
-                    uint8_t fu8 = (uint8_t)(  (fInContact? 0x01: 0x00)
-                                            | (fInRange?   0x02: 0x00));
-                    pau64Contacts[cContacts] = RT_MAKE_U64_FROM_U16((uint16_t)xAdj,
-                                                                    (uint16_t)yAdj,
+                    uint32_t u32Lo = RT_LO_U32(paContacts[i]);
+                    uint32_t u32Hi = RT_HI_U32(paContacts[i]);
+                    uint16_t x = (uint16_t)u32Lo;
+                    uint16_t y = (uint16_t)(u32Lo >> 16);
+                    uint8_t contactId =  RT_BYTE1(u32Hi);
+                    bool fInContact   = (RT_BYTE2(u32Hi) & 0x1) != 0;
+
+                    LogRel3(("%s: touchpad [%d] %#04x,%#04x id %d, inContact %d\n",
+                             __FUNCTION__, i, x, y, contactId, fInContact));
+
+                    uint8_t fu8 = (uint8_t)(fInContact? 0x01: 0x00);
+
+                    pau64Contacts[cContacts] = RT_MAKE_U64_FROM_U16(x, y,
                                                                     RT_MAKE_U16(contactId, fu8),
-                                                                    0);
+                                                                     0);
                     cContacts++;
                 }
             }
@@ -1038,10 +1090,10 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
 
     if (SUCCEEDED(hrc))
     {
-        hrc = i_reportMultiTouchEventToDevice(cContacts, cContacts? pau64Contacts: NULL, (uint32_t)aScanTime);
+        hrc = i_reportMultiTouchEventToDevice(cContacts, cContacts? pau64Contacts: NULL, !!aIsTouchscreen, (uint32_t)aScanTime);
 
         /* Send the original contact information. */
-        i_fireMultiTouchEvent(cContacts, cContacts? paContacts: NULL, (uint32_t)aScanTime);
+        i_fireMultiTouchEvent(cContacts, cContacts? paContacts: NULL, !!aIsTouchscreen, (uint32_t)aScanTime);
     }
 
     RTMemTmpFree(pau64Contacts);
@@ -1063,13 +1115,15 @@ bool Mouse::i_guestNeedsHostCursor(void)
  *
  * @param   pfAbs   supports absolute mouse coordinates.
  * @param   pfRel   supports relative mouse coordinates.
- * @param   pfMT    supports multitouch.
+ * @param   pfTS    supports touchscreen.
+ * @param   pfTP    supports touchpad.
  */
-void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
+void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfTS, bool *pfTP)
 {
     bool fAbsDev = false;
     bool fRelDev = false;
-    bool fMTDev  = false;
+    bool fTSDev  = false;
+    bool fTPDev  = false;
 
     AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1081,14 +1135,18 @@ void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                fRelDev = true;
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_ABSOLUTE)
-               fMTDev  = true;
+               fTSDev  = true;
+           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_RELATIVE)
+               fTPDev  = true;
         }
     if (pfAbs)
         *pfAbs = fAbsDev;
     if (pfRel)
         *pfRel = fRelDev;
-    if (pfMT)
-        *pfMT = fMTDev;
+    if (pfTS)
+        *pfTS = fTSDev;
+    if (pfTP)
+        *pfTP = fTPDev;
 }
 
 
@@ -1097,7 +1155,7 @@ bool Mouse::i_vmmdevCanAbs(void)
 {
     bool fRelDev;
 
-    i_getDeviceCaps(NULL, &fRelDev, NULL);
+    i_getDeviceCaps(NULL, &fRelDev, NULL, NULL);
     return    (mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
            && fRelDev;
 }
@@ -1108,7 +1166,7 @@ bool Mouse::i_deviceCanAbs(void)
 {
     bool fAbsDev;
 
-    i_getDeviceCaps(&fAbsDev, NULL, NULL);
+    i_getDeviceCaps(&fAbsDev, NULL, NULL, NULL);
     return fAbsDev;
 }
 
@@ -1118,7 +1176,7 @@ bool Mouse::i_supportsRel(void)
 {
     bool fRelDev;
 
-    i_getDeviceCaps(NULL, &fRelDev, NULL);
+    i_getDeviceCaps(NULL, &fRelDev, NULL, NULL);
     return fRelDev;
 }
 
@@ -1128,18 +1186,18 @@ bool Mouse::i_supportsAbs(void)
 {
     bool fAbsDev;
 
-    i_getDeviceCaps(&fAbsDev, NULL, NULL);
+    i_getDeviceCaps(&fAbsDev, NULL, NULL, NULL);
     return fAbsDev || i_vmmdevCanAbs();
 }
 
 
 /** Can we currently send absolute events to the guest? */
-bool Mouse::i_supportsMT(void)
+bool Mouse::i_supportsTS(void)
 {
-    bool fMTDev;
+    bool fTSDev;
 
-    i_getDeviceCaps(NULL, NULL, &fMTDev);
-    return fMTDev;
+    i_getDeviceCaps(NULL, NULL, &fTSDev, NULL);
+    return fTSDev;
 }
 
 
@@ -1148,16 +1206,16 @@ bool Mouse::i_supportsMT(void)
  */
 void Mouse::i_sendMouseCapsNotifications(void)
 {
-    bool fRelDev, fMTDev, fCanAbs, fNeedsHostCursor;
+    bool fRelDev, fTSDev, fTPDev, fCanAbs, fNeedsHostCursor;
 
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        i_getDeviceCaps(NULL, &fRelDev, &fMTDev);
+        i_getDeviceCaps(NULL, &fRelDev, &fTSDev, &fTPDev);
         fCanAbs = i_supportsAbs();
         fNeedsHostCursor = i_guestNeedsHostCursor();
     }
-    mParent->i_onMouseCapabilityChange(fCanAbs, fRelDev, fMTDev, fNeedsHostCursor);
+    mParent->i_onMouseCapabilityChange(fCanAbs, fRelDev, fTSDev, fTPDev, fNeedsHostCursor);
 }
 
 

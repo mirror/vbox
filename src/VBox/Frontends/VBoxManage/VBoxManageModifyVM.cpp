@@ -2282,6 +2282,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     if (SUCCEEDED(hrc))
                         fEnableUsb = true;
                 }
+                else if (!RTStrICmp(ValueUnion.psz, "usbmtscreenpluspad"))
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_USBMultiTouchScreenPlusPad));
+                    if (SUCCEEDED(hrc))
+                        fEnableUsb = true;
+                }
                 else if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(PointingHIDType)(PointingHIDType_None));

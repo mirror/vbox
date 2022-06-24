@@ -427,7 +427,8 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CMouseCapabilityChangedEvent comEventSpecific(pEvent);
             emit sigMouseCapabilityChange(comEventSpecific.GetSupportsAbsolute(), comEventSpecific.GetSupportsRelative(),
-                                          comEventSpecific.GetSupportsMultiTouch(), comEventSpecific.GetNeedsHostCursor());
+                                          comEventSpecific.GetSupportsTouchScreen(), comEventSpecific.GetSupportsTouchPad(),
+                                          comEventSpecific.GetNeedsHostCursor());
             break;
         }
         case KVBoxEventType_OnCursorPositionChanged:

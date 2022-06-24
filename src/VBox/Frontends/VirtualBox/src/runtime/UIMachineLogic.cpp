@@ -592,11 +592,13 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     /* Variable falgs: */
     bool fIsMouseSupportsAbsolute = uisession()->isMouseSupportsAbsolute();
     bool fIsMouseSupportsRelative = uisession()->isMouseSupportsRelative();
-    bool fIsMouseSupportsMultiTouch = uisession()->isMouseSupportsMultiTouch();
+    bool fIsMouseSupportsTouchScreen = uisession()->isMouseSupportsTouchScreen();
+    bool fIsMouseSupportsTouchPad = uisession()->isMouseSupportsTouchPad();
     bool fIsMouseHostCursorNeeded = uisession()->isMouseHostCursorNeeded();
 
     /* For now MT stuff is not important for MI action: */
-    Q_UNUSED(fIsMouseSupportsMultiTouch);
+    Q_UNUSED(fIsMouseSupportsTouchScreen);
+    Q_UNUSED(fIsMouseSupportsTouchPad);
 
     /* Update action state: */
     QAction *pAction = actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration);

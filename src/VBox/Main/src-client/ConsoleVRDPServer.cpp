@@ -2878,6 +2878,7 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
 
                     pMouse->PutEventMultiTouch(pFrame->u16ContactCount,
                                                ComSafeArrayAsInParam(aContacts),
+                                               true /* isTouchScreen */,
                                                (ULONG)(pThis->mu64TouchInputTimestampMCS / 1000)); /* Micro->milliseconds. */
                 }
             }

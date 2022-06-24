@@ -745,7 +745,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::TouchUpdate:
                 case QEvent::TouchEnd:
                 {
-                    if (uisession()->isMouseSupportsMultiTouch())
+                    if (uisession()->isMouseSupportsTouchScreen() || uisession()->isMouseSupportsTouchPad())
                         return multiTouchEvent(static_cast<QTouchEvent*>(pEvent), uScreenId);
                     break;
                 }
@@ -911,7 +911,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                                 int wheelDelta, Qt::Orientation wheelDirection)
 {
     /* Ignore fake mouse events. */
-    if (uisession()->isMouseSupportsMultiTouch() && mouseIsTouchSource(iEventType, mouseButtons))
+    if (   (uisession()->isMouseSupportsTouchScreen() || uisession()->isMouseSupportsTouchPad())
+        && mouseIsTouchSource(iEventType, mouseButtons))
         return true;
 
     /* Check if machine is still running: */
@@ -1193,17 +1194,17 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
 
     LONG xShift = 0, yShift = 0;
-    ULONG dummy;
-    KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-    display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+    if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+    {
+        ULONG dummy;
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+        display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+    }
 
     /* Pass all multi-touch events into guest: */
     int iTouchPointIndex = 0;
     foreach (const QTouchEvent::TouchPoint &touchPoint, pTouchEvent->touchPoints())
     {
-        /* Get touch-point origin: */
-        QPoint currentTouchPoint = touchPoint.pos().toPoint();
-
         /* Get touch-point state: */
         LONG iTouchPointState = KTouchContactState_None;
         switch (touchPoint.state())
@@ -1211,20 +1212,41 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
             case Qt::TouchPointPressed:
             case Qt::TouchPointMoved:
             case Qt::TouchPointStationary:
-                iTouchPointState = KTouchContactState_InContact | KTouchContactState_InRange;
+                iTouchPointState = KTouchContactState_InContact;
+                if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+                    iTouchPointState |= KTouchContactState_InRange;
                 break;
             default:
                 break;
         }
 
-        /* Pass absolute touch-point data: */
-        LogRelFlow(("UIMouseHandler::multiTouchEvent: Origin: %dx%d, Id: %d, State: %d\n",
-                    currentTouchPoint.x(), currentTouchPoint.y(), touchPoint.id(), iTouchPointState));
+        if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
+        {
+            /* Get absolute touch-point origin: */
+            QPoint currentTouchPoint = touchPoint.pos().toPoint();
 
-        contacts[iTouchPointIndex] = RT_MAKE_U64_FROM_U16((uint16_t)currentTouchPoint.x() + 1 + xShift,
-                                                          (uint16_t)currentTouchPoint.y() + 1 + yShift,
-                                                          RT_MAKE_U16(touchPoint.id(), iTouchPointState),
-                                                          0);
+            /* Pass absolute touch-point data: */
+            LogRelFlow(("UIMouseHandler::multiTouchEvent: TouchScreen, Origin: %dx%d, Id: %d, State: %d\n",
+                        currentTouchPoint.x(), currentTouchPoint.y(), touchPoint.id(), iTouchPointState));
+
+            contacts[iTouchPointIndex] = RT_MAKE_U64_FROM_U16((uint16_t)currentTouchPoint.x() + 1 + xShift,
+                                                              (uint16_t)currentTouchPoint.y() + 1 + yShift,
+                                                              RT_MAKE_U16(touchPoint.id(), iTouchPointState),
+                                                              0);
+        } else {
+            /* Get relative touch-point normalized position: */
+            QPointF rawTouchPoint = touchPoint.normalizedPos();
+
+            /* Pass relative touch-point data as Normalized Integer: */
+            uint16_t xNorm = rawTouchPoint.x() * 0xffff;
+            uint16_t yNorm = rawTouchPoint.y() * 0xffff;
+            LogRelFlow(("UIMouseHandler::multiTouchEvent: TouchPad, Normalized Position: %ux%u, Id: %d, State: %d\n",
+                        xNorm, yNorm, touchPoint.id(), iTouchPointState));
+
+            contacts[iTouchPointIndex] = RT_MAKE_U64_FROM_U16(xNorm, yNorm,
+                                                              RT_MAKE_U16(touchPoint.id(), iTouchPointState),
+                                                              0);
+        }
 
         LogRelFlow(("UIMouseHandler::multiTouchEvent: %RX64\n", contacts[iTouchPointIndex]));
 
@@ -1233,6 +1255,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     mouse().PutEventMultiTouch(pTouchEvent->touchPoints().size(),
                                contacts,
+                               pTouchEvent->device()->type() == QTouchDevice::TouchScreen,
                                (ULONG)RTTimeMilliTS());
 
     /* Eat by default? */

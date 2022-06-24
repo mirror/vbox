@@ -208,7 +208,8 @@ public:
     int mouseState() const { return m_iMouseState; }
     bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
     bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
-    bool isMouseSupportsMultiTouch() const { return m_fIsMouseSupportsMultiTouch; }
+    bool isMouseSupportsTouchScreen() const { return m_fIsMouseSupportsTouchScreen; }
+    bool isMouseSupportsTouchPad() const { return m_fIsMouseSupportsTouchPad; }
     bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
     bool isMouseCaptured() const { return m_fIsMouseCaptured; }
     bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
@@ -367,8 +368,11 @@ private slots:
     /* Console events slots */
     /** Handles signal about mouse pointer @a shapeData change. */
     void sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
-    /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
-    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
+    /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative,
+      * @a fSupportsTouchScreen, @a fSupportsTouchPad and @a fNeedsHostCursor. */
+    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
+                                  bool fSupportsTouchScreen, bool fSupportsTouchPad,
+                                  bool fNeedsHostCursor);
     /** Handles signal about guest request to change the cursor position to @a uX * @a uY.
       * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
     void sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
@@ -586,7 +590,8 @@ private:
     int m_iMouseState;
     bool m_fIsMouseSupportsAbsolute : 1;
     bool m_fIsMouseSupportsRelative : 1;
-    bool m_fIsMouseSupportsMultiTouch: 1;
+    bool m_fIsMouseSupportsTouchScreen: 1;
+    bool m_fIsMouseSupportsTouchPad: 1;
     bool m_fIsMouseHostCursorNeeded : 1;
     bool m_fIsMouseCaptured : 1;
     bool m_fIsMouseIntegrated : 1;

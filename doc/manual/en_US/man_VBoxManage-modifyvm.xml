@@ -385,6 +385,7 @@ time on documenting it. -->
           <arg choice="plain">usb</arg>
           <arg choice="plain">usbtablet</arg>
           <arg choice="plain">usbmultitouch</arg>
+          <arg choice="plain">usbmtscreenpluspad</arg>
         </group></arg>
       <arg>--keyboard=<group choice="plain">
           <arg choice="plain">ps2</arg>
@@ -1751,12 +1752,13 @@ it unless this changes. -->
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--mouse=ps2 | usb | usbtablet | usbmultitouch</option></term>
+          <term><option>--mouse=ps2 | usb | usbtablet | usbmultitouch | usbmtscreenpluspad</option></term>
           <listitem><para>
               Specifies the mode of the mouse to use in the VM. Valid
               values are: <literal>ps2</literal>,
-              <literal>usb</literal>, <literal>usbtablet</literal>, and
-              <literal>usbmultitouch</literal>.
+              <literal>usb</literal>, <literal>usbtablet</literal>,
+              <literal>usbmultitouch</literal> and
+              <literal>usbmtscreenpluspad</literal>.
             </para></listitem>
         </varlistentry>
         <varlistentry>

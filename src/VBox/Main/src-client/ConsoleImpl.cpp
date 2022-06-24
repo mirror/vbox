@@ -7524,15 +7524,15 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
 }
 
 void Console::i_onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative,
-                                        BOOL supportsMT, BOOL needsHostCursor)
+                                        BOOL supportsTouchScreen, BOOL supportsTouchPad, BOOL needsHostCursor)
 {
-    LogFlowThisFunc(("supportsAbsolute=%d supportsRelative=%d needsHostCursor=%d\n",
-                     supportsAbsolute, supportsRelative, needsHostCursor));
+    LogFlowThisFunc(("supportsAbsolute=%d supportsRelative=%d supportsTouchScreen=%d supportsTouchPad=%d needsHostCursor=%d\n",
+                     supportsAbsolute, supportsRelative, supportsTouchScreen, supportsTouchPad, needsHostCursor));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    ::FireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, supportsMT, needsHostCursor);
+    ::FireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, supportsTouchScreen, supportsTouchPad, needsHostCursor);
 }
 
 void Console::i_onStateChange(MachineState_T machineState)

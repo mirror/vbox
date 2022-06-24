@@ -1444,7 +1444,7 @@
 
   <enum
     name="PointingHIDType"
-    uuid="19964e93-0050-45c4-9382-a7bccc53e666"
+    uuid="b3fd8215-6870-4e61-b6d9-2998fa625de0"
     >
     <desc>
       Type of pointing device used in a virtual machine.
@@ -1472,7 +1472,14 @@
     </const>
     <const name="USBMultiTouch"     value="6">
       <desc>
-        USB multi-touch device.  Also enables the USB tablet and mouse devices.
+        USB multi-touch device, just touchscreen.  It is a specific mode of the
+        USB tablet and also enables the mouse device.
+      </desc>
+    </const>
+    <const name="USBMultiTouchScreenPlusPad" value="7">
+      <desc>
+        USB multi-touch device, touchscreen plus touchpad.  It also enables the
+        mouse device.
       </desc>
     </const>
   </enum>
@@ -1967,7 +1974,7 @@
     </method>
     <method name="removePortForwardRule">
       <rest request="post" path="/natnetworks/{networkid}/configuration/"/>
-      <param name="iSipv6" type="boolean" dir="in"/>
+      <param name="isIpv6" type="boolean" dir="in"/>
       <param name="ruleName" type="wstring" dir="in"/>
     </method>
     <method name="start">
@@ -19975,7 +19982,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMouse" extends="$unknown"
-    uuid="10cd08d0-e8b8-4838-b10c-45ba193734c1"
+    uuid="25360a74-55e5-4f14-ac2a-f5cf8e62e4af"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="4"
@@ -20014,9 +20021,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="multiTouchSupported" type="boolean" readonly="yes">
+    <attribute name="touchScreenSupported" type="boolean" readonly="yes">
       <desc>
-        Whether the guest OS has enabled the multi-touch reporting device.
+        Whether the guest OS has enabled the multi-touch reporting device,
+        touchscreen variant.
+        <note>
+          You can use the <link to="IMouseCapabilityChangedEvent"/>
+          event to be instantly informed about changes of this attribute
+          during virtual machine execution.
+        </note>
+        <see><link to="#putMouseEvent"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="touchPadSupported" type="boolean" readonly="yes">
+      <desc>
+        Whether the guest OS has enabled the multi-touch reporting device,
+        touchpad variant.
         <note>
           You can use the <link to="IMouseCapabilityChangedEvent"/>
           event to be instantly informed about changes of this attribute
@@ -20167,9 +20188,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="putEventMultiTouch">
       <desc>
-        Sends a multi-touch pointer event. The coordinates are expressed in
-        pixels and start from <tt>[1,1]</tt> which corresponds to the top left
-        corner of the virtual display.
+        Sends a multi-touch pointer event. For touchscreen events the
+        coordinates are expressed in pixels and start from <tt>[1,1]</tt> which
+        corresponds to the top left corner of the virtual display, for
+        touchpad events the coordinates are normalized to the range 0..0xffff.
 
         <result name="E_ACCESSDENIED">
           Console not powered up.
@@ -20182,7 +20204,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The guest may not understand or may choose to ignore this event.
         </note>
 
-        <see><link to="#multiTouchSupported"/></see>
+        <see><link to="#touchScreenSupported"/> and <link to="#touchPadSupported"/></see>
       </desc>
 
       <param name="count" type="long" dir="in">
@@ -20194,12 +20216,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="contacts" type="long long" dir="in" safearray="yes">
         <desc>
           Each array element contains packed information about one contact.
-          Bits 0..15: X coordinate in pixels.
-          Bits 16..31: Y coordinate in pixels.
+          Bits 0..15: X coordinate in pixels or normalized X position.
+          Bits 16..31: Y coordinate in pixels or normalized Y position.
           Bits 32..39: contact identifier.
           Bit 40: "in contact" flag, which indicates that there is a contact with the touch surface.
           Bit 41: "in range" flag, the contact is close enough to the touch surface.
           All other bits are reserved for future use and must be set to 0.
+        </desc>
+      </param>
+
+      <param name="isTouchScreen" type="boolean" dir="in">
+        <desc>
+          Distinguishes between touchscreen and touchpad events.
         </desc>
       </param>
 
@@ -20226,6 +20254,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Contains information about all contacts:
           "id1,x1,y1,inContact1,inRange1;...;idN,xN,yN,inContactN,inRangeN".
           For example for two contacts: "0,10,20,1,1;1,30,40,1,1"
+        </desc>
+      </param>
+
+      <param name="isTouchScreen" type="boolean" dir="in">
+        <desc>
+          Distinguishes between touchscreen and touchpad events.
         </desc>
       </param>
 
@@ -26020,7 +26054,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnGuestMultiTouch" value="93">
       <desc>
-        See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
+        See <link to="IGuestMultiTouchEvent">IGuestMultiTouchEvent</link>.
       </desc>
     </const>
     <const name="OnHostNameResolutionConfigurationChange" value="94">
@@ -26758,7 +26792,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMouseCapabilityChangedEvent" extends="IEvent"
-    uuid="70e7779a-e64a-4908-804e-371cad23a756"
+    uuid="4a773393-7a8c-4d57-b228-9ade4049a81f"
     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChanged"
     >
     <desc>
@@ -26775,9 +26809,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Supports relative coordinates.
       </desc>
     </attribute>
-    <attribute name="supportsMultiTouch" type="boolean" readonly="yes">
+    <attribute name="supportsTouchScreen" type="boolean" readonly="yes">
       <desc>
-        Supports multi-touch events coordinates.
+        Supports multi-touch events, touchscreen variant.
+      </desc>
+    </attribute>
+    <attribute name="supportsTouchPad" type="boolean" readonly="yes">
+      <desc>
+        Supports multi-touch events, touchpad variant.
       </desc>
     </attribute>
     <attribute name="needsHostCursor" type="boolean" readonly="yes">
@@ -27123,7 +27162,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestMultiTouchEvent" extends="IEvent"
-    uuid="be8a0eb5-f4f4-4dd0-9d30-c89b873247ec"
+    uuid="1f99d9dc-c144-4c28-9f88-e6f488db5441"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestMultiTouch"
     >
     <desc>
@@ -27154,6 +27193,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Contact state.
         Bit 0: in contact.
         Bit 1: in range.
+      </desc>
+    </attribute>
+    <attribute name="isTouchScreen" type="boolean" readonly="yes">
+      <desc>
+        Distinguishes between touchscreen and touchpad events.
       </desc>
     </attribute>
     <attribute name="scanTime" type="unsigned long" readonly="yes">

@@ -68,7 +68,8 @@ private:
     // Wrapped IMouse properties
     HRESULT getAbsoluteSupported(BOOL *aAbsoluteSupported);
     HRESULT getRelativeSupported(BOOL *aRelativeSupported);
-    HRESULT getMultiTouchSupported(BOOL *aMultiTouchSupported);
+    HRESULT getTouchScreenSupported(BOOL *aTouchScreenSupported);
+    HRESULT getTouchPadSupported(BOOL *aTouchPadSupported);
     HRESULT getNeedsHostCursor(BOOL *aNeedsHostCursor);
     HRESULT getPointerShape(ComPtr<IMousePointerShape> &aPointerShape);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
@@ -86,9 +87,11 @@ private:
                                   LONG aButtonState);
     HRESULT putEventMultiTouch(LONG aCount,
                                const std::vector<LONG64> &aContacts,
+                               BOOL isTouchScreen,
                                ULONG aScanTime);
     HRESULT putEventMultiTouchString(LONG aCount,
                                      const com::Utf8Str &aContacts,
+                                     BOOL isTouchScreen,
                                      ULONG aScanTime);
 
 
@@ -104,23 +107,24 @@ private:
                                      int32_t dw, uint32_t fButtons);
     HRESULT i_reportMTEventToMouseDev(int32_t x, int32_t z, uint32_t cContact,
                                     uint32_t fContact);
-    HRESULT i_reportMultiTouchEventToDevice(uint8_t cContacts, const uint64_t *pau64Contacts, uint32_t u32ScanTime);
+    HRESULT i_reportMultiTouchEventToDevice(uint8_t cContacts, const uint64_t *pau64Contacts, bool fTouchScreen, uint32_t u32ScanTime);
     HRESULT i_reportAbsEventToVMMDev(int32_t x, int32_t y);
     HRESULT i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, int32_t dw, uint32_t fButtons,
                                            bool fUsesVMMDevEvent);
     HRESULT i_reportAbsEventToDisplayDevice(int32_t x, int32_t y);
     HRESULT i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
                                  bool *pfValid);
-    HRESULT i_putEventMultiTouch(LONG aCount, const LONG64 *paContacts, ULONG aScanTime);
+    HRESULT i_putEventMultiTouch(LONG aCount, const LONG64 *paContacts, BOOL isTouchScreen, ULONG aScanTime);
 
-    void i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *fMT);
+    void i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfTS, bool *pfTP);
     void i_sendMouseCapsNotifications(void);
     bool i_guestNeedsHostCursor(void);
     bool i_vmmdevCanAbs(void);
     bool i_deviceCanAbs(void);
     bool i_supportsAbs(void);
     bool i_supportsRel(void);
-    bool i_supportsMT(void);
+    bool i_supportsTS(void);
+    bool i_supportsTP(void);
 
     ConsoleMouseInterface * const         mParent;
     /** Pointer to the associated mouse driver. */
@@ -152,6 +156,7 @@ private:
 
     void i_fireMultiTouchEvent(uint8_t cContacts,
                                const LONG64 *paContacts,
+                               bool fTouchScreen,
                                uint32_t u32ScanTime);
 };
 

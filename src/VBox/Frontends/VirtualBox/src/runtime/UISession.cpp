@@ -209,7 +209,8 @@ bool UISession::initialize()
     {
         m_fIsMouseSupportsAbsolute = mouse().GetAbsoluteSupported();
         m_fIsMouseSupportsRelative = mouse().GetRelativeSupported();
-        m_fIsMouseSupportsMultiTouch = mouse().GetMultiTouchSupported();
+        m_fIsMouseSupportsTouchScreen = mouse().GetTouchScreenSupported();
+        m_fIsMouseSupportsTouchPad = mouse().GetTouchPadSupported();
         m_fIsMouseHostCursorNeeded = mouse().GetNeedsHostCursor();
         sltAdditionsChange();
     }
@@ -509,24 +510,30 @@ void UISession::sltMousePointerShapeChange(const UIMousePointerShapeData &shapeD
     emit sigMousePointerShapeChange();
 }
 
-void UISession::sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor)
+void UISession::sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
+                                         bool fSupportsTouchScreen, bool fSupportsTouchPad,
+                                         bool fNeedsHostCursor)
 {
     LogRelFlow(("GUI: UISession::sltMouseCapabilityChange: "
                 "Supports absolute: %s, Supports relative: %s, "
-                "Supports multi-touch: %s, Needs host cursor: %s\n",
+                "Supports touchscreen: %s, Supports touchpad: %s, "
+                "Needs host cursor: %s\n",
                 fSupportsAbsolute ? "TRUE" : "FALSE", fSupportsRelative ? "TRUE" : "FALSE",
-                fSupportsMultiTouch ? "TRUE" : "FALSE", fNeedsHostCursor ? "TRUE" : "FALSE"));
+                fSupportsTouchScreen ? "TRUE" : "FALSE", fSupportsTouchPad ? "TRUE" : "FALSE",
+                fNeedsHostCursor ? "TRUE" : "FALSE"));
 
     /* Check if something had changed: */
     if (   m_fIsMouseSupportsAbsolute != fSupportsAbsolute
         || m_fIsMouseSupportsRelative != fSupportsRelative
-        || m_fIsMouseSupportsMultiTouch != fSupportsMultiTouch
+        || m_fIsMouseSupportsTouchScreen != fSupportsTouchScreen
+        || m_fIsMouseSupportsTouchPad != fSupportsTouchPad
         || m_fIsMouseHostCursorNeeded != fNeedsHostCursor)
     {
         /* Store new data: */
         m_fIsMouseSupportsAbsolute = fSupportsAbsolute;
         m_fIsMouseSupportsRelative = fSupportsRelative;
-        m_fIsMouseSupportsMultiTouch = fSupportsMultiTouch;
+        m_fIsMouseSupportsTouchScreen = fSupportsTouchScreen;
+        m_fIsMouseSupportsTouchPad = fSupportsTouchPad;
         m_fIsMouseHostCursorNeeded = fNeedsHostCursor;
 
         /* Notify listeners about mouse capability changed: */
@@ -891,7 +898,8 @@ UISession::UISession(UIMachine *pMachine)
     /* Mouse flags: */
     , m_fIsMouseSupportsAbsolute(false)
     , m_fIsMouseSupportsRelative(false)
-    , m_fIsMouseSupportsMultiTouch(false)
+    , m_fIsMouseSupportsTouchScreen(false)
+    , m_fIsMouseSupportsTouchPad(false)
     , m_fIsMouseHostCursorNeeded(false)
     , m_fIsMouseCaptured(false)
     , m_fIsMouseIntegrated(true)
