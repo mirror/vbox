@@ -57,4 +57,3 @@ BS3_CMN_DEF(bool, Bs3ExtCtxSetYmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT256
     return false;
 }
 
-
