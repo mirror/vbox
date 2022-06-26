@@ -33,12 +33,14 @@
 #undef Bs3ExtCtxAlloc
 #undef Bs3ExtCtxCopy
 #undef Bs3ExtCtxFree
+#undef Bs3ExtCtxGetMm
 #undef Bs3ExtCtxGetMxCsr
 #undef Bs3ExtCtxGetSize
 #undef Bs3ExtCtxGetYmm
 #undef Bs3ExtCtxInit
 #undef Bs3ExtCtxRestore
 #undef Bs3ExtCtxSave
+#undef Bs3ExtCtxSetMm
 #undef Bs3ExtCtxSetMxCsr
 #undef Bs3ExtCtxSetYmm
 #undef Bs3GetCpuVendor
@@ -160,6 +162,7 @@
 #undef Bs3StrPrintf
 #undef Bs3StrPrintfV
 #undef Bs3SwitchFromV86To16BitAndCallC
+#undef Bs3TestCheckExtCtx
 #undef Bs3TestCheckRegCtxEx
 #undef Bs3TestFailed
 #undef Bs3TestFailedF

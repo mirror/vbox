@@ -2896,9 +2896,28 @@ BS3_CMN_PROTO_STUB(uint32_t, Bs3ExtCtxGetMxCsr,(PCBS3EXTCTX pExtCtx));
 BS3_CMN_PROTO_STUB(void, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue));
 
 /**
+ * Gets the value of MM register number @a iReg from @a pExtCtx.
+ *
+ * @returns The MM register value.
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to get (0 thru 7).
+ */
+BS3_CMN_PROTO_STUB(uint64_t, Bs3ExtCtxGetMm,(PCBS3EXTCTX pExtCtx, uint8_t iReg));
+
+/**
+ * Sets the value of YMM register number @a iReg in @a pExtCtx to @a pValue.
+ *
+ * @returns True if set, false if not.
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to set.
+ * @param   uValue          The new register value.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue));
+
+/**
  * Gets the value of YMM register number @a iReg from @a pExtCtx.
  *
- * @returns MXCSR value, 0 if not part of context.
+ * @returns pValue
  * @param   pExtCtx         The extended CPU context.
  * @param   iReg            The register to get.
  * @param   pValue          Where to return the value.  Parts not in the
@@ -3427,6 +3446,21 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list
 BS3_CMN_PROTO_STUB(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
                                                int16_t cbSpAdjust, uint32_t fExtraEfl,
                                                const char BS3_FAR *pszMode, uint16_t idTestStep));
+
+/**
+ * Compares two extended register contexts.
+ *
+ * Differences will be reported as test failures.
+ *
+ * @returns true if equal, false if not.
+ * @param   pActualExtCtx   The actual register context.
+ * @param   pExpectedExtCtx Expected register context.
+ * @param   fFlags          Reserved, pass 0.
+ * @param   pszMode         CPU mode or some other helpful text.
+ * @param   idTestStep      Test step identifier.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3TestCheckExtCtx,(PCBS3EXTCTX pActualExtCtx, PCBS3EXTCTX pExpectedExtCtx, uint16_t fFlags,
+                                             const char BS3_FAR *pszMode, uint16_t idTestStep));
 
 /**
  * Performs the testing for the given mode.

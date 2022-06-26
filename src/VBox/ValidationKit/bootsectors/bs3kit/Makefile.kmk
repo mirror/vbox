@@ -148,6 +148,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-ExtCtxCopy.c \
        bs3-cmn-ExtCtxGetMxCsr.c \
        bs3-cmn-ExtCtxSetMxCsr.c \
+       bs3-cmn-ExtCtxGetMm.c \
+       bs3-cmn-ExtCtxSetMm.c \
        bs3-cmn-ExtCtxGetYmm.c \
        bs3-cmn-ExtCtxSetYmm.c \
        bs3-cmn-SelFar32ToFlat32.c \
@@ -200,6 +202,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestSendCmdWithU32.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
 	bs3-cmn-TestCheckRegCtxEx.c \
+	bs3-cmn-TestCheckExtCtx.c \
 	bs3-cmn-TestQueryCfgU8.asm \
 	bs3-cmn-TestQueryCfgU32.asm \
 	bs3-cmn-TestHostPrintf.c \
