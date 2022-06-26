@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-instr-3, SSE and AVX instructions, C code template.
+ * BS3Kit - bs3-cpu-instr-3 - MMX, SSE and AVX instructions, C code template.
  */
 
 /*
@@ -37,7 +37,26 @@
 *********************************************************************************************************************************/
 #ifdef BS3_INSTANTIATING_CMN
 /** Instruction set type and operand width. */
-typedef enum { T_INVALID, T_SSE, T_SSE2, T_SSE3, T_SSSE3, T_SSE4_1, T_SSE4_2, T_SSE4A, T_AVX_128, T_AVX_256, T_MAX } INPUT_TYPE_T;
+typedef enum
+{
+    T_INVALID,
+    T_MMX,
+    T_AXMMX,
+    T_SSE,
+    T_128BITS = T_SSE,
+    T_SSE2,
+    T_SSE3,
+    T_SSSE3,
+    T_SSE4_1,
+    T_SSE4_2,
+    T_SSE4A,
+    T_AVX_128,
+    T_AVX2_128,
+    T_AVX_256,
+    T_256BITS = T_AVX_256,
+    T_AVX2_256,
+    T_MAX
+} INPUT_TYPE_T;
 
 /** Memory or register rm variant. */
 enum { RM_REG, RM_MEM };
@@ -57,6 +76,7 @@ typedef struct BS3CPUINSTR3_CONFIG_T
     uint16_t    fAligned    : 1; /**< Aligned memory operands. If zero, they will be misaligned and tests w/o memory ops skipped. */
     uint16_t    fAlignCheck : 1;
     uint16_t    fMxCsrMM    : 1; /**< AMD only */
+    uint8_t     bXcptMmx;
     uint8_t     bXcptSse;
     uint8_t     bXcptAvx;
 } BS3CPUINSTR3_CONFIG_T;
@@ -105,25 +125,27 @@ static bool g_afTypeSupports[T_MAX] = { false, false, false, false, false, false
 /** Exception type #4 test configurations. */
 static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4[] =
 {
-/* fCr0Mp, Cr0Em, fCr0Ts, fCr4OsFxSR, fCr4OsXSave, fXcr0Sse, fXcr0Avx, fAligned, fAlignCheck, fMxCsrMM, bXcptSse,    bXcptAvx */
-/*   X87   SSE    SSE     SSE         AVX          AVX       AVX       SSE+AVX   AVX+AMD/SSE  AMD/SSE   */
-    { 0,   0,     0,      1,          1,           1,        1,        1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB }, /* #0 */
-    { 1,   0,     0,      1,          1,           1,        1,        1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB }, /* #1 */
-    { 0,   1,     0,      1,          1,           1,        1,        1,        0,           0,        X86_XCPT_UD, X86_XCPT_DB }, /* #2 */
-    { 0,   0,     1,      1,          1,           1,        1,        1,        0,           0,        X86_XCPT_NM, X86_XCPT_DB }, /* #3 */
-    { 0,   1,     1,      1,          1,           1,        1,        1,        0,           0,        X86_XCPT_UD, X86_XCPT_DB }, /* #4 */
-    { 0,   0,     0,      0,          1,           1,        1,        1,        0,           0,        X86_XCPT_UD, X86_XCPT_DB }, /* #5 */
-    { 0,   0,     0,      1,          0,           1,        1,        1,        0,           0,        X86_XCPT_DB, X86_XCPT_UD }, /* #6 */
-    { 0,   0,     0,      1,          1,           1,        0,        1,        0,           0,        X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
-    { 0,   0,     0,      1,          1,           0,        0,        1,        0,           0,        X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
+/*
+ *   X87 SSE SSE SSE     AVX      AVX  AVX   SSE+AVX   AVX+AMD/SSE  AMD/SSE   <-- applies to
+ *
+ *   CR0 CR0 CR0 CR4     CR4      XCR0 XCR0
+ *   MP, EM, TS, OSFXSR, OSXSAVE, SSE, AVX,  fAligned, fAlignCheck, fMxCsrMM, bXcptMmx,    bXcptSse,    bXcptAvx */
+    { 0, 0,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #0 */
+    { 1, 0,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #1 */
+    { 0, 1,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #2 */
+    { 0, 0,  1,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_NM, X86_XCPT_NM, X86_XCPT_DB }, /* #3 */
+    { 0, 1,  1,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #4 */
+    { 0, 0,  0,  0,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #5 */
+    { 0, 0,  0,  1,      0,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #6 */
+    { 0, 0,  0,  1,      1,       1,   0,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
+    { 0, 0,  0,  1,      1,       0,   0,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     /* Memory misalignment: */
-    { 0,   0,     0,      1,          1,           1,        1,        0,        0,           0,        X86_XCPT_GP, X86_XCPT_DB }, /* #9 */
-    { 0,   0,     0,      1,          1,           1,        1,        0,        1,           0,        X86_XCPT_GP, X86_XCPT_AC }, /* #10 */
+    { 0, 0,  0,  1,      1,       1,   1,    0,        0,           0,        X86_XCPT_GP, X86_XCPT_GP, X86_XCPT_DB }, /* #9 */
+    { 0, 0,  0,  1,      1,       1,   1,    0,        1,           0,        X86_XCPT_GP, X86_XCPT_GP, X86_XCPT_AC }, /* #10 */
     /* AMD only: */
-    { 0,   0,     0,      1,          1,           1,        1,        0,        0,           1,        X86_XCPT_DB, X86_XCPT_DB }, /* #11 */
-    { 0,   0,     0,      1,          1,           1,        1,        0,        1,           1,        X86_XCPT_AC, X86_XCPT_AC }, /* #12 */
+    { 0, 0,  0,  1,      1,       1,   1,    0,        0,           1,        X86_XCPT_GP, X86_XCPT_DB, X86_XCPT_DB }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,    0,        1,           1,        X86_XCPT_GP, X86_XCPT_AC, X86_XCPT_AC }, /* #12 */
 };
-
 #endif
 
 
@@ -141,8 +163,9 @@ static void bs3CpuInstr3InitGlobals(void)
     {
         if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
         {
-            uint32_t fEcx, fEdx;
+            uint32_t fEbx, fEcx, fEdx;
             ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+            g_afTypeSupports[T_MMX]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_MMX);
             g_afTypeSupports[T_SSE]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE);
             g_afTypeSupports[T_SSE2]        = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE2);
             g_afTypeSupports[T_SSE3]        = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE3);
@@ -152,9 +175,17 @@ static void bs3CpuInstr3InitGlobals(void)
             g_afTypeSupports[T_AVX_128]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
             g_afTypeSupports[T_AVX_256]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
 
+            if (ASMCpuId_EAX(0) >= 7)
+            {
+                ASMCpuIdExSlow(7, 0, 0, 0, NULL, &fEbx, NULL, NULL);
+                g_afTypeSupports[T_AVX2_128] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+                g_afTypeSupports[T_AVX2_256] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+            }
+
             if (g_uBs3CpuDetected & BS3CPU_F_CPUID_EXT_LEAVES)
             {
-                ASMCpuIdExSlow(UINT32_C(0x80000001), 0, 0, 0, NULL, NULL, &fEcx, NULL);
+                ASMCpuIdExSlow(UINT32_C(0x80000001), 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+                g_afTypeSupports[T_AXMMX]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
                 g_afTypeSupports[T_SSE4A]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_SSE4A);
                 g_fAmdMisalignedSse         = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
             }
@@ -261,91 +292,6 @@ static void bs3CpuInstr3ConfigRestore(PCBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg, P
 }
 
 
-static bool Bs3TestCheckExtCtx(PCBS3EXTCTX pActualExtCtx, PCBS3EXTCTX pExpectedExtCtx, uint16_t fFlags,
-                               const char BS3_FAR *pszMode, uint16_t idTestStep)
-{
-    /*
-     * Make sure the context of a similar and valid before starting.
-     */
-    if (!pActualExtCtx || pActualExtCtx->u16Magic != BS3EXTCTX_MAGIC)
-        return Bs3TestFailedF("%u - %s: invalid actual context pointer: %p", idTestStep, pszMode, pActualExtCtx);
-    if (!pExpectedExtCtx || pExpectedExtCtx->u16Magic != BS3EXTCTX_MAGIC)
-        return Bs3TestFailedF("%u - %s: invalid expected context pointer: %p", idTestStep, pszMode, pExpectedExtCtx);
-    if (   pActualExtCtx->enmMethod != pExpectedExtCtx->enmMethod
-        || pActualExtCtx->enmMethod == BS3EXTCTXMETHOD_INVALID
-        || pActualExtCtx->enmMethod >= BS3EXTCTXMETHOD_END)
-        return Bs3TestFailedF("%u - %s: mismatching or/and invalid context methods: %d vs %d",
-                              idTestStep, pszMode, pActualExtCtx->enmMethod, pExpectedExtCtx->enmMethod);
-    if (pActualExtCtx->cb != pExpectedExtCtx->cb)
-        return Bs3TestFailedF("%u - %s: mismatching context sizes: %#x vs %#x",
-                              idTestStep, pszMode, pActualExtCtx->cb, pExpectedExtCtx->cb);
-
-    /*
-     * Try get the job done quickly with a memory compare.
-     */
-    if (Bs3MemCmp(pActualExtCtx, pExpectedExtCtx, pActualExtCtx->cb) == 0)
-        return true;
-
-    Bs3TestFailedF("%u - %s: context memory differs", idTestStep, pszMode); // debug
-    {
-        uint8_t const BS3_FAR *pb1 = (uint8_t const BS3_FAR *)pActualExtCtx;
-        uint8_t const BS3_FAR *pb2 = (uint8_t const BS3_FAR *)pExpectedExtCtx;
-        unsigned const         cb  = pActualExtCtx->cb;
-        unsigned               off;
-        for (off = 0; off < cb; off++)
-            if (pb1[off] != pb2[off])
-            {
-                unsigned       cbDiff;
-                unsigned const offStart = off++;
-                while (off < cb && pb1[off] != pb2[off])
-                    off++;
-                cbDiff = off - offStart;
-                switch (cbDiff)
-                {
-                    case 1:
-                        Bs3TestFailedF("%u - %s: Byte difference at %#x: %#04x, expected %#04x", idTestStep, pszMode, offStart,
-                                       pb1[offStart], pb2[offStart]);
-                        break;
-                    case 2:
-                        Bs3TestFailedF("%u - %s: Word difference at %#x: %#06x, expected %#06x", idTestStep, pszMode, offStart,
-                                       RT_MAKE_U16(pb1[offStart], pb1[offStart + 1]),
-                                       RT_MAKE_U16(pb2[offStart], pb2[offStart + 1]));
-                        break;
-                    case 4:
-                        Bs3TestFailedF("%u - %s: Dword difference at %#x: %#010RX32, expected %#010RX32",
-                                       idTestStep, pszMode, offStart,
-                                       RT_MAKE_U32_FROM_U8(pb1[offStart], pb1[offStart + 1], pb1[offStart + 2], pb1[offStart + 3]),
-                                       RT_MAKE_U32_FROM_U8(pb2[offStart], pb2[offStart + 1], pb2[offStart + 2], pb2[offStart + 3]));
-                        break;
-                    default:
-                        Bs3TestFailedF("%u - %s: %#x..%#x differs", idTestStep, pszMode, offStart, off - 1);
-                        Bs3TestFailedF("got      %.*Rhxs", off - offStart, &pb1[offStart]);
-                        Bs3TestFailedF("expected %.*Rhxs", off - offStart, &pb2[offStart]);
-                        break;
-                }
-            }
-    }
-
-    if (pActualExtCtx->enmMethod == BS3EXTCTXMETHOD_ANCIENT)
-        return Bs3TestFailedF("%u - %s: BS3EXTCTXMETHOD_ANCIENT not implemented", idTestStep, pszMode);
-
-    /*
-     * Check the x87 state.
-     */
-    if (   pActualExtCtx->enmMethod == BS3EXTCTXMETHOD_FXSAVE
-        || (   pActualExtCtx->enmMethod == BS3EXTCTXMETHOD_XSAVE
-            && (pActualExtCtx->fXcr0Nominal & XSAVE_C_X87)) )
-    {
-
-    }
-
-    /*
-     *
-     */
-
-    return false;
-}
-
 /**
  * Allocates two extended CPU contexts and initializes the first one
  * with random data.
@@ -412,7 +358,7 @@ static void bs3CpuInstr3SetupSseAndAvx(PBS3REGCTX pCtx, PCBS3EXTCTX pExtCtx)
 typedef struct BS3CPUINSTR3_TEST1_VALUES_T
 {
     RTUINT256U      uSrc2;
-    RTUINT256U      uSrc1; /**< uDstIn for SSE */
+    RTUINT256U      uSrc1; /**< uDstIn for MMX & SSE */
     RTUINT256U      uDstOut;
 } BS3CPUINSTR3_TEST1_VALUES_T;
 
@@ -502,10 +448,12 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
             {
                 BS3CPUINSTR3_TEST1_VALUES_T const BS3_FAR *paValues = paTests[iTest].paValues;
                 unsigned const  cValues     = paTests[iTest].cValues;
+                bool const      fMmxInstr   = paTests[iTest].enmType < T_SSE;
                 bool const      fSseInstr   = paTests[iTest].enmType >= T_SSE && paTests[iTest].enmType < T_AVX_128;
                 uint8_t const   cbOperand   = paTests[iTest].enmType <= T_AVX_128 ? 128/8 : 256/8;
-                uint8_t const   cbAlign     = 16;
+                uint8_t const   cbAlign     = fMmxInstr ? 8 : 16;
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
+                                            : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse : paConfigs[iCfg].bXcptAvx;
                 uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                 unsigned        iVal;
@@ -514,8 +462,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                                                                        & ~(size_t)(cbAlign - 1))
                                                                       - !paConfigs[iCfg].fAligned];
 
-                /* If testing unaligned memory accesses, skip register-only tests.  This
-                   allows setting bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
+                /* If testing unaligned memory accesses, skip register-only tests.  This allows
+                   setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
                 if (!paConfigs[iCfg].fAligned && paTests[iTest].enmRm != RM_MEM)
                     continue;
 
@@ -536,6 +484,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     /*
                      * Set up the context and some expectations.
                      */
+                    /* dest */
                     if (paTests[iTest].iRegDst == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
@@ -546,9 +495,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                             uMemOpExpect = *puMemOp;
                     }
 
-                    if (paTests[iTest].iRegSrc1 != UINT8_MAX)
-                        Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegSrc1, &paValues[iVal].uSrc1, fSseInstr);
-                    else
+                    /* source #1 (/ destination for MMX and SSE) */
+                    if (paTests[iTest].iRegSrc1 == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         *puMemOp = paValues[iVal].uSrc1;
@@ -557,16 +505,25 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                         else
                             uMemOpExpect = paValues[iVal].uSrc1;
                     }
-
-                    if (paTests[iTest].iRegSrc2 != UINT8_MAX)
-                        Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegSrc2, &paValues[iVal].uSrc2, fSseInstr);
+                    else if (fMmxInstr)
+                        Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegSrc1, paValues[iVal].uSrc1.QWords.qw0);
                     else
+                        Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegSrc1, &paValues[iVal].uSrc1, fSseInstr);
+
+                    /* source #2 */
+                    if (paTests[iTest].iRegSrc2 == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         BS3_ASSERT(paTests[iTest].iRegDst != UINT8_MAX && paTests[iTest].iRegSrc1 != UINT8_MAX);
                         *puMemOp = uMemOpExpect = paValues[iVal].uSrc1;
                         uMemOpExpect = paValues[iVal].uSrc1;
                     }
+                    else if (fMmxInstr)
+                        Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegSrc2, paValues[iVal].uSrc2.QWords.qw0);
+                    else
+                        Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegSrc2, &paValues[iVal].uSrc2, fSseInstr);
+
+                    /* Memory pointer. */
                     if (paTests[iTest].enmRm == RM_MEM)
                     {
                         BS3_ASSERT(   paTests[iTest].iRegDst == UINT8_MAX
@@ -588,7 +545,12 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     cErrors = Bs3TestSubErrorCount();
 
                     if (bXcptExpect == X86_XCPT_DB && paTests[iTest].iRegDst != UINT8_MAX)
-                        Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegDst, &paValues[iVal].uDstOut, fSseInstr);
+                    {
+                        if (fMmxInstr)
+                            Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegDst, paValues[iVal].uDstOut.QWords.qw0);
+                        else
+                            Bs3ExtCtxSetYmm(pExtCtx, paTests[iTest].iRegDst, &paValues[iVal].uDstOut, fSseInstr);
+                    }
                     Bs3TestCheckExtCtx(pExtCtxOut, pExtCtx, 0 /*fFlags*/, pszMode, idTestStep);
 
                     if (TrapFrame.bXcpt != bXcptExpect)

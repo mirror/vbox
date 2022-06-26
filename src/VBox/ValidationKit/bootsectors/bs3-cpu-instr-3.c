@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-instr-3, SSE and AVX instructions, 16-bit C code.
+ * BS3Kit - bs3-cpu-instr-3 - MMX, SSE and AVX instructions, 16-bit C code.
  */
 
 /*
