@@ -355,6 +355,11 @@ static void bs3CpuInstr3SetupSseAndAvx(PBS3REGCTX pCtx, PCBS3EXTCTX pExtCtx)
     }
 }
 
+
+/*
+ * Test type #1.
+ */
+
 typedef struct BS3CPUINSTR3_TEST1_VALUES_T
 {
     RTUINT256U      uSrc2;
@@ -368,10 +373,10 @@ typedef struct BS3CPUINSTR3_TEST1_T
     uint8_t         enmRm;
     uint8_t         enmType;
     uint8_t         cbInstr;
-    uint8_t         cValues;
     uint8_t         iRegDst;
     uint8_t         iRegSrc1;
     uint8_t         iRegSrc2;
+    uint8_t         cValues;
     BS3CPUINSTR3_TEST1_VALUES_T const BS3_FAR *paValues;
 } BS3CPUINSTR3_TEST1_T;
 
@@ -450,17 +455,19 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                 unsigned const  cValues     = paTests[iTest].cValues;
                 bool const      fMmxInstr   = paTests[iTest].enmType < T_SSE;
                 bool const      fSseInstr   = paTests[iTest].enmType >= T_SSE && paTests[iTest].enmType < T_AVX_128;
-                uint8_t const   cbOperand   = paTests[iTest].enmType <= T_AVX_128 ? 128/8 : 256/8;
-                uint8_t const   cbAlign     = fMmxInstr ? 8 : 16;
+                uint8_t const   cbOperand   = paTests[iTest].enmType < T_128BITS ? 64/8
+                                            : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
+                uint8_t const   cbAlign     = RT_MIN(cbOperand, 16);
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse : paConfigs[iCfg].bXcptAvx;
                 uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                 unsigned        iVal;
                 uint8_t         abPadding[sizeof(RTUINT256U) * 2];
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&abPadding[(  BS3_FP_OFF(&abPadding[sizeof(RTUINT256U)])
-                                                                       & ~(size_t)(cbAlign - 1))
-                                                                      - !paConfigs[iCfg].fAligned];
+                unsigned const  offPadding  = (BS3_FP_OFF(&abPadding[sizeof(RTUINT256U)]) & ~(size_t)(cbAlign - 1))
+                                            - BS3_FP_OFF(&abPadding[0]);
+                PRTUINT256U     puMemOp     = (PRTUINT256U)&abPadding[offPadding - !paConfigs[iCfg].fAligned];
+                BS3_ASSERT((uint8_t BS3_FAR *)puMemOp - &abPadding[0] <= sizeof(RTUINT256U));
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
@@ -515,8 +522,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         BS3_ASSERT(paTests[iTest].iRegDst != UINT8_MAX && paTests[iTest].iRegSrc1 != UINT8_MAX);
-                        *puMemOp = uMemOpExpect = paValues[iVal].uSrc1;
-                        uMemOpExpect = paValues[iVal].uSrc1;
+                        *puMemOp = uMemOpExpect = paValues[iVal].uSrc2;
+                        uMemOpExpect = paValues[iVal].uSrc2;
                     }
                     else if (fMmxInstr)
                         Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegSrc2, paValues[iVal].uSrc2.QWords.qw0);
@@ -555,9 +562,18 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
 
                     if (TrapFrame.bXcpt != bXcptExpect)
                         Bs3TestFailedF("Expected bXcpt = %#x, got %#x", bXcptExpect, TrapFrame.bXcpt);
+
+                    /* Kludge! Looks like EFLAGS.AC is cleared when raising #GP in real mode on the 10980XE. WEIRD! */
+                    if (bMode == BS3_MODE_RM && (Ctx.rflags.u32 & X86_EFL_AC))
+                    {
+                        if (TrapFrame.Ctx.rflags.u32 & X86_EFL_AC)
+                            Bs3TestFailedF("Expected EFLAGS.AC to be cleared (bXcpt=%d)", TrapFrame.bXcpt);
+                        TrapFrame.Ctx.rflags.u32 |= X86_EFL_AC;
+                    }
                     Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &Ctx, bXcptExpect == X86_XCPT_DB ? paTests[iTest].cbInstr + 1 : 0, 0,
                                          bXcptExpect == X86_XCPT_DB || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
                                          pszMode, idTestStep);
+
                     if (   paTests[iTest].enmRm == RM_MEM
                         && Bs3MemCmp(puMemOp, &uMemOpExpect, cbOperand) != 0)
                         Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbOperand, &uMemOpExpect, cbOperand, puMemOp);
@@ -602,20 +618,23 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_xorps)(uint8_t bMode)
 
     static BS3CPUINSTR3_TEST1_T const s_aTests16[] =
     {
-        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c16,      RM_REG, T_SSE2, 3,  1, 1, 2, RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c16,      RM_REG, T_SSE2, 3,  1, 1,   2, RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c16,     RM_MEM, T_SSE2, 4,  1, 1, 255, RT_ELEMENTS(s_aValues128), s_aValues128 },
     };
 
 #if ARCH_BITS >= 32
     static BS3CPUINSTR3_TEST1_T const s_aTests32[] =
     {
-        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c32,      RM_REG, T_SSE2, 3,  1, 1, 2, RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c32,      RM_REG, T_SSE2, 3,  1, 1, 2,   RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c32,     RM_MEM, T_SSE2, 4,  1, 1, 255, RT_ELEMENTS(s_aValues128), s_aValues128 },
     };
 #endif
 
 #if ARCH_BITS >= 64
     static BS3CPUINSTR3_TEST1_T const s_aTests64[] =
     {
-        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c64,      RM_REG, T_SSE2, 3,  1, 1, 2, RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c64,      RM_REG, T_SSE2, 3,  1, 1, 2,   RT_ELEMENTS(s_aValues128), s_aValues128 },
+        {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c64,     RM_MEM, T_SSE2, 4,  1, 1, 255, RT_ELEMENTS(s_aValues128), s_aValues128 },
     };
 #endif
 
