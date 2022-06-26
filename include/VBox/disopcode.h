@@ -132,6 +132,7 @@ enum OPCODES
     OP_ENTER,
     OP_LEAVE,
     OP_RETF,
+    OP_INT1,
     OP_INT3,
     OP_INT,
     OP_INTO,
