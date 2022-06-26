@@ -33,10 +33,14 @@
 #undef Bs3ExtCtxAlloc
 #undef Bs3ExtCtxCopy
 #undef Bs3ExtCtxFree
+#undef Bs3ExtCtxGetMxCsr
 #undef Bs3ExtCtxGetSize
+#undef Bs3ExtCtxGetYmm
 #undef Bs3ExtCtxInit
 #undef Bs3ExtCtxRestore
 #undef Bs3ExtCtxSave
+#undef Bs3ExtCtxSetMxCsr
+#undef Bs3ExtCtxSetYmm
 #undef Bs3GetCpuVendor
 #undef Bs3GetModeName
 #undef Bs3GetModeNameShortLower

@@ -2879,6 +2879,50 @@ BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
  */
 BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxCopy,(PBS3EXTCTX pDst, PCBS3EXTCTX pSrc));
 
+/**
+ * Gets the MXCSR register value from @a pExtCtx.
+ *
+ * @returns MXCSR value, 0 if not part of context.
+ * @param   pExtCtx         The extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(uint32_t, Bs3ExtCtxGetMxCsr,(PCBS3EXTCTX pExtCtx));
+
+/**
+ * Sets the MXCSR register value in @a pExtCtx.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @param   uValue          The new MXCSR value.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue));
+
+/**
+ * Gets the value of YMM register number @a iReg from @a pExtCtx.
+ *
+ * @returns MXCSR value, 0 if not part of context.
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to get.
+ * @param   pValue          Where to return the value.  Parts not in the
+ *                          extended state are zeroed.  For absent or invalid
+ *                          @a iReg values this is set to zero.
+ */
+BS3_CMN_PROTO_STUB(PRTUINT256U, Bs3ExtCtxGetYmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRTUINT256U pValue));
+
+/**
+ * Sets the value of YMM register number @a iReg in @a pExtCtx to @a pValue.
+ *
+ * @returns true if set (even if only partially). False if not set (not
+ *          supported by state format, unsupported/invalid iReg).
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to set.
+ * @param   pValue          The new register value.
+ * @param   f128Bit         A little peculiarity grown from mixing SSE and AVX
+ *                          tests:  When set to true only the lower 128 bits of
+ *                          the YMM register will be set. The upper bits are
+ *                          untouched.  When false, the whole 256-bits value
+ *                          will be set.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetYmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT256U pValue, bool f128Bit));
+
 
 /** @name Debug register accessors for V8086 mode (works everwhere).
  * @{  */

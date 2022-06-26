@@ -27,7 +27,6 @@
 %include "bs3kit-template-header.mac"
 
 extern BS3_CMN_NM(Bs3RegSetXcr0)
-extern BS3_CMN_NM(Bs3RegGetXcr0Asm)
 
 ;;
 ; Saves the extended CPU context (FPU, SSE, AVX, ++).
@@ -63,7 +62,9 @@ BONLY16 push    es
         jmp     .return
 
 .do_16_xsave:
-        call    BS3_CMN_NM(Bs3RegGetXcr0Asm)
+        ; xgetbv can be used in any ring!
+        xor     ecx, ecx
+        xgetbv
         mov     [es:bx + BS3EXTCTX.fXcr0Saved], eax
         mov     [es:bx + BS3EXTCTX.fXcr0Saved + 4], edx
 
@@ -105,7 +106,8 @@ BONLY64 fxsave64 [xBX + BS3EXTCTX.Ctx]
         jmp     .return
 
 .do_xsave:
-        call    BS3_CMN_NM(Bs3RegGetXcr0Asm)
+        xor     ecx, ecx
+        xgetbv
         mov     [xBX + BS3EXTCTX.fXcr0Saved], eax
         mov     [xBX + BS3EXTCTX.fXcr0Saved + 4], edx
 

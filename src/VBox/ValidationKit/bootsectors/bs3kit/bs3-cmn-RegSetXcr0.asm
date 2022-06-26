@@ -39,13 +39,11 @@ TMPL_BEGIN_TEXT
 ;
 ; @param    uValue      The value to set.
 
-; @remarks  Does not require 20h of parameter scratch space in 64-bit mode,
-;           only 8 bytes for dumping rcx.
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
 ; @uses     No GPRs.
 ;
 BS3_PROC_BEGIN_CMN Bs3RegSetXcr0, BS3_PBC_HYBRID_SAFE
-        BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
         push    sSI
@@ -53,8 +51,14 @@ BS3_PROC_BEGIN_CMN Bs3RegSetXcr0, BS3_PBC_HYBRID_SAFE
         push    sAX
 
         ; Load the value
+%if TMPL_BITS == 64
+        mov     eax, ecx
+        mov     rdx, rcx
+        shr     rdx, 32
+%else
         mov     sAX, [xBP + xCB + cbCurRetAddr]
         mov     sDX, [xBP + xCB + cbCurRetAddr + 4]
+%endif
 
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
@@ -85,7 +89,6 @@ BS3_PROC_BEGIN_CMN Bs3RegSetXcr0, BS3_PBC_HYBRID_SAFE
         pop     sDX
         pop     sSI
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
         BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3RegSetXcr0
 
