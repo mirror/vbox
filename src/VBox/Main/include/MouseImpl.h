@@ -27,7 +27,7 @@
 #include <VBox/vmm/pdmdrv.h>
 
 /** Maximum number of devices supported */
-enum { MOUSE_MAX_DEVICES = 3 };
+enum { MOUSE_MAX_DEVICES = 4 };
 /** Mouse driver instance data. */
 typedef struct DRVMAINMOUSE DRVMAINMOUSE, *PDRVMAINMOUSE;
 

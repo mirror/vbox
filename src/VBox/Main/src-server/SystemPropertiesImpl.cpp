@@ -1510,6 +1510,7 @@ HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDTy
         PointingHIDType_ComboMouse,
 #endif
         PointingHIDType_USBMultiTouch,
+        PointingHIDType_USBMultiTouchScreenPlusPad,
     };
     aSupportedPointingHIDTypes.assign(aPointingHIDTypes,
                                       aPointingHIDTypes + RT_ELEMENTS(aPointingHIDTypes));
