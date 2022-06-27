@@ -55,6 +55,13 @@ Rules for adding a changelog entry to make them look more uniform:
       added:</para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>Audio: Added "default" host driver type to make it possible to move VMs (appliances) between different platforms
+          without the need of changing the audio driver explicitly. When the "default" driver is selected, the best audio backend
+          option for a platform will be used.</para>
+      </listitem>
+
       <listitem>
         <para>Guest Control: Implemented initial support for automatic updating
           of Guest Additions for Linux guests</para>
