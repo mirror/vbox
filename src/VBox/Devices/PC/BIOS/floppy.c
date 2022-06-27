@@ -1119,7 +1119,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             SET_AH(0x01); // invalid drive
             set_diskette_ret_status(0x01);
             SET_CF();
-        return;
+            return;
         }
 
         SET_AH(0x06); // change line not supported
