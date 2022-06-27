@@ -144,11 +144,6 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
 BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
 
 BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp
-%if 0
-.again2:
-        pause
-        jmp .again2
-%endif
         vxorps    xmm1, xmm1, [fs:xBX]
 .again:
         icebp
@@ -170,6 +165,60 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
 BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
 
 
+
+;
+; XORPD (SSE2) & VXORPD (AVX)
+;
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorpd_XMM1_XMM2_icebp
+        xorpd   xmm1, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_xorpd_XMM1_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp
+        xorpd   xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp
+        vxorpd    xmm2, xmm1, xmm0
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp
+        vxorpd    xmm2, xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp
+        vxorpd    ymm2, ymm1, ymm0
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp
+        vxorpd    ymm2, ymm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp
+
+ %if TMPL_BITS == 64
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp
+        vxorpd    ymm10, ymm8, ymm15
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp
+ %endif
 
 %endif ; BS3_INSTANTIATING_CMN
 
