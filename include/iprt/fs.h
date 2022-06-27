@@ -578,7 +578,7 @@ typedef struct RTFSPROPERTIES
      * False if it can't. */
     bool    fSupportsUnicode;
 
-    /** True if the filesystem is compresses.
+    /** True if the filesystem is compressed.
      * False if it isn't or we don't know. */
     bool    fCompressed;
 
