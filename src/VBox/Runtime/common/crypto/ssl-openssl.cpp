@@ -293,7 +293,7 @@ RTDECL(int) RTCrSslCreateSessionForNativeSocket(RTCRSSL hSsl, RTHCINTPTR hNative
             SSL_free(pSession->pSsl);
             pSession->pSsl = NULL;
         }
-        RTMemFree(pThis);
+        RTMemFree(pSession);
     }
     return rc;
 }
