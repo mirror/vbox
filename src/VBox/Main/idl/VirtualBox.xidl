@@ -15757,7 +15757,7 @@
       <param name="path" type="wstring" dir="in">
         <desc>Full path to return the free space for.</desc>
       </param>
-      <param name="freeSpace" type="long long" dir="out">
+      <param name="freeSpace" type="long long" dir="return">
         <desc>Free space (in bytes).</desc>
       </param>
     </method>
@@ -15774,7 +15774,7 @@
       <param name="path" type="wstring" dir="in">
         <desc>Full path to return file system information for.</desc>
       </param>
-      <param name="info" type="IGuestFsInfo" dir="out">
+      <param name="info" type="IGuestFsInfo" dir="return">
         <desc>IGuestFsInfo object containing the information.</desc>
       </param>
 
