@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3ExtCtxSetMm
+ * BS3Kit - Bs3ExtCtxSetAbridgedFtw
  */
 
 /*
@@ -31,25 +31,21 @@
 #include "bs3kit-template-header.h"
 
 
-#undef Bs3ExtCtxSetMm
-BS3_CMN_DEF(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue))
+#undef Bs3ExtCtxSetAbridgedFtw
+BS3_CMN_DEF(bool, Bs3ExtCtxSetAbridgedFtw,(PBS3EXTCTX pExtCtx, uint16_t uValue))
 {
-    AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.aRegs, BS3EXTCTX, Ctx.x.x87.aRegs);
-    if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aRegs))
-        switch (pExtCtx->enmMethod)
-        {
-            case BS3EXTCTXMETHOD_FXSAVE:
-            case BS3EXTCTXMETHOD_XSAVE:
-                /* pxor mm1, mm2 on 10980XE sets mm1's sign and exponent to all 1's. */
-                pExtCtx->Ctx.x87.aRegs[iReg].au16[4]    = UINT16_MAX;
-                pExtCtx->Ctx.x87.aRegs[iReg].mmx        = uValue;
-                return true;
+    AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.FTW, BS3EXTCTX, Ctx.x.x87.FTW);
+    switch (pExtCtx->enmMethod)
+    {
+        case BS3EXTCTXMETHOD_FXSAVE:
+        case BS3EXTCTXMETHOD_XSAVE:
+            pExtCtx->Ctx.x87.FTW = uValue;
+            return true;
 
-            case BS3EXTCTXMETHOD_ANCIENT:
-                pExtCtx->Ctx.Ancient.regs[iReg].au16[4] = UINT16_MAX; /* see above */
-                pExtCtx->Ctx.Ancient.regs[iReg].mmx     = uValue;
-                return true;
-        }
+        case BS3EXTCTXMETHOD_ANCIENT:
+            /* Could do iemFpuCalcFullFtw here, but too much work for now... */
+            break;
+    }
     return false;
 }
 

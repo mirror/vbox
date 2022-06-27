@@ -2880,6 +2880,58 @@ BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
 BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxCopy,(PBS3EXTCTX pDst, PCBS3EXTCTX pSrc));
 
 /**
+ * Gets the FCW register value from @a pExtCtx.
+ *
+ * @returns FCW value.
+ * @param   pExtCtx         The extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3ExtCtxGetFcw,(PCBS3EXTCTX pExtCtx));
+
+/**
+ * Sets the FCW register value in @a pExtCtx.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @param   uValue          The new FCW value.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3ExtCtxSetFcw,(PBS3EXTCTX pExtCtx, uint16_t uValue));
+
+/**
+ * Gets the FSW register value from @a pExtCtx.
+ *
+ * @returns FSW value.
+ * @param   pExtCtx         The extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3ExtCtxGetFsw,(PCBS3EXTCTX pExtCtx));
+
+/**
+ * Sets the FSW register value in @a pExtCtx.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @param   uValue          The new FSW value.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3ExtCtxSetFsw,(PBS3EXTCTX pExtCtx, uint16_t uValue));
+
+/**
+ * Gets the abridged FTW register value from @a pExtCtx.
+ *
+ * @returns FTW value.
+ * @param   pExtCtx         The extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3ExtCtxGetAbridgedFtw,(PCBS3EXTCTX pExtCtx));
+
+/**
+ * Sets the abridged FTW register value in @a pExtCtx.
+ *
+ * Currently this requires that the state stores teh abridged FTW, no conversion
+ * to the two-bit variant will be attempted.
+ *
+ * @returns true if set successfully, false if not.
+ * @param   pExtCtx         The extended CPU context.
+ * @param   uValue          The new FTW value.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetAbridgedFtw,(PBS3EXTCTX pExtCtx, uint16_t uValue));
+
+/**
  * Gets the MXCSR register value from @a pExtCtx.
  *
  * @returns MXCSR value, 0 if not part of context.
@@ -2890,10 +2942,28 @@ BS3_CMN_PROTO_STUB(uint32_t, Bs3ExtCtxGetMxCsr,(PCBS3EXTCTX pExtCtx));
 /**
  * Sets the MXCSR register value in @a pExtCtx.
  *
+ * @returns true if set, false if not supported by the format.
  * @param   pExtCtx         The extended CPU context.
  * @param   uValue          The new MXCSR value.
  */
-BS3_CMN_PROTO_STUB(void, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue));
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue));
+
+/**
+ * Gets the MXCSR MASK value from @a pExtCtx.
+ *
+ * @returns MXCSR MASK value, 0 if not part of context.
+ * @param   pExtCtx         The extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(uint32_t, Bs3ExtCtxGetMxCsrMask,(PCBS3EXTCTX pExtCtx));
+
+/**
+ * Sets the MXCSR MASK value in @a pExtCtx.
+ *
+ * @returns true if set, false if not supported by the format.
+ * @param   pExtCtx         The extended CPU context.
+ * @param   uValue          The new MXCSR MASK value.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMxCsrMask,(PBS3EXTCTX pExtCtx, uint32_t uValue));
 
 /**
  * Gets the value of MM register number @a iReg from @a pExtCtx.

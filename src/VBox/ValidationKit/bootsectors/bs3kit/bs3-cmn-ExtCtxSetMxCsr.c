@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3ExtCtxInit
+ * BS3Kit - Bs3ExtCtxSetMxCsr
  */
 
 /*
@@ -32,11 +32,15 @@
 
 
 #undef Bs3ExtCtxSetMxCsr
-BS3_CMN_DEF(void, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue))
+BS3_CMN_DEF(bool, Bs3ExtCtxSetMxCsr,(PBS3EXTCTX pExtCtx, uint32_t uValue))
 {
     AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.MXCSR, BS3EXTCTX, Ctx.x.x87.MXCSR);
     if (   pExtCtx->enmMethod == BS3EXTCTXMETHOD_FXSAVE
         || pExtCtx->enmMethod == BS3EXTCTXMETHOD_XSAVE)
+    {
         pExtCtx->Ctx.x87.MXCSR = uValue;
+        return true;
+    }
+    return false;
 }
 

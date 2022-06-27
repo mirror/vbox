@@ -146,8 +146,16 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-ExtCtxAlloc.c \
        bs3-cmn-ExtCtxFree.c \
        bs3-cmn-ExtCtxCopy.c \
+       bs3-cmn-ExtCtxGetFcw.c \
+       bs3-cmn-ExtCtxSetFcw.c \
+       bs3-cmn-ExtCtxGetFsw.c \
+       bs3-cmn-ExtCtxSetFsw.c \
+       bs3-cmn-ExtCtxGetAbridgedFtw.c \
+       bs3-cmn-ExtCtxSetAbridgedFtw.c \
        bs3-cmn-ExtCtxGetMxCsr.c \
        bs3-cmn-ExtCtxSetMxCsr.c \
+       bs3-cmn-ExtCtxGetMxCsrMask.c \
+       bs3-cmn-ExtCtxSetMxCsrMask.c \
        bs3-cmn-ExtCtxGetMm.c \
        bs3-cmn-ExtCtxSetMm.c \
        bs3-cmn-ExtCtxGetXmm.c \

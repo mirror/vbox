@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3ExtCtxSetMm
+ * BS3Kit - Bs3ExtCtxGetMxCsrMask
  */
 
 /*
@@ -31,25 +31,13 @@
 #include "bs3kit-template-header.h"
 
 
-#undef Bs3ExtCtxSetMm
-BS3_CMN_DEF(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue))
+#undef Bs3ExtCtxGetMxCsrMask
+BS3_CMN_DEF(uint32_t, Bs3ExtCtxGetMxCsrMask,(PCBS3EXTCTX pExtCtx))
 {
-    AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.aRegs, BS3EXTCTX, Ctx.x.x87.aRegs);
-    if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aRegs))
-        switch (pExtCtx->enmMethod)
-        {
-            case BS3EXTCTXMETHOD_FXSAVE:
-            case BS3EXTCTXMETHOD_XSAVE:
-                /* pxor mm1, mm2 on 10980XE sets mm1's sign and exponent to all 1's. */
-                pExtCtx->Ctx.x87.aRegs[iReg].au16[4]    = UINT16_MAX;
-                pExtCtx->Ctx.x87.aRegs[iReg].mmx        = uValue;
-                return true;
-
-            case BS3EXTCTXMETHOD_ANCIENT:
-                pExtCtx->Ctx.Ancient.regs[iReg].au16[4] = UINT16_MAX; /* see above */
-                pExtCtx->Ctx.Ancient.regs[iReg].mmx     = uValue;
-                return true;
-        }
-    return false;
+    AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.MXCSR_MASK, BS3EXTCTX, Ctx.x.x87.MXCSR_MASK);
+    if (   pExtCtx->enmMethod == BS3EXTCTXMETHOD_FXSAVE
+        || pExtCtx->enmMethod == BS3EXTCTXMETHOD_XSAVE)
+        return pExtCtx->Ctx.x87.MXCSR_MASK;
+    return 0;
 }
 
