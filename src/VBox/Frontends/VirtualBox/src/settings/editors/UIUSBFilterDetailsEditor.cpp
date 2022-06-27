@@ -219,7 +219,7 @@ void UIUSBFilterDetailsEditor::retranslateUi()
             m_pComboRemote->setItemText(i, gpConverter->toString(enmType));
         }
         m_pComboRemote->setToolTip(tr("Holds whether this filter applies to USB devices attached locally to the host computer "
-                                      "(<i>No</i>), to a VRDP client's computer (<i>Yes</i>), or both (<i>Any</i>)."));
+                                      "(No), to a VRDP client's computer (Yes), or both (Any)."));
     }
 }
 

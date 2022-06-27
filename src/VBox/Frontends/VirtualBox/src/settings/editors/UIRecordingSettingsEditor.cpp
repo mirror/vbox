@@ -313,7 +313,9 @@ void UIRecordingSettingsEditor::retranslateUi()
                                        "will be skipped. Reducing this value will increase the number of skipped "
                                        "frames and reduce the file size."));
     m_pLabelFrameRateMin->setText(tr("%1 fps").arg(m_pSliderFrameRate->minimum()));
+    m_pLabelFrameRateMin->setToolTip(tr("Minimum possible frame rate."));
     m_pLabelFrameRateMax->setText(tr("%1 fps").arg(m_pSliderFrameRate->maximum()));
+    m_pLabelFrameRateMax->setToolTip(tr("Maximum possible frame rate."));
 
     m_pLabelVideoQuality->setText(tr("&Video Quality:"));
     m_pSliderVideoQuality->setToolTip(tr("Holds the quality. Increasing this value will make the video "
