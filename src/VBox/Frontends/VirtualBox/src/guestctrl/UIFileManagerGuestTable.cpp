@@ -1324,7 +1324,6 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   m_strTableName, FileManagerLogType_Info);
 
-        printf("session status %d\n", m_comGuestSession.GetStatus());
         switch (m_comGuestSession.GetStatus())
         {
             case KGuestSessionStatus_Started:
