@@ -315,14 +315,32 @@ int main(int argc, char **argv)
         fclose(paInputs[i].pFile);
     free(paInputs);
 
+    /* Avoid output sizes that makes the FDC code think it's a single sided
+       floppy.  The BIOS always report double sided floppies, and even if we
+       the bootsector adjust it's bMaxHeads value when getting a 20h error
+       we end up with a garbaged image (seems somewhere in the BIOS/FDC it is
+       still treated as a double sided floppy and we get half the data we want and
+       with gaps). */
+    uint32_t cbOutput = ftell(pOutput);
+    if (   cbOutput == 512 * 8 * 40 /* 160kB 5"1/4 */
+        || cbOutput == 512 * 9 * 40 /* 180kB 5"1/4 */)
+    {
+        static uint8_t const s_abZeroSector[512] = { 0 };
+        if (fwrite(s_abZeroSector, sizeof(uint8_t), sizeof(s_abZeroSector), pOutput) != sizeof(s_abZeroSector))
+        {
+            fprintf(stderr, "error: fwrite failed (padding)\n");
+            rcExit = 1;
+        }
+    }
+
     /* Finally, close the output file (can fail because of buffered data). */
-    if (fclose(stderr) != 0)
+    if (fclose(pOutput) != 0)
     {
         fprintf(stderr, "error: Error closing '%s'.\n", pszOutput);
         rcExit = 1;
     }
 
-    fclose(pOutput);
+    fclose(stderr);
     return rcExit;
 }
 
