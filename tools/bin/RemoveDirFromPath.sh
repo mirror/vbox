@@ -1,10 +1,7 @@
 # !kmk_ash
 # $Id$
 ## @file
-# Bash function for removing a directory from the PATH.
-#
-# This is used by tools/env.sh but cannot be a part of it because kmk_ash
-# freaks out when it sees the bash-specific substitutions.
+# Shell (bash + kmk_ash) function for removing a directory from the PATH.
 #
 # Assumes KBUILD_HOST is set.
 #
@@ -28,16 +25,29 @@
 # @param 2     The directory to remove from the path.
 RemoveDirFromPath()
 {
-    MY_SEP=$1
-    MY_DIR=$2
+    # Parameters.
+    local MY_SEP="$1"
+    local MY_DIR="$2"
     if test "${KBUILD_HOST}" = "win"; then
         MY_DIR="$(cygpath -u "${MY_DIR}")"
     fi
 
-    # This should work at least back to bash 2.0 if the info page is anything to go by.
-    PATH="${MY_SEP}${PATH}${MY_SEP}"                        # Make sure there are separators at both ends.
-    PATH="${PATH//${MY_SEP}${MY_DIR}${MY_SEP}/${MY_SEP}}"   # Remove all (=first '/') ${MY_DIR} instance.
-    PATH="${PATH#${MY_SEP}}"                                # Remove the leading separator we added above.
-    PATH="${PATH%${MY_SEP}}"                                # Remove the trailing separator we added above.
+    # Set the PATH components as script argument.
+    local MY_OLD_IFS="${IFS}"
+    IFS="${MY_SEP}"
+    set -- ${PATH}
+    IFS="${MY_OLD_IFS}"
+
+    # Iterate the components and rebuild the path.
+    PATH=""
+    local MY_SEP_PREV=""
+    local MY_COMPONENT
+    for MY_COMPONENT
+    do
+        if test "${MY_COMPONENT}" != "${MY_DIR}"; then
+            PATH="${PATH}${MY_SEP_PREV}${MY_COMPONENT}"
+            MY_SEP_PREV="${MY_SEP}" # Helps not eliminating empty entries.
+        fi
+    done
 }
 
