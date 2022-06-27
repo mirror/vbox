@@ -1717,6 +1717,7 @@ RTDECL(int) RTTraceLogRdrQueryIterator(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRD
     {
         pIt->pRdr = pThis;
         pIt->pEvt = RTListGetFirst(&pThis->LstEvts, RTTRACELOGRDREVTINT, NdGlob);
+        *phIt = pIt;
     }
     else
         rc = VERR_NO_MEMORY;
