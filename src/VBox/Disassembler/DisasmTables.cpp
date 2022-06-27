@@ -3257,7 +3257,7 @@ const DISOPCODE g_aDisasVexMap1[] =
     OPVEX("vandps %Vps,%Hps,%Wps",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ANDPS,       OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vandnps %Vps,%Hps,%Wps",  IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ANDNPS,      OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vorps %Vps,%Hps,%Wps",    IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ORPS,        OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vxorps %Vps,%Hps,%Wps",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_XORPS,       OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vxorps %Vps,%Hps,%Wps",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_VXORPS,      OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vaddps %Vps,%Hps,%Wps",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ADDPS,       OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vmulps %Vps,%Hps,%Wps",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_MULPS,       OP_PARM_Vps,     OP_PARM_Hps,    OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vcvtps2pd %Vpd,%Wps",     IDX_ParseModRM,     IDX_UseModRM,       0,              0,         OP_CVTPS2PD,    OP_PARM_Vpd,     OP_PARM_Wps,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -3368,7 +3368,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     OPVEX("vandpd %Vpd,%Hpd,%Wpd",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ANDPD,       OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vandnpd %Vpd,%Hpd,%Wpd",  IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ANDNPD,      OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vorpd %Vpd,%Hpd,%Wpd",    IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ORPD,        OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vxorpd %Vpd,%Hpd,%Wpd",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_XORPD,       OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vxorpd %Vpd,%Hpd,%Wpd",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_VXORPD,      OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vaddpd %Vpd,%Hpd,%Wpd",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_ADDPD,       OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vmulpd %Vpd,%Hpd,%Wpd",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,         OP_MULPD,       OP_PARM_Vpd,     OP_PARM_Hpd,    OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vcvtpd2ps %Vps,%Wpd",     IDX_ParseModRM,     IDX_UseModRM,       0,              0,         OP_CVTPD2PS,    OP_PARM_Vps,     OP_PARM_Wpd,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -3480,7 +3480,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     OPVEX("vpaddsb %Vx,%Hx,%Wx",      IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PADDSB,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpaddsw %Vx,%Hx,%Wx",      IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PADDSW,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpmaxsw %Vx,%Hx,%Wx",      IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PMAXSW,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
-    OPVEX("vpxor %Vx,%Hx,%Wx",        IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PXOR,      OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("vpxor %Vx,%Hx,%Wx",        IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_VPXOR,     OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
 
     /* f */
     INVALID_OPCODE,
