@@ -36,12 +36,14 @@
 #undef Bs3ExtCtxGetMm
 #undef Bs3ExtCtxGetMxCsr
 #undef Bs3ExtCtxGetSize
+#undef Bs3ExtCtxGetXmm
 #undef Bs3ExtCtxGetYmm
 #undef Bs3ExtCtxInit
 #undef Bs3ExtCtxRestore
 #undef Bs3ExtCtxSave
 #undef Bs3ExtCtxSetMm
 #undef Bs3ExtCtxSetMxCsr
+#undef Bs3ExtCtxSetXmm
 #undef Bs3ExtCtxSetYmm
 #undef Bs3GetCpuVendor
 #undef Bs3GetModeName

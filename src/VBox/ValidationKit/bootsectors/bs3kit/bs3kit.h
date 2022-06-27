@@ -2915,6 +2915,28 @@ BS3_CMN_PROTO_STUB(uint64_t, Bs3ExtCtxGetMm,(PCBS3EXTCTX pExtCtx, uint8_t iReg))
 BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue));
 
 /**
+ * Gets the value of XMM register number @a iReg from @a pExtCtx.
+ *
+ * @returns pValue
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to get.
+ * @param   pValue          Where to return the value. Zeroed if the state
+ *                          doesn't support SSE or if @a iReg is invalid.
+ */
+BS3_CMN_PROTO_STUB(PRTUINT128U, Bs3ExtCtxGetXmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRTUINT128U pValue));
+
+/**
+ * Sets the value of XMM register number @a iReg in @a pExtCtx to @a pValue.
+ *
+ * @returns True if set, false if not set (not supported by state format or
+ *          invalid iReg).
+ * @param   pExtCtx         The extended CPU context.
+ * @param   iReg            The register to set.
+ * @param   pValue          The new register value.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetXmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT128U pValue));
+
+/**
  * Gets the value of YMM register number @a iReg from @a pExtCtx.
  *
  * @returns pValue
@@ -2934,13 +2956,11 @@ BS3_CMN_PROTO_STUB(PRTUINT256U, Bs3ExtCtxGetYmm,(PCBS3EXTCTX pExtCtx, uint8_t iR
  * @param   pExtCtx         The extended CPU context.
  * @param   iReg            The register to set.
  * @param   pValue          The new register value.
- * @param   f128Bit         A little peculiarity grown from mixing SSE and AVX
- *                          tests:  When set to true only the lower 128 bits of
- *                          the YMM register will be set. The upper bits are
- *                          untouched.  When false, the whole 256-bits value
- *                          will be set.
+ * @param   cbValue         Number of bytes to take from @a pValue, either 16 or
+ *                          32. If 16, the high part will be zeroed when present
+ *                          in the state.
  */
-BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetYmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT256U pValue, bool f128Bit));
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetYmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT256U pValue, uint8_t cbValue));
 
 
 /** @name Debug register accessors for V8086 mode (works everwhere).

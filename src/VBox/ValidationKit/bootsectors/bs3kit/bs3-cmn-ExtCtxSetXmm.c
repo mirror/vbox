@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3ExtCtxSetYmm
+ * BS3Kit - Bs3ExtCtxSetXmm
  */
 
 /*
@@ -31,35 +31,17 @@
 #include "bs3kit-template-header.h"
 
 
-#undef Bs3ExtCtxSetYmm
-BS3_CMN_DEF(bool, Bs3ExtCtxSetYmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT256U pValue, uint8_t cbValue))
+#undef Bs3ExtCtxSetXmm
+BS3_CMN_DEF(bool, Bs3ExtCtxSetXmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT128U pValue))
 {
-    BS3_ASSERT(cbValue == 16 || cbValue == 32);
+    AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.aXMM, BS3EXTCTX, Ctx.x.x87.aXMM);
     switch (pExtCtx->enmMethod)
     {
         case BS3EXTCTXMETHOD_FXSAVE:
+        case BS3EXTCTXMETHOD_XSAVE:
             if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aXMM))
             {
-                pExtCtx->Ctx.x87.aXMM[iReg].uXmm = pValue->DQWords.dqw0;
-                return true;
-            }
-            break;
-
-        case BS3EXTCTXMETHOD_XSAVE:
-            if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x.x87.aXMM))
-            {
-                pExtCtx->Ctx.x87.aXMM[iReg].uXmm = pValue->DQWords.dqw0;
-                if (pExtCtx->fXcr0Nominal & XSAVE_C_YMM)
-                {
-                    if (cbValue >= 32)
-                        pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].uXmm = pValue->DQWords.dqw1;
-                    else
-                    {
-                        pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].au64[0] = 0;
-                        pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].au64[1] = 0;
-                    }
-                    /** @todo zero high ZMM part. */
-                }
+                pExtCtx->Ctx.x87.aXMM[iReg].xmm = pValue->u;
                 return true;
             }
             break;

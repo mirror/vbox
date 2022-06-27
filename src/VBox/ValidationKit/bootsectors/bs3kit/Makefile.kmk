@@ -150,6 +150,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-ExtCtxSetMxCsr.c \
        bs3-cmn-ExtCtxGetMm.c \
        bs3-cmn-ExtCtxSetMm.c \
+       bs3-cmn-ExtCtxGetXmm.c \
+       bs3-cmn-ExtCtxSetXmm.c \
        bs3-cmn-ExtCtxGetYmm.c \
        bs3-cmn-ExtCtxSetYmm.c \
        bs3-cmn-SelFar32ToFlat32.c \

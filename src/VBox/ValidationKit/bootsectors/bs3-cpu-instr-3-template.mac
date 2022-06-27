@@ -43,36 +43,71 @@ TMPL_BEGIN_TEXT
 ;
 %ifdef BS3_INSTANTIATING_CMN
 
+
+;;
+; Variant on BS3_PROC_BEGIN_CMN w/ BS3_PBC_NEAR that prefixes the function
+; with an instruction length byte.
+;
+; ASSUMES the length is between the start of the function and the .again label.
+;
+%ifndef BS3CPUINSTR3_PROC_BEGIN_CMN
+ %define BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
+ %macro BS3CPUINSTR3_PROC_BEGIN_CMN 1
+        align   8, db 0cch
+        db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
+BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
+ %endmacro
+%endif
+
 ;
 ; XORPS (SSE2) & VXORPS (AVX)
 ;
-BS3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_XMM2_icebp, BS3_PBC_NEAR
-        xorps    xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_XMM2_icebp
+        xorps   xmm1, xmm2
 .again:
         icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_xorps_XMM1_XMM2_icebp
 
-BS3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_FSxBX_icebp, BS3_PBC_NEAR
-        xorps    xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_FSxBX_icebp
+        xorps   xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_xorps_XMM1_FSxBX_icebp
 
-BS3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp, BS3_PBC_NEAR
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
         vxorps    xmm1, xmm1, xmm2
 .again:
         icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
 
-BS3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp, BS3_PBC_NEAR
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp
+%if 0
+.again2:
+        pause
+        jmp .again2
+%endif
         vxorps    xmm1, xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp
+        vxorps    ymm1, ymm1, ymm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
+        vxorps    ymm1, ymm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
 
 
 %endif ; BS3_INSTANTIATING_CMN
