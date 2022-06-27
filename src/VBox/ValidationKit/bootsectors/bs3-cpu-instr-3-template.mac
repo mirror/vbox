@@ -50,7 +50,7 @@ TMPL_BEGIN_TEXT
 ;
 ; ASSUMES the length is between the start of the function and the .again label.
 ;
-%ifndef BS3CPUINSTR3_PROC_BEGIN_CMN
+%ifndef BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
  %define BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
  %macro BS3CPUINSTR3_PROC_BEGIN_CMN 1
         align   8, db 0cch
@@ -58,6 +58,66 @@ TMPL_BEGIN_TEXT
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
  %endmacro
 %endif
+
+;
+; PXOR (SSE2) & VPXOR (AVX2)
+;
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_MM1_MM2_icebp
+        pxor    mm1, mm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pxor_MM1_MM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_MM1_FSxBX_icebp
+        pxor    mm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pxor_MM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_XMM1_XMM2_icebp
+        pxor    xmm1, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pxor_XMM1_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_XMM1_FSxBX_icebp
+        pxor    xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pxor_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp
+        vpxor   xmm1, xmm1, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp
+        vpxor   xmm1, xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp
+        vpxor   ymm7, ymm2, ymm3
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp
+        vpxor   ymm7, ymm2, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp
+
 
 ;
 ; XORPS (SSE2) & VXORPS (AVX)
@@ -108,6 +168,7 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
         icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
+
 
 
 %endif ; BS3_INSTANTIATING_CMN

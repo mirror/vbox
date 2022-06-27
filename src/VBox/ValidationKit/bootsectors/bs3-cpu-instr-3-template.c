@@ -66,16 +66,19 @@ enum { RM_REG, RM_MEM };
  */
 typedef struct BS3CPUINSTR3_CONFIG_T
 {
-    uint16_t    fCr0Mp      : 1;
-    uint16_t    fCr0Em      : 1;
-    uint16_t    fCr0Ts      : 1;
-    uint16_t    fCr4OsFxSR  : 1;
-    uint16_t    fCr4OsXSave : 1;
-    uint16_t    fXcr0Sse    : 1;
-    uint16_t    fXcr0Avx    : 1;
-    uint16_t    fAligned    : 1; /**< Aligned memory operands. If zero, they will be misaligned and tests w/o memory ops skipped. */
-    uint16_t    fAlignCheck : 1;
-    uint16_t    fMxCsrMM    : 1; /**< AMD only */
+    uint16_t    fCr0Mp          : 1;
+    uint16_t    fCr0Em          : 1;
+    uint16_t    fCr0Ts          : 1;
+    uint16_t    fCr4OsFxSR      : 1;
+    uint16_t    fCr4OsXSave     : 1;
+    uint16_t    fXcr0Sse        : 1;
+    uint16_t    fXcr0Avx        : 1;
+    /** x87 exception pending (IE + something unmasked). */
+    uint16_t    fX87XcptPending : 1;
+    /** Aligned memory operands. If zero, they will be misaligned and tests w/o memory ops skipped. */
+    uint16_t    fAligned        : 1;
+    uint16_t    fAlignCheck     : 1;
+    uint16_t    fMxCsrMM        : 1; /**< AMD only */
     uint8_t     bXcptMmx;
     uint8_t     bXcptSse;
     uint8_t     bXcptAvx;
@@ -89,6 +92,8 @@ typedef struct BS3CPUINSTR3_CONFIG_SAVED_T
     uint32_t uCr0;
     uint32_t uCr4;
     uint32_t uEfl;
+    uint16_t uFcw;
+    uint16_t uFsw;
     uint32_t uMxCsr;
 } BS3CPUINSTR3_CONFIG_SAVED_T;
 typedef BS3CPUINSTR3_CONFIG_SAVED_T BS3_FAR *PBS3CPUINSTR3_CONFIG_SAVED_T;
@@ -106,6 +111,15 @@ typedef BS3CPUINSTR3_CONFIG_SAVED_T const BS3_FAR *PCBS3CPUINSTR3_CONFIG_SAVED_T
     extern FNBS3FAR RT_CONCAT(a_BaseNm, _c16); \
     extern FNBS3FAR RT_CONCAT(a_BaseNm, _c32); \
     extern FNBS3FAR RT_CONCAT(a_BaseNm, _c64)
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp);
 
 BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_XMM2_icebp);
 BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_FSxBX_icebp);
@@ -128,25 +142,26 @@ static bool g_afTypeSupports[T_MAX] = { false, false, false, false, false, false
 static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4[] =
 {
 /*
- *   X87 SSE SSE SSE     AVX      AVX  AVX   SSE+AVX   AVX+AMD/SSE  AMD/SSE   <-- applies to
- *
- *   CR0 CR0 CR0 CR4     CR4      XCR0 XCR0
- *   MP, EM, TS, OSFXSR, OSXSAVE, SSE, AVX,  fAligned, fAlignCheck, fMxCsrMM, bXcptMmx,    bXcptSse,    bXcptAvx */
-    { 0, 0,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #0 */
-    { 1, 0,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #1 */
-    { 0, 1,  0,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #2 */
-    { 0, 0,  1,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_NM, X86_XCPT_NM, X86_XCPT_NM }, /* #3 */
-    { 0, 1,  1,  1,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_NM }, /* #4 */
-    { 0, 0,  0,  0,      1,       1,   1,    1,        0,           0,        X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #5 */
-    { 0, 0,  0,  1,      0,       1,   1,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #6 */
-    { 0, 0,  0,  1,      1,       1,   0,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
-    { 0, 0,  0,  1,      1,       0,   0,    1,        0,           0,        X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
+ *   X87 SSE SSE SSE     AVX      AVX  AVX  MMX  MMX+SSE   MMX+AVX  AMD/SSE   <-- applies to
+ *                                               +AVX      +AMD/SSE
+ *   CR0 CR0 CR0 CR4     CR4      XCR0 XCR0 FCW                      MXCSR
+ *   MP, EM, TS, OSFXSR, OSXSAVE, SSE, AVX, ES+, fAligned, AC/AM,   MM,   bXcptMmx,    bXcptSse,    bXcptAvx */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #0 */
+    { 1, 0,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #1 */
+    { 0, 1,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #2 */
+    { 0, 0,  1,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_NM, X86_XCPT_NM, X86_XCPT_NM }, /* #3 */
+    { 0, 1,  1,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_NM }, /* #4 */
+    { 0, 0,  0,  0,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_UD, X86_XCPT_DB }, /* #5 */
+    { 0, 0,  0,  1,      0,       1,   1,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #6 */
+    { 0, 0,  0,  1,      1,       1,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
+    { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
+    { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
     /* Memory misalignment: */
-    { 0, 0,  0,  1,      1,       1,   1,    0,        0,           0,        X86_XCPT_GP, X86_XCPT_GP, X86_XCPT_DB }, /* #9 */
-    { 0, 0,  0,  1,      1,       1,   1,    0,        1,           0,        X86_XCPT_GP, X86_XCPT_GP, X86_XCPT_AC }, /* #10 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_GP, X86_XCPT_DB }, /* #10 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_GP, X86_XCPT_AC }, /* #11 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,    0,        0,           1,        X86_XCPT_GP, X86_XCPT_DB, X86_XCPT_DB }, /* #11 */
-    { 0, 0,  0,  1,      1,       1,   1,    0,        1,           1,        X86_XCPT_GP, X86_XCPT_AC, X86_XCPT_AC }, /* #12 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #13 */
 };
 #endif
 
@@ -209,9 +224,10 @@ static void bs3CpuInstr3InitGlobals(void)
  * @param   pCtx        The register context to modify.
  * @param   pExtCtx     The extended register context to modify.
  * @param   pConfig     The configuration to apply.
+ * @param   bMode       The target mode.
  */
 static bool bs3CpuInstr3ConfigReconfigure(PBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg, PBS3REGCTX pCtx, PBS3EXTCTX pExtCtx,
-                                          PCBS3CPUINSTR3_CONFIG_T pConfig)
+                                          PCBS3CPUINSTR3_CONFIG_T pConfig, uint8_t bMode)
 {
     /*
      * Save context bits we may change here
@@ -219,12 +235,19 @@ static bool bs3CpuInstr3ConfigReconfigure(PBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg
     pSavedCfg->uCr0   = pCtx->cr0.u32;
     pSavedCfg->uCr4   = pCtx->cr4.u32;
     pSavedCfg->uEfl   = pCtx->rflags.u32;
+    pSavedCfg->uFcw   = Bs3ExtCtxGetFcw(pExtCtx);
+    pSavedCfg->uFsw   = Bs3ExtCtxGetFsw(pExtCtx);
     pSavedCfg->uMxCsr = Bs3ExtCtxGetMxCsr(pExtCtx);
 
     /*
      * Can we make these changes?
      */
     if (pConfig->fMxCsrMM && !g_fAmdMisalignedSse)
+        return false;
+
+    /* Currently we skip pending x87 exceptions in real mode as they cannot be
+       caught, given that we preserve the bios int10h. */
+    if (pConfig->fX87XcptPending && BS3_MODE_IS_RM_OR_V86(bMode))
         return false;
 
     /*
@@ -273,6 +296,15 @@ static bool bs3CpuInstr3ConfigReconfigure(PBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg
         pCtx->cr0.u32    &= ~X86_CR0_AM;
     }
 
+    if (!pConfig->fX87XcptPending)
+        Bs3ExtCtxSetFsw(pExtCtx, pSavedCfg->uFsw & ~(X86_FSW_ES | X86_FSW_B));
+    else
+    {
+        Bs3ExtCtxSetFcw(pExtCtx, pSavedCfg->uFcw & ~X86_FCW_ZM);
+        Bs3ExtCtxSetFsw(pExtCtx, pSavedCfg->uFsw | X86_FSW_ZE | X86_FSW_ES | X86_FSW_B);
+        pCtx->cr0.u32 |= X86_CR0_NE;
+    }
+
     if (pConfig->fMxCsrMM)
         Bs3ExtCtxSetMxCsr(pExtCtx, pSavedCfg->uMxCsr | X86_MXCSR_MM);
     else
@@ -290,6 +322,8 @@ static void bs3CpuInstr3ConfigRestore(PCBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg, P
     pCtx->cr4.u32       = pSavedCfg->uCr4;
     pCtx->rflags.u32    = pSavedCfg->uEfl;
     pExtCtx->fXcr0Saved = pExtCtx->fXcr0Nominal;
+    Bs3ExtCtxSetFcw(pExtCtx, pSavedCfg->uFcw);
+    Bs3ExtCtxSetFsw(pExtCtx, pSavedCfg->uFsw);
     Bs3ExtCtxSetMxCsr(pExtCtx, pSavedCfg->uMxCsr);
 }
 
@@ -445,7 +479,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
         {
             unsigned                    iTest;
             BS3CPUINSTR3_CONFIG_SAVED_T SavedCfg;
-            if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg]))
+            if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg], bMode))
                 continue; /* unsupported config */
 
             /*
@@ -496,6 +530,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                 for (iVal = 0; iVal < cValues; iVal++, idTestStep++)
                 {
                     uint16_t   cErrors;
+                    uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
                     /*
@@ -568,7 +603,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     if (bXcptExpect == X86_XCPT_DB && paTests[iTest].iRegDst != UINT8_MAX)
                     {
                         if (fMmxInstr)
+                        {
                             Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegDst, paValues[iVal].uDstOut.QWords.qw0);
+                            uSavedFtw = Bs3ExtCtxGetAbridgedFtw(pExtCtx);
+                            Bs3ExtCtxSetAbridgedFtw(pExtCtx, 0xff); /* Observed on 10980xe after pxor mm1, mm2. */
+                        }
                         else if (fSseInstr)
                             Bs3ExtCtxSetXmm(pExtCtx, paTests[iTest].iRegDst, &paValues[iVal].uDstOut.DQWords.dqw0);
                         else
@@ -604,6 +643,9 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                                            bRing, iCfg, iTest, iVal, bXcptExpect, puMemOp, TrapFrame.Ctx.rflags.u32, TrapFrame.Ctx.cr0);
                         Bs3TestPrintf("\n");
                     }
+
+                    if (uSavedFtw != 0xff)
+                        Bs3ExtCtxSetAbridgedFtw(pExtCtx, uSavedFtw);
                 }
             }
 
@@ -629,7 +671,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
 /*
  * XORPS, 128-bit VXORPS
  */
-BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_xorps)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_v_xorps_xorpd_pxor)(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
     {
@@ -646,6 +688,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_xorps)(uint8_t bMode)
 
     static BS3CPUINSTR3_TEST1_T const s_aTests16[] =
     {
+        {  bs3CpuInstr3_pxor_MM1_MM2_icebp_c16,             255,         RM_REG, T_MMX,      1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_MM1_FSxBX_icebp_c16,           255,         RM_MEM, T_MMX,      1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_XMM2_icebp_c16,           255,         RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_FSxBX_icebp_c16,          255,         RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp_c16,     255,         RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp_c16,    X86_XCPT_DB, RM_MEM, T_AVX_128,  1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp_c16,     255,         RM_REG, T_AVX_256,  7, 2,   3, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp_c16,    X86_XCPT_DB, RM_MEM, T_AVX_256,  7, 2, 255, RT_ELEMENTS(s_aValues), s_aValues },
+
         {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c16,          255,         RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c16,         255,         RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp_c16,    255,         RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
@@ -653,9 +704,19 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_xorps)(uint8_t bMode)
         {  bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp_c16,    255,         RM_REG, T_AVX_256,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp_c16,   X86_XCPT_DB, RM_MEM, T_AVX_256,  1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
     };
+
 # if ARCH_BITS >= 32
     static BS3CPUINSTR3_TEST1_T const s_aTests32[] =
     {
+        {  bs3CpuInstr3_pxor_MM1_MM2_icebp_c32,             255,         RM_REG, T_MMX,      1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_MM1_FSxBX_icebp_c32,           255,         RM_MEM, T_MMX,      1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_XMM2_icebp_c32,           255,         RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_FSxBX_icebp_c32,          255,         RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp_c32,     255,         RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp_c32,    X86_XCPT_DB, RM_MEM, T_AVX_128,  1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp_c32,     255,         RM_REG, T_AVX_256,  7, 2,   3, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp_c32,    X86_XCPT_DB, RM_MEM, T_AVX_256,  7, 2, 255, RT_ELEMENTS(s_aValues), s_aValues },
+
         {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c32,          255, RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c32,         255, RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp_c32,    255, RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
@@ -667,6 +728,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr3_xorps)(uint8_t bMode)
 # if ARCH_BITS >= 64
     static BS3CPUINSTR3_TEST1_T const s_aTests64[] =
     {
+        {  bs3CpuInstr3_pxor_MM1_MM2_icebp_c64,             255,         RM_REG, T_MMX,      1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_MM1_FSxBX_icebp_c64,           255,         RM_MEM, T_MMX,      1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_XMM2_icebp_c64,           255,         RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_pxor_XMM1_FSxBX_icebp_c64,          255,         RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp_c64,     255,         RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp_c64,    X86_XCPT_DB, RM_MEM, T_AVX_128,  1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp_c64,     255,         RM_REG, T_AVX_256,  7, 2,   3, RT_ELEMENTS(s_aValues), s_aValues },
+        {  bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp_c64,    X86_XCPT_DB, RM_MEM, T_AVX_256,  7, 2, 255, RT_ELEMENTS(s_aValues), s_aValues },
+
         {  bs3CpuInstr3_xorps_XMM1_XMM2_icebp_c64,          255,         RM_REG, T_SSE2,     1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_xorps_XMM1_FSxBX_icebp_c64,         255,         RM_MEM, T_SSE2,     1, 1, 255, RT_ELEMENTS(s_aValues), s_aValues },
         {  bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp_c64,    255,         RM_REG, T_AVX_128,  1, 1,   2, RT_ELEMENTS(s_aValues), s_aValues },

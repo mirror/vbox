@@ -34,7 +34,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_xorps);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_xorps_xorpd_pxor);
 
 
 /*********************************************************************************************************************************
@@ -42,7 +42,7 @@ BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_xorps);
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYMAXENTRY g_aTests[] =
 {
-    BS3TESTMODEBYMAXENTRY_CMN("xorps", bs3CpuInstr3_xorps),
+    BS3TESTMODEBYMAXENTRY_CMN("[v]xorps/[v]xorpd/[v]pxor", bs3CpuInstr3_v_xorps_xorpd_pxor),
 };
 
 
