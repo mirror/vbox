@@ -334,13 +334,14 @@ def guestExec(ctx, machine, console, cmds):
     exec(cmds)
 
 def printMouseEvent(_ctx, mev):
-    print("Mouse : mode=%d x=%d y=%d z=%d w=%d buttons=%x" % (mev.mode, mev.x, mev.y, mev.z, mev.w, mev.buttons))
+    print("Mouse: mode=%d x=%d y=%d z=%d w=%d buttons=%x" % (mev.mode, mev.x, mev.y, mev.z, mev.w, mev.buttons))
 
 def printKbdEvent(ctx, kev):
     print("Kbd: ", ctx['global'].getArray(kev, 'scancodes'))
 
 def printMultiTouchEvent(ctx, mtev):
-    print("MultiTouch : contacts=%d time=%d" % (mtev.contactCount, mtev.scanTime))
+    print("MultiTouch: %s contacts=%d time=%d" \
+        % ("touchscreen" if mtev.isTouchScreen else "touchpad", mtev.contactCount, mtev.scanTime))
     xPositions = ctx['global'].getArray(mtev, 'xPositions')
     yPositions = ctx['global'].getArray(mtev, 'yPositions')
     contactIds = ctx['global'].getArray(mtev, 'contactIds')

@@ -1200,6 +1200,9 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 #else
     bool fTouchScreen = (pTouchEvent->device()->type() == QTouchDevice::TouchScreen);
 #endif
+    /* Compatibility with previous behavior. If there is no touchpad configured
+     * then treat all multitouch events as touchscreen ones: */
+    fTouchScreen |= !uisession()->isMouseSupportsTouchPad();
 
     if (fTouchScreen)
     {
