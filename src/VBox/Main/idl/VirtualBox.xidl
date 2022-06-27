@@ -14638,7 +14638,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="3E14C189-4A75-437E-B0BB-7E7C90D0DF2A"
+    uuid="234f0627-866d-48c2-91a5-4c9d50f04928"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -15726,7 +15726,7 @@
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>Full path of the file system object which ACL to set</desc>
+        <desc>Full path of the file system object which ACL to set.</desc>
       </param>
       <param name="followSymlinks" type="boolean" dir="in">
         <desc>
@@ -15744,6 +15744,40 @@
           a best effort basis and the exact behavior depends on the Guest OS.
         </desc>
       </param>
+    </method>
+
+    <method name="fsQueryFreeSpace">
+      <desc>
+        Returns the free space (in bytes) of a given path.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>Full path to return the free space for.</desc>
+      </param>
+      <param name="freeSpace" type="long long" dir="out">
+        <desc>Free space (in bytes).</desc>
+      </param>
+    </method>
+
+    <method name="fsQueryInfo">
+      <desc>
+        Returns file system information for a given path.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+
+      <param name="path" type="wstring" dir="in">
+        <desc>Full path to return file system information for.</desc>
+      </param>
+      <param name="info" type="IGuestFsInfo" dir="out">
+        <desc>IGuestFsInfo object containing the information.</desc>
+      </param>
+
     </method>
 
     <!-- Process methods -->
@@ -16556,6 +16590,89 @@
   </interface>
 
   <interface
+    name="IFsInfo" extends="$unknown"
+    uuid="3db2ab1a-6cf7-42f1-8bf5-e1c0553e0b30"
+    wsmap="managed"
+    reservedAttributes="8"
+    >
+    <desc>
+      Abstract parent interface for VirtualBox file system information.
+      This can be information about a host or guest file system, for example.
+    </desc>
+
+    <attribute name="freeSize" type="long long" readonly="yes">
+      <desc>
+        Remaining free space (in bytes) of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="totalSize" type="long long" readonly="yes">
+      <desc>
+        Total space (in bytes) of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="blockSize" type="unsigned long" readonly="yes">
+      <desc>
+        Block size (in bytes) of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="sectorSize" type="unsigned long" readonly="yes">
+      <desc>
+        Sector size (in bytes) of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="serialNumber" type="unsigned long" readonly="yes">
+      <desc>
+        Serial number of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="isRemote" type="boolean" readonly="yes">
+      <desc>
+        @c TRUE if the filesystem is remote, @c FALSE if the filesystem is local.
+      </desc>
+    </attribute>
+    <attribute name="isCaseSensitive" type="boolean" readonly="yes">
+      <desc>
+        @c TRUE if the filesystem is case sensitive, @c FALSE if the filesystem is case insensitive.
+      </desc>
+    </attribute>
+    <attribute name="isReadOnly" type="boolean" readonly="yes">
+      <desc>
+        @c TRUE if the filesystem is mounted read only, @c FALSE if the filesystem is mounted read write.
+      </desc>
+    </attribute>
+    <attribute name="isCompressed" type="boolean" readonly="yes">
+      <desc>
+        @c TRUE if the filesystem is compressed, @c FALSE if it isn't or we don't know.
+      </desc>
+    </attribute>
+    <attribute name="supportsFileCompression" type="boolean" readonly="yes">
+      <desc>
+        @c TRUE if the filesystem compresses of individual files, @c FALSE if it doesn't or we don't know.
+      </desc>
+    </attribute>
+    <attribute name="maxComponent" type="unsigned long" readonly="yes">
+      <desc>
+        The maximum size of a filesystem object name.
+      </desc>
+    </attribute>
+    <attribute name="type" type="wstring" readonly="yes">
+      <desc>
+        Name of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="label" type="wstring" readonly="yes">
+      <desc>
+        Label of the filesystem.
+      </desc>
+    </attribute>
+    <attribute name="mountPoint" type="wstring" readonly="yes">
+      <desc>
+        Mount point of the filesystem.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
     name="IFsObjInfo" extends="$unknown"
     uuid="081fc833-c6fa-430e-6020-6a505d086387"
     wsmap="managed"
@@ -16666,6 +16783,18 @@
         User flags (st_flags).
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IGuestFsInfo" extends="IFsInfo"
+    uuid="726eaca9-091e-41b4-bca6-355efe864107"
+    wsmap="managed"
+    >
+    <desc>
+      Represents the guest implementation of the
+      <link to="IFsInfo" /> object.
+    </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface

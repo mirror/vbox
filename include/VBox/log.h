@@ -460,6 +460,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_FRAMEBUFFER,
     /** Main group, IFramebufferOverlay. */
     LOG_GROUP_MAIN_FRAMEBUFFEROVERLAY,
+    /** Main group, IFsInfo. */
+    LOG_GROUP_MAIN_FSINFO,
     /** Main group, IFsObjInfo. */
     LOG_GROUP_MAIN_FSOBJINFO,
     /** Main group, IGraphicsAdapter. */
@@ -480,6 +482,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_GUESTFILEEVENT,
     /** Main group, IGuestFileIOEvent. */
     LOG_GROUP_MAIN_GUESTFILEIOEVENT,
+    /** Main group, IGuestFsInfo. */
+    LOG_GROUP_MAIN_GUESTFSINFO,
     /** Main group, IGuestFsObjInfo. */
     LOG_GROUP_MAIN_GUESTFSOBJINFO,
     /** Main group, IGuestOSType. */
@@ -1024,6 +1028,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_FORMVALUE", \
     "MAIN_FRAMEBUFFER", \
     "MAIN_FRAMEBUFFEROVERLAY", \
+    "MAIN_FSINFO", \
     "MAIN_FSOBJINFO", \
     "MAIN_GRAPHICSADAPTER", \
     "MAIN_GUEST", \
@@ -1034,6 +1039,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_GUESTFILE", \
     "MAIN_GUESTFILEEVENT", \
     "MAIN_GUESTFILEIOEVENT", \
+    "MAIN_GUESTFSINFO", \
     "MAIN_GUESTFSOBJINFO", \
     "MAIN_GUESTOSTYPE", \
     "MAIN_GUESTPROCESS", \

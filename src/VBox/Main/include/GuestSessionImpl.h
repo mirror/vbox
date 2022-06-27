@@ -170,6 +170,8 @@ private:
     HRESULT fileQuerySize(const com::Utf8Str &aPath,
                           BOOL aFollowSymlinks,
                           LONG64 *aSize);
+    HRESULT fsQueryFreeSpace(const com::Utf8Str &aPath, LONG64 *aFreeSpace);
+    HRESULT fsQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsInfo> &aInfo);
     HRESULT fsObjExists(const com::Utf8Str &aPath,
                         BOOL aFollowSymlinks,
                         BOOL *pfExists);

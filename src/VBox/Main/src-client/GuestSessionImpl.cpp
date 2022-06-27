@@ -4275,6 +4275,20 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     return hrc;
 }
 
+HRESULT GuestSession::fsQueryFreeSpace(const com::Utf8Str &aPath, LONG64 *aFreeSpace)
+{
+    RT_NOREF(aPath, aFreeSpace);
+
+    return E_NOTIMPL;
+}
+
+HRESULT GuestSession::fsQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsInfo> &aInfo)
+{
+    RT_NOREF(aPath, aInfo);
+
+    return E_NOTIMPL;
+}
+
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
     if (aPath.isEmpty())
