@@ -918,6 +918,13 @@ IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqw      = { iemAImpl_pcmpeqw_u64, 
 /** Function table for the PCMPEQD instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqd      = { iemAImpl_pcmpeqd_u64,    iemAImpl_pcmpeqd_u128 };
 
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the VPXOR instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpxor          = { iemAImpl_vpxor_u128,   iemAImpl_vpxor_u256 };
+# endif
+/** Function table for the VPXOR instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpxor_fallback = { iemAImpl_vpxor_u128_fallback, iemAImpl_vpxor_u256_fallback };
+
 #endif /* !TST_IEM_CHECK_MC */
 
 

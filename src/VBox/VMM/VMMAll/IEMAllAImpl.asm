@@ -3552,6 +3552,12 @@ IEMIMPL_FPU_R80_R80 fsincos
 %macro IEMIMPL_SSE_EPILOGUE 0
 %endmacro
 
+;; @todo what do we need to do for AVX?
+%macro IEMIMPL_AVX_PROLOGUE 0
+%endmacro
+%macro IEMIMPL_AVX_EPILOGUE 0
+%endmacro
+
 
 ;;
 ; Media instruction working on two full sized registers.
@@ -3786,4 +3792,45 @@ BEGINPROC_FASTCALL iemAImpl_pmovmskb_u128, 12
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_pmovmskb_u128
+
+
+;;
+; Media instruction working on two full sized source registers and one destination (AVX).
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the extended CPU/FPU state (X86XSAVEAREA).
+; @param    A1      Pointer to the destination media register size operand (output).
+; @param    A2      Pointer to the first source media register size operand (input).
+; @param    A3      Pointer to the second source media register size operand (input).
+;
+%macro IEMIMPL_MEDIA_F3 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  xmm0, [A2]
+        vmovdqu  xmm1, [A3]
+        %1       xmm0, xmm0, xmm1
+        vmovdqu  [A1], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        vmovdqu  ymm0, [A2]
+        vmovdqu  ymm1, [A3]
+        %1       ymm0, ymm0, ymm1
+        vmovdqu  [A1], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_F3 vpxor
 

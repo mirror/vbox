@@ -151,7 +151,7 @@ typedef IEMINSTRSTATS *PIEMINSTRSTATS;
  *
  * @sa IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX
  */
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
 # define IEM_SELECT_HOST_OR_FALLBACK(a_fCpumFeatureMember, a_pfnNative, a_pfnFallback) \
     (g_CpumHostFeatures.s.a_fCpumFeatureMember ? a_pfnNative : a_pfnFallback)
 #else
@@ -1735,12 +1735,18 @@ typedef IEMVMM256 *PCIEMVMM256;
 
 /** @name Media (SSE/MMX/AVX) operations: full1 + full2 -> full1.
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc));
 typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF2U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc));
 typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF2U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF3U128,(PX86XSAVEAREA pExtState, PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2));
+typedef FNIEMAIMPLMEDIAF3U128  *PFNIEMAIMPLMEDIAF3U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF3U256,(PX86XSAVEAREA pExtState, PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2));
+typedef FNIEMAIMPLMEDIAF3U256  *PFNIEMAIMPLMEDIAF3U256;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_pxor_u64,  iemAImpl_pcmpeqb_u64,  iemAImpl_pcmpeqw_u64,  iemAImpl_pcmpeqd_u64;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_pxor_u128, iemAImpl_pcmpeqb_u128, iemAImpl_pcmpeqw_u128, iemAImpl_pcmpeqd_u128;
+FNIEMAIMPLMEDIAF3U128 iemAImpl_vpxor_u128, iemAImpl_vpxor_u128_fallback;
+FNIEMAIMPLMEDIAF3U256 iemAImpl_vpxor_u256, iemAImpl_vpxor_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
@@ -1904,6 +1910,19 @@ typedef struct IEMOPMEDIAF1H1
 } IEMOPMEDIAF1H1;
 /** Pointer to a media operation function table for hihalf+hihalf -> full. */
 typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
+
+
+/**
+ * Function table for media instruction taking two full sized media source
+ * registers and one full sized destination register (AVX).
+ */
+typedef struct IEMOPMEDIAF3
+{
+    PFNIEMAIMPLMEDIAF3U128 pfnU128;
+    PFNIEMAIMPLMEDIAF3U256 pfnU256;
+} IEMOPMEDIAF3;
+/** Pointer to a media operation function table for 3 full sized ops (AVX). */
+typedef IEMOPMEDIAF3 const *PCIEMOPMEDIAF3;
 
 
 /** @} */

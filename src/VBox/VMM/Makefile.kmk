@@ -298,13 +298,6 @@ endif
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
 
-#
-# This'll apply to both VBoxVMM and VMMR0.
-#
-ifdef IEM_WITHOUT_ASSEMBLY
-VMMAll/IEMAllAImplC.cpp_DEFS = IEM_WITHOUT_ASSEMBLY
-endif
-
 
 #
 # Generate macro template for IEM instruction statistics.
