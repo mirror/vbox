@@ -882,14 +882,16 @@
  * @remarks     May return.
  */
 #define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), (a_iSeg), (a_GCPtrMem), (a_fAccess)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), (a_iSeg), \
+                                       (a_GCPtrMem), (a_fAccess), sizeof(*(a_pMem)) - 1))
 
 /** Maps guest memory for direct or bounce buffered access.
  * The purpose is to pass it to an operand implementation, thus the a_iArg.
  * @remarks     May return.
  */
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), (a_iSeg), (a_GCPtrMem), (a_fAccess)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), (a_iSeg), \
+                                       (a_GCPtrMem), (a_fAccess), (a_cbMem) - 1))
 
 /** Commits the memory and unmaps the guest memory.
  * @remarks     May return.

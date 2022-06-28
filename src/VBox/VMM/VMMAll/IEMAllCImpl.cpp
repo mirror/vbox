@@ -324,7 +324,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
     else
     {
         uint16_t const *pa16Mem = NULL;
-        rcStrict = iemMemMap(pVCpu, (void **)&pa16Mem, 16, X86_SREG_SS, GCPtrStart, IEM_ACCESS_STACK_R);
+        rcStrict = iemMemMap(pVCpu, (void **)&pa16Mem, 16, X86_SREG_SS, GCPtrStart, IEM_ACCESS_STACK_R, sizeof(*pa16Mem) - 1);
         if (rcStrict == VINF_SUCCESS)
         {
             pVCpu->cpum.GstCtx.di = pa16Mem[7 - X86_GREG_xDI];
@@ -404,7 +404,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
     else
     {
         uint32_t const *pa32Mem;
-        rcStrict = iemMemMap(pVCpu, (void **)&pa32Mem, 32, X86_SREG_SS, GCPtrStart, IEM_ACCESS_STACK_R);
+        rcStrict = iemMemMap(pVCpu, (void **)&pa32Mem, 32, X86_SREG_SS, GCPtrStart, IEM_ACCESS_STACK_R, sizeof(*pa32Mem) - 1);
         if (rcStrict == VINF_SUCCESS)
         {
             pVCpu->cpum.GstCtx.rdi = pa32Mem[7 - X86_GREG_xDI];
@@ -475,7 +475,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
     {
         GCPtrBottom--;
         uint16_t *pa16Mem = NULL;
-        rcStrict = iemMemMap(pVCpu, (void **)&pa16Mem, 16, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W);
+        rcStrict = iemMemMap(pVCpu, (void **)&pa16Mem, 16, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W, sizeof(*pa16Mem) - 1);
         if (rcStrict == VINF_SUCCESS)
         {
             pa16Mem[7 - X86_GREG_xDI] = pVCpu->cpum.GstCtx.di;
@@ -546,7 +546,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
     {
         GCPtrBottom--;
         uint32_t *pa32Mem;
-        rcStrict = iemMemMap(pVCpu, (void **)&pa32Mem, 32, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W);
+        rcStrict = iemMemMap(pVCpu, (void **)&pa32Mem, 32, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W, sizeof(*pa32Mem) - 1);
         if (rcStrict == VINF_SUCCESS)
         {
             pa32Mem[7 - X86_GREG_xDI] = pVCpu->cpum.GstCtx.edi;
@@ -1326,7 +1326,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             }
 
             GCPtrTSS = pVCpu->cpum.GstCtx.tr.u64Base + offNewStack;
-            rcStrict = iemMemMap(pVCpu, &uPtrTSS.pv, cbNewStack, UINT8_MAX, GCPtrTSS, IEM_ACCESS_SYS_R);
+            rcStrict = iemMemMap(pVCpu, &uPtrTSS.pv, cbNewStack, UINT8_MAX, GCPtrTSS, IEM_ACCESS_SYS_R, 0);
             if (rcStrict != VINF_SUCCESS)
             {
                 Log(("BranchCallGate: TSS mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -1455,7 +1455,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
              *        target stacks. */
             void    *pvNewFrame;
             RTGCPTR  GCPtrNewStack = X86DESC_BASE(&DescSS.Legacy) + uNewRsp - cbNewStack;
-            rcStrict = iemMemMap(pVCpu, &pvNewFrame, cbNewStack, UINT8_MAX, GCPtrNewStack, IEM_ACCESS_SYS_RW);
+            rcStrict = iemMemMap(pVCpu, &pvNewFrame, cbNewStack, UINT8_MAX, GCPtrNewStack, IEM_ACCESS_SYS_RW, 0);
             if (rcStrict != VINF_SUCCESS)
             {
                 Log(("BranchCallGate: Incoming stack (%04x:%08RX64) not accessible, rc=%Rrc\n", uNewSS, uNewRsp, VBOXSTRICTRC_VAL(rcStrict)));
@@ -1476,13 +1476,15 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             pVCpu->cpum.GstCtx.ss.u64Base  = X86DESC_BASE(&DescSS.Legacy);
             pVCpu->cpum.GstCtx.ss.fFlags   = CPUMSELREG_FLAGS_VALID;
             pVCpu->cpum.GstCtx.rsp         = uNewRsp;
-            pVCpu->iem.s.uCpl = uNewCSDpl;
+            pVCpu->iem.s.uCpl = uNewCSDpl; /** @todo is the parameter words accessed using the new CPL or the old CPL? */
             Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
 
             /* At this point the stack access must not fail because new state was already committed. */
             /** @todo this can still fail due to SS.LIMIT not check.   */
             rcStrict = iemMemStackPushBeginSpecial(pVCpu, cbNewStack,
+                                                   IEM_IS_LONG_MODE(pVCpu) ? 7
+                                                   : pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE ? 3 : 1,
                                                    &uPtrRet.pv, &uNewRsp);
             AssertMsgReturn(rcStrict == VINF_SUCCESS, ("BranchCallGate: New stack mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)),
                             VERR_INTERNAL_ERROR_5);
@@ -1491,14 +1493,11 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             {
                 if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
                 {
-                    /* Push the old CS:rIP. */
-                    uPtrRet.pu32[0] = pVCpu->cpum.GstCtx.eip + cbInstr;
-                    uPtrRet.pu32[1] = pVCpu->cpum.GstCtx.cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
-
                     if (cbWords)
                     {
                         /* Map the relevant chunk of the old stack. */
-                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds,
+                                             IEM_ACCESS_DATA_R, 0 /** @todo Can uNewCSDpl == 3? Then we need alignment mask here! */);
                         if (rcStrict != VINF_SUCCESS)
                         {
                             Log(("BranchCallGate: Old stack mapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -1518,6 +1517,10 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                         }
                     }
 
+                    /* Push the old CS:rIP. */
+                    uPtrRet.pu32[0] = pVCpu->cpum.GstCtx.eip + cbInstr;
+                    uPtrRet.pu32[1] = pVCpu->cpum.GstCtx.cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
+
                     /* Push the old SS:rSP. */
                     uPtrRet.pu32[2 + cbWords + 0] = uOldRsp;
                     uPtrRet.pu32[2 + cbWords + 1] = uOldSS;
@@ -1526,14 +1529,11 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                 {
                     Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
 
-                    /* Push the old CS:rIP. */
-                    uPtrRet.pu16[0] = pVCpu->cpum.GstCtx.ip + cbInstr;
-                    uPtrRet.pu16[1] = pVCpu->cpum.GstCtx.cs.Sel;
-
                     if (cbWords)
                     {
                         /* Map the relevant chunk of the old stack. */
-                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds,
+                                             IEM_ACCESS_DATA_R, 0 /** @todo Can uNewCSDpl == 3? Then we need alignment mask here! */);
                         if (rcStrict != VINF_SUCCESS)
                         {
                             Log(("BranchCallGate: Old stack mapping (16-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -1552,6 +1552,10 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                             return rcStrict;
                         }
                     }
+
+                    /* Push the old CS:rIP. */
+                    uPtrRet.pu16[0] = pVCpu->cpum.GstCtx.ip + cbInstr;
+                    uPtrRet.pu16[1] = pVCpu->cpum.GstCtx.cs.Sel;
 
                     /* Push the old SS:rSP. */
                     uPtrRet.pu16[2 + cbWords + 0] = uOldRsp;
@@ -1639,6 +1643,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             rcStrict = iemMemStackPushBeginSpecial(pVCpu,
                                                    IEM_IS_LONG_MODE(pVCpu) ? 8+8
                                                    : pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE ? 4+4 : 2+2,
+                                                   IEM_IS_LONG_MODE(pVCpu) ? 7
+                                                   : pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE ? 3 : 2,
                                                    &uPtrRet.pv, &uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
@@ -1997,6 +2003,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
 
         /* Check stack first - may #SS(0). */
         rcStrict = iemMemStackPushBeginSpecial(pVCpu, enmEffOpSize == IEMMODE_32BIT ? 4+4 : 2+2,
+                                               enmEffOpSize == IEMMODE_32BIT ? 3 : 1,
                                                &uPtrRet.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
@@ -2103,8 +2110,8 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /** @todo check how operand prefix affects pushing of CS! Does callf 16:32 in
      *        16-bit code cause a two or four byte CS to be pushed? */
     rcStrict = iemMemStackPushBeginSpecial(pVCpu,
-                                           enmEffOpSize == IEMMODE_64BIT   ? 8+8
-                                           : enmEffOpSize == IEMMODE_32BIT ? 4+4 : 2+2,
+                                           enmEffOpSize == IEMMODE_64BIT ? 8+8 : enmEffOpSize == IEMMODE_32BIT ? 4+4 : 2+2,
+                                           enmEffOpSize == IEMMODE_64BIT ? 7   : enmEffOpSize == IEMMODE_32BIT ? 3   : 1,
                                            &uPtrRet.pv, &uNewRsp);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -2216,7 +2223,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
      */
     uint32_t        cbRetPtr = enmEffOpSize == IEMMODE_16BIT ? 2+2
                              : enmEffOpSize == IEMMODE_32BIT ? 4+4 : 8+8;
-    rcStrict = iemMemStackPopBeginSpecial(pVCpu, cbRetPtr, &uPtrFrame.pv, &uNewRsp);
+    rcStrict = iemMemStackPopBeginSpecial(pVCpu, cbRetPtr,
+                                          enmEffOpSize == IEMMODE_16BIT ? 1 : enmEffOpSize == IEMMODE_32BIT ? 3 : 7,
+                                          &uPtrFrame.pv, &uNewRsp);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     if (enmEffOpSize == IEMMODE_16BIT)
@@ -2925,7 +2934,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     uint64_t        uNewRsp;
     if (enmEffOpSize == IEMMODE_32BIT)
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 12, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 12, 1, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewEip    = uFrame.pu32[0];
@@ -2944,7 +2953,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     }
     else
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 6, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 6, 1, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewEip    = uFrame.pu16[0];
@@ -3209,7 +3218,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     uint64_t        uNewRsp;
     if (enmEffOpSize == IEMMODE_32BIT)
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 12, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 12, 3, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewEip    = uFrame.pu32[0];
@@ -3218,7 +3227,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     }
     else
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 6, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 6, 1, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewEip    = uFrame.pu16[0];
@@ -3565,7 +3574,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     uint64_t        uNewRsp;
     if (enmEffOpSize == IEMMODE_64BIT)
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*8, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*8, 7, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewRip    = uFrame.pu64[0];
@@ -3576,7 +3585,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     }
     else if (enmEffOpSize == IEMMODE_32BIT)
     {
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*4, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*4, 3, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewRip    = uFrame.pu32[0];
@@ -3588,7 +3597,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     else
     {
         Assert(enmEffOpSize == IEMMODE_16BIT);
-        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*2, &uFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopBeginSpecial(pVCpu, 5*2, 1, &uFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewRip    = uFrame.pu16[0];
@@ -3954,7 +3963,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
     uint16_t const *pa16Mem;
     uint8_t const *pa8Mem;
     RTGCPHYS GCPtrStart = 0x800;    /* Fixed table location. */
-    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, (void **)&pbMem, 0x66, UINT8_MAX, GCPtrStart, IEM_ACCESS_SYS_R);
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, (void **)&pbMem, 0x66, UINT8_MAX, GCPtrStart, IEM_ACCESS_SYS_R, 0);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -5452,7 +5461,8 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      *       assembly and such.
      */
     void *pvDesc;
-    rcStrict = iemMemMap(pVCpu, &pvDesc, 8, UINT8_MAX, pVCpu->cpum.GstCtx.gdtr.pGdt + (uNewTr & X86_SEL_MASK_OFF_RPL), IEM_ACCESS_DATA_RW);
+    rcStrict = iemMemMap(pVCpu, &pvDesc, 8, UINT8_MAX, pVCpu->cpum.GstCtx.gdtr.pGdt + (uNewTr & X86_SEL_MASK_OFF_RPL),
+                         IEM_ACCESS_DATA_RW, 0);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     switch ((uintptr_t)pvDesc & 3)
@@ -8315,22 +8325,13 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
         return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pVCpu);
-    if (GCPtrEff & 15)
-    {
-        /** @todo CPU/VM detection possible! \#AC might not be signal for
-         * all/any misalignment sizes, intel says its an implementation detail. */
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
-            && pVCpu->cpum.GstCtx.eflags.Bits.u1AC
-            && pVCpu->iem.s.uCpl == 3)
-            return iemRaiseAlignmentCheckException(pVCpu);
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
 
     /*
      * Access the memory.
      */
     void *pvMem512;
-    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE,
+                                      15 | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PX86FXSTATE  pDst = (PX86FXSTATE)pvMem512;
@@ -8418,22 +8419,13 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
         return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pVCpu);
-    if (GCPtrEff & 15)
-    {
-        /** @todo CPU/VM detection possible! \#AC might not be signal for
-         * all/any misalignment sizes, intel says its an implementation detail. */
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
-            && pVCpu->cpum.GstCtx.eflags.Bits.u1AC
-            && pVCpu->iem.s.uCpl == 3)
-            return iemRaiseAlignmentCheckException(pVCpu);
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
 
     /*
      * Access the memory.
      */
     void *pvMem512;
-    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R);
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R,
+                                      15 | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
@@ -8539,16 +8531,6 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
     }
     if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)
         return iemRaiseDeviceNotAvailable(pVCpu);
-    if (GCPtrEff & 63)
-    {
-        /** @todo CPU/VM detection possible! \#AC might not be signal for
-         * all/any misalignment sizes, intel says its an implementation detail. */
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
-            && pVCpu->cpum.GstCtx.eflags.Bits.u1AC
-            && pVCpu->iem.s.uCpl == 3)
-            return iemRaiseAlignmentCheckException(pVCpu);
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
 
     /*
      * Calc the requested mask.
@@ -8567,7 +8549,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
      */
     /* The x87+SSE state.  */
     void *pvMem512;
-    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE,
+                                      63 | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PX86FXSTATE  pDst = (PX86FXSTATE)pvMem512;
@@ -8575,7 +8558,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
 
     /* The header.  */
     PX86XSAVEHDR pHdr;
-    rcStrict = iemMemMap(pVCpu, (void **)&pHdr, sizeof(&pHdr), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_RW);
+    rcStrict = iemMemMap(pVCpu, (void **)&pHdr, sizeof(&pHdr), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_RW, 0 /* checked above */);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -8647,7 +8630,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
         PCX86XSAVEYMMHI pCompSrc = CPUMCTX_XSAVE_C_PTR(IEM_GET_CTX(pVCpu), XSAVE_C_YMM_BIT, PCX86XSAVEYMMHI);
         PX86XSAVEYMMHI  pCompDst;
         rcStrict = iemMemMap(pVCpu, (void **)&pCompDst, sizeof(*pCompDst), iEffSeg, GCPtrEff + pVCpu->cpum.GstCtx.aoffXState[XSAVE_C_YMM_BIT],
-                             IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+                             IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE, 0 /* checked above */);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
 
@@ -8721,7 +8704,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
      */
     /* The x87+SSE state.  */
     void *pvMem512;
-    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R);
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R,
+                                      63 | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
@@ -8732,7 +8716,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
      */
     PX86XSAVEHDR  pHdrDst = &pVCpu->cpum.GstCtx.XState.Hdr;
     PCX86XSAVEHDR pHdrSrc;
-    rcStrict = iemMemMap(pVCpu, (void **)&pHdrSrc, sizeof(&pHdrSrc), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_R);
+    rcStrict = iemMemMap(pVCpu, (void **)&pHdrSrc, sizeof(&pHdrSrc), iEffSeg, GCPtrEff + 512,
+                         IEM_ACCESS_DATA_R, 0 /* checked above */);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -8856,7 +8841,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
             /** @todo testcase: xsave64 vs xsave32 wrt XSAVE_C_YMM. */
             PCX86XSAVEYMMHI pCompSrc;
             rcStrict = iemMemMap(pVCpu, (void **)&pCompSrc, sizeof(*pCompDst),
-                                 iEffSeg, GCPtrEff + pVCpu->cpum.GstCtx.aoffXState[XSAVE_C_YMM_BIT], IEM_ACCESS_DATA_R);
+                                 iEffSeg, GCPtrEff + pVCpu->cpum.GstCtx.aoffXState[XSAVE_C_YMM_BIT],
+                                 IEM_ACCESS_DATA_R, 0 /* checked above */);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -9155,7 +9141,8 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
 {
     RTPTRUNION   uPtr;
     VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 14 : 28,
-                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE,
+                                      enmEffOpSize == IEMMODE_16BIT ? 1 : 3 /** @todo ? */);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -9184,7 +9171,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 
     RTPTRUNION   uPtr;
     VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 94 : 108,
-                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE, 3 /** @todo ? */);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -9234,7 +9221,8 @@ IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 {
     RTCPTRUNION  uPtr;
     VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, (void **)&uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 14 : 28,
-                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R);
+                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R,
+                                      enmEffOpSize == IEMMODE_16BIT ? 1 : 3 /** @todo ?*/);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -9261,7 +9249,7 @@ IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 {
     RTCPTRUNION  uPtr;
     VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, (void **)&uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 94 : 108,
-                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R);
+                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R, 3 /** @todo ?*/ );
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 

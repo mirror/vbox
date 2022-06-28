@@ -2810,7 +2810,18 @@ void            iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg
 
 /** @name   Memory access.
  * @{ */
-VBOXSTRICTRC    iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem, uint32_t fAccess) RT_NOEXCEPT;
+
+/** Report a \#GP instead of \#AC and do not restrict to ring-3 */
+#define IEM_MEMMAP_F_ALIGN_GP       RT_BIT_32(16)
+/** SSE access that should report a \#GP instead of \#AC, unless MXCSR.MM=1
+ *  when it works like normal \#AC. Always used with IEM_MEMMAP_F_ALIGN_GP. */
+#define IEM_MEMMAP_F_ALIGN_SSE      RT_BIT_32(17)
+/** If \#AC is applicable, raise it. Always used with IEM_MEMMAP_F_ALIGN_GP.
+ * Users include FXSAVE & FXRSTOR. */
+#define IEM_MEMMAP_F_ALIGN_GP_OR_AC RT_BIT_32(18)
+
+VBOXSTRICTRC    iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem,
+                          uint32_t fAccess, uint32_t uAlignCtl) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemCommitAndUnmap(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) RT_NOEXCEPT;
 #ifndef IN_RING3
 VBOXSTRICTRC    iemMemCommitAndUnmapPostponeTroubleToR3(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) RT_NOEXCEPT;
@@ -2898,7 +2909,8 @@ void            iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR 
 void            iemMemStoreDataU256AlignedAvxJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) RT_NOEXCEPT;
 #endif
 
-VBOXSTRICTRC    iemMemStackPushBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, void **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT;
+VBOXSTRICTRC    iemMemStackPushBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t cbAlign,
+                                            void **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPushCommitSpecial(PVMCPUCC pVCpu, void *pvMem, uint64_t uNewRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPushU16(PVMCPUCC pVCpu, uint16_t u16Value) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPushU32(PVMCPUCC pVCpu, uint32_t u32Value) RT_NOEXCEPT;
@@ -2907,7 +2919,8 @@ VBOXSTRICTRC    iemMemStackPushU16Ex(PVMCPUCC pVCpu, uint16_t u16Value, PRTUINT6
 VBOXSTRICTRC    iemMemStackPushU32Ex(PVMCPUCC pVCpu, uint32_t u32Value, PRTUINT64U pTmpRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPushU64Ex(PVMCPUCC pVCpu, uint64_t u64Value, PRTUINT64U pTmpRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPushU32SReg(PVMCPUCC pVCpu, uint32_t u32Value) RT_NOEXCEPT;
-VBOXSTRICTRC    iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT;
+VBOXSTRICTRC    iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t cbAlign,
+                                           void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPopContinueSpecial(PVMCPUCC pVCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPopDoneSpecial(PVMCPUCC pVCpu, void const *pvMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPopU16(PVMCPUCC pVCpu, uint16_t *pu16Value) RT_NOEXCEPT;

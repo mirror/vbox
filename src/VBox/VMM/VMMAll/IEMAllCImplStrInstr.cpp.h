@@ -1230,7 +1230,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
 #endif
 
     OP_TYPE        *puMem;
-    rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, pVCpu->cpum.GstCtx.ADDR_rDI, IEM_ACCESS_DATA_W);
+    rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, pVCpu->cpum.GstCtx.ADDR_rDI,
+                         IEM_ACCESS_DATA_W, OP_SIZE / 8 - 1);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1420,7 +1421,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
         do
         {
             OP_TYPE *puMem;
-            rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, uAddrReg, IEM_ACCESS_DATA_W);
+            rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, uAddrReg,
+                                 IEM_ACCESS_DATA_W, OP_SIZE / 8 - 1);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 

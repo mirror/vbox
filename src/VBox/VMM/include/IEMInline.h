@@ -2197,6 +2197,20 @@ DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw)
  * @{
  */
 
+
+/**
+ * Checks whether alignment checks are enabled or not.
+ *
+ * @returns true if enabled, false if not.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu)
+{
+    AssertCompile(X86_CR0_AM == X86_EFL_AC);
+    return pVCpu->iem.s.uCpl == 3
+        && (((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u) & X86_CR0_AM);
+}
+
 /**
  * Checks if the given segment can be written to, raise the appropriate
  * exception if not.
