@@ -780,7 +780,7 @@ ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much wo
 VBOX_WITH_SECURELABEL = 1
 endif
 # Start VBoxSVC in windows session 0 (services session).
-VBOX_WITH_VBOXSVC_SESSION_0 =
+VBOX_WITH_VBOXSVC_SESSION_0 = 1
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
 # Enable the build of VRDP server.
