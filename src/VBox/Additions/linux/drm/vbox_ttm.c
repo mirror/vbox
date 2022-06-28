@@ -807,7 +807,8 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -ENODEV;
 	ret = drm_gem_mmap(filp, vma);
 #else
-	ret = ttm_bo_mmap(filp, vma, &file_priv->minor->dev->dev_private->ttm.bdev);
+	struct vbox_private *vbox = file_priv->minor->dev->dev_private;
+	ret = ttm_bo_mmap(filp, vma, &vbox->ttm.bdev);
 #endif
 	return ret;
 }
