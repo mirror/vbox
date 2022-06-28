@@ -1353,7 +1353,7 @@
  * @sa RT_FALL_THRU  */
 #if RT_CLANG_PREREQ(4, 0) && RT_CPLUSPLUS_PREREQ(201100)
 # define RT_FALL_THROUGH()      [[clang::fallthrough]]
-#elif RT_CLANG_PREREQ(4, 0) || RT_GNUC_PREREQ(7, 0)
+#elif (RT_CLANG_PREREQ(4, 0) && defined(RT_OS_LINUX)) || RT_GNUC_PREREQ(7, 0)
 # define RT_FALL_THROUGH()      __attribute__((__fallthrough__))
 #else
 # define RT_FALL_THROUGH()      (void)0
