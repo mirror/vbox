@@ -531,6 +531,17 @@ setup()
 {
     begin_msg "Building VirtualBox kernel modules" console
     log "Building the main VirtualBox module."
+
+    # Detect if kernel was built with clang.
+    unset LLVM
+    vbox_cc_is_clang=$(/lib/modules/"$KERN_VER"/build/scripts/config \
+        --file /lib/modules/"$KERN_VER"/build/.config \
+        --state CONFIG_CC_IS_CLANG 2>/dev/null)
+    if test "${vbox_cc_is_clang}" = "y"; then
+        log "Using clang compiler."
+        export LLVM=1
+    fi
+
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \

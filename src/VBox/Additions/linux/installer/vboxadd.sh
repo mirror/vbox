@@ -290,6 +290,16 @@ setup_modules()
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
 
+    # Detect if kernel was built with clang.
+    unset LLVM
+    vbox_cc_is_clang=$(/lib/modules/"$KERN_VER"/build/scripts/config \
+        --file /lib/modules/"$KERN_VER"/build/.config \
+        --state CONFIG_CC_IS_CLANG 2>/dev/null)
+    if test "${vbox_cc_is_clang}" = "y"; then
+        info "Using clang compiler."
+        export LLVM=1
+    fi
+
     log "Building the main Guest Additions $INSTALL_VER module for kernel $KERN_VER."
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
