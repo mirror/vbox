@@ -1517,8 +1517,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint16_t cons
 #endif /* convert me */
 
 
-static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsigned cbCacheLine, bool fAm,
-                                           BS3CPUBASIC2PFTTSTCMNMODE const BS3_FAR *pCmn)
+static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsigned cbCacheLine, bool fAm, bool fPf,
+                                           RTCCUINTXREG uFlatBufPtr, BS3CPUBASIC2PFTTSTCMNMODE const BS3_FAR *pCmn)
 {
     BS3TRAPFRAME        TrapCtx;
     BS3REGCTX           Ctx;
@@ -1539,7 +1539,7 @@ static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsign
      * The test snippets mostly use xAX as operand, with the div
      * one also using xDX, so make sure they make some sense.
      */
-    Bs3RegCtxSaveEx(&Ctx, bMode, 0);
+    Bs3RegCtxSaveEx(&Ctx, bMode, 256);
 
     for (iRing = 0; iRing < cRings; iRing++)
     {
@@ -1548,7 +1548,14 @@ static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsign
 
         Bs3RegCtxConvertToRingX(&Ctx, iRing);
 
-        Bs3RegCtxSetGrpDsFromCurPtr(&Ctx, &Ctx.rbx, pbBuf);
+        if (!fPf || BS3_MODE_IS_32BIT_CODE(bMode) || BS3_MODE_IS_64BIT_CODE(bMode))
+            Bs3RegCtxSetGrpDsFromCurPtr(&Ctx, &Ctx.rbx, pbBuf);
+        else
+        {
+            /* Bs3RegCtxSetGrpDsFromCurPtr barfs when trying to output a sel:off address for the aliased buffer. */
+            Ctx.ds      = BS3_FP_SEG(pbBuf);
+            Ctx.rbx.u32 = BS3_FP_OFF(pbBuf);
+        }
         uEbx = Ctx.rbx.u32;
 
         Ctx.rax.u = (bMode & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_64
@@ -1582,7 +1589,7 @@ static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsign
                 CtxUdExpected.rip.u  = Ctx.rip.u + poffUd[-1];
                 CtxUdExpected.cs     = Ctx.cs;
                 CtxUdExpected.rflags = Ctx.rflags;
-if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo investigate. automatically cleared, or is it just our code? */
+if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo investigate. automatically cleared, or is it just our code?  Observed with bs3-cpu-instr-3 too (10980xe). */
                 CtxUdExpected.rdx    = Ctx.rdx;
                 CtxUdExpected.rax    = Ctx.rax;
                 if (fOp & MYOP_LD)
@@ -1609,7 +1616,8 @@ if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo inv
                  */
                 for (offMem = 0; offMem < cbMax; offMem++)
                 {
-                    unsigned offBuf = cbMax + cbMem * 2;
+                    bool const fMisaligned = (offMem & (cbMem - 1)) != 0; /** @todo assumes cbMem is a power of two! */
+                    unsigned   offBuf      = cbMax + cbMem * 2;
                     while (offBuf-- > 0)
                         pbBuf[offBuf] = 1; /* byte-by-byte to make sure it doesn't trigger AC. */
 
@@ -1617,12 +1625,18 @@ if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo inv
                     if (BS3_MODE_IS_16BIT_SYS(bMode))
                         g_uBs3TrapEipHint = Ctx.rip.u32;
 
-                    //Bs3TestPrintf("iRing=%d iTest=%d cs:rip=%04RX16:%08RX32 ds:rbx=%04RX16:%08RX32\n",
-                    //              iRing, iTest, Ctx.cs, Ctx.rip.u32, Ctx.ds, Ctx.rbx.u32);
+                    //if (iRing == 3 && fPf && fAm)
+                    //    Bs3TestPrintf("iRing=%d iTest=%d cs:rip=%04RX16:%08RX32 ds:rbx=%04RX16:%08RX32 bXcpt=%#x errcd=%#x fAm=%d fAc=%d\n",
+                    //                  iRing, iTest, Ctx.cs, Ctx.rip.u32, Ctx.ds, Ctx.rbx.u32, TrapCtx.bXcpt, (unsigned)TrapCtx.uErrCd, fAm, fAc);
 
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
 
-                    if (!fAm || iRing != 3 || !fAc || !(offMem & (cbMem - 1))) /** @todo assumes cbMem is a power of two! */
+                    if (fPf && iRing == 3 && (!fAm || !fAc || !fMisaligned)) /* #AC beats #PF */
+                        bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx,
+                                                  X86_TRAP_PF_P | X86_TRAP_PF_US
+                                                  | (pCmn->paEntries[iTest].fOp & MYOP_ST ? X86_TRAP_PF_RW : 0),
+                                                  uFlatBufPtr + offMem);
+                    else if (!fAm || iRing != 3 || !fAc || !fMisaligned)
                     {
                         if (fOp & MYOP_EFL)
                         {
@@ -1637,9 +1651,7 @@ if (bMode == BS3_MODE_RM) CtxUdExpected.rflags.u32 &= ~X86_EFL_AC; /** @todo inv
                         bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
                     }
                     else
-                    {
                         bs3CpuBasic2_CompareAcCtx(&TrapCtx, &Ctx);
-                    }
 
                     g_usBs3TestStep++;
                 }
@@ -1681,7 +1693,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_RaiseXcpt11)(uint8_t bMode)
     /* Get us a 64-byte aligned buffer. */
     pbBuf = abBuf;
     if (BS3_FP_OFF(pbBuf) & (cbCacheLine - 1))
-        pbBuf = &abBuf[cbCacheLine - BS3_FP_OFF(pbBuf) & (cbCacheLine - 1)];
+        pbBuf = &abBuf[cbCacheLine - (BS3_FP_OFF(pbBuf) & (cbCacheLine - 1))];
+    BS3_ASSERT(pbBuf - abBuf <= cbCacheLine);
     //Bs3TestPrintf("pbBuf=%p\n", pbBuf);
 
     /* Find the g_aCmnModes entry. */
@@ -1690,16 +1703,54 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_RaiseXcpt11)(uint8_t bMode)
         idxCmnModes++;
     //Bs3TestPrintf("idxCmnModes=%d bMode=%#x\n", idxCmnModes, bMode);
 
-    /* First round is w/o aligment checks enabled. */
+    /* First round is w/o alignment checks enabled. */
     fCr0 = Bs3RegGetCr0();
     BS3_ASSERT(!(fCr0 & X86_CR0_AM));
     Bs3RegSetCr0(fCr0 & ~X86_CR0_AM);
-    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, false /*fAm*/, &g_aCmnModes[idxCmnModes]);
+#if 1
+    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, false /*fAm*/, false /*fPf*/, 0, &g_aCmnModes[idxCmnModes]);
+#endif
+
+    /* The second round is with aligment checks enabled. */
+#if 1
+    Bs3RegSetCr0(Bs3RegGetCr0() | X86_CR0_AM);
+    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, true /*fAm*/, false /*fPf*/, 0, &g_aCmnModes[idxCmnModes]);
+#endif
 
 #if 1
-    /* The second round is with aligment checks enabled. */
-    Bs3RegSetCr0(Bs3RegGetCr0() | X86_CR0_AM);
-    bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBuf, cbCacheLine, true /*fAm*/, &g_aCmnModes[idxCmnModes]);
+    /* The third and fourth round access the buffer via a page alias that's not
+       accessible from ring-3.  The third round has ACs disabled and the fourth
+       has them enabled. */
+    if (BS3_MODE_IS_PAGED(bMode) && !BS3_MODE_IS_V86(bMode)) //&& (BS3_MODE_IS_32BIT_CODE(bMode) || BS3_MODE_IS_64BIT_CODE(bMode)))
+    {
+        /* Alias the buffer as system memory so ring-3 access with AC+AM will cause #PF: */
+        int            rc;
+        RTCCUINTXREG   uFlatBufPtr = Bs3SelPtrToFlat(pbBuf);
+        uint64_t const uAliasPgPtr = bMode & BS3_MODE_CODE_64 ? UINT64_C(0x0000648680000000) : UINT32_C(0x80000000);
+        rc = Bs3PagingAlias(uAliasPgPtr, uFlatBufPtr & ~(uint64_t)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE * 2,
+                            X86_PTE_P | X86_PTE_RW);
+        if (RT_SUCCESS(rc))
+        {
+            RTCCUINTXREG     uAliasBufPtr = (RTCCUINTXREG)uAliasPgPtr + (uFlatBufPtr & X86_PAGE_OFFSET_MASK);
+            uint8_t BS3_FAR *pbBufAlias   = BS3_FP_MAKE(BS3_SEL_SPARE_00 | 3, uFlatBufPtr & X86_PAGE_OFFSET_MASK);;
+            Bs3SelSetup16BitData(&Bs3GdteSpare00, uAliasPgPtr);
+
+            Bs3TestPrintf("round three\n");
+            Bs3RegSetCr0(Bs3RegGetCr0() & ~X86_CR0_AM);
+            bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBufAlias, cbCacheLine, false /*fAm*/,
+                                           true /*fPf*/, uAliasBufPtr, &g_aCmnModes[idxCmnModes]);
+
+            Bs3TestPrintf("round four\n");
+            Bs3RegSetCr0(Bs3RegGetCr0() | X86_CR0_AM);
+            bs3CpuBasic2_RaiseXcpt11Worker(bMode, pbBufAlias, cbCacheLine, true /*fAm*/,
+                                           true /*fPf*/, uAliasBufPtr, &g_aCmnModes[idxCmnModes]);
+            Bs3TestPrintf("done\n");
+
+            Bs3PagingUnalias(uAliasPgPtr, X86_PAGE_SIZE * 2);
+        }
+        else
+            Bs3TestFailedF("Bs3PagingAlias failed with %Rrc", rc);
+    }
 #endif
 
     Bs3RegSetCr0(fCr0);
