@@ -795,7 +795,7 @@ int vbox_bo_push_sysram(struct vbox_bo *bo)
 int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	struct drm_file *file_priv;
-	struct vbox_private *vbox
+	struct vbox_private *vbox;
 	int ret = -EINVAL;
 
 	if (unlikely(vma->vm_pgoff < DRM_FILE_PAGE_OFFSET))
