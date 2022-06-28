@@ -512,7 +512,7 @@ respond(struct response *res)
         && qclass != Class_ANY)
     {
         LogErr(("NAT: hostres: unsupported qclass %d\n", qclass));
-        return refuse(res, RCode_NXDomain);
+        return refuse(res, RCode_NoError);
     }
 
     if (   qtype != Type_A
@@ -521,7 +521,7 @@ respond(struct response *res)
         && qtype != Type_ANY)
     {
         LogErr(("NAT: hostres: unsupported qtype %d\n", qtype));
-        return refuse(res, RCode_NXDomain);
+        return refuse(res, RCode_NoError);
     }
 
 
