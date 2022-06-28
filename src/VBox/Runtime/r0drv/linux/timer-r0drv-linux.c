@@ -544,7 +544,7 @@ static void rtTimerLnxCallbackHandleMigration(PRTTIMER pTimer, PRTTIMERLNXSUBTIM
         {
             case RTTIMERLNXSTATE_STOPPING:
             case RTTIMERLNXSTATE_MP_STOPPING:
-                enmState = RTTIMERLNXSTATE_STOPPED;
+                enmState = RTTIMERLNXSTATE_STOPPED; RT_FALL_THRU();
             case RTTIMERLNXSTATE_STOPPED:
                 break;
 

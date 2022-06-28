@@ -193,7 +193,7 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperI
     pSuperInfo->enmCacheMode = kVbsfCacheMode_Strict;
     if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, enmCacheMode)) {
         switch (info->enmCacheMode) {
-            case kVbsfCacheMode_Default:
+            case kVbsfCacheMode_Default: RT_FALL_THRU();
             case kVbsfCacheMode_Strict:
                 break;
             case kVbsfCacheMode_None:
@@ -1139,7 +1139,7 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
         if (pSuperInfo->cbDirBuf != VBSF_DEFAULT_DIR_BUF_SIZE)
             seq_printf(m, ",dirbuf=%u", pSuperInfo->cbDirBuf);
         switch (pSuperInfo->enmCacheMode) {
-            default: AssertFailed();
+            default: AssertFailed(); RT_FALL_THRU();
             case kVbsfCacheMode_Strict:
                 break;
             case kVbsfCacheMode_None:       seq_puts(m, ",cache=none"); break;

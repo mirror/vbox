@@ -1702,12 +1702,10 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
     if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
     {
         struct net_device  *pDev;
-        PINTNETTRUNKSWPORT  pSwitchPort;
         unsigned int        fFeatures;
 
         RTSpinlockAcquire(pThis->hSpinlock);
 
-        pSwitchPort = pThis->pSwitchPort; /* this doesn't need to be here, but it doesn't harm. */
         pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
         if (pDev)
             fFeatures = pDev->features;
