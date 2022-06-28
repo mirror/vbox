@@ -1664,11 +1664,12 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      */
     uint64_t fMbzPageFrameMask = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000ffffffffff000);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    uint64_t const fEptVpidCap = CPUMGetGuestIa32VmxEptVpidCap(pVM->apCpusR3[0]);   /* should be identical for all VCPUs. */
+    uint64_t const fEptVpidCap = CPUMGetGuestIa32VmxEptVpidCap(pVM->apCpusR3[0]);   /* should be identical for all VCPUs */
     uint64_t const fGstEptMbzBigPdeMask   = EPT_PDE2M_MBZ_MASK
                                           | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDE_2M) ^ 1) << EPT_E_BIT_LEAF;
     uint64_t const fGstEptMbzBigPdpteMask = EPT_PDPTE1G_MBZ_MASK
                                           | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDPTE_1G) ^ 1) << EPT_E_BIT_LEAF;
+    uint64_t const GCPhysRsvdAddrMask     = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000fffffffffffff); /* bits 63:52 ignored */
 #endif
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1708,12 +1709,18 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVCpu->pgm.s.fGstEptMbzPdpteMask      = fMbzPageFrameMask | EPT_PDPTE_MBZ_MASK;
         pVCpu->pgm.s.fGstEptMbzBigPdpteMask   = fMbzPageFrameMask | fGstEptMbzBigPdpteMask;
         pVCpu->pgm.s.fGstEptMbzPml4eMask      = fMbzPageFrameMask | EPT_PML4E_MBZ_MASK;
+        pVCpu->pgm.s.fGstEptPresentMask       = EPT_PRESENT_MASK;
 
-        /* If any of the features (in the assert below) are enabled, we might have to shadow the relevant bits. */
+        /* If any of the features (in the assert below) are enabled, we would have to shadow the relevant bits. */
         Assert(   !pVM->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt
                && !pVM->cpum.ro.GuestFeatures.fVmxSppEpt
-               && !pVM->cpum.ro.GuestFeatures.fVmxEptXcptVe);
-        pVCpu->pgm.s.fGstEptPresentMask       = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE;
+               && !pVM->cpum.ro.GuestFeatures.fVmxEptXcptVe
+               && !(fEptVpidCap & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY));
+        /* We need to shadow reserved bits as guest EPT tables can set them to trigger EPT misconfigs.  */
+        pVCpu->pgm.s.fGstEptShadowedPteMask   = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK;
+        pVCpu->pgm.s.fGstEptShadowedPdeMask   = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedPdpteMask = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedPml4eMask = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_PML4E_MBZ_MASK;
 #endif
     }
 
@@ -1852,6 +1859,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     }
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
     pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+    pVCpu->pgm.s.GCPhysPaeCR3 = NIL_RTGCPHYS;
 
     int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL, false /* fForce */);
     AssertReleaseRC(rc);
