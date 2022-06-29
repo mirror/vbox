@@ -3596,6 +3596,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
+IEMIMPL_MEDIA_F2 pand
+IEMIMPL_MEDIA_F2 pandn
+IEMIMPL_MEDIA_F2 por
 IEMIMPL_MEDIA_F2 pxor
 IEMIMPL_MEDIA_F2 pcmpeqb
 IEMIMPL_MEDIA_F2 pcmpeqw
@@ -3832,5 +3835,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
+IEMIMPL_MEDIA_F3 vpand
+IEMIMPL_MEDIA_F3 vpandn
+IEMIMPL_MEDIA_F3 vpor
 IEMIMPL_MEDIA_F3 vpxor
 

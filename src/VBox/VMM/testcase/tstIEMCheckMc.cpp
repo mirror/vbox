@@ -129,6 +129,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE(a_szPrf)      do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX()            do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING()                       do { } while (0)
+#define IEMOP_HLP_DONE_VEX_DECODING_EX(a_fFeature)          do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_L0()                    do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV()               do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV()        do { } while (0)
@@ -226,6 +227,9 @@ IEMOPMEDIAF1H1 g_iemAImpl_punpckhbw;
 IEMOPMEDIAF1H1 g_iemAImpl_punpckhwd;
 IEMOPMEDIAF1H1 g_iemAImpl_punpckhdq;
 IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq;
+IEMOPMEDIAF2 g_iemAImpl_pand;
+IEMOPMEDIAF2 g_iemAImpl_pandn;
+IEMOPMEDIAF2 g_iemAImpl_por;
 IEMOPMEDIAF2 g_iemAImpl_pxor;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqb;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqw;

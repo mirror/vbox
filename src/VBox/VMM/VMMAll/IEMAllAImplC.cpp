@@ -7070,10 +7070,136 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PCX86FXSTATE pFpuState, PRTUINT12
     AssertReleaseFailed();
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+
+/*
+ * PAND / VPAND / PANDPS / VPANDPS / PANDPD / VPANDPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    *puDst &= *puSrc;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    puDst->au64[0] &= puSrc->au64[0];
+    puDst->au64[1] &= puSrc->au64[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpand_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                      PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] & puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] & puSrc2->au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpand_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                      PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] & puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] & puSrc2->au64[1];
+    puDst->au64[2] = puSrc1->au64[2] & puSrc2->au64[2];
+    puDst->au64[3] = puSrc1->au64[3] & puSrc2->au64[3];
+}
+
+
+/*
+ * PANDN / VPANDN / PANDNPS / VPANDNPS / PANDNPD / VPANDNPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    *puDst = ~*puDst & *puSrc;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    puDst->au64[0] = ~puDst->au64[0] & puSrc->au64[0];
+    puDst->au64[1] = ~puDst->au64[1] & puSrc->au64[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpandn_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = ~puSrc1->au64[0] & puSrc2->au64[0];
+    puDst->au64[1] = ~puSrc1->au64[1] & puSrc2->au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpandn_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                       PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = ~puSrc1->au64[0] & puSrc2->au64[0];
+    puDst->au64[1] = ~puSrc1->au64[1] & puSrc2->au64[1];
+    puDst->au64[2] = ~puSrc1->au64[2] & puSrc2->au64[2];
+    puDst->au64[3] = ~puSrc1->au64[3] & puSrc2->au64[3];
+}
+
+
+/*
+ * POR / VPOR / PORPS / VPORPS / PORPD / VPORPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_por_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    *puDst |= *puSrc;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_por_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    puDst->au64[0] |= puSrc->au64[0];
+    puDst->au64[1] |= puSrc->au64[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpor_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                     PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] | puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] | puSrc2->au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpor_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                     PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] | puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] | puSrc2->au64[1];
+    puDst->au64[2] = puSrc1->au64[2] | puSrc2->au64[2];
+    puDst->au64[3] = puSrc1->au64[3] | puSrc2->au64[3];
+}
+
 
 /*
  * PXOR / VPXOR / PXORPS / VPXORPS / PXORPD / VPXORPD
  */
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
 {
@@ -7089,7 +7215,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u128,(PCX86FXSTATE pFpuState, PRTUINT128U 
     puDst->au64[1] ^= puSrc->au64[1];
 }
 
-#endif /* IEM_WITHOUT_ASSEMBLY */
+#endif
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpxor_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
@@ -7109,6 +7235,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpxor_u256_fallback,(PX86XSAVEAREA pExtState, P
     puDst->au64[2] = puSrc1->au64[2] ^ puSrc2->au64[2];
     puDst->au64[3] = puSrc1->au64[3] ^ puSrc2->au64[3];
 }
+
+
+/*
+ *
+ */
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
