@@ -156,10 +156,10 @@ HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hr = unconst(m->pAdapter).createObject();
-    ComAssertComRCRet(hr, hr);
-    hr = m->pAdapter->init(this);
-    ComAssertComRCRet(hr, hr);
+    HRESULT hrc = unconst(m->pAdapter).createObject();
+    ComAssertComRCRet(hrc, hrc);
+    hrc = m->pAdapter->init(this);
+    ComAssertComRCRet(hrc, hrc);
     m->pAdapter->i_copyFrom(aThat->m->pAdapter);
 
     autoInitSpan.setSucceeded();
