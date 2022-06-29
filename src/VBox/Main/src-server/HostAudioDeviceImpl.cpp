@@ -54,9 +54,9 @@ void HostAudioDevice::FinalRelease()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Initializes the audio adapter object.
+ * Initializes the audio device object.
  *
- *  @param aParent  Handle of the parent object.
+ * @returns HRESULT
  */
 HRESULT HostAudioDevice::init(void)
 {
@@ -71,10 +71,10 @@ HRESULT HostAudioDevice::init(void)
 }
 
 /**
- *  Uninitializes the instance and sets the ready flag to FALSE.
- *  Called either from FinalRelease() or by the parent when it gets destroyed.
+ * Uninitializes the instance and sets the ready flag to FALSE.
+ * Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void HostAudioDevice::uninit()
+void HostAudioDevice::uninit(void)
 {
     LogFlowThisFunc(("\n"));
 
