@@ -2248,10 +2248,14 @@ class SessionWrapper(TdTaskBase):
         :param eAudioDriverType:        The audio driver type (vboxcon.AudioDriverType_XXX), picks something suitable
                                         if None is passed (default).
         """
-        try:    oAudioAdapter = self.o.machine.audioAdapter;
+        try:
+            if self.fpApiVer >= 7.0:
+                oAdapter = self.o.machine.audioSettings.adapter;
+            else:
+                oAdapter = self.o.machine.audioAdapter;
         except: return reporter.errorXcpt('Failed to get the audio adapter.');
 
-        try:    oAudioAdapter.audioController = eAudioControllerType;
+        try:    oAdapter.audioController = eAudioControllerType;
         except: return reporter.errorXcpt('Failed to set the audio controller to %s.' % (eAudioControllerType,));
 
         if eAudioDriverType is None:
@@ -2264,16 +2268,16 @@ class SessionWrapper(TdTaskBase):
                 reporter.error('PORTME: Do not know which audio driver to pick for: %s!' % (sHost,));
                 eAudioDriverType = vboxcon.AudioDriverType_Null;
 
-        try:    oAudioAdapter.audioDriver = eAudioDriverType;
+        try:    oAdapter.audioDriver = eAudioDriverType;
         except: return reporter.errorXcpt('Failed to set the audio driver to %s.' % (eAudioDriverType,))
 
-        try:    oAudioAdapter.enabled = fEnable;
+        try:    oAdapter.enabled = fEnable;
         except: return reporter.errorXcpt('Failed to set the "enabled" property to %s.' % (fEnable,));
 
-        try:    oAudioAdapter.enabledIn = fEnableIn;
+        try:    oAdapter.enabledIn = fEnableIn;
         except: return reporter.errorXcpt('Failed to set the "enabledIn" property to %s.' % (fEnable,));
 
-        try:    oAudioAdapter.enabledOut = fEnableOut;
+        try:    oAdapter.enabledOut = fEnableOut;
         except: return reporter.errorXcpt('Failed to set the "enabledOut" property to %s.' % (fEnable,));
 
         reporter.log('set audio adapter type to %d, driver to %d, and enabled to %s (input is %s, output is %s)'
