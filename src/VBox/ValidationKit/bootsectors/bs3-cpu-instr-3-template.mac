@@ -59,166 +59,177 @@ BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
  %endmacro
 %endif
 
+
+%macro EMIT_TYPE1_INSTR 6
 ;
 ; PXOR (SSE2) & VPXOR (AVX2)
 ;
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_MM1_MM2_icebp
-        pxor    mm1, mm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
+        %1      mm1, mm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_pxor_MM1_MM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_MM1_FSxBX_icebp
-        pxor    mm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
+        %1      mm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_pxor_MM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_XMM1_XMM2_icebp
-        pxor    xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
+        %1      xmm1, xmm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_pxor_XMM1_XMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pxor_XMM1_FSxBX_icebp
-        pxor    xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
+        %1      xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_pxor_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp
-        vpxor   xmm1, xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_XMM2_icebp
+        %2      xmm1, xmm1, xmm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_XMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp
-        vpxor   xmm1, xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_FSxBX_icebp
+        %2      xmm1, xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp
-        vpxor   ymm7, ymm2, ymm3
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_YMM3_icebp
+        %2      ymm7, ymm2, ymm3
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_YMM3_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp
-        vpxor   ymm7, ymm2, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_FSxBX_icebp
+        %2      ymm7, ymm2, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_FSxBX_icebp
 
 
 ;
 ; XORPS (SSE2) & VXORPS (AVX)
 ;
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_XMM2_icebp
-        xorps   xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _XMM1_XMM2_icebp
+        %3      xmm1, xmm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_xorps_XMM1_XMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _XMM1_XMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorps_XMM1_FSxBX_icebp
-        xorps   xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _XMM1_FSxBX_icebp
+        %3      xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_xorps_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
-        vxorps    xmm1, xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_XMM2_icebp
+        %4        xmm1, xmm1, xmm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_XMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp
-        vxorps    xmm1, xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_FSxBX_icebp
+        %4        xmm1, xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp
-        vxorps    ymm1, ymm1, ymm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_YMM2_icebp
+        %4        ymm1, ymm1, ymm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_YMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
-        vxorps    ymm1, ymm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_FSxBX_icebp
+        %4        ymm1, ymm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_FSxBX_icebp
 
 
 
 ;
 ; XORPD (SSE2) & VXORPD (AVX)
 ;
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorpd_XMM1_XMM2_icebp
-        xorpd   xmm1, xmm2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _XMM1_XMM2_icebp
+        %5      xmm1, xmm2
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_xorpd_XMM1_XMM2_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _XMM1_XMM2_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp
-        xorpd   xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _XMM1_FSxBX_icebp
+        %5      xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp
-        vxorpd    xmm2, xmm1, xmm0
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_XMM0_icebp
+        %6        xmm2, xmm1, xmm0
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_XMM0_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp
-        vxorpd    xmm2, xmm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_FSxBX_icebp
+        %6        xmm2, xmm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp
-        vxorpd    ymm2, ymm1, ymm0
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_YMM0_icebp
+        %6        ymm2, ymm1, ymm0
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_YMM0_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp
-        vxorpd    ymm2, ymm1, [fs:xBX]
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_FSxBX_icebp
+        %6        ymm2, ymm1, [fs:xBX]
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_FSxBX_icebp
 
  %if TMPL_BITS == 64
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp
-        vxorpd    ymm10, ymm8, ymm15
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM10_YMM8_YMM15_icebp
+        %6        ymm10, ymm8, ymm15
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM10_YMM8_YMM15_icebp
  %endif
+
+%endmacro  ; EMIT_TYPE1_INSTR
+
+EMIT_TYPE1_INSTR pand,  vpand,  andps,  vandps,  andpd,  vandpd
+EMIT_TYPE1_INSTR pandn, vpandn, andnps, vandnps, andnpd, vandnpd
+EMIT_TYPE1_INSTR por,   vpor,   orps,   vorps,   orpd,   vorpd
+EMIT_TYPE1_INSTR pxor,  vpxor,  xorps,  vxorps,  xorpd,  vxorpd
+
+
 
 %endif ; BS3_INSTANTIATING_CMN
 
