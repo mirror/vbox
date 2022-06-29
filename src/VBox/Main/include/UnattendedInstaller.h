@@ -844,4 +844,24 @@ public:
 };
 #endif
 
+/**
+ * Base class for the unattended FreeBSD installers.
+ */
+class UnattendedFreeBsdInstaller : public UnattendedInstaller
+{
+public:
+    UnattendedFreeBsdInstaller(Unattended *pParent)
+        : UnattendedInstaller(pParent,
+                              "freebsd_installer.cfg", "freebsd_postinstall.sh",
+                              "installerconfig", "vboxpostinstall.sh") {}
+    ~UnattendedFreeBsdInstaller() {}
+
+    bool isAuxiliaryIsoNeeded() const       { return true;  }
+    bool isOriginalIsoNeeded() const        { return false; }
+
+protected:
+    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                     RTVFS hVfsOrgIso, bool fOverwrite);
+};
+
 #endif /* !MAIN_INCLUDED_UnattendedInstaller_h */

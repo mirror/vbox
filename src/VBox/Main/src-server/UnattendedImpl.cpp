@@ -448,6 +448,8 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
         hrc = i_innerDetectIsoOSLinux(hVfsIso, &uBuf);
     if (hrc == S_FALSE && mEnmOsType == VBOXOSTYPE_Unknown)
         hrc = i_innerDetectIsoOSOs2(hVfsIso, &uBuf);
+    if (hrc == S_FALSE && mEnmOsType == VBOXOSTYPE_Unknown)
+        hrc = i_innerDetectIsoOSFreeBsd(hVfsIso, &uBuf);
     if (mEnmOsType != VBOXOSTYPE_Unknown)
     {
         try {  mStrDetectedOSTypeId = Global::OSTypeId(mEnmOsType); }
@@ -2152,6 +2154,89 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf)
         return S_OK;
 
     return S_FALSE;
+}
+
+
+/**
+ * Detect FreeBSD distro ISOs.
+ *
+ * @returns COM status code.
+ * @retval  S_OK if detected
+ * @retval  S_FALSE if not fully detected.
+ *
+ * @param   hVfsIso     The ISO file system.
+ * @param   pBuf        Read buffer.
+ */
+HRESULT Unattended::i_innerDetectIsoOSFreeBsd(RTVFS hVfsIso, DETECTBUFFER *pBuf)
+{
+    RT_NOREF(pBuf);
+
+    /*
+     * FreeBSD since 10.0 has a .profile file in the root which can be used to determine that this is FreeBSD
+     * along with the version.
+     */
+
+    RTVFSFILE hVfsFile;
+    HRESULT hrc = S_FALSE;
+    int vrc = RTVfsFileOpen(hVfsIso, ".profile", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        static const uint8_t s_abFreeBsdHdr[] = "# $FreeBSD: releng/";
+        char abRead[32];
+
+        vrc = RTVfsFileRead(hVfsFile, &abRead[0], sizeof(abRead), NULL /*pcbRead*/);
+        if (   RT_SUCCESS(vrc)
+            && !memcmp(&abRead[0], &s_abFreeBsdHdr[0], sizeof(s_abFreeBsdHdr) - 1)) /* Skip terminator */
+        {
+            abRead[sizeof(abRead) - 1] = '\0';
+
+            /* Detect the architecture using the volume label. */
+            char szVolumeId[128];
+            size_t cchVolumeId;
+            vrc = RTVfsQueryLabel(hVfsIso, szVolumeId, 128, &cchVolumeId);
+            if (RT_SUCCESS(vrc))
+            {
+                /* Can re-use the Linux code here. */
+                if (!detectLinuxArchII(szVolumeId, &mEnmOsType, VBOXOSTYPE_FreeBSD))
+                    LogRel(("Unattended/FBSD: Unknown: arch='%s'\n", szVolumeId));
+
+                /* Detect the version from the string coming after the needle in .profile. */
+                AssertCompile(sizeof(s_abFreeBsdHdr) - 1 < sizeof(abRead));
+
+                char *pszVersionStart = &abRead[sizeof(s_abFreeBsdHdr) - 1];
+                char *pszVersionEnd = pszVersionStart;
+
+                while (RT_C_IS_DIGIT(*pszVersionEnd))
+                    pszVersionEnd++;
+                if (*pszVersionEnd == '.')
+                {
+                    pszVersionEnd++; /* Skip the . */
+
+                    while (RT_C_IS_DIGIT(*pszVersionEnd))
+                        pszVersionEnd++;
+
+                    /* Terminate the version string. */
+                    *pszVersionEnd = '\0';
+
+                    try { mStrDetectedOSVersion = pszVersionStart; }
+                    catch (std::bad_alloc &) { hrc = E_OUTOFMEMORY; }
+                }
+                else
+                    LogRel(("Unattended/FBSD: Unknown: version='%s'\n", &abRead[0]));
+            }
+            else
+            {
+                LogRel(("Unattended/FBSD: No Volume Label found\n"));
+                mEnmOsType = VBOXOSTYPE_FreeBSD;
+            }
+
+            hrc = S_OK;
+        }
+
+        RTVfsFileRelease(hVfsFile);
+    }
+
+    return hrc;
 }
 
 

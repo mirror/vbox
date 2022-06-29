@@ -101,6 +101,8 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
             else
                 pUinstaller = new UnattendedOracleLinux6Installer(pParent);
         }
+        else if (enmDetectedOSType >= VBOXOSTYPE_FreeBSD && enmDetectedOSType <= VBOXOSTYPE_FreeBSD_x64)
+            pUinstaller = new UnattendedFreeBsdInstaller(pParent);
 #if 0 /* doesn't work, so convert later. */
         else if (enmDetectedOSType == VBOXOSTYPE_OpenSUSE || enmDetectedOSType == VBOXOSTYPE_OpenSUSE_x64)
             pUinstaller = new UnattendedSuseInstaller(new UnattendedSUSEXMLScript(pParent), pParent);
@@ -1501,3 +1503,45 @@ HRESULT UnattendedSuseInstaller::setupScriptOnAuxiliaryCD(const Utf8Str &path)
     return rc;
 }
 #endif
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+*
+*
+*  Implementation UnattendedFreeBsdInstaller functions
+*
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+HRESULT UnattendedFreeBsdInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                                             RTVFS hVfsOrgIso, bool fOverwrite)
+{
+    try
+    {
+        RTCString strScriptName;
+        strScriptName = mpParent->i_getAuxiliaryBasePath();
+        strScriptName.append(mMainScript.getDefaultFilename());
+
+        /* Need to retain the original file permissions for executables. */
+        rVecArgs.append() = "--no-file-mode";
+        rVecArgs.append() = "--no-dir-mode";
+
+        rVecArgs.append() = "--import-iso";
+        rVecArgs.append(mpParent->i_getIsoPath());
+
+        rVecArgs.append() = "--file-mode=0444";
+        rVecArgs.append() = "--dir-mode=0555";
+
+        /* Remaster ISO, the installer config has to go into /etc. */
+        rVecArgs.append().append("/etc/installerconfig=").append(strScriptName);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Call parent to add the remaining files
+     */
+    return UnattendedInstaller::addFilesToAuxVisoVectors(rVecArgs, rVecFiles, hVfsOrgIso, fOverwrite);
+}

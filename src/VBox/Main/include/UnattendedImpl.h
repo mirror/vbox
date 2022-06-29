@@ -256,6 +256,7 @@ private:
     HRESULT i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *puBuf);
     HRESULT i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *puBuf);
     HRESULT i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *puBuf);
+    HRESULT i_innerDetectIsoOSFreeBsd(RTVFS hVfsIso, DETECTBUFFER *puBuf);
 
     /**
      * Worker for reconfigureVM().
