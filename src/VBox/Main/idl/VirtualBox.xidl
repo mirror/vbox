@@ -23279,8 +23279,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
-        The IAudioAdapter interface represents the virtual audio adapter of
-        the virtual machine. Used in <link to="IMachine::audioAdapter"/>.
+      The IAudioAdapter interface represents the virtual audio adapter of
+      the virtual machine. Used in <link to="IAudioSettings::adapter"/>.
     </desc>
     <attribute name="enabled" type="boolean">
       <desc>
