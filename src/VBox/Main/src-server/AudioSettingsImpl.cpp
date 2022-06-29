@@ -158,6 +158,8 @@ HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
 
     HRESULT hr = unconst(m->pAdapter).createObject();
     ComAssertComRCRet(hr, hr);
+    hr = m->pAdapter->init(this);
+    ComAssertComRCRet(hr, hr);
     m->pAdapter->i_copyFrom(aThat->m->pAdapter);
 
     autoInitSpan.setSucceeded();
