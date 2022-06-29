@@ -26041,7 +26041,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="d9a89164-5143-49ce-b9ab-4e76edf5b93b"
+    uuid="05dfb131-4deb-4125-9bcd-96518026b423"
     >
 
     <desc>
@@ -26531,8 +26531,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
     <!-- End event marker -->
-    <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="117">
+    <const name="End" value="117">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>

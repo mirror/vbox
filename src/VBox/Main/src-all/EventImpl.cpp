@@ -392,7 +392,7 @@ HRESULT VBoxVetoEvent::getApprovals(std::vector<com::Utf8Str> &aResult)
 }
 
 static const int FirstEvent = (int)VBoxEventType_LastWildcard + 1;
-static const int LastEvent = (int)VBoxEventType_Last;
+static const int LastEvent = (int)VBoxEventType_End;
 static const int NumEvents = LastEvent - FirstEvent;
 
 /**
