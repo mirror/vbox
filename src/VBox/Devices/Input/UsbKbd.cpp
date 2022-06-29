@@ -1193,46 +1193,48 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     }
 
     iKeyCode = usbHidToInternalCode(idUsage);
-    AssertReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+    AssertReturn((iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE) || (idUsage & PDMIKBDPORT_RELEASE_KEYS), VERR_INTERNAL_ERROR);
 
     RTCritSectEnter(&pThis->CritSect);
 
-    LogFlowFunc(("key %s: %08X (iKeyCode 0x%x)\n", fKeyDown ? "down" : "up", idUsage, iKeyCode));
-
-    /*
-     * Due to host key repeat, we can get key events for keys which are
-     * already depressed. Drop those right here.
-     */
-    if (fKeyDown && pThis->abDepressedKeys[iKeyCode])
-        fHaveEvent = false;
-
-    /* If there is already a pending event, we won't accept a new one yet. */
-    if (pIf->fHasPendingChanges && fHaveEvent)
+    if (RT_LIKELY(!(idUsage & PDMIKBDPORT_RELEASE_KEYS)))
     {
-        rc = VERR_TRY_AGAIN;
-    }
-    else if (fHaveEvent)
-    {
-        if (RT_LIKELY(!(idUsage & PDMIKBDPORT_RELEASE_KEYS)))
+        LogFlowFunc(("key %s: %08X (iKeyCode 0x%x)\n", fKeyDown ? "down" : "up", idUsage, iKeyCode));
+
+        /*
+         * Due to host key repeat, we can get key events for keys which are
+         * already depressed. Drop those right here.
+         */
+        if (fKeyDown && pThis->abDepressedKeys[iKeyCode])
+            fHaveEvent = false;
+
+        /* If there is already a pending event, we won't accept a new one yet. */
+        if (pIf->fHasPendingChanges && fHaveEvent)
+        {
+            rc = VERR_TRY_AGAIN;
+        }
+        else if (fHaveEvent)
         {
             /* Regular key event - update keyboard state. */
             if (fKeyDown)
                 pThis->abDepressedKeys[iKeyCode] = 1;
             else
                 pThis->abDepressedKeys[iKeyCode] = 0;
-        }
-        else
-        {
-            /* Clear all currently depressed keys. */
-            RT_ZERO(pThis->abDepressedKeys);
-        }
 
-        /*
-         * Try sending a report. Note that we already decided to consume the
-         * event regardless of whether a URB is available or not. If it's not,
-         * we will simply not accept any further events.
-         */
-        usbHidSendReport(pThis, pIf);
+            /*
+             * Try sending a report. Note that we already decided to consume the
+             * event regardless of whether a URB is available or not. If it's not,
+             * we will simply not accept any further events.
+             */
+            usbHidSendReport(pThis, pIf);
+        }
+    }
+    else
+    {
+        LogFlowFunc(("Release all keys.\n"));
+
+        /* Clear all currently depressed keys. */
+        RT_ZERO(pThis->abDepressedKeys);
     }
 
     RTCritSectLeave(&pThis->CritSect);
