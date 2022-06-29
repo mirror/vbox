@@ -38,8 +38,10 @@ ifeq ($(VBOX_KBUILD_TYPE),debug)
  VBOXMOD_0_KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
  ifeq ($(shell expr $(KERN_VER) : '[23]\.'),0)
   VBOXMOD_0_KFLAGS  += -Werror -Wall -Wno-array-bounds
-  # Disable this for DEBUG clang builds. There are parts of kernel which will use __builtin_frame_address with argument > 0.
-  ifneq ($(LLVM),)
+# clang objects to calls to __builtin_frame_address with a non-zero argument
+# on general principles in -Wall mode. The x86 linux kernel has two such calls
+# in the thread_info.h / arch_within_stack_frames(), though probably safe.
+  ifndef ($(LLVM),) # (This is how the Linux root Makefile (since 5.7) does the test.)
    VBOXMOD_0_KFLAGS += -Wno-frame-address
   endif
  endif
