@@ -71,23 +71,16 @@ HRESULT AudioAdapter::init(AudioSettings *aParent)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* Get the default audio driver out of the system properties */
-    Machine          *pMachine    = aParent->i_getParent();
-    ComAssertRet(pMachine, E_INVALIDARG);
-    VirtualBox       *pVirtualBox = pMachine->i_getVirtualBox();
-    ComAssertRet(pVirtualBox, E_INVALIDARG);
-    SystemProperties *pSysProps   = pVirtualBox->i_getSystemProperties();
-    ComAssertRet(pSysProps, E_INVALIDARG);
-
-    AudioDriverType_T defaultAudioDriver;
-    HRESULT hrc = pSysProps->COMGETTER(DefaultAudioDriver)(&defaultAudioDriver);
-    if (FAILED(hrc)) return hrc;
-
-    unconst(mParent)  = aParent;
+    unconst(mParent)   = aParent;
     /* mPeer is left null */
 
     mData.allocate();
-    mData->driverType  = defaultAudioDriver;
+
+    /* We now always default to the "Default" audio driver, to make it easier
+     * to move VMs around different host OSes.
+     *
+     * This can be changed by the user explicitly, if needed / wanted. */
+    mData->driverType  = AudioDriverType_Default;
     mData->fEnabledIn  = false;
     mData->fEnabledOut = false;
 
