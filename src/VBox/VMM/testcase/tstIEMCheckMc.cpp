@@ -630,7 +630,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_POP_U32(a_pu32Value)                                     do { (void)fMcBegin; } while (0)
 #define IEM_MC_POP_U64(a_pu64Value)                                     do { (void)fMcBegin; } while (0)
 #define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do { (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg)  do { (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg)  do { (void)fMcBegin; AssertCompile((a_cbAlign) <= (a_cbMem)); } while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do { (void)fMcBegin; } while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do { (void)fMcBegin; } while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm)                 do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); (void)fMcBegin; } while (0)

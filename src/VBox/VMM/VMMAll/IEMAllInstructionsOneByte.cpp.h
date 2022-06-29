@@ -8780,7 +8780,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
-    IEM_MC_MEM_MAP(pr80Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_MEM_MAP_EX(pr80Dst, IEM_ACCESS_DATA_W, sizeof(*pr80Dst), pVCpu->iem.s.iEffSeg, GCPtrEffDst, 7 /*cbAlign*/, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r80, pu16Fsw, pr80Dst, pr80Value);
@@ -10181,7 +10181,7 @@ FNIEMOP_DEF_1(iemOp_fbstp_m80d,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
-    IEM_MC_MEM_MAP(pd80Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_MEM_MAP_EX(pd80Dst, IEM_ACCESS_DATA_W, sizeof(*pd80Dst), pVCpu->iem.s.iEffSeg, GCPtrEffDst, 7 /*cbAlign*/, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_d80, pu16Fsw, pd80Dst, pr80Value);

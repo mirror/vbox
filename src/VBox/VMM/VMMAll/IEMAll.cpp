@@ -6883,8 +6883,7 @@ VBOXSTRICTRC iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSe
 {
     /* The lazy approach for now... */
     PCRTFLOAT80U pr80Src;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pr80Src, sizeof(*pr80Src), iSegReg, GCPtrMem,
-                                IEM_ACCESS_DATA_R, 7 /** @todo FLD alignment check */ );
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pr80Src, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
     if (rc == VINF_SUCCESS)
     {
         *pr80Dst = *pr80Src;
@@ -6907,8 +6906,7 @@ VBOXSTRICTRC iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSe
 void iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
     /* The lazy approach for now... */
-    PCRTFLOAT80U pr80Src = (PCRTFLOAT80U)iemMemMapJmp(pVCpu, sizeof(*pr80Src), iSegReg, GCPtrMem,
-                                                      IEM_ACCESS_DATA_R, 7 /** @todo FLD alignment check */);
+    PCRTFLOAT80U pr80Src = (PCRTFLOAT80U)iemMemMapJmp(pVCpu, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
     *pr80Dst = *pr80Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
 }
@@ -6916,7 +6914,7 @@ void iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg,
 
 
 /**
- * Fetches a data tword.
+ * Fetches a data decimal tword.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
@@ -6942,7 +6940,7 @@ VBOXSTRICTRC iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSeg
 
 #ifdef IEM_WITH_SETJMP
 /**
- * Fetches a data tword, longjmp on error.
+ * Fetches a data decimal tword, longjmp on error.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pd80Dst             Where to return the tword.
