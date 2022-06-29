@@ -1010,6 +1010,12 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 #endif
 }
 
+HRESULT Host::getAudioDevices(std::vector<ComPtr<IHostAudioDevice> > &aAudioDevices)
+{
+    RT_NOREF(aAudioDevices);
+    ReturnComNotImplemented();
+}
+
 HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 {
 #ifdef VBOX_WITH_USB

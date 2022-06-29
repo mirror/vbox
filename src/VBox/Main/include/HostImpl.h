@@ -100,6 +100,7 @@ private:
     // wrapped IHost properties
     HRESULT getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives);
     HRESULT getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives);
+    HRESULT getAudioDevices(std::vector<ComPtr<IHostAudioDevice> > &aAudioDevices);
     HRESULT getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices);
     HRESULT getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aUSBDeviceFilters);
     HRESULT getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces);

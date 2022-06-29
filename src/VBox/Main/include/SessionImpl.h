@@ -90,6 +90,9 @@ private:
     HRESULT onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkAdapter,
                                    BOOL aChangeAdapter);
     HRESULT onAudioAdapterChange(const ComPtr<IAudioAdapter> &aAudioAdapter);
+    HRESULT onHostAudioDeviceChange(const ComPtr<IHostAudioDevice> &aDevice,
+                                    BOOL aNew, AudioDeviceState_T aState,
+                                    const ComPtr<IVirtualBoxErrorInfo> &aErrInfo);
     HRESULT onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort);
     HRESULT onParallelPortChange(const ComPtr<IParallelPort> &aParallelPort);
     HRESULT onStorageControllerChange(const Guid &aMachineId, const com::Utf8Str& aControllerName);

@@ -27,6 +27,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CGraphicsAdapter.h"
 #include "CNetworkAdapter.h"
 #include "CUSBController.h"
@@ -176,8 +177,9 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
             case MachineAttribute_AudioHostDriverType:
             {
                 /* Acquire audio adapter: */
-                CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
-                if (!comMachine.isOk())
+                CAudioSettings const comAudioSettings = comMachine.GetAudioSettings();
+                CAudioAdapter        comAdapter       = comAudioSettings.GetAdapter();
+                if (!comAudioSettings.isOk())
                 {
                     UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
@@ -195,8 +197,9 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
             case MachineAttribute_AudioControllerType:
             {
                 /* Acquire audio adapter: */
-                CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
-                if (!comMachine.isOk())
+                CAudioSettings const comAudioSettings = comMachine.GetAudioSettings();
+                CAudioAdapter        comAdapter       = comAudioSettings.GetAdapter();
+                if (!comAudioSettings.isOk())
                 {
                     UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;

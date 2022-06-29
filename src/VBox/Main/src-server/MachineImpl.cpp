@@ -2683,11 +2683,11 @@ HRESULT Machine::getVRDEServer(ComPtr<IVRDEServer> &aVRDEServer)
     return S_OK;
 }
 
-HRESULT Machine::getAudioAdapter(ComPtr<IAudioAdapter> &aAudioAdapter)
+HRESULT Machine::getAudioSettings(ComPtr<IAudioSettings> &aAudioSettings)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aAudioAdapter = mAudioAdapter;
+    aAudioSettings = mAudioSettings;
 
     return S_OK;
 }
@@ -8668,9 +8668,9 @@ HRESULT Machine::initDataAndChildObjects()
         mParallelPorts[slot]->init(this, slot);
     }
 
-    /* create the audio adapter object (always present, default is disabled) */
-    unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init(this);
+    /* create the audio settings object */
+    unconst(mAudioSettings).createObject();
+    mAudioSettings->init(this);
 
     /* create the USB device filters object (always present) */
     unconst(mUSBDeviceFilters).createObject();
@@ -8731,10 +8731,10 @@ void Machine::uninitDataAndChildObjects()
         unconst(mUSBDeviceFilters).setNull();
     }
 
-    if (mAudioAdapter)
+    if (mAudioSettings)
     {
-        mAudioAdapter->uninit();
-        unconst(mAudioAdapter).setNull();
+        mAudioSettings->uninit();
+        unconst(mAudioSettings).setNull();
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
@@ -9424,8 +9424,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
             if (FAILED(rc)) return rc;
         }
 
-        /* AudioAdapter */
-        rc = mAudioAdapter->i_loadSettings(data.audioAdapter);
+        /* Audio settings */
+        rc = mAudioSettings->i_loadSettings(data.audioAdapter);
         if (FAILED(rc)) return rc;
 
         /* storage controllers */
@@ -10848,8 +10848,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             data.llParallelPorts.push_back(p);
         }
 
-        /* Audio adapter */
-        rc = mAudioAdapter->i_saveSettings(data.audioAdapter);
+        /* Audio settings */
+        rc = mAudioSettings->i_saveSettings(data.audioAdapter);
         if (FAILED(rc)) return rc;
 
         rc = i_saveStorageControllers(data.storage);
@@ -12297,8 +12297,8 @@ void Machine::i_rollback(bool aNotify)
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
 
-    if (mAudioAdapter && (mData->flModifications & IsModified_AudioAdapter))
-        mAudioAdapter->i_rollback();
+    if (mAudioSettings && (mData->flModifications & IsModified_AudioSettings))
+        mAudioSettings->i_rollback();
 
     if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
         mUSBDeviceFilters->i_rollback();
@@ -12418,7 +12418,7 @@ void Machine::i_commit()
     mRecordingSettings->i_commit();
     mGraphicsAdapter->i_commit();
     mVRDEServer->i_commit();
-    mAudioAdapter->i_commit();
+    mAudioSettings->i_commit();
     mUSBDeviceFilters->i_commit();
     mBandwidthControl->i_commit();
 
@@ -12674,7 +12674,7 @@ void Machine::i_copyFrom(Machine *aThat)
     mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mGraphicsAdapter->i_copyFrom(aThat->mGraphicsAdapter);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
-    mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
+    mAudioSettings->i_copyFrom(aThat->mAudioSettings);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->i_copyFrom(aThat->mBandwidthControl);
 
@@ -13061,9 +13061,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);
-    /* create another audio adapter object that will be mutable */
-    unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init(this, aMachine->mAudioAdapter);
+    /* create another audio settings object that will be mutable */
+    unconst(mAudioSettings).createObject();
+    mAudioSettings->init(this, aMachine->mAudioSettings);
     /* create a list of serial ports that will be mutable */
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
     {
@@ -14538,6 +14538,30 @@ HRESULT SessionMachine::i_onAudioAdapterChange(IAudioAdapter *audioAdapter)
 /**
  *  @note Locks this object for reading.
  */
+HRESULT SessionMachine::i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState, IVirtualBoxErrorInfo *aErrInfo)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnHostAudioDeviceChange(aDevice, aNew, aState, aErrInfo);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
 HRESULT SessionMachine::i_onSerialPortChange(ISerialPort *serialPort)
 {
     LogFlowThisFunc(("\n"));
@@ -15822,24 +15846,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     if (FAILED(rc)) return rc;
 
     /* Audio stuff. */
-    AudioControllerType_T audioController;
-    rc = osType->COMGETTER(RecommendedAudioController)(&audioController);
-    if (FAILED(rc)) return rc;
-
-    rc = mAudioAdapter->COMSETTER(AudioController)(audioController);
-    if (FAILED(rc)) return rc;
-
-    AudioCodecType_T audioCodec;
-    rc = osType->COMGETTER(RecommendedAudioCodec)(&audioCodec);
-    if (FAILED(rc)) return rc;
-
-    rc = mAudioAdapter->COMSETTER(AudioCodec)(audioCodec);
-    if (FAILED(rc)) return rc;
-
-    rc = mAudioAdapter->COMSETTER(Enabled)(true);
-    if (FAILED(rc)) return rc;
-
-    rc = mAudioAdapter->COMSETTER(EnabledOut)(true);
+    rc = mAudioSettings->i_applyDefaults(osType);
     if (FAILED(rc)) return rc;
 
     /* Storage Controllers */

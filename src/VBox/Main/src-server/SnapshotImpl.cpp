@@ -1187,8 +1187,8 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mVRDEServer->initCopy(this, pMachine->mVRDEServer);
     if (FAILED(rc)) return rc;
 
-    unconst(mAudioAdapter).createObject();
-    rc = mAudioAdapter->initCopy(this, pMachine->mAudioAdapter);
+    unconst(mAudioSettings).createObject();
+    rc = mAudioSettings->initCopy(this, pMachine->mAudioSettings);
     if (FAILED(rc)) return rc;
 
     /* create copies of all USB controllers (mUSBControllerData
@@ -1320,8 +1320,8 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);
 
-    unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init(this);
+    unconst(mAudioSettings).createObject();
+    mAudioSettings->init(this);
 
     unconst(mUSBDeviceFilters).createObject();
     mUSBDeviceFilters->init(this);

@@ -114,7 +114,9 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
         // request the machine lock while accessing internal members
         AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
 
-        ComPtr<IAudioAdapter> pAudioAdapter = mAudioAdapter;
+        ComPtr<IAudioAdapter> pAudioAdapter;
+        rc = mAudioSettings->COMGETTER(Adapter)(pAudioAdapter.asOutParam());
+        if (FAILED(rc)) throw rc;
         BOOL fAudioEnabled;
         rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
         if (FAILED(rc)) throw rc;

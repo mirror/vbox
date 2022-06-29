@@ -38,6 +38,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CGraphicsAdapter.h"
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
@@ -418,7 +419,8 @@ private:
         QString strFullData;
 
         /* Get audio adapter: */
-        const CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
+        const CAudioSettings comAudioSettings = comMachine.GetAudioSettings();
+        const CAudioAdapter  comAdapter       = comAudioSettings.GetAdapter();
         const bool fAudioEnabled = comAdapter.GetEnabled();
         if (fAudioEnabled)
         {

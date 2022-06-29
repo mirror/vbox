@@ -2143,19 +2143,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         }
     }
 
-    ComPtr<IAudioAdapter> AudioAdapter;
-    hrc = machine->COMGETTER(AudioAdapter)(AudioAdapter.asOutParam());
+    ComPtr<IAudioSettings> audioSettings;
+    ComPtr<IAudioAdapter>  audioAdapter;
+    hrc = machine->COMGETTER(AudioSettings)(audioSettings.asOutParam());
+    if (SUCCEEDED(hrc))
+        hrc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());
     if (SUCCEEDED(hrc))
     {
         const char *pszDrv   = Info::tr("Unknown");
         const char *pszCtrl  = Info::tr("Unknown");
         const char *pszCodec = Info::tr("Unknown");
         BOOL fEnabled;
-        hrc = AudioAdapter->COMGETTER(Enabled)(&fEnabled);
+        hrc = audioAdapter->COMGETTER(Enabled)(&fEnabled);
         if (SUCCEEDED(hrc) && fEnabled)
         {
             AudioDriverType_T enmDrvType;
-            hrc = AudioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
+            hrc = audioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
             switch (enmDrvType)
             {
                 case AudioDriverType_Default:
@@ -2224,7 +2227,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     break;
             }
             AudioControllerType_T enmCtrlType;
-            hrc = AudioAdapter->COMGETTER(AudioController)(&enmCtrlType);
+            hrc = audioAdapter->COMGETTER(AudioController)(&enmCtrlType);
             switch (enmCtrlType)
             {
                 case AudioControllerType_AC97:
@@ -2249,7 +2252,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     break;
             }
             AudioCodecType_T enmCodecType;
-            hrc = AudioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
+            hrc = audioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
             switch (enmCodecType)
             {
                 case AudioCodecType_SB16:
@@ -2280,8 +2283,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 RTPrintf(Info::tr(" (Driver: %s, Controller: %s, Codec: %s)"), pszDrv, pszCtrl, pszCodec);
             RTPrintf("\n");
         }
-        SHOW_BOOLEAN_PROP(AudioAdapter, EnabledOut,  "audio_out",  Info::tr("Audio playback:"));
-        SHOW_BOOLEAN_PROP(AudioAdapter, EnabledIn, "audio_in", Info::tr("Audio capture:"));
+        SHOW_BOOLEAN_PROP(audioAdapter, EnabledOut,  "audio_out",  Info::tr("Audio playback:"));
+        SHOW_BOOLEAN_PROP(audioAdapter, EnabledIn, "audio_in", Info::tr("Audio capture:"));
+
+        /** @todo Add printing run-time host audio device selection(s) here. */
     }
 
     /* Shared clipboard */

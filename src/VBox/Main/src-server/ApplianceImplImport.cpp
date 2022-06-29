@@ -4486,9 +4486,12 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!stack.strAudioAdapter.isEmpty())
         if (stack.strAudioAdapter.compare("null", Utf8Str::CaseInsensitive) != 0)
         {
+            ComPtr<IAudioSettings> audioSettings;
+            rc = pNewMachine->COMGETTER(AudioSettings)(audioSettings.asOutParam());
+            if (FAILED(rc)) throw rc;
             uint32_t audio = RTStrToUInt32(stack.strAudioAdapter.c_str());       // should be 0 for AC97
             ComPtr<IAudioAdapter> audioAdapter;
-            rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+            rc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());
             if (FAILED(rc)) throw rc;
             rc = audioAdapter->COMSETTER(Enabled)(true);
             if (FAILED(rc)) throw rc;

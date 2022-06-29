@@ -605,6 +605,25 @@ HRESULT Session::onAudioAdapterChange(const ComPtr<IAudioAdapter> &aAudioAdapter
 
 }
 
+HRESULT Session::onHostAudioDeviceChange(const ComPtr<IHostAudioDevice> &aDevice,
+                                         BOOL aNew, AudioDeviceState_T aState,
+                                         const ComPtr<IVirtualBoxErrorInfo> &aErrInfo)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_onHostAudioDeviceChange(aDevice, aNew, aState, aErrInfo);
+#else
+    RT_NOREF(aDevice, aNew, aState, aErrInfo);
+    return S_OK;
+#endif
+}
+
 HRESULT Session::onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort)
 {
     LogFlowThisFunc(("\n"));

@@ -434,8 +434,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "audioin"))
         {
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUDIOIN);
+
+            ComPtr<IAudioSettings> audioSettings;
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
             ComPtr<IAudioAdapter> adapter;
-            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
+            CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(adapter.asOutParam()));
             if (adapter)
             {
                 bool fEnabled;
@@ -458,8 +461,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "audioout"))
         {
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUDIOOUT);
+
+            ComPtr<IAudioSettings> audioSettings;
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
             ComPtr<IAudioAdapter> adapter;
-            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
+            CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(adapter.asOutParam()));
             if (adapter)
             {
                 bool fEnabled;

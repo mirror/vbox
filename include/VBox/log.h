@@ -368,6 +368,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_APPLIANCE,
     /** Main group, IAudioAdapter. */
     LOG_GROUP_MAIN_AUDIOADAPTER,
+    /** Main group, IAudioDevice. */
+    LOG_GROUP_MAIN_AUDIODEVICE,
+    /** Main group, IAudioSettings. */
+    LOG_GROUP_MAIN_AUDIOSETTINGS,
     /** Main group, IBandwidthControl. */
     LOG_GROUP_MAIN_BANDWIDTHCONTROL,
     /** Main group, IBandwidthGroup. */
@@ -502,6 +506,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_GUESTSESSIONEVENT,
     /** Main group, IHost. */
     LOG_GROUP_MAIN_HOST,
+    /** Main group, IHostAudioDevice. */
+    LOG_GROUP_MAIN_HOSTAUDIODEVICE,
     /** Main group, IHostDrive. */
     LOG_GROUP_MAIN_HOSTDRIVE,
     /** Main group, IHostDriveList. */
@@ -982,6 +988,8 @@ typedef enum VBOXLOGGROUP
     "MAIN_ADDITIONSFACILITY", \
     "MAIN_APPLIANCE", \
     "MAIN_AUDIOADAPTER", \
+    "MAIN_AUDIODEVICE", \
+    "MAIN_AUDIOSETTINGS", \
     "MAIN_BANDWIDTHCONTROL", \
     "MAIN_BANDWIDTHGROUP", \
     "MAIN_BIOSSETTINGS", \
@@ -1049,6 +1057,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_GUESTSESSION", \
     "MAIN_GUESTSESSIONEVENT", \
     "MAIN_HOST", \
+    "MAIN_HOSTAUDIODEVICE", \
     "MAIN_HOSTDRIVE", \
     "MAIN_HOSTDRIVELIST", \
     "MAIN_HOSTDRIVEPARTITION", \

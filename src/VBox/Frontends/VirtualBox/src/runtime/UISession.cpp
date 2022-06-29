@@ -57,6 +57,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CGraphicsAdapter.h"
 #include "CHostUSBDevice.h"
 #include "CRecordingSettings.h"
@@ -671,7 +672,8 @@ void UISession::sltHandleStorageDeviceChange(const CMediumAttachment &attachment
 void UISession::sltAudioAdapterChange()
 {
     /* Make sure Audio adapter is present: */
-    const CAudioAdapter comAdapter = machine().GetAudioAdapter();
+    const CAudioSettings comAudioSettings = machine().GetAudioSettings();
+    const CAudioAdapter  comAdapter  = comAudioSettings.GetAdapter();
     AssertMsgReturnVoid(machine().isOk() && comAdapter.isNotNull(),
                         ("Audio adapter should NOT be null!\n"));
 
@@ -1262,12 +1264,13 @@ void UISession::loadSessionSettings()
 
         /* Devices options: */
         {
-            const CAudioAdapter comAudio = m_machine.GetAudioAdapter();
+            const CAudioSettings comAudioSettings = m_machine.GetAudioSettings();
+            const CAudioAdapter  comAdapter = comAudioSettings.GetAdapter();
             actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
-            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAudio.GetEnabledOut());
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAdapter.GetEnabledOut());
             actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
             actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
-            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAudio.GetEnabledIn());
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAdapter.GetEnabledIn());
             actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
         }
 
@@ -2112,7 +2115,8 @@ void UISession::updateActionRestrictions()
     /* Audio stuff: */
     {
         /* Check whether audio controller is enabled. */
-        const CAudioAdapter &comAdapter = machine().GetAudioAdapter();
+        const CAudioSettings comAudioSettings = machine().GetAudioSettings();
+        const CAudioAdapter  comAdapter = comAudioSettings.GetAdapter();
         if (comAdapter.isNull() || !comAdapter.GetEnabled())
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
     }

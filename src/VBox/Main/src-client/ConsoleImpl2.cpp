@@ -3058,9 +3058,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /*
          * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio.
          */
+        ComPtr<IAudioSettings> audioSettings;
+        hrc = pMachine->COMGETTER(AudioSettings)(audioSettings.asOutParam());               H();
+
         BOOL fAudioEnabled = FALSE;
         ComPtr<IAudioAdapter> audioAdapter;
-        hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());                 H();
+        hrc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());                 H();
         if (audioAdapter)
         {
             hrc = audioAdapter->COMGETTER(Enabled)(&fAudioEnabled);                         H();

@@ -5238,6 +5238,32 @@ HRESULT Console::i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter)
     return S_OK;
 }
 
+/**
+ * Called by IInternalSessionControl::OnHostAudioDeviceChange().
+ */
+HRESULT Console::i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState,
+                                           IVirtualBoxErrorInfo *aErrInfo)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+
+    /** @todo Implement logic here. */
+
+    alock.release();
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(hrc))
+        ::FireHostAudioDeviceChangedEvent(mEventSource, aDevice, aNew, aState, aErrInfo);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return S_OK;
+}
 
 /**
  * Performs the Serial Port attachment change in EMT.

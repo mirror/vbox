@@ -31,6 +31,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
 #include "CCloudMachine.h"
@@ -580,14 +581,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
         return table;
     }
 
-    const CAudioAdapter comAudio = comMachine.GetAudioAdapter();
-    if (comAudio.GetEnabled())
+    const CAudioSettings comAudioSettings = comMachine.GetAudioSettings();
+    const CAudioAdapter  comAdapter       = comAudioSettings.GetAdapter();
+    if (comAdapter.GetEnabled())
     {
         /* Host driver: */
         if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver)
         {
             const QString strAnchorType = QString("audio_host_driver_type");
-            const KAudioDriverType enmType = comAudio.GetAudioDriver();
+            const KAudioDriverType enmType = comAdapter.GetAudioDriver();
             table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
                                      QString("<a href=#%1,%2>%3</a>")
                                          .arg(strAnchorType)
@@ -599,7 +601,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
         if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller)
         {
             const QString strAnchorType = QString("audio_controller_type");
-            const KAudioControllerType enmType = comAudio.GetAudioController();
+            const KAudioControllerType enmType = comAdapter.GetAudioController();
             table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
                                      QString("<a href=#%1,%2>%3</a>")
                                          .arg(strAnchorType)
@@ -612,11 +614,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
         if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO)
         {
             table << UITextTableLine(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
-                                     comAudio.GetEnabledIn() ?
+                                     comAdapter.GetEnabledIn() ?
                                      QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
                                      QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
             table << UITextTableLine(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
-                                     comAudio.GetEnabledOut() ?
+                                     comAdapter.GetEnabledOut() ?
                                      QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
                                      QApplication::translate("UIDetails", "Disabled", "details (audio/output)"));
         }

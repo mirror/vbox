@@ -29,7 +29,7 @@
 #include "PCIDeviceAttachmentImpl.h"
 #include "MediumLock.h"
 #include "NetworkAdapterImpl.h"
-#include "AudioAdapterImpl.h"
+#include "AudioSettingsImpl.h"
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
@@ -505,7 +505,7 @@ public:
         IsModified_SerialPorts           = 0x000010,
         IsModified_ParallelPorts         = 0x000020,
         IsModified_VRDEServer            = 0x000040,
-        IsModified_AudioAdapter          = 0x000080,
+        IsModified_AudioSettings         = 0x000080,
         IsModified_USB                   = 0x000100,
         IsModified_BIOS                  = 0x000200,
         IsModified_SharedFolders         = 0x000400,
@@ -547,6 +547,7 @@ public:
                                                NATProtocol_T /* protocol */, const Utf8Str & /* host ip */, LONG /* host port */,
                                                const Utf8Str & /* guest port */, LONG /* guest port */ ) { return S_OK; }
     virtual HRESULT i_onAudioAdapterChange(IAudioAdapter * /* audioAdapter */) { return S_OK; }
+    virtual HRESULT i_onHostAudioDeviceChange(IHostAudioDevice *, BOOL /* new */, AudioDeviceState_T, IVirtualBoxErrorInfo *) { return S_OK; }
     virtual HRESULT i_onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT i_onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
     virtual HRESULT i_onVRDEServerChange(BOOL /* aRestart */) { return S_OK; }
@@ -819,7 +820,7 @@ protected:
     const ComObjPtr<VRDEServer>        mVRDEServer;
     const ComObjPtr<SerialPort>        mSerialPorts[SchemaDefs::SerialPortCount];
     const ComObjPtr<ParallelPort>      mParallelPorts[SchemaDefs::ParallelPortCount];
-    const ComObjPtr<AudioAdapter>      mAudioAdapter;
+    const ComObjPtr<AudioSettings>     mAudioSettings;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
     const ComObjPtr<RecordingSettings> mRecordingSettings;
@@ -956,7 +957,7 @@ private:
     HRESULT getMediumAttachments(std::vector<ComPtr<IMediumAttachment> > &aMediumAttachments);
     HRESULT getUSBControllers(std::vector<ComPtr<IUSBController> > &aUSBControllers);
     HRESULT getUSBDeviceFilters(ComPtr<IUSBDeviceFilters> &aUSBDeviceFilters);
-    HRESULT getAudioAdapter(ComPtr<IAudioAdapter> &aAudioAdapter);
+    HRESULT getAudioSettings(ComPtr<IAudioSettings> &aAudioSettings);
     HRESULT getStorageControllers(std::vector<ComPtr<IStorageController> > &aStorageControllers);
     HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
     HRESULT getSettingsAuxFilePath(com::Utf8Str &aSettingsAuxFilePath);
@@ -1398,6 +1399,7 @@ public:
     HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT i_onVMProcessPriorityChange(VMProcPriority_T aPriority);
     HRESULT i_onAudioAdapterChange(IAudioAdapter *audioAdapter);
+    HRESULT i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState, IVirtualBoxErrorInfo *aErrInfo);
     HRESULT i_onSerialPortChange(ISerialPort *serialPort);
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);

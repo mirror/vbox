@@ -2530,8 +2530,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIOCONTROLLER:
             {
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
-                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
 
                 if (!RTStrICmp(ValueUnion.psz, "sb16"))
@@ -2550,8 +2552,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIOCODEC:
             {
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
-                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
 
                 if (!RTStrICmp(ValueUnion.psz, "sb16"))
@@ -2572,8 +2576,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIO:
             {
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
-                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
 /** @todo r=klaus: don't unconditionally bolt together setting the audio driver
  * and enabling the device. Doing this more cleverly allows changing the audio
@@ -2653,8 +2659,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIOIN:
             {
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
-                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
 
                 CHECK_ERROR(audioAdapter, COMSETTER(EnabledIn)(ValueUnion.f));
@@ -2663,8 +2671,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIOOUT:
             {
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
-                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
 
                 CHECK_ERROR(audioAdapter, COMSETTER(EnabledOut)(ValueUnion.f));

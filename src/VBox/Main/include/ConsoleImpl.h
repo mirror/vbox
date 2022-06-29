@@ -196,6 +196,8 @@ public:
     // events from IInternalSessionControl
     HRESULT i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
     HRESULT i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter);
+    HRESULT i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState,
+                                      IVirtualBoxErrorInfo *aErrInfo);
     HRESULT i_onSerialPortChange(ISerialPort *aSerialPort);
     HRESULT i_onParallelPortChange(IParallelPort *aParallelPort);
     HRESULT i_onStorageControllerChange(const com::Guid& aMachineId, const com::Utf8Str& aControllerName);

@@ -46,6 +46,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
 #include "CMachine.h"
@@ -1815,7 +1816,8 @@ QStringList UISnapshotDetailsWidget::audioReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Acquire audio adapter: */
-    const CAudioAdapter &comAdapter = comMachine.GetAudioAdapter();
+    const CAudioSettings comAudioSettings = comMachine.GetAudioSettings();
+    const CAudioAdapter &comAdapter       = comAudioSettings.GetAdapter();
     if (comAdapter.GetEnabled())
     {
         /* Host Driver: */

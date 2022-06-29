@@ -611,6 +611,7 @@ VBoxSVC_SOURCES = \
 	src-server/ApplianceImplExport.cpp \
 	src-server/ApplianceImplImport.cpp \
 	src-server/AudioAdapterImpl.cpp \
+	src-server/AudioSettingsImpl.cpp \
 	src-server/BandwidthControlImpl.cpp \
 	src-server/BandwidthGroupImpl.cpp \
 	src-server/BIOSSettingsImpl.cpp \
@@ -633,6 +634,7 @@ VBoxSVC_SOURCES = \
 	src-server/GuestOSTypeImpl.cpp \
 	src-server/HostDnsService.cpp \
 	src-server/HostImpl.cpp \
+	src-server/HostAudioDeviceImpl.cpp \
 	src-server/HostNetworkInterfaceImpl.cpp \
 	src-server/HostPower.cpp \
 	$(if $(VBOX_WITH_LIBCURL), \

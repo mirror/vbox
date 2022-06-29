@@ -6589,7 +6589,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="42643361-11f7-40b4-8d66-79029838b1f1"
+    uuid="9fbd57c7-e1b2-4baa-bbfb-ae831c06f32b"
     wsmap="managed"
     rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
@@ -6959,8 +6959,10 @@
       </desc>
     </attribute>
 
-    <attribute name="audioAdapter" type="IAudioAdapter" readonly="yes">
-      <desc>Associated audio adapter, always present.</desc>
+    <attribute name="audioSettings" type="IAudioSettings" readonly="yes">
+      <desc>
+        The machine's audio settings.
+      </desc>
     </attribute>
 
     <attribute name="storageControllers" type="IStorageController" readonly="yes" safearray="yes">
@@ -11738,7 +11740,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="fc0759a6-a5e2-41e1-93ca-64776335eb2d"
+    uuid="e54f6256-97a7-4947-8a78-10c013ddf4b8"
     wsmap="managed"
     rest="managed"
     reservedMethods="6" reservedAttributes="12"
@@ -11761,6 +11763,14 @@
 
     <attribute name="floppyDrives" type="IMedium" readonly="yes" safearray="yes">
       <desc>List of floppy drives available on the host.</desc>
+    </attribute>
+
+    <attribute name="audioDevices" type="IHostAudioDevice" readonly="yes" safearray="yes">
+      <desc>List of audio devices currently available on the host.
+        <result name="E_NOTIMPL">
+          This attribute is not implemented yet.
+        </result>
+      </desc>
     </attribute>
 
     <attribute name="USBDevices" type="IHostUSBDevice" readonly="yes" safearray="yes">
@@ -23352,6 +23362,206 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <enum
+    name="AudioDirection"
+    uuid="f27d209b-040c-4ae9-beae-85f9693ca07a"
+    >
+    <desc>
+      Audio direction enumeration.
+    </desc>
+
+    <const name="Unknown"       value="0">
+      <desc>Direction cannot be determined.</desc>
+    </const>
+    <const name="In"            value="1">
+      <desc>Input (Recording).</desc>
+    </const>
+    <const name="Out"           value="2">
+      <desc>Output (Playback).</desc>
+    </const>
+    <const name="Duplex"        value="3">
+      <desc>Duplex (Recording + Playback).</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="AudioDeviceType"
+    uuid="95457071-ef88-45a9-8416-fc05b08731d2"
+    >
+    <desc>
+      Audio device type enumeration.
+    </desc>
+
+    <const name="Unknown"       value="0">
+      <desc>Device type is unknown / cannot be determined</desc>
+    </const>
+    <const name="BuiltLin"      value="1">
+      <desc>Built-in device (cannot be removed).</desc>
+    </const>
+    <const name="ExternalUSB"   value="2">
+      <desc>External device, connected via USB.</desc>
+    </const>
+    <const name="ExternalOther" value="3">
+      <desc>External device, connected via some other method.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="AudioDeviceState"
+    uuid="45c1b969-556a-4277-8570-b438d2ef5ebe"
+    >
+    <desc>
+      Audio device state enumeration.
+    </desc>
+
+    <const name="Unknown"    value="0">
+      <desc>Device state is unknown / cannot be determined</desc>
+    </const>
+    <const name="Active"     value="1">
+      <desc>Device is active and can be used.</desc>
+    </const>
+    <const name="Disabled"   value="2">
+      <desc>Device is in a disabled state.</desc>
+    </const>
+    <const name="NotPresent" value="3">
+      <desc>Device is marked as not being present.</desc>
+    </const>
+    <const name="Unplugged" value="4">
+      <desc>Device has been unplugged.</desc>
+    </const>
+  </enum>
+
+  <interface
+    name="IAudioDevice" extends="$unknown"
+    uuid="e50cd98b-ec3f-4146-9943-863dd1233691"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      The IAudioDevice interface represents an abstract base interface for
+      an audio device.
+    </desc>
+
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
+      <desc>
+        Unique device ID.
+      </desc>
+    </attribute>
+
+    <attribute name="name" type="wstring">
+      <desc>
+        Friendly name of the device.
+      </desc>
+    </attribute>
+    <attribute name="type" type="AudioDeviceType">
+      <desc>
+        Device type.
+      </desc>
+    </attribute>
+    <attribute name="usage" type="AudioDirection">
+      <desc>
+        Usage type of the device.
+      </desc>
+    </attribute>
+    <attribute name="defaultIn" type="boolean">
+      <desc>
+        Whether this device is being marked as the default input
+        device by the host OS.
+      </desc>
+    </attribute>
+    <attribute name="defaultOut" type="boolean">
+      <desc>
+        Whether this device is being marked as the default output
+        device by the host OS.
+      </desc>
+    </attribute>
+    <attribute name="isHotPlug" type="boolean">
+      <desc>
+        Whether this device is being marked as a hotplug device, i.e. can
+        be removed from the system.
+      </desc>
+    </attribute>
+    <attribute name="state" type="AudioDeviceState">
+      <desc>
+        Current device state.
+      </desc>
+    </attribute>
+    <method name="getProperty" const="yes">
+      <desc>
+        Returns an audio specific property string.
+
+        If the requested data @a key does not exist, this function will
+        succeed and return an empty string in the @a value argument.
+
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the key to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Value of the requested key.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IHostAudioDevice" extends="IAudioDevice"
+    uuid="dc6dda3e-6b04-4203-b4c6-43906dc1695c"
+    wsmap="managed">
+    <desc>
+      Audio device provided by the host OS.
+    </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="IAudioSettings" extends="$unknown"
+    uuid="52f40b16-520e-473f-9428-3e69b0d915c3"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      The IAudioSettings interface represents the audio settings for a virtual machine.
+    </desc>
+
+    <method name="getHostAudioDevice">
+      <desc>
+        Returns the machine's current host audio device for the specified usage.
+        <result name="E_NOTIMPL">
+          This method is not implemented yet.
+        </result>
+      </desc>
+      <param name="usage" type="AudioDirection" dir="in">
+        <desc>Usage to retrieve audio device for.</desc>
+      </param>
+      <param name="device" type="IHostAudioDevice" dir="return">
+        <desc>Host audio device for the specified direction.</desc>
+      </param>
+    </method>
+
+    <method name="setHostAudioDevice">
+      <desc>
+        Sets the machine's current host audio device for the specified usage.
+        <result name="E_NOTIMPL">
+          This method is not implemented yet.
+        </result>
+      </desc>
+      <param name="device" type="IHostAudioDevice" dir="in">
+        <desc>Sets the host audio device for the specified usage.</desc>
+      </param>
+      <param name="usage" type="AudioDirection" dir="in">
+        <desc>Usage to set audio device for.</desc>
+      </param>
+    </method>
+
+    <attribute name="adapter" type="IAudioAdapter" readonly="yes">
+      <desc>Associated audio adapter, always present.</desc>
+    </attribute>
+
+  </interface>
+
+  <enum
     name="AuthType"
     uuid="7eef6ef6-98c2-4dc2-ab35-10d2b292028d"
     >
@@ -23616,7 +23826,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="f4638054-f1f8-4590-941a-cdb66075c5bf"
+    uuid="a797fb40-7e04-4aa5-88c5-299aa0454577"
     internal="yes"
     wsmap="suppress"
     >
@@ -23762,6 +23972,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
       <param name="audioAdapter" type="IAudioAdapter" dir="in"/>
+    </method>
+
+    <method name="onHostAudioDeviceChange">
+      <desc>
+        Triggerd when the state of a host audio device
+        has changed.
+      </desc>
+      <param name="device" type="IHostAudioDevice" dir="in" readonly="yes">
+        <desc>Device the state has been changed for.</desc>
+      </param>
+      <param name="isNew" type="boolean" dir="in" readonly="yes">
+        <desc>Whether this is a newly detected device or not.</desc>
+      </param>
+      <param name="state" type="AudioDeviceState" dir="in" readonly="yes">
+        <desc>The new device state.</desc>
+      </param>
+      <param name="errorInfo" type="IVirtualBoxErrorInfo" dir="in" readonly="yes">
+        <desc>Error information.</desc>
+      </param>
     </method>
 
     <method name="onSerialPortChange">
@@ -25812,7 +26041,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="08cc6ebb-1e55-4b78-8fb1-1e06f5b4dbe9"
+    uuid="d9a89164-5143-49ce-b9ab-4e76edf5b93b"
     >
 
     <desc>
@@ -26296,9 +26525,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IUpdateAgentStateChangedEvent">IUpdateAgentStateChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnHostAudioDeviceChanged" value="116">
+      <desc>
+        See <link to="IHostAudioDeviceChangedEvent">IHostAudioDeviceChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="116">
+    <const name="Last" value="117">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28110,6 +28344,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Guest port to redirect to.
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IHostAudioDeviceChangedEvent" extends="IEvent"
+    waitable="yes"
+    uuid="8dcc633f-7b03-4f0a-9f40-7a784dd0835a"
+    wsmap="managed" autogen="VBoxEvent" id="OnHostAudioDeviceChangedEvent"
+    >
+    <desc>
+      Notification when a host audio device state has changed.
+    </desc>
+
+    <attribute name="device" type="IHostAudioDevice" readonly="yes">
+      <desc>
+        Host audio device that has changed.
+      </desc>
+    </attribute>
+
+    <attribute name="new" type="boolean" readonly="yes">
+      <desc>
+        @c true if the host device is a newly detected device, @c false if not.
+      </desc>
+    </attribute>
+
+    <attribute name="state" type="AudioDeviceState" readonly="yes">
+      <desc>
+        New audio device state.
+      </desc>
+    </attribute>
+
+    <attribute name="error" type="IVirtualBoxErrorInfo" readonly="yes">
+      <desc>
+        @c null on success or an error message object on failure.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface
