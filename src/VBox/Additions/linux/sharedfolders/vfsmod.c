@@ -193,7 +193,7 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperI
     pSuperInfo->enmCacheMode = kVbsfCacheMode_Strict;
     if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, enmCacheMode)) {
         switch (info->enmCacheMode) {
-            case kVbsfCacheMode_Default: RT_FALL_THRU();
+            case kVbsfCacheMode_Default:
             case kVbsfCacheMode_Strict:
                 break;
             case kVbsfCacheMode_None:
