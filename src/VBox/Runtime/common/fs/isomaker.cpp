@@ -646,17 +646,17 @@ typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
 /**
  * Directory entry type.
  */
-typedef enum RTFSISOMAKERDIRENTRY
+typedef enum RTFSISOMAKERDIRTYPE
 {
     /** Invalid directory entry. */
-    RTFSISOMAKERDIRENTRY_INVALID = 0,
+    RTFSISOMAKERDIRTYPE_INVALID = 0,
     /** Entry for the current directory, aka ".". */
-    RTFSISOMAKERDIRENTRY_CURRENT,
+    RTFSISOMAKERDIRTYPE_CURRENT,
     /** Entry for the parent directory, aka "..". */
-    RTFSISOMAKERDIRENTRY_PARENT,
+    RTFSISOMAKERDIRTYPE_PARENT,
     /** Entry for a regular directory entry. */
-    RTFSISOMAKERDIRENTRY_OTHER
-} RTFSISOMAKERDIRENTRY;
+    RTFSISOMAKERDIRTYPE_OTHER
+} RTFSISOMAKERDIRTYPE;
 
 
 
@@ -4686,10 +4686,10 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
 {
     /* Set directory and translation table offsets.  (These are for
        helping generating data blocks later.) */
-    pName->offDirRec   = offInDir;
+    pName->offDirRec = offInDir;
 
     /* Calculate the minimal directory record size. */
-    size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
+    size_t cbDirRec = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
     AssertReturn(cbDirRec <= UINT8_MAX, VERR_FILENAME_TOO_LONG);
 
     pName->cbDirRec = (uint8_t)cbDirRec;
@@ -4730,7 +4730,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
         if (   pName->pszRockRidgeNm != pName->szName
             && pName->cchRockRidgeNm > 0
             && (   pName->cbNameInDirRec != 1
-                || (uint8_t)pName->szName[0] > (uint8_t)0x01) )
+                || (uint8_t)pName->szName[0] > (uint8_t)0x01) )  /** @todo only root dir ever uses an ID byte here? [RR NM ./..] */
         {
             uint16_t cchNm = pName->cchRockRidgeNm;
             while (cchNm > ISO9660RRIPNM_MAX_NAME_LEN)
@@ -4801,7 +4801,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 Assert(!(fFlags & (ISO9660RRIP_RR_F_NM | ISO9660RRIP_RR_F_SL | ISO9660RRIP_RR_F_CL | ISO9660RRIP_RR_F_PL | ISO9660RRIP_RR_F_RE)));
                 cbRock += sizeof(ISO9660SUSPSP);
                 Assert(pName->cbDirRec + cbRock < UINT8_MAX);
-                pName->cbRockInDirRec       = cbRock ;
+                pName->cbRockInDirRec       = cbRock;
                 pName->cbRockSpill          = 0;
                 pName->fRockNeedER          = false;
                 pName->fRockNeedRRInDirRec  = false;
@@ -4889,6 +4889,12 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             /* We don't do anything special for the special '.' and '..' directory
                entries, instead we use the directory entry in the parent directory
                with a 1 byte name (00 or 01). */
+            /** @todo r=bird: This causes trouble with RR NM records, since we'll be
+             *        emitting the real directory name rather than '.' or '..' (or
+             *        whatever we should be emitting for these two special dirs).
+             *        FreeBSD got confused with this.  The RTFSISOMAKERDIRTYPE stuff is a
+             *        workaround for this, however it doesn't hold up if we have to use
+             *        the spill file. [RR NM ./..] */
             Assert(pCurName->cbDirRec != 0);
             Assert(pParentName->cbDirRec != 0);
             pCurDir->cbDirRec00 = pCurName->cbDirRec    - pCurName->cbNameInDirRec    - !(pCurName->cbNameInDirRec    & 1) + 1;
@@ -5851,9 +5857,10 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
  * @param   cbSys           The size of the output buffer.
  * @param   fInSpill        Indicates whether we're in a spill file (true) or
  *                          directory record (false).
+ * @param   enmDirType      The kind of directory entry this is.
  */
-static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8_t *pbSys, size_t cbSys, bool fInSpill,
-                                                  RTFSISOMAKERDIRENTRY enmEntry)
+static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8_t *pbSys, size_t cbSys,
+                                                  bool fInSpill, RTFSISOMAKERDIRTYPE enmDirType)
 {
     /*
      * Deal with records specific to the root directory '.' entry.
@@ -5997,9 +6004,13 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
                 pNM->Hdr.cbEntry    = (uint8_t)(RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis);
                 pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
                 pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
-                if (enmEntry == RTFSISOMAKERDIRENTRY_CURRENT)
+                /** @todo r=bird: This only works when not using the spill file. The spill
+                 *        file entry will be shared between the original and all the '.' and
+                 *        '..' entries.  FreeBSD gets confused by this w/o the
+                 *        ISO9660RRIP_NM_F_CURRENT and ISO9660RRIP_NM_F_PARENT flags. */
+                if (enmDirType == RTFSISOMAKERDIRTYPE_CURRENT)
                     pNM->fFlags    |= ISO9660RRIP_NM_F_CURRENT;
-                else if (enmEntry == RTFSISOMAKERDIRENTRY_PARENT)
+                else if (enmDirType == RTFSISOMAKERDIRTYPE_PARENT)
                     pNM->fFlags    |= ISO9660RRIP_NM_F_PARENT;
                 memcpy(&pNM->achName[0], pszSrc, cchThis);
                 pbSys  += RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
@@ -6169,7 +6180,11 @@ static int rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(PRTFSISOMAKEROUTPUTFILE
         }
 
         AssertReturn(cbToRead >= pChild->cbRockSpill, VERR_ISOMK_IPE_RR_READ);
-        rtFsIosMakerOutFile_GenerateRockRidge(pDir->pName, pbBuf, cbToRead, true /*fInSpill*/, RTFSISOMAKERDIRENTRY_OTHER);
+        /** @todo r=bird: using RTFSISOMAKERDIRTYPE_OTHER is correct as we don't seem to
+         *        have separate name entries for '.' and '..'.  However it means that if
+         *        any directory ends up in the spill file we'll end up with the wrong
+         *        data for the '.' and '..' entries. [RR NM ./..] */
+        rtFsIosMakerOutFile_GenerateRockRidge(pDir->pName, pbBuf, cbToRead, true /*fInSpill*/, RTFSISOMAKERDIRTYPE_OTHER);
         cbToRead  -= pChild->cbRockSpill;
         pbBuf     += pChild->cbRockSpill;
         offInFile += pChild->cbRockSpill;
@@ -6676,9 +6691,10 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
  * @param   pbBuf           The buffer.  This is at least pName->cbDirRec bytes
  *                          big (i.e. at most 256 bytes).
  * @param   pFinalizedDirs  The finalized directory data for the namespace.
+ * @param   enmDirType      The kind of directory entry this is.
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf,
-                                                   PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, RTFSISOMAKERDIRENTRY enmEntry)
+                                                   PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, RTFSISOMAKERDIRTYPE enmDirType)
 {
     /*
      * Emit a standard ISO-9660 directory record.
@@ -6753,7 +6769,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
         if (cbSys > pName->cbRockInDirRec)
             RT_BZERO(&pbSys[pName->cbRockInDirRec], cbSys - pName->cbRockInDirRec);
         if (pName->cbRockSpill == 0)
-            rtFsIosMakerOutFile_GenerateRockRidge(pName, pbSys, cbSys, false /*fInSpill*/, enmEntry);
+            rtFsIosMakerOutFile_GenerateRockRidge(pName, pbSys, cbSys, false /*fInSpill*/, enmDirType);
         else
         {
             /* Maybe emit SP and RR entry, before emitting the CE entry. */
@@ -6818,7 +6834,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName
     /*
      * Normally there is just a single record without any zero padding.
      */
-    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs, RTFSISOMAKERDIRENTRY_OTHER);
+    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs, RTFSISOMAKERDIRTYPE_OTHER);
     if (RT_LIKELY(pName->cbDirRecTotal == cbReturn))
         return cbReturn;
     Assert(cbReturn < pName->cbDirRecTotal);
@@ -6894,7 +6910,8 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pNam
      */
     uint8_t abTmpBuf[256];
     Assert(pName->cbDirRec <= sizeof(abTmpBuf));
-    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs, RTFSISOMAKERDIRENTRY_OTHER);
+    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf,
+                                                              pFinalizedDirs, RTFSISOMAKERDIRTYPE_OTHER);
     Assert(cbOne == pName->cbDirRec);
     if (cbOne == pName->cbDirRecTotal)
     {
@@ -7014,8 +7031,12 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     uint8_t abTmpBuf[256];
     Assert(off < pName->cbDirRec);
     size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs,
-                                                         bDirId == 0 ? RTFSISOMAKERDIRENTRY_CURRENT : RTFSISOMAKERDIRENTRY_PARENT);
+                                                         bDirId == 0 ? RTFSISOMAKERDIRTYPE_CURRENT : RTFSISOMAKERDIRTYPE_PARENT);
     Assert(cbToCopy == pName->cbDirRec);
+
+    /** @todo r=bird: This isn't working quite right as the NM record includes the
+     *        full directory name. Spill file stuff is shared with the (grand)parent
+     *        directory entry. [RR NM ./..] */
 
     /* Replace the filename part. */
     PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
