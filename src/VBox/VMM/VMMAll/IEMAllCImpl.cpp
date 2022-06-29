@@ -8277,6 +8277,9 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
  */
 IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 {
+    /*
+     * Exceptions.
+     */
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))
         return iemRaiseDeviceNotAvailable(pVCpu);
@@ -8284,22 +8287,30 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
     iemFpuActualizeStateForChange(pVCpu);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_X87);
 
-    NOREF(fCheckXcpts); /** @todo trigger pending exceptions:
-        if (fCheckXcpts && TODO )
+    /* FINIT: Raise #MF on pending exception(s): */
+    if (fCheckXcpts && (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES))
         return iemRaiseMathFault(pVCpu);
-     */
 
+    /*
+     * Reset the state.
+     */
     PX86XSAVEAREA pXState = &pVCpu->cpum.GstCtx.XState;
-    pXState->x87.FCW   = 0x37f;
-    pXState->x87.FSW   = 0;
-    pXState->x87.FTW   = 0x00;         /* 0 - empty. */
-    pXState->x87.FPUDP = 0;
-    pXState->x87.DS    = 0; //??
-    pXState->x87.Rsrvd2= 0;
-    pXState->x87.FPUIP = 0;
-    pXState->x87.CS    = 0; //??
-    pXState->x87.Rsrvd1= 0;
-    pXState->x87.FOP   = 0;
+    pXState->x87.FCW        = 0x37f;
+    pXState->x87.FSW        = 0;
+    pXState->x87.FTW        = 0x00;     /* 0 - empty. */
+    /** @todo Intel says the instruction and data pointers are not cleared on
+     *        387, presume that 8087 and 287 doesn't do so either. */
+    /** @todo test this stuff.   */
+    if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
+    {
+        pXState->x87.FPUDP  = 0;
+        pXState->x87.DS     = 0; //??
+        pXState->x87.Rsrvd2 = 0;
+        pXState->x87.FPUIP  = 0;
+        pXState->x87.CS     = 0; //??
+        pXState->x87.Rsrvd1 = 0;
+    }
+    pXState->x87.FOP        = 0;
 
     iemHlpUsedFpu(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
