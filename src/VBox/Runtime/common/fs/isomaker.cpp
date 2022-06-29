@@ -643,6 +643,22 @@ typedef struct RTFSISOMAKEROUTPUTFILE
 typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
 
 
+/**
+ * Directory entry type.
+ */
+typedef enum RTFSISOMAKERDIRENTRY
+{
+    /** Invalid directory entry. */
+    RTFSISOMAKERDIRENTRY_INVALID = 0,
+    /** Entry for the current directory, aka ".". */
+    RTFSISOMAKERDIRENTRY_CURRENT,
+    /** Entry for the parent directory, aka "..". */
+    RTFSISOMAKERDIRENTRY_PARENT,
+    /** Entry for a regular directory entry. */
+    RTFSISOMAKERDIRENTRY_OTHER
+} RTFSISOMAKERDIRENTRY;
+
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -5836,7 +5852,8 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
  * @param   fInSpill        Indicates whether we're in a spill file (true) or
  *                          directory record (false).
  */
-static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8_t *pbSys, size_t cbSys, bool fInSpill)
+static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8_t *pbSys, size_t cbSys, bool fInSpill,
+                                                  RTFSISOMAKERDIRENTRY enmEntry)
 {
     /*
      * Deal with records specific to the root directory '.' entry.
@@ -5980,6 +5997,10 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
                 pNM->Hdr.cbEntry    = (uint8_t)(RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis);
                 pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
                 pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
+                if (enmEntry == RTFSISOMAKERDIRENTRY_CURRENT)
+                    pNM->fFlags    |= ISO9660RRIP_NM_F_CURRENT;
+                else if (enmEntry == RTFSISOMAKERDIRENTRY_PARENT)
+                    pNM->fFlags    |= ISO9660RRIP_NM_F_PARENT;
                 memcpy(&pNM->achName[0], pszSrc, cchThis);
                 pbSys  += RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
                 cbSys  -= RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
@@ -6148,7 +6169,7 @@ static int rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(PRTFSISOMAKEROUTPUTFILE
         }
 
         AssertReturn(cbToRead >= pChild->cbRockSpill, VERR_ISOMK_IPE_RR_READ);
-        rtFsIosMakerOutFile_GenerateRockRidge(pDir->pName, pbBuf, cbToRead, true /*fInSpill*/);
+        rtFsIosMakerOutFile_GenerateRockRidge(pDir->pName, pbBuf, cbToRead, true /*fInSpill*/, RTFSISOMAKERDIRENTRY_OTHER);
         cbToRead  -= pChild->cbRockSpill;
         pbBuf     += pChild->cbRockSpill;
         offInFile += pChild->cbRockSpill;
@@ -6657,7 +6678,7 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
  * @param   pFinalizedDirs  The finalized directory data for the namespace.
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf,
-                                                   PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
+                                                   PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, RTFSISOMAKERDIRENTRY enmEntry)
 {
     /*
      * Emit a standard ISO-9660 directory record.
@@ -6732,7 +6753,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
         if (cbSys > pName->cbRockInDirRec)
             RT_BZERO(&pbSys[pName->cbRockInDirRec], cbSys - pName->cbRockInDirRec);
         if (pName->cbRockSpill == 0)
-            rtFsIosMakerOutFile_GenerateRockRidge(pName, pbSys, cbSys, false /*fInSpill*/);
+            rtFsIosMakerOutFile_GenerateRockRidge(pName, pbSys, cbSys, false /*fInSpill*/, enmEntry);
         else
         {
             /* Maybe emit SP and RR entry, before emitting the CE entry. */
@@ -6797,7 +6818,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName
     /*
      * Normally there is just a single record without any zero padding.
      */
-    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs);
+    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs, RTFSISOMAKERDIRENTRY_OTHER);
     if (RT_LIKELY(pName->cbDirRecTotal == cbReturn))
         return cbReturn;
     Assert(cbReturn < pName->cbDirRecTotal);
@@ -6873,7 +6894,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pNam
      */
     uint8_t abTmpBuf[256];
     Assert(pName->cbDirRec <= sizeof(abTmpBuf));
-    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs);
+    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs, RTFSISOMAKERDIRENTRY_OTHER);
     Assert(cbOne == pName->cbDirRec);
     if (cbOne == pName->cbDirRecTotal)
     {
@@ -6992,7 +7013,8 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     /* Generate a regular directory record. */
     uint8_t abTmpBuf[256];
     Assert(off < pName->cbDirRec);
-    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs);
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs,
+                                                         bDirId == 0 ? RTFSISOMAKERDIRENTRY_CURRENT : RTFSISOMAKERDIRENTRY_PARENT);
     Assert(cbToCopy == pName->cbDirRec);
 
     /* Replace the filename part. */
