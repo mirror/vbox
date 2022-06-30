@@ -2816,6 +2816,7 @@ endif
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES      := \
 	$(if $(VBOX_ONLY_VALIDATIONKIT),,../VMM/VBoxVMM.d) \
+	common/checksum/crc32c.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
