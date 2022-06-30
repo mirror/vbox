@@ -1583,8 +1583,12 @@ const DISOPCODE g_aThreeByteMapX86_F20F38_F[16] =
     /* According to Intel opcodes map in Intel® 64 and IA-32 Architectures Software Developer’s Manual dated September 2014
        it should be %Gd (always dword regardless of operand-size attribute), but from the description of the command
        it is clear that REX.W prefix can change this size to 64 bit, therefore it is set to %Gy. Seems to be a mistake. */
-    OP("crc32 %Gy,%Eb",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32GDEB,    OP_PARM_Gy,   OP_PARM_Eb,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("crc32 %Gy,%Ey",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32GDEY,    OP_PARM_Gy,   OP_PARM_Ey,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    /** @todo r=bird: While the destination can be a 64-bit register, it is
+     *        always treated like a dword register given that the upper half is
+     *        always cleared.  So, it is really just a convenience for a more
+     *        natural syntax when using a 64-bit source register. */
+    OP("crc32 %Gy,%Eb",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32,    OP_PARM_Gy,   OP_PARM_Eb,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("crc32 %Gy,%Ey",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32,    OP_PARM_Gy,   OP_PARM_Ey,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -1606,8 +1610,8 @@ const DISOPCODE g_aThreeByteMapX86_66F20F38_F[16] =
     /* According to Intel opcodes map in Intel® 64 and IA-32 Architectures Software Developer’s Manual dated September 2014
        it should be %Gd (always dword regardless of operand-size attribute), but from the description of the command
        it is clear that REX.W prefix can change this size to 64 bit, therefore it is set to %Gy. Seems to be a mistake. */
-    OP("crc32 %Gy,%Eb",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32GDEB,    OP_PARM_Gy,   OP_PARM_Eb,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("crc32 %Gy,%Ew",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32GDEY,    OP_PARM_Gy,   OP_PARM_Ew,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("crc32 %Gy,%Eb",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32,    OP_PARM_Gy,   OP_PARM_Eb,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("crc32 %Gy,%Ew",   IDX_ParseModRM,   IDX_UseModRM,   0,   OP_CRC32,    OP_PARM_Gy,   OP_PARM_Ew,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
