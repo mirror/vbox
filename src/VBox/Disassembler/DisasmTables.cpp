@@ -3001,8 +3001,8 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm000[8] =
     /* 0F 01 MOD=11b */
     INVALID_OPCODE,
     OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg, IDX_ParseFixedReg, IDX_ParseFixedReg,          OP_MONITOR,         OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX,    DISOPTYPE_HARMLESS ),
-    INVALID_OPCODE,
     OP("xgetbv",             0,                  0,          0,          OP_XGETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
+    INVALID_OPCODE,
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
     OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
