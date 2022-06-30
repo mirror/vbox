@@ -131,8 +131,15 @@ FNIEMOP_STUB(iemOp_vpmovsxdq_Vx_UxMq);
 /*  Opcode VEX.66.0F38 0x27 - invalid */
 /** Opcode VEX.66.0F38 0x28. */
 FNIEMOP_STUB(iemOp_vpmuldq_Vx_Hx_Wx);
+
+
 /** Opcode VEX.66.0F38 0x29. */
-FNIEMOP_STUB(iemOp_vpcmpeqq_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpcmpeqq_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPCMPEQQ, vpcmpeqq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &g_iemAImpl_vpcmpeqq, &g_iemAImpl_vpcmpeqq_fallback));
+}
 
 
 FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
@@ -245,8 +252,17 @@ FNIEMOP_STUB(iemOp_vpmovzxwq_Vx_UxMd);
 FNIEMOP_STUB(iemOp_vpmovzxdq_Vx_UxMq);
 /*  Opcode VEX.66.0F38 0x36. */
 FNIEMOP_STUB(iemOp_vpermd_Vqq_Hqq_Wqq);
+
+
 /** Opcode VEX.66.0F38 0x37. */
-FNIEMOP_STUB(iemOp_vpcmpgtq_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpcmpgtq_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPCMPGTQ, vpcmpgtq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &g_iemAImpl_vpcmpgtq, &g_iemAImpl_vpcmpgtq_fallback));
+}
+
+
 /** Opcode VEX.66.0F38 0x38. */
 FNIEMOP_STUB(iemOp_vpminsb_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x39. */

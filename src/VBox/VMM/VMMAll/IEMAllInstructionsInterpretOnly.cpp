@@ -923,12 +923,24 @@ IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqb      = { iemAImpl_pcmpeqb_u64, 
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqw      = { iemAImpl_pcmpeqw_u64,    iemAImpl_pcmpeqw_u128 };
 /** Function table for the PCMPEQD instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqd      = { iemAImpl_pcmpeqd_u64,    iemAImpl_pcmpeqd_u128 };
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PCMPEQQ instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqq      = { NULL,                    iemAImpl_pcmpeqq_u128 };
+# endif
+/** Function table for the PCMPEQQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqq_fallback = { NULL,                iemAImpl_pcmpeqq_u128_fallback };
 /** Function table for the PCMPGTB instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtb      = { iemAImpl_pcmpgtb_u64,    iemAImpl_pcmpgtb_u128 };
 /** Function table for the PCMPGTW instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtw      = { iemAImpl_pcmpgtw_u64,    iemAImpl_pcmpgtw_u128 };
 /** Function table for the PCMPGTD instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtd      = { iemAImpl_pcmpgtd_u64,    iemAImpl_pcmpgtd_u128 };
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PCMPGTQ instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtq      = { NULL,                    iemAImpl_pcmpgtq_u128 };
+# endif
+/** Function table for the PCMPGTQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtq_fallback = { NULL,                iemAImpl_pcmpgtq_u128_fallback };
 
 # ifndef IEM_WITHOUT_ASSEMBLY
 /** Function table for the VPXOR instruction */
@@ -945,12 +957,16 @@ IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqb       = { iemAImpl_vpcmpeqb_u1
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqw       = { iemAImpl_vpcmpeqw_u128, iemAImpl_vpcmpeqw_u256 };
 /** Function table for the VPCMPEQD instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqd       = { iemAImpl_vpcmpeqd_u128, iemAImpl_vpcmpeqd_u256 };
+/** Function table for the VPCMPEQQ instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqq       = { iemAImpl_vpcmpeqq_u128, iemAImpl_vpcmpeqq_u256 };
 /** Function table for the VPCMPGTB instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtb       = { iemAImpl_vpcmpgtb_u128, iemAImpl_vpcmpgtb_u256 };
 /** Function table for the VPCMPGTW instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtw       = { iemAImpl_vpcmpgtw_u128, iemAImpl_vpcmpgtw_u256 };
 /** Function table for the VPCMPGTD instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtd       = { iemAImpl_vpcmpgtd_u128, iemAImpl_vpcmpgtd_u256 };
+/** Function table for the VPCMPGTQ instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtq       = { iemAImpl_vpcmpgtq_u128, iemAImpl_vpcmpgtq_u256 };
 # endif
 
 /** Function table for the VPAND instruction, software fallback. */
@@ -967,12 +983,16 @@ IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqb_fallback = { iemAImpl_vpcmpeqb
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqw_fallback = { iemAImpl_vpcmpeqw_u128_fallback, iemAImpl_vpcmpeqw_u256_fallback };
 /** Function table for the VPCMPEQD instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqd_fallback = { iemAImpl_vpcmpeqd_u128_fallback, iemAImpl_vpcmpeqd_u256_fallback };
+/** Function table for the VPCMPEQQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpeqq_fallback = { iemAImpl_vpcmpeqq_u128_fallback, iemAImpl_vpcmpeqq_u256_fallback };
 /** Function table for the VPCMPGTB instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtb_fallback = { iemAImpl_vpcmpgtb_u128_fallback, iemAImpl_vpcmpgtb_u256_fallback };
 /** Function table for the VPCMPGTW instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtw_fallback = { iemAImpl_vpcmpgtw_u128_fallback, iemAImpl_vpcmpgtw_u256_fallback };
 /** Function table for the VPCMPGTD instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtd_fallback = { iemAImpl_vpcmpgtd_u128_fallback, iemAImpl_vpcmpgtd_u256_fallback };
+/** Function table for the VPCMPGTQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpcmpgtq_fallback = { iemAImpl_vpcmpgtq_u128_fallback, iemAImpl_vpcmpgtq_u256_fallback };
 
 #endif /* !TST_IEM_CHECK_MC */
 

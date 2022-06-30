@@ -7427,6 +7427,36 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqd_u256_fallback,(PX86XSAVEAREA pExtState
 
 
 /*
+ * PCMPEQQ / VPCMPEQQ.
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqq_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au64[0] = uSrc1.au64[0] == puSrc->au64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = uSrc1.au64[1] == puSrc->au64[1] ? UINT64_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqq_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] == puSrc2->au64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = puSrc1->au64[1] == puSrc2->au64[1] ? UINT64_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqq_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] == puSrc2->au64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = puSrc1->au64[1] == puSrc2->au64[1] ? UINT64_MAX : 0;
+    puDst->au64[2] = puSrc1->au64[2] == puSrc2->au64[2] ? UINT64_MAX : 0;
+    puDst->au64[3] = puSrc1->au64[3] == puSrc2->au64[3] ? UINT64_MAX : 0;
+}
+
+
+/*
  * PCMPGTB / VPCMPGTB
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
@@ -7657,6 +7687,36 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtd_u256_fallback,(PX86XSAVEAREA pExtState
     puDst->au32[5] = puSrc1->ai32[5] > puSrc2->ai32[5] ? UINT32_MAX : 0;
     puDst->au32[6] = puSrc1->ai32[6] > puSrc2->ai32[6] ? UINT32_MAX : 0;
     puDst->au32[7] = puSrc1->ai32[7] > puSrc2->ai32[7] ? UINT32_MAX : 0;
+}
+
+
+/*
+ * PCMPGTQ / VPCMPGTQ.
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtq_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au64[0] = uSrc1.ai64[0] > puSrc->ai64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = uSrc1.ai64[1] > puSrc->ai64[1] ? UINT64_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtq_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->ai64[0] > puSrc2->ai64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = puSrc1->ai64[1] > puSrc2->ai64[1] ? UINT64_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtq_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->ai64[0] > puSrc2->ai64[0] ? UINT64_MAX : 0;
+    puDst->au64[1] = puSrc1->ai64[1] > puSrc2->ai64[1] ? UINT64_MAX : 0;
+    puDst->au64[2] = puSrc1->ai64[2] > puSrc2->ai64[2] ? UINT64_MAX : 0;
+    puDst->au64[3] = puSrc1->ai64[3] > puSrc2->ai64[3] ? UINT64_MAX : 0;
 }
 
 

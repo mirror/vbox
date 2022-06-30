@@ -86,6 +86,8 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
  *
  * Proper alignment of the 128-bit operand is enforced.
  * Exceptions type 4. SSE2 cpuid checks.
+ *
+ * @sa iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse2_FullFull_To_Full
  */
 FNIEMOP_DEF_1(iemOpCommonSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 {

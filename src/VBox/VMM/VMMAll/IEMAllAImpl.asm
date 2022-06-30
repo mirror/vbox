@@ -3563,12 +3563,14 @@ IEMIMPL_FPU_R80_R80 fsincos
 ; Media instruction working on two full sized registers.
 ;
 ; @param    1       The instruction
+; @param    2       Whether there is an MMX variant (1) or not (0).
 ;
 ; @param    A0      FPU context (fxsave).
 ; @param    A1      Pointer to the first media register size operand (input/output).
 ; @param    A2      Pointer to the second media register size operand (input).
 ;
-%macro IEMIMPL_MEDIA_F2 1
+%macro IEMIMPL_MEDIA_F2 2
+%if %2 != 0
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         PROLOGUE_3_ARGS
         IEMIMPL_MMX_PROLOGUE
@@ -3581,6 +3583,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         IEMIMPL_MMX_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
+%endif
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_3_ARGS
@@ -3596,16 +3599,18 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
-IEMIMPL_MEDIA_F2 pand
-IEMIMPL_MEDIA_F2 pandn
-IEMIMPL_MEDIA_F2 por
-IEMIMPL_MEDIA_F2 pxor
-IEMIMPL_MEDIA_F2 pcmpeqb
-IEMIMPL_MEDIA_F2 pcmpeqw
-IEMIMPL_MEDIA_F2 pcmpeqd
-IEMIMPL_MEDIA_F2 pcmpgtb
-IEMIMPL_MEDIA_F2 pcmpgtw
-IEMIMPL_MEDIA_F2 pcmpgtd
+IEMIMPL_MEDIA_F2 pand,    1
+IEMIMPL_MEDIA_F2 pandn,   1
+IEMIMPL_MEDIA_F2 por,     1
+IEMIMPL_MEDIA_F2 pxor,    1
+IEMIMPL_MEDIA_F2 pcmpeqb, 1
+IEMIMPL_MEDIA_F2 pcmpeqw, 1
+IEMIMPL_MEDIA_F2 pcmpeqd, 1
+IEMIMPL_MEDIA_F2 pcmpeqq, 0
+IEMIMPL_MEDIA_F2 pcmpgtb, 1
+IEMIMPL_MEDIA_F2 pcmpgtw, 1
+IEMIMPL_MEDIA_F2 pcmpgtd, 1
+IEMIMPL_MEDIA_F2 pcmpgtq, 0
 
 
 ;;
@@ -3845,7 +3850,9 @@ IEMIMPL_MEDIA_F3 vpxor
 IEMIMPL_MEDIA_F3 vpcmpeqb
 IEMIMPL_MEDIA_F3 vpcmpeqw
 IEMIMPL_MEDIA_F3 vpcmpeqd
+IEMIMPL_MEDIA_F3 vpcmpeqq
 IEMIMPL_MEDIA_F3 vpcmpgtb
 IEMIMPL_MEDIA_F3 vpcmpgtw
 IEMIMPL_MEDIA_F3 vpcmpgtd
+IEMIMPL_MEDIA_F3 vpcmpgtq
 
