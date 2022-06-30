@@ -258,6 +258,76 @@ BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM10_YMM8_YMM15_icebp
   %endif
 
  %endmacro  ; EMIT_TYPE1_INSTR
+
+ %macro EMIT_TYPE1_ONE_INSTR 3
+  %if %3 != 0
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
+        %1      mm1, mm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
+        %1      mm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
+  %endif
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
+        %1      xmm1, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
+        %1      xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_XMM0_icebp
+        %2        xmm2, xmm1, xmm0
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_XMM0_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_FSxBX_icebp
+        %2        xmm2, xmm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_YMM0_icebp
+        %2        ymm2, ymm1, ymm0
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_YMM0_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_FSxBX_icebp
+        %2        ymm2, ymm1, [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_FSxBX_icebp
+
+  %if TMPL_BITS == 64
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM10_YMM8_YMM15_icebp
+        %2        ymm10, ymm8, ymm15
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM10_YMM8_YMM15_icebp
+  %endif
+ %endmacro ; EMIT_TYPE1_ONE_INSTR
+
 %endif
 
 EMIT_TYPE1_INSTR pand,  vpand,  andps,  vandps,  andpd,  vandpd,  0
@@ -266,8 +336,9 @@ EMIT_TYPE1_INSTR por,   vpor,   orps,   vorps,   orpd,   vorpd,   0
 EMIT_TYPE1_INSTR pxor,  vpxor,  xorps,  vxorps,  xorpd,  vxorpd,  0
 
 EMIT_TYPE1_INSTR pcmpgtb, vpcmpgtb, pcmpgtw, vpcmpgtw, pcmpgtd, vpcmpgtd, 1
+EMIT_TYPE1_ONE_INSTR pcmpgtq, vpcmpgtq, 0
 EMIT_TYPE1_INSTR pcmpeqb, vpcmpeqb, pcmpeqw, vpcmpeqw, pcmpeqd, vpcmpeqd, 1
-
+EMIT_TYPE1_ONE_INSTR pcmpeqq, vpcmpeqq, 0
 
 
 %endif ; BS3_INSTANTIATING_CMN
