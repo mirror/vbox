@@ -23431,15 +23431,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-    name="IAudioDevice" extends="$unknown"
-    uuid="e50cd98b-ec3f-4146-9943-863dd1233691"
+    name="IHostAudioDevice" extends="$unknown"
+    uuid="cfde1265-3140-4048-a81f-a1e280dfbd75"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
-      The IAudioDevice interface represents an abstract base interface for
-      an audio device.
+      The IAudioDevice interface represents an audio device provided by the host OS.
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
@@ -23502,16 +23501,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-  </interface>
-
-  <interface
-    name="IHostAudioDevice" extends="IAudioDevice"
-    uuid="dc6dda3e-6b04-4203-b4c6-43906dc1695c"
-    wsmap="managed">
-    <desc>
-      Audio device provided by the host OS.
-    </desc>
-    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
