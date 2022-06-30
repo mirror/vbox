@@ -1844,6 +1844,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t
 
 /** @} */
 
+/** @name Media Odds and Ends
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCR32U8,(uint32_t *puDst, uint8_t uSrc));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCR32U16,(uint32_t *puDst, uint16_t uSrc));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCR32U32,(uint32_t *puDst, uint32_t uSrc));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCR32U64,(uint32_t *puDst, uint64_t uSrc));
+FNIEMAIMPLCR32U8  iemAImpl_crc32_u8,  iemAImpl_crc32_u8_fallback;
+FNIEMAIMPLCR32U16 iemAImpl_crc32_u16, iemAImpl_crc32_u16_fallback;
+FNIEMAIMPLCR32U32 iemAImpl_crc32_u32, iemAImpl_crc32_u32_fallback;
+FNIEMAIMPLCR32U64 iemAImpl_crc32_u64, iemAImpl_crc32_u64_fallback;
+/** @} */
+
 
 /** @name Function tables.
  * @{
