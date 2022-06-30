@@ -340,6 +340,8 @@ EMIT_TYPE1_ONE_INSTR pcmpgtq, vpcmpgtq, 0
 EMIT_TYPE1_INSTR pcmpeqb, vpcmpeqb, pcmpeqw, vpcmpeqw, pcmpeqd, vpcmpeqd, 1
 EMIT_TYPE1_ONE_INSTR pcmpeqq, vpcmpeqq, 0
 
+EMIT_TYPE1_INSTR paddb, vpaddb, paddw, vpaddw, paddd, vpaddd, 1
+EMIT_TYPE1_ONE_INSTR paddq, vpaddq, 1
 
 %endif ; BS3_INSTANTIATING_CMN
 
