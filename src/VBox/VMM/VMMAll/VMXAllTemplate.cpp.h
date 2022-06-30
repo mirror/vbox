@@ -803,15 +803,18 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
     AssertStmt(!fXSaveRstor  || g_CpumHostFeatures.s.fXSaveRstor,  fXSaveRstor = 0);
     AssertStmt(!fFxSaveRstor || g_CpumHostFeatures.s.fFxSaveRstor, fFxSaveRstor = 0);
 
-    uint64_t const fGstMask = (  X86_CR4_PVI
-                               | X86_CR4_TSD
-                               | X86_CR4_DE
-                               | X86_CR4_MCE
-                               | X86_CR4_PCE
-                               | X86_CR4_OSXMMEEXCPT
-                               | (fFsGsBase    ? X86_CR4_FSGSBASE : 0)
-                               | (fXSaveRstor  ? X86_CR4_OSXSAVE  : 0)
-                               | (fFxSaveRstor ? X86_CR4_OSFXSR   : 0));
+    uint64_t const fGstMask = X86_CR4_PVI
+                            | X86_CR4_TSD
+                            | X86_CR4_DE
+                            | X86_CR4_MCE
+                            | X86_CR4_PCE
+                            | X86_CR4_OSXMMEEXCPT
+                            | (fFsGsBase    ? X86_CR4_FSGSBASE : 0)
+#ifdef IN_NEM_DARWIN /* On native VT-x setting OSXSAVE must exit as we need to load guest XCR0 (see
+                        fLoadSaveGuestXcr0). These exits are not needed on Darwin as that's not our problem. */
+                            | (fXSaveRstor  ? X86_CR4_OSXSAVE  : 0)
+#endif
+                            | (fFxSaveRstor ? X86_CR4_OSFXSR   : 0);
     return ~fGstMask;
 }
 
