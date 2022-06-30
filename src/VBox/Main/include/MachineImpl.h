@@ -725,6 +725,8 @@ protected:
 
     void i_addMediumToRegistry(ComObjPtr<Medium> &pMedium);
 
+    HRESULT i_deleteFile(const Utf8Str &strFile, bool fIgnoreFailures = false, const Utf8Str &strWhat = "", int *prc = NULL);
+
     HRESULT i_createImplicitDiffs(IProgress *aProgress,
                                   ULONG aWeight,
                                   bool aOnline);

@@ -908,11 +908,7 @@ HRESULT Machine::i_tryCreateMachineConfigFile(bool fForceOverwrite)
         {
             /* try to delete the config file, as otherwise the creation
              * of a new settings file will fail. */
-            int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
-            if (RT_FAILURE(vrc2))
-                rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc2,
-                                  tr("Could not delete the existing settings file '%s' (%Rrc)"),
-                                  mData->m_strConfigFileFull.c_str(), vrc2);
+            i_deleteFile(mData->m_strConfigFileFull.c_str(), false /* fIgnoreFailures */, tr("existing settings file"));
         }
     }
     else if (    vrc != VERR_FILE_NOT_FOUND
@@ -5511,11 +5507,7 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
             LogFunc(("Deleting file %s\n", strFile.c_str()));
             rc = task.m_pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
-
-            int vrc = RTFileDelete(strFile.c_str());
-            if (RT_FAILURE(vrc))
-                throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                   tr("Could not delete file '%s' (%Rrc)"), strFile.c_str(), vrc);
+            i_deleteFile(strFile);
         }
 
         rc = task.m_pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
@@ -5528,9 +5520,9 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                See the fSafe parameter of xml::XmlFileWriter::write for details. */
             /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
             Utf8StrFmt otherXml("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
-            RTFileDelete(otherXml.c_str());
+            i_deleteFile(otherXml, true /* fIgnoreFailures */);
             otherXml.printf("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
-            RTFileDelete(otherXml.c_str());
+            i_deleteFile(otherXml, true /* fIgnoreFailures */);
 
             /* delete the Logs folder, nothing important should be left
              * there (we don't check for errors because the user might have
@@ -5545,23 +5537,23 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                  * Console::powerUpThread()). Also, delete the VBox.png[.N]
                  * files that may have been created by the GUI. */
                 Utf8StrFmt log("%s%cVBox.log", logFolder.c_str(), RTPATH_DELIMITER);
-                RTFileDelete(log.c_str());
+                i_deleteFile(log, true /* fIgnoreFailures */);
                 log.printf("%s%cVBox.png", logFolder.c_str(), RTPATH_DELIMITER);
-                RTFileDelete(log.c_str());
+                i_deleteFile(log, true /* fIgnoreFailures */);
                 for (ULONG i = uLogHistoryCount; i > 0; i--)
                 {
                     log.printf("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, i);
-                    RTFileDelete(log.c_str());
+                    i_deleteFile(log, true /* fIgnoreFailures */);
                     log.printf("%s%cVBox.png.%u", logFolder.c_str(), RTPATH_DELIMITER, i);
-                    RTFileDelete(log.c_str());
+                    i_deleteFile(log, true /* fIgnoreFailures */);
                 }
                 log.printf("%s%cVBoxUI.log", logFolder.c_str(), RTPATH_DELIMITER);
-                RTFileDelete(log.c_str());
+                i_deleteFile(log, true /* fIgnoreFailures */);
 #if defined(RT_OS_WINDOWS)
                 log.printf("%s%cVBoxStartup.log", logFolder.c_str(), RTPATH_DELIMITER);
-                RTFileDelete(log.c_str());
+                i_deleteFile(log, true /* fIgnoreFailures */);
                 log.printf("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
-                RTFileDelete(log.c_str());
+                i_deleteFile(log, true /* fIgnoreFailures */);
 #endif
 
                 RTDirRemove(logFolder.c_str());
@@ -7867,7 +7859,8 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     Utf8Str strSupHardeningLogArg("--sup-hardening-log=");
     {
         Utf8Str strHardeningLogFile = i_getHardeningLogFilename();
-        int vrc2 = RTFileDelete(strHardeningLogFile.c_str());
+        int vrc2;
+        /* ignore rc */ i_deleteFile(strHardeningLogFile, false /* fIgnoreFailures */, tr("hardening log file"), &vrc2);
         if (vrc2 == VERR_PATH_NOT_FOUND || vrc2 == VERR_FILE_NOT_FOUND)
         {
             Utf8Str strStartupLogDir = strHardeningLogFile;
@@ -7881,7 +7874,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         Utf8Str strOldStartupLogFile;
         getLogFolder(strOldStartupLogFile);
         strOldStartupLogFile.append(RTPATH_SLASH_STR "VBoxStartup.log");
-        RTFileDelete(strOldStartupLogFile.c_str());
+        i_deleteFile(strOldStartupLogFile, true /* fIgnoreFailures */);
     }
 #else
     Utf8Str strSupHardeningLogArg;
@@ -10450,7 +10443,7 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
             // now spit it all out!
             pNewConfig->write(mData->m_strConfigFileFull, pCryptoIf, pszPassword);
             if (aFlags & SaveS_RemoveBackup)
-                RTFileDelete((mData->m_strConfigFileFull + "-prev").c_str());
+                i_deleteFile(mData->m_strConfigFileFull + "-prev", true /* fIgnoreFailures */);
         }
 
         mData->pMachineConfigFile = pNewConfig;
@@ -10467,7 +10460,7 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
 
         // delete any newly created settings file
         if (fSettingsFileIsNew)
-            RTFileDelete(mData->m_strConfigFileFull.c_str());
+            i_deleteFile(mData->m_strConfigFileFull, true /* fIgnoreFailures */);
 
         // restore old config
         delete pNewConfig;
@@ -11166,6 +11159,51 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
             mParent->i_markRegistryModified(uuid);
         }
     }
+}
+
+/**
+ * Physically deletes a file belonging to a machine.
+ *
+ * @returns HRESULT
+ * @retval  VBOX_E_FILE_ERROR on failure.
+ * @param   strFile             File to delete.
+ * @param   fIgnoreFailures     Whether to ignore deletion failures. Defaults to \c false.
+ *                              VERR_FILE_NOT_FOUND and VERR_PATH_NOT_FOUND always will be ignored.
+ * @param   strWhat             File hint which will be used when setting an error. Optional.
+ * @param   prc                 Where to return IPRT's error code on failure. Optional and can be NULL.
+ */
+HRESULT Machine::i_deleteFile(const Utf8Str &strFile, bool fIgnoreFailures /* = false */,
+                              const Utf8Str &strWhat /* = "" */, int *prc /* = NULL */)
+{
+    AssertReturn(strFile.isNotEmpty(), E_INVALIDARG);
+
+    HRESULT hrc = S_OK;
+
+    LogFunc(("Deleting file '%s'\n", strFile.c_str()));
+
+    int vrc = RTFileDelete(strFile.c_str());
+    if (RT_FAILURE(vrc))
+    {
+        if (   !fIgnoreFailures
+            /* Don't (externally) bitch about stuff which doesn't exist. */
+            && (   vrc != VERR_FILE_NOT_FOUND
+                && vrc != VERR_PATH_NOT_FOUND
+               )
+           )
+        {
+            LogRel(("Deleting file '%s' failed: %Rrc\n", strFile.c_str(), vrc));
+
+            Utf8StrFmt strError("Error deleting %s '%s' (%Rrc)",
+                                strWhat.isEmpty() ? tr("file") : strWhat.c_str(), strFile.c_str(), vrc);
+            hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, strError.c_str(),
+                               strFile.c_str(), vrc);
+        }
+
+        if (prc)
+            *prc = vrc;
+    }
+
+    return hrc;
 }
 
 /**
@@ -13546,7 +13584,7 @@ void SessionMachine::i_saveStateHandler(SaveStateTask &task)
             // Delete the saved state file (might have been already created).
             // No need to check whether this is shared with a snapshot here
             // because we certainly created a fresh saved state file here.
-            RTFileDelete(task.m_strStateFilePath.c_str());
+            i_deleteFile(task.m_strStateFilePath, true /* fIgnoreFailures */);
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -15074,7 +15112,7 @@ void SessionMachine::i_releaseSavedStateFile(const Utf8Str &strStateFile,
              || !mData->mFirstSnapshot->i_sharesSavedStateFile(strStateFile, pSnapshotToIgnore)
                                 // this checks the SnapshotMachine's state file paths
            )
-            RTFileDelete(strStateFile.c_str());
+            i_deleteFile(strStateFile, true /* fIgnoreFailures */);
 }
 
 /**
@@ -15328,7 +15366,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
                  || !mData->mFirstSnapshot->i_sharesSavedStateFile(mSSData->strStateFilePath, NULL /* pSnapshotToIgnore */)
                                                 // ... none of the snapshots share the saved state file
                )
-                RTFileDelete(mSSData->strStateFilePath.c_str());
+                i_deleteFile(mSSData->strStateFilePath, true /* fIgnoreFailures */);
         }
 
         mSSData->strStateFilePath.setNull();
