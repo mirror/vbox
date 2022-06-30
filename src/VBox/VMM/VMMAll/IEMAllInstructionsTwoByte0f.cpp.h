@@ -4308,14 +4308,14 @@ FNIEMOP_DEF(iemOp_Grp14)
 /** Opcode      0x0f 0x74 - pcmpeqb Pq, Qq */
 FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq)
 {
-    IEMOP_MNEMONIC(pcmpeqb, "pcmpeqb");
+    IEMOP_MNEMONIC2(RM, PCMPEQB, pcmpeqb, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
 /** Opcode 0x66 0x0f 0x74 - pcmpeqb Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqb_Vx_Wx)
 {
-    IEMOP_MNEMONIC(pcmpeqb_Vx_Wx, "pcmpeqb");
+    IEMOP_MNEMONIC2(RM, PCMPEQB, pcmpeqb, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
@@ -4326,14 +4326,14 @@ FNIEMOP_DEF(iemOp_pcmpeqb_Vx_Wx)
 /** Opcode      0x0f 0x75 - pcmpeqw Pq, Qq */
 FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq)
 {
-    IEMOP_MNEMONIC(pcmpeqw, "pcmpeqw");
+    IEMOP_MNEMONIC2(RM, PCMPEQW, pcmpeqw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
 /** Opcode 0x66 0x0f 0x75 - pcmpeqw Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqw_Vx_Wx)
 {
-    IEMOP_MNEMONIC(pcmpeqw_Vx_Wx, "pcmpeqw");
+    IEMOP_MNEMONIC2(RM, PCMPEQW, pcmpeqw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
@@ -4344,14 +4344,14 @@ FNIEMOP_DEF(iemOp_pcmpeqw_Vx_Wx)
 /** Opcode      0x0f 0x76 - pcmpeqd Pq, Qq */
 FNIEMOP_DEF(iemOp_pcmpeqd_Pq_Qq)
 {
-    IEMOP_MNEMONIC(pcmpeqd, "pcmpeqd");
+    IEMOP_MNEMONIC2(RM, PCMPEQD, pcmpeqd, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
 /** Opcode 0x66 0x0f 0x76 - pcmpeqd Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqd_Vx_Wx)
 {
-    IEMOP_MNEMONIC(pcmpeqd_Vx_Wx, "pcmpeqd");
+    IEMOP_MNEMONIC2(RM, PCMPEQD, pcmpeqd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
