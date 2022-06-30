@@ -7721,6 +7721,280 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtq_u256_fallback,(PX86XSAVEAREA pExtState
 
 
 /*
+ * PADDB / VPADDB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = uSrc1.au8[0] + uSrc2.au8[0];
+    uDst.au8[1] = uSrc1.au8[1] + uSrc2.au8[1];
+    uDst.au8[2] = uSrc1.au8[2] + uSrc2.au8[2];
+    uDst.au8[3] = uSrc1.au8[3] + uSrc2.au8[3];
+    uDst.au8[4] = uSrc1.au8[4] + uSrc2.au8[4];
+    uDst.au8[5] = uSrc1.au8[5] + uSrc2.au8[5];
+    uDst.au8[6] = uSrc1.au8[6] + uSrc2.au8[6];
+    uDst.au8[7] = uSrc1.au8[7] + uSrc2.au8[7];
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = uSrc1.au8[0]  + puSrc->au8[0];
+    puDst->au8[1]  = uSrc1.au8[1]  + puSrc->au8[1];
+    puDst->au8[2]  = uSrc1.au8[2]  + puSrc->au8[2];
+    puDst->au8[3]  = uSrc1.au8[3]  + puSrc->au8[3];
+    puDst->au8[4]  = uSrc1.au8[4]  + puSrc->au8[4];
+    puDst->au8[5]  = uSrc1.au8[5]  + puSrc->au8[5];
+    puDst->au8[6]  = uSrc1.au8[6]  + puSrc->au8[6];
+    puDst->au8[7]  = uSrc1.au8[7]  + puSrc->au8[7];
+    puDst->au8[8]  = uSrc1.au8[8]  + puSrc->au8[8];
+    puDst->au8[9]  = uSrc1.au8[9]  + puSrc->au8[9];
+    puDst->au8[10] = uSrc1.au8[10] + puSrc->au8[10];
+    puDst->au8[11] = uSrc1.au8[11] + puSrc->au8[11];
+    puDst->au8[12] = uSrc1.au8[12] + puSrc->au8[12];
+    puDst->au8[13] = uSrc1.au8[13] + puSrc->au8[13];
+    puDst->au8[14] = uSrc1.au8[14] + puSrc->au8[14];
+    puDst->au8[15] = uSrc1.au8[15] + puSrc->au8[15];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->au8[0]  + puSrc2->au8[0];
+    puDst->au8[1]  = puSrc1->au8[1]  + puSrc2->au8[1];
+    puDst->au8[2]  = puSrc1->au8[2]  + puSrc2->au8[2];
+    puDst->au8[3]  = puSrc1->au8[3]  + puSrc2->au8[3];
+    puDst->au8[4]  = puSrc1->au8[4]  + puSrc2->au8[4];
+    puDst->au8[5]  = puSrc1->au8[5]  + puSrc2->au8[5];
+    puDst->au8[6]  = puSrc1->au8[6]  + puSrc2->au8[6];
+    puDst->au8[7]  = puSrc1->au8[7]  + puSrc2->au8[7];
+    puDst->au8[8]  = puSrc1->au8[8]  + puSrc2->au8[8];
+    puDst->au8[9]  = puSrc1->au8[9]  + puSrc2->au8[9];
+    puDst->au8[10] = puSrc1->au8[10] + puSrc2->au8[10];
+    puDst->au8[11] = puSrc1->au8[11] + puSrc2->au8[11];
+    puDst->au8[12] = puSrc1->au8[12] + puSrc2->au8[12];
+    puDst->au8[13] = puSrc1->au8[13] + puSrc2->au8[13];
+    puDst->au8[14] = puSrc1->au8[14] + puSrc2->au8[14];
+    puDst->au8[15] = puSrc1->au8[15] + puSrc2->au8[15];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                       PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->au8[0]  + puSrc2->au8[0];
+    puDst->au8[1]  = puSrc1->au8[1]  + puSrc2->au8[1];
+    puDst->au8[2]  = puSrc1->au8[2]  + puSrc2->au8[2];
+    puDst->au8[3]  = puSrc1->au8[3]  + puSrc2->au8[3];
+    puDst->au8[4]  = puSrc1->au8[4]  + puSrc2->au8[4];
+    puDst->au8[5]  = puSrc1->au8[5]  + puSrc2->au8[5];
+    puDst->au8[6]  = puSrc1->au8[6]  + puSrc2->au8[6];
+    puDst->au8[7]  = puSrc1->au8[7]  + puSrc2->au8[7];
+    puDst->au8[8]  = puSrc1->au8[8]  + puSrc2->au8[8];
+    puDst->au8[9]  = puSrc1->au8[9]  + puSrc2->au8[9];
+    puDst->au8[10] = puSrc1->au8[10] + puSrc2->au8[10];
+    puDst->au8[11] = puSrc1->au8[11] + puSrc2->au8[11];
+    puDst->au8[12] = puSrc1->au8[12] + puSrc2->au8[12];
+    puDst->au8[13] = puSrc1->au8[13] + puSrc2->au8[13];
+    puDst->au8[14] = puSrc1->au8[14] + puSrc2->au8[14];
+    puDst->au8[15] = puSrc1->au8[15] + puSrc2->au8[15];
+    puDst->au8[16] = puSrc1->au8[16] + puSrc2->au8[16];
+    puDst->au8[17] = puSrc1->au8[17] + puSrc2->au8[17];
+    puDst->au8[18] = puSrc1->au8[18] + puSrc2->au8[18];
+    puDst->au8[19] = puSrc1->au8[19] + puSrc2->au8[19];
+    puDst->au8[20] = puSrc1->au8[20] + puSrc2->au8[20];
+    puDst->au8[21] = puSrc1->au8[21] + puSrc2->au8[21];
+    puDst->au8[22] = puSrc1->au8[22] + puSrc2->au8[22];
+    puDst->au8[23] = puSrc1->au8[23] + puSrc2->au8[23];
+    puDst->au8[24] = puSrc1->au8[24] + puSrc2->au8[24];
+    puDst->au8[25] = puSrc1->au8[25] + puSrc2->au8[25];
+    puDst->au8[26] = puSrc1->au8[26] + puSrc2->au8[26];
+    puDst->au8[27] = puSrc1->au8[27] + puSrc2->au8[27];
+    puDst->au8[28] = puSrc1->au8[28] + puSrc2->au8[28];
+    puDst->au8[29] = puSrc1->au8[29] + puSrc2->au8[29];
+    puDst->au8[30] = puSrc1->au8[30] + puSrc2->au8[30];
+    puDst->au8[31] = puSrc1->au8[31] + puSrc2->au8[31];
+}
+
+
+/*
+ * PADDW / VPADDW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = uSrc1.au16[0] + uSrc2.au16[0];
+    uDst.au16[1] = uSrc1.au16[1] + uSrc2.au16[1];
+    uDst.au16[2] = uSrc1.au16[2] + uSrc2.au16[2];
+    uDst.au16[3] = uSrc1.au16[3] + uSrc2.au16[3];
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = uSrc1.au16[0] + puSrc->au16[0];
+    puDst->au16[1] = uSrc1.au16[1] + puSrc->au16[1];
+    puDst->au16[2] = uSrc1.au16[2] + puSrc->au16[2];
+    puDst->au16[3] = uSrc1.au16[3] + puSrc->au16[3];
+    puDst->au16[4] = uSrc1.au16[4] + puSrc->au16[4];
+    puDst->au16[5] = uSrc1.au16[5] + puSrc->au16[5];
+    puDst->au16[6] = uSrc1.au16[6] + puSrc->au16[6];
+    puDst->au16[7] = uSrc1.au16[7] + puSrc->au16[7];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddw_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0] = puSrc1->au16[0] + puSrc2->au16[0];
+    puDst->au16[1] = puSrc1->au16[1] + puSrc2->au16[1];
+    puDst->au16[2] = puSrc1->au16[2] + puSrc2->au16[2];
+    puDst->au16[3] = puSrc1->au16[3] + puSrc2->au16[3];
+    puDst->au16[4] = puSrc1->au16[4] + puSrc2->au16[4];
+    puDst->au16[5] = puSrc1->au16[5] + puSrc2->au16[5];
+    puDst->au16[6] = puSrc1->au16[6] + puSrc2->au16[6];
+    puDst->au16[7] = puSrc1->au16[7] + puSrc2->au16[7];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddw_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                       PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0]  = puSrc1->au16[0]  + puSrc2->au16[0];
+    puDst->au16[1]  = puSrc1->au16[1]  + puSrc2->au16[1];
+    puDst->au16[2]  = puSrc1->au16[2]  + puSrc2->au16[2];
+    puDst->au16[3]  = puSrc1->au16[3]  + puSrc2->au16[3];
+    puDst->au16[4]  = puSrc1->au16[4]  + puSrc2->au16[4];
+    puDst->au16[5]  = puSrc1->au16[5]  + puSrc2->au16[5];
+    puDst->au16[6]  = puSrc1->au16[6]  + puSrc2->au16[6];
+    puDst->au16[7]  = puSrc1->au16[7]  + puSrc2->au16[7];
+    puDst->au16[8]  = puSrc1->au16[8]  + puSrc2->au16[8];
+    puDst->au16[9]  = puSrc1->au16[9]  + puSrc2->au16[9];
+    puDst->au16[10] = puSrc1->au16[10] + puSrc2->au16[10];
+    puDst->au16[11] = puSrc1->au16[11] + puSrc2->au16[11];
+    puDst->au16[12] = puSrc1->au16[12] + puSrc2->au16[12];
+    puDst->au16[13] = puSrc1->au16[13] + puSrc2->au16[13];
+    puDst->au16[14] = puSrc1->au16[14] + puSrc2->au16[14];
+    puDst->au16[15] = puSrc1->au16[15] + puSrc2->au16[15];
+}
+
+
+/*
+ * PADDD / VPADDD.
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au32[0] = uSrc1.au32[0] + uSrc2.au32[0];
+    uDst.au32[1] = uSrc1.au32[1] + uSrc2.au32[1];
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au32[0] = uSrc1.au32[0] + puSrc->au32[0];
+    puDst->au32[1] = uSrc1.au32[1] + puSrc->au32[1];
+    puDst->au32[2] = uSrc1.au32[2] + puSrc->au32[2];
+    puDst->au32[3] = uSrc1.au32[3] + puSrc->au32[3];
+}
+
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddd_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->au32[0] + puSrc2->au32[0];
+    puDst->au32[1] = puSrc1->au32[1] + puSrc2->au32[1];
+    puDst->au32[2] = puSrc1->au32[2] + puSrc2->au32[2];
+    puDst->au32[3] = puSrc1->au32[3] + puSrc2->au32[3];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddd_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                       PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->au32[0] + puSrc2->au32[0];
+    puDst->au32[1] = puSrc1->au32[1] + puSrc2->au32[1];
+    puDst->au32[2] = puSrc1->au32[2] + puSrc2->au32[2];
+    puDst->au32[3] = puSrc1->au32[3] + puSrc2->au32[3];
+    puDst->au32[4] = puSrc1->au32[4] + puSrc2->au32[4];
+    puDst->au32[5] = puSrc1->au32[5] + puSrc2->au32[5];
+    puDst->au32[6] = puSrc1->au32[6] + puSrc2->au32[6];
+    puDst->au32[7] = puSrc1->au32[7] + puSrc2->au32[7];
+}
+
+
+/*
+ * PADDQ / VPADDQ.
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    *puDst = *puDst + *puSrc;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au64[0] = uSrc1.au64[0] + puSrc->au64[0];
+    puDst->au64[1] = uSrc1.au64[1] + puSrc->au64[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddq_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                       PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] + puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] + puSrc2->au64[1];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddq_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                       PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au64[0] = puSrc1->au64[0] + puSrc2->au64[0];
+    puDst->au64[1] = puSrc1->au64[1] + puSrc2->au64[1];
+    puDst->au64[2] = puSrc1->au64[2] + puSrc2->au64[2];
+    puDst->au64[3] = puSrc1->au64[3] + puSrc2->au64[3];
+}
+
+
+/*
  *
  */
 
