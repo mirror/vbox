@@ -269,6 +269,7 @@ g_kdOpTypes = {
     # ModR/M.reg
     'Gb':           ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      '',      ),
     'Gw':           ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      '',      ),
+    'Gd':           ( 'IDX_UseModRM',       'reg',    '%Gd',  'Gd',      '',      ),
     'Gv':           ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
     'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
     'Gy':           ( 'IDX_UseModRM',       'reg',    '%Gy',  'Gy',      '',      ),
