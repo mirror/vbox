@@ -822,6 +822,12 @@ enum OPCODES
     OP_VPXOR,
     OP_VXORPS,
     OP_VXORPD,
+    OP_VPCMPEQB,
+    OP_VPCMPEQW,
+    OP_VPCMPEQD,
+    OP_VPCMPGTB,
+    OP_VPCMPGTW,
+    OP_VPCMPGTD,
 /** @} */
     OP_END_OF_OPCODES
 };
