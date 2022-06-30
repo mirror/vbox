@@ -336,10 +336,6 @@ typedef union RTUINT16U
     /** natural view. */
     uint16_t    u;
 
-    /** 16-bit view. */
-    uint16_t    au16[1];
-    /** 8-bit view. */
-    uint8_t     au8[2];
     /** 16-bit hi/lo view. */
     struct
     {
@@ -351,6 +347,16 @@ typedef union RTUINT16U
         uint8_t    Hi;
 #endif
     } s;
+
+    /** Unsigned 16-bit view. */
+    uint16_t    au16[1];
+    /** Unsigned 8-bit view. */
+    uint8_t     au8[2];
+
+    /** Signed 16-bit view. */
+    int16_t     ai16[1];
+    /** Signed 8-bit view. */
+    int8_t      ai8[2];
 } RTUINT16U;
 /** Pointer to a 16-bit unsigned integer union. */
 typedef RTUINT16U RT_FAR *PRTUINT16U;
@@ -388,12 +394,19 @@ typedef union RTUINT32U
 #endif
     } Words;
 
-    /** 32-bit view. */
+    /** Unsigned 32-bit view. */
     uint32_t    au32[1];
-    /** 16-bit view. */
+    /** Unsigned 16-bit view. */
     uint16_t    au16[2];
-    /** 8-bit view. */
+    /** Unsigned 8-bit view. */
     uint8_t     au8[4];
+
+    /** Signed 32-bit view. */
+    int32_t     ai32[1];
+    /** Signed 16-bit view. */
+    int16_t     ai16[2];
+    /** Signed 8-bit view. */
+    int8_t      ai8[4];
 } RTUINT32U;
 /** Pointer to a 32-bit unsigned integer union. */
 typedef RTUINT32U RT_FAR *PRTUINT32U;
@@ -446,14 +459,23 @@ typedef union RTUINT64U
 #endif
     } Words;
 
-    /** 64-bit view. */
+    /** Unsigned 64-bit view. */
     uint64_t    au64[1];
-    /** 32-bit view. */
+    /** Unsigned 32-bit view. */
     uint32_t    au32[2];
-    /** 16-bit view. */
+    /** Unsigned 16-bit view. */
     uint16_t    au16[4];
-    /** 8-bit view. */
+    /** Unsigned 8-bit view. */
     uint8_t     au8[8];
+
+    /** Signed 64-bit view. */
+    int64_t     ai64[1];
+    /** Signed 32-bit view. */
+    int32_t     ai32[2];
+    /** Signed 16-bit view. */
+    int16_t     ai16[4];
+    /** Signed 8-bit view. */
+    int8_t      ai8[8];
 } RTUINT64U;
 /** Pointer to a 64-bit unsigned integer union. */
 typedef RTUINT64U RT_FAR *PRTUINT64U;
@@ -535,14 +557,23 @@ typedef union RTUINT128U
 #endif
     } Words;
 
-    /** 64-bit view. */
+    /** Unsigned 64-bit view. */
     uint64_t    au64[2];
-    /** 32-bit view. */
+    /** Unsigned 32-bit view. */
     uint32_t    au32[4];
-    /** 16-bit view. */
+    /** Unsigned 16-bit view. */
     uint16_t    au16[8];
-    /** 8-bit view. */
+    /** Unsigned 8-bit view. */
     uint8_t     au8[16];
+
+    /** Signed 64-bit view. */
+    int64_t     ai64[2];
+    /** Signed 32-bit view. */
+    int32_t     ai32[4];
+    /** Signed 16-bit view. */
+    int16_t     ai16[8];
+    /** Signed 8-bit view. */
+    int8_t      ai8[16];
 } RTUINT128U;
 #pragma pack()
 /** Pointer to a 128-bit unsigned integer union. */
@@ -663,16 +694,25 @@ typedef union RTUINT256U
 #endif
     } DQWords;
 
-    /** 128-bit view. */
+    /** Unsigned 128-bit view. */
     RTUINT128U  au128[2];
-    /** 64-bit view. */
+    /** Unsigned 64-bit view. */
     uint64_t    au64[4];
-    /** 32-bit view. */
+    /** Unsigned 32-bit view. */
     uint32_t    au32[8];
-    /** 16-bit view. */
+    /** Unsigned 16-bit view. */
     uint16_t    au16[16];
-    /** 8-bit view. */
+    /** Unsigned 8-bit view. */
     uint8_t     au8[32];
+
+    /** Signed 64-bit view. */
+    int64_t     ai64[4];
+    /** Signed 32-bit view. */
+    int32_t     ai32[8];
+    /** Signed 16-bit view. */
+    int16_t     ai16[16];
+    /** Signed 8-bit view. */
+    int8_t      ai8[32];
 } RTUINT256U;
 #pragma pack()
 /** Pointer to a 256-bit unsigned integer union. */
