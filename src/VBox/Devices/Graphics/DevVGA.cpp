@@ -350,6 +350,8 @@ DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
     pThis->fHasDirtyBits = true;
 }
 
+#ifdef IN_RING3
+
 /**
  * Tests if a VRAM page is dirty.
  *
@@ -358,13 +360,12 @@ DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
  * @param   pThis       VGA instance data.
  * @param   offVRAM     The VRAM offset of the page to check.
  */
-DECLINLINE(bool) vgaIsDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
+DECLINLINE(bool) vgaR3IsDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
     return ASMBitTest(&pThis->bmDirtyBitmap[0], offVRAM >> GUEST_PAGE_SHIFT);
 }
 
-#ifdef IN_RING3
 
 /**
  * Reset dirty flags in a give range.
@@ -2344,10 +2345,10 @@ static int vmsvgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool fFullU
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
          * anything wider than 2050 pixels @32bpp. Need to check all pages
          * between the first and last one. */
-        bool     fUpdate    = fFullUpdate | vgaIsDirty(pThis, offPage0) | vgaIsDirty(pThis, offPage1);
+        bool     fUpdate    = fFullUpdate | vgaR3IsDirty(pThis, offPage0) | vgaR3IsDirty(pThis, offPage1);
         if (offPage1 - offPage0 > GUEST_PAGE_SIZE)
             /* if wide line, can use another page */
-            fUpdate |= vgaIsDirty(pThis, offPage0 + GUEST_PAGE_SIZE);
+            fUpdate |= vgaR3IsDirty(pThis, offPage0 + GUEST_PAGE_SIZE);
         /* explicit invalidation for the hardware cursor */
         fUpdate |= (pThis->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
         if (fUpdate)
@@ -2543,10 +2544,10 @@ static int vgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_upda
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
          * anything wider than 2050 pixels @32bpp. Need to check all pages
          * between the first and last one. */
-        bool update = full_update | vgaIsDirty(pThis, page0) | vgaIsDirty(pThis, page1);
+        bool update = full_update | vgaR3IsDirty(pThis, page0) | vgaR3IsDirty(pThis, page1);
         if (page1 - page0 > GUEST_PAGE_SIZE) {
             /* if wide line, can use another page */
-            update |= vgaIsDirty(pThis, page0 + GUEST_PAGE_SIZE);
+            update |= vgaR3IsDirty(pThis, page0 + GUEST_PAGE_SIZE);
         }
         /* explicit invalidation for the hardware cursor */
         update |= (pThis->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
