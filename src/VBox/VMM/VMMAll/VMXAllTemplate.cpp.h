@@ -792,7 +792,9 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
      */
     PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
     bool fFsGsBase    = pVM->cpum.ro.GuestFeatures.fFsGsBase;
+#ifdef IN_NEM_DARWIN
     bool fXSaveRstor  = pVM->cpum.ro.GuestFeatures.fXSaveRstor;
+#endif
     bool fFxSaveRstor = pVM->cpum.ro.GuestFeatures.fFxSaveRstor;
 
     /*
@@ -800,7 +802,9 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
      * Ensure features exposed to the guest are present on the host.
      */
     AssertStmt(!fFsGsBase    || g_CpumHostFeatures.s.fFsGsBase,    fFsGsBase = 0);
+#ifdef IN_NEM_DARWIN
     AssertStmt(!fXSaveRstor  || g_CpumHostFeatures.s.fXSaveRstor,  fXSaveRstor = 0);
+#endif
     AssertStmt(!fFxSaveRstor || g_CpumHostFeatures.s.fFxSaveRstor, fFxSaveRstor = 0);
 
     uint64_t const fGstMask = X86_CR4_PVI
