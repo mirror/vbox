@@ -300,6 +300,44 @@ static uint8_t expand4to8[16];
 
 
 /**
+ * Mark a page in VGA A0000-AFFFF range as remapped.
+ *
+ * @param   pThis       VGA instance data.
+ * @param   offVGAMem   The offset within VGA memory.
+ */
+DECLINLINE(void) vgaMarkRemapped(PVGASTATE pThis, RTGCPHYS offVGAMem)
+{
+    AssertMsg(offVGAMem < _64K, ("offVGAMem = %p > 64K\n", offVGAMem));
+    ASMBitSet(&pThis->bmPageMapBitmap, offVGAMem >> GUEST_PAGE_SHIFT);
+    pThis->fRemappedVGA = true;
+}
+
+/**
+ * Checks if a page in VGA A0000-AFFFF range is remapped.
+ *
+ * @returns true if remapped.
+ * @returns false if not remapped (accesses will trap).
+ * @param   pThis       VGA instance data.
+ * @param   offVGAMem   The offset within VGA memory.
+ */
+DECLINLINE(bool) vgaIsRemapped(PVGASTATE pThis, RTGCPHYS offVGAMem)
+{
+    AssertMsg(offVGAMem < _64K, ("offVGAMem = %p > 64K\n", offVGAMem));
+    return ASMBitTest(&pThis->bmPageMapBitmap, offVGAMem >> GUEST_PAGE_SHIFT);
+}
+
+/**
+ * Reset page remap tracking bits.
+ *
+ * @param   pThis           VGA instance data.
+ */
+DECLINLINE(void) vgaResetRemapped(PVGASTATE pThis)
+{
+    pThis->fRemappedVGA = false;
+    ASMBitClearRange(&pThis->bmPageMapBitmap, 0, _64K >> GUEST_PAGE_SHIFT);
+}
+
+/**
  * Set a VRAM page dirty.
  *
  * @param   pThis       VGA instance data.
@@ -698,7 +736,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-                pThis->fRemappedVGA = false;
+                vgaResetRemapped(pThis);
             }
         }
 #endif
@@ -737,7 +775,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-                pThis->fRemappedVGA = false;
+                vgaResetRemapped(pThis);
             }
         }
 #endif
@@ -995,7 +1033,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-                pThis->fRemappedVGA = false;
+                vgaResetRemapped(pThis);
             }
 # endif
             break;
@@ -1104,7 +1142,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-                pThis->fRemappedVGA = false;
+                vgaResetRemapped(pThis);
             }
             break;
         }
@@ -1199,7 +1237,7 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
 #ifndef IN_RC
         /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
         if (   (pThis->sr[2] & 3) == 3
-            && !vgaIsDirty(pThis, addr)
+            && !vgaIsRemapped(pThis, GCPhys - 0xa0000)
             && pThis->GCPhysVRAM)
         {
             /** @todo only allow read access (doesn't work now) */
@@ -1208,7 +1246,7 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
                                       pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
             /* Set as dirty as write accesses won't be noticed now. */
             vgaR3MarkDirty(pThis, addr);
-            pThis->fRemappedVGA = true;
+            vgaMarkRemapped(pThis, GCPhys - 0xa0000);
         }
 #endif /* !IN_RC */
         VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc);
@@ -1308,13 +1346,13 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
 #ifndef IN_RC
             /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
             if (   (pThis->sr[2] & 3) == 3
-                && !vgaIsDirty(pThis, addr)
+                && !vgaIsRemapped(pThis, GCPhys - 0xa0000)
                 && pThis->GCPhysVRAM)
             {
                 STAM_COUNTER_INC(&pThis->StatMapPage);
                 PDMDevHlpMmioMapMmio2Page(pDevIns, pThis->hMmioLegacy, GCPhys - 0xa0000,
                                           pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
-                pThis->fRemappedVGA = true;
+                vgaMarkRemapped(pThis, GCPhys - 0xa0000);
             }
 #endif /* !IN_RC */
 
@@ -4654,6 +4692,7 @@ static DECLCALLBACK(void) vgaR3InfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         pHlp->pfnPrintf(pHlp, " Linear scanline pitch: 0x%04x\n", pThis->vbe_line_offset);
         pHlp->pfnPrintf(pHlp, " Linear display start : 0x%04x\n", pThis->vbe_start_addr);
         pHlp->pfnPrintf(pHlp, " Selected bank: 0x%04x\n", pThis->vbe_regs[VBE_DISPI_INDEX_BANK]);
+        pHlp->pfnPrintf(pHlp, " DAC: %d-bit\n", pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_8BIT_DAC ? 8 : 6);
     }
 }
 
@@ -4807,7 +4846,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-        pThis->fRemappedVGA = false;
+        vgaResetRemapped(pThis);
     }
 
     rc = vgaR3UpdateDisplay(pDevIns, pThis, pThisCC, false /*fUpdateAll*/, false /*fFailOnResize*/, true /*reset_dirty*/,
@@ -4835,7 +4874,7 @@ static int vgaR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, PV
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-        pThis->fRemappedVGA = false;
+        vgaResetRemapped(pThis);
     }
 
     pThis->graphic_mode = -1; /* force full update */
@@ -6056,7 +6095,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
-        pThis->fRemappedVGA = false;
+        vgaResetRemapped(pThis);
     }
 
     /*
