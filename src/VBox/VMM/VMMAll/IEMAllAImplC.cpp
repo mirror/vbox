@@ -7027,51 +7027,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t
 
 #endif /* IEM_WITH_VEX */
 
-#ifdef  IEM_WITHOUT_ASSEMBLY
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
-{
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
-{
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
-{
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
-}
-
-#endif /* IEM_WITHOUT_ASSEMBLY */
-
 
 /*
  * PAND / VPAND / PANDPS / VPANDPS / PANDPD / VPANDPD
@@ -7234,6 +7189,474 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpxor_u256_fallback,(PX86XSAVEAREA pExtState, P
     puDst->au64[1] = puSrc1->au64[1] ^ puSrc2->au64[1];
     puDst->au64[2] = puSrc1->au64[2] ^ puSrc2->au64[2];
     puDst->au64[3] = puSrc1->au64[3] ^ puSrc2->au64[3];
+}
+
+
+/*
+ * PCMPEQB / VPCMPEQB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = uSrc1.au8[0] == uSrc2.au8[0] ? 0xff : 0;
+    uDst.au8[1] = uSrc1.au8[1] == uSrc2.au8[1] ? 0xff : 0;
+    uDst.au8[2] = uSrc1.au8[2] == uSrc2.au8[2] ? 0xff : 0;
+    uDst.au8[3] = uSrc1.au8[3] == uSrc2.au8[3] ? 0xff : 0;
+    uDst.au8[4] = uSrc1.au8[4] == uSrc2.au8[4] ? 0xff : 0;
+    uDst.au8[5] = uSrc1.au8[5] == uSrc2.au8[5] ? 0xff : 0;
+    uDst.au8[6] = uSrc1.au8[6] == uSrc2.au8[6] ? 0xff : 0;
+    uDst.au8[7] = uSrc1.au8[7] == uSrc2.au8[7] ? 0xff : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = uSrc1.au8[0]  == puSrc->au8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = uSrc1.au8[1]  == puSrc->au8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = uSrc1.au8[2]  == puSrc->au8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = uSrc1.au8[3]  == puSrc->au8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = uSrc1.au8[4]  == puSrc->au8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = uSrc1.au8[5]  == puSrc->au8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = uSrc1.au8[6]  == puSrc->au8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = uSrc1.au8[7]  == puSrc->au8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = uSrc1.au8[8]  == puSrc->au8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = uSrc1.au8[9]  == puSrc->au8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = uSrc1.au8[10] == puSrc->au8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = uSrc1.au8[11] == puSrc->au8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = uSrc1.au8[12] == puSrc->au8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = uSrc1.au8[13] == puSrc->au8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = uSrc1.au8[14] == puSrc->au8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = uSrc1.au8[15] == puSrc->au8[15] ? UINT8_MAX : 0;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->au8[0]  == puSrc2->au8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = puSrc1->au8[1]  == puSrc2->au8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = puSrc1->au8[2]  == puSrc2->au8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = puSrc1->au8[3]  == puSrc2->au8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = puSrc1->au8[4]  == puSrc2->au8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = puSrc1->au8[5]  == puSrc2->au8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = puSrc1->au8[6]  == puSrc2->au8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = puSrc1->au8[7]  == puSrc2->au8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = puSrc1->au8[8]  == puSrc2->au8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = puSrc1->au8[9]  == puSrc2->au8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = puSrc1->au8[10] == puSrc2->au8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = puSrc1->au8[11] == puSrc2->au8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = puSrc1->au8[12] == puSrc2->au8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = puSrc1->au8[13] == puSrc2->au8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = puSrc1->au8[14] == puSrc2->au8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = puSrc1->au8[15] == puSrc2->au8[15] ? UINT8_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->au8[0]  == puSrc2->au8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = puSrc1->au8[1]  == puSrc2->au8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = puSrc1->au8[2]  == puSrc2->au8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = puSrc1->au8[3]  == puSrc2->au8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = puSrc1->au8[4]  == puSrc2->au8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = puSrc1->au8[5]  == puSrc2->au8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = puSrc1->au8[6]  == puSrc2->au8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = puSrc1->au8[7]  == puSrc2->au8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = puSrc1->au8[8]  == puSrc2->au8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = puSrc1->au8[9]  == puSrc2->au8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = puSrc1->au8[10] == puSrc2->au8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = puSrc1->au8[11] == puSrc2->au8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = puSrc1->au8[12] == puSrc2->au8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = puSrc1->au8[13] == puSrc2->au8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = puSrc1->au8[14] == puSrc2->au8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = puSrc1->au8[15] == puSrc2->au8[15] ? UINT8_MAX : 0;
+    puDst->au8[16] = puSrc1->au8[16] == puSrc2->au8[16] ? UINT8_MAX : 0;
+    puDst->au8[17] = puSrc1->au8[17] == puSrc2->au8[17] ? UINT8_MAX : 0;
+    puDst->au8[18] = puSrc1->au8[18] == puSrc2->au8[18] ? UINT8_MAX : 0;
+    puDst->au8[19] = puSrc1->au8[19] == puSrc2->au8[19] ? UINT8_MAX : 0;
+    puDst->au8[20] = puSrc1->au8[20] == puSrc2->au8[20] ? UINT8_MAX : 0;
+    puDst->au8[21] = puSrc1->au8[21] == puSrc2->au8[21] ? UINT8_MAX : 0;
+    puDst->au8[22] = puSrc1->au8[22] == puSrc2->au8[22] ? UINT8_MAX : 0;
+    puDst->au8[23] = puSrc1->au8[23] == puSrc2->au8[23] ? UINT8_MAX : 0;
+    puDst->au8[24] = puSrc1->au8[24] == puSrc2->au8[24] ? UINT8_MAX : 0;
+    puDst->au8[25] = puSrc1->au8[25] == puSrc2->au8[25] ? UINT8_MAX : 0;
+    puDst->au8[26] = puSrc1->au8[26] == puSrc2->au8[26] ? UINT8_MAX : 0;
+    puDst->au8[27] = puSrc1->au8[27] == puSrc2->au8[27] ? UINT8_MAX : 0;
+    puDst->au8[28] = puSrc1->au8[28] == puSrc2->au8[28] ? UINT8_MAX : 0;
+    puDst->au8[29] = puSrc1->au8[29] == puSrc2->au8[29] ? UINT8_MAX : 0;
+    puDst->au8[30] = puSrc1->au8[30] == puSrc2->au8[30] ? UINT8_MAX : 0;
+    puDst->au8[31] = puSrc1->au8[31] == puSrc2->au8[31] ? UINT8_MAX : 0;
+}
+
+
+/*
+ * PCMPEQW / VPCMPEQW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = uSrc1.au16[0] == uSrc2.au16[0] ? UINT16_MAX : 0;
+    uDst.au16[1] = uSrc1.au16[1] == uSrc2.au16[1] ? UINT16_MAX : 0;
+    uDst.au16[2] = uSrc1.au16[2] == uSrc2.au16[2] ? UINT16_MAX : 0;
+    uDst.au16[3] = uSrc1.au16[3] == uSrc2.au16[3] ? UINT16_MAX : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = uSrc1.au16[0] == puSrc->au16[0] ? UINT16_MAX : 0;
+    puDst->au16[1] = uSrc1.au16[1] == puSrc->au16[1] ? UINT16_MAX : 0;
+    puDst->au16[2] = uSrc1.au16[2] == puSrc->au16[2] ? UINT16_MAX : 0;
+    puDst->au16[3] = uSrc1.au16[3] == puSrc->au16[3] ? UINT16_MAX : 0;
+    puDst->au16[4] = uSrc1.au16[4] == puSrc->au16[4] ? UINT16_MAX : 0;
+    puDst->au16[5] = uSrc1.au16[5] == puSrc->au16[5] ? UINT16_MAX : 0;
+    puDst->au16[6] = uSrc1.au16[6] == puSrc->au16[6] ? UINT16_MAX : 0;
+    puDst->au16[7] = uSrc1.au16[7] == puSrc->au16[7] ? UINT16_MAX : 0;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqw_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0] = puSrc1->au16[0] == puSrc2->au16[0] ? UINT16_MAX : 0;
+    puDst->au16[1] = puSrc1->au16[1] == puSrc2->au16[1] ? UINT16_MAX : 0;
+    puDst->au16[2] = puSrc1->au16[2] == puSrc2->au16[2] ? UINT16_MAX : 0;
+    puDst->au16[3] = puSrc1->au16[3] == puSrc2->au16[3] ? UINT16_MAX : 0;
+    puDst->au16[4] = puSrc1->au16[4] == puSrc2->au16[4] ? UINT16_MAX : 0;
+    puDst->au16[5] = puSrc1->au16[5] == puSrc2->au16[5] ? UINT16_MAX : 0;
+    puDst->au16[6] = puSrc1->au16[6] == puSrc2->au16[6] ? UINT16_MAX : 0;
+    puDst->au16[7] = puSrc1->au16[7] == puSrc2->au16[7] ? UINT16_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqw_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0]  = puSrc1->au16[0]  == puSrc2->au16[0]  ? UINT16_MAX : 0;
+    puDst->au16[1]  = puSrc1->au16[1]  == puSrc2->au16[1]  ? UINT16_MAX : 0;
+    puDst->au16[2]  = puSrc1->au16[2]  == puSrc2->au16[2]  ? UINT16_MAX : 0;
+    puDst->au16[3]  = puSrc1->au16[3]  == puSrc2->au16[3]  ? UINT16_MAX : 0;
+    puDst->au16[4]  = puSrc1->au16[4]  == puSrc2->au16[4]  ? UINT16_MAX : 0;
+    puDst->au16[5]  = puSrc1->au16[5]  == puSrc2->au16[5]  ? UINT16_MAX : 0;
+    puDst->au16[6]  = puSrc1->au16[6]  == puSrc2->au16[6]  ? UINT16_MAX : 0;
+    puDst->au16[7]  = puSrc1->au16[7]  == puSrc2->au16[7]  ? UINT16_MAX : 0;
+    puDst->au16[8]  = puSrc1->au16[8]  == puSrc2->au16[8]  ? UINT16_MAX : 0;
+    puDst->au16[9]  = puSrc1->au16[9]  == puSrc2->au16[9]  ? UINT16_MAX : 0;
+    puDst->au16[10] = puSrc1->au16[10] == puSrc2->au16[10] ? UINT16_MAX : 0;
+    puDst->au16[11] = puSrc1->au16[11] == puSrc2->au16[11] ? UINT16_MAX : 0;
+    puDst->au16[12] = puSrc1->au16[12] == puSrc2->au16[12] ? UINT16_MAX : 0;
+    puDst->au16[13] = puSrc1->au16[13] == puSrc2->au16[13] ? UINT16_MAX : 0;
+    puDst->au16[14] = puSrc1->au16[14] == puSrc2->au16[14] ? UINT16_MAX : 0;
+    puDst->au16[15] = puSrc1->au16[15] == puSrc2->au16[15] ? UINT16_MAX : 0;
+}
+
+
+/*
+ * PCMPEQD / VPCMPEQD.
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au32[0] = uSrc1.au32[0] == uSrc2.au32[0] ? UINT32_MAX : 0;
+    uDst.au32[1] = uSrc1.au32[1] == uSrc2.au32[1] ? UINT32_MAX : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au32[0] = uSrc1.au32[0] == puSrc->au32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = uSrc1.au32[1] == puSrc->au32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = uSrc1.au32[2] == puSrc->au32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = uSrc1.au32[3] == puSrc->au32[3] ? UINT32_MAX : 0;
+}
+
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqd_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->au32[0] == puSrc2->au32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = puSrc1->au32[1] == puSrc2->au32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = puSrc1->au32[2] == puSrc2->au32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = puSrc1->au32[3] == puSrc2->au32[3] ? UINT32_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqd_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->au32[0] == puSrc2->au32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = puSrc1->au32[1] == puSrc2->au32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = puSrc1->au32[2] == puSrc2->au32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = puSrc1->au32[3] == puSrc2->au32[3] ? UINT32_MAX : 0;
+    puDst->au32[4] = puSrc1->au32[4] == puSrc2->au32[4] ? UINT32_MAX : 0;
+    puDst->au32[5] = puSrc1->au32[5] == puSrc2->au32[5] ? UINT32_MAX : 0;
+    puDst->au32[6] = puSrc1->au32[6] == puSrc2->au32[6] ? UINT32_MAX : 0;
+    puDst->au32[7] = puSrc1->au32[7] == puSrc2->au32[7] ? UINT32_MAX : 0;
+}
+
+
+/*
+ * PCMPGTB / VPCMPGTB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = uSrc1.ai8[0] > uSrc2.ai8[0] ? UINT8_MAX : 0;
+    uDst.au8[1] = uSrc1.ai8[1] > uSrc2.ai8[1] ? UINT8_MAX : 0;
+    uDst.au8[2] = uSrc1.ai8[2] > uSrc2.ai8[2] ? UINT8_MAX : 0;
+    uDst.au8[3] = uSrc1.ai8[3] > uSrc2.ai8[3] ? UINT8_MAX : 0;
+    uDst.au8[4] = uSrc1.ai8[4] > uSrc2.ai8[4] ? UINT8_MAX : 0;
+    uDst.au8[5] = uSrc1.ai8[5] > uSrc2.ai8[5] ? UINT8_MAX : 0;
+    uDst.au8[6] = uSrc1.ai8[6] > uSrc2.ai8[6] ? UINT8_MAX : 0;
+    uDst.au8[7] = uSrc1.ai8[7] > uSrc2.ai8[7] ? UINT8_MAX : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = uSrc1.ai8[0]  > puSrc->ai8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = uSrc1.ai8[1]  > puSrc->ai8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = uSrc1.ai8[2]  > puSrc->ai8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = uSrc1.ai8[3]  > puSrc->ai8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = uSrc1.ai8[4]  > puSrc->ai8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = uSrc1.ai8[5]  > puSrc->ai8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = uSrc1.ai8[6]  > puSrc->ai8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = uSrc1.ai8[7]  > puSrc->ai8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = uSrc1.ai8[8]  > puSrc->ai8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = uSrc1.ai8[9]  > puSrc->ai8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = uSrc1.ai8[10] > puSrc->ai8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = uSrc1.ai8[11] > puSrc->ai8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = uSrc1.ai8[12] > puSrc->ai8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = uSrc1.ai8[13] > puSrc->ai8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = uSrc1.ai8[14] > puSrc->ai8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = uSrc1.ai8[15] > puSrc->ai8[15] ? UINT8_MAX : 0;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->ai8[0]  > puSrc2->ai8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = puSrc1->ai8[1]  > puSrc2->ai8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = puSrc1->ai8[2]  > puSrc2->ai8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = puSrc1->ai8[3]  > puSrc2->ai8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = puSrc1->ai8[4]  > puSrc2->ai8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = puSrc1->ai8[5]  > puSrc2->ai8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = puSrc1->ai8[6]  > puSrc2->ai8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = puSrc1->ai8[7]  > puSrc2->ai8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = puSrc1->ai8[8]  > puSrc2->ai8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = puSrc1->ai8[9]  > puSrc2->ai8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = puSrc1->ai8[10] > puSrc2->ai8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = puSrc1->ai8[11] > puSrc2->ai8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = puSrc1->ai8[12] > puSrc2->ai8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = puSrc1->ai8[13] > puSrc2->ai8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = puSrc1->ai8[14] > puSrc2->ai8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = puSrc1->ai8[15] > puSrc2->ai8[15] ? UINT8_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au8[0]  = puSrc1->ai8[0]  > puSrc2->ai8[0]  ? UINT8_MAX : 0;
+    puDst->au8[1]  = puSrc1->ai8[1]  > puSrc2->ai8[1]  ? UINT8_MAX : 0;
+    puDst->au8[2]  = puSrc1->ai8[2]  > puSrc2->ai8[2]  ? UINT8_MAX : 0;
+    puDst->au8[3]  = puSrc1->ai8[3]  > puSrc2->ai8[3]  ? UINT8_MAX : 0;
+    puDst->au8[4]  = puSrc1->ai8[4]  > puSrc2->ai8[4]  ? UINT8_MAX : 0;
+    puDst->au8[5]  = puSrc1->ai8[5]  > puSrc2->ai8[5]  ? UINT8_MAX : 0;
+    puDst->au8[6]  = puSrc1->ai8[6]  > puSrc2->ai8[6]  ? UINT8_MAX : 0;
+    puDst->au8[7]  = puSrc1->ai8[7]  > puSrc2->ai8[7]  ? UINT8_MAX : 0;
+    puDst->au8[8]  = puSrc1->ai8[8]  > puSrc2->ai8[8]  ? UINT8_MAX : 0;
+    puDst->au8[9]  = puSrc1->ai8[9]  > puSrc2->ai8[9]  ? UINT8_MAX : 0;
+    puDst->au8[10] = puSrc1->ai8[10] > puSrc2->ai8[10] ? UINT8_MAX : 0;
+    puDst->au8[11] = puSrc1->ai8[11] > puSrc2->ai8[11] ? UINT8_MAX : 0;
+    puDst->au8[12] = puSrc1->ai8[12] > puSrc2->ai8[12] ? UINT8_MAX : 0;
+    puDst->au8[13] = puSrc1->ai8[13] > puSrc2->ai8[13] ? UINT8_MAX : 0;
+    puDst->au8[14] = puSrc1->ai8[14] > puSrc2->ai8[14] ? UINT8_MAX : 0;
+    puDst->au8[15] = puSrc1->ai8[15] > puSrc2->ai8[15] ? UINT8_MAX : 0;
+    puDst->au8[16] = puSrc1->ai8[16] > puSrc2->ai8[16] ? UINT8_MAX : 0;
+    puDst->au8[17] = puSrc1->ai8[17] > puSrc2->ai8[17] ? UINT8_MAX : 0;
+    puDst->au8[18] = puSrc1->ai8[18] > puSrc2->ai8[18] ? UINT8_MAX : 0;
+    puDst->au8[19] = puSrc1->ai8[19] > puSrc2->ai8[19] ? UINT8_MAX : 0;
+    puDst->au8[20] = puSrc1->ai8[20] > puSrc2->ai8[20] ? UINT8_MAX : 0;
+    puDst->au8[21] = puSrc1->ai8[21] > puSrc2->ai8[21] ? UINT8_MAX : 0;
+    puDst->au8[22] = puSrc1->ai8[22] > puSrc2->ai8[22] ? UINT8_MAX : 0;
+    puDst->au8[23] = puSrc1->ai8[23] > puSrc2->ai8[23] ? UINT8_MAX : 0;
+    puDst->au8[24] = puSrc1->ai8[24] > puSrc2->ai8[24] ? UINT8_MAX : 0;
+    puDst->au8[25] = puSrc1->ai8[25] > puSrc2->ai8[25] ? UINT8_MAX : 0;
+    puDst->au8[26] = puSrc1->ai8[26] > puSrc2->ai8[26] ? UINT8_MAX : 0;
+    puDst->au8[27] = puSrc1->ai8[27] > puSrc2->ai8[27] ? UINT8_MAX : 0;
+    puDst->au8[28] = puSrc1->ai8[28] > puSrc2->ai8[28] ? UINT8_MAX : 0;
+    puDst->au8[29] = puSrc1->ai8[29] > puSrc2->ai8[29] ? UINT8_MAX : 0;
+    puDst->au8[30] = puSrc1->ai8[30] > puSrc2->ai8[30] ? UINT8_MAX : 0;
+    puDst->au8[31] = puSrc1->ai8[31] > puSrc2->ai8[31] ? UINT8_MAX : 0;
+}
+
+
+/*
+ * PCMPGTW / VPCMPGTW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = uSrc1.ai16[0] > uSrc2.ai16[0] ? UINT16_MAX : 0;
+    uDst.au16[1] = uSrc1.ai16[1] > uSrc2.ai16[1] ? UINT16_MAX : 0;
+    uDst.au16[2] = uSrc1.ai16[2] > uSrc2.ai16[2] ? UINT16_MAX : 0;
+    uDst.au16[3] = uSrc1.ai16[3] > uSrc2.ai16[3] ? UINT16_MAX : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = uSrc1.ai16[0] > puSrc->ai16[0] ? UINT16_MAX : 0;
+    puDst->au16[1] = uSrc1.ai16[1] > puSrc->ai16[1] ? UINT16_MAX : 0;
+    puDst->au16[2] = uSrc1.ai16[2] > puSrc->ai16[2] ? UINT16_MAX : 0;
+    puDst->au16[3] = uSrc1.ai16[3] > puSrc->ai16[3] ? UINT16_MAX : 0;
+    puDst->au16[4] = uSrc1.ai16[4] > puSrc->ai16[4] ? UINT16_MAX : 0;
+    puDst->au16[5] = uSrc1.ai16[5] > puSrc->ai16[5] ? UINT16_MAX : 0;
+    puDst->au16[6] = uSrc1.ai16[6] > puSrc->ai16[6] ? UINT16_MAX : 0;
+    puDst->au16[7] = uSrc1.ai16[7] > puSrc->ai16[7] ? UINT16_MAX : 0;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtw_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0] = puSrc1->ai16[0] > puSrc2->ai16[0] ? UINT16_MAX : 0;
+    puDst->au16[1] = puSrc1->ai16[1] > puSrc2->ai16[1] ? UINT16_MAX : 0;
+    puDst->au16[2] = puSrc1->ai16[2] > puSrc2->ai16[2] ? UINT16_MAX : 0;
+    puDst->au16[3] = puSrc1->ai16[3] > puSrc2->ai16[3] ? UINT16_MAX : 0;
+    puDst->au16[4] = puSrc1->ai16[4] > puSrc2->ai16[4] ? UINT16_MAX : 0;
+    puDst->au16[5] = puSrc1->ai16[5] > puSrc2->ai16[5] ? UINT16_MAX : 0;
+    puDst->au16[6] = puSrc1->ai16[6] > puSrc2->ai16[6] ? UINT16_MAX : 0;
+    puDst->au16[7] = puSrc1->ai16[7] > puSrc2->ai16[7] ? UINT16_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtw_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au16[0]  = puSrc1->ai16[0]  > puSrc2->ai16[0]  ? UINT16_MAX : 0;
+    puDst->au16[1]  = puSrc1->ai16[1]  > puSrc2->ai16[1]  ? UINT16_MAX : 0;
+    puDst->au16[2]  = puSrc1->ai16[2]  > puSrc2->ai16[2]  ? UINT16_MAX : 0;
+    puDst->au16[3]  = puSrc1->ai16[3]  > puSrc2->ai16[3]  ? UINT16_MAX : 0;
+    puDst->au16[4]  = puSrc1->ai16[4]  > puSrc2->ai16[4]  ? UINT16_MAX : 0;
+    puDst->au16[5]  = puSrc1->ai16[5]  > puSrc2->ai16[5]  ? UINT16_MAX : 0;
+    puDst->au16[6]  = puSrc1->ai16[6]  > puSrc2->ai16[6]  ? UINT16_MAX : 0;
+    puDst->au16[7]  = puSrc1->ai16[7]  > puSrc2->ai16[7]  ? UINT16_MAX : 0;
+    puDst->au16[8]  = puSrc1->ai16[8]  > puSrc2->ai16[8]  ? UINT16_MAX : 0;
+    puDst->au16[9]  = puSrc1->ai16[9]  > puSrc2->ai16[9]  ? UINT16_MAX : 0;
+    puDst->au16[10] = puSrc1->ai16[10] > puSrc2->ai16[10] ? UINT16_MAX : 0;
+    puDst->au16[11] = puSrc1->ai16[11] > puSrc2->ai16[11] ? UINT16_MAX : 0;
+    puDst->au16[12] = puSrc1->ai16[12] > puSrc2->ai16[12] ? UINT16_MAX : 0;
+    puDst->au16[13] = puSrc1->ai16[13] > puSrc2->ai16[13] ? UINT16_MAX : 0;
+    puDst->au16[14] = puSrc1->ai16[14] > puSrc2->ai16[14] ? UINT16_MAX : 0;
+    puDst->au16[15] = puSrc1->ai16[15] > puSrc2->ai16[15] ? UINT16_MAX : 0;
+}
+
+
+/*
+ * PCMPGTD / VPCMPGTD.
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au32[0] = uSrc1.ai32[0] > uSrc2.ai32[0] ? UINT32_MAX : 0;
+    uDst.au32[1] = uSrc1.ai32[1] > uSrc2.ai32[1] ? UINT32_MAX : 0;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au32[0] = uSrc1.ai32[0] > puSrc->ai32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = uSrc1.ai32[1] > puSrc->ai32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = uSrc1.ai32[2] > puSrc->ai32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = uSrc1.ai32[3] > puSrc->ai32[3] ? UINT32_MAX : 0;
+}
+
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtd_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->ai32[0] > puSrc2->ai32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = puSrc1->ai32[1] > puSrc2->ai32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = puSrc1->ai32[2] > puSrc2->ai32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = puSrc1->ai32[3] > puSrc2->ai32[3] ? UINT32_MAX : 0;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtd_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RT_NOREF(pExtState);
+    puDst->au32[0] = puSrc1->ai32[0] > puSrc2->ai32[0] ? UINT32_MAX : 0;
+    puDst->au32[1] = puSrc1->ai32[1] > puSrc2->ai32[1] ? UINT32_MAX : 0;
+    puDst->au32[2] = puSrc1->ai32[2] > puSrc2->ai32[2] ? UINT32_MAX : 0;
+    puDst->au32[3] = puSrc1->ai32[3] > puSrc2->ai32[3] ? UINT32_MAX : 0;
+    puDst->au32[4] = puSrc1->ai32[4] > puSrc2->ai32[4] ? UINT32_MAX : 0;
+    puDst->au32[5] = puSrc1->ai32[5] > puSrc2->ai32[5] ? UINT32_MAX : 0;
+    puDst->au32[6] = puSrc1->ai32[6] > puSrc2->ai32[6] ? UINT32_MAX : 0;
+    puDst->au32[7] = puSrc1->ai32[7] > puSrc2->ai32[7] ? UINT32_MAX : 0;
 }
 
 

@@ -234,6 +234,9 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqb;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqw;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
+IEMOPMEDIAF2 g_iemAImpl_pcmpgtb;
+IEMOPMEDIAF2 g_iemAImpl_pcmpgtw;
+IEMOPMEDIAF2 g_iemAImpl_pcmpgtd;
 
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray)                  NULL

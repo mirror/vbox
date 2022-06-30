@@ -3354,22 +3354,61 @@ FNIEMOP_STUB(iemOp_packsswb_Pq_Qq);
 FNIEMOP_STUB(iemOp_packsswb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x63 - invalid */
 
+
 /** Opcode      0x0f 0x64 - pcmpgtb Pq, Qq */
-FNIEMOP_STUB(iemOp_pcmpgtb_Pq_Qq);
+FNIEMOP_DEF(iemOp_pcmpgtb_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTB, pcmpgtb, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpgtb);
+}
+
+
 /** Opcode 0x66 0x0f 0x64 - pcmpgtb Vx, Wx */
-FNIEMOP_STUB(iemOp_pcmpgtb_Vx_Wx);
+FNIEMOP_DEF(iemOp_pcmpgtb_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTB, pcmpgtb, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpgtb);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x64 - invalid */
 
+
 /** Opcode      0x0f 0x65 - pcmpgtw Pq, Qq */
-FNIEMOP_STUB(iemOp_pcmpgtw_Pq_Qq);
+FNIEMOP_DEF(iemOp_pcmpgtw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTW, pcmpgtw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpgtw);
+}
+
+
 /** Opcode 0x66 0x0f 0x65 - pcmpgtw Vx, Wx */
-FNIEMOP_STUB(iemOp_pcmpgtw_Vx_Wx);
+FNIEMOP_DEF(iemOp_pcmpgtw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTW, pcmpgtw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpgtw);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x65 - invalid */
 
+
 /** Opcode      0x0f 0x66 - pcmpgtd Pq, Qq */
-FNIEMOP_STUB(iemOp_pcmpgtd_Pq_Qq);
+FNIEMOP_DEF(iemOp_pcmpgtd_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTD, pcmpgtd, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpgtd);
+}
+
+
 /** Opcode 0x66 0x0f 0x66 - pcmpgtd Vx, Wx */
-FNIEMOP_STUB(iemOp_pcmpgtd_Vx_Wx);
+FNIEMOP_DEF(iemOp_pcmpgtd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PCMPGTD, pcmpgtd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpgtd);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x66 - invalid */
 
 /** Opcode      0x0f 0x67 - packuswb Pq, Qq */
@@ -4312,12 +4351,14 @@ FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
+
 /** Opcode 0x66 0x0f 0x74 - pcmpeqb Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqb_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQB, pcmpeqb, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
+
 
 /*  Opcode 0xf3 0x0f 0x74 - invalid */
 /*  Opcode 0xf2 0x0f 0x74 - invalid */
@@ -4330,12 +4371,14 @@ FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
+
 /** Opcode 0x66 0x0f 0x75 - pcmpeqw Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqw_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQW, pcmpeqw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
+
 
 /*  Opcode 0xf3 0x0f 0x75 - invalid */
 /*  Opcode 0xf2 0x0f 0x75 - invalid */
@@ -4348,12 +4391,14 @@ FNIEMOP_DEF(iemOp_pcmpeqd_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
+
 /** Opcode 0x66 0x0f 0x76 - pcmpeqd Vx, Wx */
 FNIEMOP_DEF(iemOp_pcmpeqd_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQD, pcmpeqd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
+
 
 /*  Opcode 0xf3 0x0f 0x76 - invalid */
 /*  Opcode 0xf2 0x0f 0x76 - invalid */
