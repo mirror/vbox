@@ -23438,7 +23438,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     reservedMethods="4" reservedAttributes="8"
     >
     <desc>
-      The IAudioDevice interface represents an audio device provided by the host OS.
+      Represents an audio device provided by the host OS.
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
