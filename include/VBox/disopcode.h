@@ -830,6 +830,10 @@ enum OPCODES
     OP_VPCMPGTW,
     OP_VPCMPGTD,
     OP_VPCMPGTQ,
+    OP_VPADDB,
+    OP_VPADDW,
+    OP_VPADDD,
+    OP_VPADDQ,
 /** @} */
     OP_END_OF_OPCODES
 };
