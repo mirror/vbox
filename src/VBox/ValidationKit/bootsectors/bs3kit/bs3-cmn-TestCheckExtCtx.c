@@ -231,19 +231,36 @@ BS3_CMN_DEF(bool, Bs3TestCheckExtCtx,(PCBS3EXTCTX pActualExtCtx, PCBS3EXTCTX pEx
                                        RT_MAKE_U16(pb2[offStart], pb2[offStart + 1]));
                         break;
                     case 4:
-                        Bs3TestFailedF("%u - %s: Dword difference at %#x (%s): %#010RX32, expected %#010RX32",
+                        Bs3TestFailedF("%u - %s: DWord difference at %#x (%s): %#010RX32, expected %#010RX32",
                                        idTestStep, pszMode, offStart, pszName,
                                        RT_MAKE_U32_FROM_U8(pb1[offStart], pb1[offStart + 1], pb1[offStart + 2], pb1[offStart + 3]),
                                        RT_MAKE_U32_FROM_U8(pb2[offStart], pb2[offStart + 1], pb2[offStart + 2], pb2[offStart + 3]));
                         break;
                     case 8:
-                        Bs3TestFailedF("%u - %s: Qword difference at %#x (%s): %#018RX64, expected %#018RX64",
+                        Bs3TestFailedF("%u - %s: QWord difference at %#x (%s): %#018RX64, expected %#018RX64",
                                        idTestStep, pszMode, offStart, pszName,
                                        RT_MAKE_U64_FROM_U8(pb1[offStart], pb1[offStart + 1], pb1[offStart + 2], pb1[offStart + 3],
                                                            pb1[offStart + 4], pb1[offStart + 5], pb1[offStart + 6], pb1[offStart + 7]),
                                        RT_MAKE_U64_FROM_U8(pb2[offStart], pb2[offStart + 1], pb2[offStart + 2], pb2[offStart + 3],
                                                            pb2[offStart + 4], pb2[offStart + 5], pb2[offStart + 6], pb2[offStart + 7]));
                         break;
+                    case 16:
+                        Bs3TestFailedF("%u - %s: DQword difference at %#x (%s): \n"
+                                       "got      %#018RX64'%#018RX64\n"
+                                       "expected %#018RX64'%#018RX64",
+                                       idTestStep, pszMode, offStart, pszName,
+                                       RT_MAKE_U64_FROM_U8(pb1[offStart + 8], pb1[offStart + 9], pb1[offStart + 10], pb1[offStart + 11],
+                                                           pb1[offStart + 12], pb1[offStart + 13], pb1[offStart + 14], pb1[offStart + 15]),
+                                       RT_MAKE_U64_FROM_U8(pb1[offStart], pb1[offStart + 1], pb1[offStart + 2], pb1[offStart + 3],
+                                                           pb1[offStart + 4], pb1[offStart + 5], pb1[offStart + 6], pb1[offStart + 7]),
+
+                                       RT_MAKE_U64_FROM_U8(pb2[offStart + 8], pb2[offStart + 9], pb2[offStart + 10], pb2[offStart + 11],
+                                                           pb2[offStart + 12], pb2[offStart + 13], pb2[offStart + 14], pb2[offStart + 15]),
+                                       RT_MAKE_U64_FROM_U8(pb2[offStart], pb2[offStart + 1], pb2[offStart + 2], pb2[offStart + 3],
+                                                           pb2[offStart + 4], pb2[offStart + 5], pb2[offStart + 6], pb2[offStart + 7])
+                                       );
+                        break;
+
                     default:
                         Bs3TestFailedF("%u - %s: %#x..%#x differs (%s)\n"
                                        "got      %.*Rhxs\n"

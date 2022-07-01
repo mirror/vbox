@@ -343,6 +343,9 @@ EMIT_TYPE1_ONE_INSTR pcmpeqq, vpcmpeqq, 0
 EMIT_TYPE1_INSTR paddb, vpaddb, paddw, vpaddw, paddd, vpaddd, 1
 EMIT_TYPE1_ONE_INSTR paddq, vpaddq, 1
 
+EMIT_TYPE1_INSTR psubb, vpsubb, psubw, vpsubw, psubd, vpsubd, 1
+EMIT_TYPE1_ONE_INSTR psubq, vpsubq, 1
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

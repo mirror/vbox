@@ -41,6 +41,7 @@ BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_xorps_xorpd_pxor);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_paddb_paddw_paddd_paddq);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_psubb_psubw_psubd_psubq);
 
 
 /*********************************************************************************************************************************
@@ -60,6 +61,7 @@ static const BS3TESTMODEBYMAXENTRY g_aTests[] =
 #endif
 #if 1
     BS3TESTMODEBYMAXENTRY_CMN("[v]paddb/[v]paddw/[v]paddd/[v]paddq", bs3CpuInstr3_v_paddb_paddw_paddd_paddq),
+    BS3TESTMODEBYMAXENTRY_CMN("[v]psubb/[v]psubw/[v]psubd/[v]psubq", bs3CpuInstr3_v_psubb_psubw_psubd_psubq),
 #endif
 };
 
