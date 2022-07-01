@@ -1329,10 +1329,10 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRAddOutputMode)
         x11Context.pXRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
 #endif
-
-    /* Destroy and forget mode created on previous guest screen resize event. */
-    if (   aPrevMode[outputId] > 0
-        && pModeInfo->id != aPrevMode[outputId])
+    /* If mode has been newly created, destroy and forget mode created on previous guest screen resize event. */
+    if (   aPrevMode[iOutputIndex] > 0
+        && pModeInfo->id != aPrevMode[iOutputIndex]
+        && fNewMode)
     {
         VBClLogInfo("removing unused mode %u\n", aPrevMode[outputId]);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
