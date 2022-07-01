@@ -140,7 +140,7 @@ fi
 for file in `find "$PREV_INSTALLATION" 2> /dev/null`; do
     rmdir -p "$file" 2> /dev/null
 done
-cd "$cwd"
+cd "$cwd" 2> /dev/null
 mkdir -p "$PREV_INSTALLATION" 2> /dev/null # The above actually removes the current directory and parents!
 rmdir "$PREV_INSTALLATION" 2> /dev/null
 rm -f "$CONFIG_DIR/$CONFIG" 2> /dev/null
