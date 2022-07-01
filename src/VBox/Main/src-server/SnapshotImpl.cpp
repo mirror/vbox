@@ -762,11 +762,6 @@ bool Snapshot::i_sharesSavedStateFile(const Utf8Str &strPath,
                                       Snapshot *pSnapshotToIgnore)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    const Utf8Str &path = m->pMachine->mSSData->strStateFilePath;
-
-    if (path.isEmpty())
-        return false;
-
     std::list<const Snapshot *> llSnapshotsTodo;
     llSnapshotsTodo.push_back(this);
 
@@ -774,8 +769,9 @@ bool Snapshot::i_sharesSavedStateFile(const Utf8Str &strPath,
     {
         const Snapshot *pSnapshot = llSnapshotsTodo.front();
         llSnapshotsTodo.pop_front();
+        const Utf8Str &path = pSnapshot->m->pMachine->mSSData->strStateFilePath;
 
-        if (!pSnapshotToIgnore || pSnapshotToIgnore != this)
+        if ((!pSnapshotToIgnore || pSnapshotToIgnore != this) && path.isNotEmpty())
             if (path == strPath)
                 return true;
 
@@ -997,7 +993,7 @@ HRESULT Snapshot::i_uninitAll(AutoWriteLock &writeLock,
             {
                 std::list<Utf8Str>::const_iterator itFound = find(llFilenames.begin(), llFilenames.end(), strFile);
 
-                if (itFound != llFilenames.end())
+                if (itFound == llFilenames.end())
                     llFilenames.push_back(strFile);
             }
 
