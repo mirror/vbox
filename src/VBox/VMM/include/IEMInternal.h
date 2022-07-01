@@ -1750,6 +1750,10 @@ FNIEMAIMPLMEDIAF2U64  iemAImpl_paddb_u64;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_paddw_u64;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_paddd_u64;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_paddq_u64;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_psubb_u64;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_psubw_u64;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_psubd_u64;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_psubq_u64;
 
 FNIEMAIMPLMEDIAF2U128 iemAImpl_pand_u128, iemAImpl_pandn_u128, iemAImpl_por_u128, iemAImpl_pxor_u128;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_pcmpeqb_u128, iemAImpl_pcmpeqw_u128, iemAImpl_pcmpeqd_u128;
@@ -1760,6 +1764,10 @@ FNIEMAIMPLMEDIAF2U128 iemAImpl_paddb_u128;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_paddw_u128;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_paddd_u128;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_paddq_u128;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_psubb_u128;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_psubw_u128;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_psubd_u128;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_psubq_u128;
 
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vpand_u128,      iemAImpl_vpand_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vpandn_u128,     iemAImpl_vpandn_u128_fallback;
@@ -1777,6 +1785,10 @@ FNIEMAIMPLMEDIAF3U128 iemAImpl_vpaddb_u128,     iemAImpl_vpaddb_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vpaddw_u128,     iemAImpl_vpaddw_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vpaddd_u128,     iemAImpl_vpaddd_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vpaddq_u128,     iemAImpl_vpaddq_u128_fallback;
+FNIEMAIMPLMEDIAF3U128 iemAImpl_vpsubb_u128,     iemAImpl_vpsubb_u128_fallback;
+FNIEMAIMPLMEDIAF3U128 iemAImpl_vpsubw_u128,     iemAImpl_vpsubw_u128_fallback;
+FNIEMAIMPLMEDIAF3U128 iemAImpl_vpsubd_u128,     iemAImpl_vpsubd_u128_fallback;
+FNIEMAIMPLMEDIAF3U128 iemAImpl_vpsubq_u128,     iemAImpl_vpsubq_u128_fallback;
 
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vpand_u256,      iemAImpl_vpand_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vpandn_u256,     iemAImpl_vpandn_u256_fallback;
@@ -1794,6 +1806,10 @@ FNIEMAIMPLMEDIAF3U256 iemAImpl_vpaddb_u256,     iemAImpl_vpaddb_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vpaddw_u256,     iemAImpl_vpaddw_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vpaddd_u256,     iemAImpl_vpaddd_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vpaddq_u256,     iemAImpl_vpaddq_u256_fallback;
+FNIEMAIMPLMEDIAF3U256 iemAImpl_vpsubb_u256,     iemAImpl_vpsubb_u256_fallback;
+FNIEMAIMPLMEDIAF3U256 iemAImpl_vpsubw_u256,     iemAImpl_vpsubw_u256_fallback;
+FNIEMAIMPLMEDIAF3U256 iemAImpl_vpsubd_u256,     iemAImpl_vpsubd_u256_fallback;
+FNIEMAIMPLMEDIAF3U256 iemAImpl_vpsubq_u256,     iemAImpl_vpsubq_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.

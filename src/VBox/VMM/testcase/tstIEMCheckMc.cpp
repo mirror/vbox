@@ -241,6 +241,10 @@ IEMOPMEDIAF2 g_iemAImpl_paddb;
 IEMOPMEDIAF2 g_iemAImpl_paddw;
 IEMOPMEDIAF2 g_iemAImpl_paddd;
 IEMOPMEDIAF2 g_iemAImpl_paddq;
+IEMOPMEDIAF2 g_iemAImpl_psubb;
+IEMOPMEDIAF2 g_iemAImpl_psubw;
+IEMOPMEDIAF2 g_iemAImpl_psubd;
+IEMOPMEDIAF2 g_iemAImpl_psubq;
 
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray)                  NULL
@@ -374,6 +378,7 @@ IEMOPMEDIAF2 g_iemAImpl_paddq;
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
+#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX(fSupported) do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT()          do { (void)fMcBegin; } while (0)

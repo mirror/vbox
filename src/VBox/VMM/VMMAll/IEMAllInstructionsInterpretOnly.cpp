@@ -949,6 +949,14 @@ IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddw        = { iemAImpl_paddw_u64,   
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddd        = { iemAImpl_paddd_u64,      iemAImpl_paddd_u128 };
 /** Function table for the PADDQ instruction. */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddq        = { iemAImpl_paddq_u64,      iemAImpl_paddq_u128 };
+/** Function table for the PSUBB instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubb        = { iemAImpl_psubb_u64,      iemAImpl_psubb_u128 };
+/** Function table for the PSUBW instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubw        = { iemAImpl_psubw_u64,      iemAImpl_psubw_u128 };
+/** Function table for the PSUBD instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubd        = { iemAImpl_psubd_u64,      iemAImpl_psubd_u128 };
+/** Function table for the PSUBQ instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubq        = { iemAImpl_psubq_u64,      iemAImpl_psubq_u128 };
 
 # ifndef IEM_WITHOUT_ASSEMBLY
 /** Function table for the VPXOR instruction */
@@ -983,6 +991,14 @@ IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddw       = { iemAImpl_vpaddw_u128, 
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddd       = { iemAImpl_vpaddd_u128, iemAImpl_vpaddd_u256 };
 /** Function table for the VPADDQ instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddq       = { iemAImpl_vpaddq_u128, iemAImpl_vpaddq_u256 };
+/** Function table for the VPSUBB instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubb       = { iemAImpl_vpsubb_u128, iemAImpl_vpsubb_u256 };
+/** Function table for the VPSUBW instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubw       = { iemAImpl_vpsubw_u128, iemAImpl_vpsubw_u256 };
+/** Function table for the VPSUBD instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubd       = { iemAImpl_vpsubd_u128, iemAImpl_vpsubd_u256 };
+/** Function table for the VPSUBQ instruction */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubq       = { iemAImpl_vpsubq_u128, iemAImpl_vpsubq_u256 };
 # endif
 
 /** Function table for the VPAND instruction, software fallback. */
@@ -1017,6 +1033,14 @@ IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddw_fallback = { iemAImpl_vpaddw_u12
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddd_fallback = { iemAImpl_vpaddd_u128_fallback, iemAImpl_vpaddd_u256_fallback };
 /** Function table for the VPADDQ instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpaddq_fallback = { iemAImpl_vpaddq_u128_fallback, iemAImpl_vpaddq_u256_fallback };
+/** Function table for the VPSUBB instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubb_fallback = { iemAImpl_vpsubb_u128_fallback, iemAImpl_vpsubb_u256_fallback };
+/** Function table for the VPSUBW instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubw_fallback = { iemAImpl_vpsubw_u128_fallback, iemAImpl_vpsubw_u256_fallback };
+/** Function table for the VPSUBD instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubd_fallback = { iemAImpl_vpsubd_u128_fallback, iemAImpl_vpsubd_u256_fallback };
+/** Function table for the VPSUBQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubq_fallback = { iemAImpl_vpsubq_u128_fallback, iemAImpl_vpsubq_u256_fallback };
 
 #endif /* !TST_IEM_CHECK_MC */
 
