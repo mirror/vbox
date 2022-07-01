@@ -21,9 +21,9 @@
 
 /* GUI includes: */
 #include "UIDetails.h"
+#include "UIDetailsItem.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsView.h"
-#include "UIDetailsItem.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -84,6 +84,23 @@ public:
 
         /* Return the lone root child's child with the passed iIndex (otherwise): */
         return QAccessible::queryAccessibleInterface(view()->details()->model()->root()->items().first()->items().at(iIndex));
+    }
+
+    /** Returns the index of passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), -1);
+        /* Make sure child is valid: */
+        AssertReturn(pChild, -1);
+
+        /* Acquire item itself: */
+        UIDetailsItem *pChildItem = qobject_cast<UIDetailsItem*>(pChild->object());
+
+        /* Return the index of item in it's parent: */
+        return   pChildItem && pChildItem->parentItem()
+               ? pChildItem->parentItem()->items().indexOf(pChildItem)
+               : -1;
     }
 
     /** Returns a text for the passed @a enmTextRole. */

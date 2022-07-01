@@ -72,6 +72,23 @@ public:
         return QAccessible::queryAccessibleInterface(view()->model() ? view()->model()->root()->items().at(iIndex) : 0);
     }
 
+    /** Returns the index of passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), -1);
+        /* Make sure child is valid: */
+        AssertReturn(pChild, -1);
+
+        /* Acquire item itself: */
+        UIChooserItem *pChildItem = qobject_cast<UIChooserItem*>(pChild->object());
+
+        /* Return the index of item in it's parent: */
+        return   pChildItem && pChildItem->parentItem()
+               ? pChildItem->parentItem()->items().indexOf(pChildItem)
+               : -1;;
+    }
+
     /** Returns a text for the passed @a enmTextRole. */
     virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {

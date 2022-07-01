@@ -100,6 +100,8 @@ public:
     virtual int childCount() const RT_OVERRIDE;
     /** Returns the child with the passed @a iIndex. */
     virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE;
 
     /** Returns a text for the passed @a enmTextRole. */
     virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
@@ -298,6 +300,20 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex)
 
     /* Return the child with the passed iIndex: */
     return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));
+}
+
+int QIAccessibilityInterfaceForQITreeWidget::indexOfChild(const QAccessibleInterface *pChild) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), -1);
+    /* Make sure child is valid: */
+    AssertReturn(pChild, -1);
+
+    // WORKAROUND:
+    // Not yet sure how to handle this for tree widget with multiple columns, so this is a simple hack:
+    const QModelIndex index = tree()->itemIndex(qobject_cast<QITreeWidgetItem*>(pChild->object()));
+    const int iIndex = index.row();
+    return iIndex;
 }
 
 QString QIAccessibilityInterfaceForQITreeWidget::text(QAccessible::Text /* enmTextRole */) const
