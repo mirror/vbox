@@ -4144,12 +4144,33 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
 
+        <listitem><para>The machine's audio adapter has been moved into the new IAudioSettings interface, which in turn
+          takes care of of all audio settings of a virtual machine.
+          See <link linkend="IMachine__audioSettings">IMachine::audioSettings</link> and
+          <link linkend="IAudioSettings">IAudioSettings</link> for more information.</para>
+        </listitem>
+
+        <listitem><para>When a new VM is being created, the default audio driver will be now
+          <link linkend="AudioDriverType__Default">AudioDriverType_Default</link>. This driver
+          type will automatically choose the best audio driver (backend) for the host OS &VBOX_PRODUCT;
+          currently is running on.</para>
+        </listitem>
+
+        <listitem><para>The host update functionality at IHost::update has been refactored into
+          <link linkend="IHost__updateHost">IHost::updateHost</link>, which in turn uses the new
+          <link linkend="IHostUpdateAgent">IHostUpdateAgent</link> interface, derived from the new
+          <link linkend="IUpdateAgent">IUpdateAgent</link> interface.</para>
+        </listitem>
+
         <listitem><para><link linkend="IGuestSession__directoryCopyFromGuest">IGuestSession::directoryCopyFromGuest()</link> and
           <link linkend="IGuestSession__directoryCopyToGuest">IGuestSession::directoryCopyToGuest()</link> no longer implicitly
           copy recursively and follow symbolic links -- for this to continue working, the newly introduced flags
           <link linkend="DirectoryCopyFlag__Recursive">DirectoryCopyFlag::Recursive</link> and/or
           <link linkend="DirectoryCopyFlag__FollowLinks">DirectoryCopyFlag::FollowLinks</link> have to be used.</para>
         </listitem>
+
+        <listitem><para>VBoxEventType_Last has been renamed to <link linkend="VBoxEventType__End">VBoxEventType_End</link>
+          for consistency.</para></listitem>
 
       </itemizedlist>
 
