@@ -232,6 +232,11 @@ BEGINPROC   TestProc32
         blsmsk eax, [ebx+edi*2]
         shlx eax, ebx, ecx
 
+        pmovmskb eax, mm2
+        pmovmskb eax, xmm3
+        vpmovmskb eax, xmm3
+        vpmovmskb eax, ymm3
+
 ENDPROC   TestProc32
 
 
@@ -433,6 +438,14 @@ BEGINPROC TestProc64
 
         shlx   eax, ebx, ecx
         shlx   r8, rax, r15
+
+        pmovmskb eax, mm2
+        pmovmskb r9, mm2
+        pmovmskb eax, xmm3
+        pmovmskb r10, xmm3
+        vpmovmskb eax, xmm3
+        vpmovmskb rax, xmm3
+        vpmovmskb r11, ymm9
 
         ret
 ENDPROC   TestProc64

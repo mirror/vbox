@@ -590,21 +590,24 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
     pDis->Param4.fParam = pOp->fParam4;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (pDis->uCpuMode == DISCPUMODE_64BIT)
-    {
-        if (pOp->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
-            pDis->uOpMode = DISCPUMODE_64BIT;
-        else
-        if (    (pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
-            &&  !(pDis->fPrefix & DISPREFIX_OPSIZE))
-            pDis->uOpMode = DISCPUMODE_64BIT;
-    }
+    if (!(pOp->fOpType & (DISOPTYPE_FORCED_64_OP_SIZE | DISOPTYPE_DEFAULT_64_OP_SIZE | DISOPTYPE_FORCED_32_OP_SIZE_X86)))
+    { /* probably likely */ }
     else
-    if (pOp->fOpType & DISOPTYPE_FORCED_32_OP_SIZE_X86)
     {
-        /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
-        Assert(pDis->uCpuMode != DISCPUMODE_64BIT);
-        pDis->uOpMode = DISCPUMODE_32BIT;
+        if (pDis->uCpuMode == DISCPUMODE_64BIT)
+        {
+            if (pOp->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
+                pDis->uOpMode = DISCPUMODE_64BIT;
+            else if (   (pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
+                     && !(pDis->fPrefix & DISPREFIX_OPSIZE))
+                pDis->uOpMode = DISCPUMODE_64BIT;
+        }
+        else if (pOp->fOpType & DISOPTYPE_FORCED_32_OP_SIZE_X86)
+        {
+            /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
+            Assert(pDis->uCpuMode != DISCPUMODE_64BIT);
+            pDis->uOpMode = DISCPUMODE_32BIT;
+        }
     }
 
     if (pOp->idxParse1 != IDX_ParseNop)
@@ -670,14 +673,16 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         pDis->pfnDisasmFnTable = g_apfnFullDisasm;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (pDis->uCpuMode == DISCPUMODE_64BIT)
+    if (  pDis->uCpuMode != DISCPUMODE_64BIT
+        || !(fpop->fOpType & (DISOPTYPE_FORCED_64_OP_SIZE | DISOPTYPE_DEFAULT_64_OP_SIZE)))
+    { /* probably likely */ }
+    else
     {
         /* Note: redundant, but just in case this ever changes */
         if (fpop->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
             pDis->uOpMode = DISCPUMODE_64BIT;
-        else
-        if (    (fpop->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
-            &&  !(pDis->fPrefix & DISPREFIX_OPSIZE))
+        else if (    (fpop->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
+                 &&  !(pDis->fPrefix & DISPREFIX_OPSIZE))
             pDis->uOpMode = DISCPUMODE_64BIT;
     }
 
@@ -887,7 +892,11 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     case OP_PARM_d:
         Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
 
-        pParam->fUse |= DISUSE_REG_GEN32;
+        if (   !(pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE) /* Tweak for vpmovmskb & pmovmskb. */
+            || pDis->uOpMode != DISCPUMODE_64BIT)
+            pParam->fUse |= DISUSE_REG_GEN32;
+        else
+            pParam->fUse |= DISUSE_REG_GEN64;
         pParam->Base.idxGenReg = (uint8_t)idx;
         break;
 
