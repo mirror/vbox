@@ -833,6 +833,10 @@ enum OPCODES
     OP_VPADDW,
     OP_VPADDD,
     OP_VPADDQ,
+    OP_VPSUBB,
+    OP_VPSUBW,
+    OP_VPSUBD,
+    OP_VPSUBQ,
 /** @} */
     OP_END_OF_OPCODES
 };
