@@ -1246,7 +1246,10 @@ static XRRModeInfo *createMode(int iXRes, int iYRes)
 
     DisplayModeR mode = f86CVTMode(iXRes, iYRes, 60 /*VRefresh */, true /*Reduced */, false  /* Interlaced */);
 
-    pModeInfo->dotClock = mode.Clock;
+    /* Convert kHz to Hz: f86CVTMode returns clock value in units of kHz,
+     * XRRCreateMode will expect it in units of Hz. */
+    pModeInfo->dotClock = mode.Clock * 1000;
+
     pModeInfo->hSyncStart = mode.HSyncStart;
     pModeInfo->hSyncEnd = mode.HSyncEnd;
     pModeInfo->hTotal = mode.HTotal;
