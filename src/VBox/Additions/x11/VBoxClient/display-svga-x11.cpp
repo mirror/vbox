@@ -1314,6 +1314,7 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     {
         /* A mode with required size was not found. Create a new one. */
         pModeInfo = createMode(paOutputs[iOutputIndex].width, paOutputs[iOutputIndex].height);
+        VBClLogInfo("create mode %s (%u) on output %d\n", pModeInfo->name, pModeInfo->id, iOutputIndex);
         fNewMode = true;
     }
     if (!pModeInfo)
@@ -1329,29 +1330,30 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRAddOutputMode)
         x11Context.pXRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
 #endif
+
     /* If mode has been newly created, destroy and forget mode created on previous guest screen resize event. */
     if (   aPrevMode[iOutputIndex] > 0
         && pModeInfo->id != aPrevMode[iOutputIndex]
         && fNewMode)
     {
-        VBClLogInfo("removing unused mode %u\n", aPrevMode[outputId]);
+        VBClLogInfo("removing unused mode %u from output %d\n", aPrevMode[iOutputIndex], iOutputIndex);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
-        XRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[outputId]);
-        XRRDestroyMode(x11Context.pDisplay, aPrevMode[outputId]);
+        XRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[iOutputIndex]);
+        XRRDestroyMode(x11Context.pDisplay, aPrevMode[iOutputIndex]);
 #else
         if (x11Context.pXRRDeleteOutputMode)
-            x11Context.pXRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[outputId]);
+            x11Context.pXRRDeleteOutputMode(x11Context.pDisplay, outputId, aPrevMode[iOutputIndex]);
         if (x11Context.pXRRDestroyMode)
-            x11Context.pXRRDestroyMode(x11Context.pDisplay, aPrevMode[outputId]);
+            x11Context.pXRRDestroyMode(x11Context.pDisplay, aPrevMode[iOutputIndex]);
 #endif
         /* Forget destroyed mode. */
-        aPrevMode[outputId] = 0;
+        aPrevMode[iOutputIndex] = 0;
     }
 
     /* Only cache modes created "by us". XRRDestroyMode will complain if provided mode
      * was not created by XRRCreateMode call. */
     if (fNewMode)
-        aPrevMode[outputId] = pModeInfo->id;
+        aPrevMode[iOutputIndex] = pModeInfo->id;
 
     if (paOutputs[iOutputIndex].fPrimary)
     {
