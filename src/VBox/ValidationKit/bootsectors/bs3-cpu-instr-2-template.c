@@ -198,6 +198,15 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_AX_FSxBX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_EAX_FSxBX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_RAX_FSxBX_icebp);
 
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BL_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_byte_FSxBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_word_FSxBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_EBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_dword_FSxBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_RBX_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_qword_FSxBX_icebp);
+
 # if ARCH_BITS == 64
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2);
@@ -2469,6 +2478,264 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_popcnt)(uint8_t bMode)
 
     return 0;
 }
+
+/*
+ * CRC32 - SSE4.2
+ */
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_crc32)(uint8_t bMode)
+{
+    typedef struct BS3CPUINSTR2_CRC32_VALUES_T
+    {
+        uint32_t uDstIn;
+        uint32_t uDstOut;
+        uint64_t uSrc;
+    } BS3CPUINSTR2_CRC32_VALUES_T;
+    static const BS3CPUINSTR2_CRC32_VALUES_T s_aValues1[] =
+    {
+        { UINT32_C(0000000000), UINT32_C(0000000000), UINT8_C(0000) },
+        { UINT32_C(0xffffffff), UINT32_C(0x25502c8c), UINT8_C(0xea) },
+        { UINT32_C(0x25502c8c), UINT32_C(0x474224a6), UINT8_C(0xea) },
+        { UINT32_C(0x474224a6), UINT32_C(0x0c7f9048), UINT8_C(0xea) },
+        { UINT32_C(0x0c7f9048), UINT32_C(0x39c5b9e0), UINT8_C(0x01) },
+        { UINT32_C(0x39c5b9e0), UINT32_C(0x2493fabc), UINT8_C(0x04) },
+        { UINT32_C(0x2493fabc), UINT32_C(0x0b05c4d6), UINT8_C(0x27) },
+        { UINT32_C(0x0b05c4d6), UINT32_C(0xbe26a561), UINT8_C(0x2a) },
+        { UINT32_C(0xbe26a561), UINT32_C(0xe1855652), UINT8_C(0x63) },
+        { UINT32_C(0xe1855652), UINT32_C(0xc67efe3f), UINT8_C(0xa7) },
+        { UINT32_C(0xc67efe3f), UINT32_C(0x227028cd), UINT8_C(0xfd) },
+        { UINT32_C(0x227028cd), UINT32_C(0xf4559a1d), UINT8_C(0xea) },
+    };
+    static const BS3CPUINSTR2_CRC32_VALUES_T s_aValues2[] =
+    {
+        { UINT32_C(0000000000), UINT32_C(0000000000), UINT16_C(000000) },
+        { UINT32_C(0xffffffff), UINT32_C(0xd550e2a0), UINT16_C(0x04d2) },
+        { UINT32_C(0xd550e2a0), UINT32_C(0x38e07a0a), UINT16_C(0xe8cc) },
+        { UINT32_C(0x38e07a0a), UINT32_C(0x60ebd519), UINT16_C(0x82a2) },
+        { UINT32_C(0x60ebd519), UINT32_C(0xaaa127b5), UINT16_C(0x0fff) },
+        { UINT32_C(0xaaa127b5), UINT32_C(0xb13175c6), UINT16_C(0x00ff) },
+        { UINT32_C(0xb13175c6), UINT32_C(0x3a226f1b), UINT16_C(0x0300) },
+        { UINT32_C(0x3a226f1b), UINT32_C(0xbaedef0c), UINT16_C(0x270f) },
+        { UINT32_C(0xbaedef0c), UINT32_C(0x2d18866e), UINT16_C(0x3ff6) },
+        { UINT32_C(0x2d18866e), UINT32_C(0x07e2e954), UINT16_C(0x9316) },
+        { UINT32_C(0x07e2e954), UINT32_C(0x95f82acb), UINT16_C(0xa59c) },
+    };
+    static const BS3CPUINSTR2_CRC32_VALUES_T s_aValues4[] =
+    {
+        { UINT32_C(0000000000), UINT32_C(0000000000), UINT32_C(0000000000) },
+        { UINT32_C(0xffffffff), UINT32_C(0xc9a7250e), UINT32_C(0x0270fa68) },
+        { UINT32_C(0xc9a7250e), UINT32_C(0x7340d175), UINT32_C(0x23729736) },
+        { UINT32_C(0x7340d175), UINT32_C(0x7e17b67d), UINT32_C(0x8bc75d35) },
+        { UINT32_C(0x7e17b67d), UINT32_C(0x5028eb71), UINT32_C(0x0e9bebf2) },
+        { UINT32_C(0x5028eb71), UINT32_C(0xc0a7f45a), UINT32_C(0x000001bc) },
+        { UINT32_C(0xc0a7f45a), UINT32_C(0xa96f4012), UINT32_C(0x0034ba02) },
+        { UINT32_C(0xa96f4012), UINT32_C(0xb27c0718), UINT32_C(0x0000002a) },
+        { UINT32_C(0xb27c0718), UINT32_C(0x79fb2d35), UINT32_C(0x0153158e) },
+        { UINT32_C(0x79fb2d35), UINT32_C(0x23434fc9), UINT32_C(0x02594882) },
+        { UINT32_C(0x23434fc9), UINT32_C(0x354bf3b6), UINT32_C(0xb230b8f3) },
+    };
+#if ARCH_BITS >= 64
+    static const BS3CPUINSTR2_CRC32_VALUES_T s_aValues8[] =
+    {
+        { UINT32_C(0000000000), UINT32_C(0000000000), UINT64_C(000000000000000000) },
+        { UINT32_C(0xffffffff), UINT32_C(0xadc36834), UINT64_C(0x02b0b5e2a975c1cc) },
+        { UINT32_C(0xadc36834), UINT32_C(0xf0e893c9), UINT64_C(0x823d386bf7517583) },
+        { UINT32_C(0xf0e893c9), UINT32_C(0x1a22a837), UINT64_C(0x0481f5311fa061d0) },
+        { UINT32_C(0x1a22a837), UINT32_C(0xcf8b6d61), UINT64_C(0x13fa70f64d52a92d) },
+        { UINT32_C(0xcf8b6d61), UINT32_C(0xc7dde203), UINT64_C(0x3ccc8b035903d3e1) },
+        { UINT32_C(0xc7dde203), UINT32_C(0xd42b5823), UINT64_C(0x0000011850ec2fac) },
+        { UINT32_C(0xd42b5823), UINT32_C(0x8b1ce49e), UINT64_C(0x0000000000001364) },
+        { UINT32_C(0x8b1ce49e), UINT32_C(0x1af31710), UINT64_C(0x000000057840205a) },
+        { UINT32_C(0x1af31710), UINT32_C(0xdea35e8b), UINT64_C(0x2e5d93688d9a0bfa) },
+        { UINT32_C(0xdea35e8b), UINT32_C(0x594c013a), UINT64_C(0x8ac7230489e7ffff) },
+        { UINT32_C(0x594c013a), UINT32_C(0x27b061e5), UINT64_C(0x6bf037ae325f1c71) },
+        { UINT32_C(0x27b061e5), UINT32_C(0x3120b5f7), UINT64_C(0x0fffffff34503556) },
+    };
+#endif
+    static const struct
+    {
+        FPFNBS3FAR      pfnWorker;
+        bool            fMemSrc;
+        uint8_t         cbOp;
+        uint8_t         cValues;
+        BS3CPUINSTR2_CRC32_VALUES_T const BS3_FAR *paValues;
+    } s_aTests[] =
+    {
+        /* 8-bit register width */
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BL_icebp),            false,  1, RT_ELEMENTS(s_aValues1), s_aValues1 },
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_byte_FSxBX_icebp),    true,   1, RT_ELEMENTS(s_aValues1), s_aValues1 },
+
+        /* 16-bit register width */
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BX_icebp),            false,  2, RT_ELEMENTS(s_aValues2), s_aValues2 },
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_word_FSxBX_icebp),    true,   2, RT_ELEMENTS(s_aValues2), s_aValues2 },
+
+        /* 32-bit register width */
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_EBX_icebp),           false,  4, RT_ELEMENTS(s_aValues4), s_aValues4 },
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_dword_FSxBX_icebp),   true,   4, RT_ELEMENTS(s_aValues4), s_aValues4 },
+#if ARCH_BITS >= 64
+        /* 32-bit register width */
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_RBX_icebp),           false,  8, RT_ELEMENTS(s_aValues8), s_aValues8 },
+        {   BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_qword_FSxBX_icebp),   true,   8, RT_ELEMENTS(s_aValues8), s_aValues8 },
+#endif
+    };
+
+    BS3REGCTX       Ctx;
+    BS3TRAPFRAME    TrapFrame;
+    unsigned        i, j;
+    bool const      fSupportsCrc32 = (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+                                  && (ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_SSE4_2);
+
+    /* Ensure the structures are allocated before we sample the stack pointer. */
+    Bs3MemSet(&Ctx, 0, sizeof(Ctx));
+    Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
+
+    /*
+     * Create test context.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 512);
+
+    /*
+     * Do the tests twice, first with all flags set, then once again with
+     * flags cleared.  The flags are not supposed to be touched at all.
+     */
+    Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+    for (j = 0; j < 2; j++)
+    {
+        for (i = 0; i < RT_ELEMENTS(s_aTests); i++)
+        {
+            uint8_t const                               cbOp        = s_aTests[i].cbOp;
+            unsigned const                              cValues     = s_aTests[i].cValues;
+            BS3CPUINSTR2_CRC32_VALUES_T const BS3_FAR  *paValues    = s_aTests[i].paValues;
+            unsigned                                    iValue;
+            bool const                                  fOkay       = fSupportsCrc32;
+            uint8_t const                               bExpectXcpt = fOkay ? X86_XCPT_DB : X86_XCPT_UD;
+            uint64_t const                              uSrcGarbage = (  cbOp == 1 ? UINT64_C(0x03948314d0f03400)
+                                                                       : cbOp == 2 ? UINT64_C(0x03948314d0f00000)
+                                                                       : cbOp == 4 ? UINT64_C(0x0394831000000000) : 0)
+                                                                      & (ARCH_BITS >= 64 ? UINT64_MAX : UINT32_MAX);
+            uint64_t                                    uExpectRip;
+
+            Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aTests[i].pfnWorker);
+            uExpectRip = Ctx.rip.u + (fOkay ? ((uint8_t const BS3_FAR *)s_aTests[i].pfnWorker)[-1] + 1 : 0);
+
+            for (iValue = 0; iValue < cValues; iValue++)
+            {
+                uint64_t const uExpectRax = fOkay ? paValues[iValue].uDstOut : paValues[iValue].uDstIn;
+                uint64_t       uMemSrc, uMemSrcExpect;
+
+                Ctx.rax.uCcXReg = paValues[iValue].uDstIn;
+                if (!s_aTests[i].fMemSrc)
+                {
+                    Ctx.rbx.u64 = paValues[iValue].uSrc | uSrcGarbage;
+                    uMemSrcExpect = uMemSrc = ~(paValues[iValue].uSrc | uSrcGarbage);
+                }
+                else
+                {
+                    uMemSrcExpect = uMemSrc = paValues[iValue].uSrc | uSrcGarbage;
+                    Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, &Ctx.fs, &uMemSrc);
+                }
+
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+
+                if (   TrapFrame.bXcpt     != bExpectXcpt
+                    || TrapFrame.Ctx.rip.u != uExpectRip
+                    || TrapFrame.Ctx.rbx.u != Ctx.rbx.u
+                    || TrapFrame.Ctx.rax.u != uExpectRax
+                    /* check that nothing else really changed: */
+                    || TrapFrame.Ctx.rflags.u16 != Ctx.rflags.u16
+                    || TrapFrame.Ctx.rcx.u != Ctx.rcx.u
+                    || TrapFrame.Ctx.rdx.u != Ctx.rdx.u
+                    || TrapFrame.Ctx.rsp.u != Ctx.rsp.u
+                    || TrapFrame.Ctx.rbp.u != Ctx.rbp.u
+                    || TrapFrame.Ctx.rsi.u != Ctx.rsi.u
+                    || TrapFrame.Ctx.rdi.u != Ctx.rdi.u
+                    || uMemSrc             != uMemSrcExpect
+                   )
+                {
+                    Bs3TestFailedF("test #%i value #%i failed: input %#RX32, %#RX64",
+                                   i, iValue, paValues[iValue].uDstIn, paValues[iValue].uSrc);
+                    if (TrapFrame.bXcpt != bExpectXcpt)
+                        Bs3TestFailedF("Expected bXcpt = %#x, got %#x", bExpectXcpt, TrapFrame.bXcpt);
+                    if (TrapFrame.Ctx.rip.u != uExpectRip)
+                        Bs3TestFailedF("Expected RIP = %#06RX64, got %#06RX64", uExpectRip, TrapFrame.Ctx.rip.u);
+                    if (TrapFrame.Ctx.rax.u != uExpectRax)
+                        Bs3TestFailedF("Expected RAX = %#010RX64, got %#010RX64", uExpectRax, TrapFrame.Ctx.rax.u);
+                    if (TrapFrame.Ctx.rbx.u != Ctx.rbx.u)
+                        Bs3TestFailedF("Expected RBX = %#06RX64, got %#06RX64 (dst)", Ctx.rbx.u, TrapFrame.Ctx.rbx.u);
+
+                    if (TrapFrame.Ctx.rflags.u16 != Ctx.rflags.u16)
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX32, got %#06RX32", Ctx.rflags.u16, TrapFrame.Ctx.rflags.u16);
+                    if (TrapFrame.Ctx.rcx.u != Ctx.rcx.u)
+                        Bs3TestFailedF("Expected RCX = %#06RX64, got %#06RX64", Ctx.rcx.u, TrapFrame.Ctx.rcx.u);
+                    if (TrapFrame.Ctx.rdx.u != Ctx.rdx.u)
+                        Bs3TestFailedF("Expected RDX = %#06RX64, got %#06RX64 (src)", Ctx.rdx.u, TrapFrame.Ctx.rdx.u);
+                    if (TrapFrame.Ctx.rsp.u != Ctx.rsp.u)
+                        Bs3TestFailedF("Expected RSP = %#06RX64, got %#06RX64", Ctx.rsp.u, TrapFrame.Ctx.rsp.u);
+                    if (TrapFrame.Ctx.rbp.u != Ctx.rbp.u)
+                        Bs3TestFailedF("Expected RBP = %#06RX64, got %#06RX64", Ctx.rbp.u, TrapFrame.Ctx.rbp.u);
+                    if (TrapFrame.Ctx.rsi.u != Ctx.rsi.u)
+                        Bs3TestFailedF("Expected RSI = %#06RX64, got %#06RX64", Ctx.rsi.u, TrapFrame.Ctx.rsi.u);
+                    if (TrapFrame.Ctx.rdi.u != Ctx.rdi.u)
+                        Bs3TestFailedF("Expected RDI = %#06RX64, got %#06RX64", Ctx.rdi.u, TrapFrame.Ctx.rdi.u);
+                    if (uMemSrc != uMemSrcExpect)
+                        Bs3TestFailedF("Expected uMemSrc = %#06RX64, got %#06RX64", (uint64_t)uMemSrcExpect, (uint64_t)uMemSrc);
+                }
+            }
+        }
+        Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
+    }
+
+    return 0;
+}
+
+#if 0 /* Program for generating CRC32 value sets: */
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+int main(int argc, char **argv)
+{
+    int      cbOp       = atoi(argv[1]);
+    uint32_t uBefore    = atoi(argv[2]);
+    int      i          = 3;
+    while (i < argc)
+    {
+        unsigned long long uValue = strtoull(argv[i], NULL, 0);
+        uint32_t           uAfter = uBefore;
+        switch (cbOp)
+        {
+            case 1:
+                __asm__ __volatile__("crc32b %2, %0" : "=r" (uAfter) : "0" (uAfter), "r" ((uint8_t)uValue));
+                printf("        { UINT32_C(%#010x), UINT32_C(%#010x), UINT8_C(%#04x) },\n",
+                       uBefore, uAfter, (unsigned)(uint8_t)uValue);
+                break;
+            case 2:
+                __asm__ __volatile__("crc32w %2, %0" : "=r" (uAfter) : "0" (uAfter), "r" ((uint16_t)uValue));
+                printf("        { UINT32_C(%#010x), UINT32_C(%#010x), UINT16_C(%#06x) },\n",
+                       uBefore, uAfter, (unsigned)(uint16_t)uValue);
+                break;
+            case 4:
+                __asm__ __volatile__("crc32l %2, %0" : "=r" (uAfter) : "0" (uAfter), "r" ((uint32_t)uValue));
+                printf("        { UINT32_C(%#010x), UINT32_C(%#010x), UINT32_C(%#010x) },\n",
+                       uBefore, uAfter, (uint32_t)uValue);
+                break;
+            case 8:
+            {
+                uint64_t u64After = uBefore;
+                __asm__ __volatile__("crc32q %2, %0" : "=r" (u64After) : "0" (u64After), "r" (uValue));
+                uAfter = (uint32_t)u64After;
+                printf("        { UINT32_C(%#010x), UINT32_C(%#010x), UINT64_C(%#018llx) },\n", uBefore, uAfter, uValue);
+                break;
+            }
+        }
+
+        /* next */
+        uBefore = uAfter;
+        i++;
+    }
+    return 0;
+}
+#endif
+
 
 /*
  *
