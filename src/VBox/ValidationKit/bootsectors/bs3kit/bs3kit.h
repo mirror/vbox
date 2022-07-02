@@ -2764,6 +2764,17 @@ BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetRipCsFromLnkPtr,(PBS3REGCTX pRegCtx, FPFNBS
  */
 BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetRipCsFromCurPtr,(PBS3REGCTX pRegCtx, FPFNBS3FAR pfnCode));
 
+/**
+ * Sets a GPR by number.
+ *
+ * @return  true if @a iGpr is valid, false if not.
+ * @param   pRegCtx     The register context.
+ * @param   iGpr        The GPR number.
+ * @param   uValue      The new value.
+ * @param   cbValue     The size of the value: 1, 2, 4 or 8.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3RegCtxSetGpr,(PBS3REGCTX pRegCtx, uint8_t iGpr, uint64_t uValue, uint8_t cb));
+
 
 /**
  * The method to be used to save and restore the extended context.

@@ -104,6 +104,7 @@
 #define Bs3RegCtxRestore BS3_CMN_MANGLER(Bs3RegCtxRestore)
 #define Bs3RegCtxSave BS3_CMN_MANGLER(Bs3RegCtxSave)
 #define Bs3RegCtxSaveEx BS3_CMN_MANGLER(Bs3RegCtxSaveEx)
+#define Bs3RegCtxSetGpr BS3_CMN_MANGLER(Bs3RegCtxSetGpr)
 #define Bs3RegCtxSetGrpDsFromCurPtr BS3_CMN_MANGLER(Bs3RegCtxSetGrpDsFromCurPtr)
 #define Bs3RegCtxSetGrpSegFromCurPtr BS3_CMN_MANGLER(Bs3RegCtxSetGrpSegFromCurPtr)
 #define Bs3RegCtxSetGrpSegFromFlat BS3_CMN_MANGLER(Bs3RegCtxSetGrpSegFromFlat)

@@ -346,6 +346,105 @@ EMIT_TYPE1_ONE_INSTR paddq, vpaddq, 1
 EMIT_TYPE1_INSTR psubb, vpsubb, psubw, vpsubw, psubd, vpsubd, 1
 EMIT_TYPE1_ONE_INSTR psubq, vpsubq, 1
 
+
+;
+; Type 2 instructions.  On the form: pxxxx sAX, [zy]mm0
+;
+%ifndef EMIT_TYPE2_ONE_INSTR_DEFINED
+ %define EMIT_TYPE2_ONE_INSTR_DEFINED
+ ;; @param 1    MMX/SSE instruction name
+ ;; @param 2    AVX instruction name
+ ;; @param 3    Whether to emit MMX function
+ ;; @param 4    The opcode byte. (assuming two byte / vex map 1)
+ %macro EMIT_TYPE2_ONE_INSTR 4
+  %if %3 != 0
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_MM2_icebp
+        %1      eax, mm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_MM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_qword_FSxBX_icebp
+  %if TMPL_BITS == 16
+        db      64h, 0fh, %4, 7 ; %1      eax, qword [fs:xBX]
+  %else
+        db      64h, 0fh, %4, 3 ; %1      eax, qword [fs:xBX]
+  %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_qword_FSxBX_icebp
+  %endif
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_XMM2_icebp
+        %1      eax, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_dqword_FSxBX_icebp
+  %if TMPL_BITS == 16
+        db      64h, 66h, 0fh, %4, 7 ; %1      eax, dqword [fs:xBX]
+  %else
+        db      64h, 66h, 0fh, %4, 3 ; %1      eax, dqword [fs:xBX]
+  %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_dqword_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_XMM2_icebp
+        %2      eax, xmm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_XMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_dqword_FSxBX_icebp
+  %if TMPL_BITS == 16
+        db      64h, 0c4h, 0e0h, 071h, %4, 7 ; %2      eax, dqword [fs:xBX]
+  %else
+        db      64h, 0c4h, 0e0h, 071h, %4, 3 ; %2      eax, dqword [fs:xBX]
+  %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_dqword_FSxBX_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_YMM2_icebp
+        %2        eax, ymm2
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_YMM2_icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_qqword_FSxBX_icebp
+  %if TMPL_BITS == 16
+        db      64h, 0c4h, 0e0h, 075h, %4, 7 ; %2      eax, qqword [fs:xBX]
+  %else
+        db      64h, 0c4h, 0e0h, 075h, %4, 3 ; %2      eax, qqword [fs:xBX]
+  %endif
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_qqword_FSxBX_icebp
+
+  %if TMPL_BITS == 64
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _RAX_YMM9_icebp
+        %2        rax, ymm9
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _RAX_YMM9_icebp
+  %endif
+ %endmacro ; EMIT_TYPE2_ONE_INSTR
+%endif
+
+EMIT_TYPE2_ONE_INSTR pmovmskb, vpmovmskb, 1, 0d7h
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

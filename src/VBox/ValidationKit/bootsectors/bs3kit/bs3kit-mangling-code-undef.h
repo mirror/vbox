@@ -104,6 +104,7 @@
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave
 #undef Bs3RegCtxSaveEx
+#undef Bs3RegCtxSetGpr
 #undef Bs3RegCtxSetGrpDsFromCurPtr
 #undef Bs3RegCtxSetGrpSegFromCurPtr
 #undef Bs3RegCtxSetGrpSegFromFlat

@@ -111,6 +111,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
        bs3-cmn-RegCtxSetRipCsFromFlat.c \
        bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
+       bs3-cmn-RegCtxSetGpr.c \
        bs3-cmn-RegGetCr0.asm \
        bs3-cmn-RegGetCr2.asm \
        bs3-cmn-RegGetCr3.asm \
