@@ -3782,35 +3782,47 @@ IEMIMPL_MEDIA_SSE_PSHUFXX pshufd
 ; Move byte mask.
 ;
 
-BEGINPROC_FASTCALL iemAImpl_pmovmskb_u64, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_pmovmskb_u64, 8
+        PROLOGUE_2_ARGS
         IEMIMPL_MMX_PROLOGUE
 
-        mov     T0,  [A1]
-        movq    mm1, [A2]
+        movq    mm1, [A1]
         pmovmskb T0, mm1
-        mov     [A1], T0
+        mov     [A0], T0
 %ifdef RT_ARCH_X86
-        mov     dword [A1 + 4], 0
+        mov     dword [A0 + 4], 0
 %endif
         IEMIMPL_MMX_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_2_ARGS
 ENDPROC iemAImpl_pmovmskb_u64
 
-BEGINPROC_FASTCALL iemAImpl_pmovmskb_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_pmovmskb_u128, 8
+        PROLOGUE_2_ARGS
         IEMIMPL_SSE_PROLOGUE
 
-        mov     T0,  [A1]
-        movdqu  xmm1, [A2]
+        movdqu  xmm1, [A1]
         pmovmskb T0, xmm1
-        mov     [A1], T0
+        mov     [A0], T0
 %ifdef RT_ARCH_X86
-        mov     dword [A1 + 4], 0
+        mov     dword [A0 + 4], 0
 %endif
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_2_ARGS
 ENDPROC iemAImpl_pmovmskb_u128
+
+BEGINPROC_FASTCALL iemAImpl_vpmovmskb_u256, 8
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm1, [A1]
+        vpmovmskb T0, ymm1
+        mov     [A0], T0
+%ifdef RT_ARCH_X86
+        mov     dword [A0 + 4], 0
+%endif
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_vpmovmskb_u256
 
 
 ;;

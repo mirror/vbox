@@ -9454,28 +9454,26 @@ FNIEMOP_DEF(iemOp_movdq2q_Pq_Uq)
     return FNIEMOP_CALL_1(iemOp_InvalidWithRMNeedDecode, bRm);
 }
 
+
 /** Opcode      0x0f 0xd7 - pmovmskb Gd, Nq */
 FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq)
 {
-    /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
-    /** @todo testcase: Check that the instruction implicitly clears the high
-     *        bits in 64-bit mode.  The REX.W is first necessary when VLMAX > 256
-     *        and opcode modifications are made to work with the whole width (not
-     *        just 128). */
-    IEMOP_MNEMONIC(pmovmskb_Gd_Udq, "pmovmskb Gd,Nq");
-    /* Docs says register only. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    /* Docs says register only. */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
     {
-        IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_MMX | DISOPTYPE_HARMLESS);
+        /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
+        IEMOP_MNEMONIC2(RM_REG, PMOVMSKB, pmovmskb, Gd, Nq, DISOPTYPE_MMX | DISOPTYPE_HARMLESS, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(uint64_t *,          pDst, 0);
-        IEM_MC_ARG(uint64_t const *,    pSrc, 1);
+        IEM_MC_ARG(uint64_t *,              puDst, 0);
+        IEM_MC_ARG(uint64_t const *,        puSrc, 1);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
         IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
-        IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
-        IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
+        IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_pmovmskb_u64, puDst, puSrc);
+        IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
         return VINF_SUCCESS;
@@ -9483,34 +9481,32 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
+
 /** Opcode 0x66 0x0f 0xd7 -  */
 FNIEMOP_DEF(iemOp_pmovmskb_Gd_Ux)
 {
-    /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
-    /** @todo testcase: Check that the instruction implicitly clears the high
-     *        bits in 64-bit mode.  The REX.W is first necessary when VLMAX > 256
-     *        and opcode modifications are made to work with the whole width (not
-     *        just 128). */
-    IEMOP_MNEMONIC(pmovmskb_Gd_Nq, "vpmovmskb Gd, Ux");
-    /* Docs says register only. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    /* Docs says register only. */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
     {
-        IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_SSE | DISOPTYPE_HARMLESS);
+        /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
+        IEMOP_MNEMONIC2(RM_REG, PMOVMSKB, pmovmskb, Gd, Ux, DISOPTYPE_SSE | DISOPTYPE_HARMLESS, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(uint64_t *,           pDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
+        IEM_MC_ARG(uint64_t *,              puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
         IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-        IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
-        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
+        IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_pmovmskb_u128, puDst, puSrc);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
         return VINF_SUCCESS;
     }
     return IEMOP_RAISE_INVALID_OPCODE();
 }
+
 
 /*  Opcode 0xf3 0x0f 0xd7 - invalid */
 /*  Opcode 0xf2 0x0f 0xd7 - invalid */

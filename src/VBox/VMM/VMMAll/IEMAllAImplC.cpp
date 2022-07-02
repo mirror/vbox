@@ -8269,26 +8269,98 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubq_u256_fallback,(PX86XSAVEAREA pExtState, 
 }
 
 
+
+/*
+ * PMOVMSKB / VPMOVMSKB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u64,(uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    /* The the most signficant bit from each byte and store them in the given general purpose register. */
+    uint64_t const uSrc = *pu64Src;
+    *pu64Dst = ((uSrc >> ( 7-0)) & RT_BIT_64(0))
+             | ((uSrc >> (15-1)) & RT_BIT_64(1))
+             | ((uSrc >> (23-2)) & RT_BIT_64(2))
+             | ((uSrc >> (31-3)) & RT_BIT_64(3))
+             | ((uSrc >> (39-4)) & RT_BIT_64(4))
+             | ((uSrc >> (47-5)) & RT_BIT_64(5))
+             | ((uSrc >> (55-6)) & RT_BIT_64(6))
+             | ((uSrc >> (63-7)) & RT_BIT_64(7));
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u128,(uint64_t *pu64Dst, PCRTUINT128U pu128Src))
+{
+    /* The the most signficant bit from each byte and store them in the given general purpose register. */
+    uint64_t const uSrc0 = pu128Src->QWords.qw0;
+    uint64_t const uSrc1 = pu128Src->QWords.qw1;
+    *pu64Dst = ((uSrc0 >> ( 7-0))        & RT_BIT_64(0))
+             | ((uSrc0 >> (15-1))        & RT_BIT_64(1))
+             | ((uSrc0 >> (23-2))        & RT_BIT_64(2))
+             | ((uSrc0 >> (31-3))        & RT_BIT_64(3))
+             | ((uSrc0 >> (39-4))        & RT_BIT_64(4))
+             | ((uSrc0 >> (47-5))        & RT_BIT_64(5))
+             | ((uSrc0 >> (55-6))        & RT_BIT_64(6))
+             | ((uSrc0 >> (63-7))        & RT_BIT_64(7))
+             | ((uSrc1 << (1 /*7-8*/))   & RT_BIT_64(8))
+             | ((uSrc1 >> (15-9))        & RT_BIT_64(9))
+             | ((uSrc1 >> (23-10))       & RT_BIT_64(10))
+             | ((uSrc1 >> (31-11))       & RT_BIT_64(11))
+             | ((uSrc1 >> (39-12))       & RT_BIT_64(12))
+             | ((uSrc1 >> (47-13))       & RT_BIT_64(13))
+             | ((uSrc1 >> (55-14))       & RT_BIT_64(14))
+             | ((uSrc1 >> (63-15))       & RT_BIT_64(15));
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCRTUINT256U puSrc))
+{
+    /* The the most signficant bit from each byte and store them in the given general purpose register. */
+    uint64_t const uSrc0 = puSrc->QWords.qw0;
+    uint64_t const uSrc1 = puSrc->QWords.qw1;
+    uint64_t const uSrc2 = puSrc->QWords.qw2;
+    uint64_t const uSrc3 = puSrc->QWords.qw3;
+    *pu64Dst = ((uSrc0 >> ( 7-0))            & RT_BIT_64(0))
+             | ((uSrc0 >> (15-1))            & RT_BIT_64(1))
+             | ((uSrc0 >> (23-2))            & RT_BIT_64(2))
+             | ((uSrc0 >> (31-3))            & RT_BIT_64(3))
+             | ((uSrc0 >> (39-4))            & RT_BIT_64(4))
+             | ((uSrc0 >> (47-5))            & RT_BIT_64(5))
+             | ((uSrc0 >> (55-6))            & RT_BIT_64(6))
+             | ((uSrc0 >> (63-7))            & RT_BIT_64(7))
+             | ((uSrc1 << (1 /*7-8*/))       & RT_BIT_64(8))
+             | ((uSrc1 >> (15-9))            & RT_BIT_64(9))
+             | ((uSrc1 >> (23-10))           & RT_BIT_64(10))
+             | ((uSrc1 >> (31-11))           & RT_BIT_64(11))
+             | ((uSrc1 >> (39-12))           & RT_BIT_64(12))
+             | ((uSrc1 >> (47-13))           & RT_BIT_64(13))
+             | ((uSrc1 >> (55-14))           & RT_BIT_64(14))
+             | ((uSrc1 >> (63-15))           & RT_BIT_64(15))
+             | ((uSrc2 << (9 /* 7-16*/))     & RT_BIT_64(16))
+             | ((uSrc2 << (2 /*15-17*/))     & RT_BIT_64(17))
+             | ((uSrc2 >> (23-18))           & RT_BIT_64(18))
+             | ((uSrc2 >> (31-19))           & RT_BIT_64(19))
+             | ((uSrc2 >> (39-20))           & RT_BIT_64(20))
+             | ((uSrc2 >> (47-21))           & RT_BIT_64(21))
+             | ((uSrc2 >> (55-22))           & RT_BIT_64(22))
+             | ((uSrc2 >> (63-23))           & RT_BIT_64(23))
+             | ((uSrc3 << (17 /* 7-24*/))    & RT_BIT_64(24))
+             | ((uSrc3 << (10 /*15-25*/))    & RT_BIT_64(25))
+             | ((uSrc3 << (3  /*23-26*/))    & RT_BIT_64(26))
+             | ((uSrc3 >> (31-27))           & RT_BIT_64(27))
+             | ((uSrc3 >> (39-28))           & RT_BIT_64(28))
+             | ((uSrc3 >> (47-29))           & RT_BIT_64(29))
+             | ((uSrc3 >> (55-30))           & RT_BIT_64(30))
+             | ((uSrc3 >> (63-31))           & RT_BIT_64(31));
+}
+
+
 /*
  *
  */
-
 #ifdef IEM_WITHOUT_ASSEMBLY
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
-
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u128,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, PCRTUINT128U pu128Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu128Src);
-    AssertReleaseFailed();
-}
-
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src, uint8_t bEvil))
 {
