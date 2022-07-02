@@ -158,6 +158,8 @@
             return iemRaiseUndefinedOpcode(pVCpu); \
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES) \
+            return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \

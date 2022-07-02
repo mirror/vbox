@@ -1843,8 +1843,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64D
 
 /** @name Media (SSE/MMX/AVX) operation: Move Byte Mask
  * @{ */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u128,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, PCRTUINT128U pu128Src));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u64,(uint64_t *pu64Dst, uint64_t const *puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u128,(uint64_t *pu64Dst, PCRTUINT128U puSrc));
+#ifndef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256,(uint64_t *pu64Dst, PCRTUINT256U puSrc));
+#endif
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCRTUINT256U puSrc));
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operation: Sort this later
@@ -2500,13 +2504,26 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  *
  * For use during decoding.
  */
-#define IEM_GET_MODRM_REG(a_pVCpu, a_bRm) ( (((a_bRm) >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | (a_pVCpu)->iem.s.uRexReg )
+#define IEM_GET_MODRM_REG(a_pVCpu, a_bRm)   ( (((a_bRm) >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | (a_pVCpu)->iem.s.uRexReg )
 /**
  * Gets the r/m part of a ModR/M encoding as a register index, with REX.B added in.
  *
  * For use during decoding.
  */
-#define IEM_GET_MODRM_RM(a_pVCpu, a_bRm)  ( ((a_bRm) & X86_MODRM_RM_MASK) | (a_pVCpu)->iem.s.uRexB )
+#define IEM_GET_MODRM_RM(a_pVCpu, a_bRm)    ( ((a_bRm) & X86_MODRM_RM_MASK) | (a_pVCpu)->iem.s.uRexB )
+
+/**
+ * Gets the register (reg) part of a ModR/M encoding, without REX.R.
+ *
+ * For use during decoding.
+ */
+#define IEM_GET_MODRM_REG_8(a_bRm)          ( (((a_bRm) >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) )
+/**
+ * Gets the r/m part of a ModR/M encoding as a register index, without REX.B.
+ *
+ * For use during decoding.
+ */
+#define IEM_GET_MODRM_RM_8(a_bRm)           ( ((a_bRm) & X86_MODRM_RM_MASK) )
 
 /**
  * Gets the effective VEX.VVVV value.
