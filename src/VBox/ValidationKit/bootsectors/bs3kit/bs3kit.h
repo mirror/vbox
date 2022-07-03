@@ -2988,6 +2988,21 @@ BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMxCsrMask,(PBS3EXTCTX pExtCtx, uint32_t uVa
  */
 BS3_CMN_PROTO_STUB(uint64_t, Bs3ExtCtxGetMm,(PCBS3EXTCTX pExtCtx, uint8_t iReg));
 
+/** What to do about the 16-bit above the MM QWORD. */
+typedef enum BS3EXTCTXTOPMM
+{
+    /** Invalid zero value. */
+    BS3EXTCTXTOPMM_INVALID = 0,
+    /** Set to 0FFFFh like real CPUs typically does when updating an MM register. */
+    BS3EXTCTXTOPMM_SET,
+    /** Set to zero. */
+    BS3EXTCTXTOPMM_ZERO,
+    /** Don't change the value, leaving it as-is. */
+    BS3EXTCTXTOPMM_AS_IS,
+    /** End of valid values. */
+    BS3EXTCTXTOPMM_END
+} BS3EXTCTXTOPMM;
+
 /**
  * Sets the value of YMM register number @a iReg in @a pExtCtx to @a pValue.
  *
@@ -2995,8 +3010,10 @@ BS3_CMN_PROTO_STUB(uint64_t, Bs3ExtCtxGetMm,(PCBS3EXTCTX pExtCtx, uint8_t iReg))
  * @param   pExtCtx         The extended CPU context.
  * @param   iReg            The register to set.
  * @param   uValue          The new register value.
+ * @param   enmTop          What to do about the 16-bit value above the MM
+ *                          QWord.
  */
-BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue));
+BS3_CMN_PROTO_STUB(bool, Bs3ExtCtxSetMm,(PBS3EXTCTX pExtCtx, uint8_t iReg, uint64_t uValue, BS3EXTCTXTOPMM enmTop));
 
 /**
  * Gets the value of XMM register number @a iReg from @a pExtCtx.

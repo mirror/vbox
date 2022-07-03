@@ -50,14 +50,71 @@ TMPL_BEGIN_TEXT
 ;
 ; ASSUMES the length is between the start of the function and the .again label.
 ;
-%ifndef BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
- %define BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
- %macro BS3CPUINSTR3_PROC_BEGIN_CMN 1
+ %ifndef BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
+  %define BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
+  %macro BS3CPUINSTR3_PROC_BEGIN_CMN 1
         align   8, db 0cch
         db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
- %endmacro
-%endif
+  %endmacro
+ %endif
+
+;;
+; The EMIT_INSTR_PLUS_ICEBP macros is for creating a common function for and
+; named after a single instruction, followed by a looping ICEBP.
+;
+; This works like a prefix to the instruction invocation, only exception is that
+; instead of [fs:xBX] you write FSxBS as that's what is wanted in the name.
+;
+ %ifndef EMIT_INSTR_PLUS_ICEBP_DEFINED
+  %define EMIT_INSTR_PLUS_ICEBP_DEFINED
+
+  %macro EMIT_INSTR_PLUS_ICEBP 2
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 3
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 4
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3, %4
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 5
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3, %4, %5
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+  %endmacro
+
+ %endif
+
 
 
 %ifndef EMIT_TYPE1_INSTR_DEFINED
@@ -444,6 +501,82 @@ BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _RAX_YMM9_icebp
 
 EMIT_TYPE2_ONE_INSTR pmovmskb, vpmovmskb, 1, 0d7h
 
+;
+; PSHUFW
+;
+EMIT_INSTR_PLUS_ICEBP   pshufw, MM1, MM2,   0FFh        ; FF = top src word in all destination words
+EMIT_INSTR_PLUS_ICEBP   pshufw, MM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   pshufw, MM1, MM2,   01Bh        ; 1B = word swap (like bswap but for words)
+EMIT_INSTR_PLUS_ICEBP   pshufw, MM1, FSxBX, 01Bh
+
+;
+; [V]PSHUFHW
+;
+EMIT_INSTR_PLUS_ICEBP   pshufhw, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   pshufhw, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   pshufhw, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   pshufhw, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, YMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, YMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, FSxBX, 01Bh
+
+ %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM9, YMM12, 01Bh
+ %endif
+
+;
+; [V]PSHUFLW
+;
+EMIT_INSTR_PLUS_ICEBP   pshuflw, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   pshuflw, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   pshuflw, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   pshuflw, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, YMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, YMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, FSxBX, 01Bh
+
+ %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM9, YMM12, 01Bh
+ %endif
+
+;
+; [V]PSHUFD
+;
+EMIT_INSTR_PLUS_ICEBP   pshufd, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   pshufd, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   pshufd, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   pshufd, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshufd, XMM1, XMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, XMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, XMM1, XMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, XMM1, FSxBX, 01Bh
+
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, YMM2,  0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, YMM2,  01Bh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, FSxBX, 01Bh
+
+ %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM9, YMM12, 01Bh
+ %endif
 
 %endif ; BS3_INSTANTIATING_CMN
 

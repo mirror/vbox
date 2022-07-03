@@ -43,6 +43,10 @@ BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_paddb_paddw_paddd_paddq);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_psubb_psubw_psubd_psubq);
 BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pmovmskb);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_pshufw);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pshufhw);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pshuflw);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pshufd);
 
 
 /*********************************************************************************************************************************
@@ -50,23 +54,27 @@ BS3TESTMODEBYMAX_PROTOTYPES_CMN(bs3CpuInstr3_v_pmovmskb);
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYMAXENTRY g_aTests[] =
 {
-#if 1
+#if 0
     BS3TESTMODEBYMAXENTRY_CMN("[v]andps/[v]andpd/[v]pand",      bs3CpuInstr3_v_andps_andpd_pand),
     BS3TESTMODEBYMAXENTRY_CMN("[v]andnps/[v]andnpd/[v]pandn",   bs3CpuInstr3_v_andnps_andnpd_pandn),
     BS3TESTMODEBYMAXENTRY_CMN("[v]orps/[v]orpd/[v]or",          bs3CpuInstr3_v_orps_orpd_por),
     BS3TESTMODEBYMAXENTRY_CMN("[v]xorps/[v]xorpd/[v]pxor",      bs3CpuInstr3_v_xorps_xorpd_pxor),
 #endif
-#if 1
+#if 0
     BS3TESTMODEBYMAXENTRY_CMN("[v]pcmpgtb/[v]pcmpgtw/[v]pcmpgtd/[v]pcmpgtq", bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq),
     BS3TESTMODEBYMAXENTRY_CMN("[v]pcmpeqb/[v]pcmpeqw/[v]pcmpeqd/[v]pcmpeqq", bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq),
 #endif
-#if 1
+#if 0
     BS3TESTMODEBYMAXENTRY_CMN("[v]paddb/[v]paddw/[v]paddd/[v]paddq", bs3CpuInstr3_v_paddb_paddw_paddd_paddq),
     BS3TESTMODEBYMAXENTRY_CMN("[v]psubb/[v]psubw/[v]psubd/[v]psubq", bs3CpuInstr3_v_psubb_psubw_psubd_psubq),
 #endif
 #if 1
-    BS3TESTMODEBYMAXENTRY_CMN("[v]pmovmskb",                    bs3CpuInstr3_v_pmovmskb),
+//    BS3TESTMODEBYMAXENTRY_CMN("[v]pmovmskb",                    bs3CpuInstr3_v_pmovmskb),
 #endif
+    BS3TESTMODEBYMAXENTRY_CMN("pshufw",                           bs3CpuInstr3_pshufw),
+    BS3TESTMODEBYMAXENTRY_CMN("[v]pshufhw",                       bs3CpuInstr3_v_pshufhw),
+    BS3TESTMODEBYMAXENTRY_CMN("[v]pshuflw",                       bs3CpuInstr3_v_pshuflw),
+    BS3TESTMODEBYMAXENTRY_CMN("[v]pshufd",                        bs3CpuInstr3_v_pshufd),
 };
 
 
