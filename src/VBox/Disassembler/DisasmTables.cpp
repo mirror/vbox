@@ -3402,7 +3402,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     OPVEX("vmovdqa %Vx,%Wx",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,         OP_MOVDQA,      OP_PARM_Vx,      OP_PARM_Wx,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 
     /* 7 */
-    OPVEX("vpshufd %Vx,%Wx,%Ib",     IDX_ParseModRM,     IDX_UseModRM,    IDX_ParseImmByte,  0,         OP_PSHUFD,      OP_PARM_Vx,      OP_PARM_Wx,     OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vpshufd %Vx,%Wx,%Ib",     IDX_ParseModRM,     IDX_UseModRM,    IDX_ParseImmByte,  0,         OP_VPSHUFD,     OP_PARM_Vx,      OP_PARM_Wx,     OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -3556,7 +3556,7 @@ static const DISOPCODE g_aDisasVexMap1F2[] =
     INVALID_OPCODE_BLOCK
 
     /* 7 */
-    OPVEX("vpshuflw %Vx,%Wx,%Ib",     IDX_ParseModRM,    IDX_UseModRM,       IDX_ParseImmByte,            0,  OP_PSHUFLW,  OP_PARM_Vx,    OP_PARM_Wx,   OP_PARM_Ib,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("vpshuflw %Vx,%Wx,%Ib",     IDX_ParseModRM,    IDX_UseModRM,       IDX_ParseImmByte,            0,  OP_VPSHUFLW, OP_PARM_Vx,    OP_PARM_Wx,   OP_PARM_Ib,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -3726,7 +3726,7 @@ static const DISOPCODE g_aDisasVexMap1F3[] =
     OPVEX("vmovdqu %Vx,%Wx",          IDX_ParseModRM,    IDX_UseModRM,       0,                           0,  OP_MOVDQU,  OP_PARM_Vx,    OP_PARM_Wx,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
 
     /* 7 */
-    OPVEX("vpshufhw %Vx,%Wx,%Ib",     IDX_ParseModRM,    IDX_UseModRM,        IDX_ParseImmByte,           0,  OP_PSHUFHW, OP_PARM_Vx,    OP_PARM_Wx,   OP_PARM_Ib,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("vpshufhw %Vx,%Wx,%Ib",     IDX_ParseModRM,    IDX_UseModRM,        IDX_ParseImmByte,           0,  OP_VPSHUFHW, OP_PARM_Vx,    OP_PARM_Wx,   OP_PARM_Ib,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -3841,7 +3841,7 @@ const DISOPMAPDESC g_DisasVexMap2F2Range = { &g_aDisasVexMap2F2[0], 0xf5, RT_ELE
 static const DISOPCODE g_aDisasVexMap2_66[] =
 {
     /* 0 */
-    OPVEX("vpshufb %Vx,%Hx,%Wx",       IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PSHUFB,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("vpshufb %Vx,%Hx,%Wx",       IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_VPSHUFB,   OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vphaddw %Vx,%Hx,%Wx",       IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PHADDW,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vphaddd %Vx,%Hx,%Wx",       IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PHADDD,    OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vphaddsw %Vx,%Hx,%Wx",      IDX_ParseModRM,    IDX_ParseVexDest,   IDX_UseModRM,                0,  OP_PHADDSW,   OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),

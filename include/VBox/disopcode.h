@@ -838,6 +838,10 @@ enum OPCODES
     OP_VPSUBW,
     OP_VPSUBD,
     OP_VPSUBQ,
+    OP_VPSHUFB,
+    OP_VPSHUFD,
+    OP_VPSHUFHW,
+    OP_VPSHUFLW,
 /** @} */
     OP_END_OF_OPCODES
 };
