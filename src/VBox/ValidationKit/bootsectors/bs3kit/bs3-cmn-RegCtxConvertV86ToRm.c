@@ -43,4 +43,3 @@ BS3_CMN_DEF(void, Bs3RegCtxConvertV86ToRm,(PBS3REGCTX pRegCtx))
     pRegCtx->bMode       = BS3_MODE_RM;
 }
 
-
