@@ -3021,6 +3021,17 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufd(uint8_t bMode)
 }
 
 
+/**
+ * The 32-bit protected mode main function.
+ *
+ * The tests a driven by 32-bit test drivers, even for real-mode tests (though
+ * we'll switch between PE32 and RM for each test step we perform).  Given that
+ * we test MMX, SSE and AVX here, we don't need to worry about 286 or 8086.
+ *
+ * Some extra steps needs to be taken to properly handle extended state in LM64
+ * (use Bs3ExtCtxRestoreEx/Bs3ExtCtxSaveEx) and when testing real mode (look for
+ * BS3_MODE_RM above in the test drivers).
+ */
 BS3_DECL(void) Main_pe32()
 {
     static const BS3TESTMODEBYONEENTRY g_aTests[] =
