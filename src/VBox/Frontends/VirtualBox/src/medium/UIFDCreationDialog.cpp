@@ -153,6 +153,12 @@ void UIFDCreationDialog::retranslateUi()
         m_pSizeCombo->setItemText(FDSize_720K, tr("720K"));
         m_pSizeCombo->setItemText(FDSize_360K, tr("360K"));
     }
+
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Create the disk and close this dialog."));
+
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel"));
 }
 
 void UIFDCreationDialog::sltPathChanged(const QString &strPath)

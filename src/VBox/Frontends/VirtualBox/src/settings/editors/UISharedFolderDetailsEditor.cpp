@@ -134,6 +134,13 @@ void UISharedFolderDetailsEditor::retranslateUi()
     if (m_pEditorName)
         m_pEditorName->setToolTip(tr("Holds the name of the shared folder "
                                      "(as it will be seen by the guest OS)."));
+    if (m_pSelectorPath)
+        m_pSelectorPath->setToolTip(tr("Holds the path of the shared folder"));
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Apply the changes and close this dialog"));
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel"));
+
     if (m_pCheckBoxReadonly)
     {
         m_pCheckBoxReadonly->setText(tr("&Read-only"));

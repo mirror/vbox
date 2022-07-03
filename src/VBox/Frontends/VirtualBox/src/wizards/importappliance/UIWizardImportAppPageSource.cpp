@@ -633,6 +633,9 @@ void UIWizardImportAppPageSource::retranslateUi()
                                             "To continue, select the file to import below.</p>"));
     }
 
+    if (m_pFileSelector)
+        m_pFileSelector->setToolTip(UIWizardImportApp::tr("Holds the path of the file selected for import."));
+
     /* Translate source label: */
     if (m_pSourceLabel)
         m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));

@@ -402,6 +402,9 @@ void UIWizardImportAppPageExpert::retranslateUi()
         m_pCheckboxImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
         m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
     }
+    /* Translate file selector's tooltip: */
+    if (m_pFileSelector)
+        m_pFileSelector->setToolTip(UIWizardImportApp::tr("Holds the path of the file selected for import."));
 
     /* Translate separate stuff: */
     retranslateMACImportPolicyCombo(m_pComboMACImportPolicy);

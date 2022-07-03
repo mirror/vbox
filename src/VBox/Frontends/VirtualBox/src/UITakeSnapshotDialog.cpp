@@ -97,7 +97,9 @@ void UITakeSnapshotDialog::retranslateUi()
 {
     setWindowTitle(tr("Take Snapshot of Virtual Machine"));
     m_pLabelName->setText(tr("Snapshot &Name"));
+    m_pEditorName->setToolTip(tr("Holds the snapshot name"));
     m_pLabelDescription->setText(tr("Snapshot &Description"));
+    m_pEditorDescription->setToolTip(tr("Holds the snapshot description"));
     m_pLabelInfo->setText(tr("Warning: You are taking a snapshot of a running machine which has %n immutable image(s) "
                              "attached to it. As long as you are working from this snapshot the immutable image(s) "
                              "will not be reset to avoid loss of data.", "", m_cImmutableMedia));
@@ -114,9 +116,20 @@ void UITakeSnapshotDialog::retranslateUi()
 
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Accept (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
-        m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(tr("Show Help (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Help)->shortcut().toString()));
+        if (m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString().isEmpty())
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Accept"));
+        else
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Accept (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+
+        if (m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString().isEmpty())
+            m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel"));
+        else
+            m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+
+        if (m_pButtonBox->button(QDialogButtonBox::Help)->shortcut().toString().isEmpty())
+            m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(tr("Show Help"));
+        else
+            m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(tr("Show Help (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Help)->shortcut().toString()));
     }
 }
 

@@ -161,11 +161,21 @@ int UIMediumSelector::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceT
 void UIMediumSelector::retranslateUi()
 {
     if (m_pCancelButton)
+    {
         m_pCancelButton->setText(tr("&Cancel"));
+        m_pCancelButton->setToolTip(tr("Cancel"));
+    }
     if (m_pLeaveEmptyButton)
+    {
         m_pLeaveEmptyButton->setText(tr("Leave &Empty"));
+        m_pLeaveEmptyButton->setToolTip(tr("Leave the drive empty"));
+    }
+
     if (m_pChooseButton)
+    {
         m_pChooseButton->setText(tr("C&hoose"));
+        m_pChooseButton->setToolTip(tr("Attached the selected medium to the drive"));
+    }
 
     if (m_pTreeWidget)
     {

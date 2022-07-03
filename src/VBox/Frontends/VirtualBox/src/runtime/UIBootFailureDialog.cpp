@@ -98,7 +98,13 @@ void UIBootFailureDialog::retranslateUi()
     if (m_pBootImageLabel)
         m_pBootImageLabel->setText(tr("DVD:"));
     if (m_pSuppressDialogCheckBox)
+    {
         m_pSuppressDialogCheckBox->setText(tr("Do not show this dialog again"));
+        m_pSuppressDialogCheckBox->setToolTip(tr("When checked this dialog will not be shown again."));
+    }
+    if (m_pBootImageSelector)
+        m_pBootImageSelector->setToolTip(tr("Holds the path of the ISO to be attached to machine as boot medium."));
+
 }
 
 void UIBootFailureDialog::configure()

@@ -506,6 +506,10 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_exportModeButtons.value(CloudExportMode_AskThenExport)->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
     m_exportModeButtons.value(CloudExportMode_ExportThenAsk)->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
 
+    /* Translate file selector's tooltip: */
+    if (m_pFileSelector)
+        m_pFileSelector->setToolTip(UIWizardExportApp::tr("Holds the path of the file selected for export."));
+
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pFormatComboBoxLabel;
