@@ -8358,36 +8358,114 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCR
 
 
 /*
- *
+ * PSHUFW, [V]PSHUFHW, [V]PSHUFLW, [V]PSHUFD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw_u64,(uint64_t *puDst, uint64_t const *puSrc, uint8_t bEvil))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu64Src, bEvil);
-    AssertReleaseFailed();
+    uint64_t const uSrc = *puSrc;
+    ASMCompilerBarrier();
+    *puDst = RT_MAKE_U64_FROM_U16(uSrc >> (( bEvil       & 3) * 16),
+                                  uSrc >> (((bEvil >> 2) & 3) * 16),
+                                  uSrc >> (((bEvil >> 4) & 3) * 16),
+                                  uSrc >> (((bEvil >> 6) & 3) * 16));
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufhw,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufhw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
-    AssertReleaseFailed();
+    puDst->QWords.qw0   = puSrc->QWords.qw0;
+    uint64_t const uSrc = puSrc->QWords.qw1;
+    ASMCompilerBarrier();
+    puDst->QWords.qw1   = RT_MAKE_U64_FROM_U16(uSrc >> (( bEvil       & 3) * 16),
+                                               uSrc >> (((bEvil >> 2) & 3) * 16),
+                                               uSrc >> (((bEvil >> 4) & 3) * 16),
+                                               uSrc >> (((bEvil >> 6) & 3) * 16));
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufhw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    puDst->QWords.qw0    = puSrc->QWords.qw0;
+    uint64_t const uSrc1 = puSrc->QWords.qw1;
+    puDst->QWords.qw2    = puSrc->QWords.qw2;
+    uint64_t const uSrc3 = puSrc->QWords.qw3;
+    ASMCompilerBarrier();
+    puDst->QWords.qw1    = RT_MAKE_U64_FROM_U16(uSrc1 >> (( bEvil       & 3) * 16),
+                                                uSrc1 >> (((bEvil >> 2) & 3) * 16),
+                                                uSrc1 >> (((bEvil >> 4) & 3) * 16),
+                                                uSrc1 >> (((bEvil >> 6) & 3) * 16));
+    puDst->QWords.qw3    = RT_MAKE_U64_FROM_U16(uSrc3 >> (( bEvil       & 3) * 16),
+                                                uSrc3 >> (((bEvil >> 2) & 3) * 16),
+                                                uSrc3 >> (((bEvil >> 4) & 3) * 16),
+                                                uSrc3 >> (((bEvil >> 6) & 3) * 16));
+}
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshuflw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    puDst->QWords.qw1   = puSrc->QWords.qw1;
+    uint64_t const uSrc = puSrc->QWords.qw0;
+    ASMCompilerBarrier();
+    puDst->QWords.qw0   = RT_MAKE_U64_FROM_U16(uSrc >> (( bEvil       & 3) * 16),
+                                               uSrc >> (((bEvil >> 2) & 3) * 16),
+                                               uSrc >> (((bEvil >> 4) & 3) * 16),
+                                               uSrc >> (((bEvil >> 6) & 3) * 16));
+
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpshuflw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    puDst->QWords.qw3    = puSrc->QWords.qw3;
+    uint64_t const uSrc2 = puSrc->QWords.qw2;
+    puDst->QWords.qw1    = puSrc->QWords.qw1;
+    uint64_t const uSrc0 = puSrc->QWords.qw0;
+    ASMCompilerBarrier();
+    puDst->QWords.qw0   = RT_MAKE_U64_FROM_U16(uSrc0 >> (( bEvil       & 3) * 16),
+                                               uSrc0 >> (((bEvil >> 2) & 3) * 16),
+                                               uSrc0 >> (((bEvil >> 4) & 3) * 16),
+                                               uSrc0 >> (((bEvil >> 6) & 3) * 16));
+    puDst->QWords.qw2   = RT_MAKE_U64_FROM_U16(uSrc2 >> (( bEvil       & 3) * 16),
+                                               uSrc2 >> (((bEvil >> 2) & 3) * 16),
+                                               uSrc2 >> (((bEvil >> 4) & 3) * 16),
+                                               uSrc2 >> (((bEvil >> 6) & 3) * 16));
+
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshuflw,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
-    AssertReleaseFailed();
+    RTUINT128U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc.au32[bEvil & 3];
+    puDst->au32[1] = uSrc.au32[(bEvil >> 2) & 3];
+    puDst->au32[2] = uSrc.au32[(bEvil >> 4) & 3];
+    puDst->au32[3] = uSrc.au32[(bEvil >> 6) & 3];
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    RTUINT256U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au128[0].au32[0] = uSrc.au128[0].au32[bEvil & 3];
+    puDst->au128[0].au32[1] = uSrc.au128[0].au32[(bEvil >> 2) & 3];
+    puDst->au128[0].au32[2] = uSrc.au128[0].au32[(bEvil >> 4) & 3];
+    puDst->au128[0].au32[3] = uSrc.au128[0].au32[(bEvil >> 6) & 3];
+    puDst->au128[1].au32[0] = uSrc.au128[1].au32[bEvil & 3];
+    puDst->au128[1].au32[1] = uSrc.au128[1].au32[(bEvil >> 2) & 3];
+    puDst->au128[1].au32[2] = uSrc.au128[1].au32[(bEvil >> 4) & 3];
+    puDst->au128[1].au32[3] = uSrc.au128[1].au32[(bEvil >> 6) & 3];
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufd,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
-{
-    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
-    AssertReleaseFailed();
-}
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 /* PUNPCKHxxx */
 

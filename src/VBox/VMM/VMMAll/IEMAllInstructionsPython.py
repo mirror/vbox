@@ -356,6 +356,9 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
     'RM':           ( 'ModR/M',     [ 'reg', 'rm' ],         '',            ),
     'RM_REG':       ( 'ModR/M',     [ 'reg', 'rm' ],         '11 mr/reg',   ),
     'RM_MEM':       ( 'ModR/M',     [ 'reg', 'rm' ],         '!11 mr/reg',  ),
+    'RMI':          ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],  '',            ),
+    'RMI_REG':      ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],  '11 mr/reg',   ),
+    'RMI_MEM':      ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],  '!11 mr/reg',  ),
     'MR':           ( 'ModR/M',     [ 'rm', 'reg' ],         '',            ),
     'MR_REG':       ( 'ModR/M',     [ 'rm', 'reg' ],         '11 mr/reg',   ),
     'MR_MEM':       ( 'ModR/M',     [ 'rm', 'reg' ],         '!11 mr/reg',  ),
@@ -534,7 +537,8 @@ g_kdHints = {
     'mod_fixed_11':          'DISOPTYPE_MOD_FIXED_11',          ##< modrm.mod is always 11b
     'forced_32_op_size_x86': 'DISOPTYPE_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes
                                                                 ##  (only in 16 & 32 bits mode!)
-    'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet!
+    'avx':                   'DISOPTYPE_AVX',                   ##< AVX,AVX2,++ instruction. Not implemented yet!
+    'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,++ instruction. Not implemented yet!
     'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
     'ignores_oz_pfx':        '',                                ##< Ignores operand size prefix 66h.

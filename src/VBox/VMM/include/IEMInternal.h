@@ -934,74 +934,80 @@ typedef struct IEM
 #define IEMOPFORM_RM_REG        (IEMOPFORM_RM | IEMOPFORM_MOD3)
 /** ModR/M: reg, r/m (memory)   */
 #define IEMOPFORM_RM_MEM        (IEMOPFORM_RM | IEMOPFORM_NOT_MOD3)
+/** ModR/M: reg, r/m */
+#define IEMOPFORM_RMI           1
+/** ModR/M: reg, r/m (register) */
+#define IEMOPFORM_RMI_REG       (IEMOPFORM_RM | IEMOPFORM_MOD3)
+/** ModR/M: reg, r/m (memory)   */
+#define IEMOPFORM_RMI_MEM       (IEMOPFORM_RM | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m, reg */
-#define IEMOPFORM_MR            1
+#define IEMOPFORM_MR            2
 /** ModR/M: r/m (register), reg */
 #define IEMOPFORM_MR_REG        (IEMOPFORM_MR | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), reg */
 #define IEMOPFORM_MR_MEM        (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m only */
-#define IEMOPFORM_M             2
+#define IEMOPFORM_M             3
 /** ModR/M: r/m only (register). */
 #define IEMOPFORM_M_REG         (IEMOPFORM_M | IEMOPFORM_MOD3)
 /** ModR/M: r/m only (memory). */
 #define IEMOPFORM_M_MEM         (IEMOPFORM_M | IEMOPFORM_NOT_MOD3)
 /** ModR/M: reg only */
-#define IEMOPFORM_R             3
+#define IEMOPFORM_R             4
 
 /** VEX+ModR/M: reg, r/m */
-#define IEMOPFORM_VEX_RM        4
+#define IEMOPFORM_VEX_RM        8
 /** VEX+ModR/M: reg, r/m (register) */
 #define IEMOPFORM_VEX_RM_REG    (IEMOPFORM_VEX_RM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m (memory)   */
 #define IEMOPFORM_VEX_RM_MEM    (IEMOPFORM_VEX_RM | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m, reg */
-#define IEMOPFORM_VEX_MR        5
+#define IEMOPFORM_VEX_MR        9
 /** VEX+ModR/M: r/m (register), reg */
 #define IEMOPFORM_VEX_MR_REG    (IEMOPFORM_VEX_MR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m (memory), reg */
 #define IEMOPFORM_VEX_MR_MEM    (IEMOPFORM_VEX_MR | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m only */
-#define IEMOPFORM_VEX_M         6
+#define IEMOPFORM_VEX_M         10
 /** VEX+ModR/M: r/m only (register). */
 #define IEMOPFORM_VEX_M_REG     (IEMOPFORM_VEX_M | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m only (memory). */
 #define IEMOPFORM_VEX_M_MEM     (IEMOPFORM_VEX_M | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg only */
-#define IEMOPFORM_VEX_R         7
+#define IEMOPFORM_VEX_R         11
 /** VEX+ModR/M: reg, vvvv, r/m */
-#define IEMOPFORM_VEX_RVM       8
+#define IEMOPFORM_VEX_RVM       12
 /** VEX+ModR/M: reg, vvvv, r/m (register). */
 #define IEMOPFORM_VEX_RVM_REG   (IEMOPFORM_VEX_RVM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, vvvv, r/m (memory). */
 #define IEMOPFORM_VEX_RVM_MEM   (IEMOPFORM_VEX_RVM | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg, r/m, vvvv */
-#define IEMOPFORM_VEX_RMV       9
+#define IEMOPFORM_VEX_RMV       13
 /** VEX+ModR/M: reg, r/m, vvvv (register). */
 #define IEMOPFORM_VEX_RMV_REG   (IEMOPFORM_VEX_RMV | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m, vvvv (memory). */
 #define IEMOPFORM_VEX_RMV_MEM   (IEMOPFORM_VEX_RMV | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg, r/m, imm8 */
-#define IEMOPFORM_VEX_RMI       10
+#define IEMOPFORM_VEX_RMI       14
 /** VEX+ModR/M: reg, r/m, imm8 (register). */
 #define IEMOPFORM_VEX_RMI_REG   (IEMOPFORM_VEX_RMI | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m, imm8 (memory). */
 #define IEMOPFORM_VEX_RMI_MEM   (IEMOPFORM_VEX_RMI | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg */
-#define IEMOPFORM_VEX_MVR       11
+#define IEMOPFORM_VEX_MVR       15
 /** VEX+ModR/M: r/m, vvvv, reg (register) */
 #define IEMOPFORM_VEX_MVR_REG   (IEMOPFORM_VEX_MVR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg (memory) */
 #define IEMOPFORM_VEX_MVR_MEM   (IEMOPFORM_VEX_MVR | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m */
-#define IEMOPFORM_VEX_VM        12
+#define IEMOPFORM_VEX_VM        16
 /** VEX+ModR/M+/n: vvvv, r/m (register) */
 #define IEMOPFORM_VEX_VM_REG    (IEMOPFORM_VEX_VM | IEMOPFORM_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m (memory) */
 #define IEMOPFORM_VEX_VM_MEM    (IEMOPFORM_VEX_VM | IEMOPFORM_NOT_MOD3)
 
 /** Fixed register instruction, no R/M. */
-#define IEMOPFORM_FIXED         16
+#define IEMOPFORM_FIXED         32
 
 /** The r/m is a register. */
 #define IEMOPFORM_MOD3          RT_BIT_32(8)
@@ -1834,11 +1840,16 @@ FNIEMAIMPLMEDIAF1H1U128 iemAImpl_punpckhbw_u128, iemAImpl_punpckhwd_u128, iemAIm
 
 /** @name Media (SSE/MMX/AVX) operation: Packed Shuffle Stuff (evil)
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHUF,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst,
-                                                       PCRTUINT128U pu128Src, uint8_t bEvil));
-typedef FNIEMAIMPLMEDIAPSHUF *PFNIEMAIMPLMEDIAPSHUF;
-FNIEMAIMPLMEDIAPSHUF iemAImpl_pshufhw, iemAImpl_pshuflw, iemAImpl_pshufd;
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src, uint8_t bEvil));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHUFU128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAPSHUFU128 *PFNIEMAIMPLMEDIAPSHUFU128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHUFU256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAPSHUFU256 *PFNIEMAIMPLMEDIAPSHUFU256;
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw_u64,(uint64_t *puDst, uint64_t const *puSrc, uint8_t bEvil));
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_pshufhw_u128, iemAImpl_pshuflw_u128, iemAImpl_pshufd_u128;
+#ifndef IEM_WITHOUT_ASSEMBLY
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpshufhw_u256, iemAImpl_vpshuflw_u256, iemAImpl_vpshufd_u256;
+#endif
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpshufhw_u256_fallback, iemAImpl_vpshuflw_u256_fallback, iemAImpl_vpshufd_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operation: Move Byte Mask

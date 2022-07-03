@@ -132,6 +132,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEMOP_HLP_DONE_VEX_DECODING_EX(a_fFeature)          do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_L0()                    do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV()               do { } while (0)
+#define IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(a_fFeature)  do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV()        do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES()                                    do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES()                                 do { } while (0)
@@ -329,9 +330,9 @@ IEMOPMEDIAF2 g_iemAImpl_psubq;
 #define iemCImpl_callf                  NULL
 #define iemCImpl_FarJmp                 NULL
 
-#define iemAImpl_pshufhw                NULL
-#define iemAImpl_pshuflw                NULL
-#define iemAImpl_pshufd                 NULL
+#define iemAImpl_pshufhw_u128           NULL
+#define iemAImpl_pshuflw_u128           NULL
+#define iemAImpl_pshufd_u128            NULL
 
 /** @}  */
 
@@ -538,6 +539,8 @@ IEMOPMEDIAF2 g_iemAImpl_psubq;
 #define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)             do { (a_pu64Dst) = (uint64_t *)((uintptr_t)0); CHK_PTYPE(uint64_t *, a_pu64Dst);             (void)fFpuWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_MREG_U64_CONST(a_pu64Dst, a_iMReg)       do { (a_pu64Dst) = (uint64_t const *)((uintptr_t)0); CHK_PTYPE(uint64_t const *, a_pu64Dst); (void)fFpuWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg)       do { (a_pu32Dst) = (uint32_t const *)((uintptr_t)0); CHK_PTYPE(uint32_t const *, a_pu32Dst); (void)fFpuWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_MODIFIED_MREG(a_iMReg)                       do { (void)fFpuWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_MODIFIED_MREG_BY_REF(a_pu64Dst)              do { AssertCompile(sizeof(*a_pu64Dst) <= sizeof(uint64_t)); (void)fFpuWrite; (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg)        do { (a_u128Value) = g_u128Zero; CHK_TYPE(RTUINT128U, a_u128Value); (void)fSseRead;  (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg)          do { (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); (void)fSseRead; (void)fMcBegin; } while (0)

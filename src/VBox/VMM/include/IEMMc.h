@@ -389,6 +389,10 @@
         (a_pu64Dst) = ((uint64_t const *)&pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx)
 #define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg) \
         (a_pu32Dst) = ((uint32_t const *)&pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx)
+#define IEM_MC_MODIFIED_MREG(a_iMReg) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; } while (0)
+#define IEM_MC_MODIFIED_MREG_BY_REF(a_pu64Dst) \
+    do { ((uint32_t *)(a_pu64Dst))[2] = 0xffff; } while (0)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
     do { (a_u128Value).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0]; \
