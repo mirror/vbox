@@ -916,7 +916,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                      */
                     cErrors = Bs3TestSubErrorCount();
 
-                    if (bXcptExpect == X86_XCPT_DB)
+                    if (fMmxInstr && bXcptExpect == X86_XCPT_DB)
                     {
                         uSavedFtw = Bs3ExtCtxGetAbridgedFtw(pExtCtx);
                         Bs3ExtCtxSetAbridgedFtw(pExtCtx, 0xff); /* Observed on 10980xe after pxor mm1, mm2. */
