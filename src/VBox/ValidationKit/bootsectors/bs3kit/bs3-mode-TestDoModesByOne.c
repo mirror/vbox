@@ -101,8 +101,8 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
     {
         const char *pszFmtStr   = "Error #%u (%#x) in %s!\n";
         bool        fSkipped    = true;
-        bool const  fOnlyPaging = RT_BOOL(paEntries[i].fFlags & BS3TESTMODEBYONEENTRY_F_ONLY_PAGING);
-        bool const  fMinimal    = RT_BOOL(paEntries[i].fFlags & BS3TESTMODEBYONEENTRY_F_MINIMAL);
+        bool const  fOnlyPaging = RT_BOOL((paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_ONLY_PAGING);
+        bool const  fMinimal    = RT_BOOL((paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_MINIMAL);
         bool const  fCurDoV86Modes      = fDoV86Modes && !fMinimal;
         bool const  fCurDoWeirdV86Modes = fDoWeirdV86Modes && fCurDoV86Modes;
         uint8_t     bErrNo;
@@ -129,6 +129,13 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
         {
             PRE_DO_CALL(g_szBs3ModeName_rm);
             bErrNo = TMPL_NM(Bs3TestCallDoerInRM)(CONV_TO_RM_FAR16(paEntries[i].pfnWorker));
+            CHECK_RESULT(g_szBs3ModeName_rm);
+        }
+# else
+        if (!fOnlyPaging && (paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY)
+        {
+            PRE_DO_CALL(g_szBs3ModeName_rm);
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPE32)(CONV_TO_FLAT(paEntries[i].pfnWorker), BS3_MODE_RM);
             CHECK_RESULT(g_szBs3ModeName_rm);
         }
 # endif

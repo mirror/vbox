@@ -44,7 +44,9 @@
 #undef Bs3ExtCtxGetYmm
 #undef Bs3ExtCtxInit
 #undef Bs3ExtCtxRestore
+#undef Bs3ExtCtxRestoreEx
 #undef Bs3ExtCtxSave
+#undef Bs3ExtCtxSaveEx
 #undef Bs3ExtCtxSetAbridgedFtw
 #undef Bs3ExtCtxSetFcw
 #undef Bs3ExtCtxSetFsw
@@ -100,6 +102,7 @@
 #undef Bs3PrintU32
 #undef Bs3PrintX32
 #undef Bs3RegCtxConvertToRingX
+#undef Bs3RegCtxConvertV86ToRm
 #undef Bs3RegCtxPrint
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave
@@ -214,6 +217,7 @@
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
 #undef Bs3TrapSetJmpAndRestore
+#undef Bs3TrapSetJmpAndRestoreInRm
 #undef Bs3TrapSetJmp
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div

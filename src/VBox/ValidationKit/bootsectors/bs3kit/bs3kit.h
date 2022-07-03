@@ -2669,6 +2669,15 @@ BS3_CMN_PROTO_FARSTUB(8, void, Bs3RegCtxSaveEx,(PBS3REGCTX pRegCtx, uint8_t bBit
 BS3_CMN_PROTO_STUB(void, Bs3RegCtxConvertToRingX,(PBS3REGCTX pRegCtx, uint8_t bRing));
 
 /**
+ * Transforms a V8086 register context to a real mode one.
+ *
+ * @param   pRegCtx     The register context.
+ *
+ * @note    Will assert if called on a non-V8086 context.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxConvertV86ToRm,(PBS3REGCTX pRegCtx));
+
+/**
  * Restores a register context.
  *
  * @param   pRegCtx     The register context to be restored and resumed.
@@ -2877,12 +2886,38 @@ BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExt
 BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxSave,(PBS3EXTCTX pExtCtx));
 
 /**
+ * Saves the extended CPU state to the given structure, when in long mode this
+ * is done from 64-bit mode to capture YMM8 thru YMM15.
+ *
+ * This is for testing 64-bit code from a 32-bit test driver.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @note    Only safe to call from ring-0 at present.
+ * @remarks All GPRs preserved.
+ * @sa      Bs3ExtCtxRestoreEx
+ */
+BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxSaveEx,(PBS3EXTCTX pExtCtx));
+
+/**
  * Restores the extended CPU state from the given structure.
  *
  * @param   pExtCtx         The extended CPU context.
  * @remarks All GPRs preserved.
  */
 BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
+
+/**
+ * Restores the extended CPU state from the given structure and in long mode
+ * switch to 64-bit mode to do this so YMM8-YMM15 are also loaded.
+ *
+ * This is for testing 64-bit code from a 32-bit test driver.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @note    Only safe to call from ring-0 at present.
+ * @remarks All GPRs preserved.
+ * @sa      Bs3ExtCtxSaveEx
+ */
+BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestoreEx,(PBS3EXTCTX pExtCtx));
 
 /**
  * Copies the state from one context to another.
@@ -3389,6 +3424,16 @@ BS3_CMN_PROTO_NOSB(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFr
  * @param   pTrapFrame      Where to store the trap information.
  */
 BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
+
+/**
+ * Combination of Bs3SwitchToRM, #Bs3TrapSetJmp and #Bs3RegCtxRestore.
+ *
+ * @param   pCtxRestore     The context to restore.  Must be real-mode
+ *                          addressable.
+ * @param   pTrapFrame      Where to store the trap information.  Must be
+ *                          real-mode addressable.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestoreInRm,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
 
 /**
  * Disables a previous #Bs3TrapSetJmp call.
@@ -3950,6 +3995,8 @@ typedef BS3TESTMODEBYONEENTRY const *PCBS3TESTMODEBYONEENTRY;
 #define BS3TESTMODEBYONEENTRY_F_ONLY_PAGING     RT_BIT_32(0)
 /** Minimal mode selection. */
 #define BS3TESTMODEBYONEENTRY_F_MINIMAL         RT_BIT_32(1)
+/** The 32-bit worker is ready to handle real-mode by mode switching. */
+#define BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY RT_BIT_32(2)
 /** @} */
 
 

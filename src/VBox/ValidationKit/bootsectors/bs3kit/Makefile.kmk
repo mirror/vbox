@@ -103,6 +103,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-PitIrqHandler.c \
        bs3-cmn-RegCtxRestore.asm \
        bs3-cmn-RegCtxConvertToRingX.c \
+       bs3-cmn-RegCtxConvertV86ToRm.c \
        bs3-cmn-RegCtxPrint.c \
        bs3-cmn-RegCtxSave.asm \
        bs3-cmn-RegCtxSaveEx.asm \
@@ -142,7 +143,9 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegSetXcr0.asm \
        bs3-cmn-ExtCtxInit.c \
        bs3-cmn-ExtCtxSave.asm \
+       bs3-cmn-ExtCtxSaveEx.asm \
        bs3-cmn-ExtCtxRestore.asm \
+       bs3-cmn-ExtCtxRestoreEx.asm \
        bs3-cmn-ExtCtxGetSize.c \
        bs3-cmn-ExtCtxAlloc.c \
        bs3-cmn-ExtCtxFree.c \
@@ -236,6 +239,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TrapSetHandlerEx.c \
 	bs3-cmn-TrapSetJmp.asm \
 	bs3-cmn-TrapSetJmpAndRestore.c \
+	bs3-cmn-TrapSetJmpAndRestoreInRm.c \
 	bs3-cmn-TrapUnsetJmp.c \
        bs3-cmn-UtilSetFullGdtr.asm \
        bs3-cmn-UtilSetFullIdtr.asm \
@@ -377,6 +381,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-PagingGetRootForLM64.asm \
 	bs3-mode-TrapInit.c \
 	bs3-mode-TrapSystemCallHandler.asm \
+	bs3-mode-TrapSetJmpAndRestoreInRmAsm.asm \
 	bs3-mode-TestDoModes.c \
 	bs3-mode-TestDoModesByOne.c \
 	bs3-mode-TestDoModesByMax.c \
