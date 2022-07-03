@@ -116,6 +116,10 @@ void UIVisoConfigurationPanel::retranslateUi()
         m_pCustomOptionsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
     if (m_pDeleteButton)
         m_pDeleteButton->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Remove current option."));
+    if (m_pVisoNameLineEdit)
+        m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
+    if (m_pCustomOptionsComboBox)
+        m_pCustomOptionsComboBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds options for VISO creation."));
 }
 
 void UIVisoConfigurationPanel::addCustomVisoOption()

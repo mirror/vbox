@@ -51,6 +51,9 @@ void UIVisoCreatorOptionsPanel::retranslateUi()
 {
     if (m_pShowHiddenObjectsLabel)
         m_pShowHiddenObjectsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
+    if (m_pShowHiddenObjectsCheckBox)
+        m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "When checked, "
+                                                                         "multiple hidden objects are shown in the file browser"));
 }
 
 void UIVisoCreatorOptionsPanel::sltHandlShowHiddenObjectsChange(int iState)
