@@ -521,16 +521,20 @@ typedef struct ClientState
     /**
      * Used by for Service::hostProcessMessage().
      *
+     * @returns VBox status code.
+     * @retval  VINF_NO_CHANGE if the client has not been woken up.
+     *
      * @note This wakes up both GUEST_MSG_WAIT and GUEST_MSG_PEEK_WAIT sleepers.
      */
     int Wakeup(void)
     {
         int rc = VINF_NO_CHANGE;
 
+        LogFlowFunc(("[Client %RU32] enmPendingMsg=%RU32, idSession=%RU32, fIsMaster=%RTbool, fRestored=%RTbool\n",
+                     m_idClient, m_enmPendingMsg, m_idSession, m_fIsMaster, m_fRestored));
+
         if (m_enmPendingMsg != 0)
         {
-            LogFlowFunc(("[Client %RU32] Waking up ...\n", m_idClient));
-
             rc = VINF_SUCCESS;
 
             HostMsg *pFirstMsg = RTListGetFirstCpp(&m_HostMsgList, HostMsg, m_ListEntry);
@@ -544,9 +548,9 @@ typedef struct ClientState
                     pFirstMsg->setPeekReturn(m_PendingReq.mParms, m_PendingReq.mNumParms);
                     rc = m_pSvcHelpers->pfnCallComplete(m_PendingReq.mHandle, VINF_SUCCESS);
 
-                    m_PendingReq.mHandle   = NULL;
-                    m_PendingReq.mParms    = NULL;
-                    m_PendingReq.mNumParms = 0;
+                    m_PendingReq.mHandle    = NULL;
+                    m_PendingReq.mParms     = NULL;
+                    m_PendingReq.mNumParms  = 0;
                     m_enmPendingMsg         = (guestControl::eGuestMsg)0;
                 }
                 else if (m_enmPendingMsg == GUEST_MSG_WAIT)
@@ -556,11 +560,10 @@ typedef struct ClientState
             }
             else
                 AssertMsgFailed(("Waking up client ID=%RU32 with no host message in queue is a bad idea\n", m_idClient));
-
-            return rc;
         }
 
-        return VINF_NO_CHANGE;
+        LogFlowFuncLeaveRC(rc);
+        return rc;
     }
 
     /**
