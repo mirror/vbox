@@ -3246,15 +3246,14 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
  * Waits for guest session status changes.
  *
  * @returns VBox status code.
- * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @retval  VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @retval  VERR_WRONG_ORDER when an unexpected event type has been received.
  * @param   pEvent              Wait event to use for waiting.
  * @param   fWaitFlags          Wait flags to use.
  * @param   uTimeoutMS          Timeout (in ms) to wait.
  * @param   pSessionStatus      Where to return the guest session status.
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
- *
- * @note    Takes the read lock.
  */
 int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
                                         GuestSessionStatus_T *pSessionStatus, int *prcGuest)
@@ -3264,35 +3263,37 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
 
     VBoxEventType_T evtType;
     ComPtr<IEvent> pIEvent;
-    int vrc = waitForEvent(pEvent, uTimeoutMS,
-                           &evtType, pIEvent.asOutParam());
+    int vrc = waitForEvent(pEvent, uTimeoutMS, &evtType, pIEvent.asOutParam());
     if (RT_SUCCESS(vrc))
     {
-        Assert(evtType == VBoxEventType_OnGuestSessionStateChanged);
+        if (evtType == VBoxEventType_OnGuestSessionStateChanged)
+        {
+            ComPtr<IGuestSessionStateChangedEvent> pChangedEvent = pIEvent;
+            Assert(!pChangedEvent.isNull());
 
-        ComPtr<IGuestSessionStateChangedEvent> pChangedEvent = pIEvent;
-        Assert(!pChangedEvent.isNull());
+            GuestSessionStatus_T sessionStatus;
+            pChangedEvent->COMGETTER(Status)(&sessionStatus);
+            if (pSessionStatus)
+                *pSessionStatus = sessionStatus;
 
-        GuestSessionStatus_T sessionStatus;
-        pChangedEvent->COMGETTER(Status)(&sessionStatus);
-        if (pSessionStatus)
-            *pSessionStatus = sessionStatus;
+            ComPtr<IVirtualBoxErrorInfo> errorInfo;
+            HRESULT hr = pChangedEvent->COMGETTER(Error)(errorInfo.asOutParam());
+            ComAssertComRC(hr);
 
-        ComPtr<IVirtualBoxErrorInfo> errorInfo;
-        HRESULT hr = pChangedEvent->COMGETTER(Error)(errorInfo.asOutParam());
-        ComAssertComRC(hr);
+            LONG lGuestRc;
+            hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
+            ComAssertComRC(hr);
+            if (RT_FAILURE((int)lGuestRc))
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            if (prcGuest)
+                *prcGuest = (int)lGuestRc;
 
-        LONG lGuestRc;
-        hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
-        ComAssertComRC(hr);
-        if (RT_FAILURE((int)lGuestRc))
-            vrc = VERR_GSTCTL_GUEST_ERROR;
-        if (prcGuest)
-            *prcGuest = (int)lGuestRc;
-
-        LogFlowThisFunc(("Status changed event for session ID=%RU32, new status is: %RU32 (%Rrc)\n",
-                         mData.mSession.mID, sessionStatus,
-                         RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
+            LogFlowThisFunc(("Status changed event for session ID=%RU32, new status is: %RU32 (%Rrc)\n",
+                             mData.mSession.mID, sessionStatus,
+                             RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
+        }
+        else /** @todo Re-visit this. Can this happen more frequently? */
+            AssertMsgFailedReturn(("Got unexpected event type %#x\n", evtType), VERR_WRONG_ORDER);
     }
     /* waitForEvent may also return VERR_GSTCTL_GUEST_ERROR like we do above, so make prcGuest is set. */
     else if (vrc == VERR_GSTCTL_GUEST_ERROR && prcGuest)
