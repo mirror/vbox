@@ -26,3 +26,6 @@
 
 # This defines it's own PAGE_XXX macros.
 /PC/ipxe/src/include/ipxe/virtio-ring.h: --no-page-restrictions
+
+# Temporary until ipxe-new is fully integrated
+--filter-out-dirs /PC/ipxe-new/.
