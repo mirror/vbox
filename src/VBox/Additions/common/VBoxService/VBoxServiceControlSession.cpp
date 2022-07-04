@@ -1859,15 +1859,17 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
                      */
                     else if (rc == VERR_VM_RESTORED)
                     {
-                        VGSvcVerbose(1, "The VM session ID changed (i.e. restored)\n");
-                        int rc2 = VGSvcGstCtrlSessionClose(&g_Session);
-                        AssertRC(rc2);
+                        VGSvcVerbose(1, "The VM session ID changed (i.e. restored), closing stale session %RU32\n",
+                                     pSession->StartupInfo.uSessionID);
 
-                        rc2 = VbglR3GuestCtrlSessionHasChanged(g_idControlSvcClient, g_idControlSvcClient);
-                        AssertRC(rc2);
-
-                        /* Invalidate the internal state to match the current host we got restored from. */
-                        vgsvcGstCtrlSessionInvalidate(pSession, g_idControlSvcClient);
+                        /* We currently don't serialize guest sessions, guest processes and other guest control objects
+                         * within saved states. So just close this session and report success to the parent process.
+                         *
+                         * Note: Not notifying the host here is intentional, as it wouldn't have any information
+                         *       about what to do with it.
+                         */
+                        rc = VINF_SUCCESS; /* Report success as exit code. */
+                        break;
                     }
                     else
                     {
