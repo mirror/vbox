@@ -3253,8 +3253,9 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
 
         unregisterWaitEvent(pEvent);
 
-        /* Wait result not None, e.g. some result acquired? Bail out. */
-        if (waitResult != GuestSessionWaitResult_None)
+        /* Wait result not None, e.g. some result acquired or a wait error occurred? Bail out. */
+        if (   waitResult != GuestSessionWaitResult_None
+            || RT_FAILURE(vrc))
             break;
 
         tsNow = RTTimeMilliTS();
