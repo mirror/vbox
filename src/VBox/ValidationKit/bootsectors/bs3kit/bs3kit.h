@@ -2646,8 +2646,8 @@ BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PBS3REGCTX pRegCtx));
  *
  * This is for writing more flexible test drivers that can test more than the
  * CPU bitcount (16-bit, 32-bit, 64-bit, and virtual 8086) of the driver itself.
- * For instance a 32-bit driver can do V86 and 16-bit testing, thus saving more
- * precious and problematic 16-bit code.
+ * For instance a 32-bit driver can do V86 and 16-bit testing, thus saving space
+ * by avoiding duplicate 16-bit driver code.
  *
  * @param   pRegCtx         Where to store the register context.
  * @param   bBitMode        Bit mode to switch to, BS3_MODE_CODE_XXX.  Only
@@ -2656,6 +2656,20 @@ BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PBS3REGCTX pRegCtx));
  * @param   cbExtraStack    Number of bytes of additional stack to allocate.
  */
 BS3_CMN_PROTO_FARSTUB(8, void, Bs3RegCtxSaveEx,(PBS3REGCTX pRegCtx, uint8_t bBitMode, uint16_t cbExtraStack));
+
+/**
+ * This is Bs3RegCtxSaveEx with automatic Bs3RegCtxConvertV86ToRm thrown in.
+ *
+ * This is for simplifying writing 32-bit test drivers that covers real-mode as
+ * well as virtual 8086, 16-bit, 32-bit, and 64-bit modes.
+ *
+ * @param   pRegCtx         Where to store the register context.
+ * @param   bMode           The mode to get a context for.  If this isn't
+ *                          BS3_MODE_RM, the BS3_MODE_SYS_MASK has to match the
+ *                          one of the current mode.
+ * @param   cbExtraStack    Number of bytes of additional stack to allocate.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSaveForMode,(PBS3REGCTX pRegCtx, uint8_t bMode, uint16_t cbExtraStack));
 
 /**
  * Transforms a register context to a different ring.
@@ -2904,7 +2918,7 @@ BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxSaveEx,(PBS3EXTCTX pExtCtx));
  * @param   pExtCtx         The extended CPU context.
  * @remarks All GPRs preserved.
  */
-BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
+BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PCBS3EXTCTX pExtCtx));
 
 /**
  * Restores the extended CPU state from the given structure and in long mode
@@ -2917,7 +2931,7 @@ BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
  * @remarks All GPRs preserved.
  * @sa      Bs3ExtCtxSaveEx
  */
-BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestoreEx,(PBS3EXTCTX pExtCtx));
+BS3_CMN_PROTO_FARSTUB(4, void, Bs3ExtCtxRestoreEx,(PCBS3EXTCTX pExtCtx));
 
 /**
  * Copies the state from one context to another.
@@ -3424,6 +3438,53 @@ BS3_CMN_PROTO_NOSB(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFr
  * @param   pTrapFrame      Where to store the trap information.
  */
 BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
+
+/**
+ * Variation of Bs3TrapSetJmpAndRestore that includes
+ * #Bs3TrapSetJmpAndRestoreInRm and calls is if pCtxRestore is a real mode
+ * context and we're not in real mode.
+ *
+ * This is useful for 32-bit test drivers running via #Bs3TestDoModesByOne using
+ * BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY to allow them to test real-mode too.
+ *
+ * @param   pCtxRestore     The context to restore.
+ * @param   pTrapFrame      Where to store the trap information.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestoreWithRm,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
+
+/**
+ * Combination of #Bs3ExtCtxRestoreEx, #Bs3TrapSetJmp, #Bs3RegCtxRestore and
+ * #Bs3ExtCtxSaveEx.
+ *
+ * @param   pCtxRestore     The context to restore.
+ * @param   pExtCtxRestore  The extended context to restore.
+ * @param   pTrapFrame      Where to store the trap information.
+ * @param   pExtCtxTrap     Where to store the extended context after the trap.
+ *                          Note, the saving isn't done from the trap handler,
+ *                          but after #Bs3TrapSetJmp returns zero (i.e. for the
+ *                          2nd time).
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestoreWithExtCtx,(PCBS3REGCTX pCtxRestore, PCBS3EXTCTX pExtCtxRestore,
+                                                            PBS3TRAPFRAME pTrapFrame, PBS3EXTCTX pExtCtxTrap));
+
+/**
+ * Variation of Bs3TrapSetJmpAndRestoreWithExtCtx that includes
+ * #Bs3TrapSetJmpAndRestoreInRm and calls is if pCtxRestore is a real mode
+ * context and we're not in real mode.
+ *
+ * This is useful for 32-bit test drivers running via #Bs3TestDoModesByOne using
+ * BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY to allow them to test real-mode too.
+ *
+ * @param   pCtxRestore     The context to restore.
+ * @param   pExtCtxRestore  The extended context to restore.
+ * @param   pTrapFrame      Where to store the trap information.
+ * @param   pExtCtxTrap     Where to store the extended context after the trap.
+ *                          Note, the saving isn't done from the trap handler,
+ *                          but after #Bs3TrapSetJmp returns zero (i.e. for the
+ *                          2nd time).
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestoreWithExtCtxAndRm,(PCBS3REGCTX pCtxRestore, PCBS3EXTCTX pExtCtxRestore,
+                                                                 PBS3TRAPFRAME pTrapFrame, PBS3EXTCTX pExtCtxTrap));
 
 /**
  * Combination of Bs3SwitchToRM, #Bs3TrapSetJmp and #Bs3RegCtxRestore.

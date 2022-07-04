@@ -107,6 +107,7 @@
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave
 #undef Bs3RegCtxSaveEx
+#undef Bs3RegCtxSaveForMode
 #undef Bs3RegCtxSetGpr
 #undef Bs3RegCtxSetGrpDsFromCurPtr
 #undef Bs3RegCtxSetGrpSegFromCurPtr
@@ -218,6 +219,9 @@
 #undef Bs3TrapSetHandlerEx
 #undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapSetJmpAndRestoreInRm
+#undef Bs3TrapSetJmpAndRestoreWithExtCtxAndRm
+#undef Bs3TrapSetJmpAndRestoreWithExtCtx
+#undef Bs3TrapSetJmpAndRestoreWithRm
 #undef Bs3TrapSetJmp
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
