@@ -3068,7 +3068,8 @@ int GuestSession::i_determineProtocolVersion(void)
  * Waits for guest session events.
  *
  * @returns VBox status code.
- * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @retval  VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @retval  VERR_TIMEOUT when a timeout has occurred.
  * @param   fWaitFlags          Wait flags to use.
  * @param   uTimeoutMS          Timeout (in ms) to wait.
  * @param   waitResult          Where to return the wait result on success.
@@ -3184,59 +3185,88 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
 
     int vrc;
 
-    GuestWaitEvent *pEvent = NULL;
-    GuestEventTypes eventTypes;
-    try
+    uint64_t const tsStart = RTTimeMilliTS();
+    uint64_t       tsNow   = tsStart;
+
+    while (tsNow - tsStart < uTimeoutMS)
     {
-        eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
-
-        vrc = registerWaitEventEx(mData.mSession.mID, mData.mObjectID, eventTypes, &pEvent);
-    }
-    catch (std::bad_alloc &)
-    {
-        vrc = VERR_NO_MEMORY;
-    }
-
-    if (RT_FAILURE(vrc))
-        return vrc;
-
-    alock.release(); /* Release lock before waiting. */
-
-    GuestSessionStatus_T sessionStatus;
-    vrc = i_waitForStatusChange(pEvent, fWaitFlags,
-                                uTimeoutMS, &sessionStatus, prcGuest);
-    if (RT_SUCCESS(vrc))
-    {
-        switch (sessionStatus)
+        GuestWaitEvent *pEvent = NULL;
+        GuestEventTypes eventTypes;
+        try
         {
-            case GuestSessionStatus_Started:
-                waitResult = GuestSessionWaitResult_Start;
-                break;
+            eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
 
-            case GuestSessionStatus_Terminated:
-                waitResult = GuestSessionWaitResult_Terminate;
-                break;
-
-            case GuestSessionStatus_TimedOutKilled:
-            case GuestSessionStatus_TimedOutAbnormally:
-                waitResult = GuestSessionWaitResult_Timeout;
-                break;
-
-            case GuestSessionStatus_Down:
-                waitResult = GuestSessionWaitResult_Terminate;
-                break;
-
-            case GuestSessionStatus_Error:
-                waitResult = GuestSessionWaitResult_Error;
-                break;
-
-            default:
-                waitResult = GuestSessionWaitResult_Status;
-                break;
+            vrc = registerWaitEventEx(mData.mSession.mID, mData.mObjectID, eventTypes, &pEvent);
         }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
+
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        alock.release(); /* Release lock before waiting. */
+
+        GuestSessionStatus_T sessionStatus;
+        vrc = i_waitForStatusChange(pEvent, fWaitFlags,
+                                    uTimeoutMS - (tsNow - tsStart), &sessionStatus, prcGuest);
+        if (RT_SUCCESS(vrc))
+        {
+            switch (sessionStatus)
+            {
+                case GuestSessionStatus_Started:
+                    waitResult = GuestSessionWaitResult_Start;
+                    break;
+
+                case GuestSessionStatus_Starting:
+                    RT_FALL_THROUGH();
+                case GuestSessionStatus_Terminating:
+                    if (fWaitFlags & GuestSessionWaitForFlag_Status) /* Any status wanted? */
+                        waitResult = GuestSessionWaitResult_Status;
+                    /* else: Wait another round until we get the event(s) fWaitFlags defines. */
+                    break;
+
+                case GuestSessionStatus_Terminated:
+                    waitResult = GuestSessionWaitResult_Terminate;
+                    break;
+
+                case GuestSessionStatus_TimedOutKilled:
+                    RT_FALL_THROUGH();
+                case GuestSessionStatus_TimedOutAbnormally:
+                    waitResult = GuestSessionWaitResult_Timeout;
+                    break;
+
+                case GuestSessionStatus_Down:
+                    waitResult = GuestSessionWaitResult_Terminate;
+                    break;
+
+                case GuestSessionStatus_Error:
+                    waitResult = GuestSessionWaitResult_Error;
+                    break;
+
+                default:
+                    waitResult = GuestSessionWaitResult_Status;
+                    break;
+            }
+        }
+
+        unregisterWaitEvent(pEvent);
+
+        /* Wait result not None, e.g. some result acquired? Bail out. */
+        if (waitResult != GuestSessionWaitResult_None)
+            break;
+
+        tsNow = RTTimeMilliTS();
+
+        alock.acquire(); /* Re-acquire lock before waiting for the next event. */
     }
 
-    unregisterWaitEvent(pEvent);
+    if (tsNow - tsStart >= uTimeoutMS)
+    {
+        waitResult = GuestSessionWaitResult_None; /* Paranoia. */
+        vrc = VERR_TIMEOUT;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
