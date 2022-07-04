@@ -891,24 +891,6 @@ IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shrd_eflags[] =
 };
 
 
-/** Function table for the PUNPCKLBW instruction */
-IEM_STATIC const IEMOPMEDIAF1L1 g_iemAImpl_punpcklbw  = { iemAImpl_punpcklbw_u64,  iemAImpl_punpcklbw_u128 };
-/** Function table for the PUNPCKLBD instruction */
-IEM_STATIC const IEMOPMEDIAF1L1 g_iemAImpl_punpcklwd  = { iemAImpl_punpcklwd_u64,  iemAImpl_punpcklwd_u128 };
-/** Function table for the PUNPCKLDQ instruction */
-IEM_STATIC const IEMOPMEDIAF1L1 g_iemAImpl_punpckldq  = { iemAImpl_punpckldq_u64,  iemAImpl_punpckldq_u128 };
-/** Function table for the PUNPCKLQDQ instruction */
-IEM_STATIC const IEMOPMEDIAF1L1 g_iemAImpl_punpcklqdq = { NULL, iemAImpl_punpcklqdq_u128 };
-
-/** Function table for the PUNPCKHBW instruction */
-IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhbw  = { iemAImpl_punpckhbw_u64,  iemAImpl_punpckhbw_u128 };
-/** Function table for the PUNPCKHBD instruction */
-IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhwd  = { iemAImpl_punpckhwd_u64,  iemAImpl_punpckhwd_u128 };
-/** Function table for the PUNPCKHDQ instruction */
-IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhdq  = { iemAImpl_punpckhdq_u64,  iemAImpl_punpckhdq_u128 };
-/** Function table for the PUNPCKHQDQ instruction */
-IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq = { NULL, iemAImpl_punpckhqdq_u128 };
-
 # ifndef IEM_WITHOUT_ASSEMBLY
 /** Function table for the PSHUFB instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pshufb       = { iemAImpl_pshufb_u64,     iemAImpl_pshufb_u128 };

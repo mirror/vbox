@@ -3628,37 +3628,36 @@ IEMIMPL_MEDIA_F2 psubq,   1
 ; @param    1       The instruction
 ; @param    2       1 if MMX is included, 0 if not.
 ;
-; @param    A0      FPU context (fxsave).
-; @param    A1      Pointer to the first full sized media register operand (input/output).
-; @param    A2      Pointer to the second half sized media register operand (input).
+; @param    A0      Pointer to the first full sized media register operand (input/output).
+; @param    A1      Pointer to the second half sized media register operand (input).
 ;
 %macro IEMIMPL_MEDIA_F1L1 2
  %if %2 != 0
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
+        PROLOGUE_2_ARGS
         IEMIMPL_MMX_PROLOGUE
 
-        movq    mm0, [A1]
-        movd    mm1, [A2]
+        movq    mm0, [A0]
+        movq    mm1, [A1]
         %1      mm0, mm1
-        movq    [A1], mm0
+        movq    [A0], mm0
 
         IEMIMPL_MMX_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_2_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif
 
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 8
+        PROLOGUE_2_ARGS
         IEMIMPL_SSE_PROLOGUE
 
-        movdqu   xmm0, [A1]
-        movq     xmm1, [A2]
+        movdqu   xmm0, [A0]
+        movdqu   xmm1, [A1]
         %1       xmm0, xmm1
-        movdqu   [A1], xmm0
+        movdqu   [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_2_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
@@ -3669,50 +3668,91 @@ IEMIMPL_MEDIA_F1L1 punpcklqdq, 0
 
 
 ;;
+; Media instruction working two half sized input registers (lower half) and a full sized
+; destination register (vpunpckh*).
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination register (full sized, output only).
+; @param    A1      Pointer to the first full sized media source register operand, where we
+;                   will only use the lower half as input - but we'll be loading it in full.
+; @param    A2      Pointer to the second full sized media source register operand, where we
+;                   will only use the lower half as input - but we'll be loading it in full.
+;
+%macro IEMIMPL_MEDIA_F1L1L1 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu xmm0, [A1]
+        vmovdqu xmm1, [A2]
+        %1      xmm0, xmm0, xmm1
+        vmovdqu [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        vmovdqu  ymm1, [A2]
+        %1       ymm0, ymm0, ymm1
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_F1L1L1 vpunpcklbw
+IEMIMPL_MEDIA_F1L1L1 vpunpcklwd
+IEMIMPL_MEDIA_F1L1L1 vpunpckldq
+IEMIMPL_MEDIA_F1L1L1 vpunpcklqdq
+
+
+;;
 ; Media instruction working on one full sized and one half sized register (high half).
 ;
 ; @param    1       The instruction
 ; @param    2       1 if MMX is included, 0 if not.
 ;
-; @param    A0      FPU context (fxsave).
-; @param    A1      Pointer to the first full sized media register operand (input/output).
-; @param    A2      Pointer to the second full sized media register operand, where we
-;                   will only use the upper half (input).
+; @param    A0      Pointer to the first full sized media register operand (input/output).
+; @param    A1      Pointer to the second full sized media register operand, where we
+;                   will only use the upper half as input - but we'll load it in full.
 ;
 %macro IEMIMPL_MEDIA_F1H1 2
- %if %2 != 0
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
-        PROLOGUE_3_ARGS
-        IEMIMPL_MMX_PROLOGUE
-
-        movq    mm0, [A1]
-        movq    mm1, [A2]
-        %1      mm0, mm1
-        movq    [A1], mm0
-
-        IEMIMPL_MMX_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_ %+ %1 %+ _u64
- %endif
-
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
-        PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
-
-        movdqu   xmm0, [A1]
-        movdqu   xmm1, [A2]
-        %1       xmm0, xmm1
-        movdqu   [A1], xmm0
-
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_ %+ %1 %+ _u128
+IEMIMPL_MEDIA_F1L1 %1, %2
 %endmacro
 
 IEMIMPL_MEDIA_F1L1 punpckhbw,  1
 IEMIMPL_MEDIA_F1L1 punpckhwd,  1
 IEMIMPL_MEDIA_F1L1 punpckhdq,  1
 IEMIMPL_MEDIA_F1L1 punpckhqdq, 0
+
+
+;;
+; Media instruction working two half sized input registers (high half) and a full sized
+; destination register (vpunpckh*).
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination register (full sized, output only).
+; @param    A1      Pointer to the first full sized media source register operand, where we
+;                   will only use the upper half as input - but we'll be loading it in full.
+; @param    A2      Pointer to the second full sized media source register operand, where we
+;                   will only use the upper half as input - but we'll be loading it in full.
+;
+%macro IEMIMPL_MEDIA_F1H1H1 1
+IEMIMPL_MEDIA_F1L1L1 %1
+%endmacro
+
+IEMIMPL_MEDIA_F1H1H1 vpunpckhbw
+IEMIMPL_MEDIA_F1H1H1 vpunpckhwd
+IEMIMPL_MEDIA_F1H1H1 vpunpckhdq
+IEMIMPL_MEDIA_F1H1H1 vpunpckhqdq
 
 
 ;

@@ -8547,109 +8547,626 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufd_u256_fallback,(PRTUINT256U puDst, PCRTU
 }
 
 
+/*
+ * PUNPCKHBW - high bytes -> words
+ */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-/* PUNPCKHxxx */
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au8[0] = uSrc1.au8[4];
+    uDstOut.au8[1] = uSrc2.au8[4];
+    uDstOut.au8[2] = uSrc1.au8[5];
+    uDstOut.au8[3] = uSrc2.au8[5];
+    uDstOut.au8[4] = uSrc1.au8[6];
+    uDstOut.au8[5] = uSrc2.au8[6];
+    uDstOut.au8[6] = uSrc1.au8[7];
+    uDstOut.au8[7] = uSrc2.au8[7];
+    *puDst = uDstOut.u;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[ 8];
+    uDstOut.au8[ 1] = uSrc2.au8[ 8];
+    uDstOut.au8[ 2] = uSrc1.au8[ 9];
+    uDstOut.au8[ 3] = uSrc2.au8[ 9];
+    uDstOut.au8[ 4] = uSrc1.au8[10];
+    uDstOut.au8[ 5] = uSrc2.au8[10];
+    uDstOut.au8[ 6] = uSrc1.au8[11];
+    uDstOut.au8[ 7] = uSrc2.au8[11];
+    uDstOut.au8[ 8] = uSrc1.au8[12];
+    uDstOut.au8[ 9] = uSrc2.au8[12];
+    uDstOut.au8[10] = uSrc1.au8[13];
+    uDstOut.au8[11] = uSrc2.au8[13];
+    uDstOut.au8[12] = uSrc1.au8[14];
+    uDstOut.au8[13] = uSrc2.au8[14];
+    uDstOut.au8[14] = uSrc1.au8[15];
+    uDstOut.au8[15] = uSrc2.au8[15];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[ 8];
+    uDstOut.au8[ 1] = uSrc2.au8[ 8];
+    uDstOut.au8[ 2] = uSrc1.au8[ 9];
+    uDstOut.au8[ 3] = uSrc2.au8[ 9];
+    uDstOut.au8[ 4] = uSrc1.au8[10];
+    uDstOut.au8[ 5] = uSrc2.au8[10];
+    uDstOut.au8[ 6] = uSrc1.au8[11];
+    uDstOut.au8[ 7] = uSrc2.au8[11];
+    uDstOut.au8[ 8] = uSrc1.au8[12];
+    uDstOut.au8[ 9] = uSrc2.au8[12];
+    uDstOut.au8[10] = uSrc1.au8[13];
+    uDstOut.au8[11] = uSrc2.au8[13];
+    uDstOut.au8[12] = uSrc1.au8[14];
+    uDstOut.au8[13] = uSrc2.au8[14];
+    uDstOut.au8[14] = uSrc1.au8[15];
+    uDstOut.au8[15] = uSrc2.au8[15];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[ 8];
+    uDstOut.au8[ 1] = uSrc2.au8[ 8];
+    uDstOut.au8[ 2] = uSrc1.au8[ 9];
+    uDstOut.au8[ 3] = uSrc2.au8[ 9];
+    uDstOut.au8[ 4] = uSrc1.au8[10];
+    uDstOut.au8[ 5] = uSrc2.au8[10];
+    uDstOut.au8[ 6] = uSrc1.au8[11];
+    uDstOut.au8[ 7] = uSrc2.au8[11];
+    uDstOut.au8[ 8] = uSrc1.au8[12];
+    uDstOut.au8[ 9] = uSrc2.au8[12];
+    uDstOut.au8[10] = uSrc1.au8[13];
+    uDstOut.au8[11] = uSrc2.au8[13];
+    uDstOut.au8[12] = uSrc1.au8[14];
+    uDstOut.au8[13] = uSrc2.au8[14];
+    uDstOut.au8[14] = uSrc1.au8[15];
+    uDstOut.au8[15] = uSrc2.au8[15];
+    /* As usual, the upper 128-bits are treated like a parallel register to the lower half. */
+    uDstOut.au8[16] = uSrc1.au8[24];
+    uDstOut.au8[17] = uSrc2.au8[24];
+    uDstOut.au8[18] = uSrc1.au8[25];
+    uDstOut.au8[19] = uSrc2.au8[25];
+    uDstOut.au8[20] = uSrc1.au8[26];
+    uDstOut.au8[21] = uSrc2.au8[26];
+    uDstOut.au8[22] = uSrc1.au8[27];
+    uDstOut.au8[23] = uSrc2.au8[27];
+    uDstOut.au8[24] = uSrc1.au8[28];
+    uDstOut.au8[25] = uSrc2.au8[28];
+    uDstOut.au8[26] = uSrc1.au8[29];
+    uDstOut.au8[27] = uSrc2.au8[29];
+    uDstOut.au8[28] = uSrc1.au8[30];
+    uDstOut.au8[29] = uSrc2.au8[30];
+    uDstOut.au8[30] = uSrc1.au8[31];
+    uDstOut.au8[31] = uSrc2.au8[31];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+/*
+ * PUNPCKHBW - high words -> dwords
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[2];
+    uDstOut.au16[1] = uSrc2.au16[2];
+    uDstOut.au16[2] = uSrc1.au16[3];
+    uDstOut.au16[3] = uSrc2.au16[3];
+    *puDst = uDstOut.u;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[4];
+    uDstOut.au16[1] = uSrc2.au16[4];
+    uDstOut.au16[2] = uSrc1.au16[5];
+    uDstOut.au16[3] = uSrc2.au16[5];
+    uDstOut.au16[4] = uSrc1.au16[6];
+    uDstOut.au16[5] = uSrc2.au16[6];
+    uDstOut.au16[6] = uSrc1.au16[7];
+    uDstOut.au16[7] = uSrc2.au16[7];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[4];
+    uDstOut.au16[1] = uSrc2.au16[4];
+    uDstOut.au16[2] = uSrc1.au16[5];
+    uDstOut.au16[3] = uSrc2.au16[5];
+    uDstOut.au16[4] = uSrc1.au16[6];
+    uDstOut.au16[5] = uSrc2.au16[6];
+    uDstOut.au16[6] = uSrc1.au16[7];
+    uDstOut.au16[7] = uSrc2.au16[7];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au16[0]  = uSrc1.au16[4];
+    uDstOut.au16[1]  = uSrc2.au16[4];
+    uDstOut.au16[2]  = uSrc1.au16[5];
+    uDstOut.au16[3]  = uSrc2.au16[5];
+    uDstOut.au16[4]  = uSrc1.au16[6];
+    uDstOut.au16[5]  = uSrc2.au16[6];
+    uDstOut.au16[6]  = uSrc1.au16[7];
+    uDstOut.au16[7]  = uSrc2.au16[7];
+
+    uDstOut.au16[8]  = uSrc1.au16[12];
+    uDstOut.au16[9]  = uSrc2.au16[12];
+    uDstOut.au16[10] = uSrc1.au16[13];
+    uDstOut.au16[11] = uSrc2.au16[13];
+    uDstOut.au16[12] = uSrc1.au16[14];
+    uDstOut.au16[13] = uSrc2.au16[14];
+    uDstOut.au16[14] = uSrc1.au16[15];
+    uDstOut.au16[15] = uSrc2.au16[15];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhqdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+/*
+ * PUNPCKHBW - high dwords -> qword(s)
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu128Src);
-    AssertReleaseFailed();
-}
-
-/* PUNPCKLxxx */
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
-{
-    RT_NOREF(pFpuState, pu64Dst, pu32Src);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
-{
-    RT_NOREF(pFpuState, pu128Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[1];
+    uDstOut.au32[1] = uSrc2.au32[1];
+    *puDst = uDstOut.u;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu32Src);
-    AssertReleaseFailed();
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[2];
+    uDstOut.au32[1] = uSrc2.au32[2];
+    uDstOut.au32[2] = uSrc1.au32[3];
+    uDstOut.au32[3] = uSrc2.au32[3];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[2];
+    uDstOut.au32[1] = uSrc2.au32[2];
+    uDstOut.au32[2] = uSrc1.au32[3];
+    uDstOut.au32[3] = uSrc2.au32[3];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[2];
+    uDstOut.au32[1] = uSrc2.au32[2];
+    uDstOut.au32[2] = uSrc1.au32[3];
+    uDstOut.au32[3] = uSrc2.au32[3];
+
+    uDstOut.au32[4] = uSrc1.au32[6];
+    uDstOut.au32[5] = uSrc2.au32[6];
+    uDstOut.au32[6] = uSrc1.au32[7];
+    uDstOut.au32[7] = uSrc2.au32[7];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
+/*
+ * PUNPCKHQDQ -> High qwords -> double qword(s).
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhqdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState, pu64Dst, pu32Src);
-    AssertReleaseFailed();
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[1];
+    uDstOut.au64[1] = uSrc2.au64[1];
+    *puDst = uDstOut;
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[1];
+    uDstOut.au64[1] = uSrc2.au64[1];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhqdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[1];
+    uDstOut.au64[1] = uSrc2.au64[1];
+
+    uDstOut.au64[2] = uSrc1.au64[3];
+    uDstOut.au64[3] = uSrc2.au64[3];
+    *puDst = uDstOut;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklqdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+/*
+ * PUNPCKLBW - low bytes -> words
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState, pu128Dst, pu64Src);
-    AssertReleaseFailed();
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au8[0] = uSrc1.au8[0];
+    uDstOut.au8[1] = uSrc2.au8[0];
+    uDstOut.au8[2] = uSrc1.au8[1];
+    uDstOut.au8[3] = uSrc2.au8[1];
+    uDstOut.au8[4] = uSrc1.au8[2];
+    uDstOut.au8[5] = uSrc2.au8[2];
+    uDstOut.au8[6] = uSrc1.au8[3];
+    uDstOut.au8[7] = uSrc2.au8[3];
+    *puDst = uDstOut.u;
 }
 
-#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[0];
+    uDstOut.au8[ 1] = uSrc2.au8[0];
+    uDstOut.au8[ 2] = uSrc1.au8[1];
+    uDstOut.au8[ 3] = uSrc2.au8[1];
+    uDstOut.au8[ 4] = uSrc1.au8[2];
+    uDstOut.au8[ 5] = uSrc2.au8[2];
+    uDstOut.au8[ 6] = uSrc1.au8[3];
+    uDstOut.au8[ 7] = uSrc2.au8[3];
+    uDstOut.au8[ 8] = uSrc1.au8[4];
+    uDstOut.au8[ 9] = uSrc2.au8[4];
+    uDstOut.au8[10] = uSrc1.au8[5];
+    uDstOut.au8[11] = uSrc2.au8[5];
+    uDstOut.au8[12] = uSrc1.au8[6];
+    uDstOut.au8[13] = uSrc2.au8[6];
+    uDstOut.au8[14] = uSrc1.au8[7];
+    uDstOut.au8[15] = uSrc2.au8[7];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[0];
+    uDstOut.au8[ 1] = uSrc2.au8[0];
+    uDstOut.au8[ 2] = uSrc1.au8[1];
+    uDstOut.au8[ 3] = uSrc2.au8[1];
+    uDstOut.au8[ 4] = uSrc1.au8[2];
+    uDstOut.au8[ 5] = uSrc2.au8[2];
+    uDstOut.au8[ 6] = uSrc1.au8[3];
+    uDstOut.au8[ 7] = uSrc2.au8[3];
+    uDstOut.au8[ 8] = uSrc1.au8[4];
+    uDstOut.au8[ 9] = uSrc2.au8[4];
+    uDstOut.au8[10] = uSrc1.au8[5];
+    uDstOut.au8[11] = uSrc2.au8[5];
+    uDstOut.au8[12] = uSrc1.au8[6];
+    uDstOut.au8[13] = uSrc2.au8[6];
+    uDstOut.au8[14] = uSrc1.au8[7];
+    uDstOut.au8[15] = uSrc2.au8[7];
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au8[ 0] = uSrc1.au8[0];
+    uDstOut.au8[ 1] = uSrc2.au8[0];
+    uDstOut.au8[ 2] = uSrc1.au8[1];
+    uDstOut.au8[ 3] = uSrc2.au8[1];
+    uDstOut.au8[ 4] = uSrc1.au8[2];
+    uDstOut.au8[ 5] = uSrc2.au8[2];
+    uDstOut.au8[ 6] = uSrc1.au8[3];
+    uDstOut.au8[ 7] = uSrc2.au8[3];
+    uDstOut.au8[ 8] = uSrc1.au8[4];
+    uDstOut.au8[ 9] = uSrc2.au8[4];
+    uDstOut.au8[10] = uSrc1.au8[5];
+    uDstOut.au8[11] = uSrc2.au8[5];
+    uDstOut.au8[12] = uSrc1.au8[6];
+    uDstOut.au8[13] = uSrc2.au8[6];
+    uDstOut.au8[14] = uSrc1.au8[7];
+    uDstOut.au8[15] = uSrc2.au8[7];
+    /* As usual, the upper 128-bits are treated like a parallel register to the lower half. */
+    uDstOut.au8[16] = uSrc1.au8[16];
+    uDstOut.au8[17] = uSrc2.au8[16];
+    uDstOut.au8[18] = uSrc1.au8[17];
+    uDstOut.au8[19] = uSrc2.au8[17];
+    uDstOut.au8[20] = uSrc1.au8[18];
+    uDstOut.au8[21] = uSrc2.au8[18];
+    uDstOut.au8[22] = uSrc1.au8[19];
+    uDstOut.au8[23] = uSrc2.au8[19];
+    uDstOut.au8[24] = uSrc1.au8[20];
+    uDstOut.au8[25] = uSrc2.au8[20];
+    uDstOut.au8[26] = uSrc1.au8[21];
+    uDstOut.au8[27] = uSrc2.au8[21];
+    uDstOut.au8[28] = uSrc1.au8[22];
+    uDstOut.au8[29] = uSrc2.au8[22];
+    uDstOut.au8[30] = uSrc1.au8[23];
+    uDstOut.au8[31] = uSrc2.au8[23];
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PUNPCKLBW - low words -> dwords
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[0];
+    uDstOut.au16[1] = uSrc2.au16[0];
+    uDstOut.au16[2] = uSrc1.au16[1];
+    uDstOut.au16[3] = uSrc2.au16[1];
+    *puDst = uDstOut.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[0];
+    uDstOut.au16[1] = uSrc2.au16[0];
+    uDstOut.au16[2] = uSrc1.au16[1];
+    uDstOut.au16[3] = uSrc2.au16[1];
+    uDstOut.au16[4] = uSrc1.au16[2];
+    uDstOut.au16[5] = uSrc2.au16[2];
+    uDstOut.au16[6] = uSrc1.au16[3];
+    uDstOut.au16[7] = uSrc2.au16[3];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[0] = uSrc1.au16[0];
+    uDstOut.au16[1] = uSrc2.au16[0];
+    uDstOut.au16[2] = uSrc1.au16[1];
+    uDstOut.au16[3] = uSrc2.au16[1];
+    uDstOut.au16[4] = uSrc1.au16[2];
+    uDstOut.au16[5] = uSrc2.au16[2];
+    uDstOut.au16[6] = uSrc1.au16[3];
+    uDstOut.au16[7] = uSrc2.au16[3];
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au16[0]  = uSrc1.au16[0];
+    uDstOut.au16[1]  = uSrc2.au16[0];
+    uDstOut.au16[2]  = uSrc1.au16[1];
+    uDstOut.au16[3]  = uSrc2.au16[1];
+    uDstOut.au16[4]  = uSrc1.au16[2];
+    uDstOut.au16[5]  = uSrc2.au16[2];
+    uDstOut.au16[6]  = uSrc1.au16[3];
+    uDstOut.au16[7]  = uSrc2.au16[3];
+
+    uDstOut.au16[8]  = uSrc1.au16[8];
+    uDstOut.au16[9]  = uSrc2.au16[8];
+    uDstOut.au16[10] = uSrc1.au16[9];
+    uDstOut.au16[11] = uSrc2.au16[9];
+    uDstOut.au16[12] = uSrc1.au16[10];
+    uDstOut.au16[13] = uSrc2.au16[10];
+    uDstOut.au16[14] = uSrc1.au16[11];
+    uDstOut.au16[15] = uSrc2.au16[11];
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PUNPCKLBW - low dwords -> qword(s)
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[0];
+    uDstOut.au32[1] = uSrc2.au32[0];
+    *puDst = uDstOut.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[0];
+    uDstOut.au32[1] = uSrc2.au32[0];
+    uDstOut.au32[2] = uSrc1.au32[1];
+    uDstOut.au32[3] = uSrc2.au32[1];
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[0];
+    uDstOut.au32[1] = uSrc2.au32[0];
+    uDstOut.au32[2] = uSrc1.au32[1];
+    uDstOut.au32[3] = uSrc2.au32[1];
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au32[0] = uSrc1.au32[0];
+    uDstOut.au32[1] = uSrc2.au32[0];
+    uDstOut.au32[2] = uSrc1.au32[1];
+    uDstOut.au32[3] = uSrc2.au32[1];
+
+    uDstOut.au32[4] = uSrc1.au32[4];
+    uDstOut.au32[5] = uSrc2.au32[4];
+    uDstOut.au32[6] = uSrc1.au32[5];
+    uDstOut.au32[7] = uSrc2.au32[5];
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PUNPCKLQDQ -> Low qwords -> double qword(s).
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklqdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[0];
+    uDstOut.au64[1] = uSrc2.au64[0];
+    *puDst = uDstOut;
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[0];
+    uDstOut.au64[1] = uSrc2.au64[0];
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au64[0] = uSrc1.au64[0];
+    uDstOut.au64[1] = uSrc2.au64[0];
+
+    uDstOut.au64[2] = uSrc1.au64[2];
+    uDstOut.au64[3] = uSrc2.au64[2];
+    *puDst = uDstOut;
+}
 
 
 /*
