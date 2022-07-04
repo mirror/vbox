@@ -764,13 +764,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     /*
      * Create test context.
      */
-    if (bMode != BS3_MODE_RM)
-        Bs3RegCtxSaveEx(&Ctx, bMode, 1024);
-    else
-    {
-        Bs3RegCtxSaveEx(&Ctx, (bMode & ~BS3_MODE_CODE_MASK) | BS3_MODE_CODE_V86, 1024);
-        Bs3RegCtxConvertV86ToRm(&Ctx);
-    }
+    Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
 
@@ -899,18 +893,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     /*
                      * Execute.
                      */
-                    if (bMode != BS3_MODE_RM)
-                    {
-                        Bs3ExtCtxRestoreEx(pExtCtx);
-                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSaveEx(pExtCtxOut);
-                    }
-                    else
-                    {
-                        Bs3ExtCtxRestore(pExtCtx);
-                        Bs3TrapSetJmpAndRestoreInRm(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSave(pExtCtxOut);
-                    }
+                    Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                     /*
                      * Check the result:
@@ -2170,13 +2153,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     /*
      * Create test context.
      */
-    if (bMode != BS3_MODE_RM)
-        Bs3RegCtxSaveEx(&Ctx, bMode, 1024);
-    else
-    {
-        Bs3RegCtxSaveEx(&Ctx, (bMode & ~BS3_MODE_CODE_MASK) | BS3_MODE_CODE_V86, 1024);
-        Bs3RegCtxConvertV86ToRm(&Ctx);
-    }
+    Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
 
@@ -2293,18 +2270,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                     /*
                      * Execute.
                      */
-                    if (bMode != BS3_MODE_RM)
-                    {
-                        Bs3ExtCtxRestoreEx(pExtCtx);
-                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSaveEx(pExtCtxOut);
-                    }
-                    else
-                    {
-                        Bs3ExtCtxRestore(pExtCtx);
-                        Bs3TrapSetJmpAndRestoreInRm(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSave(pExtCtxOut);
-                    }
+                    Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                     /*
                      * Check the result:
@@ -2493,13 +2459,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
     /*
      * Create test context.
      */
-    if (bMode != BS3_MODE_RM)
-        Bs3RegCtxSaveEx(&Ctx, bMode, 1024);
-    else
-    {
-        Bs3RegCtxSaveEx(&Ctx, (bMode & ~BS3_MODE_CODE_MASK) | BS3_MODE_CODE_V86, 1024);
-        Bs3RegCtxConvertV86ToRm(&Ctx);
-    }
+    Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
 
     /*
@@ -2609,18 +2569,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                     /*
                      * Execute.
                      */
-                    if (bMode != BS3_MODE_RM)
-                    {
-                        Bs3ExtCtxRestoreEx(pExtCtx);
-                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSaveEx(pExtCtxOut);
-                    }
-                    else
-                    {
-                        Bs3ExtCtxRestore(pExtCtx);
-                        Bs3TrapSetJmpAndRestoreInRm(&Ctx, &TrapFrame);
-                        Bs3ExtCtxSave(pExtCtxOut);
-                    }
+                    Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                     /*
                      * Check the result:
@@ -3029,8 +2978,8 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufd(uint8_t bMode)
  * we test MMX, SSE and AVX here, we don't need to worry about 286 or 8086.
  *
  * Some extra steps needs to be taken to properly handle extended state in LM64
- * (use Bs3ExtCtxRestoreEx/Bs3ExtCtxSaveEx) and when testing real mode (look for
- * BS3_MODE_RM above in the test drivers).
+ * (Bs3ExtCtxRestoreEx & Bs3ExtCtxSaveEx) and when testing real mode
+ * (Bs3RegCtxSaveForMode & Bs3TrapSetJmpAndRestoreWithExtCtxAndRm).
  */
 BS3_DECL(void) Main_pe32()
 {
