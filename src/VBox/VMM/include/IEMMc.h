@@ -85,6 +85,15 @@
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT() \
+    do { \
+        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
+            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse42) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
+    } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT() \
     do { \
         if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
@@ -94,11 +103,11 @@
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
-#define IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT() \
+#define IEM_MC_MAYBE_RAISE_SSSE3_RELATED_XCPT() \
     do { \
         if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
             || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR) \
-            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse42) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3) \
             return iemRaiseUndefinedOpcode(pVCpu); \
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \

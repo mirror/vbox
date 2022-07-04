@@ -909,6 +909,12 @@ IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhdq  = { iemAImpl_punpckhdq_u64
 /** Function table for the PUNPCKHQDQ instruction */
 IEM_STATIC const IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq = { NULL, iemAImpl_punpckhqdq_u128 };
 
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PSHUFB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pshufb       = { iemAImpl_pshufb_u64,     iemAImpl_pshufb_u128 };
+# endif
+/** Function table for the PSHUFB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pshufb_fallback = { iemAImpl_pshufb_u64_fallback, iemAImpl_pshufb_u128_fallback };
 /** Function table for the PAND instruction */
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pand         = { iemAImpl_pand_u64,       iemAImpl_pand_u128 };
 /** Function table for the PANDN instruction */
@@ -959,6 +965,8 @@ IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubd        = { iemAImpl_psubd_u64,   
 IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubq        = { iemAImpl_psubq_u64,      iemAImpl_psubq_u128 };
 
 # ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the VPSHUFB instruction. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpshufb        = { iemAImpl_vpshufb_u128, iemAImpl_vpshufb_u256 };
 /** Function table for the VPXOR instruction */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpand          = { iemAImpl_vpand_u128,   iemAImpl_vpand_u256 };
 /** Function table for the VPXORN instruction */
@@ -1001,6 +1009,8 @@ IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubd       = { iemAImpl_vpsubd_u128, 
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpsubq       = { iemAImpl_vpsubq_u128, iemAImpl_vpsubq_u256 };
 # endif
 
+/** Function table for the VPSHUFB instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpshufb_fallback = { iemAImpl_vpshufb_u128_fallback, iemAImpl_vpshufb_u256_fallback };
 /** Function table for the VPAND instruction, software fallback. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpand_fallback = { iemAImpl_vpand_u128_fallback,  iemAImpl_vpand_u256_fallback };
 /** Function table for the VPANDN instruction, software fallback. */

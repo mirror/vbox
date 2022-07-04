@@ -384,6 +384,7 @@ IEMOPMEDIAF2 g_iemAImpl_psubq;
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT()          do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT()          do { (void)fMcBegin; } while (0)
+#define IEM_MC_MAYBE_RAISE_SSSE3_RELATED_XCPT()         do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT()         do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT()         do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT()           do { (void)fMcBegin; } while (0)

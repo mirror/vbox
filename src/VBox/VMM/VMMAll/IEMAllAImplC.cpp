@@ -8358,6 +8358,88 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCR
 
 
 /*
+ * [V]PSHUFB
+ */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc    = { *puSrc };
+    RTUINT64U const uDstIn  = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U       uDstOut = { 0 };
+    for (unsigned iByte = 0; iByte < RT_ELEMENTS(uDstIn.au8); iByte++)
+    {
+        uint8_t idxSrc = uSrc.au8[iByte];
+        if (!(idxSrc & 0x80))
+            uDstOut.au8[iByte] = uDstIn.au8[idxSrc & 7];
+    }
+    *puDst = uDstOut.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc    = { *puSrc };
+    RTUINT128U const uDstIn  = { *puDst };
+    ASMCompilerBarrier();
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    for (unsigned iByte = 0; iByte < RT_ELEMENTS(puDst->au8); iByte++)
+    {
+        uint8_t idxSrc = uSrc.au8[iByte];
+        if (!(idxSrc & 0x80))
+            puDst->au8[iByte] = uDstIn.au8[idxSrc & 15];
+    }
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc1 = { *puSrc1 }; /* could be same as puDst */
+    RTUINT128U const uSrc2 = { *puSrc2 }; /* could be same as puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    for (unsigned iByte = 0; iByte < 16; iByte++)
+    {
+        uint8_t idxSrc = uSrc2.au8[iByte];
+        if (!(idxSrc & 0x80))
+            puDst->au8[iByte] = uSrc1.au8[(idxSrc & 15)];
+    }
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc1 = { *puSrc1 }; /* could be same as puDst */
+    RTUINT256U const uSrc2 = { *puSrc2 }; /* could be same as puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    puDst->au64[2] = 0;
+    puDst->au64[3] = 0;
+    for (unsigned iByte = 0; iByte < 16; iByte++)
+    {
+        uint8_t idxSrc = uSrc2.au8[iByte];
+        if (!(idxSrc & 0x80))
+            puDst->au8[iByte] = uSrc1.au8[(idxSrc & 15)];
+    }
+    for (unsigned iByte = 16; iByte < RT_ELEMENTS(puDst->au8); iByte++)
+    {
+        uint8_t idxSrc = uSrc2.au8[iByte];
+        if (!(idxSrc & 0x80))
+            puDst->au8[iByte] = uSrc1.au8[(idxSrc & 15) + 16]; /* baka intel */
+    }
+    RT_NOREF(pExtState);
+}
+
+
+/*
  * PSHUFW, [V]PSHUFHW, [V]PSHUFLW, [V]PSHUFD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY

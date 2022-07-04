@@ -3599,6 +3599,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
+IEMIMPL_MEDIA_F2 pshufb,  1
 IEMIMPL_MEDIA_F2 pand,    1
 IEMIMPL_MEDIA_F2 pandn,   1
 IEMIMPL_MEDIA_F2 por,     1
@@ -3896,6 +3897,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
+IEMIMPL_MEDIA_F3 vpshufb
 IEMIMPL_MEDIA_F3 vpand
 IEMIMPL_MEDIA_F3 vpandn
 IEMIMPL_MEDIA_F3 vpor
