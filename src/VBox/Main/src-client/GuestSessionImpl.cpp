@@ -3183,7 +3183,7 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
         return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
-    int vrc;
+    int vrc = VINF_SUCCESS;
 
     uint64_t const tsStart = RTTimeMilliTS();
     uint64_t       tsNow   = tsStart;
