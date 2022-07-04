@@ -1054,7 +1054,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
         Assert(!pVmcbCtrl0->IntCtrl.n.u1VGifEnable);
     }
 
-    /* CR4 writes must always be intercepted for tracking PGM mode changes. */
+    /* CR4 writes must always be intercepted for tracking PGM mode changes and
+       AVX (for XCR0 syncing during worlds switching). */
     pVmcbCtrl0->u16InterceptWrCRx = RT_BIT(4);
 
     /* Intercept all DRx reads and writes by default. Changed later on. */
@@ -1665,7 +1666,8 @@ static int hmR0SvmExportGuestCR4(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     else
         pVmcb->ctrl.u16InterceptRdCRx |= RT_BIT(4);
 
-    /* CR4 writes are always intercepted (both guest, nested-guest) for tracking PGM mode changes. */
+    /* CR4 writes are always intercepted (both guest, nested-guest) for tracking
+       PGM mode changes and AVX (for XCR0 syncing during worlds switching). */
     Assert(pVmcb->ctrl.u16InterceptWrCRx & RT_BIT(4));
 
     /* Update VMCB with the shadow CR4 the appropriate VMCB clean bits. */
@@ -2204,7 +2206,8 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
     pVmcbNstGstCtrl->u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
     pVmcbNstGstCtrl->u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
 
-    /* Always intercept CR4 writes for tracking PGM mode changes. */
+    /* Always intercept CR4 writes for tracking PGM mode changes and AVX (for
+       XCR0 syncing during worlds switching). */
     pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(4);
 
     /* Without nested paging, intercept CR3 reads and writes as we load shadow page tables. */
