@@ -312,6 +312,10 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_punpckhbw_u64          NULL
 #define iemAImpl_punpckhwd_u64          NULL
 #define iemAImpl_punpckhdq_u64          NULL
+#define iemAImpl_packsswb_u64           NULL
+#define iemAImpl_packssdw_u64           NULL
+#define iemAImpl_packuswb_u64           NULL
+
 #define iemAImpl_punpcklbw_u128         NULL
 #define iemAImpl_punpcklwd_u128         NULL
 #define iemAImpl_punpckldq_u128         NULL
@@ -320,6 +324,11 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_punpckhwd_u128         NULL
 #define iemAImpl_punpckhdq_u128         NULL
 #define iemAImpl_punpckhqdq_u128        NULL
+#define iemAImpl_packsswb_u128          NULL
+#define iemAImpl_packssdw_u128          NULL
+#define iemAImpl_packuswb_u128          NULL
+#define iemAImpl_packusdw_u128          NULL
+
 
 #define iemAImpl_pand_u64               NULL
 #define iemAImpl_pandn_u64              NULL

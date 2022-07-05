@@ -9170,6 +9170,414 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u256_fallback,(PRTUINT256U puDst, P
 
 
 /*
+ * PACKSSWB - signed words -> signed bytes
+ */
+#define SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(a_iWord) \
+        ( (uint16_t)((a_iWord) + 0x80) <= (uint16_t)0xff  \
+          ? (uint8_t)(a_iWord) \
+          : (uint8_t)0x7f + (uint8_t)(((a_iWord) >> 15) & 1) ) /* 0x7f = INT8_MAX; 0x80 = INT8_MIN; source bit 15 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packsswb_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[2]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[3]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[4]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[5]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[6]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[7]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[3]);
+    *puDst = uDstOut.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packsswb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[7]);
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpacksswb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[7]);
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpacksswb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[7]);
+
+    uDstOut.au8[16] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[ 8]);
+    uDstOut.au8[17] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[ 9]);
+    uDstOut.au8[18] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[10]);
+    uDstOut.au8[19] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[11]);
+    uDstOut.au8[20] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[12]);
+    uDstOut.au8[21] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[13]);
+    uDstOut.au8[22] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[14]);
+    uDstOut.au8[23] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[15]);
+    uDstOut.au8[24] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[ 8]);
+    uDstOut.au8[25] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[ 9]);
+    uDstOut.au8[26] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[10]);
+    uDstOut.au8[27] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[11]);
+    uDstOut.au8[28] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[12]);
+    uDstOut.au8[29] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[13]);
+    uDstOut.au8[30] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[14]);
+    uDstOut.au8[31] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc2.au16[15]);
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PACKUSWB - signed words -> unsigned bytes
+ */
+#define SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(a_iWord) \
+        ( (uint16_t)(a_iWord) <= (uint16_t)0xff  \
+          ? (uint8_t)(a_iWord) \
+          : (uint8_t)0xff * (uint8_t)((((a_iWord) >> 15) & 1) ^ 1) ) /* 0xff = UINT8_MAX; 0x00 == UINT8_MIN; source bit 15 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packuswb_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au8[0]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[1]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[2]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[3]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[4]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[5]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[6]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[7]  = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[3]);
+    *puDst = uDstOut.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packuswb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[7]);
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[7]);
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
+    uDstOut.au8[ 1] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[1]);
+    uDstOut.au8[ 2] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[2]);
+    uDstOut.au8[ 3] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[3]);
+    uDstOut.au8[ 4] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[4]);
+    uDstOut.au8[ 5] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[5]);
+    uDstOut.au8[ 6] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[6]);
+    uDstOut.au8[ 7] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[7]);
+    uDstOut.au8[ 8] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[0]);
+    uDstOut.au8[ 9] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[1]);
+    uDstOut.au8[10] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[2]);
+    uDstOut.au8[11] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[3]);
+    uDstOut.au8[12] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[4]);
+    uDstOut.au8[13] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[5]);
+    uDstOut.au8[14] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[6]);
+    uDstOut.au8[15] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[7]);
+
+    uDstOut.au8[16] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[ 8]);
+    uDstOut.au8[17] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[ 9]);
+    uDstOut.au8[18] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[10]);
+    uDstOut.au8[19] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[11]);
+    uDstOut.au8[20] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[12]);
+    uDstOut.au8[21] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[13]);
+    uDstOut.au8[22] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[14]);
+    uDstOut.au8[23] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[15]);
+    uDstOut.au8[24] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[ 8]);
+    uDstOut.au8[25] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[ 9]);
+    uDstOut.au8[26] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[10]);
+    uDstOut.au8[27] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[11]);
+    uDstOut.au8[28] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[12]);
+    uDstOut.au8[29] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[13]);
+    uDstOut.au8[30] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[14]);
+    uDstOut.au8[31] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc2.au16[15]);
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PACKSSDW - signed dwords -> signed words
+ */
+#define SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(a_iDword) \
+        ( (uint32_t)((a_iDword) + 0x8000) <= (uint16_t)0xffff  \
+          ? (uint16_t)(a_iDword) \
+          : (uint16_t)0x7fff + (uint16_t)(((a_iDword) >> 31) & 1) ) /* 0x7fff = INT16_MAX; 0x8000 = INT16_MIN; source bit 31 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packssdw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc2 = { *puSrc };
+    RTUINT64U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT64U uDstOut;
+    uDstOut.au16[0]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[1]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[2]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[3]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[1]);
+    *puDst = uDstOut.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_packssdw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[3]);
+    *puDst = uDstOut;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[3]);
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[3]);
+
+    uDstOut.au16[ 8] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[4]);
+    uDstOut.au16[ 9] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[5]);
+    uDstOut.au16[10] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[6]);
+    uDstOut.au16[11] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[7]);
+    uDstOut.au16[12] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[4]);
+    uDstOut.au16[13] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[5]);
+    uDstOut.au16[14] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[6]);
+    uDstOut.au16[15] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.au32[7]);
+    *puDst = uDstOut;
+}
+
+
+/*
+ * PACKUSDW - signed dwords -> unsigned words
+ */
+#define SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(a_iDword) \
+        ( (uint32_t)(a_iDword) <= (uint16_t)0xffff  \
+          ? (uint16_t)(a_iDword) \
+          : (uint16_t)0xffff * (uint16_t)((((a_iDword) >> 31) & 1) ^ 1) ) /* 0xffff = UINT16_MAX; source bit 31 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_packusdw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U const uSrc2 = { *puSrc };
+    RTUINT128U const uSrc1 = { *puDst };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[3]);
+    *puDst = uDstOut;
+}
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc2 = { *puSrc2 };
+    RTUINT128U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT128U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[3]);
+    *puDst = uDstOut;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc2 = { *puSrc2 };
+    RTUINT256U const uSrc1 = { *puSrc1 };
+    ASMCompilerBarrier();
+    RTUINT256U uDstOut;
+    uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
+    uDstOut.au16[ 1] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[1]);
+    uDstOut.au16[ 2] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[2]);
+    uDstOut.au16[ 3] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[3]);
+    uDstOut.au16[ 4] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[0]);
+    uDstOut.au16[ 5] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[1]);
+    uDstOut.au16[ 6] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[2]);
+    uDstOut.au16[ 7] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[3]);
+
+    uDstOut.au16[ 8] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[4]);
+    uDstOut.au16[ 9] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[5]);
+    uDstOut.au16[10] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[6]);
+    uDstOut.au16[11] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[7]);
+    uDstOut.au16[12] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[4]);
+    uDstOut.au16[13] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[5]);
+    uDstOut.au16[14] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[6]);
+    uDstOut.au16[15] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc2.au32[7]);
+    *puDst = uDstOut;
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 

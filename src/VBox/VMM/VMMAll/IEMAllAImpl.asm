@@ -3623,6 +3623,51 @@ IEMIMPL_MEDIA_F2 psubq,   1
 
 
 ;;
+; Media instruction working on two full sized registers, but no FXSAVE state argument.
+;
+; @param    1       The instruction
+; @param    2       Whether there is an MMX variant (1) or not (0).
+;
+; @param    A0      Pointer to the first media register size operand (input/output).
+; @param    A1      Pointer to the second media register size operand (input).
+;
+%macro IEMIMPL_MEDIA_OPT_F2 2
+%if %2 != 0
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
+        PROLOGUE_2_ARGS
+        IEMIMPL_MMX_PROLOGUE
+
+        movq    mm0, [A0]
+        movq    mm1, [A1]
+        %1      mm0, mm1
+        movq    [A0], mm0
+
+        IEMIMPL_MMX_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+%endif
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 8
+        PROLOGUE_2_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu   xmm0, [A0]
+        movdqu   xmm1, [A1]
+        %1       xmm0, xmm1
+        movdqu   [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_OPT_F2 packsswb, 1
+IEMIMPL_MEDIA_OPT_F2 packssdw, 1
+IEMIMPL_MEDIA_OPT_F2 packuswb, 1
+IEMIMPL_MEDIA_OPT_F2 packusdw, 0
+
+
+;;
 ; Media instruction working on one full sized and one half sized register (lower half).
 ;
 ; @param    1       The instruction
@@ -3925,7 +3970,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_AVX_PROLOGUE
 
         vmovdqu  ymm0, [A2]
         vmovdqu  ymm1, [A3]
@@ -3958,6 +4003,50 @@ IEMIMPL_MEDIA_F3 vpsubb
 IEMIMPL_MEDIA_F3 vpsubw
 IEMIMPL_MEDIA_F3 vpsubd
 IEMIMPL_MEDIA_F3 vpsubq
+
+
+;;
+; Media instruction working on two full sized source registers and one destination (AVX),
+; but no XSAVE state pointer argument.
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      Pointer to the second source media register size operand (input).
+;
+%macro IEMIMPL_MEDIA_OPT_F3 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  xmm0, [A1]
+        vmovdqu  xmm1, [A2]
+        %1       xmm0, xmm0, xmm1
+        vmovdqu  [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        vmovdqu  ymm1, [A2]
+        %1       ymm0, ymm0, ymm1
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_OPT_F3 vpacksswb
+IEMIMPL_MEDIA_OPT_F3 vpackssdw
+IEMIMPL_MEDIA_OPT_F3 vpackuswb
+IEMIMPL_MEDIA_OPT_F3 vpackusdw
 
 
 ;

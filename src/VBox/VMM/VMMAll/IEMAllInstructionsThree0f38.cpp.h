@@ -31,7 +31,7 @@ FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PFNIEMAIMPLMEDIAF2U64, pfnU64,
  *      pxxx    xmm1, xmm2/mem128
  *
  * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 4. SSE3 cpuid checks.
+ * Exceptions type 4. SSSE3 cpuid checks.
  *
  * @sa  iemOpCommonSse2_FullFull_To_Full
  */
@@ -45,13 +45,13 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(PRTUINT128U,          pDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
         IEM_MC_MAYBE_RAISE_SSSE3_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -61,9 +61,9 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
          * Register, memory.
          */
         IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
-        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
@@ -72,8 +72,182 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE4.1 instructions on the forms:
+ *      pxxx    xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 4. SSE4.1 cpuid checks.
+ *
+ * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
+ *      iemOpCommonSse42_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE4.1 instructions on the forms:
+ *      pxxx    xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 4. SSE4.1 cpuid checks.
+ *
+ * Unlike iemOpCommonSse41_FullFull_To_Full, the @a pfnU128 worker function
+ * takes no FXSAVE state, just the operands.
+ *
+ * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
+ *      iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse42_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse41Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE4.2 instructions on the forms:
+ *      pxxx    xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 4. SSE4.2 cpuid checks.
+ *
+ * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
+ *      iemOpCommonSse41_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -217,117 +391,6 @@ FNIEMOP_STUB(iemOp_pmovsxdq_Vx_UxMq);
 /** Opcode 0x66 0x0f 0x38 0x28. */
 FNIEMOP_STUB(iemOp_pmuldq_Vx_Wx);
 
-/**
- * Common worker for SSE4.1 instructions on the forms:
- *      pxxx    xmm1, xmm2/mem128
- *
- * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 4. SSE2 cpuid checks.
- *
- * @sa  iemOpCommonSse2_FullFull_To_Full
- */
-FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(PRTUINT128U,          pDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
-        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
-        IEM_MC_LOCAL(RTUINT128U,                uSrc);
-        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Common worker for SSE4.2 instructions on the forms:
- *      pxxx    xmm1, xmm2/mem128
- *
- * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 4. SSE2 cpuid checks.
- *
- * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSse41_FullFull_To_Full
- */
-FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(PRTUINT128U,          pDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
-        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
-        IEM_MC_LOCAL(RTUINT128U,                uSrc);
-        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
-
 
 /** Opcode 0x66 0x0f 0x38 0x29. */
 FNIEMOP_DEF(iemOp_pcmpeqq_Vx_Wx)
@@ -385,8 +448,15 @@ FNIEMOP_DEF(iemOp_movntdqa_Vdq_Mdq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
+
 /** Opcode 0x66 0x0f 0x38 0x2b. */
-FNIEMOP_STUB(iemOp_packusdw_Vx_Wx);
+FNIEMOP_DEF(iemOp_packusdw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PACKUSDW, packusdw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse41Opt_FullFull_To_Full, iemAImpl_packusdw_u128);
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0x2c - invalid (vex only). */
 /*  Opcode 0x66 0x0f 0x38 0x2d - invalid (vex only). */
 /*  Opcode 0x66 0x0f 0x38 0x2e - invalid (vex only). */
