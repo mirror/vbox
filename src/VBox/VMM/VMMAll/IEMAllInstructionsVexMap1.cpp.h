@@ -392,7 +392,7 @@ FNIEMOP_DEF(iemOp_vmovups_Vps_Wps)
  */
 FNIEMOP_DEF(iemOp_vmovupd_Vpd_Wpd)
 {
-    IEMOP_MNEMONIC2(VEX_RM, VMOVUPD, vmovupd, Vpd_WO, Wpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_MNEMONIC2(VEX_RM, VMOVUPD, vmovupd, Vpd_WO, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
     Assert(pVCpu->iem.s.uVexLength <= 1);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -484,7 +484,7 @@ FNIEMOP_DEF(iemOp_vmovss_Vss_Hss_Wss)
         IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
         IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm),
                                            IEM_GET_MODRM_RM(pVCpu, bRm) /*U32*/,
-                                            IEM_GET_EFFECTIVE_VVVV(pVCpu) /*Hss*/);
+                                           IEM_GET_EFFECTIVE_VVVV(pVCpu) /*Hss*/);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -676,7 +676,7 @@ FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
  */
 FNIEMOP_DEF(iemOp_vmovupd_Wpd_Vpd)
 {
-    IEMOP_MNEMONIC2(VEX_MR, VMOVUPD, vmovupd, Wpd_WO, Vpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_MNEMONIC2(VEX_MR, VMOVUPD, vmovupd, Wpd_WO, Vpd, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
     Assert(pVCpu->iem.s.uVexLength <= 1);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))

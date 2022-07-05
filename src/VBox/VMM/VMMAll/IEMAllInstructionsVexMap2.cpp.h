@@ -171,7 +171,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
              */
             /* 128-bit: Memory, register. */
             IEMOP_MNEMONIC2EX(vmovntdqa_Vdq_WO_Mdq_L0, "vmovntdqa, Vdq_WO, Mdq", VEX_RM_MEM, VMOVNTDQA, vmovntdqa, Vx_WO, Mx,
-                              DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+                              DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(RTUINT128U,                uSrc);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -202,7 +202,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
              */
             /* 256-bit: Memory, register. */
             IEMOP_MNEMONIC2EX(vmovntdqa_Vqq_WO_Mqq_L1, "vmovntdqa, Vqq_WO,Mqq", VEX_RM_MEM, VMOVNTDQA, vmovntdqa, Vx_WO, Mx,
-                              DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+                              DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(RTUINT256U,                uSrc);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
