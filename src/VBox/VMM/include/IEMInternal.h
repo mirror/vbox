@@ -2537,6 +2537,10 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  */
 #define IEM_IS_CANONICAL(a_u64Addr)         X86_IS_CANONICAL(a_u64Addr)
 
+/** Checks if the ModR/M byte is in register mode or not.  */
+#define IEM_IS_MODRM_REG_MODE(a_bRm)        ( ((a_bRm) & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT) )
+/** Checks if the ModR/M byte is in memory mode or not.  */
+#define IEM_IS_MODRM_MEM_MODE(a_bRm)        ( ((a_bRm) & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT) )
 
 /**
  * Gets the register (reg) part of a ModR/M encoding, with REX.R added in.

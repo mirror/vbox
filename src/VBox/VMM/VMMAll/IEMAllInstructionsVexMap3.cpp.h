@@ -274,7 +274,7 @@ FNIEMOP_DEF(iemOp_rorx_Gy_Ey_Ib)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi2)
         return iemOp_InvalidNeedRMImm8(pVCpu);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
          * Register, register.

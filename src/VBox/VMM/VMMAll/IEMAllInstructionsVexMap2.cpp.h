@@ -155,7 +155,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
 {
     Assert(pVCpu->iem.s.uVexLength <= 1);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    if (IEM_IS_MODRM_MEM_MODE(bRm))
     {
         if (pVCpu->iem.s.uVexLength == 0)
         {
@@ -182,7 +182,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
             IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-            IEM_MC_STORE_YREG_U128_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+            IEM_MC_STORE_YREG_U128_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
 
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
@@ -213,7 +213,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
             IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U256_ALIGN_AVX(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-            IEM_MC_STORE_YREG_U256_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
 
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
@@ -569,7 +569,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         return iemOp_InvalidNeedRM(pVCpu);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
          * Register, register.
@@ -672,7 +672,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1) \
         return iemOp_InvalidWithRM(pVCpu, bRm); /* decode memory variant? */ \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF); \
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
@@ -807,7 +807,7 @@ AssertCompile(RT_ELEMENTS(g_apfnVexGroup17_f3) == 8);
 FNIEMOP_DEF(iemOp_VGrp17_f3)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    return FNIEMOP_CALL_1(g_apfnVexGroup17_f3[((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)], bRm);
+    return FNIEMOP_CALL_1(g_apfnVexGroup17_f3[IEM_GET_MODRM_REG_8(bRm)], bRm);
 }
 
 /*  Opcode VEX.F2.0F38 0xf3 - invalid (vex only - group 17). */
@@ -824,7 +824,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         return iemOp_InvalidNeedRM(pVCpu); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
@@ -921,7 +921,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         return iemOp_InvalidNeedRM(pVCpu); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
@@ -1014,7 +1014,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeatureMember) \
         return iemOp_InvalidNeedRM(pVCpu); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
@@ -1126,7 +1126,7 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi2)
         return iemOp_InvalidNeedRM(pVCpu);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
          * Register, register.
