@@ -23,7 +23,7 @@
  * @{
  */
 
-FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PFNIEMAIMPLMEDIAF2U64, pfnU64, bool, fSupported); /* in IEMAllInstructionsTwoByteOf.cpp.h */
+FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PCIEMOPMEDIAF2, pImpl, bool, fSupported); /* in IEMAllInstructionsTwoByteOf.cpp.h */
 
 
 /**
@@ -35,7 +35,7 @@ FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PFNIEMAIMPLMEDIAF2U64, pfnU64,
  *
  * @sa  iemOpCommonSse2_FullFull_To_Full
  */
-FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -51,7 +51,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -73,7 +73,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
 
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -87,7 +87,7 @@ FNIEMOP_DEF(iemOp_pshufb_Pq_Qq)
 {
     IEMOP_MNEMONIC2(RM, PSHUFB, pshufb, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
-                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_pshufb_u64,&iemAImpl_pshufb_u64_fallback),
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, &g_iemAImpl_pshufb, &g_iemAImpl_pshufb_fallback),
                           IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
 }
 
@@ -97,7 +97,7 @@ FNIEMOP_DEF(iemOp_pshufb_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PSHUFB, pshufb, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
-                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_pshufb_u128, iemAImpl_pshufb_u128_fallback));
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, &g_iemAImpl_pshufb, &g_iemAImpl_pshufb_fallback));
 
 }
 
@@ -226,7 +226,7 @@ FNIEMOP_STUB(iemOp_pmuldq_Vx_Wx);
  *
  * @sa  iemOpCommonSse2_FullFull_To_Full
  */
-FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -242,7 +242,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -264,7 +264,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
 
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -282,7 +282,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
  *
  * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSse41_FullFull_To_Full
  */
-FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -298,7 +298,7 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -320,7 +320,7 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
 
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -334,7 +334,7 @@ FNIEMOP_DEF(iemOp_pcmpeqq_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQQ, pcmpeqq, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse41_FullFull_To_Full,
-                          IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_pcmpeqq_u128, iemAImpl_pcmpeqq_u128_fallback));
+                          IEM_SELECT_HOST_OR_FALLBACK(fSse41, &g_iemAImpl_pcmpeqq, &g_iemAImpl_pcmpeqq_fallback));
 }
 
 
@@ -412,7 +412,7 @@ FNIEMOP_DEF(iemOp_pcmpgtq_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPGTQ, pcmpgtq, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse42_FullFull_To_Full,
-                          IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_pcmpgtq_u128, iemAImpl_pcmpgtq_u128_fallback));
+                          IEM_SELECT_HOST_OR_FALLBACK(fSse42, &g_iemAImpl_pcmpgtq, &g_iemAImpl_pcmpgtq_fallback));
 }
 
 

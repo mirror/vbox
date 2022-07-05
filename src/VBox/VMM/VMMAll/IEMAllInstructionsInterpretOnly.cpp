@@ -892,6 +892,61 @@ IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shrd_eflags[] =
 
 
 # ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PSHUFB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pshufb       = { iemAImpl_pshufb_u64,     iemAImpl_pshufb_u128 };
+# endif
+/** Function table for the PSHUFB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pshufb_fallback = { iemAImpl_pshufb_u64_fallback, iemAImpl_pshufb_u128_fallback };
+/** Function table for the PAND instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pand         = { iemAImpl_pand_u64,       iemAImpl_pand_u128 };
+/** Function table for the PANDN instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pandn        = { iemAImpl_pandn_u64,      iemAImpl_pandn_u128 };
+/** Function table for the POR instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_por          = { iemAImpl_por_u64,        iemAImpl_por_u128 };
+/** Function table for the PXOR instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pxor         = { iemAImpl_pxor_u64,       iemAImpl_pxor_u128 };
+/** Function table for the PCMPEQB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqb      = { iemAImpl_pcmpeqb_u64,    iemAImpl_pcmpeqb_u128 };
+/** Function table for the PCMPEQW instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqw      = { iemAImpl_pcmpeqw_u64,    iemAImpl_pcmpeqw_u128 };
+/** Function table for the PCMPEQD instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqd      = { iemAImpl_pcmpeqd_u64,    iemAImpl_pcmpeqd_u128 };
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PCMPEQQ instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqq      = { NULL,                    iemAImpl_pcmpeqq_u128 };
+# endif
+/** Function table for the PCMPEQQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpeqq_fallback = { NULL,                iemAImpl_pcmpeqq_u128_fallback };
+/** Function table for the PCMPGTB instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtb      = { iemAImpl_pcmpgtb_u64,    iemAImpl_pcmpgtb_u128 };
+/** Function table for the PCMPGTW instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtw      = { iemAImpl_pcmpgtw_u64,    iemAImpl_pcmpgtw_u128 };
+/** Function table for the PCMPGTD instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtd      = { iemAImpl_pcmpgtd_u64,    iemAImpl_pcmpgtd_u128 };
+# ifndef IEM_WITHOUT_ASSEMBLY
+/** Function table for the PCMPGTQ instruction */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtq      = { NULL,                    iemAImpl_pcmpgtq_u128 };
+# endif
+/** Function table for the PCMPGTQ instruction, software fallback. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_pcmpgtq_fallback = { NULL,                iemAImpl_pcmpgtq_u128_fallback };
+/** Function table for the PADDB instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddb        = { iemAImpl_paddb_u64,      iemAImpl_paddb_u128 };
+/** Function table for the PADDW instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddw        = { iemAImpl_paddw_u64,      iemAImpl_paddw_u128 };
+/** Function table for the PADDD instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddd        = { iemAImpl_paddd_u64,      iemAImpl_paddd_u128 };
+/** Function table for the PADDQ instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_paddq        = { iemAImpl_paddq_u64,      iemAImpl_paddq_u128 };
+/** Function table for the PSUBB instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubb        = { iemAImpl_psubb_u64,      iemAImpl_psubb_u128 };
+/** Function table for the PSUBW instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubw        = { iemAImpl_psubw_u64,      iemAImpl_psubw_u128 };
+/** Function table for the PSUBD instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubd        = { iemAImpl_psubd_u64,      iemAImpl_psubd_u128 };
+/** Function table for the PSUBQ instruction. */
+IEM_STATIC const IEMOPMEDIAF2 g_iemAImpl_psubq        = { iemAImpl_psubq_u64,      iemAImpl_psubq_u128 };
+
+# ifndef IEM_WITHOUT_ASSEMBLY
 /** Function table for the VPSHUFB instruction. */
 IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpshufb        = { iemAImpl_vpshufb_u128, iemAImpl_vpshufb_u256 };
 /** Function table for the VPXOR instruction */
