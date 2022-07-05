@@ -62,170 +62,170 @@ static void catchSIGINT( int signalCode )
 static void (*subjFunctionPtr)();
 
 #ifdef FLOAT16
-typedef float16_t funcType_a_ui32_z_f16( uint32_t );
+typedef float16_t funcType_a_ui32_z_f16( uint32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_ui32_z_f32( uint32_t );
+typedef float32_t funcType_a_ui32_z_f32( uint32_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_ui32_z_f64( uint32_t );
+typedef float64_t funcType_a_ui32_z_f64( uint32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_ui32_z_extF80( uint32_t, extFloat80_t * );
+typedef void funcType_a_ui32_z_extF80( uint32_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_ui32_z_f128( uint32_t, float128_t * );
+typedef void funcType_a_ui32_z_f128( uint32_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT16
-typedef float16_t funcType_a_ui64_z_f16( uint64_t );
+typedef float16_t funcType_a_ui64_z_f16( uint64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_ui64_z_f32( uint64_t );
+typedef float32_t funcType_a_ui64_z_f32( uint64_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_ui64_z_f64( uint64_t );
+typedef float64_t funcType_a_ui64_z_f64( uint64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_ui64_z_extF80( uint64_t, extFloat80_t * );
+typedef void funcType_a_ui64_z_extF80( uint64_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_ui64_z_f128( uint64_t, float128_t * );
+typedef void funcType_a_ui64_z_f128( uint64_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT16
-typedef float16_t funcType_a_i32_z_f16( int32_t );
+typedef float16_t funcType_a_i32_z_f16( int32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_i32_z_f32( int32_t );
+typedef float32_t funcType_a_i32_z_f32( int32_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_i32_z_f64( int32_t );
+typedef float64_t funcType_a_i32_z_f64( int32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_i32_z_extF80( int32_t, extFloat80_t * );
+typedef void funcType_a_i32_z_extF80( int32_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_i32_z_f128( int32_t, float128_t * );
+typedef void funcType_a_i32_z_f128( int32_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT16
-typedef float16_t funcType_a_i64_z_f16( int64_t );
+typedef float16_t funcType_a_i64_z_f16( int64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_i64_z_f32( int64_t );
+typedef float32_t funcType_a_i64_z_f32( int64_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_i64_z_f64( int64_t );
+typedef float64_t funcType_a_i64_z_f64( int64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_i64_z_extF80( int64_t, extFloat80_t * );
+typedef void funcType_a_i64_z_extF80( int64_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_i64_z_f128( int64_t, float128_t * );
+typedef void funcType_a_i64_z_f128( int64_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 
 #ifdef FLOAT16
-typedef uint_fast32_t funcType_a_f16_z_ui32( float16_t );
-typedef uint_fast64_t funcType_a_f16_z_ui64( float16_t );
-typedef int_fast32_t funcType_a_f16_z_i32( float16_t );
-typedef int_fast64_t funcType_a_f16_z_i64( float16_t );
-typedef float32_t funcType_a_f16_z_f32( float16_t );
+typedef uint_fast32_t funcType_a_f16_z_ui32( float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef uint_fast64_t funcType_a_f16_z_ui64( float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast32_t funcType_a_f16_z_i32( float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast64_t funcType_a_f16_z_i64( float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float32_t funcType_a_f16_z_f32( float16_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_f16_z_f64( float16_t );
+typedef float64_t funcType_a_f16_z_f64( float16_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_f16_z_extF80( float16_t, extFloat80_t * );
+typedef void funcType_a_f16_z_extF80( float16_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_f16_z_f128( float16_t, float128_t * );
+typedef void funcType_a_f16_z_f128( float16_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float16_t funcType_az_f16( float16_t );
-typedef float16_t funcType_abz_f16( float16_t, float16_t );
-typedef float16_t funcType_abcz_f16( float16_t, float16_t, float16_t );
-typedef bool funcType_ab_f16_z_bool( float16_t, float16_t );
+typedef float16_t funcType_az_f16( float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float16_t funcType_abz_f16( float16_t, float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float16_t funcType_abcz_f16( float16_t, float16_t, float16_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef bool funcType_ab_f16_z_bool( float16_t, float16_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 
-typedef uint_fast32_t funcType_a_f32_z_ui32( float32_t );
-typedef uint_fast64_t funcType_a_f32_z_ui64( float32_t );
-typedef int_fast32_t funcType_a_f32_z_i32( float32_t );
-typedef int_fast64_t funcType_a_f32_z_i64( float32_t );
+typedef uint_fast32_t funcType_a_f32_z_ui32( float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef uint_fast64_t funcType_a_f32_z_ui64( float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast32_t funcType_a_f32_z_i32( float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast64_t funcType_a_f32_z_i64( float32_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT16
-typedef float16_t funcType_a_f32_z_f16( float32_t );
+typedef float16_t funcType_a_f32_z_f16( float32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT64
-typedef float64_t funcType_a_f32_z_f64( float32_t );
+typedef float64_t funcType_a_f32_z_f64( float32_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_f32_z_extF80( float32_t, extFloat80_t * );
+typedef void funcType_a_f32_z_extF80( float32_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_f32_z_f128( float32_t, float128_t * );
+typedef void funcType_a_f32_z_f128( float32_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_az_f32( float32_t );
-typedef float32_t funcType_abz_f32( float32_t, float32_t );
-typedef float32_t funcType_abcz_f32( float32_t, float32_t, float32_t );
-typedef bool funcType_ab_f32_z_bool( float32_t, float32_t );
+typedef float32_t funcType_az_f32( float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float32_t funcType_abz_f32( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float32_t funcType_abcz_f32( float32_t, float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef bool funcType_ab_f32_z_bool( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
 
 #ifdef FLOAT64
-typedef uint_fast32_t funcType_a_f64_z_ui32( float64_t );
-typedef uint_fast64_t funcType_a_f64_z_ui64( float64_t );
-typedef int_fast32_t funcType_a_f64_z_i32( float64_t );
-typedef int_fast64_t funcType_a_f64_z_i64( float64_t );
+typedef uint_fast32_t funcType_a_f64_z_ui32( float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef uint_fast64_t funcType_a_f64_z_ui64( float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast32_t funcType_a_f64_z_i32( float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast64_t funcType_a_f64_z_i64( float64_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT16
-typedef float16_t funcType_a_f64_z_f16( float64_t );
+typedef float16_t funcType_a_f64_z_f16( float64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_f64_z_f32( float64_t );
+typedef float32_t funcType_a_f64_z_f32( float64_t SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef EXTFLOAT80
-typedef void funcType_a_f64_z_extF80( float64_t, extFloat80_t * );
+typedef void funcType_a_f64_z_extF80( float64_t, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_f64_z_f128( float64_t, float128_t * );
+typedef void funcType_a_f64_z_f128( float64_t, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float64_t funcType_az_f64( float64_t );
-typedef float64_t funcType_abz_f64( float64_t, float64_t );
-typedef float64_t funcType_abcz_f64( float64_t, float64_t, float64_t );
-typedef bool funcType_ab_f64_z_bool( float64_t, float64_t );
+typedef float64_t funcType_az_f64( float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float64_t funcType_abz_f64( float64_t, float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef float64_t funcType_abcz_f64( float64_t, float64_t, float64_t SOFTFLOAT_STATE_DECL_COMMA );
+typedef bool funcType_ab_f64_z_bool( float64_t, float64_t SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 
 #ifdef EXTFLOAT80
-typedef uint_fast32_t funcType_a_extF80_z_ui32( const extFloat80_t * );
-typedef uint_fast64_t funcType_a_extF80_z_ui64( const extFloat80_t * );
-typedef int_fast32_t funcType_a_extF80_z_i32( const extFloat80_t * );
-typedef int_fast64_t funcType_a_extF80_z_i64( const extFloat80_t * );
+typedef uint_fast32_t funcType_a_extF80_z_ui32( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
+typedef uint_fast64_t funcType_a_extF80_z_ui64( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast32_t funcType_a_extF80_z_i32( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
+typedef int_fast64_t funcType_a_extF80_z_i64( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT16
-typedef float16_t funcType_a_extF80_z_f16( const extFloat80_t * );
+typedef float16_t funcType_a_extF80_z_f16( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef float32_t funcType_a_extF80_z_f32( const extFloat80_t * );
+typedef float32_t funcType_a_extF80_z_f32( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_extF80_z_f64( const extFloat80_t * );
+typedef float64_t funcType_a_extF80_z_f64( const extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
 #ifdef FLOAT128
-typedef void funcType_a_extF80_z_f128( const extFloat80_t *, float128_t * );
+typedef void funcType_a_extF80_z_f128( const extFloat80_t *, float128_t * SOFTFLOAT_STATE_DECL_COMMA );
 #endif
-typedef void funcType_az_extF80( const extFloat80_t *, extFloat80_t * );
+typedef void funcType_az_extF80( const extFloat80_t *, extFloat80_t * SOFTFLOAT_STATE_DECL_COMMA );
 typedef
  void
   funcType_abz_extF80(
-      const extFloat80_t *, const extFloat80_t *, extFloat80_t * );
+      const extFloat80_t *, const extFloat80_t *, extFloat80_t * SOFTFLOAT_STATE_ARG_COMMA );
 typedef
- bool funcType_ab_extF80_z_bool( const extFloat80_t *, const extFloat80_t * );
+ bool funcType_ab_extF80_z_bool( const extFloat80_t *, const extFloat80_t * SOFTFLOAT_STATE_ARG_COMMA );
 #endif
 
 #ifdef FLOAT128
-typedef uint_fast32_t funcType_a_f128_z_ui32( const float128_t * );
-typedef uint_fast64_t funcType_a_f128_z_ui64( const float128_t * );
-typedef int_fast32_t funcType_a_f128_z_i32( const float128_t * );
-typedef int_fast64_t funcType_a_f128_z_i64( const float128_t * );
+typedef uint_fast32_t funcType_a_f128_z_ui32( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
+typedef uint_fast64_t funcType_a_f128_z_ui64( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
+typedef int_fast32_t funcType_a_f128_z_i32( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
+typedef int_fast64_t funcType_a_f128_z_i64( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 #ifdef FLOAT16
-typedef float16_t funcType_a_f128_z_f16( const float128_t * );
+typedef float16_t funcType_a_f128_z_f16( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 #endif
-typedef float32_t funcType_a_f128_z_f32( const float128_t * );
+typedef float32_t funcType_a_f128_z_f32( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 #ifdef FLOAT64
-typedef float64_t funcType_a_f128_z_f64( const float128_t * );
+typedef float64_t funcType_a_f128_z_f64( const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 #endif
 #ifdef EXTFLOAT80
-typedef void funcType_a_f128_z_extF80( const float128_t *, extFloat80_t * );
+typedef void funcType_a_f128_z_extF80( const float128_t *, extFloat80_t * SOFTFLOAT_STATE_ARG_COMMA );
 #endif
-typedef void funcType_az_f128( const float128_t *, float128_t * );
+typedef void funcType_az_f128( const float128_t *, float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 typedef
  void
-  funcType_abz_f128( const float128_t *, const float128_t *, float128_t * );
+  funcType_abz_f128( const float128_t *, const float128_t *, float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 typedef
  void
   funcType_abcz_f128(
-      const float128_t *, const float128_t *, const float128_t *, float128_t *
+      const float128_t *, const float128_t *, const float128_t *, float128_t * SOFTFLOAT_STATE_ARG_COMMA
   );
-typedef bool funcType_ab_f128_z_bool( const float128_t *, const float128_t * );
+typedef bool funcType_ab_f128_z_bool( const float128_t *, const float128_t * SOFTFLOAT_STATE_ARG_COMMA );
 #endif
 
 #ifdef FLOAT16
