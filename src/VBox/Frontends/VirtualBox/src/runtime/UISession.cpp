@@ -425,7 +425,16 @@ bool UISession::setPause(bool fOn)
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
-    /* Install guest additions: */
+    /* Check whether we have something to update automatically: */
+    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
+    if (ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+    {
+        /* Otherwise we'll just mount and be gone: */
+        sltMountDVDAdHoc(strSource);
+        return;
+    }
+
+    /* Update guest additions automatically: */
     UINotificationProgressGuestAdditionsInstall *pNotification =
             new UINotificationProgressGuestAdditionsInstall(guest(), strSource);
     connect(pNotification, &UINotificationProgressGuestAdditionsInstall::sigGuestAdditionsInstallationFailed,
