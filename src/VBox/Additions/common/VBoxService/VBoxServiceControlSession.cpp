@@ -2699,6 +2699,11 @@ int VGSvcGstCtrlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint
         VbglR3GuestCtrlSessionStartupInfoFree(pThread->pStartupInfo);
         pThread->pStartupInfo = NULL;
 
+        RTPipeClose(pThread->hKeyPipe);
+        pThread->hKeyPipe = NIL_RTPIPE;
+
+        RTCritSectDelete(&pThread->CritSect);
+
         /* Remove session from list and destroy object. */
         RTListNodeRemove(&pThread->Node);
 
