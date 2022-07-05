@@ -1749,6 +1749,14 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF3U128,(PX86XSAVEAREA pExtState,
 typedef FNIEMAIMPLMEDIAF3U128  *PFNIEMAIMPLMEDIAF3U128;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF3U256,(PX86XSAVEAREA pExtState, PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2));
 typedef FNIEMAIMPLMEDIAF3U256  *PFNIEMAIMPLMEDIAF3U256;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF2U64,(uint64_t *puDst, uint64_t const *puSrc));
+typedef FNIEMAIMPLMEDIAOPTF2U64   *PFNIEMAIMPLMEDIAOPTF2U64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF2U128,(PRTUINT128U puDst, PCRTUINT128U puSrc));
+typedef FNIEMAIMPLMEDIAOPTF2U128  *PFNIEMAIMPLMEDIAOPTF2U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2));
+typedef FNIEMAIMPLMEDIAOPTF3U128  *PFNIEMAIMPLMEDIAOPTF3U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2));
+typedef FNIEMAIMPLMEDIAOPTF3U256  *PFNIEMAIMPLMEDIAOPTF3U256;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_pshufb_u64, iemAImpl_pshufb_u64_fallback;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_pand_u64, iemAImpl_pandn_u64, iemAImpl_por_u64, iemAImpl_pxor_u64;
 FNIEMAIMPLMEDIAF2U64  iemAImpl_pcmpeqb_u64,  iemAImpl_pcmpeqw_u64,  iemAImpl_pcmpeqd_u64;
@@ -1824,22 +1832,30 @@ FNIEMAIMPLMEDIAF3U256 iemAImpl_vpsubq_u256,     iemAImpl_vpsubq_u256_fallback;
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1L1U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src));
-typedef FNIEMAIMPLMEDIAF1L1U64   *PFNIEMAIMPLMEDIAF1L1U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1L1U128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src));
-typedef FNIEMAIMPLMEDIAF1L1U128  *PFNIEMAIMPLMEDIAF1L1U128;
-FNIEMAIMPLMEDIAF1L1U64  iemAImpl_punpcklbw_u64,  iemAImpl_punpcklwd_u64,  iemAImpl_punpckldq_u64;
-FNIEMAIMPLMEDIAF1L1U128 iemAImpl_punpcklbw_u128, iemAImpl_punpcklwd_u128, iemAImpl_punpckldq_u128, iemAImpl_punpcklqdq_u128;
+FNIEMAIMPLMEDIAOPTF2U64   iemAImpl_punpcklbw_u64,  iemAImpl_punpcklwd_u64,  iemAImpl_punpckldq_u64;
+FNIEMAIMPLMEDIAOPTF2U128  iemAImpl_punpcklbw_u128, iemAImpl_punpcklwd_u128, iemAImpl_punpckldq_u128, iemAImpl_punpcklqdq_u128;
+FNIEMAIMPLMEDIAOPTF3U128  iemAImpl_vpunpcklbw_u128,  iemAImpl_vpunpcklbw_u128_fallback,
+                          iemAImpl_vpunpcklwd_u128,  iemAImpl_vpunpcklwd_u128_fallback,
+                          iemAImpl_vpunpckldq_u128,  iemAImpl_vpunpckldq_u128_fallback,
+                          iemAImpl_vpunpcklqdq_u128, iemAImpl_vpunpcklqdq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256  iemAImpl_vpunpcklbw_u256,  iemAImpl_vpunpcklbw_u256_fallback,
+                          iemAImpl_vpunpcklwd_u256,  iemAImpl_vpunpcklwd_u256_fallback,
+                          iemAImpl_vpunpckldq_u256,  iemAImpl_vpunpckldq_u256_fallback,
+                          iemAImpl_vpunpcklqdq_u256, iemAImpl_vpunpcklqdq_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: hihalf1 + hihalf2 -> full1.
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1H1U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src));
-typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF1H1U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1H1U128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src));
-typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF1H1U128;
-FNIEMAIMPLMEDIAF1H1U64  iemAImpl_punpckhbw_u64,  iemAImpl_punpckhwd_u64,  iemAImpl_punpckhdq_u64;
-FNIEMAIMPLMEDIAF1H1U128 iemAImpl_punpckhbw_u128, iemAImpl_punpckhwd_u128, iemAImpl_punpckhdq_u128, iemAImpl_punpckhqdq_u128;
+FNIEMAIMPLMEDIAOPTF2U64   iemAImpl_punpckhbw_u64,  iemAImpl_punpckhwd_u64,  iemAImpl_punpckhdq_u64;
+FNIEMAIMPLMEDIAOPTF2U128  iemAImpl_punpckhbw_u128, iemAImpl_punpckhwd_u128, iemAImpl_punpckhdq_u128, iemAImpl_punpckhqdq_u128;
+FNIEMAIMPLMEDIAOPTF3U128  iemAImpl_vpunpckhbw_u128,  iemAImpl_vpunpckhbw_u128_fallback,
+                          iemAImpl_vpunpckhwd_u128,  iemAImpl_vpunpckhwd_u128_fallback,
+                          iemAImpl_vpunpckhdq_u128,  iemAImpl_vpunpckhdq_u128_fallback,
+                          iemAImpl_vpunpckhqdq_u128, iemAImpl_vpunpckhqdq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256  iemAImpl_vpunpckhbw_u256,  iemAImpl_vpunpckhbw_u256_fallback,
+                          iemAImpl_vpunpckhwd_u256,  iemAImpl_vpunpckhwd_u256_fallback,
+                          iemAImpl_vpunpckhdq_u256,  iemAImpl_vpunpckhdq_u256_fallback,
+                          iemAImpl_vpunpckhqdq_u256, iemAImpl_vpunpckhqdq_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operation: Packed Shuffle Stuff (evil)
@@ -1972,6 +1988,9 @@ typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
 /**
  * Function table for media instruction taking two full sized media registers,
  * optionally the 2nd being a memory reference (only modifying the first op.)
+ *
+ * @deprecated This won't be needed as MMX and SSE decoding needs to be handled
+ *             separate from one another.
  */
 typedef struct IEMOPMEDIAF2
 {
@@ -1980,31 +1999,6 @@ typedef struct IEMOPMEDIAF2
 } IEMOPMEDIAF2;
 /** Pointer to a media operation function table for full sized ops. */
 typedef IEMOPMEDIAF2 const *PCIEMOPMEDIAF2;
-
-/**
- * Function table for media instruction taking taking one full and one lower
- * half media register.
- */
-typedef struct IEMOPMEDIAF1L1
-{
-    PFNIEMAIMPLMEDIAF1L1U64  pfnU64;
-    PFNIEMAIMPLMEDIAF1L1U128 pfnU128;
-} IEMOPMEDIAF1L1;
-/** Pointer to a media operation function table for lowhalf+lowhalf -> full. */
-typedef IEMOPMEDIAF1L1 const *PCIEMOPMEDIAF1L1;
-
-/**
- * Function table for media instruction taking taking one full and one high half
- * media register.
- */
-typedef struct IEMOPMEDIAF1H1
-{
-    PFNIEMAIMPLMEDIAF1H1U64  pfnU64;
-    PFNIEMAIMPLMEDIAF1H1U128 pfnU128;
-} IEMOPMEDIAF1H1;
-/** Pointer to a media operation function table for hihalf+hihalf -> full. */
-typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
-
 
 /**
  * Function table for media instruction taking two full sized media source
@@ -2017,6 +2011,36 @@ typedef struct IEMOPMEDIAF3
 } IEMOPMEDIAF3;
 /** Pointer to a media operation function table for 3 full sized ops (AVX). */
 typedef IEMOPMEDIAF3 const *PCIEMOPMEDIAF3;
+
+/**
+ * Function table for media instruction taking two full sized media source
+ * registers and one full sized destination register, but no additional state
+ * (AVX).
+ */
+typedef struct IEMOPMEDIAOPTF3
+{
+    PFNIEMAIMPLMEDIAOPTF3U128 pfnU128;
+    PFNIEMAIMPLMEDIAOPTF3U256 pfnU256;
+} IEMOPMEDIAOPTF3;
+/** Pointer to a media operation function table for 3 full sized ops (AVX). */
+typedef IEMOPMEDIAOPTF3 const *PCIEMOPMEDIAOPTF3;
+
+/** @def IEMOPMEDIAOPTF3_INIT_VARS
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF3 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPMEDIAOPTF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
 
 
 /** @} */

@@ -27,7 +27,8 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#define IN_TSTVMSTRUCT 1
+#define TST_IEM_CHECK_MC    /**< For hacks.  */
+#define IN_TSTVMSTRUCT 1    /**< Ditto. */
 #include "../include/IEMInternal.h"
 #include <VBox/vmm/vm.h>
 
@@ -40,8 +41,6 @@ uint8_t volatile    g_bRandom;
 RTUINT128U          g_u128Zero;
 
 
-/** For hacks.  */
-#define TST_IEM_CHECK_MC
 
 #define CHK_TYPE(a_ExpectedType, a_Param) \
     do { a_ExpectedType const * pCheckType = &(a_Param); NOREF(pCheckType); } while (0)
@@ -220,14 +219,6 @@ IEMOPUNARYSIZES g_iemAImpl_inc;
 IEMOPUNARYSIZES g_iemAImpl_dec;
 IEMOPUNARYSIZES g_iemAImpl_neg;
 IEMOPUNARYSIZES g_iemAImpl_not;
-IEMOPMEDIAF1L1 g_iemAImpl_punpcklbw;
-IEMOPMEDIAF1L1 g_iemAImpl_punpcklwd;
-IEMOPMEDIAF1L1 g_iemAImpl_punpckldq;
-IEMOPMEDIAF1L1 g_iemAImpl_punpcklqdq;
-IEMOPMEDIAF1H1 g_iemAImpl_punpckhbw;
-IEMOPMEDIAF1H1 g_iemAImpl_punpckhwd;
-IEMOPMEDIAF1H1 g_iemAImpl_punpckhdq;
-IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq;
 IEMOPMEDIAF2 g_iemAImpl_pand;
 IEMOPMEDIAF2 g_iemAImpl_pandn;
 IEMOPMEDIAF2 g_iemAImpl_por;
@@ -333,6 +324,20 @@ IEMOPMEDIAF2 g_iemAImpl_psubq;
 #define iemAImpl_pshufhw_u128           NULL
 #define iemAImpl_pshuflw_u128           NULL
 #define iemAImpl_pshufd_u128            NULL
+#define iemAImpl_punpcklbw_u64          NULL
+#define iemAImpl_punpcklwd_u64          NULL
+#define iemAImpl_punpckldq_u64          NULL
+#define iemAImpl_punpckhbw_u64          NULL
+#define iemAImpl_punpckhwd_u64          NULL
+#define iemAImpl_punpckhdq_u64          NULL
+#define iemAImpl_punpcklbw_u128         NULL
+#define iemAImpl_punpcklwd_u128         NULL
+#define iemAImpl_punpckldq_u128         NULL
+#define iemAImpl_punpcklqdq_u128        NULL
+#define iemAImpl_punpckhbw_u128         NULL
+#define iemAImpl_punpckhwd_u128         NULL
+#define iemAImpl_punpckhdq_u128         NULL
+#define iemAImpl_punpckhqdq_u128        NULL
 
 /** @}  */
 
