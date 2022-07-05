@@ -219,24 +219,6 @@ IEMOPUNARYSIZES g_iemAImpl_inc;
 IEMOPUNARYSIZES g_iemAImpl_dec;
 IEMOPUNARYSIZES g_iemAImpl_neg;
 IEMOPUNARYSIZES g_iemAImpl_not;
-IEMOPMEDIAF2 g_iemAImpl_pand;
-IEMOPMEDIAF2 g_iemAImpl_pandn;
-IEMOPMEDIAF2 g_iemAImpl_por;
-IEMOPMEDIAF2 g_iemAImpl_pxor;
-IEMOPMEDIAF2 g_iemAImpl_pcmpeqb;
-IEMOPMEDIAF2 g_iemAImpl_pcmpeqw;
-IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
-IEMOPMEDIAF2 g_iemAImpl_pcmpgtb;
-IEMOPMEDIAF2 g_iemAImpl_pcmpgtw;
-IEMOPMEDIAF2 g_iemAImpl_pcmpgtd;
-IEMOPMEDIAF2 g_iemAImpl_paddb;
-IEMOPMEDIAF2 g_iemAImpl_paddw;
-IEMOPMEDIAF2 g_iemAImpl_paddd;
-IEMOPMEDIAF2 g_iemAImpl_paddq;
-IEMOPMEDIAF2 g_iemAImpl_psubb;
-IEMOPMEDIAF2 g_iemAImpl_psubw;
-IEMOPMEDIAF2 g_iemAImpl_psubd;
-IEMOPMEDIAF2 g_iemAImpl_psubq;
 
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray)                  NULL
@@ -338,6 +320,45 @@ IEMOPMEDIAF2 g_iemAImpl_psubq;
 #define iemAImpl_punpckhwd_u128         NULL
 #define iemAImpl_punpckhdq_u128         NULL
 #define iemAImpl_punpckhqdq_u128        NULL
+
+#define iemAImpl_pand_u64               NULL
+#define iemAImpl_pandn_u64              NULL
+#define iemAImpl_por_u64                NULL
+#define iemAImpl_pxor_u64               NULL
+#define iemAImpl_pcmpeqb_u64            NULL
+#define iemAImpl_pcmpeqw_u64            NULL
+#define iemAImpl_pcmpeqd_u64            NULL
+#define iemAImpl_pcmpgtb_u64            NULL
+#define iemAImpl_pcmpgtw_u64            NULL
+#define iemAImpl_pcmpgtd_u64            NULL
+#define iemAImpl_paddb_u64              NULL
+#define iemAImpl_paddw_u64              NULL
+#define iemAImpl_paddd_u64              NULL
+#define iemAImpl_paddq_u64              NULL
+#define iemAImpl_psubb_u64              NULL
+#define iemAImpl_psubw_u64              NULL
+#define iemAImpl_psubd_u64              NULL
+#define iemAImpl_psubq_u64              NULL
+
+#define iemAImpl_pand_u128              NULL
+#define iemAImpl_pandn_u128             NULL
+#define iemAImpl_por_u128               NULL
+#define iemAImpl_pxor_u128              NULL
+#define iemAImpl_pcmpeqb_u128           NULL
+#define iemAImpl_pcmpeqw_u128           NULL
+#define iemAImpl_pcmpeqd_u128           NULL
+#define iemAImpl_pcmpgtb_u128           NULL
+#define iemAImpl_pcmpgtw_u128           NULL
+#define iemAImpl_pcmpgtd_u128           NULL
+#define iemAImpl_paddb_u128             NULL
+#define iemAImpl_paddw_u128             NULL
+#define iemAImpl_paddd_u128             NULL
+#define iemAImpl_paddq_u128             NULL
+#define iemAImpl_psubb_u128             NULL
+#define iemAImpl_psubw_u128             NULL
+#define iemAImpl_psubd_u128             NULL
+#define iemAImpl_psubq_u128             NULL
+
 
 /** @}  */
 

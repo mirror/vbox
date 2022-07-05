@@ -1986,21 +1986,6 @@ typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
 
 
 /**
- * Function table for media instruction taking two full sized media registers,
- * optionally the 2nd being a memory reference (only modifying the first op.)
- *
- * @deprecated This won't be needed as MMX and SSE decoding needs to be handled
- *             separate from one another.
- */
-typedef struct IEMOPMEDIAF2
-{
-    PFNIEMAIMPLMEDIAF2U64  pfnU64;
-    PFNIEMAIMPLMEDIAF2U128 pfnU128;
-} IEMOPMEDIAF2;
-/** Pointer to a media operation function table for full sized ops. */
-typedef IEMOPMEDIAF2 const *PCIEMOPMEDIAF2;
-
-/**
  * Function table for media instruction taking two full sized media source
  * registers and one full sized destination register (AVX).
  */
