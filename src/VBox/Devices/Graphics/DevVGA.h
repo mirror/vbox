@@ -512,7 +512,8 @@ typedef struct VGAState
     STAMPROFILE                 StatR3MemoryRead;
     STAMPROFILE                 StatRZMemoryWrite;
     STAMPROFILE                 StatR3MemoryWrite;
-    STAMCOUNTER                 StatMapPage;            /**< Counts IOMMMIOMapMMIO2Page calls.  */
+    STAMCOUNTER                 StatMapPage;            /**< Counts IOMMmioMapMmio2Page calls.  */
+    STAMCOUNTER                 StatMapReset;           /**< Counts IOMMmioResetRegion calls.  */
     STAMCOUNTER                 StatUpdateDisp;         /**< Counts vgaPortUpdateDisplay calls.  */
 #ifdef VBOX_WITH_HGSMI
     STAMCOUNTER                 StatHgsmiMdaCgaAccesses;

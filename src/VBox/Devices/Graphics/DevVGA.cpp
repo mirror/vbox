@@ -737,6 +737,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+                STAM_COUNTER_INC(&pThis->StatMapReset);
                 vgaResetRemapped(pThis);
             }
         }
@@ -776,6 +777,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+                STAM_COUNTER_INC(&pThis->StatMapReset);
                 vgaResetRemapped(pThis);
             }
         }
@@ -1034,6 +1036,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+                STAM_COUNTER_INC(&pThis->StatMapReset);
                 vgaResetRemapped(pThis);
             }
 # endif
@@ -1143,6 +1146,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             if (pThis->fRemappedVGA)
             {
                 PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+                STAM_COUNTER_INC(&pThis->StatMapReset);
                 vgaResetRemapped(pThis);
             }
             break;
@@ -4847,6 +4851,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+        STAM_COUNTER_INC(&pThis->StatMapReset);
         vgaResetRemapped(pThis);
     }
 
@@ -4875,6 +4880,7 @@ static int vgaR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, PV
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+        STAM_COUNTER_INC(&pThis->StatMapReset);
         vgaResetRemapped(pThis);
     }
 
@@ -6096,6 +6102,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
+        STAM_COUNTER_INC(&pThis->StatMapReset);
         vgaResetRemapped(pThis);
     }
 
@@ -7258,6 +7265,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRZMemoryWrite, STAMTYPE_PROFILE, "RZ/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatR3MemoryWrite, STAMTYPE_PROFILE, "R3/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMapPage,       STAMTYPE_COUNTER, "MapPageCalls",  STAMUNIT_OCCURENCES,     "Calls to IOMMmioMapMmio2Page.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMapReset,      STAMTYPE_COUNTER, "MapPageReset",  STAMUNIT_OCCURENCES,     "Calls to IOMMmioResetRegion.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUpdateDisp,    STAMTYPE_COUNTER, "UpdateDisplay", STAMUNIT_OCCURENCES,     "Calls to vgaR3PortUpdateDisplay().");
 # endif
 # ifdef VBOX_WITH_HGSMI
