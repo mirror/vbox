@@ -1997,6 +1997,29 @@ typedef struct IEMOPMEDIAF3
 /** Pointer to a media operation function table for 3 full sized ops (AVX). */
 typedef IEMOPMEDIAF3 const *PCIEMOPMEDIAF3;
 
+/** @def IEMOPMEDIAF3_INIT_VARS_EX
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPMEDIAF3_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAF3 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPMEDIAF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPMEDIAF3_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPMEDIAF3_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
+/** @def IEMOPMEDIAF3_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPMEDIAF3_INIT_VARS_EX */
+#define IEMOPMEDIAF3_INIT_VARS(a_InstrNm) \
+    IEMOPMEDIAF3_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
+                              RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
+
 /**
  * Function table for media instruction taking two full sized media source
  * registers and one full sized destination register, but no additional state
@@ -2010,22 +2033,28 @@ typedef struct IEMOPMEDIAOPTF3
 /** Pointer to a media operation function table for 3 full sized ops (AVX). */
 typedef IEMOPMEDIAOPTF3 const *PCIEMOPMEDIAOPTF3;
 
-/** @def IEMOPMEDIAOPTF3_INIT_VARS
+/** @def IEMOPMEDIAOPTF3_INIT_VARS_EX
  * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
  * given functions as initializers.  For use in AVX functions where a pair of
  * functions are only used once and the function table need not be public. */
 #ifndef TST_IEM_CHECK_MC
 # if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
-#  define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+#  define IEMOPMEDIAOPTF3_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
     static IEMOPMEDIAOPTF3 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
     static IEMOPMEDIAOPTF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
 # else
-#  define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+#  define IEMOPMEDIAOPTF3_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
     static IEMOPMEDIAOPTF3 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
 # endif
 #else
-# define IEMOPMEDIAOPTF3_INIT_VARS(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+# define IEMOPMEDIAOPTF3_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
 #endif
+/** @def IEMOPMEDIAOPTF3_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPMEDIAOPTF3_INIT_VARS_EX */
+#define IEMOPMEDIAOPTF3_INIT_VARS(a_InstrNm) \
+    IEMOPMEDIAOPTF3_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
+                                 RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 
 
 /** @} */
