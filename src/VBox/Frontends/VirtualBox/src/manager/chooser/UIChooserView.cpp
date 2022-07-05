@@ -97,7 +97,7 @@ public:
 
         /* Return view tool-tip: */
         Q_UNUSED(enmTextRole);
-        return view()->toolTip();
+        return view()->whatsThis();
     }
 
 private:
@@ -238,9 +238,7 @@ void UIChooserView::sltHandleSearchWidgetVisibilityToggle(bool fVisible)
 void UIChooserView::retranslateUi()
 {
     /* Translate this: */
-#if 0 /* we will leave that for accessibility needs. */
-    setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
-#endif  /* to be integrated to accessibility interface. */
+    setWhatsThis(tr("Contains a tree of Virtual Machines and their groups"));
 }
 
 void UIChooserView::prepare()
