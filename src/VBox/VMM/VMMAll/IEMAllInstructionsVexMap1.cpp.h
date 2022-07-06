@@ -476,7 +476,7 @@ FNIEMOP_DEF(iemOp_vmovss_Vss_Hss_Wss)
          * @optest      op1=3 op2=-2 op3=0x77 -> op1=-8589934473
          * @note        HssHi refers to bits 127:32.
          */
-        IEMOP_MNEMONIC3(VEX_RVM_REG, VMOVSS, vmovss, Vss_WO, HssHi, Uss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
+        IEMOP_MNEMONIC3(VEX_RVM_REG, VMOVSS, vmovss, Vss_WO, HssHi, Uss, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
         IEMOP_HLP_DONE_VEX_DECODING();
         IEM_MC_BEGIN(0, 0);
 
@@ -502,7 +502,7 @@ FNIEMOP_DEF(iemOp_vmovss_Vss_Hss_Wss)
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-22 -> op1=-22
          */
-        IEMOP_MNEMONIC2(VEX_RM_MEM, VMOVSS, vmovss, VssZx_WO, Md, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
+        IEMOP_MNEMONIC2(VEX_RM_MEM, VMOVSS, vmovss, VssZx_WO, Md, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint32_t,                  uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -542,7 +542,7 @@ FNIEMOP_DEF(iemOp_vmovsd_Vsd_Hsd_Wsd)
          *              op1=0xffffffffffffffff0000000000000077
          * @optest      op1=3 op2=0x42 op3=0x77 -> op1=0x420000000000000077
          */
-        IEMOP_MNEMONIC3(VEX_RVM_REG, VMOVSD, vmovsd, Vsd_WO, HsdHi, Usd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
+        IEMOP_MNEMONIC3(VEX_RVM_REG, VMOVSD, vmovsd, Vsd_WO, HsdHi, Usd, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
         IEMOP_HLP_DONE_VEX_DECODING();
         IEM_MC_BEGIN(0, 0);
 
@@ -568,7 +568,7 @@ FNIEMOP_DEF(iemOp_vmovsd_Vsd_Hsd_Wsd)
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-22 -> op1=-22
          */
-        IEMOP_MNEMONIC2(VEX_RM_MEM, VMOVSD, vmovsd, VsdZx_WO, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
+        IEMOP_MNEMONIC2(VEX_RM_MEM, VMOVSD, vmovsd, VsdZx_WO, Mq, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_IGNORED);
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
