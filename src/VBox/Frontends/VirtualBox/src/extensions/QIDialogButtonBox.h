@@ -67,10 +67,16 @@ public:
     /** Adds extra @a pLayout. */
     void addExtraLayout(QLayout *pLayout);
 
+    /** Defines whether button-box should avoid picking default button. */
+    void setDoNotPickDefaultButton(bool fDoNotPickDefaultButton);
+
 protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
     /** Returns button layout. */
     QBoxLayout *boxLayout() const;
@@ -82,6 +88,9 @@ private:
 
     /** Holds the Help button reference. */
     QPointer<UIHelpButton> m_pHelpButton;
+
+    /** Holds whether button-box should avoid picking default button. */
+    bool  m_fDoNotPickDefaultButton;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIDialogButtonBox_h */

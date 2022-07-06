@@ -29,17 +29,20 @@
 
 QIDialogButtonBox::QIDialogButtonBox(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QDialogButtonBox>(pParent)
+    , m_fDoNotPickDefaultButton(false)
 {
 }
 
 QIDialogButtonBox::QIDialogButtonBox(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QDialogButtonBox>(pParent)
+    , m_fDoNotPickDefaultButton(false)
 {
     setOrientation(enmOrientation);
 }
 
 QIDialogButtonBox::QIDialogButtonBox(StandardButtons enmButtonTypes, Qt::Orientation enmOrientation, QWidget *pParent)
-   : QIWithRetranslateUI<QDialogButtonBox>(pParent)
+    : QIWithRetranslateUI<QDialogButtonBox>(pParent)
+    , m_fDoNotPickDefaultButton(false)
 {
     setOrientation(enmOrientation);
     setStandardButtons(enmButtonTypes);
@@ -97,6 +100,11 @@ void QIDialogButtonBox::addExtraLayout(QLayout *pInsertedLayout)
     }
 }
 
+void QIDialogButtonBox::setDoNotPickDefaultButton(bool fDoNotPickDefaultButton)
+{
+    m_fDoNotPickDefaultButton = fDoNotPickDefaultButton;
+}
+
 void QIDialogButtonBox::retranslateUi()
 {
     QPushButton *pButton = QDialogButtonBox::button(QDialogButtonBox::Help);
@@ -109,6 +117,25 @@ void QIDialogButtonBox::retranslateUi()
         removeButton(pButton);
         QDialogButtonBox::addButton(m_pHelpButton, QDialogButtonBox::HelpRole);
     }
+}
+
+void QIDialogButtonBox::showEvent(QShowEvent *pEvent)
+{
+    // WORKAROUND:
+    // QDialogButtonBox has embedded functionality we'd like to avoid.
+    // It auto-picks default button if non is set, based on button role.
+    // Qt documentation states that happens in showEvent, so here we are.
+    // In rare case we'd like to have dialog with no default button at all.
+    if (m_fDoNotPickDefaultButton)
+    {
+        /* Unset all default-buttons in the dialog: */
+        foreach (QPushButton *pButton, findChildren<QPushButton*>())
+            if (pButton->isDefault())
+                pButton->setDefault(false);
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QDialogButtonBox>::showEvent(pEvent);
 }
 
 QBoxLayout *QIDialogButtonBox::boxLayout() const
