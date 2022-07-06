@@ -6952,9 +6952,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80_amd,(PCX86FXSTATE pFpuState,
 *   MMX, SSE & AVX                                                                                                               *
 *********************************************************************************************************************************/
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au32[0] = puSrc->au32[0];
     puDst->au32[1] = puSrc->au32[0];
     puDst->au32[2] = puSrc->au32[2];
