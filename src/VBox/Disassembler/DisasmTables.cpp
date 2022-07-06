@@ -3212,14 +3212,14 @@ const DISOPCODE g_aMapX86_NopPause[2] =
 const DISOPCODE g_aDisasVexMap1[] =
 {
     /* 1 */
-    OPVEX("vmovups %Vps,%Wps",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVUPS,      OP_PARM_Vps,    OP_PARM_Wps,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovups %Wps,%Vps",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVUPS,      OP_PARM_Wps,    OP_PARM_Vps,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("&vmovlps/vmovlps %Vq,%Hq,%Wq",     IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_MOVLPS,      OP_PARM_Vq,     OP_PARM_Hq,     OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovlps %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVLPS,      OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovups %Vps,%Wps",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVUPS,     OP_PARM_Vps,    OP_PARM_Wps,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovups %Wps,%Vps",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVUPS,     OP_PARM_Wps,    OP_PARM_Vps,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("&vmovlps/vmovhlps %Vq,%Hq,%Wq",IDX_ParseModRM,IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_VMOVLPS,     OP_PARM_Vq,     OP_PARM_Hq,     OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovlps %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVLPS,     OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vunpcklps %Vx,%Hx,%Wx",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_UNPCKLPS,    OP_PARM_Vx,     OP_PARM_Hx,     OP_PARM_Wx,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vunpckhps %Vx,%Hx,%Wx",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_UNPCKHPS,    OP_PARM_Vx,     OP_PARM_Hx,     OP_PARM_Wx,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("&vmovhps/vmovlhps %Vdq,%Hq,%Wq",    IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_MOVHPS,      OP_PARM_Vdq,    OP_PARM_Hq,     OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovhps %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVHPS,      OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("&vmovhps/vmovlhps %Vdq,%Hq,%Wq",IDX_ParseModRM,IDX_ParseVexDest,  IDX_UseModRM,   0,          OP_VMOVHPS,     OP_PARM_Vdq,    OP_PARM_Hq,     OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovhps %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVHPS,     OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -3323,14 +3323,14 @@ const DISOPMAPDESC g_DisasVexMap1Range = { &g_aDisasVexMap1[0], 0x10, RT_ELEMENT
 static const DISOPCODE g_aDisasVexMap1_66[] =
 {
     /* 1 */
-    OPVEX("vmovupd %Vpd,%Wpd",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVUPD,      OP_PARM_Vpd,    OP_PARM_Wpd,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovupd %Wpd,%Vpd",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVUPD,      OP_PARM_Wpd,    OP_PARM_Vpd,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovlpd %Vq,%Hq,%Mq",     IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_MOVLPD,      OP_PARM_Vq,     OP_PARM_Hq,     OP_PARM_Mq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovlpd %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVLPD,      OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovupd %Vpd,%Wpd",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVUPD,     OP_PARM_Vpd,    OP_PARM_Wpd,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovupd %Wpd,%Vpd",       IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVUPD,     OP_PARM_Wpd,    OP_PARM_Vpd,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovlpd %Vq,%Hq,%Mq",     IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_VMOVLPD,     OP_PARM_Vq,     OP_PARM_Hq,     OP_PARM_Mq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovlpd %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVLPD,     OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vunpcklpd %Vx,%Hx,%Wx",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_UNPCKLPD,    OP_PARM_Vx,     OP_PARM_Hx,     OP_PARM_Wx,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OPVEX("vunpckhpd %Vx,%Hx,%Wx",   IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_UNPCKHPD,    OP_PARM_Vx,     OP_PARM_Hx,     OP_PARM_Wx,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovhpd %Vdq,%Hq,%Mq",    IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_MOVHPD,      OP_PARM_Vdq,    OP_PARM_Hq,     OP_PARM_Mq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OPVEX("vmovhpd %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_MOVHPD,      OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovhpd %Vdq,%Hq,%Mq",    IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,   0,          OP_VMOVHPD,     OP_PARM_Vdq,    OP_PARM_Hq,     OP_PARM_Mq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OPVEX("vmovhpd %Mq,%Vq",         IDX_ParseModRM,     IDX_UseModRM,       0,              0,          OP_VMOVHPD,     OP_PARM_Mq,     OP_PARM_Vq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
