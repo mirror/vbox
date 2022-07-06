@@ -308,6 +308,7 @@ g_kdOpTypes = {
     'Hpd':          ( 'IDX_UseModRM',       'vvvv',   '%Hpd', 'Hpd',     'V',     ),
     'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   'V',     ),
     'HsdHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HsdHi',   'V',     ),
+    'Hq':           ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'Hq',      'V',     ),
     'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    'V',     ),
     'Hx':           ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'Hx',      'V',     ),
 
