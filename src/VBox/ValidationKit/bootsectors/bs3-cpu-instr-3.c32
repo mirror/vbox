@@ -122,9 +122,13 @@ typedef BS3CPUINSTR3_CONFIG_SAVED_T const BS3_FAR *PCBS3CPUINSTR3_CONFIG_SAVED_T
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static bool g_fGlobalInitialized    = false;
-static bool g_fAmdMisalignedSse     = false;
 static bool g_afTypeSupports[T_MAX] = { false, false, false, false, false, false, false, false, false };
+static bool g_fAmdMisalignedSse     = false;
+
+/** Size of g_pbBuf - at least three pages. */
+static uint32_t         g_cbBuf;
+/** Buffer of g_cbBuf size. */
+static uint8_t BS3_FAR *g_pbBuf;
 
 /** Exception type \#4 test configurations. */
 static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4[] =
@@ -431,10 +435,12 @@ typedef struct BS3CPUINSTR3_TEST1_MODE_T
 static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T const BS3_FAR *paTests, unsigned cTests,
                                             PCBS3CPUINSTR3_CONFIG_T paConfigs, unsigned cConfigs)
 {
-    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
     BS3REGCTX                   Ctx;
     BS3TRAPFRAME                TrapFrame;
-    uint8_t                     bRing = BS3_MODE_IS_V86(bMode) ? 3 : 0;
+    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
+    uint8_t                     bRing   = BS3_MODE_IS_V86(bMode) ? 3 : 0;
+    uint8_t BS3_FAR            *pbBuf   = g_pbBuf;
+    uint32_t                    cbBuf   = g_cbBuf;
     PBS3EXTCTX                  pExtCtxOut;
     PBS3EXTCTX                  pExtCtx = bs3CpuInstr3AllocExtCtxs(&pExtCtxOut);
     if (!pExtCtx)
@@ -450,6 +456,17 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
+
+    /*
+     * Prep the buffer for tail guard if we're in paging mode.
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        pbBuf += X86_PAGE_SIZE;
+        cbBuf -= X86_PAGE_SIZE * 2;
+    }
 
     /*
      * Run the tests in all rings since alignment issues may behave
@@ -478,18 +495,14 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                 bool const      fAvxInstr   = paTests[iTest].enmType >= T_AVX_128;
                 uint8_t const   cbOperand   = paTests[iTest].enmType < T_128BITS ? 64/8
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
-                uint8_t const   cbAlign     = RT_MIN(cbOperand, 16);
+                uint8_t const   cbMemOp     = cbOperand;
+                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp - !paConfigs[iCfg].fAligned];
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse
                                             : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                 uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                 unsigned        iVal;
-                uint8_t         abPadding[sizeof(RTUINT256U) * 2];
-                unsigned const  offPadding  = (BS3_FP_OFF(&abPadding[sizeof(RTUINT256U)]) & ~(size_t)(cbAlign - 1))
-                                            - BS3_FP_OFF(&abPadding[0]);
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&abPadding[offPadding - !paConfigs[iCfg].fAligned];
-                BS3_ASSERT((uint8_t BS3_FAR *)puMemOp - &abPadding[0] <= sizeof(RTUINT256U));
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
@@ -523,11 +536,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     if (paTests[iTest].iRegDst == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
-                        Bs3MemSet(puMemOp, 0xcc, sizeof(*puMemOp));
+                        Bs3MemSet(puMemOp, 0xcc, cbMemOp);
                         if (bXcptExpect == X86_XCPT_DB)
                             uMemOpExpect = paValues[iVal].uDstOut;
                         else
-                            uMemOpExpect = *puMemOp;
+                            Bs3MemSet(&uMemOpExpect, 0xcc, sizeof(uMemOpExpect));
                     }
                     else if (fMmxInstr)
                         Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegSrc2, ~paValues[iVal].uDstOut.QWords.qw0, BS3EXTCTXTOPMM_ZERO);
@@ -536,7 +549,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     if (paTests[iTest].iRegSrc1 == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
-                        *puMemOp = paValues[iVal].uSrc1;
+                        Bs3MemCpy(puMemOp, &paValues[iVal].uSrc1, cbMemOp);
                         if (paTests[iTest].iRegDst == UINT8_MAX)
                             BS3_ASSERT(fSseInstr);
                         else
@@ -554,7 +567,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         BS3_ASSERT(paTests[iTest].iRegDst != UINT8_MAX && paTests[iTest].iRegSrc1 != UINT8_MAX);
-                        *puMemOp = uMemOpExpect = paValues[iVal].uSrc2;
+                        Bs3MemCpy(puMemOp, &paValues[iVal].uSrc2, cbMemOp);
                         uMemOpExpect = paValues[iVal].uSrc2;
                     }
                     else if (fMmxInstr)
@@ -614,8 +627,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                                          pszMode, idTestStep);
 
                     if (   paTests[iTest].enmRm == RM_MEM
-                        && Bs3MemCmp(puMemOp, &uMemOpExpect, cbOperand) != 0)
-                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbOperand, &uMemOpExpect, cbOperand, puMemOp);
+                        && Bs3MemCmp(puMemOp, &uMemOpExpect, cbMemOp) != 0)
+                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbMemOp, &uMemOpExpect, cbMemOp, puMemOp);
 
                     if (cErrors != Bs3TestSubErrorCount())
                     {
@@ -648,6 +661,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     /*
      * Cleanup.
      */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
+    }
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
@@ -3275,10 +3293,12 @@ typedef struct BS3CPUINSTR3_TEST2_MODE_T
 static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T const BS3_FAR *paTests, unsigned cTests,
                                             PCBS3CPUINSTR3_CONFIG_T paConfigs, unsigned cConfigs)
 {
-    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
     BS3REGCTX                   Ctx;
     BS3TRAPFRAME                TrapFrame;
-    uint8_t                     bRing = BS3_MODE_IS_V86(bMode) ? 3 : 0;
+    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
+    uint8_t BS3_FAR            *pbBuf   = g_pbBuf;
+    uint32_t                    cbBuf   = g_cbBuf;
+    uint8_t                     bRing   = BS3_MODE_IS_V86(bMode) ? 3 : 0;
     PBS3EXTCTX                  pExtCtxOut;
     PBS3EXTCTX                  pExtCtx = bs3CpuInstr3AllocExtCtxs(&pExtCtxOut);
     if (!pExtCtx)
@@ -3296,6 +3316,17 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
 
     /*
+     * Prep the buffer for tail guard if we're in paging mode.
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        pbBuf += X86_PAGE_SIZE;
+        cbBuf -= X86_PAGE_SIZE * 2;
+    }
+
+    /*
      * Run the tests in all rings since alignment issues may behave
      * differently in ring-3 compared to ring-0.
      */
@@ -3305,6 +3336,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
         for (iCfg = 0; iCfg < cConfigs; iCfg++)
         {
             unsigned                    iTest;
+            bool const                  fCfgAlignCheck = paConfigs[iCfg].fAlignCheck;
+            bool const                  fCfgAligned    = paConfigs[iCfg].fAligned;
             BS3CPUINSTR3_CONFIG_SAVED_T SavedCfg;
             if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg], bMode))
                 continue; /* unsupported config */
@@ -3322,7 +3355,10 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                 bool const      fAvxInstr   = paTests[iTest].enmType >= T_AVX_128;
                 uint8_t const   cbOperand   = paTests[iTest].enmType < T_128BITS ? 64/8
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
+                uint8_t const   cbMemOp     = cbOperand;
                 uint8_t const   cbAlign     = RT_MIN(cbOperand, 16);
+                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp
+                                                                  - (fCfgAligned && fCfgAlignCheck ? cbAlign : !fCfgAligned)];
                 uint8_t         bXcptExpect =    !g_afTypeSupports[paTests[iTest].enmType]
                                               || paTests[iTest].fInvalidEncoding ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
@@ -3332,11 +3368,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                                             : RT_BIT_64(paTests[iTest].cBitsDstValMask) - 1;
                 uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                 unsigned        iVal;
-                uint8_t         abPadding[sizeof(RTUINT256U) * 2];
-                unsigned const  offPadding  = (BS3_FP_OFF(&abPadding[sizeof(RTUINT256U)]) & ~(size_t)(cbAlign - 1))
-                                            - BS3_FP_OFF(&abPadding[0]);
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&abPadding[offPadding - !paConfigs[iCfg].fAligned];
-                BS3_ASSERT((uint8_t BS3_FAR *)puMemOp - &abPadding[0] <= sizeof(RTUINT256U));
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
@@ -3370,8 +3401,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                     if (paTests[iTest].iRegDst == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
-                        Bs3MemSet(puMemOp, 0xcc, sizeof(*puMemOp));
-                        uMemOpExpect = *puMemOp;
+                        Bs3MemSet(puMemOp, 0xcc, cbMemOp);
+                        Bs3MemSet(&uMemOpExpect, 0xcc, sizeof(uMemOpExpect));
                         if (bXcptExpect == X86_XCPT_DB)
                             switch (paTests[iTest].cbDst)
                             {
@@ -3388,7 +3419,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         BS3_ASSERT(paTests[iTest].iRegDst != UINT8_MAX);
-                        *puMemOp = uMemOpExpect = paValues[iVal].uSrc;
+                        Bs3MemCpy(puMemOp, &paValues[iVal].uSrc, cbMemOp);
                         uMemOpExpect = paValues[iVal].uSrc;
                     }
                     else if (fMmxInstr)
@@ -3440,7 +3471,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
 
                     if (   paTests[iTest].enmRm == RM_MEM
                         && Bs3MemCmp(puMemOp, &uMemOpExpect, cbOperand) != 0)
-                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbOperand, &uMemOpExpect, cbOperand, puMemOp);
+                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbMemOp, &uMemOpExpect, cbMemOp, puMemOp);
 
                     if (cErrors != Bs3TestSubErrorCount())
                     {
@@ -3473,6 +3504,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     /*
      * Cleanup.
      */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
+    }
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
@@ -3583,9 +3619,11 @@ typedef struct BS3CPUINSTR3_TEST3_MODE_T
 static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T const BS3_FAR *paTests, unsigned cTests,
                                             PCBS3CPUINSTR3_CONFIG_T paConfigs, unsigned cConfigs, uint8_t cbMaxAlign)
 {
-    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
     BS3REGCTX                   Ctx;
     BS3TRAPFRAME                TrapFrame;
+    const char BS3_FAR * const  pszMode = Bs3GetModeName(bMode);
+    uint8_t BS3_FAR            *pbBuf   = g_pbBuf;
+    uint32_t                    cbBuf   = g_cbBuf;
     uint8_t                     bRing   = BS3_MODE_IS_V86(bMode) ? 3 : 0;
     PBS3EXTCTX                  pExtCtxOut;
     PBS3EXTCTX                  pExtCtx = bs3CpuInstr3AllocExtCtxs(&pExtCtxOut);
@@ -3603,6 +3641,17 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
 
     /*
+     * Prep the buffer for tail guard if we're in paging mode.
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        pbBuf += X86_PAGE_SIZE;
+        cbBuf -= X86_PAGE_SIZE * 2;
+    }
+
+    /*
      * Run the tests in all rings since alignment issues may behave
      * differently in ring-3 compared to ring-0.
      */
@@ -3612,6 +3661,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
         for (iCfg = 0; iCfg < cConfigs; iCfg++)
         {
             unsigned                    iTest;
+            bool const                  fCfgAlignCheck = paConfigs[iCfg].fAlignCheck;
+            bool const                  fCfgAligned    = paConfigs[iCfg].fAligned;
             BS3CPUINSTR3_CONFIG_SAVED_T SavedCfg;
             if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg], bMode))
                 continue; /* unsupported config */
@@ -3629,18 +3680,16 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                 bool const      fAvxInstr   = paTests[iTest].enmType >= T_AVX_128;
                 uint8_t const   cbOperand   = paTests[iTest].enmType < T_128BITS ? 64/8
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
+                uint8_t const   cbMemOp     = cbOperand;
                 uint8_t const   cbAlign     = RT_MIN(cbOperand, !cbMaxAlign ? 16 : cbMaxAlign);
+                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp
+                                                                  - (fCfgAligned && fCfgAlignCheck ? cbAlign : !fCfgAligned)];
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse
                                             : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                 uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                 unsigned        iVal;
-                uint8_t         abPadding[sizeof(RTUINT256U) * 2];
-                unsigned const  offPadding  = (BS3_FP_OFF(&abPadding[sizeof(RTUINT256U)]) & ~(size_t)(cbAlign - 1))
-                                            - BS3_FP_OFF(&abPadding[0]);
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&abPadding[offPadding - !paConfigs[iCfg].fAligned];
-                BS3_ASSERT((uint8_t BS3_FAR *)puMemOp - &abPadding[0] <= sizeof(RTUINT256U));
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
@@ -3674,11 +3723,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                     if (paTests[iTest].iRegDst == UINT8_MAX)
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
-                        Bs3MemSet(puMemOp, 0xcc, sizeof(*puMemOp));
+                        Bs3MemSet(puMemOp, 0xcc, cbMemOp);
                         if (bXcptExpect == X86_XCPT_DB)
                             uMemOpExpect = paValues[iVal].uDstOut;
                         else
-                            uMemOpExpect = *puMemOp;
+                            Bs3MemSet(&uMemOpExpect, 0xcc, sizeof(uMemOpExpect));
                     }
                     else if (fMmxInstr)
                         Bs3ExtCtxSetMm(pExtCtx, paTests[iTest].iRegSrc, ~paValues[iVal].uDstOut.QWords.qw0, BS3EXTCTXTOPMM_ZERO);
@@ -3688,7 +3737,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                     {
                         BS3_ASSERT(paTests[iTest].enmRm == RM_MEM);
                         BS3_ASSERT(paTests[iTest].iRegDst != UINT8_MAX);
-                        *puMemOp = uMemOpExpect = paValues[iVal].uSrc;
+                        Bs3MemCpy(puMemOp, &paValues[iVal].uSrc, cbMemOp);
                         uMemOpExpect = paValues[iVal].uSrc;
                     }
                     else if (fMmxInstr)
@@ -3747,8 +3796,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                                          pszMode, idTestStep);
 
                     if (   paTests[iTest].enmRm == RM_MEM
-                        && Bs3MemCmp(puMemOp, &uMemOpExpect, cbOperand) != 0)
-                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbOperand, &uMemOpExpect, cbOperand, puMemOp);
+                        && Bs3MemCmp(puMemOp, &uMemOpExpect, cbMemOp) != 0)
+                        Bs3TestFailedF("Expected uMemOp %*.Rhxs, got %*.Rhxs", cbMemOp, &uMemOpExpect, cbMemOp, puMemOp);
 
                     if (cErrors != Bs3TestSubErrorCount())
                     {
@@ -3781,6 +3830,11 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
     /*
      * Cleanup.
      */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
+    }
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
@@ -4495,9 +4549,19 @@ BS3_DECL(void) Main_pe32()
     }
 
     /*
-     * Do the tests.
+     * Allocate a buffer for testing.
      */
-    Bs3TestDoModesByOne_pe32(g_aTests, RT_ELEMENTS(g_aTests), BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY);
+    g_cbBuf = X86_PAGE_SIZE * 4;
+    g_pbBuf = (uint8_t BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_REAL, g_cbBuf);
+    if (g_pbBuf)
+    {
+        /*
+         * Do the tests.
+         */
+        Bs3TestDoModesByOne_pe32(g_aTests, RT_ELEMENTS(g_aTests), BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY);
+    }
+    else
+        Bs3TestFailed("Failed to allocate 16K buffer");
 
     Bs3TestTerm();
 }
