@@ -6952,6 +6952,9 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80_amd,(PCX86FXSTATE pFpuState,
 *   MMX, SSE & AVX                                                                                                               *
 *********************************************************************************************************************************/
 
+/*
+ * MOVSLDUP / VMOVSLDUP
+ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     puDst->au32[0] = puSrc->au32[0];
@@ -6990,19 +6993,52 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovsldup_256_rm,(PX86XSAVEAREA pXState, uint8_
 #endif /* IEM_WITH_VEX */
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_movshdup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+/*
+ * MOVSHDUP / VMOVSHDUP
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_movshdup,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au32[0] = puSrc->au32[1];
     puDst->au32[1] = puSrc->au32[1];
     puDst->au32[2] = puSrc->au32[3];
     puDst->au32[3] = puSrc->au32[3];
 }
 
+#ifdef IEM_WITH_VEX
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_movddup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, uint64_t uSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovshdup_256_rr,(PX86XSAVEAREA pXState, uint8_t iYRegDst, uint8_t iYRegSrc))
 {
-    RT_NOREF(pFpuState);
+    pXState->x87.aXMM[iYRegDst].au32[0] = pXState->x87.aXMM[iYRegSrc].au32[1];
+    pXState->x87.aXMM[iYRegDst].au32[1] = pXState->x87.aXMM[iYRegSrc].au32[1];
+    pXState->x87.aXMM[iYRegDst].au32[2] = pXState->x87.aXMM[iYRegSrc].au32[3];
+    pXState->x87.aXMM[iYRegDst].au32[3] = pXState->x87.aXMM[iYRegSrc].au32[3];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[0] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au32[1];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[1] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au32[1];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[2] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au32[3];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[3] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au32[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovshdup_256_rm,(PX86XSAVEAREA pXState, uint8_t iYRegDst, PCRTUINT256U pSrc))
+{
+    pXState->x87.aXMM[iYRegDst].au32[0]       = pSrc->au32[1];
+    pXState->x87.aXMM[iYRegDst].au32[1]       = pSrc->au32[1];
+    pXState->x87.aXMM[iYRegDst].au32[2]       = pSrc->au32[3];
+    pXState->x87.aXMM[iYRegDst].au32[3]       = pSrc->au32[3];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[0] = pSrc->au32[5];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[1] = pSrc->au32[5];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[2] = pSrc->au32[7];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au32[3] = pSrc->au32[7];
+}
+
+#endif /* IEM_WITH_VEX */
+
+
+/*
+ * MOVDDUP / VMOVDDUP
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_movddup,(PRTUINT128U puDst, uint64_t uSrc))
+{
     puDst->au64[0] = uSrc;
     puDst->au64[1] = uSrc;
 }
