@@ -35,6 +35,21 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define BS3_FNBS3FAR_PROTOTYPES_CMN(a_BaseNm) \
+    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c16); \
+    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c32); \
+    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c64)
+
+
+/** Converts an execution mode (BS3_MODE_XXX) into an index into an array
+ *  initialized by BS3CPUINSTR3_TEST1_MODES_INIT,
+ *  BS3CPUINSTR3_TEST2_MODES_INIT, BS3CPUINSTR3_TEST3_MODES_INIT, ... . */
+#define BS3CPUINSTR3_TEST_MODES_INDEX(a_bMode) (BS3_MODE_IS_16BIT_CODE(bMode) ? 0 : BS3_MODE_IS_32BIT_CODE(bMode) ? 1 : 2)
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Instruction set type and operand width. */
@@ -102,481 +117,6 @@ typedef struct BS3CPUINSTR3_CONFIG_SAVED_T
 } BS3CPUINSTR3_CONFIG_SAVED_T;
 typedef BS3CPUINSTR3_CONFIG_SAVED_T BS3_FAR *PBS3CPUINSTR3_CONFIG_SAVED_T;
 typedef BS3CPUINSTR3_CONFIG_SAVED_T const BS3_FAR *PCBS3CPUINSTR3_CONFIG_SAVED_T;
-
-
-
-/*********************************************************************************************************************************
-*   External Symbols                                                                                                             *
-*********************************************************************************************************************************/
-#define BS3_FNBS3FAR_PROTOTYPES_CMN(a_BaseNm) \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c16); \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c32); \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c64)
-
-/* AND */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vandpd_YMM10_YMM8_YMM15_icebp_c64;
-
-/* ANDN */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vandnpd_YMM10_YMM8_YMM15_icebp_c64;
-
-/* OR */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vorpd_YMM10_YMM8_YMM15_icebp_c64;
-
-/* XOR */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp_c64;
-
-/* [V]PCMPGT[BWD] */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpgtd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpgtq_YMM10_YMM8_YMM15_icebp_c64;
-
-/* [V]PCMPEQ[BWD] */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpeqd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpeqq_YMM10_YMM8_YMM15_icebp_c64;
-
-/* [V]ADD[BWDQ] */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddq_YMM10_YMM8_YMM15_icebp_c64;
-
-/* [V]SUB[BWDQ] */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubq_YMM10_YMM8_YMM15_icebp_c64;
-
-/* [V]PMOVMSKB */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_qword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_dqword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_dqword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_qqword_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovmskb_RAX_YMM9_icebp_c64;
-
-/* [V]PSHUFB */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKHBW */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKHWD */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKHDQ */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKHQDQ */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKLBW */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKLWD */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKLDQ */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PUNPCKLQDQ */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PACKSSWB */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PACKSSDW */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PACKUSWB */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_FSxBX_icebp_c64;
-
-/* [V]PACKUSDW */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_FSxBX_icebp_c64;
 
 
 /*********************************************************************************************************************************
@@ -664,49 +204,6 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig5StrictAligned[] =
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_GP }, /* #13 */
 };
 
-
-
-/** Initializes global variables. */
-static void bs3CpuInstr3InitGlobals(void)
-{
-    if (!g_fGlobalInitialized)
-    {
-        if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
-        {
-            uint32_t fEbx, fEcx, fEdx;
-            ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
-            g_afTypeSupports[T_MMX]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_MMX);
-            g_afTypeSupports[T_MMX_SSE]     = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE);
-            g_afTypeSupports[T_MMX_SSSE3]   = RT_BOOL(fEdx & X86_CPUID_FEATURE_ECX_SSSE3);
-            g_afTypeSupports[T_SSE]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE);
-            g_afTypeSupports[T_SSE2]        = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE2);
-            g_afTypeSupports[T_SSE3]        = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE3);
-            g_afTypeSupports[T_SSSE3]       = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSSE3);
-            g_afTypeSupports[T_SSE4_1]      = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE4_1);
-            g_afTypeSupports[T_SSE4_2]      = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE4_2);
-            g_afTypeSupports[T_AVX_128]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
-            g_afTypeSupports[T_AVX_256]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
-
-            if (ASMCpuId_EAX(0) >= 7)
-            {
-                ASMCpuIdExSlow(7, 0, 0, 0, NULL, &fEbx, NULL, NULL);
-                g_afTypeSupports[T_AVX2_128] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
-                g_afTypeSupports[T_AVX2_256] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
-            }
-
-            if (g_uBs3CpuDetected & BS3CPU_F_CPUID_EXT_LEAVES)
-            {
-                ASMCpuIdExSlow(UINT32_C(0x80000001), 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
-                g_afTypeSupports[T_AXMMX]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
-                g_afTypeSupports[T_SSE4A]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_SSE4A);
-                g_fAmdMisalignedSse         = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
-            }
-            g_afTypeSupports[T_AXMMX_OR_SSE] = g_afTypeSupports[T_AXMMX] || g_afTypeSupports[T_SSE];
-        }
-
-        g_fGlobalInitialized = true;
-    }
-}
 
 
 /**
@@ -927,11 +424,6 @@ typedef struct BS3CPUINSTR3_TEST1_MODE_T
 #define BS3CPUINSTR3_TEST1_MODES_INIT(a_aTests16, a_aTests32, a_aTests64) \
     { { a_aTests16, RT_ELEMENTS(a_aTests16) }, { a_aTests32, RT_ELEMENTS(a_aTests32) }, { a_aTests64, RT_ELEMENTS(a_aTests64) } }
 
-/** Converts an execution mode (BS3_MODE_XXX) into an index into an array
- *  initialized by BS3CPUINSTR3_TEST1_MODES_INIT. */
-#define BS3CPUINSTR3_TEST1_MODES_INDEX(a_bMode) \
-    (BS3_MODE_IS_16BIT_CODE(bMode) ? 0 : BS3_MODE_IS_32BIT_CODE(bMode) ? 1 : 2)
-
 
 /**
  * Test type #1 worker.
@@ -951,9 +443,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
     Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
-
-    /* Ensure that the globals we use here have been initialized. */
-    bs3CpuInstr3InitGlobals();
 
     /*
      * Create test context.
@@ -1167,6 +656,30 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
 /*
  * PAND, VPAND, ANDPS, VANDPS, ANDPD, VANDPD.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vandpd_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andps_andpd_pand(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1260,7 +773,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andps_andpd_pand(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1269,6 +782,30 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andps_andpd_pand(uint8_t bMode)
 /*
  * PANDN, VPANDN, ANDNPS, VANDNPS, ANDNPD, VANDNPD.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vandnpd_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andnps_andnpd_pandn(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1362,7 +899,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andnps_andnpd_pandn(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1372,6 +909,30 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andnps_andnpd_pandn(uint8_t bMode)
 /*
  * POR, VPOR, PORPS, VORPS, PORPD, VPORPD.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vorpd_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_orps_orpd_por(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1464,7 +1025,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_orps_orpd_por(uint8_t bMode)
         {  bs3CpuInstr3_vorpd_YMM10_YMM8_YMM15_icebp_c64,   255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValues), s_aValues },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1473,6 +1034,30 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_orps_orpd_por(uint8_t bMode)
 /*
  * PXOR, VPXOR, XORPS, VXORPS, XORPD, VXORPD.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_xorps_xorpd_pxor(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1565,7 +1150,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_xorps_xorpd_pxor(uint8_t bMode)
         {  bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp_c64,  255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValues), s_aValues },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1575,6 +1160,42 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_xorps_xorpd_pxor(uint8_t bMode)
 /*
  * PCMPGTB, VPCMPGTB, PCMPGTW, VPCMPGTW, PCMPGTD, VPCMPGTD, PCMPGTQ, VPCMPGTQ.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpcmpgtd_YMM10_YMM8_YMM15_icebp_c64;
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpcmpgtq_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -1740,7 +1361,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq(uint8_t bMo
         {  bs3CpuInstr3_vpcmpgtq_YMM10_YMM8_YMM15_icebp_c64,   255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValuesD), s_aValuesQ },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1749,6 +1370,42 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq(uint8_t bMo
 /*
  * PCMPEQB, VPCMPEQB, PCMPEQW, VPCMPEQW, PCMPEQD, VPCMPEQD, PCMPEQQ, VPCMPEQQ.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpcmpeqd_YMM10_YMM8_YMM15_icebp_c64;
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpcmpeqq_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -1914,7 +1571,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq(uint8_t bMo
         {  bs3CpuInstr3_vpcmpeqq_YMM10_YMM8_YMM15_icebp_c64,   255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValuesQ), s_aValuesQ },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -1923,6 +1580,44 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq(uint8_t bMo
 /*
  * PADDB, VPADDB, PADDW, VPADDW, PADDD, VPADDD, PADDQ, VPADDQ.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpaddd_YMM10_YMM8_YMM15_icebp_c64;
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpaddq_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddb_paddw_paddd_paddq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -2094,7 +1789,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddb_paddw_paddd_paddq(uint8_t bMode)
         {  bs3CpuInstr3_vpaddq_YMM10_YMM8_YMM15_icebp_c64,   255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValuesQ), s_aValuesQ },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2103,6 +1798,44 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddb_paddw_paddd_paddq(uint8_t bMode)
 /*
  * PSUBB, VPSUBB, PSUBW, VPSUBW, PSUBD, VPSUBD, PSUBQ, VPSUBQ.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_FSxBX_icebp);
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpsubd_YMM10_YMM8_YMM15_icebp_c64;
+
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_XMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_YMM0_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpsubq_YMM10_YMM8_YMM15_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubb_psubw_psubd_psubq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -2274,7 +2007,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubb_psubw_psubd_psubq(uint8_t bMode)
         {  bs3CpuInstr3_vpsubq_YMM10_YMM8_YMM15_icebp_c64,   255,         RM_REG, T_AVX_256, 10, 8,  15, RT_ELEMENTS(s_aValuesQ), s_aValuesQ },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2283,6 +2016,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubb_psubw_psubd_psubq(uint8_t bMode)
 /*
  * PSHUFB
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2363,7 +2111,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufb(uint8_t bMode)
         {  bs3CpuInstr3_vpshufb_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2372,6 +2120,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufb(uint8_t bMode)
 /*
  * [V]PUNPCKHBW
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2445,7 +2208,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhbw(uint8_t bMode)
         {  bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2454,6 +2217,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhbw(uint8_t bMode)
 /*
  * [V]PUNPCKHWD
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhwd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2527,7 +2305,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhwd(uint8_t bMode)
         {  bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2536,6 +2314,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhwd(uint8_t bMode)
 /*
  * [V]PUNPCKHDQ
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2609,7 +2402,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhdq(uint8_t bMode)
         {  bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2618,6 +2411,19 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhdq(uint8_t bMode)
 /*
  * [V]PUNPCKHQDQ
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhqdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -2670,7 +2476,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhqdq(uint8_t bMode)
         {  bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2679,6 +2485,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhqdq(uint8_t bMode)
 /*
  * [V]PUNPCKLBW
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2752,7 +2573,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklbw(uint8_t bMode)
         {  bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2761,6 +2582,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklbw(uint8_t bMode)
 /*
  * [V]PUNPCKLWD
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklwd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2834,7 +2670,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklwd(uint8_t bMode)
         {  bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2843,6 +2679,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklwd(uint8_t bMode)
 /*
  * [V]PUNPCKLDQ
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckldq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2916,7 +2767,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckldq(uint8_t bMode)
         {  bs3CpuInstr3_vpunpckldq_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2925,6 +2776,19 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckldq(uint8_t bMode)
 /*
  * [V]PUNPCKLQDQ
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklqdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -2977,7 +2841,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklqdq(uint8_t bMode)
         {  bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -2986,6 +2850,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklqdq(uint8_t bMode)
 /*
  * [V]PACKSSWB
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packsswb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3065,7 +2944,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packsswb(uint8_t bMode)
         {  bs3CpuInstr3_vpacksswb_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -3074,6 +2953,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packsswb(uint8_t bMode)
 /*
  * [V]PACKSSDW
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packssdw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3153,7 +3047,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packssdw(uint8_t bMode)
         {  bs3CpuInstr3_vpackssdw_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -3162,6 +3056,21 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packssdw(uint8_t bMode)
 /*
  * [V]PACKUSWB
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_FSxBX_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packuswb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3241,7 +3150,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packuswb(uint8_t bMode)
         {  bs3CpuInstr3_vpackuswb_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -3250,6 +3159,18 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packuswb(uint8_t bMode)
 /*
  * [V]PACKUSDW
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_XMM9_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_XMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_XMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_YMM3_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_YMM10_icebp_c64;
+extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_FSxBX_icebp_c64;
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packusdw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -3305,7 +3226,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packusdw(uint8_t bMode)
         {  bs3CpuInstr3_vpackusdw_YMM8_YMM9_FSxBX_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX2_256,  8, 9, 255, RT_ELEMENTS(s_aValuesOthers), s_aValuesOthers },
     };
     static BS3CPUINSTR3_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST1_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -3347,11 +3268,6 @@ typedef struct BS3CPUINSTR3_TEST2_MODE_T
 #define BS3CPUINSTR3_TEST2_MODES_INIT(a_aTests16, a_aTests32, a_aTests64) \
     { { a_aTests16, RT_ELEMENTS(a_aTests16) }, { a_aTests32, RT_ELEMENTS(a_aTests32) }, { a_aTests64, RT_ELEMENTS(a_aTests64) } }
 
-/** Converts an execution mode (BS3_MODE_XXX) into an index into an array
- *  initialized by BS3CPUINSTR3_TEST2_MODES_INIT. */
-#define BS3CPUINSTR3_TEST2_MODES_INDEX(a_bMode) \
-    (BS3_MODE_IS_16BIT_CODE(bMode) ? 0 : BS3_MODE_IS_32BIT_CODE(bMode) ? 1 : 2)
-
 
 /**
  * Test type #2 worker.
@@ -3371,9 +3287,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
     Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
-
-    /* Ensure that the globals we use here have been initialized. */
-    bs3CpuInstr3InitGlobals();
 
     /*
      * Create test context.
@@ -3568,6 +3481,16 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
 /*
  * PMOVMSKB, VPMOVMSKB.
  */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_MM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_qword_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_dqword_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_XMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_dqword_FSxBX_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_YMM2_icebp);
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_qqword_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vpmovmskb_RAX_YMM9_icebp_c64;
+
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovmskb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST2_VALUES_T const s_aValues[] =
@@ -3615,7 +3538,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovmskb(uint8_t bMode)
         {  bs3CpuInstr3_vpmovmskb_RAX_YMM9_icebp_c64,         255, RM_REG, T_AVX2_256,     8, 32, false, 0,   9, RT_ELEMENTS(s_aValues), s_aValues },
     };
     static BS3CPUINSTR3_TEST2_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST2_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST2_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType2(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4));
 }
@@ -3653,11 +3576,6 @@ typedef struct BS3CPUINSTR3_TEST3_MODE_T
 #define BS3CPUINSTR3_TEST3_MODES_INIT(a_aTests16, a_aTests32, a_aTests64) \
     { { a_aTests16, RT_ELEMENTS(a_aTests16) }, { a_aTests32, RT_ELEMENTS(a_aTests32) }, { a_aTests64, RT_ELEMENTS(a_aTests64) } }
 
-/** Converts an execution mode (BS3_MODE_XXX) into an index into an array
- *  initialized by BS3CPUINSTR3_TEST3_MODES_INIT. */
-#define BS3CPUINSTR3_TEST3_MODES_INDEX(a_bMode) \
-    (BS3_MODE_IS_16BIT_CODE(bMode) ? 0 : BS3_MODE_IS_32BIT_CODE(bMode) ? 1 : 2)
-
 
 /**
  * Test type #1 worker.
@@ -3677,9 +3595,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
     Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
-
-    /* Ensure that the globals we use here have been initialized. */
-    bs3CpuInstr3InitGlobals();
 
     /*
      * Create test context.
@@ -3927,7 +3842,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufw(uint8_t bMode)
         {  bs3CpuInstr3_pshufw_MM1_FSxBX_01Bh_icebp_c64, 255, RM_MEM, T_AXMMX_OR_SSE, 1, 255, RT_ELEMENTS(s_aValues1B), s_aValues1B },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4), 0 /*cbMaxAlign*/);
 }
@@ -4033,7 +3948,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufhw(uint8_t bMode)
         {  bs3CpuInstr3_vpshufhw_YMM9_YMM12_01Bh_icebp_c64, 255,         RM_REG, T_AVX2_256, 9,  12, RT_ELEMENTS(s_aValues1B), s_aValues1B },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4), 0 /*cbMaxAlign*/);
 }
@@ -4139,7 +4054,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshuflw(uint8_t bMode)
         {  bs3CpuInstr3_vpshuflw_YMM9_YMM12_01Bh_icebp_c64, 255,         RM_REG, T_AVX2_256, 9,  12, RT_ELEMENTS(s_aValues1B), s_aValues1B },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4), 0 /*cbMaxAlign*/);
 }
@@ -4245,7 +4160,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufd(uint8_t bMode)
         {  bs3CpuInstr3_vpshufd_YMM9_YMM12_01Bh_icebp_c64, 255,         RM_REG, T_AVX2_256, 9,  12, RT_ELEMENTS(s_aValues1B), s_aValues1B },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4, RT_ELEMENTS(g_aXcptConfig4), 0 /*cbMaxAlign*/);
 }
@@ -4301,7 +4216,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdqa(uint8_t bMode)
         {  bs3CpuInstr3_vmovntdqa_YMM12_FSxBX_icebp_c64, X86_XCPT_GP, RM_MEM, T_AVX2_256, 12, 255, RT_ELEMENTS(g_aMoveValues), g_aMoveValues },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig5StrictAligned, RT_ELEMENTS(g_aXcptConfig5StrictAligned), 255 /*cbMaxAlign*/);
 }
@@ -4387,7 +4302,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movups(uint8_t bMode)
         {  bs3CpuInstr3_vmovups_FSxBX_YMM12_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX_256, 255,  12, RT_ELEMENTS(g_aMoveValues), g_aMoveValues },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4Unaligned, RT_ELEMENTS(g_aXcptConfig4Unaligned), 0 /*cbMaxAlign*/);
 }
@@ -4473,7 +4388,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movupd(uint8_t bMode)
         {  bs3CpuInstr3_vmovupd_FSxBX_YMM12_icebp_c64, X86_XCPT_DB, RM_MEM, T_AVX_256, 255,  12, RT_ELEMENTS(g_aMoveValues), g_aMoveValues },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
-    unsigned const                         iTest       = BS3CPUINSTR3_TEST3_MODES_INDEX(bMode);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig4Unaligned, RT_ELEMENTS(g_aXcptConfig4Unaligned), 0 /*cbMaxAlign*/);
 }
@@ -4494,21 +4409,22 @@ BS3_DECL(void) Main_pe32()
 {
     static const BS3TESTMODEBYONEENTRY g_aTests[] =
     {
-#if 0
+#define ALL_TESTS
+#if defined(ALL_TESTS)
         { "[v]andps/[v]andpd/[v]pand",                      bs3CpuInstr3_v_andps_andpd_pand, 0 },
         { "[v]andnps/[v]andnpd/[v]pandn",                   bs3CpuInstr3_v_andnps_andnpd_pandn, 0 },
         { "[v]orps/[v]orpd/[v]or",                          bs3CpuInstr3_v_orps_orpd_por, 0 },
         { "[v]xorps/[v]xorpd/[v]pxor",                      bs3CpuInstr3_v_xorps_xorpd_pxor, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]pcmpgtb/[v]pcmpgtw/[v]pcmpgtd/[v]pcmpgtq",    bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq, 0 },
         { "[v]pcmpeqb/[v]pcmpeqw/[v]pcmpeqd/[v]pcmpeqq",    bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]paddb/[v]paddw/[v]paddd/[v]paddq",            bs3CpuInstr3_v_paddb_paddw_paddd_paddq, 0 },
         { "[v]psubb/[v]psubw/[v]psubd/[v]psubq",            bs3CpuInstr3_v_psubb_psubw_psubd_psubq, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]pmovmskb",                                    bs3CpuInstr3_v_pmovmskb, 0 },
         { "pshufb",                                         bs3CpuInstr3_pshufb, 0 },
         { "pshufw",                                         bs3CpuInstr3_pshufw, 0 },
@@ -4516,25 +4432,25 @@ BS3_DECL(void) Main_pe32()
         { "[v]pshuflw",                                     bs3CpuInstr3_v_pshuflw, 0 },
         { "[v]pshufd",                                      bs3CpuInstr3_v_pshufd, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]punpckhbw",                                   bs3CpuInstr3_v_punpckhbw, 0 },
         { "[v]punpckhwd",                                   bs3CpuInstr3_v_punpckhwd, 0 },
         { "[v]punpckhdq",                                   bs3CpuInstr3_v_punpckhdq, 0 },
         { "[v]punpckhqdq",                                  bs3CpuInstr3_v_punpckhqdq, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]punpcklbw",                                   bs3CpuInstr3_v_punpcklbw, 0 },
         { "[v]punpcklwd",                                   bs3CpuInstr3_v_punpcklwd, 0 },
         { "[v]punpckldq",                                   bs3CpuInstr3_v_punpckldq, 0 },
         { "[v]punpcklqdq",                                  bs3CpuInstr3_v_punpcklqdq, 0 },
 #endif
-#if 0
+#if defined(ALL_TESTS)
         { "[v]packsswb",                                    bs3CpuInstr3_v_packsswb, 0 },
         { "[v]packssdw",                                    bs3CpuInstr3_v_packssdw, 0 },
         { "[v]packuswb",                                    bs3CpuInstr3_v_packuswb, 0 },
         { "[v]packusdw",                                    bs3CpuInstr3_v_packusdw, 0 },
 #endif
-#if 1
+#if defined(ALL_TESTS)
         { "[v]movntdqa",                                    bs3CpuInstr3_v_movntdqa, 0 },
         { "[v]movups",                                      bs3CpuInstr3_v_movups, 0 },
         { "[v]movupd",                                      bs3CpuInstr3_v_movupd, 0 },
@@ -4542,6 +4458,45 @@ BS3_DECL(void) Main_pe32()
     };
     Bs3TestInit("bs3-cpu-instr-3");
 
+    /*
+     * Initialize globals.
+     */
+    if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+    {
+        uint32_t fEbx, fEcx, fEdx;
+        ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+        g_afTypeSupports[T_MMX]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_MMX);
+        g_afTypeSupports[T_MMX_SSE]     = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE);
+        g_afTypeSupports[T_MMX_SSSE3]   = RT_BOOL(fEdx & X86_CPUID_FEATURE_ECX_SSSE3);
+        g_afTypeSupports[T_SSE]         = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE);
+        g_afTypeSupports[T_SSE2]        = RT_BOOL(fEdx & X86_CPUID_FEATURE_EDX_SSE2);
+        g_afTypeSupports[T_SSE3]        = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE3);
+        g_afTypeSupports[T_SSSE3]       = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSSE3);
+        g_afTypeSupports[T_SSE4_1]      = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE4_1);
+        g_afTypeSupports[T_SSE4_2]      = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_SSE4_2);
+        g_afTypeSupports[T_AVX_128]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
+        g_afTypeSupports[T_AVX_256]     = RT_BOOL(fEcx & X86_CPUID_FEATURE_ECX_AVX);
+
+        if (ASMCpuId_EAX(0) >= 7)
+        {
+            ASMCpuIdExSlow(7, 0, 0, 0, NULL, &fEbx, NULL, NULL);
+            g_afTypeSupports[T_AVX2_128] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+            g_afTypeSupports[T_AVX2_256] = RT_BOOL(fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+        }
+
+        if (g_uBs3CpuDetected & BS3CPU_F_CPUID_EXT_LEAVES)
+        {
+            ASMCpuIdExSlow(UINT32_C(0x80000001), 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+            g_afTypeSupports[T_AXMMX]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
+            g_afTypeSupports[T_SSE4A]   = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_SSE4A);
+            g_fAmdMisalignedSse         = RT_BOOL(fEcx & X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
+        }
+        g_afTypeSupports[T_AXMMX_OR_SSE] = g_afTypeSupports[T_AXMMX] || g_afTypeSupports[T_SSE];
+    }
+
+    /*
+     * Do the tests.
+     */
     Bs3TestDoModesByOne_pe32(g_aTests, RT_ELEMENTS(g_aTests), BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY);
 
     Bs3TestTerm();
