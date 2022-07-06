@@ -148,12 +148,13 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4[] =
     { 0, 0,  0,  1,      1,       1,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
-    /* Memory misalignment: */
+    /* Memory misalignment and alignment checks: */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_GP, X86_XCPT_DB }, /* #10 */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_GP, X86_XCPT_AC }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */
 };
 
 /** Exception type \#4 test configurations, for the SSE version of movups. */
@@ -174,12 +175,13 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4Unaligned[] =
     { 0, 0,  0,  1,      1,       1,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
-    /* Memory misalignment: */
+    /* Memory misalignment and alignment checks: */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #10 */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_DB, X86_XCPT_AC }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */
 };
 
 /** Exception type \#5 test configurations, strict alignment. */
@@ -200,12 +202,13 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig5StrictAligned[] =
     { 0, 0,  0,  1,      1,       1,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
-    /* Memory misalignment: */
+    /* Memory misalignment and alignment checks: */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_GP, X86_XCPT_GP }, /* #10 */
     { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_GP, X86_XCPT_GP }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_GP }, /* #12 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_GP }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_GP }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_GP }, /* #14 */
 };
 
 
@@ -394,6 +397,71 @@ static void bs3CpuInstr3SetupSseAndAvx(PBS3REGCTX pCtx, PCBS3EXTCTX pExtCtx)
 }
 
 
+
+/**
+ * Configures the buffer with electrict fences in paged modes.
+ *
+ * @returns Adjusted buffer pointer.
+ * @param   pbBuf       The buffer pointer.
+ * @param   pcbBuf      Pointer to the buffer size (input & output).
+ * @param   bMode       The testing target mode.
+ */
+DECLINLINE(uint8_t BS3_FAR *) bs3CpuInstr3BufSetup(uint8_t BS3_FAR *pbBuf, uint32_t *pcbBuf, uint8_t bMode)
+{
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        uint32_t cbBuf = *pcbBuf;
+        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
+        pbBuf  += X86_PAGE_SIZE;
+        cbBuf  -= X86_PAGE_SIZE * 2;
+        *pcbBuf = cbBuf;
+    }
+    return pbBuf;
+}
+
+
+/**
+ * Undoes what bs3CpuInstr3BufSetup did.
+ *
+ * @param   pbBuf       The buffer pointer.
+ * @param   cbBuf       The buffer size.
+ * @param   bMode       The testing target mode.
+ */
+DECLINLINE(void) bs3CpuInstr3BufCleanup(uint8_t BS3_FAR *pbBuf, uint32_t cbBuf, uint8_t bMode)
+{
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, X86_PTE_P, 0);
+        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, X86_PTE_P, 0);
+    }
+}
+
+
+/**
+ * Gets a buffer of a @a cbMemOp sized operand according to the given
+ * configuration and alignment restrictions.
+ *
+ * @returns Pointer to the buffer.
+ * @param   pbBuf       The buffer pointer.
+ * @param   cbBuf       The buffer size.
+ * @param   cbMemOp     The operand size.
+ * @param   cbAlign     The operand alignment restriction.
+ * @param   pConfig     The configuration.
+ */
+DECLINLINE(PRTUINT256U) bs3CpuInstr3BufForOperand(uint8_t BS3_FAR *pbBuf, uint32_t cbBuf, uint8_t cbMemOp, uint8_t cbAlign,
+                                                  PCBS3CPUINSTR3_CONFIG_T pConfig)
+{
+    if (pConfig->fAligned)
+    {
+        if (!pConfig->fAlignCheck)
+            return (PRTUINT256U)&pbBuf[cbBuf - cbMemOp];
+        return (PRTUINT256U)&pbBuf[cbBuf - cbMemOp - cbAlign];
+    }
+    return (PRTUINT256U)&pbBuf[cbBuf - cbMemOp - 1];
+}
+
+
 /*
  * Test type #1.
  */
@@ -453,20 +521,10 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     /*
      * Create test context.
      */
+    pbBuf = bs3CpuInstr3BufSetup(pbBuf, &cbBuf, bMode);
     Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
-
-    /*
-     * Prep the buffer for tail guard if we're in paging mode.
-     */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        pbBuf += X86_PAGE_SIZE;
-        cbBuf -= X86_PAGE_SIZE * 2;
-    }
 
     /*
      * Run the tests in all rings since alignment issues may behave
@@ -496,7 +554,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                 uint8_t const   cbOperand   = paTests[iTest].enmType < T_128BITS ? 64/8
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
                 uint8_t const   cbMemOp     = cbOperand;
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp - !paConfigs[iCfg].fAligned];
+                PRTUINT256U     puMemOp     = bs3CpuInstr3BufForOperand(pbBuf, cbBuf, cbMemOp, cbMemOp, &paConfigs[iCfg]);
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse
@@ -506,7 +564,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
-                if (!paConfigs[iCfg].fAligned && paTests[iTest].enmRm != RM_MEM)
+                if (paTests[iTest].enmRm != RM_MEM && (!paConfigs[iCfg].fAligned || paConfigs[iCfg].fAlignCheck))
                     continue;
 
                 /* #AC is only raised in ring-3.: */
@@ -661,11 +719,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
     /*
      * Cleanup.
      */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
-    }
+    bs3CpuInstr3BufCleanup(pbBuf, cbBuf, bMode);
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
@@ -3311,20 +3365,10 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     /*
      * Create test context.
      */
+    pbBuf = bs3CpuInstr3BufSetup(pbBuf, &cbBuf, bMode);
     Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
     //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
-
-    /*
-     * Prep the buffer for tail guard if we're in paging mode.
-     */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        pbBuf += X86_PAGE_SIZE;
-        cbBuf -= X86_PAGE_SIZE * 2;
-    }
 
     /*
      * Run the tests in all rings since alignment issues may behave
@@ -3336,8 +3380,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
         for (iCfg = 0; iCfg < cConfigs; iCfg++)
         {
             unsigned                    iTest;
-            bool const                  fCfgAlignCheck = paConfigs[iCfg].fAlignCheck;
-            bool const                  fCfgAligned    = paConfigs[iCfg].fAligned;
             BS3CPUINSTR3_CONFIG_SAVED_T SavedCfg;
             if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg], bMode))
                 continue; /* unsupported config */
@@ -3357,8 +3399,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
                 uint8_t const   cbMemOp     = cbOperand;
                 uint8_t const   cbAlign     = RT_MIN(cbOperand, 16);
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp
-                                                                  - (fCfgAligned && fCfgAlignCheck ? cbAlign : !fCfgAligned)];
+                PRTUINT256U     puMemOp     = bs3CpuInstr3BufForOperand(pbBuf, cbBuf, cbMemOp, cbAlign, &paConfigs[iCfg]);
                 uint8_t         bXcptExpect =    !g_afTypeSupports[paTests[iTest].enmType]
                                               || paTests[iTest].fInvalidEncoding ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
@@ -3371,7 +3412,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
-                if (!paConfigs[iCfg].fAligned && paTests[iTest].enmRm != RM_MEM)
+                if (paTests[iTest].enmRm != RM_MEM && (!paConfigs[iCfg].fAligned || paConfigs[iCfg].fAlignCheck))
                     continue;
 
                 /* #AC is only raised in ring-3.: */
@@ -3504,11 +3545,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
     /*
      * Cleanup.
      */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
-    }
+    bs3CpuInstr3BufCleanup(pbBuf, cbBuf, bMode);
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
@@ -3639,17 +3676,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
      */
     Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr3SetupSseAndAvx(&Ctx, pExtCtx);
-
-    /*
-     * Prep the buffer for tail guard if we're in paging mode.
-     */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[0], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf - X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        pbBuf += X86_PAGE_SIZE;
-        cbBuf -= X86_PAGE_SIZE * 2;
-    }
+    pbBuf = bs3CpuInstr3BufSetup(pbBuf, &cbBuf, bMode);
 
     /*
      * Run the tests in all rings since alignment issues may behave
@@ -3661,8 +3688,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
         for (iCfg = 0; iCfg < cConfigs; iCfg++)
         {
             unsigned                    iTest;
-            bool const                  fCfgAlignCheck = paConfigs[iCfg].fAlignCheck;
-            bool const                  fCfgAligned    = paConfigs[iCfg].fAligned;
             BS3CPUINSTR3_CONFIG_SAVED_T SavedCfg;
             if (!bs3CpuInstr3ConfigReconfigure(&SavedCfg, &Ctx, pExtCtx, &paConfigs[iCfg], bMode))
                 continue; /* unsupported config */
@@ -3682,8 +3707,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                                             : paTests[iTest].enmType < T_256BITS ? 128/8 : 256/8;
                 uint8_t const   cbMemOp     = cbOperand;
                 uint8_t const   cbAlign     = RT_MIN(cbOperand, !cbMaxAlign ? 16 : cbMaxAlign);
-                PRTUINT256U     puMemOp     = (PRTUINT256U)&pbBuf[cbBuf - cbMemOp
-                                                                  - (fCfgAligned && fCfgAlignCheck ? cbAlign : !fCfgAligned)];
+                PRTUINT256U     puMemOp     = bs3CpuInstr3BufForOperand(pbBuf, cbBuf, cbMemOp, cbAlign, &paConfigs[iCfg]);
                 uint8_t         bXcptExpect = !g_afTypeSupports[paTests[iTest].enmType] ? X86_XCPT_UD
                                             : fMmxInstr ? paConfigs[iCfg].bXcptMmx
                                             : fSseInstr ? paConfigs[iCfg].bXcptSse
@@ -3693,7 +3717,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
 
                 /* If testing unaligned memory accesses, skip register-only tests.  This allows
                    setting bXcptMmx, bXcptSse and bXcptAvx to reflect the misaligned exceptions.  */
-                if (!paConfigs[iCfg].fAligned && paTests[iTest].enmRm != RM_MEM)
+                if (paTests[iTest].enmRm != RM_MEM && (!paConfigs[iCfg].fAligned || paConfigs[iCfg].fAlignCheck))
                     continue;
 
                 /* #AC is only raised in ring-3.: */
@@ -3830,11 +3854,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
     /*
      * Cleanup.
      */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3PagingProtectPtr(&pbBuf[-X86_PAGE_SIZE], X86_PAGE_SIZE, 0, X86_PTE_P);
-        Bs3PagingProtectPtr(&pbBuf[cbBuf], X86_PAGE_SIZE, 0, X86_PTE_P);
-    }
+    bs3CpuInstr3BufCleanup(pbBuf, cbBuf, bMode);
     bs3CpuInstr3FreeExtCtxs(pExtCtx, pExtCtxOut);
     return 0;
 }
