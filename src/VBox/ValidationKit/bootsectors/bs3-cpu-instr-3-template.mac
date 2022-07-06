@@ -1016,6 +1016,21 @@ EMIT_INSTR_PLUS_ICEBP vmovsd, XMM10, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovsd, FSxBX, XMM9
  %endif
 
+;
+; [V]MOVLPS - not testing the 2nd register variant.
+;
+EMIT_INSTR_PLUS_ICEBP movlps,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP movlps,  FSxBX, XMM1
+EMIT_INSTR_PLUS_ICEBP vmovlps, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP vmovlps, FSxBX, XMM1
+ %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP movlps,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP movlps,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP vmovlps, XMM10, XMM14, FSxBX
+EMIT_INSTR_PLUS_ICEBP vmovlps, FSxBX, XMM9
+ %endif
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
