@@ -26,7 +26,11 @@
 #include <VBox/vmm/mm.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
+#ifdef VBOX_WITH_DEBUGGER
+# include <VBox/dbg.h>
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
@@ -38,6 +42,9 @@
 *********************************************************************************************************************************/
 static FNDBGFINFOARGVINT iemR3InfoITlb;
 static FNDBGFINFOARGVINT iemR3InfoDTlb;
+#ifdef VBOX_WITH_DEBUGGER
+static void iemR3RegisterDebuggerCommands(void);
+#endif
 
 
 static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
@@ -208,6 +215,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
     DBGFR3InfoRegisterInternalArgv(pVM, "itlb", "IEM instruction TLB", iemR3InfoITlb, DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalArgv(pVM, "dtlb", "IEM instruction TLB", iemR3InfoDTlb, DBGFINFO_FLAGS_RUN_ON_EMT);
+#ifdef VBOX_WITH_DEBUGGER
+    iemR3RegisterDebuggerCommands();
+#endif
 
     return VINF_SUCCESS;
 }
@@ -444,4 +454,53 @@ static DECLCALLBACK(void) iemR3InfoDTlb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
 {
     return iemR3InfoTlbCommon(pVM, pHlp, cArgs, papszArgs, false /*fITlb*/);
 }
+
+
+#ifdef VBOX_WITH_DEBUGGER
+
+/** @callback_method_impl{FNDBGCCMD,
+ * Implements the '.alliem' command. }
+ */
+static DECLCALLBACK(int) iemR3DbgFlushTlbs(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    VMCPUID idCpu = DBGCCmdHlpGetCurrentCpu(pCmdHlp);
+    PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, idCpu);
+    if (pVCpu)
+    {
+        VMR3ReqPriorityCallVoidWaitU(pUVM, idCpu, (PFNRT)IEMTlbInvalidateAll, 1, pVCpu);
+        return VINF_SUCCESS;
+    }
+    RT_NOREF(paArgs, cArgs);
+    return DBGCCmdHlpFail(pCmdHlp, pCmd, "failed to get the PVMCPU for the current CPU");
+}
+
+
+/**
+ * Called by IEMR3Init to register debugger commands.
+ */
+static void iemR3RegisterDebuggerCommands(void)
+{
+    /*
+     * Register debugger commands.
+     */
+    static DBGCCMD const s_aCmds[] =
+    {
+        {
+            /* .pszCmd = */         "iemflushtlb",
+            /* .cArgsMin = */       0,
+            /* .cArgsMax = */       0,
+            /* .paArgDescs = */     NULL,
+            /* .cArgDescs = */      0,
+            /* .fFlags = */         0,
+            /* .pfnHandler = */     iemR3DbgFlushTlbs,
+            /* .pszSyntax = */      "",
+            /* .pszDescription = */ "Flushed the code and data TLBs"
+        },
+    };
+
+    int rc = DBGCRegisterCommands(&s_aCmds[0], RT_ELEMENTS(s_aCmds));
+    AssertLogRelRC(rc);
+}
+
+#endif
 
