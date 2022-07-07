@@ -533,6 +533,7 @@ VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
 VMM_INT_DECL(void) IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
+    Log10(("IEMTlbInvalidatePage: GCPtr=%RGv\n", GCPtr));
     GCPtr = IEMTLB_CALC_TAG_NO_REV(GCPtr);
     Assert(!(GCPtr >> (48 - X86_PAGE_SHIFT)));
     uintptr_t const idx = IEMTLB_TAG_TO_INDEX(GCPtr);
@@ -3827,6 +3828,15 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
         Log3(("%s%s\n", szRegs, szInstr));
     }
 #endif /* LOG_ENABLED */
+
+    /*
+     * #PF's implies a INVLPG for the CR2 value (see 4.10.1.1 in Intel SDM Vol 3)
+     * to ensure that a stale TLB or paging cache entry will only cause one
+     * spurious #PF.
+     */
+    if (    u8Vector == X86_XCPT_PF
+        && (fFlags & (IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_CR2)) == (IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_CR2))
+        IEMTlbInvalidatePage(pVCpu, uCr2);
 
     /*
      * Call the mode specific worker function.
