@@ -56,7 +56,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef IPRT_ERRMSG_DEFINES_ONLY
+#ifdef IPRT_NO_ERROR_DATA
 /* Cook data just for VINF_SUCCESS so that code below compiles fine. */
 static const char            g_achWinStrTabData[] = { "ERROR_SUCCESS" };
 static const RTBLDPROGSTRTAB g_WinMsgStrTab = { g_achWinStrTabData, sizeof(g_achWinStrTabData) - 1, 0, NULL };
