@@ -669,7 +669,7 @@ static void dbgcCmdHelpCommands(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHi
     const char *pszDesc = "\nExternal Commands:\n";
     for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
     {
-        dbgcCmdHelpCommandsWorker(pDbgc, pCmdHlp, pExtCmd->paCmds, pExtCmd->cCmds, false, pszDesc);
+        dbgcCmdHelpCommandsWorker(pDbgc, pCmdHlp, pExtCmd->paCmds, pExtCmd->cCmds, true, pszDesc);
         pszDesc = NULL;
     }
     DBGCEXTLISTS_UNLOCK_RD();
