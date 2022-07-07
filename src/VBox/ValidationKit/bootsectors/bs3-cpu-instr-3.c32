@@ -5020,7 +5020,7 @@ static BS3CPUINSTR3_TEST3_VALUES_T const g_aMoveValues3[] =
 
 
 /*
- * MOVNTDQA - load double qword, aligned, with non-temporal hint.
+ * MOVNTDQA - load double qword, strictly aligned, with non-temporal hint.
  */
 BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntdqa_XMM1_FSxBX_icebp);
 extern FNBS3FAR             bs3CpuInstr3_movntdqa_XMM10_FSxBX_icebp_c64;
@@ -5051,6 +5051,46 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdqa(uint8_t bMode)
         {  bs3CpuInstr3_vmovntdqa_XMM11_FSxBX_icebp_c64, X86_XCPT_GP, RM_MEM, T_AVX_128,  11, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
         {  bs3CpuInstr3_vmovntdqa_YMM1_FSxBX_icebp_c64,  X86_XCPT_GP, RM_MEM, T_AVX2_256,  1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
         {  bs3CpuInstr3_vmovntdqa_YMM12_FSxBX_icebp_c64, X86_XCPT_GP, RM_MEM, T_AVX2_256, 12, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
+    return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+                                        g_aXcptConfig1, RT_ELEMENTS(g_aXcptConfig1), 255 /*cbMaxAlign*/);
+}
+
+
+/*
+ * MOVNTDQ - store double qword, strictly aligned, with non-temporal hint.
+ */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntdq_FSxBX_XMM1_icebp);
+extern FNBS3FAR             bs3CpuInstr3_movntdq_FSxBX_XMM10_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdq_FSxBX_XMM1_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vmovntdq_FSxBX_XMM10_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdq_FSxBX_YMM1_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vmovntdq_FSxBX_YMM10_icebp_c64;
+
+BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdq(uint8_t bMode)
+{
+    static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
+    {
+        {  bs3CpuInstr3_movntdq_FSxBX_XMM1_icebp_c16,    X86_XCPT_GP, RM_MEM, T_SSE2,    255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_XMM1_icebp_c16,   X86_XCPT_GP, RM_MEM, T_AVX_128, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_YMM1_icebp_c16,   X86_XCPT_GP, RM_MEM, T_AVX_256, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_T const s_aTests32[] =
+    {
+        {  bs3CpuInstr3_movntdq_FSxBX_XMM1_icebp_c32,    X86_XCPT_GP, RM_MEM, T_SSE2,    255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_XMM1_icebp_c32,   X86_XCPT_GP, RM_MEM, T_AVX_128, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_YMM1_icebp_c32,   X86_XCPT_GP, RM_MEM, T_AVX_256, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_T const s_aTests64[] =
+    {
+        {  bs3CpuInstr3_movntdq_FSxBX_XMM1_icebp_c64,    X86_XCPT_GP, RM_MEM, T_SSE2,    255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_movntdq_FSxBX_XMM10_icebp_c64,   X86_XCPT_GP, RM_MEM, T_SSE2,    255, 10, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_XMM1_icebp_c64,   X86_XCPT_GP, RM_MEM, T_AVX_128, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_XMM10_icebp_c64,  X86_XCPT_GP, RM_MEM, T_AVX_128, 255, 10, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_YMM1_icebp_c64,   X86_XCPT_GP, RM_MEM, T_AVX_256, 255,  1, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vmovntdq_FSxBX_YMM10_icebp_c64,  X86_XCPT_GP, RM_MEM, T_AVX_256, 255, 10, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
     };
     static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
     unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
@@ -5885,6 +5925,7 @@ BS3_DECL(void) Main_pe32()
 #endif
 #if defined(ALL_TESTS)
         { "[v]movntdqa",                                    bs3CpuInstr3_v_movntdqa, 0 },
+        { "[v]movntdq",                                     bs3CpuInstr3_v_movntdq, 0 },
         { "[v]movntps_movntpd",                             bs3CpuInstr3_v_movntps_movntpd, 0 },
         { "[v]movups",                                      bs3CpuInstr3_v_movups, 0 },
         { "[v]movupd",                                      bs3CpuInstr3_v_movupd, 0 },
