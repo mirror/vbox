@@ -4883,6 +4883,10 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
     if (aMedium && pMedium.isNull())
         return setError(E_INVALIDARG, tr("The given medium pointer is invalid"));
 
+    /* Check if potential medium is already mounted */
+    if (pMedium == oldmedium)
+        return S_OK;
+
     AutoCaller mediumCaller(pMedium);
     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
 
