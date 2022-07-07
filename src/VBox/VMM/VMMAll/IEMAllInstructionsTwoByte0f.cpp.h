@@ -3883,7 +3883,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @optest      64-bit / op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42 ftw=0xff
          */
-        IEMOP_MNEMONIC2(RM, MOVQ, movq, Pq_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(RM, MOVQ, movq, Pq_WO, Eq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* MMX, greg64 */
@@ -3935,7 +3935,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @optest      op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
          */
-        IEMOP_MNEMONIC2(RM, MOVD, movd, PdZx_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(RM, MOVD, movd, PdZx_WO, Ed, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* MMX, greg */
@@ -3991,7 +3991,7 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
          * @optest      64-bit / op1=1 op2=2   -> op1=2
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(RM, MOVQ, movq, VqZx_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(RM, MOVQ, movq, VqZx_WO, Eq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg64 */
@@ -4041,7 +4041,7 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
          * @optest      op1=1 op2=2   -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(RM, MOVD, movd, VdZx_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(RM, MOVD, movd, VdZx_WO, Ed, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg32 */
@@ -4805,7 +4805,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
          * @optest      64-bit / op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42 ftw=0xff
          */
-        IEMOP_MNEMONIC2(MR, MOVQ, movq, Eq_WO, Pq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(MR, MOVQ, movq, Eq_WO, Pq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, MMX */
@@ -4857,7 +4857,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
          * @optest      op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
          */
-        IEMOP_MNEMONIC2(MR, MOVD, movd, Ed_WO, Pd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(MR, MOVD, movd, Ed_WO, Pd, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg32, MMX */
@@ -4915,7 +4915,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Vy)
          * @optest      64-bit / op1=1 op2=2   -> op1=2
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(MR, MOVQ, movq, Eq_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(MR, MOVQ, movq, Eq_WO, Vq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
@@ -4965,7 +4965,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Vy)
          * @optest      op1=1 op2=2   -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(MR, MOVD, movd, Ed_WO, Vd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
+        IEMOP_MNEMONIC2(MR, MOVD, movd, Ed_WO, Vd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OZ_PFX);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg32, XMM */
@@ -5065,7 +5065,7 @@ FNIEMOP_DEF(iemOp_movq_Vq_Wq)
 /** Opcode      0x0f 0x7f - movq Qq, Pq */
 FNIEMOP_DEF(iemOp_movq_Qq_Pq)
 {
-    IEMOP_MNEMONIC(movq_Qq_Pq, "movq Qq,Pq");
+    IEMOP_MNEMONIC2(MR, MOVQ, movq, Qq_WO, Pq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_IGNORES_REXW);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -5081,13 +5081,14 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq)
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
         IEM_MC_FETCH_MREG_U64(u64Tmp, IEM_GET_MODRM_REG_8(bRm));
         IEM_MC_STORE_MREG_U64(IEM_GET_MODRM_RM_8(bRm), u64Tmp);
+        IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
     else
     {
         /*
-         * Register, memory.
+         * Memory, Register.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -5096,10 +5097,11 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+        IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
 
         IEM_MC_FETCH_MREG_U64(u64Tmp, IEM_GET_MODRM_REG_8(bRm));
         IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u64Tmp);
+        IEM_MC_FPU_TO_MMX_MODE();
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -9435,7 +9437,7 @@ FNIEMOP_STUB(iemOp_pmullw_Vx_Wx);
  */
 FNIEMOP_DEF(iemOp_movq_Wq_Vq)
 {
-    IEMOP_MNEMONIC2(MR, MOVQ, movq, WqZxReg_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_MNEMONIC2(MR, MOVQ, movq, WqZxReg_WO, Vq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {

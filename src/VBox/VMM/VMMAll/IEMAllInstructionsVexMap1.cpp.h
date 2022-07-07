@@ -2677,7 +2677,7 @@ FNIEMOP_DEF(iemOp_vmovd_q_Vy_Ey)
          * @optest      64-bit / op1=1 op2=2   -> op1=2
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(VEX_RM, VMOVQ, vmovq, Vq_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
+        IEMOP_MNEMONIC2(VEX_RM, VMOVQ, vmovq, Vq_WO, Eq, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg64 */
@@ -2727,7 +2727,7 @@ FNIEMOP_DEF(iemOp_vmovd_q_Vy_Ey)
          * @optest      op1=1 op2=2   -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(VEX_RM, VMOVD, vmovd, Vd_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
+        IEMOP_MNEMONIC2(VEX_RM, VMOVD, vmovd, Vd_WO, Ed, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg32 */
@@ -3294,7 +3294,7 @@ FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
          * @optest      64-bit / op1=1 op2=2   -> op1=2
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(VEX_MR, VMOVQ, vmovq, Eq_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
+        IEMOP_MNEMONIC2(VEX_MR, VMOVQ, vmovq, Eq_WO, Vq, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
@@ -3344,7 +3344,7 @@ FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
          * @optest      op1=1 op2=2   -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(VEX_MR, VMOVD, vmovd, Ed_WO, Vd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
+        IEMOP_MNEMONIC2(VEX_MR, VMOVD, vmovd, Ed_WO, Vd, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_VEX_L_ZERO);
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg32, XMM */
@@ -3394,7 +3394,7 @@ FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
  */
 FNIEMOP_DEF(iemOp_vmovq_Vq_Wq)
 {
-    IEMOP_MNEMONIC2(VEX_RM, VMOVQ, vmovq, Vq_WO, Wq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEMOP_MNEMONIC2(VEX_RM, VMOVQ, vmovq, Vq_WO, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
