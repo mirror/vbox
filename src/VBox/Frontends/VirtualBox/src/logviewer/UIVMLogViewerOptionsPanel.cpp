@@ -112,6 +112,8 @@ void UIVMLogViewerOptionsPanel::prepareWidgets()
     if (m_pFontSizeLabel)
     {
         mainLayout()->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
+        if (m_pFontSizeSpinBox)
+            m_pFontSizeLabel->setBuddy(m_pFontSizeSpinBox);
     }
 
     /* Create combo/button layout: */
