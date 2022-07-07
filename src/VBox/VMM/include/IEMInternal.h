@@ -717,6 +717,9 @@ typedef struct IEMCPU
      * @remarks Must be 64-byte aligned. */
     IEMTLB                  CodeTlb;
 
+    /** Exception and interrupt statistics. */
+    STAMCOUNTER             aStatXcpts[256];
+
 #if defined(VBOX_WITH_STATISTICS) && !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
     /** Instruction statistics for ring-0/raw-mode. */
     IEMINSTRSTATS           StatsRZ;

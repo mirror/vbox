@@ -747,7 +747,7 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
  *          EMHistoryExec().  Take normal exit action when NULL.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
+ * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FT).
  * @param   uFlatPC         The flattened program counter (RIP).  UINT64_MAX if not available.
  * @param   uTimestamp      The TSC value for the exit, 0 if not available.
  * @thread  EMT(pVCpu)

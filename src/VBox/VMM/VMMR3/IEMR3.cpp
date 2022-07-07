@@ -130,6 +130,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
 
+        for (uint32_t i = 0; i < RT_MIN(0x20, RT_ELEMENTS(pVCpu->iem.s.aStatXcpts)); i++)
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatXcpts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                            "", "/IEM/CPU%u/xcpts/00-1f/%02x", idCpu, i);
+        for (uint32_t i = 0x20; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatXcpts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                            "", "/IEM/CPU%u/xcpts/20-ff/%02x", idCpu, i);
+
 #if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
         /* Instruction statistics: */
 # define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \

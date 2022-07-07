@@ -3830,6 +3830,13 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
 #endif /* LOG_ENABLED */
 
     /*
+     * Stats.
+     */
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.aStatXcpts[u8Vector]);
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, u8Vector),
+                     pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base, 0);
+
+    /*
      * #PF's implies a INVLPG for the CR2 value (see 4.10.1.1 in Intel SDM Vol 3)
      * to ensure that a stale TLB or paging cache entry will only cause one
      * spurious #PF.

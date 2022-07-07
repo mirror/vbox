@@ -135,7 +135,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
         struct IEMCPU       s;
 #endif
-        uint8_t             padding[26688];     /* multiple of 64 */
+        uint8_t             padding[28736];     /* multiple of 64 */
     } iem;
 
     /** @name Static per-cpu data.
@@ -281,7 +281,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[2744];
+    uint8_t                 abAlignment2[696];
 
     /** PGM part. */
     union VMCPUUNIONPGM
