@@ -9142,17 +9142,15 @@ static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RT
     /* Make adjustments. */
     pDstX87->FTW = iemFpuCompressFtw(pDstX87->FTW);
 #ifdef LOG_ENABLED
-    uint16_t const fRawFsw = pDstX87->FSW;
+    uint16_t const fOldFsw = pDstX87->FSW;
 #endif
     pDstX87->FCW &= ~X86_FCW_ZERO_MASK;
     iemFpuRecalcExceptionStatus(pDstX87);
 #ifdef LOG_ENABLED
-    if (pDstX87->FSW & X86_FSW_ES)
-        Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: Pending FPU exception (FCW=%#x FSW=%#x, raw=%#x)\n",
-               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pDstX87->FCW, pDstX87->FSW, fRawFsw));
-    else if (fRawFsw & X86_FSW_ES)
-        Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: Supressed FPU exception (FSW=%#x, raw=%#x)\n",
-               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pDstX87->FCW, pDstX87->FSW, fRawFsw));
+    if ((pDstX87->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
+        Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: %s FPU exception (FCW=%#x FSW=%#x -> %#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fOldFsw & X86_FSW_ES ? "Supressed" : "Raised",
+               pDstX87->FCW, fOldFsw, pDstX87->FSW));
 #endif
 
     /** @todo Testcase: Check if ES and/or B are automatically cleared if no
