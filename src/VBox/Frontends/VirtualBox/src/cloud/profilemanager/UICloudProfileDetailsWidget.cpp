@@ -21,11 +21,11 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QTableWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QITableWidget.h"
 #include "UICommon.h"
 #include "UICloudProfileDetailsWidget.h"
 
@@ -71,7 +71,7 @@ void UICloudProfileDetailsWidget::retranslateUi()
     /* Translate table-widget label: */
     m_pLabelTableWidget->setText(tr("Properties:"));
     /* Translate table-widget: */
-    m_pTableWidget->setToolTip(tr("Contains cloud profile settings"));
+    m_pTableWidget->setWhatsThis(tr("Contains cloud profile settings"));
 
     /* Translate buttons: */
     retranslateButtons();
@@ -240,14 +240,14 @@ void UICloudProfileDetailsWidget::prepareWidgets()
         }
 
         /* Create tab-widget: */
-        m_pTableWidget = new QTableWidget;
+        m_pTableWidget = new QITableWidget;
         if (m_pTableWidget)
         {
             m_pTableWidget->setAlternatingRowColors(true);
             m_pTableWidget->horizontalHeader()->setVisible(false);
             m_pTableWidget->verticalHeader()->setVisible(false);
             m_pTableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-            connect(m_pTableWidget, &QTableWidget::itemChanged, this, &UICloudProfileDetailsWidget::sltTableChanged);
+            connect(m_pTableWidget, &QITableWidget::itemChanged, this, &UICloudProfileDetailsWidget::sltTableChanged);
 
             /* Add into layout: */
             pLayout->addWidget(m_pTableWidget, 1, 1);
@@ -301,7 +301,7 @@ void UICloudProfileDetailsWidget::loadData()
         const QString strToolTip = m_oldData.m_data.value(strKey).second;
 
         /* Create key item: */
-        QTableWidgetItem *pItemK = new QTableWidgetItem(strKey);
+        QITableWidgetItem *pItemK = new QITableWidgetItem(strKey);
         if (pItemK)
         {
             /* Non-editable for sure, but non-selectable? */
@@ -314,7 +314,7 @@ void UICloudProfileDetailsWidget::loadData()
         }
 
         /* Create value item: */
-        QTableWidgetItem *pItemV = new QTableWidgetItem(strValue);
+        QITableWidgetItem *pItemV = new QITableWidgetItem(strValue);
         if (pItemV)
         {
             /* Use the value as tool-tip, there can be quite long values: */

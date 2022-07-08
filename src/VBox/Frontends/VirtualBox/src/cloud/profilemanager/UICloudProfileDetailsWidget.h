@@ -34,9 +34,9 @@
 class QAbstractButton;
 class QLabel;
 class QLineEdit;
-class QTableWidget;
 class QTableWidgetItem;
 class QIDialogButtonBox;
+class QITableWidget;
 
 
 /** Cloud Provider data structure. */
@@ -212,9 +212,9 @@ private:
         QLineEdit *m_pEditorName;
 
         /** Holds the table-widget label instance. */
-        QLabel       *m_pLabelTableWidget;
+        QLabel        *m_pLabelTableWidget;
         /** Holds the table-widget instance. */
-        QTableWidget *m_pTableWidget;
+        QITableWidget *m_pTableWidget;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
