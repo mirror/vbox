@@ -467,7 +467,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             {
                 void const *pvPage;
 #ifdef VBOX_WITH_PGM_NEM_MODE
-                if (!PGMROMPROT_IS_ROM(enmProt))
+                if (!PGMROMPROT_IS_ROM(enmProt) && pVM->pgm.s.fNemMode)
                     pvPage = &pRom->pbR3Alternate[iPage << GUEST_PAGE_SHIFT];
                 else
 #endif
@@ -558,7 +558,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     {
                         void const *pvPage;
 #ifdef VBOX_WITH_PGM_NEM_MODE
-                        if (PGMROMPROT_IS_ROM(enmProt))
+                        if (PGMROMPROT_IS_ROM(enmProt) && pVM->pgm.s.fNemMode)
                             pvPage = &pRom->pbR3Alternate[iPage << GUEST_PAGE_SHIFT];
                         else
 #endif
@@ -2915,7 +2915,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                     case PGM_STATE_REC_ROM_VIRGIN:
                     case PGM_STATE_REC_ROM_SHW_RAW:
 #ifdef VBOX_WITH_PGM_NEM_MODE
-                        if (fAltPage)
+                        if (fAltPage && pVM->pgm.s.fNemMode)
                             pvDstPage = &pRom->pbR3Alternate[iPage << GUEST_PAGE_SHIFT];
                         else
 #endif
