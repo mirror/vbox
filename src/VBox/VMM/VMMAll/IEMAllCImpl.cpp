@@ -8504,6 +8504,10 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
             pDst->aXMM[i] = pSrc->aXMM[i];
     }
 
+    if (pDst->FSW & X86_FSW_ES)
+        Log11(("fxrstor: %04x:%08RX64: loading state with pending FPU exception (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pSrc->FSW));
+
     /*
      * Commit the memory.
      */
@@ -8780,6 +8784,9 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
                 pDst->aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
                 pDst->aRegs[i].au32[3] = 0;
             }
+            if (pDst->FSW & X86_FSW_ES)
+                Log11(("xrstor: %04x:%08RX64: loading state with pending FPU exception (FSW=%#x)\n",
+                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pSrc->FSW));
         }
         else
         {
@@ -9134,8 +9141,20 @@ static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RT
 
     /* Make adjustments. */
     pDstX87->FTW = iemFpuCompressFtw(pDstX87->FTW);
+#ifdef LOG_ENABLED
+    uint16_t const fRawFsw = pDstX87->FSW;
+#endif
     pDstX87->FCW &= ~X86_FCW_ZERO_MASK;
     iemFpuRecalcExceptionStatus(pDstX87);
+#ifdef LOG_ENABLED
+    if (pDstX87->FSW & X86_FSW_ES)
+        Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: Pending FPU exception (FCW=%#x FSW=%#x, raw=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pDstX87->FCW, pDstX87->FSW, fRawFsw));
+    else if (fRawFsw & X86_FSW_ES)
+        Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: Supressed FPU exception (FSW=%#x, raw=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pDstX87->FCW, pDstX87->FSW, fRawFsw));
+#endif
+
     /** @todo Testcase: Check if ES and/or B are automatically cleared if no
      *        exceptions are pending after loading the saved state? */
 }
@@ -9298,10 +9317,18 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
     /** @todo Testcase: Try see what happens when trying to set undefined bits
      *        (other than 6 and 7).  Currently ignoring them. */
     /** @todo Testcase: Test that it raises and loweres the FPU exception bits
-     *        according to FSW. (This is was is currently implemented.) */
+     *        according to FSW. (This is what is currently implemented.) */
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     pFpuCtx->FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
+#ifdef LOG_ENABLED
+    uint16_t fOldFsw = pFpuCtx->FSW;
+#endif
     iemFpuRecalcExceptionStatus(pFpuCtx);
+#ifdef LOG_ENABLED
+    if ((pFpuCtx->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
+        Log11(("fldcw: %04x:%08RX64: %s FPU exception (FCW=%#x, FSW %#x -> %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+               fOldFsw & X86_FSW_ES ? "Supressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
+#endif
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
     iemHlpUsedFpu(pVCpu);
@@ -9351,6 +9378,8 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
         /* raise underflow exception, don't change anything. */
         pFpuCtx->FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_XCPT_MASK);
         pFpuCtx->FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("fxch: %04x:%08RX64: Underflow exception (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
     }
 
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
@@ -9415,6 +9444,8 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
         /* Raise underflow - don't touch EFLAGS or TOP. */
         pFpuCtx->FSW &= ~X86_FSW_C1;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("fxch: %04x:%08RX64: Raising IE+SF exception (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
         fPop = false;
     }
 

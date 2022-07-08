@@ -71,6 +71,7 @@
  *      - Level 8  (Log8) : Memory writes.
  *      - Level 9  (Log9) : Memory reads.
  *      - Level 10 (Log10): TLBs.
+ *      - Level 11 (Log11): Unmasked FPU exceptions.
  */
 
 /* Disabled warning C4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed */
@@ -4545,17 +4546,21 @@ DECLINLINE(void) iemFpuRotateStackPop(PX86FXSTATE pFpuCtx)
  * Updates FSW and pushes a FPU result onto the FPU stack if no pending
  * exception prevents it.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The FPU operation result to push.
  * @param   pFpuCtx             The FPU context.
  */
-static void iemFpuMaybePushResult(PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
+static void iemFpuMaybePushResult(PVMCPU pVCpu, PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
 {
     /* Update FSW and bail if there are pending exceptions afterwards. */
     uint16_t fFsw = pFpuCtx->FSW & ~X86_FSW_C_MASK;
     fFsw |= pResult->FSW & ~X86_FSW_TOP_MASK;
-    if (   (fFsw             & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+    if (   (fFsw         & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
         & ~(pFpuCtx->FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
     {
+        if ((fFsw & X86_FSW_ES) && !(pFpuCtx->FCW & X86_FSW_ES))
+            Log11(("iemFpuMaybePushResult: %04x:%08RX64: FSW %#x -> %#x\n",
+                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW, fFsw));
         pFpuCtx->FSW = fFsw;
         return;
     }
@@ -4578,6 +4583,8 @@ static void iemFpuMaybePushResult(PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx) RT
         /* Raise stack overflow, don't push anything. */
         pFpuCtx->FSW |= pResult->FSW & ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
+        Log11(("iemFpuMaybePushResult: %04x:%08RX64: stack overflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
         return;
     }
 
@@ -4586,24 +4593,32 @@ static void iemFpuMaybePushResult(PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx) RT
     pFpuCtx->FSW = fFsw;
 
     iemFpuRotateStackPush(pFpuCtx);
+    RT_NOREF(pVCpu);
 }
 
 
 /**
  * Stores a result in a FPU register and updates the FSW and FTW.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
  */
-static void iemFpuStoreResultOnly(PX86FXSTATE pFpuCtx, PIEMFPURESULT pResult, uint8_t iStReg) RT_NOEXCEPT
+static void iemFpuStoreResultOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx, PIEMFPURESULT pResult, uint8_t iStReg) RT_NOEXCEPT
 {
     Assert(iStReg < 8);
-    uint16_t iReg = (X86_FSW_TOP_GET(pFpuCtx->FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    pFpuCtx->FSW &= ~X86_FSW_C_MASK;
-    pFpuCtx->FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
+    uint16_t       fNewFsw = pFpuCtx->FSW;
+    uint16_t const iReg    = (X86_FSW_TOP_GET(fNewFsw) + iStReg) & X86_FSW_TOP_SMASK;
+    fNewFsw &= ~X86_FSW_C_MASK;
+    fNewFsw |= pResult->FSW & ~X86_FSW_TOP_MASK;
+    if ((fNewFsw & X86_FSW_ES) && !(pFpuCtx->FSW & X86_FSW_ES))
+        Log11(("iemFpuStoreResultOnly: %04x:%08RX64: FSW %#x -> %#x\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW, fNewFsw));
+    pFpuCtx->FSW  = fNewFsw;
     pFpuCtx->FTW |= RT_BIT(iReg);
     pFpuCtx->aRegs[iStReg].r80 = pResult->r80Result;
+    RT_NOREF(pVCpu);
 }
 
 
@@ -4611,13 +4626,20 @@ static void iemFpuStoreResultOnly(PX86FXSTATE pFpuCtx, PIEMFPURESULT pResult, ui
  * Only updates the FPU status word (FSW) with the result of the current
  * instruction.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  * @param   u16FSW              The FSW output of the current instruction.
  */
-static void iemFpuUpdateFSWOnly(PX86FXSTATE pFpuCtx, uint16_t u16FSW) RT_NOEXCEPT
+static void iemFpuUpdateFSWOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx, uint16_t u16FSW) RT_NOEXCEPT
 {
-    pFpuCtx->FSW &= ~X86_FSW_C_MASK;
-    pFpuCtx->FSW |= u16FSW & ~X86_FSW_TOP_MASK;
+    uint16_t fNewFsw = pFpuCtx->FSW;
+    fNewFsw &= ~X86_FSW_C_MASK;
+    fNewFsw |= u16FSW & ~X86_FSW_TOP_MASK;
+    if ((fNewFsw & X86_FSW_ES) && !(pFpuCtx->FSW & X86_FSW_ES))
+        Log11(("iemFpuStoreResultOnly: %04x:%08RX64: FSW %#x -> %#x\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW, fNewFsw));
+    pFpuCtx->FSW = fNewFsw;
+    RT_NOREF(pVCpu);
 }
 
 
@@ -4659,7 +4681,7 @@ void iemFpuPushResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuMaybePushResult(pResult, pFpuCtx);
+    iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
 }
 
 
@@ -4677,7 +4699,7 @@ void iemFpuPushResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iE
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuMaybePushResult(pResult, pFpuCtx);
+    iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
 }
 
 
@@ -4696,9 +4718,12 @@ void iemFpuPushResultTwo(PVMCPUCC pVCpu, PIEMFPURESULTTWO pResult) RT_NOEXCEPT
     /* Update FSW and bail if there are pending exceptions afterwards. */
     uint16_t fFsw = pFpuCtx->FSW & ~X86_FSW_C_MASK;
     fFsw |= pResult->FSW & ~X86_FSW_TOP_MASK;
-    if (   (fFsw             & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+    if (   (fFsw         & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
         & ~(pFpuCtx->FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
     {
+        if ((fFsw & X86_FSW_ES) && !(pFpuCtx->FSW & X86_FSW_ES))
+            Log11(("iemFpuPushResultTwo: %04x:%08RX64: FSW %#x -> %#x\n",
+                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW, fFsw));
         pFpuCtx->FSW = fFsw;
         return;
     }
@@ -4723,6 +4748,8 @@ void iemFpuPushResultTwo(PVMCPUCC pVCpu, PIEMFPURESULTTWO pResult) RT_NOEXCEPT
         /* Raise stack overflow, don't push anything. */
         pFpuCtx->FSW |= pResult->FSW & ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
+        Log11(("iemFpuPushResultTwo: %04x:%08RX64: stack overflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
         return;
     }
 
@@ -4746,7 +4773,7 @@ void iemFpuStoreResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg) RT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStoreResultOnly(pFpuCtx, pResult, iStReg);
+    iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
 }
 
 
@@ -4762,7 +4789,7 @@ void iemFpuStoreResultThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iSt
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStoreResultOnly(pFpuCtx, pResult, iStReg);
+    iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4783,7 +4810,7 @@ void iemFpuStoreResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t i
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStoreResultOnly(pFpuCtx, pResult, iStReg);
+    iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
 }
 
 
@@ -4803,7 +4830,7 @@ void iemFpuStoreResultWithMemOpThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult,
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStoreResultOnly(pFpuCtx, pResult, iStReg);
+    iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4830,7 +4857,7 @@ void iemFpuUpdateFSW(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuUpdateFSWOnly(pFpuCtx, u16FSW);
+    iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
 }
 
 
@@ -4844,7 +4871,7 @@ void iemFpuUpdateFSWThenPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuUpdateFSWOnly(pFpuCtx, u16FSW);
+    iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4862,7 +4889,7 @@ void iemFpuUpdateFSWWithMemOp(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, 
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuUpdateFSWOnly(pFpuCtx, u16FSW);
+    iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
 }
 
 
@@ -4876,7 +4903,7 @@ void iemFpuUpdateFSWThenPopPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuUpdateFSWOnly(pFpuCtx, u16FSW);
+    iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -4895,7 +4922,7 @@ void iemFpuUpdateFSWWithMemOpThenPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iE
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuUpdateFSWOnly(pFpuCtx, u16FSW);
+    iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4903,10 +4930,11 @@ void iemFpuUpdateFSWWithMemOpThenPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iE
 /**
  * Worker routine for raising an FPU stack underflow exception.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  * @param   iStReg              The stack register being accessed.
  */
-static void iemFpuStackUnderflowOnly(PX86FXSTATE pFpuCtx, uint8_t iStReg)
+static void iemFpuStackUnderflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx, uint8_t iStReg)
 {
     Assert(iStReg < 8 || iStReg == UINT8_MAX);
     if (pFpuCtx->FCW & X86_FCW_IM)
@@ -4925,7 +4953,10 @@ static void iemFpuStackUnderflowOnly(PX86FXSTATE pFpuCtx, uint8_t iStReg)
     {
         pFpuCtx->FSW &= ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("iemFpuStackUnderflowOnly: %04x:%08RX64: underflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
     }
+    RT_NOREF(pVCpu);
 }
 
 
@@ -4941,7 +4972,7 @@ void iemFpuStackUnderflow(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
 }
 
 
@@ -4950,7 +4981,7 @@ void iemFpuStackUnderflowWithMemOp(PVMCPUCC pVCpu, uint8_t iStReg, uint8_t iEffS
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
 }
 
 
@@ -4958,7 +4989,7 @@ void iemFpuStackUnderflowThenPop(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4968,7 +4999,7 @@ void iemFpuStackUnderflowWithMemOpThenPop(PVMCPUCC pVCpu, uint8_t iStReg, uint8_
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -4977,7 +5008,7 @@ void iemFpuStackUnderflowThenPopPop(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackUnderflowOnly(pFpuCtx, UINT8_MAX);
+    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, UINT8_MAX);
     iemFpuMaybePopOne(pFpuCtx);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -5004,6 +5035,8 @@ void iemFpuStackPushUnderflow(PVMCPUCC pVCpu) RT_NOEXCEPT
         /* Exception pending - don't change TOP or the register stack. */
         pFpuCtx->FSW &= ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("iemFpuStackPushUnderflow: %04x:%08RX64: underflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
     }
 }
 
@@ -5030,6 +5063,8 @@ void iemFpuStackPushUnderflowTwo(PVMCPUCC pVCpu) RT_NOEXCEPT
         /* Exception pending - don't change TOP or the register stack. */
         pFpuCtx->FSW &= ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("iemFpuStackPushUnderflowTwo: %04x:%08RX64: underflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
     }
 }
 
@@ -5037,9 +5072,10 @@ void iemFpuStackPushUnderflowTwo(PVMCPUCC pVCpu) RT_NOEXCEPT
 /**
  * Worker routine for raising an FPU stack overflow exception on a push.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  */
-static void iemFpuStackPushOverflowOnly(PX86FXSTATE pFpuCtx) RT_NOEXCEPT
+static void iemFpuStackPushOverflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
 {
     if (pFpuCtx->FCW & X86_FCW_IM)
     {
@@ -5057,7 +5093,10 @@ static void iemFpuStackPushOverflowOnly(PX86FXSTATE pFpuCtx) RT_NOEXCEPT
         /* Exception pending - don't change TOP or the register stack. */
         pFpuCtx->FSW &= ~X86_FSW_C_MASK;
         pFpuCtx->FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        Log11(("iemFpuStackPushOverflowOnly: %04x:%08RX64: overflow (FSW=%#x)\n",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pFpuCtx->FSW));
     }
+    RT_NOREF(pVCpu);
 }
 
 
@@ -5070,7 +5109,7 @@ void iemFpuStackPushOverflow(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackPushOverflowOnly(pFpuCtx);
+    iemFpuStackPushOverflowOnly(pVCpu, pFpuCtx);
 }
 
 
@@ -5086,7 +5125,7 @@ void iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR G
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
-    iemFpuStackPushOverflowOnly(pFpuCtx);
+    iemFpuStackPushOverflowOnly(pVCpu, pFpuCtx);
 }
 
 /** @}  */
