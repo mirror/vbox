@@ -151,9 +151,9 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidgetItem::child(int iIn
 int QIAccessibilityInterfaceForQITreeWidgetItem::indexOfChild(const QAccessibleInterface *pChild) const
 {
     /* Search for corresponding child: */
-    for (int i = 0; i < childCount(); ++i)
-        if (child(i) == pChild)
-            return i;
+    for (int iIndex = 0; iIndex < childCount(); ++iIndex)
+        if (child(iIndex) == pChild)
+            return iIndex;
 
     /* -1 by default: */
     return -1;
@@ -321,8 +321,11 @@ QString QIAccessibilityInterfaceForQITreeWidget::text(QAccessible::Text /* enmTe
     /* Make sure tree still alive: */
     AssertPtrReturn(tree(), QString());
 
-    /* Return tree whats-this: */
-    return tree()->whatsThis();
+    /* Gather suitable text: */
+    QString strText = tree()->toolTip();
+    if (strText.isEmpty())
+        strText = tree()->whatsThis();
+    return strText;
 }
 
 
@@ -334,7 +337,7 @@ QString QIAccessibilityInterfaceForQITreeWidget::text(QAccessible::Text /* enmTe
 QITreeWidgetItem *QITreeWidgetItem::toItem(QTreeWidgetItem *pItem)
 {
     /* Make sure alive QITreeWidgetItem passed: */
-    if (!pItem || pItem->type() != QITreeWidgetItem::ItemType)
+    if (!pItem || pItem->type() != ItemType)
         return 0;
 
     /* Return casted QITreeWidgetItem: */
@@ -345,7 +348,7 @@ QITreeWidgetItem *QITreeWidgetItem::toItem(QTreeWidgetItem *pItem)
 const QITreeWidgetItem *QITreeWidgetItem::toItem(const QTreeWidgetItem *pItem)
 {
     /* Make sure alive QITreeWidgetItem passed: */
-    if (!pItem || pItem->type() != QITreeWidgetItem::ItemType)
+    if (!pItem || pItem->type() != ItemType)
         return 0;
 
     /* Return casted QITreeWidgetItem: */
@@ -379,19 +382,16 @@ QITreeWidgetItem::QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem, const QStr
 
 QITreeWidget *QITreeWidgetItem::parentTree() const
 {
-    /* Return the parent tree if any: */
     return treeWidget() ? qobject_cast<QITreeWidget*>(treeWidget()) : 0;
 }
 
 QITreeWidgetItem *QITreeWidgetItem::parentItem() const
 {
-    /* Return the parent item if any: */
     return QTreeWidgetItem::parent() ? toItem(QTreeWidgetItem::parent()) : 0;
 }
 
 QITreeWidgetItem *QITreeWidgetItem::childItem(int iIndex) const
 {
-    /* Return the child item with iIndex if any: */
     return QTreeWidgetItem::child(iIndex) ? toItem(QTreeWidgetItem::child(iIndex)) : 0;
 }
 
@@ -438,13 +438,11 @@ void QITreeWidget::setSizeHintForItems(const QSize &sizeHint)
 
 int QITreeWidget::childCount() const
 {
-    /* Return the number of children: */
     return invisibleRootItem()->childCount();
 }
 
 QITreeWidgetItem *QITreeWidget::childItem(int iIndex) const
 {
-    /* Return the child item with iIndex if any: */
     return invisibleRootItem()->child(iIndex) ? QITreeWidgetItem::toItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
