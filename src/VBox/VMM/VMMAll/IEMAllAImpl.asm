@@ -3026,6 +3026,7 @@ BEGINPROC_FASTCALL iemAImpl_fld_r80_from_r64, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
+        fninit
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
         fld     qword [A2]
 
