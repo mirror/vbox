@@ -1001,7 +1001,6 @@ if defined(VBOX_WITH_RECORDING) && defined(VBOX_WITH_LIBVPX)
 VBoxC_SDKS += VBOX_VPX
 VBoxC_DEFS += VBOX_WITH_RECORDING VBOX_WITH_LIBVPX
 VBoxC_SOURCES += \
-	xml/Settings.cpp \
 	src-client/EBMLWriter.cpp \
 	src-client/WebMWriter.cpp \
 	src-client/Recording.cpp \
@@ -1113,6 +1112,7 @@ VBoxC_SOURCES += \
 	src-client/VBoxDriversRegister.cpp \
 	src-client/VirtualBoxClientImpl.cpp \
 	src-client/VMMDevInterface.cpp \
+	xml/Settings.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
