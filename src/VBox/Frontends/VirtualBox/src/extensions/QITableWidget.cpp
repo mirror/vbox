@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Qt extensions: QITreeWidget class implementation.
+ * VBox Qt GUI - Qt extensions: QITableWidget class implementation.
  */
 
 /*
@@ -21,30 +21,30 @@
 #include <QResizeEvent>
 
 /* GUI includes: */
-#include "QITreeWidget.h"
+#include "QITableWidget.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
 
-/** QAccessibleObject extension used as an accessibility interface for QITreeWidgetItem. */
-class QIAccessibilityInterfaceForQITreeWidgetItem : public QAccessibleObject
+/** QAccessibleObject extension used as an accessibility interface for QITableWidgetItem. */
+class QIAccessibilityInterfaceForQITableWidgetItem : public QAccessibleObject
 {
 public:
 
     /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
     static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
     {
-        /* Creating QITreeWidgetItem accessibility interface: */
-        if (pObject && strClassname == QLatin1String("QITreeWidgetItem"))
-            return new QIAccessibilityInterfaceForQITreeWidgetItem(pObject);
+        /* Creating QITableWidgetItem accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITableWidgetItem"))
+            return new QIAccessibilityInterfaceForQITableWidgetItem(pObject);
 
         /* Null by default: */
         return 0;
     }
 
     /** Constructs an accessibility interface passing @a pObject to the base-class. */
-    QIAccessibilityInterfaceForQITreeWidgetItem(QObject *pObject)
+    QIAccessibilityInterfaceForQITableWidgetItem(QObject *pObject)
         : QAccessibleObject(pObject)
     {}
 
@@ -52,11 +52,11 @@ public:
     virtual QAccessibleInterface *parent() const RT_OVERRIDE;
 
     /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
+    virtual int childCount() const RT_OVERRIDE { return 0; }
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE { Q_UNUSED(iIndex); return 0; }
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE;
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE { Q_UNUSED(pChild); return -1; }
 
     /** Returns the rect. */
     virtual QRect rect() const RT_OVERRIDE;
@@ -70,29 +70,29 @@ public:
 
 private:
 
-    /** Returns corresponding QITreeWidgetItem. */
-    QITreeWidgetItem *item() const { return qobject_cast<QITreeWidgetItem*>(object()); }
+    /** Returns corresponding QITableWidgetItem. */
+    QITableWidgetItem *item() const { return qobject_cast<QITableWidgetItem*>(object()); }
 };
 
 
-/** QAccessibleWidget extension used as an accessibility interface for QITreeWidget. */
-class QIAccessibilityInterfaceForQITreeWidget : public QAccessibleWidget
+/** QAccessibleWidget extension used as an accessibility interface for QITableWidget. */
+class QIAccessibilityInterfaceForQITableWidget : public QAccessibleWidget
 {
 public:
 
     /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
     static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
     {
-        /* Creating QITreeWidget accessibility interface: */
-        if (pObject && strClassname == QLatin1String("QITreeWidget"))
-            return new QIAccessibilityInterfaceForQITreeWidget(qobject_cast<QWidget*>(pObject));
+        /* Creating QITableWidget accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITableWidget"))
+            return new QIAccessibilityInterfaceForQITableWidget(qobject_cast<QWidget*>(pObject));
 
         /* Null by default: */
         return 0;
     }
 
     /** Constructs an accessibility interface passing @a pWidget to the base-class. */
-    QIAccessibilityInterfaceForQITreeWidget(QWidget *pWidget)
+    QIAccessibilityInterfaceForQITableWidget(QWidget *pWidget)
         : QAccessibleWidget(pWidget, QAccessible::List)
     {}
 
@@ -108,58 +108,25 @@ public:
 
 private:
 
-    /** Returns corresponding QITreeWidget. */
-    QITreeWidget *tree() const { return qobject_cast<QITreeWidget*>(widget()); }
+    /** Returns corresponding QITableWidget. */
+    QITableWidget *table() const { return qobject_cast<QITableWidget*>(widget()); }
 };
 
 
 /*********************************************************************************************************************************
-*   Class QIAccessibilityInterfaceForQITreeWidgetItem implementation.                                                            *
+*   Class QIAccessibilityInterfaceForQITableWidgetItem implementation.                                                           *
 *********************************************************************************************************************************/
 
-QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidgetItem::parent() const
+QAccessibleInterface *QIAccessibilityInterfaceForQITableWidgetItem::parent() const
 {
     /* Make sure item still alive: */
     AssertPtrReturn(item(), 0);
 
     /* Return the parent: */
-    return item()->parentItem() ?
-           QAccessible::queryAccessibleInterface(item()->parentItem()) :
-           QAccessible::queryAccessibleInterface(item()->parentTree());
+    return QAccessible::queryAccessibleInterface(item()->parentTable());
 }
 
-int QIAccessibilityInterfaceForQITreeWidgetItem::childCount() const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), 0);
-
-    /* Return the number of children: */
-    return item()->childCount();
-}
-
-QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidgetItem::child(int iIndex) const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), 0);
-    /* Make sure index is valid: */
-    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
-
-    /* Return the child with the passed iIndex: */
-    return QAccessible::queryAccessibleInterface(item()->childItem(iIndex));
-}
-
-int QIAccessibilityInterfaceForQITreeWidgetItem::indexOfChild(const QAccessibleInterface *pChild) const
-{
-    /* Search for corresponding child: */
-    for (int iIndex = 0; iIndex < childCount(); ++iIndex)
-        if (child(iIndex) == pChild)
-            return iIndex;
-
-    /* -1 by default: */
-    return -1;
-}
-
-QRect QIAccessibilityInterfaceForQITreeWidgetItem::rect() const
+QRect QIAccessibilityInterfaceForQITableWidgetItem::rect() const
 {
     /* Make sure item still alive: */
     AssertPtrReturn(item(), QRect());
@@ -168,22 +135,18 @@ QRect QIAccessibilityInterfaceForQITreeWidgetItem::rect() const
     QRegion region;
 
     /* Append item rectangle: */
-    const QRect  itemRectInViewport = item()->parentTree()->visualItemRect(item());
+    const QRect  itemRectInViewport = item()->parentTable()->visualItemRect(item());
     const QSize  itemSize           = itemRectInViewport.size();
     const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
-    const QPoint itemPosInScreen    = item()->parentTree()->viewport()->mapToGlobal(itemPosInViewport);
+    const QPoint itemPosInScreen    = item()->parentTable()->viewport()->mapToGlobal(itemPosInViewport);
     const QRect  itemRectInScreen   = QRect(itemPosInScreen, itemSize);
     region += itemRectInScreen;
-
-    /* Append children rectangles: */
-    for (int i = 0; i < childCount(); ++i)
-        region += child(i)->rect();
 
     /* Return common region bounding rectangle: */
     return region.boundingRect();
 }
 
-QString QIAccessibilityInterfaceForQITreeWidgetItem::text(QAccessible::Text enmTextRole) const
+QString QIAccessibilityInterfaceForQITableWidgetItem::text(QAccessible::Text enmTextRole) const
 {
     /* Make sure item still alive: */
     AssertPtrReturn(item(), QString());
@@ -191,7 +154,7 @@ QString QIAccessibilityInterfaceForQITreeWidgetItem::text(QAccessible::Text enmT
     /* Return a text for the passed enmTextRole: */
     switch (enmTextRole)
     {
-        case QAccessible::Name: return item()->defaultText();
+        case QAccessible::Name: return item()->text();
         default: break;
     }
 
@@ -199,17 +162,12 @@ QString QIAccessibilityInterfaceForQITreeWidgetItem::text(QAccessible::Text enmT
     return QString();
 }
 
-QAccessible::Role QIAccessibilityInterfaceForQITreeWidgetItem::role() const
+QAccessible::Role QIAccessibilityInterfaceForQITableWidgetItem::role() const
 {
-    /* Return the role of item with children: */
-    if (childCount() > 0)
-        return QAccessible::List;
-
-    /* ListItem by default: */
     return QAccessible::ListItem;
 }
 
-QAccessible::State QIAccessibilityInterfaceForQITreeWidgetItem::state() const
+QAccessible::State QIAccessibilityInterfaceForQITableWidgetItem::state() const
 {
     /* Make sure item still alive: */
     AssertPtrReturn(item(), QAccessible::State());
@@ -221,7 +179,7 @@ QAccessible::State QIAccessibilityInterfaceForQITreeWidgetItem::state() const
 
     /* Compose the state of current item: */
     if (   item()
-        && item() == QITreeWidgetItem::toItem(item()->treeWidget()->currentItem()))
+        && item() == QITableWidgetItem::toItem(item()->tableWidget()->currentItem()))
     {
         state.active = true;
         state.focused = true;
@@ -230,10 +188,10 @@ QAccessible::State QIAccessibilityInterfaceForQITreeWidgetItem::state() const
 
     /* Compose the state of checked item: */
     if (   item()
-        && item()->checkState(0) != Qt::Unchecked)
+        && item()->checkState() != Qt::Unchecked)
     {
         state.checked = true;
-        if (item()->checkState(0) == Qt::PartiallyChecked)
+        if (item()->checkState() == Qt::PartiallyChecked)
             state.checkStateMixed = true;
     }
 
@@ -243,176 +201,103 @@ QAccessible::State QIAccessibilityInterfaceForQITreeWidgetItem::state() const
 
 
 /*********************************************************************************************************************************
-*   Class QIAccessibilityInterfaceForQITreeWidget implementation.                                                                *
+*   Class QIAccessibilityInterfaceForQITableWidget implementation.                                                               *
 *********************************************************************************************************************************/
 
-int QIAccessibilityInterfaceForQITreeWidget::childCount() const
+int QIAccessibilityInterfaceForQITableWidget::childCount() const
 {
-    /* Make sure tree still alive: */
-    AssertPtrReturn(tree(), 0);
+    /* Make sure table still alive: */
+    AssertPtrReturn(table(), 0);
 
     /* Return the number of children: */
-    return tree()->childCount();
+    return table()->rowCount() * table()->columnCount();
 }
 
-QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex) const
+QAccessibleInterface *QIAccessibilityInterfaceForQITableWidget::child(int iIndex) const
 {
-    /* Make sure tree still alive: */
-    AssertPtrReturn(tree(), 0);
+    /* Make sure table still alive: */
+    AssertPtrReturn(table(), 0);
     /* Make sure index is valid: */
-    AssertReturn(iIndex >= 0, 0);
-    if (iIndex >= childCount())
-    {
-        // WORKAROUND:
-        // Normally I would assert here, but Qt5 accessibility code has
-        // a hard-coded architecture for a tree-widgets which we do not like
-        // but have to live with and this architecture enumerates children
-        // of all levels as children of level 0, so Qt5 can try to address
-        // our interface with index which surely out of bounds by our laws.
-        // So let's assume that's exactly such case and try to enumerate
-        // visible children like they are a part of the list, not tree.
-        // printf("Invalid index: %d\n", iIndex);
-
-        // Take into account we also have header with 'column count' indexes,
-        // so we should start enumerating tree indexes since 'column count'.
-        const int iColumnCount = tree()->columnCount();
-        int iCurrentIndex = iColumnCount;
-
-        // Do some sanity check as well, enough?
-        AssertReturn(iIndex >= iColumnCount, 0);
-
-        // Search for sibling with corresponding index:
-        QTreeWidgetItem *pItem = tree()->topLevelItem(0);
-        while (pItem && iCurrentIndex < iIndex)
-        {
-            ++iCurrentIndex;
-            if (iCurrentIndex % iColumnCount == 0)
-                pItem = tree()->itemBelow(pItem);
-        }
-
-        // Return what we found:
-        // if (pItem)
-        //     printf("Item found: [%s]\n", pItem->text(0).toUtf8().constData());
-        // else
-        //     printf("Item not found\n");
-        return pItem ? QAccessible::queryAccessibleInterface(QITreeWidgetItem::toItem(pItem)) : 0;
-    }
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
 
     /* Return the child with the passed iIndex: */
-    return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));
+    const int iRow = iIndex / table()->columnCount();
+    const int iColumn = iIndex % table()->columnCount();
+    return QAccessible::queryAccessibleInterface(table()->childItem(iRow, iColumn));
 }
 
-int QIAccessibilityInterfaceForQITreeWidget::indexOfChild(const QAccessibleInterface *pChild) const
+int QIAccessibilityInterfaceForQITableWidget::indexOfChild(const QAccessibleInterface *pChild) const
 {
-    /* Make sure tree still alive: */
-    AssertPtrReturn(tree(), -1);
-    /* Make sure child is valid: */
-    AssertReturn(pChild, -1);
+    /* Search for corresponding child: */
+    for (int iIndex = 0; iIndex < childCount(); ++iIndex)
+        if (child(iIndex) == pChild)
+            return iIndex;
 
-    // WORKAROUND:
-    // Not yet sure how to handle this for tree widget with multiple columns, so this is a simple hack:
-    const QModelIndex index = tree()->itemIndex(qobject_cast<QITreeWidgetItem*>(pChild->object()));
-    const int iIndex = index.row();
-    return iIndex;
+    /* -1 by default: */
+    return -1;
 }
 
-QString QIAccessibilityInterfaceForQITreeWidget::text(QAccessible::Text /* enmTextRole */) const
+QString QIAccessibilityInterfaceForQITableWidget::text(QAccessible::Text /* enmTextRole */) const
 {
-    /* Make sure tree still alive: */
-    AssertPtrReturn(tree(), QString());
+    /* Make sure table still alive: */
+    AssertPtrReturn(table(), QString());
 
     /* Gather suitable text: */
-    QString strText = tree()->toolTip();
+    QString strText = table()->toolTip();
     if (strText.isEmpty())
-        strText = tree()->whatsThis();
+        strText = table()->whatsThis();
     return strText;
 }
 
 
 /*********************************************************************************************************************************
-*   Class QITreeWidgetItem implementation.                                                                                       *
+*   Class QITableWidgetItem implementation.                                                                                      *
 *********************************************************************************************************************************/
 
 /* static */
-QITreeWidgetItem *QITreeWidgetItem::toItem(QTreeWidgetItem *pItem)
+QITableWidgetItem *QITableWidgetItem::toItem(QTableWidgetItem *pItem)
 {
-    /* Make sure alive QITreeWidgetItem passed: */
+    /* Make sure alive QITableWidgetItem passed: */
     if (!pItem || pItem->type() != ItemType)
         return 0;
 
-    /* Return casted QITreeWidgetItem: */
-    return static_cast<QITreeWidgetItem*>(pItem);
+    /* Return casted QITableWidgetItem: */
+    return static_cast<QITableWidgetItem*>(pItem);
 }
 
 /* static */
-const QITreeWidgetItem *QITreeWidgetItem::toItem(const QTreeWidgetItem *pItem)
+const QITableWidgetItem *QITableWidgetItem::toItem(const QTableWidgetItem *pItem)
 {
-    /* Make sure alive QITreeWidgetItem passed: */
+    /* Make sure alive QITableWidgetItem passed: */
     if (!pItem || pItem->type() != ItemType)
         return 0;
 
-    /* Return casted QITreeWidgetItem: */
-    return static_cast<const QITreeWidgetItem*>(pItem);
+    /* Return casted QITableWidgetItem: */
+    return static_cast<const QITableWidgetItem*>(pItem);
 }
 
-QITreeWidgetItem::QITreeWidgetItem()
-    : QTreeWidgetItem(ItemType)
+QITableWidgetItem::QITableWidgetItem(const QString &strText /* = QString() */)
+    : QTableWidgetItem(strText, ItemType)
 {
 }
 
-QITreeWidgetItem::QITreeWidgetItem(QITreeWidget *pTreeWidget)
-    : QTreeWidgetItem(pTreeWidget, ItemType)
+QITableWidget *QITableWidgetItem::parentTable() const
 {
-}
-
-QITreeWidgetItem::QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem)
-    : QTreeWidgetItem(pTreeWidgetItem, ItemType)
-{
-}
-
-QITreeWidgetItem::QITreeWidgetItem(QITreeWidget *pTreeWidget, const QStringList &strings)
-    : QTreeWidgetItem(pTreeWidget, strings, ItemType)
-{
-}
-
-QITreeWidgetItem::QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem, const QStringList &strings)
-    : QTreeWidgetItem(pTreeWidgetItem, strings, ItemType)
-{
-}
-
-QITreeWidget *QITreeWidgetItem::parentTree() const
-{
-    return treeWidget() ? qobject_cast<QITreeWidget*>(treeWidget()) : 0;
-}
-
-QITreeWidgetItem *QITreeWidgetItem::parentItem() const
-{
-    return QTreeWidgetItem::parent() ? toItem(QTreeWidgetItem::parent()) : 0;
-}
-
-QITreeWidgetItem *QITreeWidgetItem::childItem(int iIndex) const
-{
-    return QTreeWidgetItem::child(iIndex) ? toItem(QTreeWidgetItem::child(iIndex)) : 0;
-}
-
-QString QITreeWidgetItem::defaultText() const
-{
-    /* Return 1st cell text as default: */
-    return text(0);
+    return tableWidget() ? qobject_cast<QITableWidget*>(tableWidget()) : 0;
 }
 
 
 /*********************************************************************************************************************************
-*   Class QITreeWidget implementation.                                                                                           *
+*   Class QITableWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-QITreeWidget::QITreeWidget(QWidget *pParent)
-    : QTreeWidget(pParent)
+QITableWidget::QITableWidget(QWidget *pParent)
+    : QTableWidget(pParent)
 {
-    /* Install QITreeWidget accessibility interface factory: */
-    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeWidget::pFactory);
-    /* Install QITreeWidgetItem accessibility interface factory: */
-    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeWidgetItem::pFactory);
+    /* Install QITableWidget accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITableWidget::pFactory);
+    /* Install QITableWidgetItem accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITableWidgetItem::pFactory);
 
     // WORKAROUND:
     // Ok, what do we have here..
@@ -429,73 +314,39 @@ QITreeWidget::QITreeWidget(QWidget *pParent)
     }
 }
 
-void QITreeWidget::setSizeHintForItems(const QSize &sizeHint)
+QITableWidgetItem *QITableWidget::childItem(int iRow, int iColumn) const
 {
-    /* Pass the sizeHint to all the top-level items: */
-    for (int i = 0; i < topLevelItemCount(); ++i)
-        topLevelItem(i)->setSizeHint(0, sizeHint);
+    return item(iRow, iColumn) ? QITableWidgetItem::toItem(item(iRow, iColumn)) : 0;
 }
 
-int QITreeWidget::childCount() const
-{
-    return invisibleRootItem()->childCount();
-}
-
-QITreeWidgetItem *QITreeWidget::childItem(int iIndex) const
-{
-    return invisibleRootItem()->child(iIndex) ? QITreeWidgetItem::toItem(invisibleRootItem()->child(iIndex)) : 0;
-}
-
-QModelIndex QITreeWidget::itemIndex(QTreeWidgetItem *pItem)
+QModelIndex QITableWidget::itemIndex(QTableWidgetItem *pItem)
 {
     return indexFromItem(pItem);
 }
 
-QList<QTreeWidgetItem*> QITreeWidget::filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent /* = 0 */)
-{
-    QList<QTreeWidgetItem*> filteredItemList;
-    filterItemsInternal(filter, pParent ? pParent : invisibleRootItem(), filteredItemList);
-    return filteredItemList;
-}
-
-void QITreeWidget::paintEvent(QPaintEvent *pEvent)
+void QITableWidget::paintEvent(QPaintEvent *pEvent)
 {
     /* Create item painter: */
     QPainter painter;
     painter.begin(viewport());
 
     /* Notify listeners about painting: */
-    QTreeWidgetItemIterator it(this);
-    while (*it)
-    {
-        emit painted(*it, &painter);
-        ++it;
-    }
+    for (int iRow = 0; iRow < rowCount(); ++iRow)
+        for (int iColumn = 0; iColumn < rowCount(); ++iColumn)
+            emit painted(item(iRow, iColumn), &painter);
 
     /* Close item painter: */
     painter.end();
 
     /* Call to base-class: */
-    QTreeWidget::paintEvent(pEvent);
+    QTableWidget::paintEvent(pEvent);
 }
 
-void QITreeWidget::resizeEvent(QResizeEvent *pEvent)
+void QITableWidget::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QTreeWidget::resizeEvent(pEvent);
+    QTableWidget::resizeEvent(pEvent);
 
     /* Notify listeners about resizing: */
     emit resized(pEvent->size(), pEvent->oldSize());
-}
-
-void QITreeWidget::filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent,
-                                       QList<QTreeWidgetItem*> &filteredItemList)
-{
-    if (!pParent)
-        return;
-    if (filter(pParent))
-        filteredItemList.append(pParent);
-
-    for (int i = 0; i < pParent->childCount(); ++i)
-        filterItemsInternal(filter, pParent->child(i), filteredItemList);
 }

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Qt extensions: QITreeWidget class declaration.
+ * VBox Qt GUI - Qt extensions: QITableWidget class declaration.
  */
 
 /*
@@ -15,108 +15,65 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_extensions_QITreeWidget_h
-#define FEQT_INCLUDED_SRC_extensions_QITreeWidget_h
+#ifndef FEQT_INCLUDED_SRC_extensions_QITableWidget_h
+#define FEQT_INCLUDED_SRC_extensions_QITableWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* Qt includes: */
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
-class QITreeWidget;
+class QITableWidget;
 
-/** A functor base to be passed to QITabWidget::filterItems(..).
-  * Overload operator()(..) to filter out tree items. */
-class SHARED_LIBRARY_STUFF QITreeWidgetItemFilter
-{
-public:
-
-    /** Destructs item filter. */
-    virtual ~QITreeWidgetItemFilter() { /* Make VC++ 19.2 happy. */ }
-
-    /** Returns whether item can pass the filter. */
-    virtual bool operator()(QTreeWidgetItem*) const
-    {
-        return true;
-    }
-};
-
-/** QTreeWidgetItem subclass extending standard functionality. */
-class SHARED_LIBRARY_STUFF QITreeWidgetItem : public QObject, public QTreeWidgetItem
+/** QTableWidgetItem subclass extending standard functionality. */
+class SHARED_LIBRARY_STUFF QITableWidgetItem : public QObject, public QTableWidgetItem
 {
     Q_OBJECT;
 
 public:
 
-    /** Item type for QITreeWidgetItem. */
-    enum { ItemType = QTreeWidgetItem::UserType + 1 };
+    /** Item type for QITableWidgetItem. */
+    enum { ItemType = QTableWidgetItem::UserType + 1 };
 
-    /** Casts QTreeWidgetItem* to QITreeWidgetItem* if possible. */
-    static QITreeWidgetItem *toItem(QTreeWidgetItem *pItem);
-    /** Casts const QTreeWidgetItem* to const QITreeWidgetItem* if possible. */
-    static const QITreeWidgetItem *toItem(const QTreeWidgetItem *pItem);
+    /** Casts QTableWidgetItem* to QITableWidgetItem* if possible. */
+    static QITableWidgetItem *toItem(QTableWidgetItem *pItem);
+    /** Casts const QTableWidgetItem* to const QITableWidgetItem* if possible. */
+    static const QITableWidgetItem *toItem(const QTableWidgetItem *pItem);
 
-    /** Constructs item. */
-    QITreeWidgetItem();
+    /** Constructs item passing @a strText into the base-class. */
+    QITableWidgetItem(const QString &strText = QString());
 
-    /** Constructs item passing @a pTreeWidget into the base-class. */
-    QITreeWidgetItem(QITreeWidget *pTreeWidget);
-    /** Constructs item passing @a pTreeWidgetItem into the base-class. */
-    QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem);
-
-    /** Constructs item passing @a pTreeWidget and @a strings into the base-class. */
-    QITreeWidgetItem(QITreeWidget *pTreeWidget, const QStringList &strings);
-    /** Constructs item passing @a pTreeWidgetItem and @a strings into the base-class. */
-    QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem, const QStringList &strings);
-
-    /** Returns the parent tree-widget. */
-    QITreeWidget *parentTree() const;
-    /** Returns the parent tree-widget item. */
-    QITreeWidgetItem *parentItem() const;
-
-    /** Returns the child tree-widget item with @a iIndex. */
-    QITreeWidgetItem *childItem(int iIndex) const;
-
-    /** Returns default text. */
-    virtual QString defaultText() const;
+    /** Returns the parent table-widget. */
+    QITableWidget *parentTable() const;
 };
 
-
-/** QTreeWidget subclass extending standard functionality. */
-class SHARED_LIBRARY_STUFF QITreeWidget : public QTreeWidget
+/** QTableWidget subclass extending standard functionality. */
+class SHARED_LIBRARY_STUFF QITableWidget : public QTableWidget
 {
     Q_OBJECT;
 
 signals:
 
     /** Notifies about particular tree-widget @a pItem is painted with @a pPainter. */
-    void painted(QTreeWidgetItem *pItem, QPainter *pPainter);
+    void painted(QTableWidgetItem *pItem, QPainter *pPainter);
     /** Notifies about tree-widget being resized from @a oldSize to @a size. */
     void resized(const QSize &size, const QSize &oldSize);
 
 public:
 
     /** Constructs tree-widget passing @a pParent to the base-class. */
-    QITreeWidget(QWidget *pParent = 0);
+    QITableWidget(QWidget *pParent = 0);
 
-    /** Defines @a sizeHint for tree-widget items. */
-    void setSizeHintForItems(const QSize &sizeHint);
-
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child item with @a iIndex. */
-    QITreeWidgetItem *childItem(int iIndex) const;
+    /** Returns the child item with @a iRow and @a iColumn. */
+    QITableWidgetItem *childItem(int iRow, int iColumn) const;
     /** Returns a model-index of @a pItem specified. */
-    QModelIndex itemIndex(QTreeWidgetItem *pItem);
-    /** Recurses thru the subtree with a root @a pParent and returns a list of tree-items filtered by @a filter.
-      * When @a pParent is null then QTreeWidget::invisibleRootItem() is used as the root item. */
-    QList<QTreeWidgetItem*> filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent = 0);
+    QModelIndex itemIndex(QTableWidgetItem *pItem);
 
 protected:
 
@@ -124,14 +81,6 @@ protected:
     void paintEvent(QPaintEvent *pEvent);
     /** Handles resize @a pEvent. */
     void resizeEvent(QResizeEvent *pEvent);
-
-private:
-
-    /** Recurses thru the subtree with a root @a pParent and appends a
-      * list of tree-items filtered by @a filter to @a filteredItemList. */
-    void filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem *pParent,
-                             QList<QTreeWidgetItem*> &filteredItemList);
 };
 
-
-#endif /* !FEQT_INCLUDED_SRC_extensions_QITreeWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QITableWidget_h */
