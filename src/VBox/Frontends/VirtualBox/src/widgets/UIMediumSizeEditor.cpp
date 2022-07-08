@@ -76,6 +76,8 @@ void UIMediumSizeEditor::retranslateUi()
     /* Translate fields: */
     m_pSlider->setToolTip(tr("Holds the size of this medium."));
     m_pEditor->setToolTip(tr("Holds the size of this medium."));
+    m_pLabelMinSize->setToolTip(tr("Minimum size for this medium."));
+    m_pLabelMaxSize->setToolTip(tr("Maximum size for this medium."));
 }
 
 void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
