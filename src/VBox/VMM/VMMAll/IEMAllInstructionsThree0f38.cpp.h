@@ -348,8 +348,61 @@ FNIEMOP_STUB(iemOp_blendvpd_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x16 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x16 - invalid (vex only). */
 /*  Opcode      0x0f 0x38 0x17 - invalid */
+
+
 /** Opcode 0x66 0x0f 0x38 0x17 - invalid */
-FNIEMOP_STUB(iemOp_ptest_Vx_Wx);
+FNIEMOP_DEF(iemOp_ptest_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PTEST, ptest, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc1,  0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc2,  1);
+        IEM_MC_ARG(uint32_t *,                  pEFlags, 2);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_REF_EFLAGS(pEFlags);
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_ptest_u128, puSrc1, puSrc2, pEFlags);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(3, 2);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc1,        0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc2);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc2, uSrc2, 1);
+        IEM_MC_ARG(uint32_t *,                  pEFlags,       2);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_EFLAGS(pEFlags);
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_ptest_u128, puSrc1, puSrc2, pEFlags);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /*  Opcode      0x0f 0x38 0x18 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x18 - invalid (vex only). */
 /*  Opcode      0x0f 0x38 0x19 - invalid */
