@@ -3406,7 +3406,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
 
     if (CBstatus != SVGA_CB_STATUS_NONE)
     {
-        LogFunc(("Write status %#x, offNextCmd %#x (of %#x), fIRQ %#x\n", CBstatus, offNextCmd, pCmdBuf ? pCmdBuf->hdr.length : 0, fIRQ));
+        LogFunc(("Write status %#x, offNextCmd %#x, fIRQ %#x\n", CBstatus, offNextCmd, fIRQ));
         vmsvgaR3CmdBufWriteStatus(pDevIns, GCPhysCB, CBstatus, offNextCmd);
         if (fIRQ)
             vmsvgaR3CmdBufRaiseIRQ(pDevIns, pThis, fIRQ);
