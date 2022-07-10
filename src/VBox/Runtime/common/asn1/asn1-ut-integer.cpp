@@ -339,7 +339,7 @@ RTDECL(int) RTAsn1Integer_FromBigNum(PRTASN1INTEGER pThis, PCRTBIGNUM pBigNum, P
 }
 
 
-RTDECL(int) RTAsn1Integer_ToString(PRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual)
+RTDECL(int) RTAsn1Integer_ToString(PCRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual)
 {
     AssertReturn(RTAsn1Integer_IsPresent(pThis), VERR_INVALID_PARAMETER);
     AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);

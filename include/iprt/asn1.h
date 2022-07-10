@@ -951,7 +951,7 @@ RTDECL(int) RTAsn1Integer_FromBigNum(PRTASN1INTEGER pThis, PCRTBIGNUM pBigNum, P
  *
  * @remarks Currently assume unsigned number.
  */
-RTDECL(int) RTAsn1Integer_ToString(PRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual);
+RTDECL(int) RTAsn1Integer_ToString(PCRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual);
 
 RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQOFINTEGERS, RTASN1INTEGER, RTDECL, RTAsn1SeqOfIntegers);
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFINTEGERS, RTASN1INTEGER, RTDECL, RTAsn1SetOfIntegers);
