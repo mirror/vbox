@@ -129,6 +129,7 @@ typedef SHOWEXEPKCS7 *PSHOWEXEPKCS7;
 static RTEXITCODE HandleHelp(int cArgs, char **papszArgs);
 static RTEXITCODE HelpHelp(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel);
 static RTEXITCODE HandleVersion(int cArgs, char **papszArgs);
+static int HandleShowExeWorkerPkcs7DisplaySignerInfo(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7SIGNERINFO pSignerInfo);
 static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix,
                                            PCRTCRPKCS7CONTENTINFO pContentInfo);
 
@@ -1851,8 +1852,21 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
 
         /* Counter signatures (PKCS \#9), use pCounterSignatures. */
         case RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES:
-            RTPrintf("%sTODO: RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES! %u bytes\n",
-                     pThis->szPrefix, pAttr->uValues.pCounterSignatures->SetCore.Asn1Core.cb);
+            RTPrintf("%s%u counter signatures, %u bytes in total\n", pThis->szPrefix,
+                     pAttr->uValues.pCounterSignatures->cItems, pAttr->uValues.pCounterSignatures->SetCore.Asn1Core.cb);
+            for (uint32_t i = 0; i < pAttr->uValues.pCounterSignatures->cItems; i++)
+            {
+                size_t offPrefix2 = offPrefix;
+                if (pAttr->uValues.pContentInfos->cItems > 1)
+                    offPrefix2 += RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix, "CounterSig[%u]: ", i);
+                else
+                    offPrefix2 += RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix, "  ");
+
+                int rc2 = HandleShowExeWorkerPkcs7DisplaySignerInfo(pThis, offPrefix2,
+                                                                    pAttr->uValues.pCounterSignatures->papItems[i]);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
             break;
 
         /* Signing time (PKCS \#9), use pSigningTime. */
@@ -1948,6 +1962,76 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
             RTPrintf("%senmType=%d!\n", pThis->szPrefix, pAttr->enmType);
             break;
     }
+    return rc;
+}
+
+
+/**
+ * Displays a SignerInfo structure.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   offPrefix           The current prefix offset.
+ * @param   pSignerInfo         The structure to display.
+ */
+static int HandleShowExeWorkerPkcs7DisplaySignerInfo(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7SIGNERINFO pSignerInfo)
+{
+    int rc = RTAsn1Integer_ToString(&pSignerInfo->IssuerAndSerialNumber.SerialNumber,
+                                    pThis->szTmp, sizeof(pThis->szTmp), 0 /*fFlags*/, NULL);
+    if (RT_FAILURE(rc))
+        RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc);
+    RTPrintf("%s                  Serial No: %s\n", pThis->szPrefix, pThis->szTmp);
+
+    rc = RTCrX509Name_FormatAsString(&pSignerInfo->IssuerAndSerialNumber.Name, pThis->szTmp, sizeof(pThis->szTmp), NULL);
+    if (RT_FAILURE(rc))
+        RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc);
+    RTPrintf("%s                     Issuer: %s\n", pThis->szPrefix, pThis->szTmp);
+
+    const char *pszType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_QueryDigestType(&pSignerInfo->DigestAlgorithm));
+    if (!pszType)
+        pszType = pSignerInfo->DigestAlgorithm.Algorithm.szObjId;
+    RTPrintf("%s           Digest Algorithm: %s", pThis->szPrefix, pszType);
+    if (pThis->cVerbosity > 1)
+        RTPrintf(" (%s)\n", pSignerInfo->DigestAlgorithm.Algorithm.szObjId);
+    else
+        RTPrintf("\n");
+
+    HandleShowExeWorkerDisplayObjId(pThis, &pSignerInfo->DigestEncryptionAlgorithm.Algorithm,
+                                    "Digest Encryption Algorithm: ", "\n");
+
+    if (pSignerInfo->AuthenticatedAttributes.cItems == 0)
+        RTPrintf("%s   Authenticated Attributes: none\n", pThis->szPrefix);
+    else
+    {
+        RTPrintf("%s   Authenticated Attributes: %u item%s\n", pThis->szPrefix,
+                 pSignerInfo->AuthenticatedAttributes.cItems, pSignerInfo->AuthenticatedAttributes.cItems > 1 ? "s" : "");
+        for (unsigned j = 0; j < pSignerInfo->AuthenticatedAttributes.cItems; j++)
+        {
+            PRTCRPKCS7ATTRIBUTE pAttr = pSignerInfo->AuthenticatedAttributes.papItems[j];
+            size_t offPrefix3 = offPrefix+ RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix,
+                                                         "              AuthAttrib[%u]: ", j);
+            HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
+        }
+        pThis->szPrefix[offPrefix] = '\0';
+    }
+
+    if (pSignerInfo->UnauthenticatedAttributes.cItems == 0)
+        RTPrintf("%s Unauthenticated Attributes: none\n", pThis->szPrefix);
+    else
+    {
+        RTPrintf("%s Unauthenticated Attributes: %u item%s\n", pThis->szPrefix,
+                 pSignerInfo->UnauthenticatedAttributes.cItems, pSignerInfo->UnauthenticatedAttributes.cItems > 1 ? "s" : "");
+        for (unsigned j = 0; j < pSignerInfo->UnauthenticatedAttributes.cItems; j++)
+        {
+            PRTCRPKCS7ATTRIBUTE pAttr = pSignerInfo->UnauthenticatedAttributes.papItems[j];
+            size_t offPrefix3 = offPrefix + RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix,
+                                                        "            UnauthAttrib[%u]: ", j);
+            HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
+        }
+        pThis->szPrefix[offPrefix] = '\0';
+    }
+
+    /** @todo show the encrypted stuff (EncryptedDigest)?   */
     return rc;
 }
 
@@ -2181,17 +2265,53 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
     if (pSignedData->Certificates.cItems > 0)
     {
         RTPrintf("%s    Certificates: %u\n", pThis->szPrefix, pSignedData->Certificates.cItems);
-        if (pThis->cVerbosity >= 2)
+        for (uint32_t i = 0; i < pSignedData->Certificates.cItems; i++)
         {
-            for (uint32_t i = 0; i < pSignedData->Certificates.cItems; i++)
+            PCRTCRPKCS7CERT pCert = pSignedData->Certificates.papItems[i];
+            if (i != 0 && pThis->cVerbosity >= 2)
+                RTPrintf("\n");
+            switch (pCert->enmChoice)
             {
-                if (i != 0)
-                    RTPrintf("\n");
-                RTPrintf("%s      Certificate #%u:\n", pThis->szPrefix, i);
+                case RTCRPKCS7CERTCHOICE_X509:
+                {
+                    PCRTCRX509CERTIFICATE pX509Cert = pCert->u.pX509Cert;
+                    int rc2 = RTAsn1QueryObjIdName(&pX509Cert->SignatureAlgorithm.Algorithm, pThis->szTmp, sizeof(pThis->szTmp));
+                    RTPrintf("%s      Certificate #%u: %s\n", pThis->szPrefix, i,
+                             RT_SUCCESS(rc2) ? pThis->szTmp : pX509Cert->SignatureAlgorithm.Algorithm.szObjId);
+
+                    rc2 = RTCrX509Name_FormatAsString(&pX509Cert->TbsCertificate.Subject,
+                                                      pThis->szTmp, sizeof(pThis->szTmp), NULL);
+                    if (RT_FAILURE(rc2))
+                        RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc2);
+                    RTPrintf("%s        Subject: %s\n", pThis->szPrefix, pThis->szTmp);
+
+                    rc2 = RTCrX509Name_FormatAsString(&pX509Cert->TbsCertificate.Issuer,
+                                                      pThis->szTmp, sizeof(pThis->szTmp), NULL);
+                    if (RT_FAILURE(rc2))
+                        RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc2);
+                    RTPrintf("%s         Issuer: %s\n", pThis->szPrefix, pThis->szTmp);
+
+
+                    char szNotAfter[RTTIME_STR_LEN];
+                    RTPrintf("%s          Valid: %s thru %s\n", pThis->szPrefix,
+                             RTTimeToString(&pX509Cert->TbsCertificate.Validity.NotBefore.Time,
+                                            pThis->szTmp, sizeof(pThis->szTmp)),
+                             RTTimeToString(&pX509Cert->TbsCertificate.Validity.NotAfter.Time,
+                                            szNotAfter, sizeof(szNotAfter)));
+                    break;
+                }
+
+                default:
+                    RTPrintf("%s      Certificate #%u: Unsupported type\n", pThis->szPrefix, i);
+                    break;
+            }
+
+
+            if (pThis->cVerbosity >= 2)
                 RTAsn1Dump(RTCrPkcs7Cert_GetAsn1Core(pSignedData->Certificates.papItems[i]), 0,
                            ((uint32_t)offPrefix + 9) / 2, RTStrmDumpPrintfV, g_pStdOut);
-            }
         }
+
         /** @todo display certificates properly. */
     }
 
@@ -2206,73 +2326,20 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
         RTPrintf("%s     SignerInfos: %u signers\n", pThis->szPrefix, cSigInfos);
     else
         RTPrintf("%s     SignerInfos:\n", pThis->szPrefix);
+    int rc = VINF_SUCCESS;
     for (unsigned i = 0; i < cSigInfos; i++)
     {
-        PRTCRPKCS7SIGNERINFO pSigInfo = pSignedData->SignerInfos.papItems[i];
         size_t offPrefix2 = offPrefix;
         if (cSigInfos != 1)
             offPrefix2 += RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix, "SignerInfo[%u]: ", i);
 
-        int rc = RTAsn1Integer_ToString(&pSigInfo->IssuerAndSerialNumber.SerialNumber,
-                                        pThis->szTmp, sizeof(pThis->szTmp), 0 /*fFlags*/, NULL);
-        if (RT_FAILURE(rc))
-            RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc);
-        RTPrintf("%s                  Serial No: %s\n", pThis->szPrefix, pThis->szTmp);
-
-        rc = RTCrX509Name_FormatAsString(&pSigInfo->IssuerAndSerialNumber.Name, pThis->szTmp, sizeof(pThis->szTmp), NULL);
-        if (RT_FAILURE(rc))
-            RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc);
-        RTPrintf("%s                     Issuer: %s\n", pThis->szPrefix, pThis->szTmp);
-
-        const char *pszType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_QueryDigestType(&pSigInfo->DigestAlgorithm));
-        if (!pszType)
-            pszType = pSigInfo->DigestAlgorithm.Algorithm.szObjId;
-        RTPrintf("%s           Digest Algorithm: %s", pThis->szPrefix, pszType);
-        if (pThis->cVerbosity > 1)
-            RTPrintf(" (%s)\n", pSigInfo->DigestAlgorithm.Algorithm.szObjId);
-        else
-            RTPrintf("\n");
-
-        HandleShowExeWorkerDisplayObjId(pThis, &pSigInfo->DigestEncryptionAlgorithm.Algorithm,
-                                        "Digest Encryption Algorithm: ", "\n");
-
-        if (pSigInfo->AuthenticatedAttributes.cItems == 0)
-            RTPrintf("%s   Authenticated Attributes: none\n", pThis->szPrefix);
-        else
-        {
-            RTPrintf("%s   Authenticated Attributes: %u item%s\n", pThis->szPrefix,
-                     pSigInfo->AuthenticatedAttributes.cItems, pSigInfo->AuthenticatedAttributes.cItems > 1 ? "s" : "");
-            for (unsigned j = 0; j < pSigInfo->AuthenticatedAttributes.cItems; j++)
-            {
-                PRTCRPKCS7ATTRIBUTE pAttr = pSigInfo->AuthenticatedAttributes.papItems[j];
-                size_t offPrefix3 = offPrefix2 + RTStrPrintf(&pThis->szPrefix[offPrefix2], sizeof(pThis->szPrefix) - offPrefix2,
-                                                             "              AuthAttrib[%u]: ", j);
-                HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
-            }
-            pThis->szPrefix[offPrefix2] = '\0';
-        }
-
-        if (pSigInfo->UnauthenticatedAttributes.cItems == 0)
-            RTPrintf("%s Unauthenticated Attributes: none\n", pThis->szPrefix);
-        else
-        {
-            RTPrintf("%s Unauthenticated Attributes: %u item%s\n", pThis->szPrefix,
-                     pSigInfo->UnauthenticatedAttributes.cItems, pSigInfo->UnauthenticatedAttributes.cItems > 1 ? "s" : "");
-            for (unsigned j = 0; j < pSigInfo->UnauthenticatedAttributes.cItems; j++)
-            {
-                PRTCRPKCS7ATTRIBUTE pAttr = pSigInfo->UnauthenticatedAttributes.papItems[j];
-                size_t offPrefix3 = offPrefix2 + RTStrPrintf(&pThis->szPrefix[offPrefix2], sizeof(pThis->szPrefix) - offPrefix2,
-                                                             "            UnauthAttrib[%u]: ", j);
-                HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
-            }
-            pThis->szPrefix[offPrefix2] = '\0';
-        }
-
-        /** @todo show the encrypted stuff (EncryptedDigest)?   */
+        int rc2 = HandleShowExeWorkerPkcs7DisplaySignerInfo(pThis, offPrefix2, pSignedData->SignerInfos.papItems[i]);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
     }
     pThis->szPrefix[offPrefix] = '\0';
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
