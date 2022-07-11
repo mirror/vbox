@@ -427,6 +427,7 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
                                 uint32_t uVersion, uint32_t uPass);
 static int vmsvgaR3SaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
 static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, RTGCPHYS GCPhysCB, SVGACBContext CBCtx);
+static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, bool fLoadState);
 #endif /* IN_RING3 */
 
 
@@ -3985,8 +3986,7 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
                 /* The following RT_OS_DARWIN code was in vmsvga3dLoadExec and therefore must be executed before each vmsvga3dLoadExec invocation. */
 #  ifndef RT_OS_DARWIN /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA.cpp */
                 /* Must initialize now as the recreation calls below rely on an initialized 3d subsystem. */
-                PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
-                pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
+                vmsvgaR3PowerOnDevice(pDevIns, pThis, pThisCC, /*fLoadState=*/ true);
 #  endif
 
                 if (vmsvga3dIsLegacyBackend(pThisCC))
@@ -5767,7 +5767,7 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
 
         rc = pHlp->pfnSSMGetBool(pSSM, &f);
         AssertLogRelRCReturn(rc, rc);
-        AssertReturn(f == pThis->fVMSVGA10, VERR_INVALID_STATE);
+        pThis->fVMSVGA10 = f;
 
         if (pThis->fVMSVGA10)
         {
@@ -5823,8 +5823,7 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
     }
 
 #  ifdef RT_OS_DARWIN  /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA3d-shared.h. */
-    if (pThis->svga.f3DEnabled)
-        pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
+    vmsvgaR3PowerOnDevice(pDevIns, pThis, pThisCC, /*fLoadState=*/ true);
 #  endif
 
     VMSVGA_STATE_LOAD LoadState;
@@ -6290,63 +6289,69 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 # endif /* VBOX_WITH_VMSVGA3D */
 
 /**
- * Initializes the host capabilities: device and FIFO.
+ * Compute the host capabilities: device and FIFO.
+ * Depends on 3D backend initialization.
  *
  * @returns VBox status code.
  * @param   pThis     The shared VGA/VMSVGA instance data.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
+ * @param   pu32DeviceCaps Device capabilities (SVGA_CAP_*).
+ * @param   pu32FIFOCaps FIFO capabilities (SVGA_FIFO_CAPS_*).
  */
-static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
+static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32DeviceCaps, uint32_t *pu32FIFOCaps)
 {
-# ifdef VBOX_WITH_VMSVGA3D
-    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
-# endif
-
     /* Device caps. */
-    pThis->svga.u32DeviceCaps = SVGA_CAP_GMR
-                              | SVGA_CAP_GMR2
-                              | SVGA_CAP_CURSOR
-                              | SVGA_CAP_CURSOR_BYPASS
-                              | SVGA_CAP_CURSOR_BYPASS_2
-                              | SVGA_CAP_EXTENDED_FIFO
-                              | SVGA_CAP_IRQMASK
-                              | SVGA_CAP_PITCHLOCK
-                              | SVGA_CAP_RECT_COPY
-                              | SVGA_CAP_TRACES
-                              | SVGA_CAP_SCREEN_OBJECT_2
-                              | SVGA_CAP_ALPHA_CURSOR;
+    *pu32DeviceCaps = SVGA_CAP_GMR
+                    | SVGA_CAP_GMR2
+                    | SVGA_CAP_CURSOR
+                    | SVGA_CAP_CURSOR_BYPASS
+                    | SVGA_CAP_CURSOR_BYPASS_2
+                    | SVGA_CAP_EXTENDED_FIFO
+                    | SVGA_CAP_IRQMASK
+                    | SVGA_CAP_PITCHLOCK
+                    | SVGA_CAP_RECT_COPY
+                    | SVGA_CAP_TRACES
+                    | SVGA_CAP_SCREEN_OBJECT_2
+                    | SVGA_CAP_ALPHA_CURSOR;
 
-    pThis->svga.u32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS /* Enable register based command buffer submission. */
-//                              |  SVGA_CAP_CMD_BUFFERS_2   /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
-                              ;
+    *pu32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS   /* Enable register based command buffer submission. */
+//                  |  SVGA_CAP_CMD_BUFFERS_2     /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
+                    ;
 
     /* VGPU10 capabilities. */
     if (pThis->fVMSVGA10)
     {
 # ifdef VBOX_WITH_VMSVGA3D
-        if (pSVGAState->pFuncsGBO)
-           pThis->svga.u32DeviceCaps |= SVGA_CAP_GBOBJECTS;     /* Enable guest-backed objects and surfaces. */
-        if (pSVGAState->pFuncsDX)
-           pThis->svga.u32DeviceCaps |= SVGA_CAP_DX;            /* Enable support for DX commands, and command buffers in a mob. */
+        if (pThisCC->svga.pSvgaR3State->pFuncsGBO)
+           *pu32DeviceCaps |= SVGA_CAP_GBOBJECTS; /* Enable guest-backed objects and surfaces. */
+        if (pThisCC->svga.pSvgaR3State->pFuncsDX)
+           *pu32DeviceCaps |= SVGA_CAP_DX;        /* Enable support for DX commands, and command buffers in a mob. */
 # endif
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
-    if (pSVGAState->pFuncs3D)
-        pThis->svga.u32DeviceCaps |= SVGA_CAP_3D;
+    if (pThisCC->svga.pSvgaR3State->pFuncs3D)
+        *pu32DeviceCaps |= SVGA_CAP_3D;
 # endif
 
-    /* Clear the FIFO. */
-    RT_BZERO(pThisCC->svga.pau32FIFO, pThis->svga.cbFIFO);
+    /* FIFO capabilities. */
+    *pu32FIFOCaps = SVGA_FIFO_CAP_FENCE
+                  | SVGA_FIFO_CAP_PITCHLOCK
+                  | SVGA_FIFO_CAP_CURSOR_BYPASS_3
+                  | SVGA_FIFO_CAP_RESERVE
+                  | SVGA_FIFO_CAP_GMR2
+                  | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
+                  | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
+}
 
-    /* Setup FIFO capabilities. */
-    pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE
-                                                    | SVGA_FIFO_CAP_PITCHLOCK
-                                                    | SVGA_FIFO_CAP_CURSOR_BYPASS_3
-                                                    | SVGA_FIFO_CAP_RESERVE
-                                                    | SVGA_FIFO_CAP_GMR2
-                                                    | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
-                                                    | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
+/** Initialize the FIFO on power on and reset.
+ *
+ * @param   pThis     The shared VGA/VMSVGA instance data.
+ * @param   pThisCC   The VGA/VMSVGA state for ring-3.
+ */
+static void vmsvgaR3InitFIFO(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    RT_BZERO(pThisCC->svga.pau32FIFO, pThis->svga.cbFIFO);
 
     /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
     pThisCC->svga.pau32FIFO[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
@@ -6463,8 +6468,10 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     RT_BZERO(pThisCC->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
+    vmsvgaR3InitFIFO(pThis, pThisCC);
+
     /* Initialize FIFO and register capabilities. */
-    vmsvgaR3InitCaps(pThis, pThisCC);
+    vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
 
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
@@ -6601,22 +6608,6 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns, PGMPHYSHANDLERKIND_WRITE, vmsvgaR3GboAccessHandler,
                                                  "VMSVGA GBO", &pSVGAState->hGboAccessHandlerType);
     AssertRCReturn(rc, rc);
-
-# ifdef VBOX_WITH_VMSVGA3D
-    if (pThis->svga.f3DEnabled)
-    {
-        /* Load a 3D backend. */
-        rc = vmsvgaR3Init3dInterfaces(pDevIns, pThis, pThisCC);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
-            pThis->svga.f3DEnabled = false;
-        }
-    }
-# endif
-
-    /* Initialize FIFO and register capabilities. */
-    vmsvgaR3InitCaps(pThis, pThisCC);
 
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
@@ -6891,19 +6882,48 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-/**
- * Power On notification.
+/* Initialize 3D backend, set device capabilities and call pfnPowerOn callback of 3D backend.
  *
- * @returns VBox status code.
- * @param   pDevIns     The device instance data.
- *
- * @remarks Caller enters the device critical section.
+ * @param   pDevIns    The device instance.
+ * @param   pThis      The shared VGA/VMSVGA instance data.
+ * @param   pThisCC    The VGA/VMSVGA state for ring-3.
+ * @param   fLoadState Whether saved state is being loaded.
  */
-DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
+static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, bool fLoadState)
 {
 # ifdef VBOX_WITH_VMSVGA3D
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    if (pThis->svga.f3DEnabled)
+    {
+        /* Load a 3D backend. */
+        int rc = vmsvgaR3Init3dInterfaces(pDevIns, pThis, pThisCC);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
+            pThis->svga.f3DEnabled = false;
+        }
+    }
+# endif
+
+    if (!fLoadState)
+    {
+        vmsvgaR3InitFIFO(pThis, pThisCC);
+        vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
+    }
+# ifdef DEBUG
+    else
+    {
+        /* If saved state is being loaded then FIFO and caps are already restored. */
+        uint32_t u32DeviceCaps = 0;
+        uint32_t u32FIFOCaps = 0;
+        vmsvgaR3GetCaps(pThis, pThisCC, &u32DeviceCaps, &u32FIFOCaps);
+
+        /* Capabilities should not change normally. */
+        Assert(   pThis->svga.u32DeviceCaps == u32DeviceCaps
+               && pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] == u32FIFOCaps);
+    }
+#endif
+
+# ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
@@ -6922,6 +6942,23 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 # else  /* !VBOX_WITH_VMSVGA3D */
     RT_NOREF(pDevIns);
 # endif /* !VBOX_WITH_VMSVGA3D */
+}
+
+
+/**
+ * Power On notification.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance data.
+ *
+ * @remarks Caller enters the device critical section.
+ */
+DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
+{
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+
+    vmsvgaR3PowerOnDevice(pDevIns, pThis, pThisCC, /*fLoadState=*/ false);
 }
 
 /**
