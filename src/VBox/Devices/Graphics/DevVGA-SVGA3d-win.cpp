@@ -1543,8 +1543,13 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
         AssertRCReturn(rc, rc);
     }
 
-    Assert(pSurfaceSrc->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE); /// @todo
-    Assert(pSurfaceDest->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE); /// @todo
+    AssertReturn(pSurfaceSrc->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE, VERR_NOT_IMPLEMENTED); /// @todo
+    AssertReturn(pSurfaceDest->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE, VERR_NOT_IMPLEMENTED); /// @todo
+
+    /* Surface copy only makes sense between surfaces with identical layout. */
+    AssertReturn(pSurfaceSrc->cbBlock == pSurfaceDest->cbBlock, VERR_INVALID_PARAMETER);
+    AssertReturn(pSurfaceSrc->cxBlock == pSurfaceDest->cxBlock, VERR_INVALID_PARAMETER);
+    AssertReturn(pSurfaceSrc->cyBlock == pSurfaceDest->cyBlock, VERR_INVALID_PARAMETER);
 
     if (   pSurfaceSrc->u.pSurface
         && pSurfaceDest->u.pSurface)
@@ -1758,9 +1763,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
                      sidDest, dest.face, dest.mipmap, pBox[i].x, pBox[i].y));
 
             Assert(!clipBox.srcz && !clipBox.z);
-            Assert(pSurfaceSrc->cbBlock == pSurfaceDest->cbBlock);
-            Assert(pSurfaceSrc->cxBlock == pSurfaceDest->cxBlock);
-            Assert(pSurfaceSrc->cyBlock == pSurfaceDest->cyBlock);
 
             uint32_t cBlocksX = (clipBox.w + pSurfaceSrc->cxBlock - 1) / pSurfaceSrc->cxBlock;
             uint32_t cBlocksY = (clipBox.h + pSurfaceSrc->cyBlock - 1) / pSurfaceSrc->cyBlock;
