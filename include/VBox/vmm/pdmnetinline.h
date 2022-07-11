@@ -149,6 +149,10 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     if (RT_LIKELY(enmType != PDMNETWORKGSOTYPE_IPV4_UDP || pGso->cbMaxSeg >= RTNETUDP_MIN_LEN))
     { /* likely */ } else return false;
 
+    /* Make sure the segment size is not zero. */
+    if (RT_LIKELY(pGso->cbMaxSeg > 0))
+    { /* likely */ } else return false;
+
     return true;
 }
 
