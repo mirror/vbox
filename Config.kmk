@@ -1573,17 +1573,6 @@ endif
 # Derived indicators.
 #
 
-## Indicates that we need the extpack openssl libs.
-if   defined(VBOX_WITH_EXTPACK_PUEL_BUILD) \
- && (   !defined(VRDP_WITH_IPRT_CRYPTO) \
-     || !defined(VRDP_WITH_IPRT_SSL) \
-     || !defined(VD_WITH_IPRT_CRYPTO) )
- VBOX_NEED_EXTPACK_OPENSSL = 1
-else
- VBOX_NEED_EXTPACK_OPENSSL =
-endif
-
-
 #
 # Mark OSE builds clearly, helps figuring out limitations more easily.
 #
@@ -4773,8 +4762,8 @@ SDK_VBOX_OPENSSL_INCS                   ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
 if  !defined(VBOX_ONLY_SDK) \
  && (!defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER)) \
- && (!defined(VBOX_ONLY_EXTPACKS) || defined(VBOX_NEED_EXTPACK_OPENSSL) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)) \
- && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" || defined(VBOX_NEED_EXTPACK_OPENSSL))
+ && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)) \
+ && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
  SDK_VBOX_OPENSSL_DEPS                  ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
 endif
 SDK_VBOX_OPENSSL_LIBS                   ?= \
@@ -4785,7 +4774,7 @@ SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or 
 SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
 SDK_VBOX_OPENSSL-x86_INCS               ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
-if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" || defined(VBOX_NEED_EXTPACK_OPENSSL))
+if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
  SDK_VBOX_OPENSSL-x86_DEPS              ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
 endif
 SDK_VBOX_OPENSSL-x86_LIBS               ?= \
@@ -7520,15 +7509,6 @@ ifdef VBOX_WITH_EXTPACK
 
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl = For the ring-3 context modules in the PUEL extension pack using ExtPack OpenSSL.
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_EXTENDS = VBoxR3ExtPackPuel
-  ifdef VBOX_NEED_EXTPACK_OPENSSL
-   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_INCS = \
-   	$(TEMPLATE_VBoxR3ExtPack_INCS) \
-   	$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_LIBS = \
-   	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
-   	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB) \
-   	$(TEMPLATE_VBoxR3ExtPack_LIBS) # Must come after the two libraries or we'll pick up SSL from VBoxRT!
-  endif
 
   TEMPLATE_VBoxR0ExtPackPuel = For the ring-0 context modules in the PUEL extension pack.
   TEMPLATE_VBoxR0ExtPackPuel_EXTENDS = VBoxR0ExtPack
