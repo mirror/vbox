@@ -312,6 +312,72 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...) RT_IPR
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
+ * Prints a formatted string to the specified stream, performing wrapping of
+ * lines considered too long.
+ *
+ * If the stream is to a terminal, the terminal width is used as the max line
+ * width.  Otherwise, the width is taken from @a fFlags
+ * (RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_MASK /
+ * RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_SHIFT), defaulting to 80 if zero.
+ *
+ * @returns Low 16 bits is the line offset, high 16 bits the number of lines
+ *          outputted.  Apply RTSTRMWRAPPED_F_LINE_OFFSET_MASK to the value and
+ *          it can be passed via @a fFlags to the next invocation (not necessary
+ *          if all format strings ends with a newline).
+ *          Negative values are IPRT error status codes.
+ * @param   pStream         The stream to print to.
+ * @param   fFlags          RTSTRMWRAPPED_F_XXX - flags, configuration and state.
+ * @param   pszFormat       Runtime format string.
+ * @param   ...             Arguments specified by pszFormat.
+ * @sa      RTStrmWrappedPrintfV, RTStrmPrintf, RTStrmPrintfV
+ */
+RTDECL(int32_t) RTStrmWrappedPrintf(PRTSTREAM pStream, uint32_t fFlags, const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * Prints a formatted string to the specified stream, performing wrapping of
+ * lines considered too long.
+ *
+ * If the stream is to a terminal, the terminal width is used as the max line
+ * width.  Otherwise, the width is taken from @a fFlags
+ * (RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_MASK /
+ * RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_SHIFT), defaulting to 80 if zero.
+ *
+ * @returns Low 16 bits is the line offset, high 16 bits the number of lines
+ *          outputted.  Apply RTSTRMWRAPPED_F_LINE_OFFSET_MASK to the value and
+ *          it can be passed via @a fFlags to the next invocation (not necessary
+ *          if all format strings ends with a newline).
+ *          Negative values are IPRT error status codes.
+ * @param   pStream         The stream to print to.
+ * @param   fFlags          RTSTRMWRAPPED_F_XXX - flags, configuration and state.
+ * @param   pszFormat       Runtime format string.
+ * @param   va              Arguments specified by pszFormat.
+ * @sa      RTStrmWrappedPrintf, RTStrmPrintf, RTStrmPrintfV
+ */
+RTDECL(int32_t) RTStrmWrappedPrintfV(PRTSTREAM pStream, uint32_t fFlags, const char *pszFormat,
+                                     va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/** @name RTSTRMWRAPPED_F_XXX - Flags for RTStrmWrappedPrintf &
+ *        RTStrmWrappedPrintfV.
+ * @{ */
+/** The current line offset mask.
+ * This should be used to passed the line off state from one call to the next
+ * when printing incomplete lines.  If all format strings ends with a newline,
+ * this is not necessary. */
+#define RTSTRMWRAPPED_F_LINE_OFFSET_MASK            UINT32_C(0x00000fff)
+/** The non-terminal width mask. Defaults to 80 if not specified (zero). */
+#define RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_MASK     UINT32_C(0x000ff000)
+/** The non-terminal width shift. */
+#define RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_SHIFT    12
+/** The hanging indent level mask - defaults to 4 if zero.
+ * Used when RTSTRMWRAPPED_F_HANGING_INDENT is set. */
+#define RTSTRMWRAPPED_F_HANGING_INDENT_MASK         UINT32_C(0x01f00000)
+/** The hanging indent level shift. */
+#define RTSTRMWRAPPED_F_HANGING_INDENT_SHIFT        20
+/** Hanging indent.  Used for command synopsis and such. */
+#define RTSTRMWRAPPED_F_HANGING_INDENT              UINT32_C(0x80000000)
+/** @} */
+
+/**
  * Dumper vprintf-like function outputting to a stream.
  *
  * @param   pvUser          The stream to print to.  NULL means standard output.

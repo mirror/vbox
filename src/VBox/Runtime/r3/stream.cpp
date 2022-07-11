@@ -44,6 +44,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
@@ -97,6 +98,22 @@ typedef struct RTSTREAM
     PRTCRITSECT         pCritSect;
 #endif
 } RTSTREAM;
+
+
+/**
+ * State for wrapped output (RTStrmWrappedPrintf, RTStrmWrappedPrintfV).
+ */
+typedef struct RTSTRMWRAPPEDSTATE
+{
+    PRTSTREAM   pStream;            /**< The output stream. */
+    uint32_t    cchWidth;           /**< The line width. */
+    uint32_t    cchLine;            /**< The current line length (valid chars in szLine). */
+    uint32_t    cLines;             /**< Number of lines written. */
+    uint32_t    cchIndent;          /**< The indent (determined from the first line). */
+    int         rcStatus;           /**< The output status. */
+    uint8_t     cchHangingIndent;   /**< Hanging indent (from fFlags). */
+    char        szLine[0x1000+1];   /**< We must buffer output so we can do proper word splitting. */
+} RTSTRMWRAPPEDSTATE;
 
 
 /*********************************************************************************************************************************
@@ -1288,5 +1305,239 @@ RTR3DECL(int) RTPrintf(const char *pszFormat, ...)
     int rc = RTStrmPrintfV(g_pStdOut, pszFormat, args);
     va_end(args);
     return rc;
+}
+
+
+
+#define RTSTRMWRAPPED_F_LINE_OFFSET_MASK            UINT32_C(0x00000fff)
+#define RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_MASK     UINT32_C(0x000ff000)
+#define RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_SHIFT    12
+#define RTSTRMWRAPPED_F_HANGING_INDENT_MASK         UINT32_C(0x01f00000)
+#define RTSTRMWRAPPED_F_HANGING_INDENT_SHIFT        20
+#define RTSTRMWRAPPED_F_HANGING_INDENT              UINT32_C(0x80000000)
+
+/**
+ * Outputs @a cchIndent spaces.
+ */
+static void rtStrmWrapppedIndent(RTSTRMWRAPPEDSTATE *pState, uint32_t cchIndent)
+{
+    static const char s_szSpaces[] = "                                                ";
+    while (cchIndent)
+    {
+        uint32_t cchToWrite = RT_MIN(cchIndent, sizeof(s_szSpaces) - 1);
+        int rc = RTStrmWrite(pState->pStream, s_szSpaces, cchToWrite);
+        if (RT_SUCCESS(rc))
+            cchIndent -= cchToWrite;
+        else
+        {
+            pState->rcStatus = rc;
+            break;
+        }
+    }
+}
+
+
+/**
+ * Flushes the current line.
+ *
+ * @param   pState      The wrapped output state.
+ * @param   fPartial    Set if partial flush due to buffer overflow, clear when
+ *                      flushing due to '\n'.
+ */
+static void rtStrmWrappedFlushLine(RTSTRMWRAPPEDSTATE *pState, bool fPartial)
+{
+    /*
+     * Check indentation in case we need to split the line later.
+     */
+    uint32_t cchIndent = pState->cchIndent;
+    if (cchIndent == UINT32_MAX)
+    {
+        pState->cchIndent = 0;
+        cchIndent = pState->cchHangingIndent;
+        while (RT_C_IS_BLANK(pState->szLine[cchIndent]))
+            cchIndent++;
+    }
+
+    /*
+     * Do the flushing.
+     */
+    uint32_t cchLine = pState->cchLine;
+    Assert(cchLine < sizeof(pState->szLine));
+    while (cchLine >= pState->cchWidth || !fPartial)
+    {
+        /*
+         * Hopefully we don't need to do any wrapping ...
+         */
+        uint32_t offSplit;
+        if (pState->cchIndent + cchLine <= pState->cchWidth)
+        {
+            if (!fPartial)
+            {
+                rtStrmWrapppedIndent(pState, pState->cchIndent);
+                pState->szLine[cchLine] = '\n';
+                int rc = RTStrmWrite(pState->pStream, pState->szLine, cchLine + 1);
+                if (RT_FAILURE(rc))
+                    pState->rcStatus = rc;
+                pState->cLines   += 1;
+                pState->cchLine   = 0;
+                pState->cchIndent = UINT32_MAX;
+                return;
+            }
+
+            /*
+             * ... no such luck.
+             */
+            offSplit = cchLine;
+        }
+        else
+            offSplit = pState->cchWidth - pState->cchIndent;
+
+        /* Find the start of the current word: */
+        while (offSplit > 0 && !RT_C_IS_BLANK(pState->szLine[offSplit - 1]))
+            offSplit--;
+
+        /* Skip spaces. */
+        while (offSplit > 0 && RT_C_IS_BLANK(pState->szLine[offSplit - 1]))
+            offSplit--;
+        uint32_t offNextLine = offSplit;
+
+        /* If the first word + indent is wider than the screen width, so just output it in full. */
+        if (offSplit == 0) /** @todo Split words, look for hyphen...  This code is currently a bit crude. */
+        {
+            while (offSplit < cchLine && !RT_C_IS_BLANK(pState->szLine[offSplit]))
+                offSplit++;
+            offNextLine = offSplit;
+        }
+
+        while (offNextLine < cchLine && RT_C_IS_BLANK(pState->szLine[offNextLine]))
+            offNextLine++;
+
+        /*
+         * Output and advance.
+         */
+        rtStrmWrapppedIndent(pState, pState->cchIndent);
+        int rc = RTStrmWrite(pState->pStream, pState->szLine, offSplit);
+        if (RT_SUCCESS(rc))
+            rc = RTStrmPutCh(pState->pStream, '\n');
+        if (RT_FAILURE(rc))
+            pState->rcStatus = rc;
+
+        cchLine -= offNextLine;
+        pState->cchLine   = cchLine;
+        pState->cLines   += 1;
+        pState->cchIndent = cchIndent;
+        memmove(&pState->szLine[0], &pState->szLine[offNextLine], cchLine);
+    }
+
+    /* The indentation level is reset for each '\n' we process, so only save cchIndent if partial. */
+    pState->cchIndent = fPartial ? cchIndent : UINT32_MAX;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTROUTPUT}
+ */
+static DECLCALLBACK(size_t) rtStrmWrappedOutput(void *pvArg, const char *pachChars, size_t cbChars)
+{
+    RTSTRMWRAPPEDSTATE *pState = (RTSTRMWRAPPEDSTATE *)pvArg;
+    size_t const cchRet = cbChars;
+    while (cbChars > 0)
+    {
+        if (*pachChars == '\n')
+        {
+            rtStrmWrappedFlushLine(pState, false /*fPartial*/);
+            pachChars++;
+            cbChars--;
+        }
+        else
+        {
+            const char *pszEol      = (const char *)memchr(pachChars, '\n', cbChars);
+            size_t      cchToCopy   = pszEol ? (size_t)(pszEol - pachChars) : cbChars;
+            uint32_t    cchLine     = pState->cchLine;
+            Assert(cchLine < sizeof(pState->szLine));
+            bool const  fFlush      = cchLine + cchToCopy >= sizeof(pState->szLine);
+            if (fFlush)
+                cchToCopy = cchToCopy - sizeof(pState->szLine) - 1;
+
+            pState->cchLine = cchLine + (uint32_t)cchToCopy;
+            memcpy(&pState->szLine[cchLine], pachChars, cchToCopy);
+
+            pachChars += cchToCopy;
+            cbChars   -= cchToCopy;
+
+            if (fFlush)
+                rtStrmWrappedFlushLine(pState, true /*fPartial*/);
+        }
+    }
+    return cchRet;
+}
+
+
+RTDECL(int32_t) RTStrmWrappedPrintfV(PRTSTREAM pStream, uint32_t fFlags, const char *pszFormat, va_list va)
+{
+    /*
+     * Figure the output width and set up the rest of the output state.
+     */
+    RTSTRMWRAPPEDSTATE State;
+    State.pStream           = pStream;
+    State.cchLine           = fFlags & RTSTRMWRAPPED_F_LINE_OFFSET_MASK;
+    State.cLines            = 0;
+    State.rcStatus          = VINF_SUCCESS;
+    State.cchIndent         = UINT32_MAX;
+    State.cchHangingIndent  = 0;
+    if (fFlags & RTSTRMWRAPPED_F_HANGING_INDENT)
+    {
+        State.cchHangingIndent = (fFlags & RTSTRMWRAPPED_F_HANGING_INDENT_MASK) >> RTSTRMWRAPPED_F_HANGING_INDENT_SHIFT;
+        if (!State.cchHangingIndent)
+            State.cchHangingIndent = 4;
+    }
+
+    int rc = RTStrmQueryTerminalWidth(pStream, &State.cchWidth);
+    if (RT_SUCCESS(rc))
+        State.cchWidth = RT_MIN(State.cchWidth, RTSTRMWRAPPED_F_LINE_OFFSET_MASK + 1);
+    else
+    {
+        State.cchWidth = (uint32_t)fFlags & RTSTRMWRAPPED_F_NON_TERMINAL_WIDTH_MASK;
+        if (!State.cchWidth)
+            State.cchWidth = 80;
+    }
+    if (State.cchWidth < 32)
+        State.cchWidth = 32;
+    //State.cchWidth         -= 1; /* necessary here? */
+
+    /*
+     * Do the formatting.
+     */
+    RTStrFormatV(rtStrmWrappedOutput, &State, NULL, NULL, pszFormat, va);
+
+    /*
+     * Returning is simple if the buffer is empty.  Otherwise we'll have to
+     * perform a partial flush and write out whatever is left ourselves.
+     */
+    if (RT_SUCCESS(State.rcStatus))
+    {
+        if (State.cchLine == 0)
+            return State.cLines << 16;
+
+        rtStrmWrappedFlushLine(&State, true /*fPartial*/);
+        if (RT_SUCCESS(State.rcStatus) && State.cchLine > 0)
+        {
+            rtStrmWrapppedIndent(&State, State.cchIndent);
+            State.rcStatus = RTStrmWrite(State.pStream, State.szLine, State.cchLine);
+        }
+        if (RT_SUCCESS(State.rcStatus))
+            return RT_MIN(State.cchIndent + State.cchLine, RTSTRMWRAPPED_F_LINE_OFFSET_MASK) | (State.cLines << 16);
+    }
+    return State.rcStatus;
+}
+
+
+RTDECL(int32_t) RTStrmWrappedPrintf(PRTSTREAM pStream, uint32_t fFlags, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int32_t rcRet = RTStrmWrappedPrintfV(pStream, fFlags, pszFormat, va);
+    va_end(va);
+    return rcRet;
 }
 
