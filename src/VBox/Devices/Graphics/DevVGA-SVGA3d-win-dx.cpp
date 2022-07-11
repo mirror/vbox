@@ -9481,6 +9481,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXLoadState(PVGASTATECC pThisCC, PVMSVGA3DD
         AssertLogRelReturn(pDXShader->shaderInfo.cDclResource <= SVGA3D_DX_MAX_SRVIEWS, VERR_INVALID_STATE);
         if (pDXShader->shaderInfo.cDclResource)
             pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aOffDclResource, pDXShader->shaderInfo.cDclResource * sizeof(uint32_t));
+
+        DXShaderGenerateSemantics(&pDXShader->shaderInfo);
     }
 
     rc = pHlp->pfnSSMGetU32(pSSM, &pDXContext->pBackendDXContext->cSOTarget);

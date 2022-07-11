@@ -319,7 +319,7 @@ static int vmsvga3dDXSaveSurface(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
                     else
                     {
                         uint8_t *pu8Map = (uint8_t *)map.pvData;
-                        for (uint32_t z = 0; z < map.box.z; ++z)
+                        for (uint32_t z = 0; z < map.box.d; ++z)
                         {
                             uint8_t *pu8MapPlane = pu8Map;
                             for (uint32_t y = 0; y < dims.cyBlocks; ++y)
