@@ -59,9 +59,7 @@ void UIVisoConfigurationPanel::setVisoCustomOptions(const QStringList& visoCusto
         return;
     m_pCustomOptionsComboBox->clear();
     foreach (const QString &strOption, visoCustomOptions)
-    {
         m_pCustomOptionsComboBox->addItem(strOption);
-    }
 }
 
 void UIVisoConfigurationPanel::prepareObjects()
