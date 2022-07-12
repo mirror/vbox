@@ -1568,7 +1568,7 @@ static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
 
 
 /*********************************************************************************************************************************
-*   The 'add-timestamp-exe-signature' command.                                                                                      *
+*   The 'add-timestamp-exe-signature' command.                                                                                   *
 *********************************************************************************************************************************/
 #ifndef IPRT_IN_BUILD_TOOL
 
