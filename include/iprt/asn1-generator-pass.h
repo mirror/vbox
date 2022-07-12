@@ -362,12 +362,15 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Init)(RT_CONCAT(P,RTASN1TMPL
 # define RTASN1TMPL_END_SETCORE() RTASN1TMPL_END_SEQCORE()
 
 /* No choice, just an empty, non-present structure. */
-# define RTASN1TMPL_BEGIN_PCHOICE() RTASN1TMPL_BEGIN_COMMON(); int rc = VINF_SUCCESS
+# define RTASN1TMPL_BEGIN_PCHOICE() \
+    RTASN1TMPL_BEGIN_COMMON(); \
+    RTAsn1MemInitAllocation(&pThis->Allocation, pAllocator); \
+    int rc = VINF_SUCCESS
 # define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
                                                                                                     do { } while (0)
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
                                                                                                     do { } while (0)
-# define RTASN1TMPL_END_PCHOICE()   RTASN1TMPL_END_COMMON()
+# define RTASN1TMPL_END_PCHOICE() RTASN1TMPL_END_COMMON()
 
 
 # define RTASN1TMPL_SET_SEQ_OF_COMMON(a_ItemType, a_ItemApi, a_OfApi, a_OfMember) \
