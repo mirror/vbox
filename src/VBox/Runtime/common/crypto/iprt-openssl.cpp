@@ -36,6 +36,7 @@
 # include <iprt/mem.h>
 # include <iprt/asn1.h>
 # include <iprt/crypto/digest.h>
+# include <iprt/crypto/pkcs7.h>
 
 # include "internal/iprt-openssl.h"
 # include "internal/openssl-pre.h"
@@ -137,6 +138,36 @@ DECLHIDDEN(const void /*EVP_MD*/ *) rtCrOpenSslConvertDigestType(RTDIGESTTYPE en
 
     return pEvpMdType;
 }
+
+DECLHIDDEN(int) rtCrOpenSslConvertPkcs7Attribute(void **ppvOsslAttrib, PCRTCRPKCS7ATTRIBUTE pAttrib, PRTERRINFO pErrInfo)
+{
+    const unsigned char *pabEncoded;
+    uint32_t             cbEncoded;
+    void                *pvFree;
+    int rc = RTAsn1EncodeQueryRawBits(RTCrPkcs7Attribute_GetAsn1Core(pAttrib),
+                                      (const uint8_t **)&pabEncoded, &cbEncoded, &pvFree, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        X509_ATTRIBUTE *pOsslAttrib = NULL;
+        X509_ATTRIBUTE *pOsslAttribRet = d2i_X509_ATTRIBUTE(&pOsslAttrib, &pabEncoded, cbEncoded);
+        RTMemTmpFree(pvFree);
+        if (pOsslAttribRet == pOsslAttrib)
+        {
+            *ppvOsslAttrib = pOsslAttrib;
+            return VINF_SUCCESS;
+        }
+        rc = RTErrInfoSet(pErrInfo, VERR_CR_X509_OSSL_D2I_FAILED, "d2i_X509_ATTRIBUTE");
+    }
+    *ppvOsslAttrib = NULL;
+    return rc;
+}
+
+
+DECLHIDDEN(void) rtCrOpenSslFreeConvertedPkcs7Attribute(void *pvOsslAttrib)
+{
+    X509_ATTRIBUTE_free((X509_ATTRIBUTE *)pvOsslAttrib);
+}
+
 
 #endif /* IPRT_WITH_OPENSSL */
 

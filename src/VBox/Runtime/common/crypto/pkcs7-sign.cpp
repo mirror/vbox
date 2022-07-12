@@ -145,49 +145,66 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                     CMS_ContentInfo *pCms = CMS_sign(NULL, NULL, pOsslAdditionalCerts, NULL, fOsslSign);
                     if (pCms != NULL)
                     {
-RT_NOREF(pAdditionalAuthenticatedAttribs); /** @todo */
-                        if (CMS_add1_signer(pCms, pOsslSigner, pEvpPrivateKey, pEvpMd, fOsslSign) != NULL)
+                        CMS_SignerInfo *pSignerInfo = CMS_add1_signer(pCms, pOsslSigner, pEvpPrivateKey, pEvpMd, fOsslSign);
+                        if (pSignerInfo)
                         {
-                            rc = CMS_final(pCms, pOsslData, NULL /*dcont*/, fOsslSign);
-                            if (rc > 0)
-                            {
-                                /*
-                                 * Get the output and copy it into the result buffer.
-                                 */
-                                BIO *pOsslResult = BIO_new(BIO_s_mem());
-                                if (pOsslResult)
+                            if (pAdditionalAuthenticatedAttribs)
+                                for (uint32_t i = 0; i < pAdditionalAuthenticatedAttribs->cItems && RT_SUCCESS(rc); i++)
                                 {
-                                    rc = i2d_CMS_bio(pOsslResult, pCms);
-                                    if (rc > 0)
+                                    PCRTCRPKCS7ATTRIBUTE pAttrib = pAdditionalAuthenticatedAttribs->papItems[i];
+                                    X509_ATTRIBUTE *pOsslAttrib;
+                                    rc = rtCrOpenSslConvertPkcs7Attribute((void **)&pOsslAttrib, pAttrib, pErrInfo);
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        BUF_MEM *pBuf = NULL;
-                                        rc = (int)BIO_get_mem_ptr(pOsslResult, &pBuf);
+                                        rc = CMS_signed_add1_attr(pSignerInfo, pOsslAttrib);
+                                        rtCrOpenSslFreeConvertedPkcs7Attribute((void **)pOsslAttrib);
+                                        if (rc <= 0)
+                                            rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "CMS_signed_add1_attr");
+                                    }
+                                }
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = CMS_final(pCms, pOsslData, NULL /*dcont*/, fOsslSign);
+                                if (rc > 0)
+                                {
+                                    /*
+                                     * Get the output and copy it into the result buffer.
+                                     */
+                                    BIO *pOsslResult = BIO_new(BIO_s_mem());
+                                    if (pOsslResult)
+                                    {
+                                        rc = i2d_CMS_bio(pOsslResult, pCms);
                                         if (rc > 0)
                                         {
-                                            AssertPtr(pBuf);
-                                            size_t const cbResult = pBuf->length;
-                                            if (   cbResultBuf >= cbResult
-                                                && pvResult != NULL)
+                                            BUF_MEM *pBuf = NULL;
+                                            rc = (int)BIO_get_mem_ptr(pOsslResult, &pBuf);
+                                            if (rc > 0)
                                             {
-                                                memcpy(pvResult, pBuf->data, cbResult);
-                                                rc = VINF_SUCCESS;
+                                                AssertPtr(pBuf);
+                                                size_t const cbResult = pBuf->length;
+                                                if (   cbResultBuf >= cbResult
+                                                    && pvResult != NULL)
+                                                {
+                                                    memcpy(pvResult, pBuf->data, cbResult);
+                                                    rc = VINF_SUCCESS;
+                                                }
+                                                else
+                                                    rc = VERR_BUFFER_OVERFLOW;
+                                                *pcbResult = cbResult;
                                             }
                                             else
-                                                rc = VERR_BUFFER_OVERFLOW;
-                                            *pcbResult = cbResult;
+                                                rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "BIO_get_mem_ptr");
                                         }
                                         else
-                                            rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "BIO_get_mem_ptr");
+                                            rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "i2d_CMS_bio");
+                                        BIO_free(pOsslResult);
                                     }
                                     else
-                                        rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "i2d_CMS_bio");
-                                    BIO_free(pOsslResult);
+                                        rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "BIO_new/BIO_s_mem");
                                 }
                                 else
-                                    rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "BIO_new/BIO_s_mem");
+                                    rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_final");
                             }
-                            else
-                                rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_final");
                         }
                         else
                             rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_add1_signer");
