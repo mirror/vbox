@@ -1697,9 +1697,11 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
                 RTTIME Time;
                 RTTimeExplode(&Time, RTTimeNow(&SigningTime));
                 Time.i32Year = (int32_t)ValueUnion.u32;
-                if (Time.u8MonthDay == 29 && Time.u8Month == 2 && !RTTimeIsLeapYear(Time.i32Year))
+                if (Time.u8MonthDay > 28 && Time.u8Month == 2 && !RTTimeIsLeapYear(Time.i32Year))
                     Time.u8MonthDay = 28;
-                RTTimeImplode(&SigningTime, &Time);
+                Time.u16YearDay = 0;
+                Time.fFlags    &= ~(RTTIME_FLAGS_COMMON_YEAR | RTTIME_FLAGS_LEAP_YEAR);
+                RTTimeImplode(&SigningTime, RTTimeNormalize(&Time));
                 break;
             }
 
