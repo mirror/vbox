@@ -1027,7 +1027,36 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1TIME, RTDECL, RTAsn1GeneralizedTime, Asn1Co
  */
 RTDECL(int) RTAsn1Time_CompareWithTimeSpec(PCRTASN1TIME pLeft, PCRTTIMESPEC pTsRight);
 
+/**
+ * Extended init function that lets you select the kind of time object (UTC or
+ * generalized).
+ */
 RTDECL(int) RTAsn1Time_InitEx(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATORVTABLE pAllocator);
+
+/**
+ * Combines RTAsn1Time_InitEx() and RTAsn1Time_SetTime().
+ */
+RTDECL(int) RTAsn1Time_InitWithTime(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIME pTime);
+
+/**
+ * Sets the ASN.1 time value to @a pTime.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ASN.1 time object to modify.
+ * @param   pAllocator          The allocator to use.
+ * @param   pTime               The time to set.
+ */
+RTDECL(int) RTAsn1Time_SetTime(PRTASN1TIME pThis, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIME pTime);
+
+/**
+ * Sets the ASN.1 time value to @a pTimeSpec.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ASN.1 time object to modify.
+ * @param   pAllocator          The allocator to use.
+ * @param   pTimeSpec           The time to set.
+ */
+RTDECL(int) RTAsn1Time_SetTimeSpec(PRTASN1TIME pThis, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIMESPEC pTimeSpec);
 
 /** @name Predicate macros for determing the exact type of RTASN1TIME.
  * @{ */

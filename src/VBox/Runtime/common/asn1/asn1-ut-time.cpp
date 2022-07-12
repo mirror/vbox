@@ -71,7 +71,91 @@ RTDECL(int) RTAsn1Time_InitEx(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATO
         pThis->Asn1Core.cb = sizeof(g_szEpochGeneralized) - 1;
         pThis->Asn1Core.uData.pv = &g_szEpochGeneralized[0];
     }
+
+    RTTIMESPEC EpochTimeSpec;
+    RTTimeExplode(&pThis->Time, RTTimeSpecSetSeconds(&EpochTimeSpec, 0));
+
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTAsn1Time_InitWithTime(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIME pTime)
+{
+    int rc = RTAsn1Time_InitEx(pThis, uTag, pAllocator); /* this doens't leave any state needing deletion */
+    if (RT_SUCCESS(rc) && pTime)
+        rc = RTAsn1Time_SetTime(pThis, pAllocator, pTime);
+    return rc;
+}
+
+
+RTDECL(int) RTAsn1Time_SetTime(PRTASN1TIME pThis, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIME pTime)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(RTAsn1Time_IsPresent(pThis), VERR_INVALID_STATE); /* Use RTAsn1Time_InitWithTime. */
+
+    RTTIMESPEC TmpTimeSpec;
+    AssertReturn(RTTimeImplode(&TmpTimeSpec, pTime), VERR_INVALID_PARAMETER);
+    RTTIME NormalizedTime;
+    RTTimeExplode(&NormalizedTime, &TmpTimeSpec);
+
+    uint32_t const uTag = RTASN1CORE_GET_TAG(&pThis->Asn1Core);
+    if (uTag == ASN1_TAG_UTC_TIME)
+    {
+        AssertReturn(NormalizedTime.i32Year >= 1950, VERR_INVALID_PARAMETER);
+        AssertReturn(NormalizedTime.i32Year <  2050, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(uTag == ASN1_TAG_GENERAL_STRING, VERR_INVALID_STATE);
+        AssertReturn(NormalizedTime.i32Year >= 0, VERR_INVALID_PARAMETER);
+        AssertReturn(NormalizedTime.i32Year <  9999, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Format the string to a temporary buffer, since the ASN.1 content isn't
+     * zero terminated and we cannot use RTStrPrintf directly on it.
+     */
+    char     szTmp[64];
+    uint32_t cchTime;
+    if (uTag == ASN1_TAG_UTC_TIME)
+        cchTime = (uint32_t)RTStrPrintf(szTmp, sizeof(szTmp), "%02u%02u%02u%02u%02u%02uZ",
+                                        NormalizedTime.i32Year % 100,
+                                        NormalizedTime.u8Month,
+                                        NormalizedTime.u8MonthDay,
+                                        NormalizedTime.u8Hour,
+                                        NormalizedTime.u8Minute,
+                                        NormalizedTime.u8Second);
+    else
+        cchTime = (uint32_t)RTStrPrintf(szTmp, sizeof(szTmp), "%04u%02u%02u%02u%02u%02uZ",
+                                        NormalizedTime.i32Year,
+                                        NormalizedTime.u8Month,
+                                        NormalizedTime.u8MonthDay,
+                                        NormalizedTime.u8Hour,
+                                        NormalizedTime.u8Minute,
+                                        NormalizedTime.u8Second);
+    AssertReturn(cchTime == (uTag == ASN1_TAG_UTC_TIME ? sizeof(g_szEpochUtc) - 1 : sizeof(g_szEpochGeneralized) - 1),
+                 VERR_INTERNAL_ERROR_3);
+
+    /*
+     * (Re-)Allocate content buffer, copy over the formatted timestamp and
+     * set the exploded time member to the new time.
+     */
+    int rc = RTAsn1ContentReallocZ(&pThis->Asn1Core, cchTime, pAllocator);
+    if (RT_SUCCESS(rc))
+    {
+        memcpy((void *)pThis->Asn1Core.uData.pv, szTmp, cchTime);
+        pThis->Time = NormalizedTime;
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTAsn1Time_SetTimeSpec(PRTASN1TIME pThis, PCRTASN1ALLOCATORVTABLE pAllocator, PCRTTIMESPEC pTimeSpec)
+{
+    RTTIME Time;
+    return RTAsn1Time_SetTime(pThis, pAllocator, RTTimeExplode(&Time, pTimeSpec));
 }
 
 
