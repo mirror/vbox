@@ -87,7 +87,8 @@ typedef RTCRPKCS7SIGNINGJOB *PRTCRPKCS7SIGNINGJOB;
 
 RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE pSigner, RTCRKEY hPrivateKey,
                                           void const *pvData, size_t cbData, RTDIGESTTYPE enmDigestType,
-                                          RTCRSTORE hAdditionalCerts, void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo)
+                                          RTCRSTORE hAdditionalCerts, PCRTCRPKCS7ATTRIBUTES pAdditionalAuthenticatedAttribs,
+                                          void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo)
 {
     size_t const cbResultBuf = *pcbResult;
     *pcbResult = 0;
@@ -144,6 +145,7 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                     CMS_ContentInfo *pCms = CMS_sign(NULL, NULL, pOsslAdditionalCerts, NULL, fOsslSign);
                     if (pCms != NULL)
                     {
+RT_NOREF(pAdditionalAuthenticatedAttribs); /** @todo */
                         if (CMS_add1_signer(pCms, pOsslSigner, pEvpPrivateKey, pEvpMd, fOsslSign) != NULL)
                         {
                             rc = CMS_final(pCms, pOsslData, NULL /*dcont*/, fOsslSign);
@@ -202,7 +204,8 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
     }
     return rc;
 #else
-    RT_NOREF(fFlags, pSigner, hPrivateKey, pvData, cbData, enmDigestType, hAdditionalCerts, pvResult, pErrInfo, cbResultBuf);
+    RT_NOREF(fFlags, pSigner, hPrivateKey, pvData, cbData, enmDigestType, hAdditionalCerts, pAdditionalAuthenticatedAttribs,
+             pvResult, pErrInfo, cbResultBuf);
     *pcbResult = 0;
     return VERR_NOT_IMPLEMENTED;
 #endif
