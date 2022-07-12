@@ -1735,11 +1735,11 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
                       VIRTIO_DEV_INDEPENDENT_LEGACY_FEATURES_OFFERED, pVirtio->uDriverFeatures));
                 pVirtio->uDriverFeatures &= VIRTIO_DEV_INDEPENDENT_LEGACY_FEATURES_OFFERED;
         }
-        if (!((pVirtio->fDriverFeaturesWritten ^= 1) & 1))
+        if (!(pVirtio->fDriverFeaturesWritten & DRIVER_FEATURES_COMPLETE_HANDLED))
         {
 #ifdef IN_RING0
             Log6(("%-23s: RING0 => RING3 (demote)\n", __FUNCTION__));
-            return VINF_IOM_R3_MMIO_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #endif
 #ifdef IN_RING3
             PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
