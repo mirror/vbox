@@ -149,7 +149,7 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
     unconst(m->pMachine) = aParent;
     // mPeer is left null
 
-    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS); /** @todo r=andy Shouldn't a read lock be sufficient here? */
     m->bd.attachCopy(that->m->bd);
 
     autoInitSpan.setSucceeded();
