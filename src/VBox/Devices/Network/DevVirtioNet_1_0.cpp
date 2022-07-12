@@ -1198,7 +1198,7 @@ static DECLCALLBACK(int) virtioNetR3LegacyDeviceLoadExec(PPDMDEVINS pDevIns, PSS
          * Log the restored VirtIO feature selection.
          */
         pThis->fNegotiatedFeatures = virtioCoreGetNegotiatedFeatures(&pThis->Virtio);
-        /** @todo: shouldn't we update the virtio header size here? it depends on the negotiated features. */
+        /** @todo shouldn't we update the virtio header size here? it depends on the negotiated features. */
         virtioCorePrintDeviceFeatures(&pThis->Virtio, NULL, s_aDevSpecificFeatures, RT_ELEMENTS(s_aDevSpecificFeatures));
 
         /*
@@ -3552,7 +3552,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-net: failed to initialize VirtIO"));
 
     pThis->fNegotiatedFeatures = virtioCoreGetNegotiatedFeatures(&pThis->Virtio);
-    /** @todo: validating features at this point is most probably pointless, as the negotiation hasn't started yet. */
+    /** @todo validating features at this point is most probably pointless, as the negotiation hasn't started yet. */
     if (!virtioNetValidateRequiredFeatures(pThis->fNegotiatedFeatures))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-net: Required features not successfully negotiated."));
     pThis->cVirtqPairs = pThis->virtioNetConfig.uMaxVirtqPairs;
