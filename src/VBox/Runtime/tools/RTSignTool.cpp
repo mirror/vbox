@@ -1566,11 +1566,11 @@ static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
     return rcExit;
 }
 
-#ifndef IPRT_IN_BUILD_TOOL
 
 /*********************************************************************************************************************************
 *   The 'add-timestamp-exe-signature' command.                                                                                      *
 *********************************************************************************************************************************/
+#ifndef IPRT_IN_BUILD_TOOL
 
 static RTEXITCODE HelpAddTimestampExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
@@ -1752,11 +1752,12 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
 }
 
 #endif /*!IPRT_IN_BUILD_TOOL */
-#ifndef IPRT_IN_BUILD_TOOL
 
-/*
- * The 'verify-exe' command.
- */
+
+/*********************************************************************************************************************************
+*   The 'verify-exe' command.                                                                                                    *
+*********************************************************************************************************************************/
+#ifndef IPRT_IN_BUILD_TOOL
 static RTEXITCODE HelpVerifyExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
