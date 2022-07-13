@@ -43,6 +43,9 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** Value for RTCR_PKCS9_ID_MS_STATEMENT_TYPE. */
+#define RTCRSPC_STMT_TYPE_INDIVIDUAL_CODE_SIGNING   "1.3.6.1.4.1.311.2.1.21"
+
 /**
  * PE Image page hash table, generic union.
  *
