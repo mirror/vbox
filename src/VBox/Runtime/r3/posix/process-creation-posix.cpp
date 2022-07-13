@@ -68,6 +68,9 @@
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # include <shadow.h>
 #endif
+#if defined(RT_OS_DARWIN)
+# include <xlocale.h> /* for newlocale() */
+#endif
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
 /* While Solaris has posix_spawn() of course we don't want to use it as
@@ -1463,56 +1466,95 @@ static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse
     }
     else
     {
-        /* LC_ALL overrides everything else.*/
-        /** @todo I don't recall now if this can do LC_XXX= inside it's value, like
-         *        what setlocale returns on some systems.  It's been 15-16 years
-         *        since I last worked on an setlocale implementation... */
+        /*
+         * LC_ALL overrides everything else.  The LC_* environment variables are often set
+         * to the empty string so move on the next variable if that is the case.
+         */
         const char *pszVar;
         int rc = RTEnvGetEx(hEnvToUse, pszVar = "LC_ALL", szEncoding, sizeof(szEncoding), NULL);
-        if (rc == VERR_ENV_VAR_NOT_FOUND)
+        if (rc == VERR_ENV_VAR_NOT_FOUND || (RT_SUCCESS(rc) && !*szEncoding))
             rc = RTEnvGetEx(hEnvToUse, pszVar = "LC_CTYPE", szEncoding, sizeof(szEncoding), NULL);
-        if (rc == VERR_ENV_VAR_NOT_FOUND)
+        if (rc == VERR_ENV_VAR_NOT_FOUND || (RT_SUCCESS(rc) && !*szEncoding))
             rc = RTEnvGetEx(hEnvToUse, pszVar = "LANG", szEncoding, sizeof(szEncoding), NULL);
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc) && *szEncoding)
         {
-            const char *pszDot = strchr(szEncoding, '.');
-            if (pszDot)
-                pszDot = RTStrStripL(pszDot + 1);
-            if (pszDot && *pszDot)
+            /*
+             * LC_ALL can contain a composite locale consisting of the locales of each of the
+             * categories in two different formats depending on the OS. On Solaris, macOS, and
+             * *BSD composite locale names use slash ('/') as the separator and the following
+             * order for the categories:
+             *   LC_CTYPE/LC_NUMERIC/LC_TIME/LC_COLLATE/LC_MONETARY/LC_MESSAGES
+             * e.g.:
+             *   en_US.UTF-8/POSIX/el_GR.UTF-8/el_CY.UTF-8/en_GB.UTF-8/es_ES.UTF-8
+             * N.B. On Solaris there is also a leading slash.
+             * On Linux the composite locale format is made up of key-value pairs of category
+             * names and locales of the form 'name=value' with each element separated by a
+             * semicolon in the same order as above with following additional categories
+             * included as well:
+             *   LC_PAPER/LC_NAME/LC_ADDRESS/LC_TELEPHONE/LC_MEASUREMENT/LC_IDENTIFICATION
+             * e.g.
+             *   LC_CTYPE=fr_BE;LC_NUMERIC=fr_BE@euro;LC_TIME=fr_BE.utf8;LC_COLLATE=fr_CA;\
+             *   LC_MONETARY=fr_CA.utf8;LC_MESSAGES=fr_CH;LC_PAPER=fr_CH.utf8;LC_NAME=fr_FR;\
+             *   LC_ADDRESS=fr_FR.utf8;LC_TELEPHONE=fr_LU;LC_MEASUREMENT=fr_LU@euro;\
+             *   LC_IDENTIFICATION=fr_LU.utf8
+             */
+#if !defined(RT_OS_LINUX)
+# if defined(RT_OS_SOLARIS)
+            if (RTPATH_IS_SLASH(*szEncoding))
+                (void) memmove(szEncoding, szEncoding + 1, strlen(szEncoding));
+# endif
+            char *pszSlash = strchr(szEncoding, '/');
+            if (pszSlash)
+                *pszSlash = '\0';
+#else
+            char *pszSemicolon = strchr(szEncoding, ';');
+            if (pszSemicolon)
             {
-                pszEncoding = pszDot;
-                Log2Func(("%s=%s -> %s (simple)\n", pszVar, szEncoding, pszEncoding));
+                *pszSemicolon = '\0';
+                size_t cchPrefix = strlen("LC_CTYPE=");
+                if (!RTStrNCmp(szEncoding, "LC_CTYPE=", cchPrefix))
+                    (void) memmove(szEncoding, szEncoding + cchPrefix, strlen(szEncoding));
             }
-            else
-            {
-                 /* No charset is given, so the default of the locale should be
-                    used.  To get at that we have to use newlocale and nl_langinfo_l,
-                    which is there since ancient days on linux but no necessarily else
-                    where. */
-#ifdef LC_CTYPE_MASK
-                locale_t hLocale = newlocale(LC_CTYPE_MASK, szEncoding, (locale_t)0);
-                if (hLocale != (locale_t)0)
-                {
-                    const char *pszCodeset = nl_langinfo_l(CODESET, hLocale);
-                    Log2Func(("nl_langinfo_l(CODESET, %s=%s) -> %s\n", pszVar, szEncoding, pszCodeset));
-                    Assert(pszCodeset && *pszCodeset != '\0');
-
-                    rc = RTStrCopy(szEncoding, sizeof(szEncoding), pszCodeset);
-                    AssertRC(rc); /* cannot possibly overflow */
-
-                    freelocale(hLocale);
-                    pszEncoding = szEncoding;
-                }
-                else
 #endif
-                {
-                    /* This is mostly wrong, but I cannot think of anything better now: */
-                    pszEncoding = rtStrGetLocaleCodeset();
-                    LogFunc(("No newlocale or it failed (on '%s=%s', errno=%d), falling back on %s that we're using...\n",
-                             pszVar, szEncoding, errno, pszEncoding));
-                }
-            }
-            RT_NOREF_PV(pszVar);
+            /*
+             * Use newlocale and nl_langinfo_l to determine the default codeset for the locale
+             * specified in the child's environment.  These routines have been around since
+             * ancient days on Linux and for quite a long time on macOS, Solaris, and *BSD but
+             * to ensure their availability check that LC_CTYPE_MASK is defined.
+             */
+#ifdef LC_CTYPE_MASK
+            locale_t hLocale = newlocale(LC_CTYPE_MASK, szEncoding, (locale_t)0);
+            if (hLocale != (locale_t)0)
+            {
+                const char *pszCodeset = nl_langinfo_l(CODESET, hLocale);
+# ifdef RT_OS_DARWIN
+                /*
+                 * The macOS nl_langinfo(3)/nl_langinfo_l(3) routines return a pointer to an
+                 * empty string for "short" locale names like en_NZ, it_IT, el_GR, etc. so
+                 * fallback to UTF-8 in those cases which is the default for short name locales
+                 * on macOS anyhow.
+                 */
+                if (pszCodeset && !*pszCodeset)
+                    pszCodeset = "UTF-8";
+# endif
+                Log2Func(("nl_langinfo_l(CODESET, %s=%s) -> %s\n", pszVar, szEncoding, pszCodeset));
+                Assert(pszCodeset && *pszCodeset != '\0');
+
+                rc = RTStrCopy(szEncoding, sizeof(szEncoding), pszCodeset);
+                AssertRC(rc); /* cannot possibly overflow */
+
+                freelocale(hLocale);
+                pszEncoding = szEncoding;
+             }
+             else
+#endif
+             {
+                 /* This is mostly wrong, but I cannot think of anything better now: */
+                 pszEncoding = rtStrGetLocaleCodeset();
+                 LogFunc(("No newlocale or it failed (on '%s=%s', errno=%d), falling back on %s that we're using...\n",
+                          pszVar, szEncoding, errno, pszEncoding));
+             }
+             RT_NOREF_PV(pszVar);
         }
         else
 #ifdef RT_OS_DARWIN /* @bugref{10153}: Darwin defaults to UTF-8. */
