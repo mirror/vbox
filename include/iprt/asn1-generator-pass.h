@@ -864,6 +864,43 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Clone)(RT_CONCAT(P,RTASN1TMP
 # define RTASN1TMPL_END_SEQCORE()                                                   RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_END_SETCORE()                                                   RTASN1TMPL_SEMICOLON_DUMMY()
 
+# define RTASN1TMPL_MEMBER_OPT_ITAG_EX(a_Name, a_Type, a_Api, a_uTag, a_fClue, a_Constraints) \
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+                                                                 PCRTASN1ALLOCATORVTABLE pAllocator) \
+{ \
+    AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
+    if (RT_CONCAT(a_Api,_IsPresent)(&pThis->a_Name)) \
+        RT_CONCAT(a_Api,_Delete)(&pThis->a_Name); \
+    \
+    int rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_Name, pSrc, pAllocator); \
+    if (RT_SUCCESS(rc)) \
+    { \
+        RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_Name)); /* probably not needed */ \
+        rc = RTAsn1Core_SetTagAndFlags(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_Name), \
+                                       a_uTag, RTASN1TMPL_ITAG_F_EXPAND(a_fClue)); \
+    } \
+    return rc; \
+} RTASN1TMPL_SEMICOLON_DUMMY()
+
+# define RTASN1TMPL_MEMBER_OPT_XTAG_EX(a_TnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_uTag, a_Constraints) \
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+                                                                 PCRTASN1ALLOCATORVTABLE pAllocator) \
+{ \
+    AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
+    if (RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core)) \
+        RT_CONCAT(a_Api,_Delete)(&pThis->a_TnNm.a_Name); \
+    \
+    int rc = RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Init)(&pThis->a_TnNm.a_CtxTagN, \
+                                                       &RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable), \
+                                                       pAllocator); \
+    if (RT_SUCCESS(rc)) \
+    { \
+        rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_TnNm.a_Name, pSrc, pAllocator); \
+        if (RT_SUCCESS(rc)) \
+            RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_TnNm.a_Name)); \
+    } \
+    return rc; \
+} RTASN1TMPL_SEMICOLON_DUMMY()
 
 # define RTASN1TMPL_BEGIN_PCHOICE() RTASN1TMPL_SEMICOLON_DUMMY()
 

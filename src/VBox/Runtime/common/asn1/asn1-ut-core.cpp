@@ -136,13 +136,13 @@ static int rtAsn1Core_CloneEx(PRTASN1CORE pThis, PCRTASN1CORE pSrc, PCRTASN1ALLO
 
 RTDECL(int) RTAsn1Core_CloneContent(PRTASN1CORE pThis, PCRTASN1CORE pSrc, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
-    return rtAsn1Core_CloneEx(pThis, pSrc, pAllocator, true /*fConpyContent*/);
+    return rtAsn1Core_CloneEx(pThis, pSrc, pAllocator, true /*fCopyContent*/);
 }
 
 
 RTDECL(int) RTAsn1Core_CloneNoContent(PRTASN1CORE pThis, PCRTASN1CORE pSrc)
 {
-    return rtAsn1Core_CloneEx(pThis, pSrc, NULL, false /*fConpyContent*/);
+    return rtAsn1Core_CloneEx(pThis, pSrc, NULL, false /*fCopyContent*/);
 }
 
 

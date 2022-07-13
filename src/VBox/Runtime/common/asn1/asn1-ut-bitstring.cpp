@@ -344,6 +344,26 @@ RTDECL(int) RTAsn1BitString_Init(PRTASN1BITSTRING pThis, PCRTASN1ALLOCATORVTABLE
 }
 
 
+RTDECL(int) RTAsn1BitString_InitWithData(PRTASN1BITSTRING pThis, void const *pvSrc, uint32_t cSrcBits,
+                                         PCRTASN1ALLOCATORVTABLE pAllocator)
+{
+    RTAsn1BitString_Init(pThis, pAllocator);
+    Assert(pThis->pEncapsulated == NULL);
+
+    uint32_t cbToCopy = (cSrcBits + 7) / 8;
+    int rc = RTAsn1ContentAllocZ(&pThis->Asn1Core, cbToCopy + 1, pAllocator);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->cBits    = cSrcBits;
+        uint8_t *pbDst  = (uint8_t *)pThis->Asn1Core.uData.pu8;
+        pThis->uBits.pv = pbDst + 1;
+        *pbDst = 8 - (cSrcBits & 7); /* unused bits */
+        memcpy(pbDst + 1, pvSrc, cbToCopy);
+    }
+    return rc;
+}
+
+
 RTDECL(int) RTAsn1BitString_Clone(PRTASN1BITSTRING pThis, PCRTASN1BITSTRING pSrc, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
     AssertPtr(pSrc); AssertPtr(pThis); AssertPtr(pAllocator);

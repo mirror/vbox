@@ -135,7 +135,7 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                 if (pOsslData)
                 {
                     /*
-                     * Do the signing.
+                     * Use CMS_sign with CMS_PARTIAL to start a extended the signing process.
                      */
                     /* Create a ContentInfo we can modify using CMS_sign w/ CMS_PARTIAL. */
                     unsigned int fOsslSign = CMS_BINARY | CMS_PARTIAL;
@@ -146,7 +146,9 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                     CMS_ContentInfo *pCms = CMS_sign(NULL, NULL, pOsslAdditionalCerts, NULL, fOsslSign);
                     if (pCms != NULL)
                     {
-                        /* Set encapsulated content type if present in the auth attribs. */
+                        /*
+                         * Set encapsulated content type if present in the auth attribs.
+                         */
                         uint32_t iAuthAttrSkip = UINT32_MAX;
                         for (uint32_t i = 0; i < pAdditionalAuthenticatedAttribs->cItems && RT_SUCCESS(rc); i++)
                         {
@@ -175,11 +177,15 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                         }
                         if (RT_SUCCESS(rc))
                         {
-                            /* Add a signer. */
+                            /*
+                             * Add a signer.
+                             */
                             CMS_SignerInfo *pSignerInfo = CMS_add1_signer(pCms, pOsslSigner, pEvpPrivateKey, pEvpMd, fOsslSign);
                             if (pSignerInfo)
                             {
-                                /* Add additional attributes, skipping the content type found above. */
+                                /*
+                                 * Add additional attributes, skipping the content type if found above.
+                                 */
                                 if (pAdditionalAuthenticatedAttribs)
                                     for (uint32_t i = 0; i < pAdditionalAuthenticatedAttribs->cItems && RT_SUCCESS(rc); i++)
                                         if (i != iAuthAttrSkip)
@@ -197,7 +203,9 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                                         }
                                 if (RT_SUCCESS(rc))
                                 {
-                                    /* Finally, produce the signed data. */
+                                    /*
+                                     * Finalized and actually sign the data.
+                                     */
                                     rc = CMS_final(pCms, pOsslData, NULL /*dcont*/, fOsslSign);
                                     if (rc > 0)
                                     {

@@ -336,6 +336,16 @@ RTDECL(int) RTAsn1ObjId_InitFromString(PRTASN1OBJID pThis, const char *pszObjId,
 }
 
 
+RTDECL(int) RTAsn1ObjId_SetFromString(PRTASN1OBJID pThis, const char *pszObjId, PCRTASN1ALLOCATORVTABLE pAllocator)
+{
+    RTAsn1ObjId_Delete(pThis);
+    int rc = RTAsn1ObjId_InitFromString(pThis, pszObjId, pAllocator);
+    if (RT_FAILURE(rc))
+        RTAsn1ObjId_Init(pThis, pAllocator);
+    return rc;
+}
+
+
 RTDECL(int) RTAsn1ObjId_CompareWithString(PCRTASN1OBJID pThis, const char *pszRight)
 {
     return strcmp(pThis->szObjId, pszRight);

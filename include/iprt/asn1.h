@@ -1106,6 +1106,7 @@ extern RTDATADECL(RTASN1COREVTABLE const) g_RTAsn1ObjId_Vtable;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1OBJID, RTDECL, RTAsn1ObjId, Asn1Core);
 
 RTDECL(int) RTAsn1ObjId_InitFromString(PRTASN1OBJID pThis, const char *pszObjId, PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTAsn1ObjId_SetFromString(PRTASN1OBJID pThis, const char *pszObjId, PCRTASN1ALLOCATORVTABLE pAllocator);
 
 /**
  * Compares an ASN.1 object identifier with a dotted object identifier string.
@@ -1184,6 +1185,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1BITSTRING, RTDECL, RTAsn1BitString, Asn1Cor
  */
 #define RTASN1BITSTRING_GET_BYTE_SIZE(a_pBitString)  ( ((a_pBitString)->cBits + 7U) >> 3 )
 
+RTDECL(int) RTAsn1BitString_InitWithData(PRTASN1BITSTRING pThis, void const *pvSrc, uint32_t cSrcBits,
+                                         PCRTASN1ALLOCATORVTABLE pAllocator);
 RTDECL(int) RTAsn1BitString_DecodeAsn1Ex(PRTASN1CURSOR pCursor, uint32_t fFlags, uint32_t cMaxBits, PRTASN1BITSTRING pThis,
                                          const char *pszErrorTag);
 RTDECL(uint64_t) RTAsn1BitString_GetAsUInt64(PCRTASN1BITSTRING pThis);
