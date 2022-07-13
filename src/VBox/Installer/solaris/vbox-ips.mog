@@ -32,10 +32,6 @@ depend fmri=pkg:/system/font/truetype/dejavu type=require
 <transform file path=platform/i86pc/kernel/drv/amd64/vboxflt$ -> drop>
 <transform file path=platform/i86pc/kernel/drv/vboxflt\.conf$ -> drop>
 
-# Drop legacy libraries, needed only for Solaris 10
-<transform dir path=opt/VirtualBox/amd64/legacy$ -> drop>
-<transform file path=opt/VirtualBox/amd64/legacy/.*$ -> drop>
-
 # Drop all API helper libraries for python 2.x other than 2.7
 <transform file path=opt/VirtualBox/VBoxPython\.so.*$ -> drop>
 <transform file path=opt/VirtualBox/VBoxPython2\.so.*$ -> drop>
