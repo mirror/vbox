@@ -1933,6 +1933,8 @@ static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
 /*********************************************************************************************************************************
 *   Option handlers shared by 'sign-exe', 'sign-cat', 'add-timestamp-exe-signature' and others.                                  *
 *********************************************************************************************************************************/
+#ifndef IPRT_IN_BUILD_TOOL
+
 static RTEXITCODE HandleOptCertFile(SIGNTOOLKEYPAIR *pKeyPair, const char *pszFile)
 {
     if (pKeyPair->pCertificate == &pKeyPair->Cert)
@@ -2065,6 +2067,8 @@ static RTEXITCODE HandleOptTimestampOverride(PRTTIMESPEC pSigningTime, const cha
 
     return RTEXITCODE_SUCCESS;
 }
+
+#endif /* !IPRT_IN_BUILD_TOOL */
 
 
 /*********************************************************************************************************************************
@@ -2351,6 +2355,7 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
 *   The 'verify-exe' command.                                                                                                    *
 *********************************************************************************************************************************/
 #ifndef IPRT_IN_BUILD_TOOL
+
 static RTEXITCODE HelpVerifyExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
