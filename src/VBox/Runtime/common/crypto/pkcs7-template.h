@@ -50,23 +50,23 @@ RTASN1TMPL_END_SEQCORE();
 RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              Type,               RTASN1OBJID,                    RTAsn1ObjId);
 RTASN1TMPL_MEMBER_DYN_BEGIN(Type, RTCRPKCS7ATTRIBUTETYPE, enmType, Allocation);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pOctetStrings,  RTASN1SETOFOCTETSTRINGS,    RTAsn1SetOfOctetStrings,    Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pOctetStrings,  MessageDigest,      RTASN1SETOFOCTETSTRINGS,    RTAsn1SetOfOctetStrings,    Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS,        RTCR_PKCS9_ID_MESSAGE_DIGEST_OID);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pObjIds,        RTASN1SETOFOBJIDS,          RTAsn1SetOfObjIds,          Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pObjIds,        ContentType,        RTASN1SETOFOBJIDS,          RTAsn1SetOfObjIds,          Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS,              RTCR_PKCS9_ID_CONTENT_TYPE_OID);
-RTASN1TMPL_MEMBER_DYN(          uValues, pCounterSignatures, RTCRPKCS7SINGERINFOS,      RTCrPkcs7SignerInfos,       Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues, pCounterSignatures,CounterSignatures,  RTCRPKCS7SIGNERINFOS,       RTCrPkcs7SignerInfos,       Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES,   RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pSigningTime,   RTASN1SETOFTIMES,           RTAsn1SetOfTimes,           Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pSigningTime,   SigningTime,        RTASN1SETOFTIMES,           RTAsn1SetOfTimes,           Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,         RTCR_PKCS9_ID_SIGNING_TIME_OID);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  MsTimestamp,        RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,         RTCR_PKCS9_ID_MS_TIMESTAMP);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  MsNestedSignature,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE,  RTCR_PKCS9_ID_MS_NESTED_SIGNATURE);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pObjIdSeqs,     RTASN1SETOFOBJIDSEQS,       RTAsn1SetOfObjIdSeqs,       Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pObjIdSeqs,     MsStatementType,    RTASN1SETOFOBJIDSEQS,       RTAsn1SetOfObjIdSeqs,       Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE,    RTCR_PKCS9_ID_MS_STATEMENT_TYPE);
-RTASN1TMPL_MEMBER_DYN(          uValues,    pOctetStrings,  RTASN1SETOFOCTETSTRINGS,    RTAsn1SetOfOctetStrings,    Allocation,
+RTASN1TMPL_MEMBER_DYN(          uValues,    pOctetStrings,  AppleMultiCdPlist,  RTASN1SETOFOCTETSTRINGS,    RTAsn1SetOfOctetStrings,    Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_APPLE_MULTI_CD_PLIST, RTCR_PKCS9_ID_APPLE_MULTI_CD_PLIST);
-RTASN1TMPL_MEMBER_DYN_DEFAULT(  uValues,    pCores,         RTASN1SETOFCORES,           RTAsn1SetOfCores,           Allocation,
+RTASN1TMPL_MEMBER_DYN_DEFAULT(  uValues,    pCores,                             RTASN1SETOFCORES,           RTAsn1SetOfCores,           Allocation,
     Type, enmType, RTCRPKCS7ATTRIBUTETYPE_UNKNOWN);
 RTASN1TMPL_MEMBER_DYN_END(Type, RTCRPKCS7ATTRIBUTETYPE, enmType, Allocation);
 RTASN1TMPL_END_SEQCORE();

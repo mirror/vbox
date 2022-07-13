@@ -154,6 +154,23 @@ typedef RTCRPKCS7ATTRIBUTE *PRTCRPKCS7ATTRIBUTE;
 typedef RTCRPKCS7ATTRIBUTE const *PCRTCRPKCS7ATTRIBUTE;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7ATTRIBUTE, RTDECL, RTCrPkcs7Attribute, SeqCore.Asn1Core);
 
+RTDECL(int) RTCrPkcs7Attribute_SetAppleMultiCdPlist(PRTCRPKCS7ATTRIBUTE pThis, PCRTASN1SETOFOCTETSTRINGS pToClone,
+                                                    PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetContentType(PRTCRPKCS7ATTRIBUTE pThis, PCRTASN1SETOFOBJIDS pToClone,
+                                              PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetCounterSignatures(PRTCRPKCS7ATTRIBUTE pThis, PCRTCRPKCS7SIGNERINFOS pToClone,
+                                                    PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetMessageDigest(PRTCRPKCS7ATTRIBUTE pThis, PCRTASN1SETOFOCTETSTRINGS pToClone,
+                                                PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetMsStatementType(PRTCRPKCS7ATTRIBUTE pThis, PCRTASN1SETOFOBJIDSEQS pToClone,
+                                                  PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetMsNestedSignature(PRTCRPKCS7ATTRIBUTE pThis, struct RTCRPKCS7SETOFCONTENTINFOS const *pToClone,
+                                                    PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetMsTimestamp(PRTCRPKCS7ATTRIBUTE pThis, struct RTCRPKCS7SETOFCONTENTINFOS const *pToClone,
+                                              PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7Attribute_SetSigningTime(PRTCRPKCS7ATTRIBUTE pThis, PCRTASN1SETOFTIMES pToClone,
+                                              PCRTASN1ALLOCATORVTABLE pAllocator);
+
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7ATTRIBUTES, RTCRPKCS7ATTRIBUTE, RTDECL, RTCrPkcs7Attributes);
 
 
@@ -186,6 +203,11 @@ typedef struct RTCRPKCS7SIGNERINFO
     RTCRPKCS7ATTRIBUTES                 UnauthenticatedAttributes;
 } RTCRPKCS7SIGNERINFO;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo, SeqCore.Asn1Core);
+
+RTDECL(int) RTCrPkcs7SignerInfo_SetAuthenticatedAttributes(PRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7ATTRIBUTES pAttributes,
+                                                           PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTCrPkcs7SignerInfo_SetUnauthenticatedAttributes(PRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7ATTRIBUTES pAttributes,
+                                                             PCRTASN1ALLOCATORVTABLE pAllocator);
 
 /** RTCRPKCS7SIGNERINFO::Version value.  */
 #define RTCRPKCS7SIGNERINFO_V1    1

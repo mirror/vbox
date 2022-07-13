@@ -860,19 +860,55 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Clone)(RT_CONCAT(P,RTASN1TMP
 # define RTASN1TMPL_BEGIN_SETCORE()                                                                 RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_MEMBER_EX(a_Name, a_Type, a_Api, a_Constraints)                                 RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_MEMBER_DYN_BEGIN(a_ObjIdMembNm, a_enmType, a_enmMembNm, a_Allocation)           RTASN1TMPL_SEMICOLON_DUMMY()
+
+# define RTASN1TMPL_MEMBER_DYN(a_UnionNm, a_PtrName, a_Name, a_Type, a_Api, a_Allocation, a_ObjIdMembNm, a_enmMembNm, a_enmValue, a_szObjId) \
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, \
+                                                                 RT_CONCAT(PC,a_Type) pToClone,\
+                                                                 PCRTASN1ALLOCATORVTABLE pAllocator) \
+{ \
+    AssertPtr(pThis); AssertPtrNull(pToClone); Assert(!pToClone || RT_CONCAT(a_Api,_IsPresent)(pToClone)); \
+    AssertReturn(pThis->a_UnionNm.a_PtrName == NULL, VERR_INVALID_STATE); /* for now */ \
+    /* Set the type */ \
+    if (RTAsn1ObjId_IsPresent(&pThis->a_ObjIdMembNm)) \
+        RTAsn1ObjId_Delete(&pThis->a_ObjIdMembNm); \
+    int rc = RTAsn1ObjId_InitFromString(&pThis->a_ObjIdMembNm, a_szObjId, pAllocator); \
+    if (RT_SUCCESS(rc)) \
+    { \
+        pThis->a_enmMembNm = a_enmValue; \
+        \
+        /* Allocate memory for the structure we're targeting. */ \
+        rc = RTAsn1MemAllocZ(&pThis->a_Allocation, (void **)&pThis->a_UnionNm.a_PtrName, sizeof(*pThis->a_UnionNm.a_PtrName)); \
+        if (RT_SUCCESS(rc)) \
+        { \
+            if (pToClone) /* If nothing to clone, just initialize the structure. */ \
+                rc = RT_CONCAT(a_Api,_Clone)(pThis->a_UnionNm.a_PtrName, pToClone, pAllocator); \
+            else \
+                rc = RT_CONCAT(a_Api,_Init)(pThis->a_UnionNm.a_PtrName, pAllocator); \
+        } \
+    } \
+    return rc; \
+} RTASN1TMPL_SEMICOLON_DUMMY()
+
+
+
 # define RTASN1TMPL_MEMBER_DYN_END(a_ObjIdMembNm, a_enmType, a_enmMembNm, a_Allocation)             RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_END_SEQCORE()                                                                   RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_END_SETCORE()                                                                   RTASN1TMPL_SEMICOLON_DUMMY()
 
 # define RTASN1TMPL_MEMBER_OPT_ITAG_EX(a_Name, a_Type, a_Api, a_uTag, a_fClue, a_Constraints) \
-RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, \
+                                                                 RT_CONCAT(PC,a_Type) pToClone,\
                                                                  PCRTASN1ALLOCATORVTABLE pAllocator) \
 { \
-    AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
+    AssertPtr(pThis); AssertPtrNull(pToClone); Assert(!pToClone || RT_CONCAT(a_Api,_IsPresent)(pToClone)); \
     if (RT_CONCAT(a_Api,_IsPresent)(&pThis->a_Name)) \
         RT_CONCAT(a_Api,_Delete)(&pThis->a_Name); \
     \
-    int rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_Name, pSrc, pAllocator); \
+    int rc; \
+    if (pToClone) \
+        rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_Name, pToClone, pAllocator); \
+    else \
+        rc = RT_CONCAT(a_Api,_Init)(&pThis->a_Name, pAllocator); \
     if (RT_SUCCESS(rc)) \
     { \
         RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_Name)); /* probably not needed */ \
@@ -883,10 +919,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
 } RTASN1TMPL_SEMICOLON_DUMMY()
 
 # define RTASN1TMPL_MEMBER_OPT_XTAG_EX(a_TnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_uTag, a_Constraints) \
-RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, \
+                                                                 RT_CONCAT(PC,a_Type) pToClone,\
                                                                  PCRTASN1ALLOCATORVTABLE pAllocator) \
 { \
-    AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
+    AssertPtr(pThis); AssertPtrNull(pToClone); Assert(!pToClone || RT_CONCAT(a_Api,_IsPresent)(pToClone)); \
     if (RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core)) \
         RT_CONCAT(a_Api,_Delete)(&pThis->a_TnNm.a_Name); \
     \
@@ -895,8 +932,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
                                                        pAllocator); \
     if (RT_SUCCESS(rc)) \
     { \
-        rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_TnNm.a_Name, pSrc, pAllocator); \
-        if (RT_SUCCESS(rc)) \
+        if (pToClone) \
+            rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_TnNm.a_Name, pToClone, pAllocator); \
+        else \
+            rc = RT_CONCAT(a_Api,_Init)(&pThis->a_TnNm.a_Name, pAllocator); \
+        if (RT_SUCCESS(rc) && pToClone) \
             RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_TnNm.a_Name)); \
     } \
     return rc; \
@@ -905,10 +945,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
 # define RTASN1TMPL_BEGIN_PCHOICE() RTASN1TMPL_SEMICOLON_DUMMY()
 
 # define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
-RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, \
+                                                                 RT_CONCAT(PC,a_Type) pToClone,\
                                                                  PCRTASN1ALLOCATORVTABLE pAllocator) \
 { \
-    AssertPtr(pSrc); AssertPtr(pThis); \
+    AssertPtrNull(pToClone); AssertPtr(pThis); \
     RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(pThis); /* See _Init. */ \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
     pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
@@ -917,10 +958,14 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
     int rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrName, sizeof(*pThis->a_PtrName)); \
     if (RT_SUCCESS(rc)) \
     { \
-        rc = RT_CONCAT(a_Api,_Clone)(pThis->a_PtrName, pSrc, pAllocator); \
+        if (pToClone) \
+            rc = RT_CONCAT(a_Api,_Clone)(pThis->a_PtrName, pToClone, pAllocator); \
+        else \
+            rc = RT_CONCAT(a_Api,_Init)(pThis->a_PtrName, pAllocator); \
         if (RT_SUCCESS(rc)) \
         { \
-            RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName)); \
+            if (pToClone) \
+                RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName)); \
             rc = RTAsn1Core_SetTagAndFlags(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName), \
                                            a_uTag, RTASN1TMPL_ITAG_F_EXPAND(a_fClue)); \
         } \
@@ -929,10 +974,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
 } RTASN1TMPL_SEMICOLON_DUMMY()
 
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
-RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, RT_CONCAT(PC,a_Type) pSrc,\
+RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, \
+                                                                 RT_CONCAT(PC,a_Type) pToClone,\
                                                                  PCRTASN1ALLOCATORVTABLE pAllocator) \
 { \
-    AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
+    AssertPtr(pThis); AssertPtrNull(pToClone); Assert(!pToClone || RT_CONCAT(a_Api,_IsPresent)(pToClone)); \
     RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(pThis); /* See _Init. */ \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
     pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
@@ -946,8 +992,11 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
                                                        pAllocator); \
         if (RT_SUCCESS(rc)) \
         { \
-            rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_PtrTnNm->a_Name, pSrc, pAllocator); \
-            if (RT_SUCCESS(rc)) \
+            if (pToClone) \
+                rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_PtrTnNm->a_Name, pToClone, pAllocator); \
+            else \
+                rc = RT_CONCAT(a_Api,_Init)(&pThis->a_PtrTnNm->a_Name, pAllocator); \
+            if (RT_SUCCESS(rc) && pToClone) \
                 RTAsn1Core_ResetImplict(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_PtrTnNm->a_Name)); \
         } \
     } \
@@ -1475,7 +1524,7 @@ RTASN1TMPL_DECL(void) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(RT_CONCAT(P,RTASN1T
     RTASN1TMPL_MEMBER(a_UnionNm.a_PtrName, a_Type, a_Api)
 #endif
 #ifndef RTASN1TMPL_MEMBER_DYN
-# define RTASN1TMPL_MEMBER_DYN(a_UnionNm, a_PtrName, a_Type, a_Api, a_Allocation, a_ObjIdMembNm, a_enmMembNm, a_enmValue, a_szObjId) \
+# define RTASN1TMPL_MEMBER_DYN(a_UnionNm, a_PtrName, a_Name, a_Type, a_Api, a_Allocation, a_ObjIdMembNm, a_enmMembNm, a_enmValue, a_szObjId) \
     RTASN1TMPL_MEMBER_DYN_COMMON(a_UnionNm, a_PtrName, a_Type, a_Api, a_Allocation, a_enmMembNm, a_enmValue, if (RTAsn1ObjId_CompareWithString(&pThis->a_ObjIdMembNm, a_szObjId) == 0))
 #endif
 #ifndef RTASN1TMPL_MEMBER_DYN_DEFAULT
