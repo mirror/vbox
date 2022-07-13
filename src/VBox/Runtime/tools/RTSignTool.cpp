@@ -644,7 +644,7 @@ static PRTCRPKCS7SIGNERINFO SignToolPkcs7_FindNestedSignatureByIndex(PSIGNTOOLPK
 
 
 /**
- * Reads and decodes PKCS\#7 signature from the given executable.
+ * Reads and decodes PKCS\#7 signature from the given executable, if it has one.
  *
  * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error message
  *          on failure.
@@ -652,9 +652,10 @@ static PRTCRPKCS7SIGNERINFO SignToolPkcs7_FindNestedSignatureByIndex(PSIGNTOOLPK
  * @param   pszFilename         The executable filename.
  * @param   cVerbosity          The verbosity.
  * @param   enmLdrArch          For FAT binaries.
+ * @param   fAllowUnsigned      Whether to allow unsigned binaries.
  */
-static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const char *pszFilename,
-                                                unsigned cVerbosity, RTLDRARCH enmLdrArch = RTLDRARCH_WHATEVER)
+static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const char *pszFilename, unsigned cVerbosity,
+                                                RTLDRARCH enmLdrArch = RTLDRARCH_WHATEVER, bool fAllowUnsigned = false)
 {
     /*
      * Init the return structure.
@@ -721,7 +722,12 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
                 RTMsgError("RTLdrQueryPropEx/RTLDRPROP_PKCS7_SIGNED_DATA failed on '%s': %Rrc\n", pszFilename, rc);
         }
         else if (RT_SUCCESS(rc))
-            RTMsgInfo("'%s': not signed\n", pszFilename);
+        {
+            if (!fAllowUnsigned || cVerbosity >= 2)
+                RTMsgInfo("'%s': not signed\n", pszFilename);
+            if (fAllowUnsigned)
+                return RTEXITCODE_SUCCESS;
+        }
         else
             RTMsgError("RTLdrQueryProp/RTLDRPROP_IS_SIGNED failed on '%s': %Rrc\n", pszFilename, rc);
     }
@@ -850,7 +856,7 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                             if (RT_FAILURE(rc))
                                 RTMsgError("Error truncating file to %#x bytes: %Rrc", pSecDir->VirtualAddress, rc);
                         }
-                        else
+                        else if (pSecDir->Size != 0 && pSecDir->VirtualAddress == 0)
                             rc = RTMsgErrorRc(VERR_BAD_EXE_FORMAT, "Bad security directory entry: VA=%#x Size=%#x",
                                               pSecDir->VirtualAddress, pSecDir->Size);
                         if (RT_SUCCESS(rc))
@@ -2404,8 +2410,8 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
                 {
                     /* Do the work: */
                     SIGNTOOLPKCS7EXE Exe;
-                    /** @todo will fail if not already signed. */
-                    rcExit2 = SignToolPkcs7Exe_InitFromFile(&Exe, ValueUnion.psz, cVerbosity);
+                    rcExit2 = SignToolPkcs7Exe_InitFromFile(&Exe, ValueUnion.psz, cVerbosity,
+                                                            RTLDRARCH_WHATEVER, true /*fAllowUnsigned*/);
                     if (rcExit2 == RTEXITCODE_SUCCESS)
                     {
                         rcExit2 = SignToolPkcs7_AddOrReplaceSignature(&Exe, cVerbosity, enmSigType, fReplaceExisting, fHashPages,
