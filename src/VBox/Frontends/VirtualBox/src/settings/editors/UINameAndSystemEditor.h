@@ -39,6 +39,7 @@ class QLabel;
 class QILineEdit;
 class QString;
 class UIFilePathSelector;
+class UIMarkableLineEdit;
 
 /** QWidget subclass providing complex editor for basic VM parameters. */
 class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
@@ -231,7 +232,7 @@ private:
         QLabel *m_pIconType;
 
         /** Holds the VM name editor instance. */
-        QILineEdit         *m_pEditorName;
+        UIMarkableLineEdit *m_pEditorName;
         /** Holds the VM path editor instance. */
         UIFilePathSelector *m_pSelectorPath;
         /** Holds the file selector for ISO image (either for unattended install or to be attached to vm). */

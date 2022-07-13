@@ -41,6 +41,7 @@ class QLabel;
 class QRadioButton;
 class QILineEdit;
 class UIFilePathSelector;
+class UIMarkableLineEdit;
 
 /** MAC address policies. */
 enum MACAddressClonePolicy
@@ -84,8 +85,8 @@ private:
     virtual void retranslateUi() /* override final */;
 
     QGridLayout *m_pContainerLayout;
-    QILineEdit  *m_pNameLineEdit;
-    UIFilePathSelector *m_pPathSelector;
+    UIMarkableLineEdit  *m_pNameLineEdit;
+    UIFilePathSelector  *m_pPathSelector;
     QLabel      *m_pNameLabel;
     QLabel      *m_pPathLabel;
 

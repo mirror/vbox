@@ -140,12 +140,12 @@ void UICloneVMNamePathEditor::prepare()
         m_pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
     }
 
-    m_pNameLineEdit = new QILineEdit();
+    m_pNameLineEdit = new UIMarkableLineEdit();
     if (m_pNameLineEdit)
     {
         m_pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
         m_pNameLineEdit->setText(tr("%1 Clone").arg(m_strOriginalName));
-        connect(m_pNameLineEdit, &QILineEdit::textChanged,
+        connect(m_pNameLineEdit, &UIMarkableLineEdit::textChanged,
                 this, &UICloneVMNamePathEditor::sigCloneNameChanged);
         if (m_pNameLabel)
             m_pNameLabel->setBuddy(m_pNameLineEdit);

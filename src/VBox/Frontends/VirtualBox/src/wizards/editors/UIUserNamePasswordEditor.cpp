@@ -330,7 +330,7 @@ void UIUserNamePasswordEditor::prepare()
         return;
     setLayout(pMainLayout);
     int iRow = 0;
-    addLineEdit<QILineEdit>(iRow, m_pUserNameLabel, m_pUserNameLineEdit, pMainLayout);
+    addLineEdit<UIMarkableLineEdit>(iRow, m_pUserNameLabel, m_pUserNameLineEdit, pMainLayout);
     addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordLabel, m_pPasswordLineEdit, pMainLayout);
     addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordRepeatLabel, m_pPasswordRepeatLineEdit, pMainLayout);
 
@@ -342,7 +342,7 @@ void UIUserNamePasswordEditor::prepare()
             this, &UIUserNamePasswordEditor::sltPasswordChanged);
     connect(m_pPasswordRepeatLineEdit, &UIPasswordLineEdit::textChanged,
             this, &UIUserNamePasswordEditor::sltPasswordChanged);
-    connect(m_pUserNameLineEdit, &QILineEdit::textChanged,
+    connect(m_pUserNameLineEdit, &UIMarkableLineEdit::textChanged,
             this, &UIUserNamePasswordEditor::sltUserNameChanged);
 
     retranslateUi();

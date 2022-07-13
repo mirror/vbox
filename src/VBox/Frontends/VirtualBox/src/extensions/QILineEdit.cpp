@@ -19,6 +19,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
 #include <QPalette>
@@ -27,6 +28,10 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "UIIconPool.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
@@ -181,4 +186,71 @@ QSize QILineEdit::featTextWidth(const QString &strText) const
     const QSize sa = style()->sizeFromContents(QStyle::CT_LineEdit, &sof, sc, this);
 
     return sa;
+}
+
+UIMarkableLineEdit::UIMarkableLineEdit(QWidget *pParent /* = 0 */)
+    :QWidget(pParent)
+    , m_pLineEdit(0)
+    , m_pIconLabel(0)
+{
+    prepare();
+}
+
+void UIMarkableLineEdit::setText(const QString &strText)
+{
+    if (m_pLineEdit)
+        m_pLineEdit->setText(strText);
+}
+
+QString UIMarkableLineEdit::text() const
+{
+    if (!m_pLineEdit)
+        return QString();
+    return m_pLineEdit->text();
+}
+
+void UIMarkableLineEdit::setValidator(const QValidator *pValidator)
+{
+    if (m_pLineEdit)
+        m_pLineEdit->setValidator(pValidator);
+}
+
+bool UIMarkableLineEdit::hasAcceptableInput() const
+{
+    if (!m_pLineEdit)
+        return false;
+    return m_pLineEdit->hasAcceptableInput();
+}
+
+void UIMarkableLineEdit::setPlaceholderText(const QString &strText)
+{
+    if (m_pLineEdit)
+        m_pLineEdit->setPlaceholderText(strText);
+}
+
+void UIMarkableLineEdit::mark(bool fError, const QString &strErrorMessage /* = QString() */)
+{
+    AssertReturnVoid(m_pIconLabel);
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
+    if (fError)
+        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+    else
+        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_check_16px.png").pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+    m_pIconLabel->setToolTip(strErrorMessage);
+}
+
+void UIMarkableLineEdit::prepare()
+{
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    m_pLineEdit = new QILineEdit;
+    AssertReturnVoid(m_pLineEdit);
+    m_pIconLabel = new QLabel;
+    AssertReturnVoid(m_pIconLabel);
+    pMainLayout->addWidget(m_pLineEdit);
+    pMainLayout->addWidget(m_pIconLabel);
+
+    connect(m_pLineEdit, &QILineEdit::textChanged, this, &UIMarkableLineEdit::textChanged);
 }
