@@ -971,24 +971,6 @@ static PRTCRPKCS7ATTRIBUTE SignToolPkcs7_AuthAttribAppend(PRTCRPKCS7ATTRIBUTES p
     return NULL;
 }
 
-static PRTCRPKCS7ATTRIBUTE SignToolPkcs7_AuthAttribAppend(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszAttrId)
-{
-    int32_t iPos = RTCrPkcs7Attributes_Append(pAuthAttribs);
-    if (iPos >= 0)
-    {
-        /* Create the attrib and its sub-set of timestamps. */
-        PRTCRPKCS7ATTRIBUTE pAttr = pAuthAttribs->papItems[iPos];
-        int rc = RTAsn1ObjId_InitFromString(&pAttr->Type, pszAttrId, pAttr->Allocation.pAllocator);
-        if (RT_SUCCESS(rc))
-            return pAttr;
-        RTMsgError("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszAttrId, rc);
-    }
-    else
-        RTMsgError("RTCrPkcs7Attributes_Append failed: %Rrc", iPos);
-
-    return NULL;
-}
-
 
 static RTEXITCODE SignToolPkcs7_AuthAttribsAddSigningTime(PRTCRPKCS7ATTRIBUTES pAuthAttribs, RTTIMESPEC SigningTime)
 {
