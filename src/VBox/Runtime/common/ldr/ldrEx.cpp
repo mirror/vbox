@@ -628,7 +628,13 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, 
             AssertReturn(cbBuf == sizeof(bool), VERR_INVALID_PARAMETER);
             break;
         case RTLDRPROP_PKCS7_SIGNED_DATA:
+        case RTLDRPROP_SHA1_PAGE_HASHES:
+        case RTLDRPROP_SHA256_PAGE_HASHES:
             *pcbRet = 0;
+            break;
+        case RTLDRPROP_HASHABLE_PAGES:
+            *pcbRet = sizeof(uint32_t);
+            AssertReturn(cbBuf >= sizeof(uint32_t), VERR_INVALID_PARAMETER);
             break;
         case RTLDRPROP_SIGNATURE_CHECKS_ENFORCED:
             *pcbRet = sizeof(bool);
@@ -692,7 +698,7 @@ RTDECL(int) RTLdrVerifySignature(RTLDRMOD hLdrMod, PFNRTLDRVALIDATESIGNEDDATA pf
 RT_EXPORT_SYMBOL(RTLdrVerifySignature);
 
 
-RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest)
+RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash)
 {
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
@@ -703,23 +709,23 @@ RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDi
      */
     switch (enmDigest)
     {
-        case RTDIGESTTYPE_MD5:      AssertReturn(cbDigest >= RTMD5_DIGEST_LEN    + 1, VERR_BUFFER_OVERFLOW); break;
-        case RTDIGESTTYPE_SHA1:     AssertReturn(cbDigest >= RTSHA1_DIGEST_LEN   + 1, VERR_BUFFER_OVERFLOW); break;
-        case RTDIGESTTYPE_SHA256:   AssertReturn(cbDigest >= RTSHA256_DIGEST_LEN + 1, VERR_BUFFER_OVERFLOW); break;
-        case RTDIGESTTYPE_SHA512:   AssertReturn(cbDigest >= RTSHA512_DIGEST_LEN + 1, VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_MD5:      AssertReturn(cbHash >= RTMD5_HASH_SIZE,    VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA1:     AssertReturn(cbHash >= RTSHA1_HASH_SIZE,   VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA256:   AssertReturn(cbHash >= RTSHA256_HASH_SIZE, VERR_BUFFER_OVERFLOW); break;
+        case RTDIGESTTYPE_SHA512:   AssertReturn(cbHash >= RTSHA512_HASH_SIZE, VERR_BUFFER_OVERFLOW); break;
         default:
             if (enmDigest > RTDIGESTTYPE_INVALID && enmDigest < RTDIGESTTYPE_END)
                 return VERR_NOT_SUPPORTED;
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
-    AssertPtrReturn(pszDigest, VERR_INVALID_POINTER);
+    AssertPtrReturn(pabHash, VERR_INVALID_POINTER);
 
     /*
      * Call the image specific worker, if there is one.
      */
     if (!pMod->pOps->pfnHashImage)
         return VERR_NOT_SUPPORTED;
-    return pMod->pOps->pfnHashImage(pMod, enmDigest, pszDigest, cbDigest);
+    return pMod->pOps->pfnHashImage(pMod, enmDigest, pabHash, cbHash);
 }
 RT_EXPORT_SYMBOL(RTLdrHashImage);
 

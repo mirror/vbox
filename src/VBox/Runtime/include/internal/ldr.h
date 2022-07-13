@@ -517,10 +517,11 @@ typedef struct RTLDROPS
      * @returns IPRT status code.
      * @param   pMod            The module handle.
      * @param   enmDigest       Which kind of digest.
-     * @param   pszDigest       Where to store the image digest.
-     * @param   cbDigest        Size of the buffer @a pszDigest points at.
+     * @param   pabHash         Where to store the image hash.
+     * @param   cbHash          Size of the buffer @a pabHash points at.  This has
+     *                          been validated to be at least the required size.
      */
-    DECLCALLBACKMEMBER(int, pfnHashImage,(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest));
+    DECLCALLBACKMEMBER(int, pfnHashImage,(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash));
 
         /**
      * Try use unwind information to unwind one frame.

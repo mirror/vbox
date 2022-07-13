@@ -1104,6 +1104,18 @@ typedef enum RTLDRPROP
      * @remarks This generally starts with a PKCS \#7 Content structure, the
      *          SignedData bit is found a few levels down into this as per RFC. */
     RTLDRPROP_PKCS7_SIGNED_DATA,
+    /** Query the number of pages that needs hashing.
+     * This is for RTLDRPROP_SHA1_PAGE_HASHES and RTLDRPROP_SHA256_PAGE_HASHES
+     * buffer size calculations. */
+    RTLDRPROP_HASHABLE_PAGES,
+    /** Query the SHA-1 page hashes.
+     * Returns an array with entries made of a 32-bit file offset and a SHA-1
+     * digest.  Use RTLDRPROP_HASHABLE_PAGES to calculate the buffer size. */
+    RTLDRPROP_SHA1_PAGE_HASHES,
+    /** Query the SHA-256 page hashes.
+     * Returns an array with entries made of a 32-bit file offset and a SHA-256
+     * digest. Use RTLDRPROP_HASHABLE_PAGES to calculate the buffer size. */
+    RTLDRPROP_SHA256_PAGE_HASHES,
 
     /** Query whether code signature checks are enabled.  */
     RTLDRPROP_SIGNATURE_CHECKS_ENFORCED,
@@ -1280,10 +1292,12 @@ RTDECL(int) RTLdrVerifySignature(RTLDRMOD hLdrMod, PFNRTLDRVALIDATESIGNEDDATA pf
  * @returns IPRT status code.
  * @param   hLdrMod         The module handle.
  * @param   enmDigest       Which kind of digest.
- * @param   pszDigest       Where to store the image digest.
- * @param   cbDigest        Size of the buffer @a pszDigest points at.
+ * @param   pabHash         Where to store the image hash.
+ * @param   cbHash          Size of the buffer @a pabHash points at.  The
+ *                          required and returned size can be derived from the
+ *                          digest type (@a enmDigest).
  */
-RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest);
+RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash);
 
 /**
  * Try use unwind information to unwind one frame.

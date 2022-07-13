@@ -3159,7 +3159,7 @@ static DECLCALLBACK(int) rtldrPE_VerifySignature(PRTLDRMODINTERNAL pMod, PFNRTLD
 /**
  * @interface_method_impl{RTLDROPS,pfnHashImage}
  */
-static DECLCALLBACK(int) rtldrPE_HashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest)
+static DECLCALLBACK(int) rtldrPE_HashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
 
@@ -3185,14 +3185,15 @@ static DECLCALLBACK(int) rtldrPE_HashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE 
     if (RT_SUCCESS(rc))
     {
         /*
-         * Format the digest into as human readable hash string.
+         * Copy out the result.
          */
+        RT_NOREF(cbHash); /* verified by caller */
         switch (enmDigest)
         {
-            case RTDIGESTTYPE_SHA512:  rc = RTSha512ToString(HashRes.abSha512, pszDigest, cbDigest); break;
-            case RTDIGESTTYPE_SHA256:  rc = RTSha256ToString(HashRes.abSha256, pszDigest, cbDigest); break;
-            case RTDIGESTTYPE_SHA1:    rc = RTSha1ToString(HashRes.abSha1, pszDigest, cbDigest); break;
-            case RTDIGESTTYPE_MD5:     rc = RTMd5ToString(HashRes.abMd5, pszDigest, cbDigest); break;
+            case RTDIGESTTYPE_SHA512:  memcpy(pabHash, HashRes.abSha512, sizeof(HashRes.abSha512)); break;
+            case RTDIGESTTYPE_SHA256:  memcpy(pabHash, HashRes.abSha256, sizeof(HashRes.abSha256)); break;
+            case RTDIGESTTYPE_SHA1:    memcpy(pabHash, HashRes.abSha1,   sizeof(HashRes.abSha1)); break;
+            case RTDIGESTTYPE_MD5:     memcpy(pabHash, HashRes.abMd5,    sizeof(HashRes.abMd5)); break;
             default:                   AssertFailedReturn(VERR_INTERNAL_ERROR_3);
         }
     }

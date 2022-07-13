@@ -37,6 +37,9 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
+#include <iprt/md5.h>
+#include <iprt/sha.h>
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -72,20 +75,33 @@ int main(int argc, char **argv)
         int rc = RTLdrOpen(pszFullName, RTLDR_O_FOR_VALIDATION, RTLDRARCH_WHATEVER, &hLdrMod);
         if (RT_SUCCESS(rc))
         {
-            char szDigest[512];
+            uint8_t abHash[128];
+            char    szDigest[512];
 
-            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_MD5, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_MD5, abHash, sizeof(abHash)), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
+            {
+                RTMd5ToString(abHash, szDigest, sizeof(szDigest));
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "md5=%s\n", szDigest);
-            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA1, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+            }
+            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA1, abHash, sizeof(abHash)), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
+            {
+                RTSha1ToString(abHash, szDigest, sizeof(szDigest));
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "sha1=%s\n", szDigest);
-            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA256, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+            }
+            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA256, abHash, sizeof(abHash)), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
+            {
+                RTSha256ToString(abHash, szDigest, sizeof(szDigest));
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "sha256=%s\n", szDigest);
-            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA512, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+            }
+            RTTESTI_CHECK_RC(rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA512, abHash, sizeof(abHash)), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
+            {
+                RTSha512ToString(abHash, szDigest, sizeof(szDigest));
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "sha512=%s\n", szDigest);
+            }
 
             if (rc != VERR_NOT_SUPPORTED)
             {
