@@ -962,6 +962,15 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
 
 #ifndef IPRT_IN_BUILD_TOOL
 
+static PRTCRPKCS7ATTRIBUTE SignToolPkcs7_AuthAttribAppend(PRTCRPKCS7ATTRIBUTES pAuthAttribs)
+{
+    int32_t iPos = RTCrPkcs7Attributes_Append(pAuthAttribs);
+    if (iPos >= 0)
+        return pAuthAttribs->papItems[iPos];
+    RTMsgError("RTCrPkcs7Attributes_Append failed: %Rrc", iPos);
+    return NULL;
+}
+
 static PRTCRPKCS7ATTRIBUTE SignToolPkcs7_AuthAttribAppend(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszAttrId)
 {
     int32_t iPos = RTCrPkcs7Attributes_Append(pAuthAttribs);
@@ -990,21 +999,13 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddSigningTime(PRTCRPKCS7ATTRIBUTES p
      *  00000187d6a65fe0/23c0: 35 30 33 30 5a 30 23 06-09 2a 86 48 86 f7 0d 01 5030Z0#..*.H....
      *                                     ^^- end 2016-10-05T07:50:30.000000000Z (161005075030Z)
      */
-    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs, RTCR_PKCS9_ID_SIGNING_TIME_OID);
+    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
     if (!pAttr)
         return RTEXITCODE_FAILURE;
 
-    /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
-    Assert(pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT);
-    Assert(pAttr->uValues.pContentInfos == NULL);
-    pAttr->enmType = RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME;
-    int rc = RTAsn1MemAllocZ(&pAttr->Allocation, (void **)&pAttr->uValues.pSigningTime, sizeof(*pAttr->uValues.pSigningTime));
+    int rc = RTCrPkcs7Attribute_SetSigningTime(pAttr, NULL, pAuthAttribs->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1MemAllocZ failed: %Rrc", rc);
-
-    rc = RTAsn1SetOfTimes_Init(pAttr->uValues.pSigningTime, pAttr->Allocation.pAllocator);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1SetOfTimes_Init failed: %Rrc", rc);
+        return RTMsgErrorExitFailure("RTCrPkcs7Attribute_SetSigningTime failed: %Rrc", rc);
 
     /* Create the timestamp. */
     int32_t iPos = RTAsn1SetOfTimes_Append(pAttr->uValues.pSigningTime);
@@ -1020,37 +1021,42 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddSigningTime(PRTCRPKCS7ATTRIBUTES p
 }
 
 
-static RTEXITCODE SignToolPkcs7_AuthAttribsAddObjIdSeqsEmpty(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszAttrId)
+static RTEXITCODE SignToolPkcs7_AuthAttribsAddSpcOpusInfo(PRTCRPKCS7ATTRIBUTES pAuthAttribs, void *pvInfo)
 {
-    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs, pszAttrId);
+    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
     if (!pAttr)
         return RTEXITCODE_FAILURE;
 
-    /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
-    Assert(pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT);
-    Assert(pAttr->uValues.pContentInfos == NULL);
-    pAttr->enmType = RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE;
-    int rc = RTAsn1MemAllocZ(&pAttr->Allocation, (void **)&pAttr->uValues.pObjIdSeqs, sizeof(*pAttr->uValues.pObjIdSeqs));
+    int rc = RTCrPkcs7Attribute_SetMsStatementType(pAttr, NULL, pAuthAttribs->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1MemAllocZ failed: %Rrc", rc);
+        return RTMsgErrorExitFailure("RTCrPkcs7Attribute_SetMsStatementType failed: %Rrc", rc);
 
-    rc = RTAsn1SetOfObjIdSeqs_Init(pAttr->uValues.pObjIdSeqs, pAttr->Allocation.pAllocator);
+    /* Override the ID. */
+    rc = RTAsn1ObjId_SetFromString(&pAttr->Type, RTCR_PKCS9_ID_MS_SP_OPUS_INFO, pAuthAttribs->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1SetOfObjIdSeqs_Init failed: %Rrc", rc);
+        return RTMsgErrorExitFailure("RTAsn1ObjId_SetFromString failed: %Rrc", rc);
 
+    /* Add attribute value entry. */
+    int32_t iPos = RTAsn1SetOfObjIdSeqs_Append(pAttr->uValues.pObjIdSeqs);
+    if (iPos < 0)
+        return RTMsgErrorExitFailure("RTAsn1SetOfObjIdSeqs_Append failed: %Rrc", iPos);
+
+    RT_NOREF(pvInfo); Assert(!pvInfo);
     return RTEXITCODE_SUCCESS;
 }
 
 
-static RTEXITCODE SignToolPkcs7_AuthAttribsAddObjIdSeqsValue(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszAttrId,
-                                                             const char *pszValueId)
+static RTEXITCODE SignToolPkcs7_AuthAttribsAddMsStatementType(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszTypeId)
 {
-    RTEXITCODE rcExit = SignToolPkcs7_AuthAttribsAddObjIdSeqsEmpty(pAuthAttribs, pszAttrId);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;
+    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
+    if (!pAttr)
+        return RTEXITCODE_FAILURE;
+
+    int rc = RTCrPkcs7Attribute_SetMsStatementType(pAttr, NULL, pAuthAttribs->Allocation.pAllocator);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("RTCrPkcs7Attribute_SetMsStatementType failed: %Rrc", rc);
 
     /* Add attribute value entry. */
-    PRTCRPKCS7ATTRIBUTE pAttr = pAuthAttribs->papItems[pAuthAttribs->cItems - 1];
     int32_t iPos = RTAsn1SetOfObjIdSeqs_Append(pAttr->uValues.pObjIdSeqs);
     if (iPos < 0)
         return RTMsgErrorExitFailure("RTAsn1SetOfObjIdSeqs_Append failed: %Rrc", iPos);
@@ -1058,9 +1064,9 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddObjIdSeqsValue(PRTCRPKCS7ATTRIBUTE
 
     /* Add a object id to the value. */
     RTASN1OBJID ObjIdValue;
-    int rc = RTAsn1ObjId_InitFromString(&ObjIdValue, pszValueId, &g_RTAsn1DefaultAllocator);
+    rc = RTAsn1ObjId_InitFromString(&ObjIdValue, pszTypeId, &g_RTAsn1DefaultAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszAttrId, rc);
+        return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszTypeId, rc);
 
     rc = RTAsn1SeqOfObjIds_InsertEx(pSeqObjIds, 0 /*iPos*/, &ObjIdValue, &g_RTAsn1DefaultAllocator, NULL);
     RTAsn1ObjId_Delete(&ObjIdValue);
@@ -1070,34 +1076,23 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddObjIdSeqsValue(PRTCRPKCS7ATTRIBUTE
     return RTEXITCODE_SUCCESS;
 }
 
-
-static RTEXITCODE SignToolPkcs7_AuthAttribsAddObjIdValue(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszAttrId,
-                                                         const char *pszValueId)
+static RTEXITCODE SignToolPkcs7_AuthAttribsAddContentType(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszContentTypeId)
 {
-    /* Create the attrib and its sub-set of object IDs. */
-    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs, pszAttrId);
+    PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
     if (!pAttr)
         return RTEXITCODE_FAILURE;
 
-    /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
-    Assert(pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT);
-    Assert(pAttr->uValues.pContentInfos == NULL);
-    pAttr->enmType = RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS;
-    int rc = RTAsn1MemAllocZ(&pAttr->Allocation, (void **)&pAttr->uValues.pObjIds, sizeof(*pAttr->uValues.pObjIds));
+    int rc = RTCrPkcs7Attribute_SetContentType(pAttr, NULL, pAuthAttribs->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1MemAllocZ failed: %Rrc", rc);
-
-    rc = RTAsn1SetOfObjIds_Init(pAttr->uValues.pObjIds, pAttr->Allocation.pAllocator);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1SetOfObjIdSeqs_Init failed: %Rrc", rc);
+        return RTMsgErrorExitFailure("RTCrPkcs7Attribute_SetContentType failed: %Rrc", rc);
 
     /* Add a object id to the value. */
     RTASN1OBJID ObjIdValue;
-    rc = RTAsn1ObjId_InitFromString(&ObjIdValue, pszValueId, &g_RTAsn1DefaultAllocator);
+    rc = RTAsn1ObjId_InitFromString(&ObjIdValue, pszContentTypeId, pAuthAttribs->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszAttrId, rc);
+        return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszContentTypeId, rc);
 
-    rc = RTAsn1SetOfObjIds_InsertEx(pAttr->uValues.pObjIds, 0 /*iPos*/, &ObjIdValue, &g_RTAsn1DefaultAllocator, NULL);
+    rc = RTAsn1SetOfObjIds_InsertEx(pAttr->uValues.pObjIds, 0 /*iPos*/, &ObjIdValue, pAuthAttribs->Allocation.pAllocator, NULL);
     RTAsn1ObjId_Delete(&ObjIdValue);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("RTAsn1SetOfObjIds_InsertEx failed: %Rrc", rc);
@@ -1135,8 +1130,7 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageSignature(PRTCRPKCS7ATTRIB
      *   1c70: 01 82 37 02 01 0c 31 02-30 00 30 19 06 09 2a 86 ..7...1.0.0...*.
      *                   Set Of -^^    ^^- Empty Sequence.
      */
-    /** @todo ends up with zero byte instead of two.   */
-    RTEXITCODE rcExit = SignToolPkcs7_AuthAttribsAddObjIdSeqsEmpty(pAuthAttribs, RTCR_PKCS9_ID_MS_SP_OPUS_INFO);
+    RTEXITCODE rcExit = SignToolPkcs7_AuthAttribsAddSpcOpusInfo(pAuthAttribs, NULL /*pvInfo - none*/);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1148,8 +1142,7 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageSignature(PRTCRPKCS7ATTRIB
      *   1c90: 82 37 02 01 04       ^^-   ^^- ObjId
      *                              ^- Set Of
      */
-    rcExit = SignToolPkcs7_AuthAttribsAddObjIdValue(pAuthAttribs, RTCR_PKCS9_ID_CONTENT_TYPE_OID,
-                                                    RTCRSPCINDIRECTDATACONTENT_OID);
+    rcExit = SignToolPkcs7_AuthAttribsAddContentType(pAuthAttribs, RTCRSPCINDIRECTDATACONTENT_OID);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1161,8 +1154,7 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageSignature(PRTCRPKCS7ATTRIB
      *   1cb0: 02 01 15 ^^    ^^    ^^- ObjId
      *          Set Of -^^    ^^- Sequence Of
      */
-    rcExit = SignToolPkcs7_AuthAttribsAddObjIdSeqsValue(pAuthAttribs, RTCR_PKCS9_ID_MS_STATEMENT_TYPE,
-                                                        RTCRSPC_STMT_TYPE_INDIVIDUAL_CODE_SIGNING);
+    rcExit = SignToolPkcs7_AuthAttribsAddMsStatementType(pAuthAttribs, RTCRSPC_STMT_TYPE_INDIVIDUAL_CODE_SIGNING);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1200,6 +1192,9 @@ static RTEXITCODE SignToolPkcs7_PrependCounterSignature(PRTCRPKCS7SIGNERINFO pSi
         RTMsgInfo("Adding UnauthenticatedAttribute #%u...", iPos);
 
     /* Create the attrib and its sub-set of counter signatures. */
+#if 1
+    rc = RTCrPkcs7Attribute_SetCounterSignatures(pAttr, NULL, pAttr->Allocation.pAllocator);
+#else
     rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID, pAttr->Allocation.pAllocator);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString failed: %Rrc", rc);
@@ -1216,6 +1211,7 @@ static RTEXITCODE SignToolPkcs7_PrependCounterSignature(PRTCRPKCS7SIGNERINFO pSi
     rc = RTCrPkcs7SignerInfos_Init(pAttr->uValues.pCounterSignatures, pAttr->Allocation.pAllocator);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("RTCrPkcs7SignerInfos_Init failed: %Rrc", rc);
+#endif
 
     /* Insert the counter signature. */
     rc = RTCrPkcs7SignerInfos_InsertEx(pAttr->uValues.pCounterSignatures, 0 /*iPosition*/, pCounterSignerInfo,
@@ -1238,30 +1234,18 @@ static RTEXITCODE SignToolPkcs7_AppendCertificate(PRTCRPKCS7SIGNEDDATA pSignedDa
                                                               &pCertToAppend->TbsCertificate.SerialNumber);
     if (!pExisting || RTCrX509Certificate_Compare(pExisting, pCertToAppend) != 0)
     {
-        /* Append a RTCRPKCS7CERT entry. */
-        //int32_t iPos = RTCrPkcs7SetOfCerts_Append(&pSignedData->Certificates);
-        //if (iPos < 0)
-        //    return RTMsgErrorExitFailure("RTCrPkcs7SetOfCerts_Append failed: %Rrc", iPos);
+        /* Prepend a RTCRPKCS7CERT entry. */
         uint32_t iPos;
         int rc = RTCrPkcs7SetOfCerts_InsertEx(&pSignedData->Certificates, 0 /*iPosition*/, NULL /*pToClone*/,
                                               &g_RTAsn1DefaultAllocator, &iPos);
         if (RT_FAILURE(rc))
             return RTMsgErrorExitFailure("RTCrPkcs7SetOfCerts_Append failed: %Rrc", rc);
-
         PRTCRPKCS7CERT pCertEntry = pSignedData->Certificates.papItems[iPos];
 
-        /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
-        Assert(pCertEntry->enmChoice == RTCRPKCS7CERTCHOICE_INVALID);
-        Assert(pCertEntry->u.pX509Cert == NULL);
-        pCertEntry->enmChoice = RTCRPKCS7CERTCHOICE_X509;
-        rc = RTAsn1MemAllocZ(&pCertEntry->Allocation, (void **)&pCertEntry->u.pX509Cert, sizeof(*pCertEntry->u.pX509Cert));
+        /* Set (clone) the certificate. */
+        rc = RTCrPkcs7Cert_SetX509Cert(pCertEntry, pCertToAppend, pCertEntry->Allocation.pAllocator);
         if (RT_FAILURE(rc))
-            return RTMsgErrorExitFailure("RTAsn1MemAllocZ failed: %Rrc", rc);
-
-        /* Copy over the certificate we wish to append. */
-        rc = RTCrX509Certificate_Clone(pCertEntry->u.pX509Cert, pCertToAppend, pCertEntry->Allocation.pAllocator);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExitFailure("RTCrX509Certificate_Clone failed: %Rrc", rc);
+            return RTMsgErrorExitFailure("RTCrPkcs7Cert_X509Cert failed: %Rrc", rc);
     }
     return RTEXITCODE_SUCCESS;
 }
@@ -1339,6 +1323,7 @@ static RTEXITCODE Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign
     return RTEXITCODE_FAILURE;
 }
 
+
 static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSignerInfo, PRTCRPKCS7SIGNEDDATA pSignedData,
                                                         unsigned cVerbosity,  bool fReplaceExisting, bool fTimestampTypeOld,
                                                         RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampPair)
@@ -1415,6 +1400,7 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
     return rcExit;
 }
 
+
 static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, unsigned cVerbosity, unsigned iSignature,
                                                       bool fReplaceExisting, bool fTimestampTypeOld, RTTIMESPEC SigningTime,
                                                       SIGNTOOLKEYPAIR *pTimestampPair)
@@ -1433,10 +1419,11 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, u
                                                  SigningTime, pTimestampPair);
 }
 
+
 static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCINDIRECTDATACONTENT *pSpcIndData,
-                                               unsigned cVerbosity, bool fReplaceExisting,  SIGNTOOLKEYPAIR *pSigningCertKey,
-                                               RTCRSTORE hAddCerts,  bool fTimestampTypeOld, RTTIMESPEC SigningTime,
-                                               SIGNTOOLKEYPAIR *pTimestampCertKey)
+                                               unsigned cVerbosity,  RTDIGESTTYPE enmSigType, bool fReplaceExisting,
+                                               SIGNTOOLKEYPAIR *pSigningCertKey, RTCRSTORE hAddCerts,
+                                               bool fTimestampTypeOld, RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
 {
     /*
      * Encode it.
@@ -1487,7 +1474,7 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
                 SIGNTOOLPKCS7  Src     = { NULL, 0, NULL };
                 PSIGNTOOLPKCS7 pSigDst = !pThis->pSignedData ? pThis : &Src;
                 rcExit = Pkcs7SignStuff("image", pvSpcEncoded, cbSpcEncoded, &AuthAttribs, hAddCerts, 0 /*fExtraFlags*/,
-                                        RTDIGESTTYPE_SHA1 /** @todo */, pSigningCertKey, cVerbosity,
+                                        enmSigType /** @todo ?? */, pSigningCertKey, cVerbosity,
                                         (void **)&pSigDst->pbBuf, &pSigDst->cbBuf, &pSigDst->ContentInfo, &pSigDst->pSignedData);
                 if (rcExit == RTEXITCODE_SUCCESS)
                 {
@@ -1521,6 +1508,7 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
     RTMemTmpFree(pvSpcEncoded);
     return rcExit;
 }
+
 
 static RTEXITCODE SignToolPkcs7_SpcCompleteWithoutPageHashes(RTCRSPCINDIRECTDATACONTENT *pSpcIndData)
 {
@@ -1585,12 +1573,14 @@ static RTEXITCODE SignToolPkcs7_SpcCompleteWithoutPageHashes(RTCRSPCINDIRECTDATA
     return rcExit;
 }
 
+
 static RTEXITCODE SignToolPkcs7_SpcAddImagePageHashes(SIGNTOOLPKCS7EXE *pThis, RTCRSPCINDIRECTDATACONTENT *pSpcIndData,
                                                       RTDIGESTTYPE enmSigType)
 {
     RT_NOREF(pThis, pSpcIndData, enmSigType);
     return RTEXITCODE_SUCCESS;
 }
+
 
 static RTEXITCODE SignToolPkcs7_SpcAddImageHash(SIGNTOOLPKCS7EXE *pThis, RTCRSPCINDIRECTDATACONTENT *pSpcIndData,
                                                 RTDIGESTTYPE enmSigType)
@@ -1688,8 +1678,9 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
                      * Encode and sign the SPC data, timestamp it, and line it up for adding to the executable.
                      */
                     if (rcExit == RTEXITCODE_SUCCESS)
-                        rcExit = SignToolPkcs7_SignSpcIndData(pThis, &SpcIndData, cVerbosity, fReplaceExisting, pSigningCertKey,
-                                                              hAddCerts, fTimestampTypeOld, SigningTime, pTimestampCertKey);
+                        rcExit = SignToolPkcs7_SignSpcIndData(pThis, &SpcIndData, cVerbosity,
+                                                              enmSigType, fReplaceExisting, pSigningCertKey, hAddCerts,
+                                                              fTimestampTypeOld, SigningTime, pTimestampCertKey);
                 }
             }
             else
