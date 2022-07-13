@@ -5777,7 +5777,7 @@
 
   <enum
     name="RecordingAudioCodec"
-    uuid="0AEFF775-053A-42F8-9C00-E445107DBED8"
+    uuid="16c42be8-1713-4717-a8b9-c65a6549fbcd"
     >
     <desc>
       Recording audio codec enumeration.
@@ -5787,17 +5787,25 @@
       <desc>No codec set.</desc>
     </const>
     <const name="WavPCM"                value="1">
-      <desc>WAV format, linear PCM, uncompressed.
-        Not implemented yet.</desc>
+      <desc>WAV format, linear PCM, uncompressed.</desc>
     </const>
-    <const name="Opus"                  value="2">
+    <const name="MP3"                   value="2">
+      <desc>MPEG-2 Audio Layer III.</desc>
+    </const>
+    <const name="OggVorbis"             value="3">
+      <desc>Ogg Vorbis.</desc>
+    </const>
+    <const name="Opus"                  value="4">
       <desc>Opus Audio.</desc>
+    </const>
+    <const name="Other"                 value="5">
+      <desc>Other codec.</desc>
     </const>
   </enum>
 
   <enum
     name="RecordingVideoCodec"
-    uuid="663BFC39-AFFF-49FA-98DD-322A857E877B"
+    uuid="93791063-3e8c-4310-987c-ddb43ff03ffe"
     >
     <desc>
       Recording video codec enumeration.
@@ -5806,14 +5814,32 @@
     <const name="None"                  value="0">
       <desc>No codec set.</desc>
     </const>
-    <const name="VP8"                   value="1">
+    <const name="MJPEG"                 value="1">
+      <desc>Motion JPEG.</desc>
+    </const>
+    <const name="H262"                  value="2">
+      <desc>MPEG-2, Part 2.</desc>
+    </const>
+    <const name="H264"                  value="3">
+      <desc>Advanced Video Coding (AVC), MPEG-4 Part 10.</desc>
+    </const>
+    <const name="H265"                  value="4">
+      <desc>High Efficiency Video Coding (HEVC), MPEG-H Part 2.</desc>
+    </const>
+    <const name="H266"                  value="5">
+      <desc>Versatile Video Coding (VVC), MPEG-I Part 3.</desc>
+    </const>
+    <const name="VP8"                   value="6">
       <desc>VP8 codec.</desc>
     </const>
-    <const name="VP9"                   value="2">
-      <desc>VP9 codec. Not implemented yet.</desc>
+    <const name="VP9"                   value="7">
+      <desc>VP9 codec.</desc>
     </const>
-    <const name="AV1"                   value="3">
-      <desc>AV1 codec. Not implemented yet.</desc>
+    <const name="AV1"                   value="8">
+      <desc>AOMedia Video 1 codec.</desc>
+    </const>
+    <const name="Other"                 value="9">
+      <desc>Other codec.</desc>
     </const>
   </enum>
 
@@ -5963,6 +5989,10 @@
         Determines the audio codec to use for encoding the
         recorded audio data. This setting cannot be changed while recording is
         enabled.
+
+        <note>
+          Only the Opus codec is supported currently.
+        </note>
       </desc>
     </attribute>
 
@@ -5993,6 +6023,10 @@
       <desc>
         Determines the video codec to use for encoding the recorded video data.
         This setting cannot be changed while recording is enabled.
+
+        <note>
+          Only the VP8 codec is supported currently.
+        </note>
       </desc>
     </attribute>
 
