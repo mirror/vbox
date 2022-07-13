@@ -93,12 +93,14 @@ void UIFileManagerLogPanel::appendLog(const QString &strLog, const QString &strM
 {
     if (!m_pLogTextEdit)
         return;
-    QString strColorTag("<font color=\"Black\">");
+    QString strStartTag("<font color=\"Black\">");
+    QString strEndTag("</font>");
     if (eLogType == FileManagerLogType_Error)
     {
-        strColorTag = "<font color=\"Red\">";
+        strStartTag = "<b><font color=\"Red\">";
+        strEndTag = "</font></b>";
     }
-    QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strColorTag).arg(QTime::currentTime().toString("hh:mm:ss:z")).arg(strMachineName).arg(strLog).arg("</font>");
+    QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strStartTag).arg(QTime::currentTime().toString("hh:mm:ss:z")).arg(strMachineName).arg(strLog).arg(strEndTag);
     m_pLogTextEdit->append(strColoredLog);
 }
 
