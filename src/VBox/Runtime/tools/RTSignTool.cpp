@@ -1477,7 +1477,7 @@ static RTEXITCODE SignToolPkcs7_SpcCompleteWithoutPageHashes(SIGNTOOLPKCS7EXE *p
     PRTCRSPCPEIMAGEDATA pPeImage = pSpcIndData->Data.uValue.pPeImage;
     Assert(pPeImage);
     //pPeImage->Flags
-    RT_NOREF(pPeImage)
+    RT_NOREF(pPeImage);
 
     return RTEXITCODE_SUCCESS;
 }
