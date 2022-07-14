@@ -7997,6 +7997,9 @@ void MachineConfigFile::buildAutostartXML(xml::ElementNode &elmParent, const Aut
 
 void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const RecordingSettings &recording)
 {
+    if (recording.areDefaultSettings()) /* Omit branch if we still have the default settings (i.e. nothing to save). */
+        return;
+
     /* Note: Since settings 1.19 the recording settings have a dedicated XML branch outside of Hardware. */
     if (m->sv >= SettingsVersion_v1_19 /* VBox >= 7.0 */)
     {
@@ -8054,8 +8057,7 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
         }
     }
     else if (   m->sv >= SettingsVersion_v1_14
-             && m->sv <  SettingsVersion_v1_19 /* VBox < 7.0 */
-             && !recording.areDefaultSettings())
+             && m->sv <  SettingsVersion_v1_19 /* VBox < 7.0 */)
     {
         /* Note: elmParent is Hardware or Snapshot. */
         xml::ElementNode *pelmVideoCapture = elmParent.createChild("VideoCapture");
