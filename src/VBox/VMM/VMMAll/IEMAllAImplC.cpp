@@ -8415,8 +8415,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u64_fallback,(PCX86FXSTATE pFpuState, ui
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc    = { *puSrc };
-    RTUINT128U const uDstIn  = { *puDst };
+    RTUINT128U const uSrc    = *puSrc;
+    RTUINT128U const uDstIn  = *puDst;
     ASMCompilerBarrier();
     puDst->au64[0] = 0;
     puDst->au64[1] = 0;
@@ -8433,8 +8433,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PCX86FXSTATE pFpuState, P
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
                                                         PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc1 = { *puSrc1 }; /* could be same as puDst */
-    RTUINT128U const uSrc2 = { *puSrc2 }; /* could be same as puDst */
+    RTUINT128U const uSrc1 = *puSrc1; /* could be same as puDst */
+    RTUINT128U const uSrc2 = *puSrc2; /* could be same as puDst */
     ASMCompilerBarrier();
     puDst->au64[0] = 0;
     puDst->au64[1] = 0;
@@ -8451,8 +8451,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufb_u128_fallback,(PX86XSAVEAREA pExtState,
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpshufb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
                                                         PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc1 = { *puSrc1 }; /* could be same as puDst */
-    RTUINT256U const uSrc2 = { *puSrc2 }; /* could be same as puDst */
+    RTUINT256U const uSrc1 = *puSrc1; /* could be same as puDst */
+    RTUINT256U const uSrc2 = *puSrc2; /* could be same as puDst */
     ASMCompilerBarrier();
     puDst->au64[0] = 0;
     puDst->au64[1] = 0;
@@ -8607,8 +8607,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[ 8];
@@ -8634,8 +8634,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[ 8];
@@ -8660,8 +8660,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhbw_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[ 8];
@@ -8722,8 +8722,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[0] = uSrc1.au16[4];
@@ -8741,8 +8741,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[0] = uSrc1.au16[4];
@@ -8759,8 +8759,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhwd_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au16[0]  = uSrc1.au16[4];
@@ -8803,8 +8803,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[2];
@@ -8818,8 +8818,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[2];
@@ -8832,8 +8832,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[2];
@@ -8855,8 +8855,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhdq_u256_fallback,(PRTUINT256U puDst, PC
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhqdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[1];
@@ -8868,8 +8868,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhqdq_u128,(PRTUINT128U puDst, PCRTUINT128
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[1];
@@ -8880,8 +8880,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhqdq_u128_fallback,(PRTUINT128U puDst, P
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckhqdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[1];
@@ -8918,8 +8918,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[0];
@@ -8945,8 +8945,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[0];
@@ -8971,8 +8971,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklbw_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au8[ 0] = uSrc1.au8[0];
@@ -9033,8 +9033,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[0] = uSrc1.au16[0];
@@ -9052,8 +9052,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[0] = uSrc1.au16[0];
@@ -9070,8 +9070,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklwd_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au16[0]  = uSrc1.au16[0];
@@ -9114,8 +9114,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u64,(uint64_t *puDst, uint64_t const 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[0];
@@ -9129,8 +9129,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u128,(PRTUINT128U puDst, PCRTUINT128U
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[0];
@@ -9143,8 +9143,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au32[0] = uSrc1.au32[0];
@@ -9166,8 +9166,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpckldq_u256_fallback,(PRTUINT256U puDst, PC
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklqdq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[0];
@@ -9179,8 +9179,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklqdq_u128,(PRTUINT128U puDst, PCRTUINT128
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[0];
@@ -9191,8 +9191,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u128_fallback,(PRTUINT128U puDst, P
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au64[0] = uSrc1.au64[0];
@@ -9234,8 +9234,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packsswb_u64,(uint64_t *puDst, uint64_t const *
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_packsswb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
@@ -9261,8 +9261,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packsswb_u128,(PRTUINT128U puDst, PCRTUINT128U 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpacksswb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
@@ -9287,8 +9287,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpacksswb_u128_fallback,(PRTUINT128U puDst, PCR
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpacksswb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.au16[0]);
@@ -9358,8 +9358,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packuswb_u64,(uint64_t *puDst, uint64_t const *
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_packuswb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
@@ -9385,8 +9385,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packuswb_u128,(PRTUINT128U puDst, PCRTUINT128U 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
@@ -9411,8 +9411,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u128_fallback,(PRTUINT128U puDst, PCR
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au8[ 0] = SATURATED_SIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au16[0]);
@@ -9478,8 +9478,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packssdw_u64,(uint64_t *puDst, uint64_t const *
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_packssdw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
@@ -9497,8 +9497,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packssdw_u128,(PRTUINT128U puDst, PCRTUINT128U 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
@@ -9515,8 +9515,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u128_fallback,(PRTUINT128U puDst, PCR
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.au32[0]);
@@ -9551,8 +9551,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackssdw_u256_fallback,(PRTUINT256U puDst, PCR
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_packusdw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RTUINT128U const uSrc2 = { *puSrc };
-    RTUINT128U const uSrc1 = { *puDst };
+    RTUINT128U const uSrc2 = *puSrc;
+    RTUINT128U const uSrc1 = *puDst;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
@@ -9569,8 +9569,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_packusdw_u128,(PRTUINT128U puDst, PCRTUINT128U 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U const uSrc2 = { *puSrc2 };
-    RTUINT128U const uSrc1 = { *puSrc1 };
+    RTUINT128U const uSrc2 = *puSrc2;
+    RTUINT128U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT128U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
@@ -9587,8 +9587,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u128_fallback,(PRTUINT128U puDst, PCR
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U const uSrc2 = { *puSrc2 };
-    RTUINT256U const uSrc1 = { *puSrc1 };
+    RTUINT256U const uSrc2 = *puSrc2;
+    RTUINT256U const uSrc1 = *puSrc1;
     ASMCompilerBarrier();
     RTUINT256U uDstOut;
     uDstOut.au16[ 0] = SATURATED_SIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au32[0]);
