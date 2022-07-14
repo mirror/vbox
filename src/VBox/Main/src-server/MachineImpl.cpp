@@ -509,7 +509,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         /* Apply TPM defaults. */
         mTrustedPlatformModule->i_applyDefaults(aOsType);
 
-        /* Apply record defaults. */
+        /* Apply recording defaults. */
         mRecordingSettings->i_applyDefaults();
 
         /* Apply network adapters defaults */
@@ -8631,6 +8631,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
+    /* create associated recording settings object */
+    unconst(mRecordingSettings).createObject();
+    mRecordingSettings->init(this);
+
     /* create associated trusted platform module object */
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this);
@@ -8638,10 +8642,6 @@ HRESULT Machine::initDataAndChildObjects()
     /* create associated NVRAM store object */
     unconst(mNvramStore).createObject();
     mNvramStore->init(this);
-
-    /* create associated record settings object */
-    unconst(mRecordingSettings).createObject();
-    mRecordingSettings->init(this);
 
     /* create the graphics adapter object (always present) */
     unconst(mGraphicsAdapter).createObject();
@@ -8770,6 +8770,12 @@ void Machine::uninitDataAndChildObjects()
         unconst(mBIOSSettings).setNull();
     }
 
+    if (mRecordingSettings)
+    {
+        mRecordingSettings->uninit();
+        unconst(mRecordingSettings).setNull();
+    }
+
     if (mTrustedPlatformModule)
     {
         mTrustedPlatformModule->uninit();
@@ -8780,12 +8786,6 @@ void Machine::uninitDataAndChildObjects()
     {
         mNvramStore->uninit();
         unconst(mNvramStore).setNull();
-    }
-
-    if (mRecordingSettings)
-    {
-        mRecordingSettings->uninit();
-        unconst(mRecordingSettings).setNull();
     }
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
@@ -9081,7 +9081,8 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     }
 
     // hardware data
-    rc = i_loadHardware(puuidRegistry, NULL, config.hardwareMachine, &config.debugging, &config.autostart);
+    rc = i_loadHardware(puuidRegistry, NULL, config.hardwareMachine, &config.debugging, &config.autostart,
+                        config.recordingSettings);
     if (FAILED(rc)) return rc;
 
     /*
@@ -9163,6 +9164,7 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
                                                 current->hardware,
                                                 &current->debugging,
                                                 &current->autostart,
+                                                current->recordingSettings,
                                                 current->uuid.ref(),
                                                 strStateFile);
         if (FAILED(rc)) break;
@@ -9213,13 +9215,15 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
  * @param puuidSnapshot Snapshot ID
  * @param data          Reference to the hardware settings.
  * @param pDbg          Pointer to the debugging settings.
- * @param pAutostart    Pointer to the autostart settings.
+ * @param pAutostart    Pointer to the autostart settings
+ * @param recording     Reference to recording settings.
  */
 HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                                 const Guid *puuidSnapshot,
                                 const settings::Hardware &data,
                                 const settings::Debugging *pDbg,
-                                const settings::Autostart *pAutostart)
+                                const settings::Autostart *pAutostart,
+                                const settings::RecordingSettings &recording)
 {
     AssertReturn(!i_isSessionMachine(), E_FAIL);
 
@@ -9325,15 +9329,15 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         rc = mBIOSSettings->i_loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
+        /* Recording */
+        rc = mRecordingSettings->i_loadSettings(recording);
+        if (FAILED(rc)) return rc;
+
         /* Trusted Platform Module */
         rc = mTrustedPlatformModule->i_loadSettings(data.tpmSettings);
         if (FAILED(rc)) return rc;
 
         rc = mNvramStore->i_loadSettings(data.nvramSettings);
-        if (FAILED(rc)) return rc;
-
-        /* Recording settings */
-        rc = mRecordingSettings->i_loadSettings(data.recordingSettings);
         if (FAILED(rc)) return rc;
 
         // Bandwidth control (must come before network adapters)
@@ -10577,8 +10581,8 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.fAborted = (mData->mMachineState == MachineState_Aborted || mData->mMachineState == MachineState_AbortedSaved);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
-    HRESULT rc = i_saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
-    if (FAILED(rc)) throw rc;
+    HRESULT hrc = i_saveHardware(config.hardwareMachine, &config.debugging, &config.autostart, config.recordingSettings);
+    if (FAILED(hrc)) throw hrc;
 
     // save machine's media registry if this is VirtualBox 4.0 or later
     if (config.canHaveOwnMediaRegistry())
@@ -10593,8 +10597,8 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     }
 
     // save snapshots
-    rc = i_saveAllSnapshots(config);
-    if (FAILED(rc)) throw rc;
+    hrc = i_saveAllSnapshots(config);
+    if (FAILED(hrc)) throw hrc;
 }
 
 /**
@@ -10650,9 +10654,10 @@ HRESULT Machine::i_saveAllSnapshots(settings::MachineConfigFile &config)
  *                        which happens to live in mHWData.
  *  @param pAutostart     Pointer to the settings object for the autostart config
  *                        which happens to live in mHWData.
+ *  @param recording      Reference to reecording settings.
  */
 HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *pDbg,
-                                settings::Autostart *pAutostart)
+                                settings::Autostart *pAutostart, settings::RecordingSettings &recording)
 {
     HRESULT rc = S_OK;
 
@@ -10756,16 +10761,16 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         rc = mBIOSSettings->i_saveSettings(data.biosSettings);
         if (FAILED(rc)) throw rc;
 
+        /* Recording settings. */
+        rc = mRecordingSettings->i_saveSettings(recording);
+        if (FAILED(rc)) throw rc;
+
         /* Trusted Platform Module settings (required) */
         rc = mTrustedPlatformModule->i_saveSettings(data.tpmSettings);
         if (FAILED(rc)) throw rc;
 
         /* NVRAM settings (required) */
         rc = mNvramStore->i_saveSettings(data.nvramSettings);
-        if (FAILED(rc)) throw rc;
-
-        /* Recording settings (required) */
-        rc = mRecordingSettings->i_saveSettings(data.recordingSettings);
         if (FAILED(rc)) throw rc;
 
         /* GraphicsAdapter settings (required) */
@@ -12324,14 +12329,14 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
+    if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
+        mRecordingSettings->i_rollback();
+
     if (mTrustedPlatformModule)
         mTrustedPlatformModule->i_rollback();
 
     if (mNvramStore)
         mNvramStore->i_rollback();
-
-    if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
-        mRecordingSettings->i_rollback();
 
     if (mGraphicsAdapter && (mData->flModifications & IsModified_GraphicsAdapter))
         mGraphicsAdapter->i_rollback();
@@ -12455,9 +12460,9 @@ void Machine::i_commit()
         i_commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->i_commit();
+    mRecordingSettings->i_commit();
     mTrustedPlatformModule->i_commit();
     mNvramStore->i_commit();
-    mRecordingSettings->i_commit();
     mGraphicsAdapter->i_commit();
     mVRDEServer->i_commit();
     mAudioSettings->i_commit();
@@ -12711,9 +12716,9 @@ void Machine::i_copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
+    mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mTrustedPlatformModule->i_copyFrom(aThat->mTrustedPlatformModule);
     mNvramStore->i_copyFrom(aThat->mNvramStore);
-    mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mGraphicsAdapter->i_copyFrom(aThat->mGraphicsAdapter);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioSettings->i_copyFrom(aThat->mAudioSettings);
@@ -13089,14 +13094,15 @@ HRESULT SessionMachine::init(Machine *aMachine)
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
 
+    unconst(mRecordingSettings).createObject();
+    mRecordingSettings->init(this, aMachine->mRecordingSettings);
+
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this, aMachine->mTrustedPlatformModule);
 
     unconst(mNvramStore).createObject();
     mNvramStore->init(this, aMachine->mNvramStore);
 
-    unconst(mRecordingSettings).createObject();
-    mRecordingSettings->init(this, aMachine->mRecordingSettings);
     /* create another GraphicsAdapter object that will be mutable */
     unconst(mGraphicsAdapter).createObject();
     mGraphicsAdapter->init(this, aMachine->mGraphicsAdapter);

@@ -866,10 +866,7 @@ HRESULT Snapshot::i_saveSnapshotOne(settings::Snapshot &data) const
     else
         data.strStateFile.setNull();
 
-    HRESULT rc = m->pMachine->i_saveHardware(data.hardware, &data.debugging, &data.autostart);
-    if (FAILED(rc)) return rc;
-
-    return S_OK;
+    return m->pMachine->i_saveHardware(data.hardware, &data.debugging, &data.autostart, data.recordingSettings);
 }
 
 /**
@@ -1163,16 +1160,16 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
     if (FAILED(rc)) return rc;
 
+    unconst(mRecordingSettings).createObject();
+    rc = mRecordingSettings->initCopy(this, pMachine->mRecordingSettings);
+    if (FAILED(rc)) return rc;
+
     unconst(mTrustedPlatformModule).createObject();
     rc = mTrustedPlatformModule->initCopy(this, pMachine->mTrustedPlatformModule);
     if (FAILED(rc)) return rc;
 
     unconst(mNvramStore).createObject();
     rc = mNvramStore->initCopy(this, pMachine->mNvramStore);
-    if (FAILED(rc)) return rc;
-
-    unconst(mRecordingSettings).createObject();
-    rc = mRecordingSettings->initCopy(this, pMachine->mRecordingSettings);
     if (FAILED(rc)) return rc;
 
     unconst(mGraphicsAdapter).createObject();
@@ -1246,6 +1243,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
  *  @param hardware         hardware settings
  *  @param pDbg             debuging settings
  *  @param pAutostart       autostart settings
+ *  @param recording        recording settings
  *  @param aSnapshotId      snapshot ID of this snapshot machine
  *  @param aStateFilePath   file where the execution state is saved
  *                          (or NULL for the offline snapshot)
@@ -1256,6 +1254,7 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
                                           const settings::Hardware &hardware,
                                           const settings::Debugging *pDbg,
                                           const settings::Autostart *pAutostart,
+                                          const settings::RecordingSettings &recording,
                                           IN_GUID aSnapshotId,
                                           const Utf8Str &aStateFilePath)
 {
@@ -1301,14 +1300,14 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
+    unconst(mRecordingSettings).createObject();
+    mRecordingSettings->init(this);
+
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this);
 
     unconst(mNvramStore).createObject();
     mNvramStore->init(this);
-
-    unconst(mRecordingSettings).createObject();
-    mRecordingSettings->init(this);
 
     unconst(mGraphicsAdapter).createObject();
     mGraphicsAdapter->init(this);
@@ -1345,20 +1344,19 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     mBandwidthControl->init(this);
 
     /* load hardware and storage settings */
-    HRESULT rc = i_loadHardware(NULL, &mSnapshotId, hardware, pDbg, pAutostart);
-
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_loadHardware(NULL, &mSnapshotId, hardware, pDbg, pAutostart, recording);
+    if (SUCCEEDED(hrc))
         /* commit all changes made during the initialization */
         i_commit();   /// @todo r=dj why do we need a commit in init?!? this is very expensive
         /// @todo r=klaus for some reason the settings loading logic backs up
         // the settings, and therefore a commit is needed. Should probably be changed.
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 /**

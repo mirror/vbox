@@ -46,7 +46,18 @@ public:
     HRESULT init(RecordingSettings *aParent, uint32_t uScreenId, const settings::RecordingScreenSettings& aThat);
     HRESULT init(RecordingSettings *aParent, RecordingScreenSettings *aThat);
     HRESULT initCopy(RecordingSettings *aParent, RecordingScreenSettings *aThat);
-    void uninit();
+    void uninit(void);
+
+    // public methods only for internal purposes
+    HRESULT i_loadSettings(const settings::RecordingScreenSettings &data);
+    HRESULT i_saveSettings(settings::RecordingScreenSettings &data);
+
+    void i_rollback(void);
+    void i_commit(void);
+    void i_copyFrom(RecordingScreenSettings *aThat);
+    void i_applyDefaults(void);
+
+    settings::RecordingScreenSettings &i_getData(void);
 
 private:
 

@@ -7247,11 +7247,11 @@ HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_
 
 #ifdef VBOX_WITH_RECORDING
 
-int Console::i_recordingGetSettings(settings::RecordingSettings &Settings)
+int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
 {
     Assert(mMachine.isNotNull());
 
-    Settings.applyDefaults();
+    recording.applyDefaults();
 
     ComPtr<IRecordingSettings> pRecordSettings;
     HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
@@ -7260,44 +7260,44 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &Settings)
     BOOL fTemp;
     hrc = pRecordSettings->COMGETTER(Enabled)(&fTemp);
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-    Settings.fEnabled = RT_BOOL(fTemp);
+    recording.common.fEnabled = RT_BOOL(fTemp);
 
-    SafeIfaceArray<IRecordingScreenSettings> paRecordingScreens;
-    hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paRecordingScreens));
+    SafeIfaceArray<IRecordingScreenSettings> paRecScreens;
+    hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paRecScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-    for (unsigned long i = 0; i < (unsigned long)paRecordingScreens.size(); ++i)
+    for (unsigned long i = 0; i < (unsigned long)paRecScreens.size(); ++i)
     {
-        settings::RecordingScreenSettings RecordScreenSettings;
-        ComPtr<IRecordingScreenSettings> pRecordScreenSettings = paRecordingScreens[i];
+        settings::RecordingScreenSettings recScreenSettings;
+        ComPtr<IRecordingScreenSettings> pRecScreenSettings = paRecScreens[i];
 
-        hrc = pRecordScreenSettings->COMGETTER(Enabled)(&fTemp);
+        hrc = pRecScreenSettings->COMGETTER(Enabled)(&fTemp);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        RecordScreenSettings.fEnabled = RT_BOOL(fTemp);
-        hrc = pRecordScreenSettings->COMGETTER(MaxTime)((ULONG *)&RecordScreenSettings.ulMaxTimeS);
+        recScreenSettings.fEnabled = RT_BOOL(fTemp);
+        hrc = pRecScreenSettings->COMGETTER(MaxTime)((ULONG *)&recScreenSettings.ulMaxTimeS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pRecordScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&RecordScreenSettings.File.ulMaxSizeMB);
+        hrc = pRecScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&recScreenSettings.File.ulMaxSizeMB);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         Bstr bstrTemp;
-        hrc = pRecordScreenSettings->COMGETTER(Filename)(bstrTemp.asOutParam());
+        hrc = pRecScreenSettings->COMGETTER(Filename)(bstrTemp.asOutParam());
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        RecordScreenSettings.File.strName = bstrTemp;
-        hrc = pRecordScreenSettings->COMGETTER(Options)(bstrTemp.asOutParam());
+        recScreenSettings.File.strName = bstrTemp;
+        hrc = pRecScreenSettings->COMGETTER(Options)(bstrTemp.asOutParam());
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        RecordScreenSettings.strOptions = bstrTemp;
-        hrc = pRecordScreenSettings->COMGETTER(VideoWidth)((ULONG *)&RecordScreenSettings.Video.ulWidth);
+        recScreenSettings.strOptions = bstrTemp;
+        hrc = pRecScreenSettings->COMGETTER(VideoWidth)((ULONG *)&recScreenSettings.Video.ulWidth);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pRecordScreenSettings->COMGETTER(VideoHeight)((ULONG *)&RecordScreenSettings.Video.ulHeight);
+        hrc = pRecScreenSettings->COMGETTER(VideoHeight)((ULONG *)&recScreenSettings.Video.ulHeight);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pRecordScreenSettings->COMGETTER(VideoRate)((ULONG *)&RecordScreenSettings.Video.ulRate);
+        hrc = pRecScreenSettings->COMGETTER(VideoRate)((ULONG *)&recScreenSettings.Video.ulRate);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pRecordScreenSettings->COMGETTER(VideoFPS)((ULONG *)&RecordScreenSettings.Video.ulFPS);
+        hrc = pRecScreenSettings->COMGETTER(VideoFPS)((ULONG *)&recScreenSettings.Video.ulFPS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-        Settings.mapScreens[i] = RecordScreenSettings;
+        recording.mapScreens[i] = recScreenSettings;
     }
 
-    Assert(Settings.mapScreens.size() == paRecordingScreens.size());
+    Assert(recording.mapScreens.size() == paRecScreens.size());
 
     return VINF_SUCCESS;
 }

@@ -2823,72 +2823,93 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
 #ifdef VBOX_WITH_RECORDING
     {
-        /* Video capture */
-        BOOL fCaptureVideo = FALSE;
+        BOOL fRecordVideo = FALSE;
 # ifdef VBOX_WITH_AUDIO_RECORDING
-        BOOL fCaptureAudio = FALSE;
+        BOOL fRecordAudio = FALSE;
 # endif
 
         ComPtr<IRecordingSettings> recordingSettings;
         CHECK_ERROR_RET(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()), hrc);
 
-        SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
-        CHECK_ERROR_RET(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)), hrc);
+        BOOL  fEnabled;
+        CHECK_ERROR_RET(recordingSettings, COMGETTER(Enabled)(&fEnabled), hrc);
+        SHOW_BOOL_VALUE_EX("recording_enabled", Info::tr("Recording enabled:"), fEnabled, Info::tr("yes"), Info::tr("no"));
 
-        /* For now all screens have the same configuration; so take screen 0 and work with that. */
-        ULONG fFeatures;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Features)(&fFeatures), hrc);
-        ULONG Width;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoWidth)(&Width), hrc);
-        ULONG Height;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoHeight)(&Height), hrc);
-        ULONG Rate;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoRate)(&Rate), hrc);
-        ULONG Fps;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoFPS)(&Fps), hrc);
-        Bstr  bstrFile;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Filename)(bstrFile.asOutParam()), hrc);
-        Bstr  bstrOptions;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), hrc);
+        SafeIfaceArray <IRecordingScreenSettings> saScreenSettings;
+        CHECK_ERROR_RET(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saScreenSettings)), hrc);
 
-        Utf8Str strOptions(bstrOptions);
-        size_t pos = 0;
-        com::Utf8Str key, value;
-        while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+        SHOW_ULONG_VALUE("recording_screens", Info::tr("Recording screens:"), saScreenSettings.size(), "");
+
+        for (size_t i = 0; i < saScreenSettings.size(); ++i)
         {
-            if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
-            {
-                fCaptureVideo = value.compare("true", Utf8Str::CaseInsensitive) == 0;
-            }
-            else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
-            {
-# ifdef VBOX_WITH_AUDIO_RECORDING
-                fCaptureAudio = value.compare("true", Utf8Str::CaseInsensitive) == 0;
-# endif
-            }
-        }
+            ComPtr<IRecordingScreenSettings> screenSettings = saScreenSettings[i];
 
-        SHOW_BOOL_VALUE_EX("videocap", Info::tr("Capturing:"), fCaptureVideo, Info::tr("active"), Info::tr("not active"));
-# ifdef VBOX_WITH_AUDIO_RECORDING
-        SHOW_BOOL_VALUE_EX("videocapaudio", Info::tr("Capture audio:"), fCaptureAudio, Info::tr("active"), Info::tr("not active"));
-# endif
-        szValue[0] = '\0';
-        for (size_t i = 0, off = 0; i < saRecordingScreenScreens.size(); i++)
-        {
-            BOOL fEnabled;
-            CHECK_ERROR_RET(saRecordingScreenScreens[i], COMGETTER(Enabled)(&fEnabled), hrc);
-            if (fEnabled && off < sizeof(szValue) - 3)
-                off += RTStrPrintf(&szValue[off], sizeof(szValue) - off, off ? ",%zu" : "%zu", i);
-        }
-        SHOW_UTF8_STRING("capturescreens", Info::tr("Capture screens:"), szValue);
-        SHOW_BSTR_STRING("capturefilename", Info::tr("Capture file:"), bstrFile);
-        RTStrPrintf(szValue, sizeof(szValue), "%ux%u", Width, Height);
-        SHOW_UTF8_STRING("captureres", Info::tr("Capture dimensions:"), szValue);
-        SHOW_ULONG_VALUE("capturevideorate", Info::tr("Capture rate:"), Rate, Info::tr("kbps"));
-        SHOW_ULONG_VALUE("capturevideofps", Info::tr("Capture FPS:"), Fps, Info::tr("kbps"));
-        SHOW_BSTR_STRING("captureopts", Info::tr("Capture options:"), bstrOptions);
+            FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "rec_screen%zu" : Info::tr("Screen %u:"), i);
+            RTPrintf(Info::tr(" %s\n"), szNm);
 
-        /** @todo Add more audio capturing profile / information here. */
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Enabled)(&fEnabled), hrc);
+            ULONG idScreen;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Id)(&idScreen), hrc);
+            ULONG fFeatures;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Features)(&fFeatures), hrc);
+            ULONG Width;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(VideoWidth)(&Width), hrc);
+            ULONG Height;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(VideoHeight)(&Height), hrc);
+            ULONG Rate;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(VideoRate)(&Rate), hrc);
+            ULONG Fps;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(VideoFPS)(&Fps), hrc);
+            RecordingDestination_T enmDst;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Destination)(&enmDst), hrc);
+            Bstr  bstrFile;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Filename)(bstrFile.asOutParam()), hrc);
+            Bstr  bstrOptions;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Options)(bstrOptions.asOutParam()), hrc);
+
+            Utf8Str strOptions(bstrOptions);
+            size_t pos = 0;
+            com::Utf8Str key, value;
+            while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+            {
+                if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+                {
+                    fRecordVideo = value.compare("true", Utf8Str::CaseInsensitive) == 0;
+                }
+                else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+                {
+# ifdef VBOX_WITH_AUDIO_RECORDING
+                    fRecordAudio = value.compare("true", Utf8Str::CaseInsensitive) == 0;
+# endif
+                }
+            }
+
+            SHOW_BOOL_VALUE_EX("rec_screen_enabled",         Info::tr("    Enabled:"), fEnabled,
+                                                             Info::tr("yes"), Info::tr("no"));
+            SHOW_ULONG_VALUE  ("rec_screen_id",              Info::tr("    ID:"), idScreen, "");
+            SHOW_BOOL_VALUE_EX("rec_screen_video_enabled",   Info::tr("    Record video:"), fRecordVideo,
+                                                             Info::tr("yes"), Info::tr("no"));
+# ifdef VBOX_WITH_AUDIO_RECORDING
+            SHOW_BOOL_VALUE_EX("rec_screen_audio_enabled",   Info::tr("    Record audio:"), fRecordAudio,
+                                                             Info::tr("yes"), Info::tr("no"));
+# endif
+            SHOW_UTF8_STRING("rec_screen_dest",              Info::tr("    Destination:"),
+                                                               enmDst == RecordingDestination_File
+                                                             ? Info::tr("File") : Info::tr("Unknown"));
+            /** @todo Implement other destinations. */
+            if (enmDst == RecordingDestination_File)
+                SHOW_BSTR_STRING("rec_screen_dest_filename", Info::tr("    File:"), bstrFile);
+
+            SHOW_BSTR_STRING  ("rec_screen_opts",            Info::tr("    Options:"), bstrOptions);
+
+            /* Video properties. */
+            RTStrPrintf(szValue, sizeof(szValue), "%ux%u", Width, Height);
+            SHOW_UTF8_STRING  ("rec_screen_video_res_xy",    Info::tr("    Video dimensions:"), szValue);
+            SHOW_ULONG_VALUE  ("rec_screen_video_rate_kbps", Info::tr("    Video rate:"), Rate, Info::tr("kbps"));
+            SHOW_ULONG_VALUE  ("rec_screen_video_fps",       Info::tr("    Video FPS:"), Fps, Info::tr("fps"));
+
+            /** @todo Add more audio capturing profile / information here. */
+        }
     }
 #endif /* VBOX_WITH_RECORDING */
 

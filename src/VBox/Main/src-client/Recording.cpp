@@ -150,7 +150,7 @@ int RecordingContext::createInternal(const settings::RecordingSettings &a_Settin
     if (RT_FAILURE(vrc))
         return vrc;
 
-    settings::RecordingScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
+    settings::RecordingScreenSettingsMap::const_iterator itScreen = a_Settings.mapScreens.begin();
     while (itScreen != a_Settings.mapScreens.end())
     {
         RecordingStream *pStream = NULL;
@@ -205,7 +205,7 @@ int RecordingContext::startInternal(void)
                              RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "Record");
 
     if (RT_SUCCESS(vrc)) /* Wait for the thread to start. */
-        vrc = RTThreadUserWait(this->Thread, 30 * RT_MS_1SEC /* 30s timeout */);
+        vrc = RTThreadUserWait(this->Thread, RT_MS_30SEC /* 30s timeout */);
 
     if (RT_SUCCESS(vrc))
     {
@@ -236,7 +236,7 @@ int RecordingContext::stopInternal(void)
     /* Signal the thread and wait for it to shut down. */
     int vrc = threadNotify();
     if (RT_SUCCESS(vrc))
-        vrc = RTThreadWait(this->Thread, 30 * 1000 /* 10s timeout */, NULL);
+        vrc = RTThreadWait(this->Thread, RT_MS_30SEC /* 30s timeout */, NULL);
 
     lock();
 
@@ -294,10 +294,7 @@ void RecordingContext::destroyInternal(void)
     unlock();
 
     if (RTCritSectIsInitialized(&this->CritSect))
-    {
-        Assert(RTCritSectGetWaiters(&this->CritSect) == -1);
         RTCritSectDelete(&this->CritSect);
-    }
 
     this->enmState = RECORDINGSTS_UNINITIALIZED;
 }

@@ -52,7 +52,7 @@ struct RecordingScreenSettings::Data
 };
 
 // constructor / destructor
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EMPTY_CTOR_DTOR(RecordingScreenSettings)
 
@@ -68,7 +68,7 @@ void RecordingScreenSettings::FinalRelease()
 }
 
 // public initializer/uninitializer for internal purposes only
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Initializes the recording screen settings object.
@@ -78,7 +78,6 @@ void RecordingScreenSettings::FinalRelease()
 HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScreenId,
                                       const settings::RecordingScreenSettings& aThat)
 {
-    LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
 
     ComAssertRet(aParent, E_INVALIDARG);
@@ -98,7 +97,7 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
     m->bd.allocate();
     m->bd->operator=(aThat);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     int vrc = i_initInternal();
     if (RT_SUCCESS(vrc))
@@ -108,11 +107,11 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
     else
     {
         autoInitSpan.setFailed();
-        rc = E_UNEXPECTED;
+        hrc = E_UNEXPECTED;
     }
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 /**
@@ -121,11 +120,10 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
  *  the object passed as an argument.
  *
  *  @note This object must be destroyed before the original object
- *  it shares data with is destroyed.
+ *        it shares data with is destroyed.
  */
 HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScreenSettings *aThat)
 {
-    LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
     ComAssertRet(aParent && aThat, E_INVALIDARG);
@@ -171,7 +169,6 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
  */
 HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingScreenSettings *aThat)
 {
-    LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
     ComAssertRet(aParent && aThat, E_INVALIDARG);
@@ -193,7 +190,7 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
     m->uScreenId = aThat->m->uScreenId;
     m->bd.attachCopy(aThat->m->bd);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     int vrc = i_initInternal();
     if (RT_SUCCESS(vrc))
@@ -203,11 +200,11 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
     else
     {
         autoInitSpan.setFailed();
-        rc = E_UNEXPECTED;
+        hrc = E_UNEXPECTED;
     }
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 /**
@@ -330,6 +327,8 @@ HRESULT RecordingScreenSettings::setFeatures(ULONG aFeatures)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
+
+    settings::RecordingFeatureMap featureMapOld = m->bd->featureMap;
     m->bd->featureMap.clear();
 
     if (aFeatures & RecordingFeature_Audio)
@@ -337,7 +336,12 @@ HRESULT RecordingScreenSettings::setFeatures(ULONG aFeatures)
     if (aFeatures & RecordingFeature_Video)
         m->bd->featureMap[RecordingFeature_Video] = true;
 
-    alock.release();
+    if (m->bd->featureMap != featureMapOld)
+    {
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -362,10 +366,18 @@ HRESULT RecordingScreenSettings::setDestination(RecordingDestination_T aDestinat
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change destination type while recording is enabled"));
 
+    if (aDestination != RecordingDestination_File)
+        return setError(E_INVALIDARG, tr("Destination type invalid / not supported"));
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->enmDest = aDestination;
+    if (m->bd->enmDest != aDestination)
+    {
+        m->bd.backup();
+        m->bd->enmDest = aDestination;
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -381,12 +393,15 @@ HRESULT RecordingScreenSettings::getFilename(com::Utf8Str &aFilename)
     if (   m->bd->File.strName.isEmpty()
         || m->bd->File.strName.equals("."))
     {
-        int vrc = m->pParent->i_getDefaultFilename(m->bd->File.strName, true /* fWithFileExtension */);
+        int vrc = m->pParent->i_getDefaultFilename(aFilename, m->uScreenId, true /* fWithFileExtension */);
         if (RT_FAILURE(vrc))
-            return setError(E_INVALIDARG, tr("Error retrieving default file name"));
-    }
+            return setErrorBoth(E_INVALIDARG, vrc, tr("Error retrieving default file name"));
 
-    aFilename = m->bd->File.strName;
+        /* Important: Don't assign the default file name to File.strName, as this woulnd't be considered
+         *            as default settings anymore! */
+    }
+    else /* Return custom file name. */
+        aFilename = m->bd->File.strName;
 
     return S_OK;
 }
@@ -399,14 +414,26 @@ HRESULT RecordingScreenSettings::setFilename(const com::Utf8Str &aFilename)
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change file name while recording is enabled"));
 
-    Utf8Str strFile(aFilename);
-    if (!RTPathStartsWithRoot(strFile.c_str()))
-        return setError(E_INVALIDARG, tr("Recording file name '%s' is not absolute"), strFile.c_str());
+    if (aFilename.isNotEmpty())
+    {
+        if (!RTPathStartsWithRoot(aFilename.c_str()))
+            return setError(E_INVALIDARG, tr("Recording file name '%s' is not absolute"), aFilename.c_str());
+    }
+
+    /** @todo Add more sanity? */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->File.strName = strFile;
+    /* Note: When setting an empty file name, this will return the screen's default file name when using ::getFileName(). */
+    if (m->bd->File.strName != aFilename)
+    {
+        m->bd.backup();
+        m->bd->File.strName = aFilename;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -433,8 +460,15 @@ HRESULT RecordingScreenSettings::setMaxTime(ULONG aMaxTimeS)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->ulMaxTimeS = aMaxTimeS;
+    if (m->bd->ulMaxTimeS != aMaxTimeS)
+    {
+        m->bd.backup();
+        m->bd->ulMaxTimeS = aMaxTimeS;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -461,8 +495,15 @@ HRESULT RecordingScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->File.ulMaxSizeMB = aMaxFileSize;
+    if (m->bd->File.ulMaxSizeMB != aMaxFileSize)
+    {
+        m->bd.backup();
+        m->bd->File.ulMaxSizeMB = aMaxFileSize;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -489,12 +530,16 @@ HRESULT RecordingScreenSettings::setOptions(const com::Utf8Str &aOptions)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->strOptions = aOptions;
-
     int vrc = RecordingScreenSettings::i_parseOptionsString(aOptions, *m->bd.data());
     if (RT_FAILURE(vrc))
         return setError(E_INVALIDARG, tr("Invalid option specified"));
+
+    m->bd.backup();
+    m->bd->strOptions = aOptions;
+
+    alock.release();
+
+    m->pParent->i_onSettingsChanged();
 
     return S_OK;
 }
@@ -519,10 +564,20 @@ HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio codec while recording is enabled"));
 
+    if (aCodec != RecordingAudioCodec_Opus)
+        return setError(E_INVALIDARG, tr("Audio codec not supported"));
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Audio.enmAudioCodec = aCodec;
+    if (m->bd->Audio.enmAudioCodec != aCodec)
+    {
+        m->bd.backup();
+        m->bd->Audio.enmAudioCodec = aCodec;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -549,8 +604,15 @@ HRESULT RecordingScreenSettings::setAudioHz(ULONG aHz)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Audio.uHz = (uint16_t)aHz;
+    if (m->bd->Audio.uHz != (uint16_t)aHz)
+    {
+        m->bd.backup();
+        m->bd->Audio.uHz = (uint16_t)aHz;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -577,8 +639,15 @@ HRESULT RecordingScreenSettings::setAudioBits(ULONG aBits)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Audio.cBits = (uint8_t)aBits;
+    if (m->bd->Audio.cBits != (uint8_t)aBits)
+    {
+        m->bd.backup();
+        m->bd->Audio.cBits = (uint8_t)aBits;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -605,8 +674,15 @@ HRESULT RecordingScreenSettings::setAudioChannels(ULONG aChannels)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Audio.cChannels = (uint8_t)aChannels;
+    if (m->bd->Audio.cChannels != (uint8_t)aChannels)
+    {
+        m->bd.backup();
+        m->bd->Audio.cChannels = (uint8_t)aChannels;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -631,10 +707,20 @@ HRESULT RecordingScreenSettings::setVideoCodec(RecordingVideoCodec_T aCodec)
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video codec while recording is enabled"));
 
+    if (aCodec != RecordingVideoCodec_VP8)
+        return setError(E_INVALIDARG, tr("Video codec not supported"));
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Video.enmCodec = aCodec;
+    if (m->bd->Video.enmCodec != aCodec)
+    {
+        m->bd.backup();
+        m->bd->Video.enmCodec = aCodec;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -661,8 +747,15 @@ HRESULT RecordingScreenSettings::setVideoWidth(ULONG aVideoWidth)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Video.ulWidth = aVideoWidth;
+    if (m->bd->Video.ulWidth != aVideoWidth)
+    {
+        m->bd.backup();
+        m->bd->Video.ulWidth = aVideoWidth;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -689,8 +782,15 @@ HRESULT RecordingScreenSettings::setVideoHeight(ULONG aVideoHeight)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Video.ulHeight = aVideoHeight;
+    if (m->bd->Video.ulHeight != aVideoHeight)
+    {
+        m->bd.backup();
+        m->bd->Video.ulHeight = aVideoHeight;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -717,8 +817,15 @@ HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Video.ulRate = aVideoRate;
+    if (m->bd->Video.ulRate != aVideoRate)
+    {
+        m->bd.backup();
+        m->bd->Video.ulRate = aVideoRate;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -773,8 +880,15 @@ HRESULT RecordingScreenSettings::setVideoFPS(ULONG aVideoFPS)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.backup();
-    m->bd->Video.ulFPS = aVideoFPS;
+    if (m->bd->Video.ulFPS != aVideoFPS)
+    {
+        m->bd.backup();
+        m->bd->Video.ulFPS = aVideoFPS;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
 
     return S_OK;
 }
@@ -810,22 +924,22 @@ HRESULT RecordingScreenSettings::setVideoScalingMethod(RecordingVideoScalingMeth
 /**
  * Initializes data, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingScreenSettings::i_initInternal(void)
 {
-    Assert(m);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
 
-    int rc = i_parseOptionsString(m->bd->strOptions, *m->bd.data());
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = i_parseOptionsString(m->bd->strOptions, *m->bd.data());
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     switch (m->bd->enmDest)
     {
         case RecordingDestination_File:
         {
-            if (m->bd->File.strName.isEmpty())
-                rc = m->pParent->i_getDefaultFilename(m->bd->File.strName, true /* fWithExtension */);
+            /* Note: Leave the file name empty here, which means using the default setting.
+             *       Important when comparing with the default settings! */
             break;
         }
 
@@ -833,7 +947,129 @@ int RecordingScreenSettings::i_initInternal(void)
             break;
     }
 
-    return rc;
+    return vrc;
+}
+
+
+// public methods only for internal purposes
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Loads settings from the given machine node.
+ * May be called once right after this object creation.
+ *
+ * @returns HRESULT
+ * @param   data                Configuration settings to load.
+ */
+HRESULT RecordingScreenSettings::i_loadSettings(const settings::RecordingScreenSettings &data)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    // simply copy
+    m->bd.assignCopy(&data);
+    return S_OK;
+}
+
+/**
+ *  Saves settings to the given machine node.
+ *
+ *  @returns HRESULT
+ *  @param   data               Configuration settings to save to.
+ */
+HRESULT RecordingScreenSettings::i_saveSettings(settings::RecordingScreenSettings &data)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    data = *m->bd.data();
+
+    return S_OK;
+}
+
+void RecordingScreenSettings::i_rollback(void)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->bd.rollback();
+}
+
+void RecordingScreenSettings::i_commit(void)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
+
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock(m->pPeer, this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd.isBackedUp())
+    {
+        m->bd.commit();
+        if (m->pPeer)
+        {
+            /* attach new data to the peer and reshare it */
+            AutoWriteLock peerlock(m->pPeer COMMA_LOCKVAL_SRC_POS);
+            m->pPeer->m->bd.attach(m->bd);
+        }
+    }
+}
+
+void RecordingScreenSettings::i_copyFrom(RecordingScreenSettings *aThat)
+{
+    AssertReturnVoid(aThat != NULL);
+
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
+
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
+
+    /* this will back up current data */
+    m->bd.assignCopy(aThat->m->bd);
+}
+
+/**
+ * Applies default screen recording settings.
+ *
+ * @note Locks this object for writing.
+ */
+void RecordingScreenSettings::i_applyDefaults(void)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->bd->applyDefaults();
+}
+
+settings::RecordingScreenSettings &RecordingScreenSettings::i_getData(void)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
+
+    AssertPtr(m);
+    return *m->bd.data();
 }
 
 /**
