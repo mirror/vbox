@@ -45,8 +45,10 @@
 #include <iprt/string.h>
 #include <iprt/utf16.h>
 #include <iprt/x86.h>
+#if !defined(IPRT_WITHOUT_LDR_VERIFY) || !defined(IPRT_WITHOUT_LDR_PAGE_HASHING)
+# include <iprt/zero.h>
+#endif
 #ifndef IPRT_WITHOUT_LDR_VERIFY
-#include <iprt/zero.h>
 # include <iprt/crypto/pkcs7.h>
 # include <iprt/crypto/spc.h>
 # include <iprt/crypto/x509.h>
@@ -268,6 +270,10 @@ typedef RTLDRPESIGNATURE *PRTLDRPESIGNATURE;
 static void rtldrPEConvert32BitOptionalHeaderTo64Bit(PIMAGE_OPTIONAL_HEADER64 pOptHdr);
 static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 pLoadCfg);
 static int  rtldrPEApplyFixups(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvBitsW, RTUINTPTR BaseAddress, RTUINTPTR OldBaseAddress);
+#ifndef IPRT_WITHOUT_LDR_PAGE_HASHING
+static int  rtLdrPE_QueryPageHashes(PRTLDRMODPE pModPe, RTDIGESTTYPE enmDigest, void *pvBuf, size_t cbBuf, size_t *pcbRet);
+static uint32_t rtLdrPE_GetHashablePages(PRTLDRMODPE pModPe);
+#endif
 
 
 
@@ -2071,6 +2077,19 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
                                                  pModPe->offPkcs7SignedData);
         }
 
+#ifndef IPRT_WITHOUT_LDR_PAGE_HASHING
+        case RTLDRPROP_HASHABLE_PAGES:
+            *pcbRet = sizeof(uint32_t);
+            *(uint32_t *)pvBuf = rtLdrPE_GetHashablePages(pModPe);
+            return VINF_SUCCESS;
+
+        case RTLDRPROP_SHA1_PAGE_HASHES:
+            return rtLdrPE_QueryPageHashes(pModPe, RTDIGESTTYPE_SHA1, pvBuf, cbBuf, pcbRet);
+
+        case RTLDRPROP_SHA256_PAGE_HASHES:
+            return rtLdrPE_QueryPageHashes(pModPe, RTDIGESTTYPE_SHA256, pvBuf, cbBuf, pcbRet);
+#endif
+
         case RTLDRPROP_SIGNATURE_CHECKS_ENFORCED:
             Assert(cbBuf == sizeof(bool));
             Assert(*pcbRet == cbBuf);
@@ -2197,7 +2216,6 @@ static void rtLdrPE_HashFinalize(PRTLDRPEHASHCTXUNION pHashCtx, RTDIGESTTYPE enm
 }
 
 
-#ifndef IPRT_WITHOUT_LDR_VERIFY
 /**
  * Returns the digest size for the given digest type.
  *
@@ -2215,7 +2233,6 @@ static uint32_t rtLdrPE_HashGetHashSize(RTDIGESTTYPE enmDigest)
         default:                   AssertReleaseFailedReturn(0);
     }
 }
-#endif
 
 
 /**
@@ -2387,6 +2404,238 @@ static int rtldrPE_HashImageCommon(PRTLDRMODPE pModPe, void *pvScratch, uint32_t
     return VINF_SUCCESS;
 }
 
+#ifndef IPRT_WITHOUT_LDR_PAGE_HASHING
+
+/**
+ * Returns the size of the page hashes, including the terminator entry.
+ *
+ * Used for handling RTLDRPROP_HASHABLE_PAGES.
+ *
+ * @returns Number of page hashes.
+ * @param   pModPe              The PE module.
+ */
+static uint32_t rtLdrPE_GetHashablePages(PRTLDRMODPE pModPe)
+{
+    uint32_t const  cbPage = _4K;
+    uint32_t        cPages = 1; /* termination entry */
+
+    /* Add implicit header section: */
+    cPages += (pModPe->cbHeaders + cbPage - 1) / cbPage;
+
+    /* Add on disk pages for each section.  Each starts with a fresh page and
+       we ASSUMES that it is page aligned (in memory). */
+    for (uint32_t i = 0; i < pModPe->cSections; i++)
+    {
+        uint32_t const cbRawData = pModPe->paSections[i].SizeOfRawData;
+        if (cbRawData > 0)
+            cPages += (cbRawData + cbPage - 1) / cbPage;
+    }
+
+    return cPages;
+}
+
+
+/**
+ * Worker for rtLdrPE_QueryPageHashes.
+ *
+ * Keep in mind that rtldrPE_VerifyAllPageHashes does similar work, so some
+ * fixes may apply both places.
+ */
+static int rtLdrPE_CalcPageHashes(PRTLDRMODPE pModPe, RTDIGESTTYPE const enmDigest, uint32_t const cbHash,
+                                  uint8_t *pbDst, uint8_t *pbScratch, uint32_t cbScratch, uint32_t const cbPage)
+{
+    /*
+     * Calculate the special places.
+     */
+    RTLDRPEHASHSPECIALS SpecialPlaces = { 0, 0, 0, 0, 0, 0 }; /* shut up gcc */
+    int rc = rtldrPe_CalcSpecialHashPlaces(pModPe, &SpecialPlaces, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Walk section table and hash the pages in each.  Because the headers are
+     * in an implicit section, the loop advancing is a little funky.
+     */
+    int32_t const   cSections   = pModPe->cSections;
+    int32_t         iSection    = -1;
+    uint32_t        offRawData  = 0;
+    uint32_t        cbRawData   = pModPe->cbHeaders;
+    uint32_t        offLastPage = 0;
+
+    uint32_t const  cbScratchReadMax = cbScratch / cbPage * cbPage;
+    uint32_t        cbScratchRead    = 0;
+    uint32_t        offScratchRead   = 0;
+
+    for (;;)
+    {
+        /*
+         * Process the pages in this section.
+         */
+        uint32_t cPagesInSection = (cbRawData + cbPage - 1) / cbPage;
+        for (uint32_t iPage = 0; iPage < cPagesInSection; iPage++)
+        {
+            uint32_t const offPageInFile = offRawData + iPage * cbPage;
+            uint32_t const cbPageInFile  = RT_MIN(cbPage, offPageInFile - cbRawData);
+            offLastPage = offPageInFile;
+
+            /* Calculate and output the page offset. */
+            *(uint32_t *)pbDst = offPageInFile;
+            pbDst += sizeof(uint32_t);
+
+            /*
+             * Read/find in the raw page.
+             */
+            /* Did we get a cache hit? */
+            uint8_t *pbCur = pbScratch;
+            if (   offPageInFile + cbPageInFile <= offScratchRead + cbScratchRead
+                && offPageInFile                >= offScratchRead)
+                pbCur += offPageInFile - offScratchRead;
+            /* Missed, read more. */
+            else
+            {
+                offScratchRead = offPageInFile;
+                cbScratchRead  = SpecialPlaces.cbToHash - offPageInFile;
+                if (cbScratchRead > cbScratchReadMax)
+                    cbScratchRead = cbScratchReadMax;
+                rc = pModPe->Core.pReader->pfnRead(pModPe->Core.pReader, pbCur, cbScratchRead, offScratchRead);
+                if (RT_FAILURE(rc))
+                    return VERR_LDRVI_READ_ERROR_HASH;
+            }
+
+            /*
+             * Hash it.
+             */
+            RTLDRPEHASHCTXUNION HashCtx;
+            rc = rtLdrPE_HashInit(&HashCtx, enmDigest);
+            AssertRCReturn(rc, rc);
+
+            /* Deal with special places. */
+            uint32_t cbLeft = cbPageInFile;
+            if (offPageInFile < SpecialPlaces.offEndSpecial)
+            {
+                uint32_t off = offPageInFile;
+                if (off < SpecialPlaces.offCksum)
+                {
+                    /* Hash everything up to the checksum. */
+                    uint32_t cbChunk = RT_MIN(SpecialPlaces.offCksum - off, cbLeft);
+                    rtLdrPE_HashUpdate(&HashCtx, enmDigest, pbCur, cbChunk);
+                    pbCur  += cbChunk;
+                    cbLeft -= cbChunk;
+                    off    += cbChunk;
+                }
+
+                if (off < SpecialPlaces.offCksum + SpecialPlaces.cbCksum && off >= SpecialPlaces.offCksum)
+                {
+                    /* Skip the checksum */
+                    uint32_t cbChunk = RT_MIN(SpecialPlaces.offCksum + SpecialPlaces.cbCksum - off, cbLeft);
+                    pbCur  += cbChunk;
+                    cbLeft -= cbChunk;
+                    off    += cbChunk;
+                }
+
+                if (off < SpecialPlaces.offSecDir && off >= SpecialPlaces.offCksum + SpecialPlaces.cbCksum)
+                {
+                    /* Hash everything between the checksum and the data dir entry. */
+                    uint32_t cbChunk = RT_MIN(SpecialPlaces.offSecDir - off, cbLeft);
+                    rtLdrPE_HashUpdate(&HashCtx, enmDigest, pbCur, cbChunk);
+                    pbCur  += cbChunk;
+                    cbLeft -= cbChunk;
+                    off    += cbChunk;
+                }
+
+                if (off < SpecialPlaces.offSecDir + SpecialPlaces.cbSecDir && off >= SpecialPlaces.offSecDir)
+                {
+                    /* Skip the security data directory entry. */
+                    uint32_t cbChunk = RT_MIN(SpecialPlaces.offSecDir + SpecialPlaces.cbSecDir - off, cbLeft);
+                    pbCur  += cbChunk;
+                    cbLeft -= cbChunk;
+                    off    += cbChunk;
+                }
+            }
+
+            rtLdrPE_HashUpdate(&HashCtx, enmDigest, pbCur, cbLeft);
+            if (cbPageInFile < cbPage)
+                rtLdrPE_HashUpdate(&HashCtx, enmDigest, g_abRTZero4K, cbPage - cbPageInFile);
+
+            /*
+             * Finish the hash calculation storing it in the table.
+             */
+            rtLdrPE_HashFinalize(&HashCtx, enmDigest, (PRTLDRPEHASHRESUNION)pbDst);
+            pbDst += cbHash;
+        }
+
+        /*
+         * Advance to the next section.
+         */
+        iSection++;
+        if (iSection >= cSections)
+            break;
+        offRawData = pModPe->paSections[iSection].PointerToRawData;
+        cbRawData  = pModPe->paSections[iSection].SizeOfRawData;
+    }
+
+    /*
+     * Add the terminator entry.
+     */
+    *(uint32_t *)pbDst = offLastPage;
+    RT_BZERO(&pbDst[sizeof(uint32_t)], cbHash);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Creates the page hash table for the image.
+ *
+ * Used for handling RTLDRPROP_SHA1_PAGE_HASHES and
+ * RTLDRPROP_SHA256_PAGE_HASHES.
+ *
+ * @returns IPRT status code.
+ * @param   pModPe              The PE module.
+ * @param   enmDigest           The digest to use when hashing the pages.
+ * @param   pvBuf               Where to return the page hash table.
+ * @param   cbBuf               The size of the buffer @a pvBuf points to.
+ * @param   pcbRet              Where to return the output/needed size.
+ */
+static int rtLdrPE_QueryPageHashes(PRTLDRMODPE pModPe, RTDIGESTTYPE enmDigest, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    /*
+     * Check that we've got enough buffer space.
+     */
+    uint32_t const cbPage   = _4K;
+    uint32_t const cEntries = rtLdrPE_GetHashablePages(pModPe);
+    uint32_t const cbHash   = rtLdrPE_HashGetHashSize(enmDigest);
+    AssertReturn(cbHash > 0, VERR_INTERNAL_ERROR_3);
+
+    size_t const   cbNeeded = (size_t)(cbHash + 4) * cEntries;
+    *pcbRet = cbNeeded;
+    if (cbNeeded > cbBuf)
+        return VERR_BUFFER_OVERFLOW;
+
+    /*
+     * Allocate a scratch buffer and call worker to do the real job.
+     */
+# ifdef IN_RING0
+    uint32_t    cbScratch = _256K - _4K;
+# else
+    uint32_t    cbScratch = _1M;
+# endif
+    void       *pvScratch = RTMemTmpAlloc(cbScratch);
+    if (!pvScratch)
+    {
+        cbScratch = _4K;
+        pvScratch = RTMemTmpAlloc(cbScratch);
+        if (!pvScratch)
+            return VERR_NO_TMP_MEMORY;
+    }
+
+    int rc = rtLdrPE_CalcPageHashes(pModPe, enmDigest, cbHash, (uint8_t *)pvBuf, (uint8_t *)pvScratch, cbScratch, cbPage);
+
+    RTMemTmpFree(pvScratch);
+    return rc;
+}
+
+#endif /* !IPRT_WITHOUT_LDR_PAGE_HASHING */
 #ifndef IPRT_WITHOUT_LDR_VERIFY
 
 /**
@@ -2906,7 +3155,7 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
 
         rtLdrPE_HashUpdate(&HashCtx, enmDigest, pbCur, cbLeft);
         if (cbPageInFile < _4K)
-            rtLdrPE_HashUpdate(&HashCtx, enmDigest, &g_abRTZero4K[cbPageInFile], _4K - cbPageInFile);
+            rtLdrPE_HashUpdate(&HashCtx, enmDigest, g_abRTZero4K, _4K - cbPageInFile);
 
         /*
          * Finish the hash calculation and compare the result.
