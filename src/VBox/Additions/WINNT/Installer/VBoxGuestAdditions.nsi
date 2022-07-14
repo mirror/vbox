@@ -32,6 +32,8 @@
 !endif
 
 ; Defines for special functions
+!define WHQL_FAKE                   ; Enables faking of non WHQL signed / approved drivers
+                                    ; Needs the VBoxWHQLFake.exe in the additions output directory!
 !define WFP_FILE_EXCEPTION          ; Enables setting a temporary file exception for WFP proctected files
 
 !define VENDOR_ROOT_KEY             "SOFTWARE\$%VBOX_VENDOR_SHORT%"
@@ -225,6 +227,7 @@ Var g_bCapWDDM                          ; Capability: Is the guest able to handl
 
 ; Command line parameters - these can be set/modified
 ; on the command line
+Var g_bFakeWHQL                         ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
 Var g_bForceInstall                     ; Cmd line: Force installation on unknown Windows OS version
 Var g_bUninstall                        ; Cmd line: Just uninstall any previous Guest Additions and exit
 Var g_bRebootOnExit                     ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
@@ -376,6 +379,12 @@ Function HandleCommandLine
       ${Case} 'sforder'
         StrCpy $g_iSfOrder $5
         ${Break}
+
+!ifdef WHQL_FAKE
+      ${Case} '/unsig_drv'
+        StrCpy $g_bFakeWHQL "true"
+      ${Break}
+!endif
 
       ${Case} '/uninstall'
         StrCpy $g_bUninstall "true"
@@ -918,6 +927,7 @@ Function .onInit
 
   StrCpy $g_bIgnoreUnknownOpts "false"
   StrCpy $g_bLogEnable "false"
+  StrCpy $g_bFakeWHQL "false"
   StrCpy $g_bForceInstall "false"
   StrCpy $g_bUninstall "false"
   StrCpy $g_bRebootOnExit "false"

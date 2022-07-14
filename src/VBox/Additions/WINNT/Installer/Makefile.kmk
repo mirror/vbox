@@ -65,7 +65,8 @@ RegCleanup_SOURCES  = \
 #
 PACKING     += $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
 OTHER_CLEAN += \
-	$(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
+	$(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe \
+	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe
 
 ## @todo r=andy Rename DRIVER_FILES to INST_FILES or something, as those files are not strictly driver-related files.
 
@@ -80,6 +81,7 @@ DRIVER_FILES := \
 	$(PATH_STAGE_BIN)/additions/VBoxMRXNP.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxTray.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxControl.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxService.exe
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
       # Also include 32-bit network provider DLLs on 64-bit guests to enable
@@ -218,6 +220,17 @@ $(PATH_TARGET)/uninst.exe: $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_A
 	$(TEST) -f $@
 	$(call VBOX_SIGN_FILE_FN,$@)
 endif
+
+WHQLFAKE := $(PATH_SUB_CURRENT)/VBoxWHQLFake.au3
+
+$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe:
+	$(call MSG_L1,Creating $@, from $<)
+	$(QUIET)$(EXEC_X86_WIN32) $(VBOX_PATH_AUTOIT3)/Aut2Exe/Aut2exe.exe \
+		/in $(WHQLFAKE) \
+		/out $(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe \
+		/icon $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
+		/comp 4 \
+		/unicode
 
 ifdef VBOX_GA_ATTESTATION_SIGNING
 VBOX_DRIVERS_PACK_NAME := VBoxDrivers-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)-$(KBUILD_TARGET_ARCH).cab

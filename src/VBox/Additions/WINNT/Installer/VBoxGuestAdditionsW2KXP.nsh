@@ -208,6 +208,11 @@ Function W2K_CopyFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxAudioTest.exe"
 !endif
 
+  ; WHQL fake
+!ifdef WHQL_FAKE
+  FILE "$%PATH_OUT%\bin\additions\VBoxWHQLFake.exe"
+!endif
+
   SetOutPath $g_strSystemDir
 
   ; VBoxService
@@ -281,6 +286,37 @@ doneCr:
 
 FunctionEnd
 
+!ifdef WHQL_FAKE
+
+Function W2K_WHQLFakeOn
+
+  StrCmp $g_bFakeWHQL "true" do
+  Goto exit
+
+do:
+
+  ${LogVerbose} "Turning off WHQL protection..."
+  ${CmdExecute} "$\"$INSTDIR\VBoxWHQLFake.exe$\" $\"ignore$\"" "true"
+
+exit:
+
+FunctionEnd
+
+Function W2K_WHQLFakeOff
+
+  StrCmp $g_bFakeWHQL "true" do
+  Goto exit
+
+do:
+
+  ${LogVerbose} "Turning back on WHQL protection..."
+  ${CmdExecute} "$\"$INSTDIR\VBoxWHQLFake.exe$\" $\"warn$\"" "true"
+
+exit:
+
+FunctionEnd
+
+!endif
 
 Function W2K_InstallFiles
 
@@ -392,7 +428,17 @@ Function W2K_Main
 
   Call W2K_Prepare
   Call W2K_CopyFiles
+
+!ifdef WHQL_FAKE
+  Call W2K_WHQLFakeOn
+!endif
+
   Call W2K_InstallFiles
+
+!ifdef WHQL_FAKE
+  Call W2K_WHQLFakeOff
+!endif
+
   Call W2K_SetVideoResolution
 
 FunctionEnd
@@ -463,6 +509,11 @@ Function ${un}W2K_UninstallInstDir
       Delete /REBOOTOK "$INSTDIR\wined3dwddm-x86.dll"
   !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
+
+  ; WHQL fake
+!ifdef WHQL_FAKE
+  Delete /REBOOTOK "$INSTDIR\VBoxWHQLFake.exe"
+!endif
 
   ; Log file
   Delete /REBOOTOK "$INSTDIR\install.log"
