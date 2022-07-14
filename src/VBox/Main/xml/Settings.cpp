@@ -8007,7 +8007,7 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
             pelmRecording->setAttribute("enabled", recording.common.fEnabled);
 
         /* Only serialize screens which have non-default settings. */
-        size_t cScreensToWrite = 0;
+        uint32_t cScreensToWrite = 0;
 
         RecordingScreenSettingsMap::const_iterator itScreen = recording.mapScreens.begin();
         while (itScreen != recording.mapScreens.end())
