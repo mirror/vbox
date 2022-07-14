@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* IPRT includes: */
-#include "iprt/path.h" /* For RTPATH_MAX in UIMachineSettingsDisplay::saveRecordingData(). */
-
 /* Qt includes: */
 #include <QFileInfo>
 #include <QVBoxLayout>
@@ -1171,99 +1168,190 @@ bool UIMachineSettingsDisplay::saveRecordingData()
     /* Prepare result: */
     bool fSuccess = true;
 
+    /* Get old data from cache: */
+    const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
     /* Get new data from cache: */
     const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
     CRecordingSettings recordingSettings = m_machine.GetRecordingSettings();
     Assert(recordingSettings.isNotNull());
 
-    CRecordingScreenSettingsVector comRecordingScreenSettingsVector = recordingSettings.GetScreens();
-    for (int idxScreen = 0; fSuccess && idxScreen < comRecordingScreenSettingsVector.size(); ++idxScreen)
+    /** @todo r=andy Make the code below more compact -- too much redundancy here. */
+
+    /* Save new 'Recording' data for online case: */
+    if (isMachineOnline())
     {
-        CRecordingScreenSettings comRecordingScreenSettings = comRecordingScreenSettingsVector.at(idxScreen);
+        /* If 'Recording' was *enabled*: */
+        if (oldDisplayData.m_fRecordingEnabled)
+        {
+            /* Save whether recording is enabled: */
+            if (fSuccess && newDisplayData.m_fRecordingEnabled != oldDisplayData.m_fRecordingEnabled)
+            {
+                recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
+                fSuccess = recordingSettings.isOk();
+            }
 
-        char szFileAbs[RTPATH_MAX] = "";
-        int vrc = RTStrCopy(szFileAbs, sizeof(szFileAbs), newDisplayData.m_strRecordingFilePath.toLocal8Bit().data());
-        if (RT_FAILURE(vrc))
-        {
-            notifyOperationProgressError(QString("Copying path failed with %1").arg(vrc));
-            fSuccess = false;
-        }
+            // We can still save the *screens* option.
+            /* Save recording screens: */
+            if (fSuccess)
+            {
+                CRecordingScreenSettingsVector comRecordingScreenSettingsVector = recordingSettings.GetScreens();
+                for (int iScreenIndex = 0; fSuccess && iScreenIndex < comRecordingScreenSettingsVector.size(); ++iScreenIndex)
+                {
+                    if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
+                        continue;
 
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetFilename(szFileAbs);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
+                    CRecordingScreenSettings comRecordingScreenSettings = comRecordingScreenSettingsVector.at(iScreenIndex);
+                    comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+            }
         }
+        /* If 'Recording' was *disabled*: */
+        else
+        {
+            CRecordingScreenSettingsVector comRecordingScreenSettingsVector = recordingSettings.GetScreens();
+            for (int iScreenIndex = 0; fSuccess && iScreenIndex < comRecordingScreenSettingsVector.size(); ++iScreenIndex)
+            {
+                CRecordingScreenSettings comRecordingScreenSettings = comRecordingScreenSettingsVector.at(iScreenIndex);
 
-        /** @todo r=andy We have to explicitly set all settings to the screen objects here, to keep things in
-         *               sync with the settings from screen 0. Optimize / change this when we have support for per-screen
-         *               recording settings in the GUI.  See @bugref{10259} */
+                // We should save all the options *before* 'Recording' activation.
+                // And finally we should *enable* Recording if necessary.
+                /* Save recording file path: */
+                if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
+                {
+                    comRecordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Save recording frame width: */
+                if (fSuccess && newDisplayData.m_iRecordingVideoFrameWidth != oldDisplayData.m_iRecordingVideoFrameWidth)
+                {
+                    comRecordingScreenSettings.SetVideoWidth(newDisplayData.m_iRecordingVideoFrameWidth);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Save recording frame height: */
+                if (fSuccess && newDisplayData.m_iRecordingVideoFrameHeight != oldDisplayData.m_iRecordingVideoFrameHeight)
+                {
+                    comRecordingScreenSettings.SetVideoHeight(newDisplayData.m_iRecordingVideoFrameHeight);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Save recording frame rate: */
+                if (fSuccess && newDisplayData.m_iRecordingVideoFrameRate != oldDisplayData.m_iRecordingVideoFrameRate)
+                {
+                    comRecordingScreenSettings.SetVideoFPS(newDisplayData.m_iRecordingVideoFrameRate);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Save recording frame bit rate: */
+                if (fSuccess && newDisplayData.m_iRecordingVideoBitRate != oldDisplayData.m_iRecordingVideoBitRate)
+                {
+                    comRecordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Save recording options: */
+                if (fSuccess && newDisplayData.m_strRecordingVideoOptions != oldDisplayData.m_strRecordingVideoOptions)
+                {
+                    comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+                /* Finally, save the screen's recording state: */
+                /* Note: Must come last, as modifying options with an enabled recording state is not possible. */
+                if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
+                {
+                    comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
+                    Assert(comRecordingScreenSettings.isOk());
+                    fSuccess = comRecordingScreenSettings.isOk();
+                }
+            }
 
-        /* Save recording frame width: */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetVideoWidth(newDisplayData.m_iRecordingVideoFrameWidth);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
+            /* Save whether recording is enabled:
+             * Do this last, as after enabling recording no changes via API aren't allowed anymore. */
+            if (fSuccess && newDisplayData.m_fRecordingEnabled != oldDisplayData.m_fRecordingEnabled)
+            {
+                recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
+                Assert(recordingSettings.isOk());
+                fSuccess = recordingSettings.isOk();
+            }
         }
-        /* Save recording frame height: */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetVideoHeight(newDisplayData.m_iRecordingVideoFrameHeight);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
-        }
-        /* Save recording frame rate: */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetVideoFPS(newDisplayData.m_iRecordingVideoFrameRate);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
-        }
-        /* Save recording frame bit rate: */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
-        }
-        /* Save recording options: */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
-        }
-        /* Finally, save the screen's recording state: */
-        /* Note: Must come last, as modifying options with an enabled recording state is not possible. */
-        if (fSuccess)
-        {
-            comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[idxScreen]);
-            Assert(comRecordingScreenSettings.isOk());
-            fSuccess = comRecordingScreenSettings.isOk();
-        }
-
-        if (!fSuccess)
-            break;
     }
-
-    /* Save whether recording is enabled:
-     * Do this last, as after enabling recording no changes via API aren't allowed anymore. */
-    if (fSuccess)
+    /* Save new 'Recording' data for offline case: */
+    else
     {
-        recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
-        Assert(recordingSettings.isOk());
-        fSuccess = recordingSettings.isOk();
+        CRecordingScreenSettingsVector comRecordingScreenSettingsVector = recordingSettings.GetScreens();
+        for (int iScreenIndex = 0; fSuccess && iScreenIndex < comRecordingScreenSettingsVector.size(); ++iScreenIndex)
+        {
+            CRecordingScreenSettings comRecordingScreenSettings = comRecordingScreenSettingsVector.at(iScreenIndex);
+
+            /* Save recording file path: */
+            if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
+            {
+                comRecordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Save recording frame width: */
+            if (fSuccess && newDisplayData.m_iRecordingVideoFrameWidth != oldDisplayData.m_iRecordingVideoFrameWidth)
+            {
+                comRecordingScreenSettings.SetVideoWidth(newDisplayData.m_iRecordingVideoFrameWidth);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Save recording frame height: */
+            if (fSuccess && newDisplayData.m_iRecordingVideoFrameHeight != oldDisplayData.m_iRecordingVideoFrameHeight)
+            {
+                comRecordingScreenSettings.SetVideoHeight(newDisplayData.m_iRecordingVideoFrameHeight);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Save recording frame rate: */
+            if (fSuccess && newDisplayData.m_iRecordingVideoFrameRate != oldDisplayData.m_iRecordingVideoFrameRate)
+            {
+                comRecordingScreenSettings.SetVideoFPS(newDisplayData.m_iRecordingVideoFrameRate);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Save recording frame bit rate: */
+            if (fSuccess && newDisplayData.m_iRecordingVideoBitRate != oldDisplayData.m_iRecordingVideoBitRate)
+            {
+                comRecordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Save capture options: */
+            if (fSuccess && newDisplayData.m_strRecordingVideoOptions != oldDisplayData.m_strRecordingVideoOptions)
+            {
+                comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+            /* Finally, save the screen's recording state: */
+            /* Note: Must come last, as modifying options with an enabled recording state is not possible. */
+            if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
+            {
+                comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
+                Assert(comRecordingScreenSettings.isOk());
+                fSuccess = comRecordingScreenSettings.isOk();
+            }
+        }
+
+        /* Save whether recording is enabled:
+         * Do this last, as after enabling recording no changes via API aren't allowed anymore. */
+        if (fSuccess && newDisplayData.m_fRecordingEnabled != oldDisplayData.m_fRecordingEnabled)
+        {
+            recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
+            Assert(recordingSettings.isOk());
+            fSuccess = recordingSettings.isOk();
+        }
     }
 
     /* Show error message if necessary: */
     if (!fSuccess)
-    {
-        if (!m_machine.isOk()) /* Did we already warn above? */
-            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
-    }
+        notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
 
     /* Return result: */
     return fSuccess;
