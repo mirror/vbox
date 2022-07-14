@@ -545,7 +545,7 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
 
     data.common = *m->bd.data();
 
-    HRESULT hrc;
+    HRESULT hrc = S_OK;
 
     for (RecordingScreenSettingsObjMap::const_iterator itScreen  = m->mapScreenObj.begin();
                                                        itScreen != m->mapScreenObj.end();
