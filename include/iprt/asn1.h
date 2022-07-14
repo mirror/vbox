@@ -1224,6 +1224,10 @@ extern RTDATADECL(RTASN1COREVTABLE const) g_RTAsn1OctetString_Vtable;
 
 RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1OCTETSTRING, RTDECL, RTAsn1OctetString, Asn1Core);
 
+RTDECL(int) RTAsn1OctetString_AllocContent(PRTASN1OCTETSTRING pThis, void const *pvSrc, size_t cb,
+                                           PCRTASN1ALLOCATORVTABLE pAllocator);
+RTDECL(int) RTAsn1OctetString_SetContent(PRTASN1OCTETSTRING pThis, void const *pvSrc, size_t cbSrc,
+                                         PCRTASN1ALLOCATORVTABLE pAllocator);
 RTDECL(bool) RTAsn1OctetString_AreContentBytesValid(PCRTASN1OCTETSTRING pThis, uint32_t fFlags);
 RTDECL(int) RTAsn1OctetString_RefreshContent(PRTASN1OCTETSTRING pThis, uint32_t fFlags,
                                              PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo);

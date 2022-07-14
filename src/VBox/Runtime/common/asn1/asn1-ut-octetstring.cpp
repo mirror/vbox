@@ -126,6 +126,27 @@ RTDECL(int) RTAsn1OctetString_RefreshContent(PRTASN1OCTETSTRING pThis, uint32_t 
 }
 
 
+RTDECL(int) RTAsn1OctetString_AllocContent(PRTASN1OCTETSTRING pThis, void const *pvSrc, size_t cb,
+                                           PCRTASN1ALLOCATORVTABLE pAllocator)
+{
+    AssertReturn(!pThis->pEncapsulated, VERR_INVALID_STATE);
+    int rc;
+    if (pvSrc)
+        rc = RTAsn1ContentDup(&pThis->Asn1Core, pvSrc, cb, pAllocator);
+    else
+        rc = RTAsn1ContentAllocZ(&pThis->Asn1Core, cb, pAllocator);
+    return rc;
+}
+
+
+RTDECL(int) RTAsn1OctetString_SetContent(PRTASN1OCTETSTRING pThis, void const *pvSrc, size_t cbSrc,
+                                         PCRTASN1ALLOCATORVTABLE pAllocator)
+{
+    AssertPtrReturn(pvSrc, VERR_INVALID_POINTER);
+    return RTAsn1OctetString_AllocContent(pThis, pvSrc, cbSrc, pAllocator);
+}
+
+
 RTDECL(bool) RTAsn1OctetString_AreContentBytesValid(PCRTASN1OCTETSTRING pThis, uint32_t fFlags)
 {
     if (pThis->pEncapsulated)
