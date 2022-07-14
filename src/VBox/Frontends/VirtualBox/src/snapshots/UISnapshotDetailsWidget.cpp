@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QDateTime>
 #include <QDir>
@@ -61,6 +62,42 @@
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
+
+/* Forward declarations: */
+class UISnapshotDetailsElement;
+
+
+/** QAccessibleObject extension used as an accessibility interface for UISnapshotDetailsElement. */
+class UIAccessibilityInterfaceForUISnapshotDetailsElement : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating UISnapshotDetailsElement accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UISnapshotDetailsElement"))
+            return new UIAccessibilityInterfaceForUISnapshotDetailsElement(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUISnapshotDetailsElement(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::StaticText)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+
+private:
+
+    /** Returns corresponding UISnapshotDetailsElement. */
+    UISnapshotDetailsElement *browser() const;
+};
 
 
 /** QWiget extension providing GUI with snapshot details elements. */
@@ -184,6 +221,42 @@ private:
     /** Holds whether we are in zoom mode. */
     bool  m_fZoomMode;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIAccessibilityInterfaceForUISnapshotDetailsElement implementation.                                                    *
+*********************************************************************************************************************************/
+
+QAccessibleInterface *UIAccessibilityInterfaceForUISnapshotDetailsElement::parent() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(browser(), 0);
+
+    /* Always return parent object: */
+    return QAccessible::queryAccessibleInterface(browser()->parent());
+}
+
+QString UIAccessibilityInterfaceForUISnapshotDetailsElement::text(QAccessible::Text enmTextRole) const
+{
+    /* Make sure browser still alive: */
+    AssertPtrReturn(browser(), QString());
+
+    /* Return the description: */
+    if (enmTextRole == QAccessible::Description)
+    {
+        /* Sanity check: */
+        AssertPtrReturn(browser()->document(), QString());
+        return browser()->document()->toPlainText();
+    }
+
+    /* Null-string by default: */
+    return QString();
+}
+
+UISnapshotDetailsElement *UIAccessibilityInterfaceForUISnapshotDetailsElement::browser() const
+{
+    return qobject_cast<UISnapshotDetailsElement*>(widget());
+}
 
 
 /*********************************************************************************************************************************
@@ -328,6 +401,9 @@ void UISnapshotDetailsElement::paintEvent(QPaintEvent * /* pEvent */)
 
 void UISnapshotDetailsElement::prepare()
 {
+    /* Install QIComboBox accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUISnapshotDetailsElement::pFactory);
+
     /* Create layout: */
     new QHBoxLayout(this);
     AssertPtrReturnVoid(layout());
@@ -1596,7 +1672,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             .arg(1 + iRowCount) /* rows */
             .arg(QString("details://%1").arg(gpConverter->toInternalString(enmType)), /* icon */
                  QString::number(iIconArea), /* icon area */
-                 gpConverter->toString(enmType), /* title */
+                 QString("%1:").arg(gpConverter->toString(enmType)), /* title */
                  strItem /* items */);
 
     /* Return report as table: */
