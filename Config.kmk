@@ -1004,9 +1004,10 @@ if1of ($(KBUILD_TARGET), darwin linux)
  VBOX_WITH_VBOXIMGMOUNT = 1
 endif
 # Set this to enable packaging the fuse related bits into our installer.
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
- VBOX_WITH_FUSE_PACKING = 1
-endif
+# Newer versions prohibit from distributing with commercial software @bugref{8515}
+#if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
+# VBOX_WITH_FUSE_PACKING = 1
+#endif
 # Enables updating checking through Main.
 # Only available if cURL is being used.
 ifdef VBOX_WITH_LIBCURL
