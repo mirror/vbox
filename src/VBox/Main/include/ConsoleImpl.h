@@ -173,7 +173,7 @@ public:
 # ifdef VBOX_WITH_AUDIO_RECORDING
     AudioVideoRec *i_recordingGetAudioDrv(void) const { return mRecording.mAudioRec; }
 # endif
-    RecordingContext *i_recordingGetContext(void) const { return mRecording.mpCtx; }
+    RecordingContext *i_recordingGetContext(void) { return &mRecording.mCtx; }
 # ifdef VBOX_WITH_AUDIO_RECORDING
     HRESULT i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
 # endif
@@ -1155,14 +1155,13 @@ private:
     struct Recording
     {
         Recording()
-            : mpCtx(NULL)
 # ifdef VBOX_WITH_AUDIO_RECORDING
-            , mAudioRec(NULL)
+            : mAudioRec(NULL)
 # endif
         { }
 
         /** The recording context. */
-        RecordingContext     *mpCtx;
+        RecordingContext      mCtx;
 # ifdef VBOX_WITH_AUDIO_RECORDING
         /** Pointer to capturing audio backend. */
         AudioVideoRec * const mAudioRec;

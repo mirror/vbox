@@ -57,12 +57,39 @@ using namespace com;
 #endif
 
 
-RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordingSettings &a_Settings)
-    : pConsole(a_pConsole)
+/**
+ * Recording context constructor.
+ *
+ * @note    Will throw when unable to create.
+ */
+RecordingContext::RecordingContext(void)
+    : pConsole(NULL)
     , enmState(RECORDINGSTS_UNINITIALIZED)
     , cStreamsEnabled(0)
 {
-    int vrc = RecordingContext::createInternal(a_Settings);
+    int vrc = RTCritSectInit(&this->CritSect);
+    if (RT_FAILURE(vrc))
+        throw vrc;
+}
+
+/**
+ * Recording context constructor.
+ *
+ * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
+ * @param   settings            Reference to recording settings to use for creation.
+ *
+ * @note    Will throw when unable to create.
+ */
+RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &settings)
+    : pConsole(NULL)
+    , enmState(RECORDINGSTS_UNINITIALIZED)
+    , cStreamsEnabled(0)
+{
+    int vrc = RTCritSectInit(&this->CritSect);
+    if (RT_FAILURE(vrc))
+        throw vrc;
+
+    vrc = RecordingContext::createInternal(ptrConsole, settings);
     if (RT_FAILURE(vrc))
         throw vrc;
 }
@@ -70,6 +97,9 @@ RecordingContext::RecordingContext(Console *a_pConsole, const settings::Recordin
 RecordingContext::~RecordingContext(void)
 {
     destroyInternal();
+
+    if (RTCritSectIsInitialized(&this->CritSect))
+        RTCritSectDelete(&this->CritSect);
 }
 
 /**
@@ -142,16 +172,17 @@ int RecordingContext::threadNotify(void)
  * Creates a recording context.
  *
  * @returns IPRT status code.
- * @param   a_Settings          Recording settings to use for context creation.
+ * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
+ * @param   settings            Reference to recording settings to use for creation.
  */
-int RecordingContext::createInternal(const settings::RecordingSettings &a_Settings)
+int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &settings)
 {
-    int vrc = RTCritSectInit(&this->CritSect);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    int vrc = VINF_SUCCESS;
 
-    settings::RecordingScreenSettingsMap::const_iterator itScreen = a_Settings.mapScreens.begin();
-    while (itScreen != a_Settings.mapScreens.end())
+    this->pConsole = ptrConsole;
+
+    settings::RecordingScreenSettingsMap::const_iterator itScreen = settings.mapScreens.begin();
+    while (itScreen != settings.mapScreens.end())
     {
         RecordingStream *pStream = NULL;
         try
@@ -177,7 +208,7 @@ int RecordingContext::createInternal(const settings::RecordingSettings &a_Settin
         this->fShutdown = false;
 
         /* Copy the settings to our context. */
-        this->Settings  = a_Settings;
+        this->Settings  = settings;
 
         vrc = RTSemEventCreate(&this->WaitEvent);
         AssertRCReturn(vrc, vrc);
@@ -259,13 +290,16 @@ int RecordingContext::stopInternal(void)
  */
 void RecordingContext::destroyInternal(void)
 {
+    lock();
+
     if (this->enmState == RECORDINGSTS_UNINITIALIZED)
+    {
+        unlock();
         return;
+    }
 
     int vrc = stopInternal();
     AssertRCReturnVoid(vrc);
-
-    lock();
 
     vrc = RTSemEventDestroy(this->WaitEvent);
     AssertRCReturnVoid(vrc);
@@ -291,12 +325,9 @@ void RecordingContext::destroyInternal(void)
     Assert(this->vecStreams.empty());
     Assert(this->mapBlocksCommon.size() == 0);
 
-    unlock();
-
-    if (RTCritSectIsInitialized(&this->CritSect))
-        RTCritSectDelete(&this->CritSect);
-
     this->enmState = RECORDINGSTS_UNINITIALIZED;
+
+    unlock();
 }
 
 /**
@@ -370,12 +401,12 @@ size_t RecordingContext::GetStreamCount(void) const
  * Creates a new recording context.
  *
  * @returns IPRT status code.
- * @param   a_Settings          Recording settings to use for creation.
- *
+ * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
+ * @param   settings            Reference to recording settings to use for creation.
  */
-int RecordingContext::Create(const settings::RecordingSettings &a_Settings)
+int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &settings)
 {
-    return createInternal(a_Settings);
+    return createInternal(ptrConsole, settings);
 }
 
 /**

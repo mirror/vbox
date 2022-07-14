@@ -5886,8 +5886,7 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
     Display *pDisplay = i_getDisplay();
     if (pDisplay)
     {
-        const bool fIsEnabled =    mRecording.mpCtx
-                                && mRecording.mpCtx->IsStarted();
+        bool const fIsEnabled = mRecording.mCtx.IsStarted();
 
         if (RT_BOOL(fEnable) != fIsEnabled)
         {
@@ -5903,16 +5902,16 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                     {
 # ifdef VBOX_WITH_AUDIO_RECORDING
                         /* Attach the video recording audio driver if required. */
-                        if (   mRecording.mpCtx->IsFeatureEnabled(RecordingFeature_Audio)
+                        if (   mRecording.mCtx.IsFeatureEnabled(RecordingFeature_Audio)
                             && mRecording.mAudioRec)
                         {
-                            vrc = mRecording.mAudioRec->applyConfiguration(mRecording.mpCtx->GetConfig());
+                            vrc = mRecording.mAudioRec->applyConfiguration(mRecording.mCtx.GetConfig());
                             if (RT_SUCCESS(vrc))
                                 vrc = mRecording.mAudioRec->doAttachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
                         }
 # endif
                         if (   RT_SUCCESS(vrc)
-                            && mRecording.mpCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
+                            && mRecording.mCtx.IsReady()) /* Any video recording (audio and/or video) feature enabled? */
                         {
                             vrc = pDisplay->i_recordingInvalidate();
                             if (RT_SUCCESS(vrc))
@@ -7234,12 +7233,9 @@ HRESULT Console::i_cancelSaveState()
  */
 HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
-    if (!mRecording.mpCtx)
-        return S_OK;
-
-    if (   mRecording.mpCtx->IsStarted()
-        && mRecording.mpCtx->IsFeatureEnabled(RecordingFeature_Audio))
-        return mRecording.mpCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
+    if (   mRecording.mCtx.IsStarted()
+        && mRecording.mCtx.IsFeatureEnabled(RecordingFeature_Audio))
+        return mRecording.mCtx.SendAudioFrame(pvData, cbData, uTimestampMs);
 
     return S_OK;
 }
@@ -7309,28 +7305,13 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
  */
 int Console::i_recordingCreate(void)
 {
-    AssertReturn(mRecording.mpCtx == NULL, VERR_WRONG_ORDER);
-
     settings::RecordingSettings recordingSettings;
-    int rc = i_recordingGetSettings(recordingSettings);
-    if (RT_SUCCESS(rc))
-    {
-        try
-        {
-            mRecording.mpCtx = new RecordingContext(this /* pConsole */, recordingSettings);
-        }
-        catch (std::bad_alloc &)
-        {
-            return VERR_NO_MEMORY;
-        }
-        catch (int &rc2)
-        {
-            return rc2;
-        }
-    }
+    int vrc = i_recordingGetSettings(recordingSettings);
+    if (RT_SUCCESS(vrc))
+        vrc = mRecording.mCtx.Create(this, recordingSettings);
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -7338,13 +7319,7 @@ int Console::i_recordingCreate(void)
  */
 void Console::i_recordingDestroy(void)
 {
-    if (mRecording.mpCtx)
-    {
-        delete mRecording.mpCtx;
-        mRecording.mpCtx = NULL;
-    }
-
-    LogFlowThisFuncLeave();
+    mRecording.mCtx.Destroy();
 }
 
 /**
@@ -7355,22 +7330,21 @@ void Console::i_recordingDestroy(void)
 int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 {
     RT_NOREF(pAutoLock);
-    AssertPtrReturn(mRecording.mpCtx, VERR_WRONG_ORDER);
 
-    if (mRecording.mpCtx->IsStarted())
+    if (mRecording.mCtx.IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Starting ...\n"));
 
-    int rc = mRecording.mpCtx->Start();
-    if (RT_SUCCESS(rc))
+    int vrc = mRecording.mCtx.Start();
+    if (RT_SUCCESS(vrc))
     {
-        for (unsigned uScreen = 0; uScreen < mRecording.mpCtx->GetStreamCount(); uScreen++)
+        for (unsigned uScreen = 0; uScreen < mRecording.mCtx.GetStreamCount(); uScreen++)
             mDisplay->i_recordingScreenChanged(uScreen);
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -7378,16 +7352,15 @@ int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
  */
 int Console::i_recordingStop(util::AutoWriteLock *pAutoLock /* = NULL */)
 {
-    if (   !mRecording.mpCtx
-        || !mRecording.mpCtx->IsStarted())
+    if (!mRecording.mCtx.IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Stopping ...\n"));
 
-    int rc = mRecording.mpCtx->Stop();
-    if (RT_SUCCESS(rc))
+    int vrc = mRecording.mCtx.Stop();
+    if (RT_SUCCESS(vrc))
     {
-        const size_t cStreams = mRecording.mpCtx->GetStreamCount();
+        const size_t cStreams = mRecording.mCtx.GetStreamCount();
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_recordingScreenChanged(uScreen);
 
@@ -7404,8 +7377,8 @@ int Console::i_recordingStop(util::AutoWriteLock *pAutoLock /* = NULL */)
             pAutoLock->acquire();
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 #endif /* VBOX_WITH_RECORDING */

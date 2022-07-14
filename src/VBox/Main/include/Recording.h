@@ -35,7 +35,9 @@ class RecordingContext
 {
 public:
 
-    RecordingContext(Console *pConsole, const settings::RecordingSettings &a_Settings);
+    RecordingContext();
+
+    RecordingContext(Console *ptrConsole, const settings::RecordingSettings &settings);
 
     virtual ~RecordingContext(void);
 
@@ -45,7 +47,7 @@ public:
     RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
 
-    int Create(const settings::RecordingSettings &a_Settings);
+    int Create(Console *pConsole, const settings::RecordingSettings &settings);
     void Destroy(void);
 
     int Start(void);
@@ -69,7 +71,7 @@ public:
 
 protected:
 
-    int createInternal(const settings::RecordingSettings &a_Settings);
+    int createInternal(Console *ptrConsole, const settings::RecordingSettings &settings);
     int startInternal(void);
     int stopInternal(void);
 
