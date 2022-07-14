@@ -2408,9 +2408,6 @@ VBOX_PATH_HTML_HELP_WORKSHOP ?= $(KBUILD_DEVTOOLS)/win.x86/HTML_Help_Workshop/v1
 # Path to the null soft installer.
 VBOX_PATH_NSIS ?= $(KBUILD_DEVTOOLS)/win.x86/nsis/v3.04-log
 
-# Path to AutoIt3.
-VBOX_PATH_AUTOIT3 ?= $(KBUILD_DEVTOOLS)/win.x86/autoit/v3.2.10.0
-
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
 VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.8.1128.0
