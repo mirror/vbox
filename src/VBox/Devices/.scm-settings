@@ -25,7 +25,14 @@
 /*.m:   --only-guest-host-page --no-ASMMemPage-use
 
 # This defines it's own PAGE_XXX macros.
-/PC/ipxe/src/include/ipxe/virtio-ring.h: --no-page-restrictions
-
-# Temporary until ipxe-new is fully integrated
---filter-out-dirs /PC/ipxe-new/.
+/PC/ipxe/src/arch/arm/include/ipxe/arm_io.h: --no-page-restrictions
+/PC/ipxe/src/arch/x86/include/ipxe/x86_io.h: --no-page-restrictions
+/PC/ipxe/src/include/ipxe/virtio-ring.h:     --no-page-restrictions
+/PC/ipxe/src/include/ipxe/hyperv.h:          --no-page-restrictions
+/PC/ipxe/src/include/ipxe/io.h:              --no-page-restrictions
+/PC/ipxe/src/include/ipxe/vmbus.h:           --no-page-restrictions
+/PC/ipxe/src/include/ipxe/xengrant.h:        --no-page-restrictions
+/PC/ipxe/src/include/xen/io/ring.h:          --no-page-restrictions
+/PC/ipxe/src/drivers/net/netvsc.h:           --no-page-restrictions
+/PC/ipxe/src/drivers/net/bnxt/bnxt.h:        --skip-unicode-checks
+/PC/ipxe/vbox/config/local/*.h:              --external-copyright
