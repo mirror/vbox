@@ -53,6 +53,7 @@
 #include <iprt/crypto/pkcs7.h>
 #include <iprt/crypto/store.h>
 #include <iprt/crypto/spc.h>
+#include <iprt/crypto/tsp.h>
 #ifdef VBOX
 # include <VBox/sup.h> /* Certificates */
 #endif
@@ -1011,6 +1012,10 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddSigningTime(PRTCRPKCS7ATTRIBUTES p
 
 static RTEXITCODE SignToolPkcs7_AuthAttribsAddSpcOpusInfo(PRTCRPKCS7ATTRIBUTES pAuthAttribs, void *pvInfo)
 {
+    /** @todo The OpusInfo is a structure with an optional SpcString and an
+     * optional SpcLink (url). The two attributes can be set using the /d and /du
+     * options of MS signtool.exe, I think.  We shouldn't be using them atm. */
+
     PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
     if (!pAttr)
         return RTEXITCODE_FAILURE;
@@ -1064,6 +1069,7 @@ static RTEXITCODE SignToolPkcs7_AuthAttribsAddMsStatementType(PRTCRPKCS7ATTRIBUT
     return RTEXITCODE_SUCCESS;
 }
 
+
 static RTEXITCODE SignToolPkcs7_AuthAttribsAddContentType(PRTCRPKCS7ATTRIBUTES pAuthAttribs, const char *pszContentTypeId)
 {
     PRTCRPKCS7ATTRIBUTE pAttr = SignToolPkcs7_AuthAttribAppend(pAuthAttribs);
@@ -1093,9 +1099,17 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForTimestamp(PRTCRPKCS7ATTRIBUTES 
                                                            RTTIMESPEC SigningTime,  PCRTCRX509CERTIFICATE pTimestampCert)
 {
     /*
+     * Add content type.
+     */
+    RTEXITCODE rcExit = SignToolPkcs7_AuthAttribsAddContentType(pAuthAttribs,
+                                                                fTimestampTypeOld ? RTCR_PKCS7_DATA_OID : RTCRTSPTSTINFO_OID);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    /*
      * Add signing time.
      */
-    RTEXITCODE rcExit = SignToolPkcs7_AuthAttribsAddSigningTime(pAuthAttribs, SigningTime);
+    rcExit = SignToolPkcs7_AuthAttribsAddSigningTime(pAuthAttribs, SigningTime);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1109,7 +1123,8 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForTimestamp(PRTCRPKCS7ATTRIBUTES 
 }
 
 
-static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageSignature(PRTCRPKCS7ATTRIBUTES pAuthAttribs, RTTIMESPEC SigningTime)
+static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageOrCatSignature(PRTCRPKCS7ATTRIBUTES pAuthAttribs, RTTIMESPEC SigningTime,
+                                                                     const char *pszContentTypeId)
 {
     /*
      * Add SpcOpusInfo.  No attribute values.
@@ -1130,7 +1145,7 @@ static RTEXITCODE SignToolPkcs7_AddAuthAttribsForImageSignature(PRTCRPKCS7ATTRIB
      *   1c90: 82 37 02 01 04       ^^-   ^^- ObjId
      *                              ^- Set Of
      */
-    rcExit = SignToolPkcs7_AuthAttribsAddContentType(pAuthAttribs, RTCRSPCINDIRECTDATACONTENT_OID);
+    rcExit = SignToolPkcs7_AuthAttribsAddContentType(pAuthAttribs, pszContentTypeId);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1180,26 +1195,9 @@ static RTEXITCODE SignToolPkcs7_PrependCounterSignature(PRTCRPKCS7SIGNERINFO pSi
         RTMsgInfo("Adding UnauthenticatedAttribute #%u...", iPos);
 
     /* Create the attrib and its sub-set of counter signatures. */
-#if 1
     rc = RTCrPkcs7Attribute_SetCounterSignatures(pAttr, NULL, pAttr->Allocation.pAllocator);
-#else
-    rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID, pAttr->Allocation.pAllocator);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString failed: %Rrc", rc);
-
-    /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
-    Assert(pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT);
-    Assert(pAttr->uValues.pContentInfos == NULL);
-    pAttr->enmType = RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES;
-    rc = RTAsn1MemAllocZ(&pAttr->Allocation, (void **)&pAttr->uValues.pCounterSignatures,
-                         sizeof(*pAttr->uValues.pCounterSignatures));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTAsn1MemAllocZ failed: %Rrc", rc);
-
-    rc = RTCrPkcs7SignerInfos_Init(pAttr->uValues.pCounterSignatures, pAttr->Allocation.pAllocator);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTCrPkcs7SignerInfos_Init failed: %Rrc", rc);
-#endif
+        return RTMsgErrorExitFailure("RTCrPkcs7Attribute_SetCounterSignatures failed: %Rrc", rc);
 
     /* Insert the counter signature. */
     rc = RTCrPkcs7SignerInfos_InsertEx(pAttr->uValues.pCounterSignatures, 0 /*iPosition*/, pCounterSignerInfo,
@@ -1239,11 +1237,11 @@ static RTEXITCODE SignToolPkcs7_AppendCertificate(PRTCRPKCS7SIGNEDDATA pSignedDa
 }
 
 
-static RTEXITCODE Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
-                                 PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts, uint32_t fExtraFlags,
-                                 RTDIGESTTYPE enmDigestType, SIGNTOOLKEYPAIR *pCertKeyPair,
-                                 unsigned cVerbosity, void **ppvSigned, size_t *pcbSigned,
-                                 PRTCRPKCS7CONTENTINFO pContentInfo, PRTCRPKCS7SIGNEDDATA *ppSignedData)
+static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
+                                               PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts,
+                                               uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType, SIGNTOOLKEYPAIR *pCertKeyPair,
+                                               unsigned cVerbosity, void **ppvSigned, size_t *pcbSigned,
+                                               PRTCRPKCS7CONTENTINFO pContentInfo, PRTCRPKCS7SIGNEDDATA *ppSignedData)
 {
     *ppvSigned = NULL;
     if (pcbSigned)
@@ -1252,11 +1250,11 @@ static RTEXITCODE Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign
         *ppSignedData = NULL;
 
     /* Figure out how large the signature will be. */
+    uint32_t const  fSignFlags = RTCRPKCS7SIGN_SD_F_USE_V1 | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP | fExtraFlags;
+    size_t          cbSigned   = 1024;
     RTERRINFOSTATIC ErrInfo;
-    size_t cbSigned = 1024;
-    int rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP | fExtraFlags,
-                                           pCertKeyPair->pCertificate, pCertKeyPair->hPrivateKey, pvToDataToSign, cbToDataToSign,
-                                           enmDigestType, hAdditionalCerts, pAuthAttribs,
+    int rc = RTCrPkcs7SimpleSignSignedData(fSignFlags, pCertKeyPair->pCertificate, pCertKeyPair->hPrivateKey,
+                                           pvToDataToSign, cbToDataToSign,enmDigestType, hAdditionalCerts, pAuthAttribs,
                                            NULL, &cbSigned, RTErrInfoInitStatic(&ErrInfo));
     if (rc != VERR_BUFFER_OVERFLOW)
         return RTMsgErrorExitFailure("RTCrPkcs7SimpleSignSignedData failed: %Rrc%#RTeim", rc, &ErrInfo.Core);
@@ -1265,9 +1263,8 @@ static RTEXITCODE Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign
     void *pvSigned = RTMemAllocZ(cbSigned);
     if (!pvSigned)
         return RTMsgErrorExitFailure("Failed to allocate %#zx bytes for %s signature", cbSigned, pszWhat);
-    rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP | fExtraFlags,
-                                       pCertKeyPair->pCertificate, pCertKeyPair->hPrivateKey, pvToDataToSign, cbToDataToSign,
-                                       enmDigestType, hAdditionalCerts, pAuthAttribs,
+    rc = RTCrPkcs7SimpleSignSignedData(fSignFlags, pCertKeyPair->pCertificate, pCertKeyPair->hPrivateKey,
+                                       pvToDataToSign, cbToDataToSign, enmDigestType, hAdditionalCerts, pAuthAttribs,
                                        pvSigned, &cbSigned, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
@@ -1337,10 +1334,11 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
         void                *pvSigned      = NULL;
         PRTCRPKCS7SIGNEDDATA pTsSignedData = NULL;
         RTCRPKCS7CONTENTINFO TsContentInfo;
-        rcExit = Pkcs7SignStuff("timestamp", pSignerInfo->EncryptedDigest.Asn1Core.uData.pv,
-                                pSignerInfo->EncryptedDigest.Asn1Core.cb, &AuthAttribs, NIL_RTCRSTORE /*hAdditionalCerts*/,
-                                RTCRPKCS7SIGN_SD_F_DEATCHED, RTDIGESTTYPE_SHA1, pTimestampPair, cVerbosity,
-                                &pvSigned, NULL /*pcbSigned*/, &TsContentInfo, &pTsSignedData);
+        rcExit = SignToolPkcs7_Pkcs7SignStuff("timestamp", pSignerInfo->EncryptedDigest.Asn1Core.uData.pv,
+                                              pSignerInfo->EncryptedDigest.Asn1Core.cb, &AuthAttribs,
+                                              NIL_RTCRSTORE /*hAdditionalCerts*/, RTCRPKCS7SIGN_SD_F_DEATCHED,
+                                              RTDIGESTTYPE_SHA1, pTimestampPair, cVerbosity,
+                                              &pvSigned, NULL /*pcbSigned*/, &TsContentInfo, &pTsSignedData);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
 
@@ -1408,32 +1406,35 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, u
 }
 
 
-static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCINDIRECTDATACONTENT *pSpcIndData,
-                                               unsigned cVerbosity,  RTDIGESTTYPE enmSigType, bool fReplaceExisting,
-                                               SIGNTOOLKEYPAIR *pSigningCertKey, RTCRSTORE hAddCerts,
-                                               bool fTimestampTypeOld, RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
+static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, bool fIsRootsParent,
+                                         const char *pszContentTypeId, unsigned cVerbosity,  RTDIGESTTYPE enmSigType,
+                                         bool fReplaceExisting, SIGNTOOLKEYPAIR *pSigningCertKey, RTCRSTORE hAddCerts,
+                                         bool fTimestampTypeOld, RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
 {
     /*
      * Encode it.
      */
     RTERRINFOSTATIC ErrInfo;
-    PRTASN1CORE     pSpcRoot     = RTCrSpcIndirectDataContent_GetAsn1Core(pSpcIndData);
-    uint32_t        cbSpcEncoded = 0;
-    int rc = RTAsn1EncodePrepare(pSpcRoot, RTASN1ENCODE_F_DER, &cbSpcEncoded, RTErrInfoInitStatic(&ErrInfo));
+    uint32_t        cbEncoded = 0;
+    int rc = RTAsn1EncodePrepare(pToSignRoot, RTASN1ENCODE_F_DER, &cbEncoded, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("RTAsn1EncodePrepare failed: %Rrc%RTeim", rc, &ErrInfo.Core);
 
     if (cVerbosity >= 4)
-        RTAsn1Dump(pSpcRoot, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
+        RTAsn1Dump(pToSignRoot, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
 
-    void *pvSpcEncoded = (uint8_t *)RTMemTmpAllocZ(cbSpcEncoded);
-    if (!pvSpcEncoded)
-        return RTMsgErrorExitFailure("Failed to allocate %#z bytes for SpcIndirectData", cbSpcEncoded);
+    void *pvEncoded = (uint8_t *)RTMemTmpAllocZ(cbEncoded);
+    if (!pvEncoded)
+        return RTMsgErrorExitFailure("Failed to allocate %#z bytes for encoding data we're signing (%s)",
+                                     cbEncoded, pszContentTypeId);
 
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
-    rc = RTAsn1EncodeToBuffer(pSpcRoot, RTASN1ENCODE_F_DER, pvSpcEncoded, cbSpcEncoded, RTErrInfoInitStatic(&ErrInfo));
+    rc = RTAsn1EncodeToBuffer(pToSignRoot, RTASN1ENCODE_F_DER, pvEncoded, cbEncoded, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
+        size_t const cbToSign = cbEncoded            - (fIsRootsParent ? pToSignRoot->cbHdr : 0);
+        void const  *pvToSign = (uint8_t *)pvEncoded + (fIsRootsParent ? pToSignRoot->cbHdr : 0);
+
         /*
          * Create additional authenticated attributes.
          */
@@ -1441,7 +1442,7 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
         rc = RTCrPkcs7Attributes_Init(&AuthAttribs, &g_RTAsn1DefaultAllocator);
         if (RT_SUCCESS(rc))
         {
-            rcExit = SignToolPkcs7_AddAuthAttribsForImageSignature(&AuthAttribs, SigningTime);
+            rcExit = SignToolPkcs7_AddAuthAttribsForImageOrCatSignature(&AuthAttribs, SigningTime, pszContentTypeId);
             if (rcExit == RTEXITCODE_SUCCESS)
             {
                 /*
@@ -1461,9 +1462,11 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
                  */
                 SIGNTOOLPKCS7  Src     = { NULL, 0, NULL };
                 PSIGNTOOLPKCS7 pSigDst = !pThis->pSignedData ? pThis : &Src;
-                rcExit = Pkcs7SignStuff("image", pvSpcEncoded, cbSpcEncoded, &AuthAttribs, hAddCerts, 0 /*fExtraFlags*/,
-                                        enmSigType /** @todo ?? */, pSigningCertKey, cVerbosity,
-                                        (void **)&pSigDst->pbBuf, &pSigDst->cbBuf, &pSigDst->ContentInfo, &pSigDst->pSignedData);
+                rcExit = SignToolPkcs7_Pkcs7SignStuff("image", pvToSign, cbToSign, &AuthAttribs, hAddCerts,
+                                                      RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP, enmSigType /** @todo ?? */,
+                                                      pSigningCertKey, cVerbosity,
+                                                      (void **)&pSigDst->pbBuf, &pSigDst->cbBuf,
+                                                      &pSigDst->ContentInfo, &pSigDst->pSignedData);
                 if (rcExit == RTEXITCODE_SUCCESS)
                 {
                     /*
@@ -1485,6 +1488,7 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
                     if (pSigDst == &Src)
                         SignToolPkcs7_Delete(&Src);
                 }
+
             }
             RTCrPkcs7Attributes_Delete(&AuthAttribs);
         }
@@ -1493,7 +1497,7 @@ static RTEXITCODE SignToolPkcs7_SignSpcIndData(SIGNTOOLPKCS7EXE *pThis, RTCRSPCI
     }
     else
         RTMsgError("RTAsn1EncodeToBuffer failed: %Rrc", rc);
-    RTMemTmpFree(pvSpcEncoded);
+    RTMemTmpFree(pvEncoded);
     return rcExit;
 }
 
@@ -1771,9 +1775,10 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
                      * Encode and sign the SPC data, timestamp it, and line it up for adding to the executable.
                      */
                     if (rcExit == RTEXITCODE_SUCCESS)
-                        rcExit = SignToolPkcs7_SignSpcIndData(pThis, &SpcIndData, cVerbosity,
-                                                              enmSigType, fReplaceExisting, pSigningCertKey, hAddCerts,
-                                                              fTimestampTypeOld, SigningTime, pTimestampCertKey);
+                        rcExit = SignToolPkcs7_SignData(pThis, RTCrSpcIndirectDataContent_GetAsn1Core(&SpcIndData), false,
+                                                        RTCRSPCINDIRECTDATACONTENT_OID, cVerbosity,
+                                                        enmSigType, fReplaceExisting, pSigningCertKey, hAddCerts,
+                                                        fTimestampTypeOld, SigningTime, pTimestampCertKey);
                 }
             }
             else
@@ -1786,6 +1791,44 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
         rcExit = RTMsgErrorExitFailure("RTAsn1ObjId_SetWithString/SpcPeImageData failed: %Rrc", rc);
 
     RTCrSpcIndirectDataContent_Delete(&SpcIndData);
+    return rcExit;
+}
+
+
+static RTEXITCODE SignToolPkcs7_AddOrReplaceCatSignature(SIGNTOOLPKCS7 *pThis, unsigned cVerbosity, RTDIGESTTYPE enmSigType,
+                                                         bool fReplaceExisting, SIGNTOOLKEYPAIR *pSigningCertKey,
+                                                         RTCRSTORE hAddCerts, bool fTimestampTypeOld,
+                                                         RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
+{
+    AssertReturn(fTimestampTypeOld || pTimestampCertKey->isNull(),
+                 RTMsgErrorExitFailure("New style signatures not supported yet"));
+    AssertReturn(pThis->pSignedData, RTMsgErrorExitFailure("pSignedData is NULL!"));
+
+    /*
+     * Figure out what to sign first.
+     */
+    PRTASN1CORE pToSign = &pThis->pSignedData->ContentInfo.Content.Asn1Core;
+    const char *pszType = pThis->pSignedData->ContentInfo.ContentType.szObjId;
+    if (!fReplaceExisting)
+    {
+        if (pThis->pSignedData->SignerInfos.cItems == 0)
+            fReplaceExisting = false;
+        else
+        {
+            /** @todo figure out nested catalog signatures... It's marked as
+             * pkcs7-data and seems to be empty, i.e. it's detached. */
+            //pszType = RTCR_PKCS7_SIGNED_DATA_OID;
+            AssertFailedReturn(RTMsgErrorExitFailure("nested cat signing not implemented"));
+        }
+    }
+
+    /*
+     * Do the signing.
+     */
+    RTEXITCODE rcExit = SignToolPkcs7_SignData(pThis, pToSign, true, pszType, cVerbosity, enmSigType, fReplaceExisting,
+                                               pSigningCertKey, hAddCerts, fTimestampTypeOld, SigningTime, pTimestampCertKey);
+
+    /* probably need to clean up stuff related to nested signatures here later... */
     return rcExit;
 }
 
@@ -2527,6 +2570,155 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
                         if (rcExit2 == RTEXITCODE_SUCCESS)
                             rcExit2 = SignToolPkcs7Exe_WriteSignatureToFile(&Exe, cVerbosity);
                         SignToolPkcs7Exe_Delete(&Exe);
+                    }
+                    if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = rcExit2;
+                    rcExit2 = RTEXITCODE_SUCCESS;
+                }
+                else
+                {
+                    if (!TimestampCertKey.pCertificate)
+                        RTMsgError("No signing certificate was specified");
+                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY)
+                        RTMsgError("No signing private key was specified");
+
+                    if (!TimestampCertKey.pCertificate && !TimestampCertKey.isNull())
+                        RTMsgError("No timestamp certificate was specified");
+                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY && !TimestampCertKey.isNull())
+                        RTMsgError("No timestamp private key was specified");
+                    rcExit2 = RTEXITCODE_SYNTAX;
+                }
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+        if (rcExit2 != RTEXITCODE_SUCCESS)
+        {
+            rcExit = rcExit2;
+            break;
+        }
+    }
+
+    if (hAddCerts != NIL_RTCRSTORE)
+        RTCrStoreRelease(hAddCerts);
+    return rcExit;
+}
+
+#endif /*!IPRT_IN_BUILD_TOOL */
+
+
+/*********************************************************************************************************************************
+*   The 'sign-cat' command.                                                                                   *
+*********************************************************************************************************************************/
+#ifndef IPRT_IN_BUILD_TOOL
+
+static RTEXITCODE HelpSignCat(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+
+    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
+                        "sign-exe [-v|--verbose] "
+                        "[--type sha1|sha256] "
+                        "[--append] "
+                        "[--cert-file <file>] "
+                        "[--cert-key <file>] "
+                        "[--add-cert <file>] "
+                        "[--timestamp-cert-file <file>] "
+                        "[--timestamp-key-file <file>] "
+                        "[--timestamp-type old|new] "
+                        "[--timestamp-date <fake-isots>] "
+                        "[--timestamp-year <fake-year>] "
+                        "[--replace-existing|-r] "
+                        "<exe>\n");
+    if (enmLevel == RTSIGNTOOLHELP_FULL)
+        RTStrmWrappedPrintf(pStrm, 0,
+                            "Sign a catalog file.\n"
+                            "\n"
+                            "The --timestamp-override option can take a partial or full ISO timestamp.  It is merged "
+                            "with the current time if partial.\n"
+                            "\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--append",               'a',                        RTGETOPT_REQ_NOTHING },
+        { "/as",                    'a',                        RTGETOPT_REQ_NOTHING },
+        { "--type",                 't',                        RTGETOPT_REQ_STRING },
+        { "/fd",                    't',                        RTGETOPT_REQ_STRING },
+        { "--add-cert",             OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
+        { "/ac",                    OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
+        { "--cert-file",            OPT_CERT_FILE,              RTGETOPT_REQ_STRING },
+        { "--key-file",             OPT_KEY_FILE,               RTGETOPT_REQ_STRING },
+        { "--timestamp-cert-file",  OPT_TIMESTAMP_CERT_FILE,    RTGETOPT_REQ_STRING },
+        { "--timestamp-key-file",   OPT_TIMESTAMP_KEY_FILE,     RTGETOPT_REQ_STRING },
+        { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
+        { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
+        { "--verbose",              'v',                        RTGETOPT_REQ_NOTHING },
+        { "/v",                     'v',                        RTGETOPT_REQ_NOTHING },
+        { "/debug",                 'v',                        RTGETOPT_REQ_NOTHING },
+    };
+
+    unsigned                cVerbosity              = 0;
+    RTDIGESTTYPE            enmSigType              = RTDIGESTTYPE_SHA1;
+    bool                    fReplaceExisting        = true;
+    SIGNTOOLKEYPAIR         SigningCertKey;
+    RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
+    bool                    fTimestampTypeOld       = true;
+    SIGNTOOLKEYPAIR         TimestampCertKey;
+    RTTIMESPEC              SigningTime;
+    RTTimeNow(&SigningTime);
+
+    RTGETOPTSTATE   GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    RTEXITCODE      rcExit = RTEXITCODE_SUCCESS;
+    RTGETOPTUNION   ValueUnion;
+    int             ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
+        switch (ch)
+        {
+            case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
+            case 'a':                       fReplaceExisting = false; break;
+            case OPT_CERT_FILE:             rcExit2 = HandleOptCertFile(&SigningCertKey, ValueUnion.psz); break;
+            case OPT_KEY_FILE:              rcExit2 = HandleOptKeyFile(&SigningCertKey, ValueUnion.psz); break;
+            case OPT_ADD_CERT:              rcExit2 = HandleOptAddCert(&hAddCerts, ValueUnion.psz); break;
+            case OPT_TIMESTAMP_CERT_FILE:   rcExit2 = HandleOptCertFile(&TimestampCertKey, ValueUnion.psz); break;
+            case OPT_TIMESTAMP_KEY_FILE:    rcExit2 = HandleOptKeyFile(&TimestampCertKey, ValueUnion.psz); break;
+            case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
+            case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
+            case 'v':                       cVerbosity++; break;
+            case 'V':                       return HandleVersion(cArgs, papszArgs);
+            case 'h':                       return HelpSignExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
+
+            case VINF_GETOPT_NOT_OPTION:
+                /* check that we've got all the info we need: */
+                if (   SigningCertKey.isComplete()
+                    && (TimestampCertKey.isNull() || TimestampCertKey.isComplete()))
+                {
+                    /* Do the work: */
+                    SIGNTOOLPKCS7 Cat;
+                    rcExit2 = SignToolPkcs7_InitFromFile(&Cat, ValueUnion.psz, cVerbosity);
+                    if (rcExit2 == RTEXITCODE_SUCCESS)
+                    {
+                        rcExit2 = SignToolPkcs7_AddOrReplaceCatSignature(&Cat, cVerbosity, enmSigType, fReplaceExisting,
+                                                                         &SigningCertKey, hAddCerts,
+                                                                         fTimestampTypeOld, SigningTime, &TimestampCertKey);
+                        if (rcExit2 == RTEXITCODE_SUCCESS)
+                            rcExit2 = SignToolPkcs7_Encode(&Cat, cVerbosity);
+                        if (rcExit2 == RTEXITCODE_SUCCESS)
+                            rcExit2 = SignToolPkcs7_WriteSignatureToFile(&Cat, ValueUnion.psz, cVerbosity);
+                        SignToolPkcs7_Delete(&Cat);
                     }
                     if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
@@ -3616,7 +3808,11 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
         pThis->szPrefix[offPrefix] = '\0';
     }
     else
+    {
         HandleShowExeWorkerDisplayObjId(pThis, &pSignedData->ContentInfo.ContentType, "     ContentType: ", " - not implemented.\n");
+        RTPrintf("%s                  %u (%#x) bytes\n", pThis->szPrefix,
+                 pSignedData->ContentInfo.Content.Asn1Core.cb, pSignedData->ContentInfo.Content.Asn1Core.cb);
+    }
 
     /*
      * Display certificates (Certificates).
@@ -4122,6 +4318,7 @@ const g_aCommands[] =
 #ifndef IPRT_IN_BUILD_TOOL
     { "add-timestamp-exe-signature",    HandleAddTimestampExeSignature,     HelpAddTimestampExeSignature },
     { "sign-exe",                       HandleSignExe,                      HelpSignExe  },
+    { "sign-cat",                       HandleSignCat,                      HelpSignCat  },
 #endif
 #ifndef IPRT_IN_BUILD_TOOL
     { "verify-exe",                     HandleVerifyExe,                    HelpVerifyExe },
