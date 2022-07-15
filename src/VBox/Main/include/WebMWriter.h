@@ -552,6 +552,13 @@ public:
 
     uint64_t GetAvailableSpace(void);
 
+    /**
+     * Returns the number of written WebM clusters.
+     *
+     * @returns Number of written WebM clusters; 0 when no clusters written (empty file).
+     */
+    uint64_t GetClusters(void) const { return CurSeg.cClusters; }
+
 protected:
 
     int init(void);

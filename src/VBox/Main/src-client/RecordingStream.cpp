@@ -799,11 +799,11 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
             AssertPtr(File.pWEBM);
             vrc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                                    fAudioEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
+                                     fAudioEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
-                                    WebMWriter::AudioCodec_None,
+                                     WebMWriter::AudioCodec_None,
 #endif
-                                    fVideoEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+                                     fVideoEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Failed to create output file '%s' (%Rrc)\n", pszFile, vrc));
@@ -940,9 +940,21 @@ int RecordingStream::close(void)
                 }
             }
 
-            if (this->File.pWEBM)
+            WebMWriter *pWebMWriter = this->File.pWEBM;
+            AssertPtr(pWebMWriter);
+
+            if (pWebMWriter)
             {
-                delete this->File.pWEBM;
+                /* If no clusters (= data) was written, delete the file again. */
+                if (pWebMWriter->GetClusters() == 0)
+                {
+                    int vrc2 = RTFileDelete(this->ScreenSettings.File.strName.c_str());
+                    AssertRC(vrc2); /* Ignore rc on non-debug builds. */
+                }
+
+                delete pWebMWriter;
+                pWebMWriter = NULL;
+
                 this->File.pWEBM = NULL;
             }
             break;
