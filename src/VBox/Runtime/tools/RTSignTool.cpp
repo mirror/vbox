@@ -1700,6 +1700,7 @@ static RTEXITCODE SignToolPkcs7_SpcAddImageHash(SIGNTOOLPKCS7EXE *pThis, RTCRSPC
     rc = RTAsn1ObjId_InitFromString(&pSpcIndData->DigestInfo.DigestAlgorithm.Algorithm, pszAlgId, &g_RTAsn1DefaultAllocator);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("RTAsn1ObjId_InitFromString/%s failed: %Rrc", pszAlgId, rc);
+    RTAsn1DynType_SetToNull(&pSpcIndData->DigestInfo.DigestAlgorithm.Parameters); /* ASSUMES RSA or similar */
 
     rc = RTAsn1ContentDup(&pSpcIndData->DigestInfo.Digest.Asn1Core, abHash, cbHash, &g_RTAsn1DefaultAllocator);
     if (RT_FAILURE(rc))
@@ -1961,6 +1962,110 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
         }
         else
             RTMsgError("Could not locate signature #%u!", iSignature);
+
+        /* Delete the signature data. */
+        SignToolPkcs7Exe_Delete(&This);
+    }
+    return rcExit;
+}
+
+
+/*********************************************************************************************************************************
+*   The 'extract-exe-signature' command.                                                                                         *
+*********************************************************************************************************************************/
+
+static RTEXITCODE HelpExtractExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
+                        "extract-exe-signerature [--exe|-e] <exe> [--output|-o] <outfile.pkcs7>\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+static RTEXITCODE HandleExtractExeSignature(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--exe",              'e', RTGETOPT_REQ_STRING  },
+        { "--output",           'o', RTGETOPT_REQ_STRING  },
+    };
+
+    const char *pszExe = NULL;
+    const char *pszOut = NULL;
+    RTLDRARCH   enmLdrArch   = RTLDRARCH_WHATEVER;
+    unsigned    cVerbosity   = 0;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'e':   pszExe = ValueUnion.psz; break;
+            case 'o':   pszOut = ValueUnion.psz; break;
+            case 'V':   return HandleVersion(cArgs, papszArgs);
+            case 'h':   return HelpExtractExeSignerCert(g_pStdOut, RTSIGNTOOLHELP_FULL);
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszExe)
+                    pszExe = ValueUnion.psz;
+                else if (!pszOut)
+                    pszOut = ValueUnion.psz;
+                else
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many file arguments: %s", ValueUnion.psz);
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (!pszExe)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No executable given.");
+    if (!pszOut)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No output file given.");
+    if (RTPathExists(pszOut))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The output file '%s' exists.", pszOut);
+
+    /*
+     * Do it.
+     */
+    /* Read & decode the PKCS#7 signature. */
+    SIGNTOOLPKCS7EXE This;
+    RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&This, pszExe, cVerbosity, enmLdrArch);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Write out the PKCS#7 signature.
+         */
+        RTFILE hFile;
+        rc = RTFileOpen(&hFile, pszOut, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(hFile, This.pbBuf, This.cbBuf, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFileClose(hFile);
+                if (RT_SUCCESS(rc))
+                {
+                    hFile  = NIL_RTFILE;
+                    RTMsgInfo("Successfully wrote %u bytes to '%s'", This.cbBuf, pszOut);
+                    rcExit = RTEXITCODE_SUCCESS;
+                }
+                else
+                    RTMsgError("RTFileClose failed: %Rrc", rc);
+            }
+            else
+                RTMsgError("RTFileWrite failed: %Rrc", rc);
+            RTFileClose(hFile);
+        }
+        else
+            RTMsgError("Error opening '%s' for writing: %Rrc", pszOut, rc);
 
         /* Delete the signature data. */
         SignToolPkcs7Exe_Delete(&This);
@@ -4313,6 +4418,7 @@ static struct
 const g_aCommands[] =
 {
     { "extract-exe-signer-cert",        HandleExtractExeSignerCert,         HelpExtractExeSignerCert },
+    { "extract-exe-signature",          HandleExtractExeSignature,          HelpExtractExeSignature },
     { "add-nested-exe-signature",       HandleAddNestedExeSignature,        HelpAddNestedExeSignature },
     { "add-nested-cat-signature",       HandleAddNestedCatSignature,        HelpAddNestedCatSignature },
 #ifndef IPRT_IN_BUILD_TOOL
