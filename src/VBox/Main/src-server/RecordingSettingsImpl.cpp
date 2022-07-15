@@ -405,7 +405,7 @@ int RecordingSettings::i_destroyScreenObj(RecordingScreenSettingsObjMap &screenS
     LogFlowThisFunc(("Screen %RU32\n", idScreen));
 
     AssertReturn(idScreen > 0, VERR_INVALID_PARAMETER); /* Removing screen 0 isn't a good idea. */
-    AssertReturn(screenSettingsMap.find(idScreen) == screenSettingsMap.end(), VERR_NOT_FOUND);
+    AssertReturn(screenSettingsMap.find(idScreen) != screenSettingsMap.end(), VERR_NOT_FOUND);
 
     RecordingScreenSettingsObjMap::iterator itScreen = screenSettingsMap.find(idScreen);
 
