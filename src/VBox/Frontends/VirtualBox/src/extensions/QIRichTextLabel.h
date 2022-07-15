@@ -46,6 +46,8 @@ public:
 
     /** Returns text. */
     QString text() const;
+    /** Returns plain text. */
+    QString plainText() const;
 
     /** Registers @a image under a passed @a strName. */
     void registerImage(const QImage &image, const QString &strName);

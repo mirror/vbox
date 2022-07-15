@@ -589,7 +589,7 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus)
     }
 
     if (pWhatsThisWidget && !strWhatsThisText.isEmpty())
-        pWhatsThisWidget->setToolTip(QString("<qt>%1</qt>").arg(strWhatsThisText));
+        pWhatsThisWidget->setToolTip(strWhatsThisText);
 }
 
 void UISettingsDialog::prepare()
