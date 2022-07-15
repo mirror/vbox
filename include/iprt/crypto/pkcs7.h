@@ -669,11 +669,18 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
 /** @name RTCRPKCS7SIGN_SD_F_XXX - Flags for RTCrPkcs7SimpleSign.
  * @{ */
 /** Detached data. */
-#define RTCRPKCS7SIGN_SD_F_DEATCHED      RT_BIT_32(0)
+#define RTCRPKCS7SIGN_SD_F_DEATCHED         RT_BIT_32(0)
 /** No SMIME capabilities attribute. */
-#define RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP  RT_BIT_32(1)
+#define RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP     RT_BIT_32(1)
+/** Produce version 1 output (PKCS\#7), rather than version 3 (CMS). */
+#define RTCRPKCS7SIGN_SD_F_USE_V1           RT_BIT_32(2)
+/** Avoid extra OCTET STRING encapsulation around the data blob.
+ * This is needed for Authenticode signatures.  This requires that the
+ * content type is supplied via the additional authenticated attributes.
+ * @note Currently only works with RTCRPKCS7SIGN_SD_F_USE_V1.  */
+#define RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP    RT_BIT_32(3)
 /** Valid flag mask.   */
-#define RTCRPKCS7SIGN_SD_F_VALID_MASK    UINT32_C(0x00000003)
+#define RTCRPKCS7SIGN_SD_F_VALID_MASK       UINT32_C(0x0000000f)
 /** @} */
 
 /** @} */
