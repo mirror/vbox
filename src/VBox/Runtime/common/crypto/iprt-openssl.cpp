@@ -37,6 +37,7 @@
 # include <iprt/asn1.h>
 # include <iprt/crypto/digest.h>
 # include <iprt/crypto/pkcs7.h>
+# include <iprt/crypto/spc.h>
 
 # include "internal/iprt-openssl.h"
 # include "internal/openssl-pre.h"
@@ -53,6 +54,24 @@ DECLHIDDEN(void) rtCrOpenSslInit(void)
         OpenSSL_add_all_algorithms();
         ERR_load_ERR_strings();
         ERR_load_crypto_strings();
+
+        /* Add some OIDs we might possibly want to use. */
+        static struct { const char *pszOid, *pszDesc; } const s_aOids[] =
+        {
+            { RTCRSPC_PE_IMAGE_HASHES_V1_OID,               "Ms-SpcPeImagePageHashesV1" },
+            { RTCRSPC_PE_IMAGE_HASHES_V2_OID,               "Ms-SpcPeImagePageHashesV2" },
+            { RTCRSPC_STMT_TYPE_INDIVIDUAL_CODE_SIGNING,    "Ms-SpcIndividualCodeSigning" },
+            { RTCRSPCPEIMAGEDATA_OID,                       "Ms-SpcPeImageData" },
+            { RTCRSPCINDIRECTDATACONTENT_OID,               "Ms-SpcIndirectDataContext" },
+            { RTCR_PKCS9_ID_MS_TIMESTAMP,                   "Ms-CounterSign" },
+            { RTCR_PKCS9_ID_MS_NESTED_SIGNATURE,            "Ms-SpcNestedSignature" },
+            { RTCR_PKCS9_ID_MS_STATEMENT_TYPE,              "Ms-SpcStatementType" },
+            { RTCR_PKCS9_ID_MS_SP_OPUS_INFO,                "Ms-SpcOpusInfo" },
+            { "1.3.6.1.4.1.311.3.2.1",                      "Ms-SpcTimeStampRequest" },     /** @todo define */
+            { "1.3.6.1.4.1.311.10.1",                       "Ms-CertTrustList" },           /** @todo define */
+        };
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aOids); i++)
+            OBJ_create(s_aOids[i].pszOid, s_aOids[i].pszDesc, s_aOids[i].pszDesc);
 
         s_fOssInitalized = true;
     }
