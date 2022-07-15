@@ -6047,10 +6047,11 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
         uint64_t cScreens = 0;
         elmRecording.getAttributeValue("screens",   cScreens);
 
-        /* Propagate the settings from screen 0 to all other screens (= monitors). */
+        /* Note: For settings < 1.19 the "screens" attribute is a bit field for all screens
+         *       which are ENABLED for recording. The settings for recording are for all the same though. */
         for (unsigned i = 0; i <  cScreens; i++)
         {
-            /* Add screen i to config in any case. */
+            /* Apply settings of screen 0 to screen i and enable it. */
             recording.mapScreens[i] = screen0;
 
             if (cScreens & RT_BIT_64(i)) /* Screen i enabled? */
@@ -6381,10 +6382,16 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 readDebugging(*pelmMachineChild, debugging);
             else if (pelmMachineChild->nameEquals("Autostart"))
                 readAutostart(*pelmMachineChild, autostart);
-            else if (pelmMachineChild->nameEquals("Recording")) /* Only exists for settings >= 1.19 (VBox 7.0). */
-                readRecordingSettings(*pelmMachineChild, recordingSettings);
             else if (pelmMachineChild->nameEquals("Groups"))
                 readGroups(*pelmMachineChild, machineUserData.llGroups);
+
+            if (   m->sv >= SettingsVersion_v1_14
+                && m->sv <  SettingsVersion_v1_19
+                && pelmMachineChild->nameEquals("VideoCapture"))   /* For settings >= 1.14 (< VBox 7.0). */
+                readRecordingSettings(*pelmMachineChild, recordingSettings);
+            else if (   m->sv >= SettingsVersion_v1_19
+                     && pelmMachineChild->nameEquals("Recording")) /* Only exists for settings >= 1.19 (VBox 7.0). */
+                readRecordingSettings(*pelmMachineChild, recordingSettings);
         }
 
         if (m->sv < SettingsVersion_v1_9)
