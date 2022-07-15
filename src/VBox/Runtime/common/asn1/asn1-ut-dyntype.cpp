@@ -102,6 +102,14 @@ RTDECL(void) RTAsn1DynType_Delete(PRTASN1DYNTYPE pThis)
 }
 
 
+RTDECL(int) RTAsn1DynType_SetToNull(PRTASN1DYNTYPE pThis)
+{
+    RTAsn1DynType_Delete(pThis);
+    pThis->enmType = RTASN1TYPE_NULL;
+    return RTAsn1Null_Init(&pThis->u.Asn1Null, NULL /*pAllocator*/);
+}
+
+
 RTDECL(int) RTAsn1DynType_Enum(PRTASN1DYNTYPE pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
     if (   pThis

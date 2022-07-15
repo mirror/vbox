@@ -1511,6 +1511,7 @@ typedef RTASN1DYNTYPE *PRTASN1DYNTYPE;
 /** Pointer to a const ASN.1 dynamic type record. */
 typedef RTASN1DYNTYPE const *PCRTASN1DYNTYPE;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1DYNTYPE, RTDECL, RTAsn1DynType, u.Core);
+RTDECL(int) RTAsn1DynType_SetToNull(PRTASN1DYNTYPE pThis);
 
 
 /** @name Virtual Method Table Based API

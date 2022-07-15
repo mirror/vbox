@@ -3151,6 +3151,7 @@
 # define RTAsn1Core_DecodeAsn1                          RT_MANGLER(RTAsn1Core_DecodeAsn1)
 # define RTAsn1SeqOfCores_DecodeAsn1                    RT_MANGLER(RTAsn1SeqOfCores_DecodeAsn1)
 # define RTAsn1SetOfCores_DecodeAsn1                    RT_MANGLER(RTAsn1SetOfCores_DecodeAsn1)
+# define RTAsn1DynType_SetToNull                        RT_MANGLER(RTAsn1DynType_SetToNull)
 # define RTAsn1DynType_CheckSanity                      RT_MANGLER(RTAsn1DynType_CheckSanity)
 # define RTAsn1DynType_Clone                            RT_MANGLER(RTAsn1DynType_Clone)
 # define RTAsn1DynType_Compare                          RT_MANGLER(RTAsn1DynType_Compare)
