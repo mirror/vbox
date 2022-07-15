@@ -88,8 +88,6 @@ public:
         : QAccessibleWidget(pWidget, QAccessible::StaticText)
     {}
 
-    /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
     /** Returns a text for the passed @a enmTextRole. */
     virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
 
@@ -226,15 +224,6 @@ private:
 /*********************************************************************************************************************************
 *   Class UIAccessibilityInterfaceForUISnapshotDetailsElement implementation.                                                    *
 *********************************************************************************************************************************/
-
-QAccessibleInterface *UIAccessibilityInterfaceForUISnapshotDetailsElement::parent() const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(browser(), 0);
-
-    /* Always return parent object: */
-    return QAccessible::queryAccessibleInterface(browser()->parent());
-}
 
 QString UIAccessibilityInterfaceForUISnapshotDetailsElement::text(QAccessible::Text enmTextRole) const
 {
