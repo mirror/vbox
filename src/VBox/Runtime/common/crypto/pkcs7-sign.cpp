@@ -144,6 +144,72 @@ static int rtCrPkcs7SimpleSignSignedDataDoV1TweakContent(PKCS7 *pOsslPkcs7, cons
     return rc;
 }
 
+
+static int rtCrPkcs7SimpleSignSignedDataDoV1TweakedFinal(PKCS7 *pOsslPkcs7, const char *pszContentId,
+                                                         const void *pvData, size_t cbData, PRTERRINFO pErrInfo)
+{
+    AssertReturn(pszContentId, RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_MISSING_CONTENT_TYPE_ATTRIB,
+                                            "RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP requires content type in additional attribs"));
+
+    /*
+     * Prepare a BIO of what should be hashed with all the hashing filters attached.
+     */
+    BIO *pOsslBio = PKCS7_dataInit(pOsslPkcs7, NULL);
+    if (!pOsslBio)
+        return RTErrInfoSet(pErrInfo, VERR_CR_CIPHER_OSSL_ENCRYPT_FINAL_FAILED, "PKCS7_dataInit failed");
+
+    /*
+     * Now write the data.
+     *
+     * We must skip the outer wrapper here (see RTCrPkcs7VerifySignedData).  This
+     * is probably a bit presumptive about what we're working on, so add an extra
+     * flag for this later.
+     */
+    uint8_t const *pbToWrite = (uint8_t const *)pvData;
+    size_t         cbToWrite = cbData;
+
+    /** @todo add extra flag for this? */
+    RTASN1CURSORPRIMARY SkipCursor;
+    RTAsn1CursorInitPrimary(&SkipCursor, pvData, (uint32_t)cbData,
+                            pErrInfo,&g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, "skip");
+    RTASN1CORE SkipAsn1Core = { 0 };
+    int rc = RTAsn1CursorReadHdr(&SkipCursor.Cursor, &SkipAsn1Core, "skip-core");
+    if (RT_SUCCESS(rc))
+    {
+        pbToWrite += SkipAsn1Core.cbHdr;
+        cbToWrite -= SkipAsn1Core.cbHdr;
+
+        rc = BIO_write(pOsslBio, pbToWrite, (int)cbToWrite);
+        if (rc == (ssize_t)cbToWrite)
+        {
+            BIO_flush(pOsslBio); /** @todo error check this */
+            if (true)
+            {
+                /*
+                 * Finalize the job - produce the signer info signatures and stuff.
+                 */
+                rc = PKCS7_dataFinal(pOsslPkcs7, pOsslBio);
+                if (rc > 0)
+                {
+                    /*
+                     * Now tweak the content so we get the desired content type and
+                     * no extra wrappers and stuff.
+                     */
+                    rc = rtCrPkcs7SimpleSignSignedDataDoV1TweakContent(pOsslPkcs7, pszContentId, pvData, cbData, pErrInfo);
+                }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, VERR_CR_CIPHER_OSSL_ENCRYPT_FINAL_FAILED, "PKCS7_dataFinal failed: %d", rc);
+            }
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_CR_CIPHER_OSSL_ENCRYPT_FINAL_FAILED,
+                               "%zu byte data write failed: %d", cbToWrite, rc);
+    }
+    BIO_free_all(pOsslBio);
+    return rc;
+}
+
+
 static int rtCrPkcs7SimpleSignSignedDataDoV1AttribConversion(PKCS7_SIGNER_INFO *pSignerInfo,
                                                              PCRTCRPKCS7ATTRIBUTES pAdditionalAuthenticatedAttribs,
                                                              const char **ppszContentId, PRTERRINFO pErrInfo)
@@ -241,57 +307,51 @@ static int rtCrPkcs7SimpleSignSignedDataDoV1(uint32_t fFlags, X509 *pOsslSigner,
                 /*
                  * Finalized and actually sign the data.
                  */
-                rc = PKCS7_final(pCms, pOsslData, fOsslSign);
-                if (rc > 0)
+                bool const fTweaked = (fFlags & (RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP))
+                                   == RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP;
+                if (fTweaked)
+                    rc = rtCrPkcs7SimpleSignSignedDataDoV1TweakedFinal(pCms, pszContentId, pvData, cbData, pErrInfo);
+                else
+                {
+                    rc = PKCS7_final(pCms, pOsslData, fOsslSign);
+                    if (rc > 0)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "PKCS7_final");
+                    /** @todo maybe we want to use rtCrPkcs7SimpleSignSignedDataDoV1TweakContent
+                     * for when the content type isn't 'data'...  */
+                }
+                if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Do content type/enclosure tweaking if requested.
+                     * Get the output and copy it into the result buffer.
                      */
-                    rc = VINF_SUCCESS;
-                    if (   (fFlags & (RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP))
-                        == RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP) /** @todo maybe we want to also do this when the content type isn't 'data'. */
-                        rc = rtCrPkcs7SimpleSignSignedDataDoV1TweakContent(pCms, pszContentId, pvData, cbData, pErrInfo);
-                    else
+                    BIO *pOsslResult = BIO_new(BIO_s_mem());
+                    if (pOsslResult)
                     {
-                        /** @todo Set content type if needed? */
-                        AssertMsg(!pszContentId || strcmp(pszContentId, RTCR_PKCS7_DATA_OID) == 0,
-                                  ("pszContentId=%s\n", pszContentId));
-                        rc = VINF_SUCCESS;
-                    }
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Get the output and copy it into the result buffer.
-                         */
-                        BIO *pOsslResult = BIO_new(BIO_s_mem());
-                        if (pOsslResult)
+                        rc = i2d_PKCS7_bio(pOsslResult, pCms);
+                        if (rc > 0)
                         {
-                            rc = i2d_PKCS7_bio(pOsslResult, pCms);
-                            if (rc > 0)
-                            {
-                                *ppOsslResult = pOsslResult;
-                                rc = VINF_SUCCESS;
-                            }
-                            else
-                            {
-                                rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "i2d_CMS_bio");
-                                BIO_free(pOsslResult);
-                            }
+                            *ppOsslResult = pOsslResult;
+                            rc = VINF_SUCCESS;
                         }
                         else
-                            rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "BIO_new/BIO_s_mem");
+                        {
+                            rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "i2d_PKCS7_bio");
+                            BIO_free(pOsslResult);
+                        }
                     }
+                    else
+                        rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "BIO_new/BIO_s_mem");
                 }
-                else
-                    rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_final");
             }
             else
-                rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_add1_signer");
+                rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "PKCS7_sign_add_signer");
         }
         PKCS7_free(pCms);
     }
     else
-        rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "CMS_sign");
+        rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "PKCS7_sign");
     return rc;
 }
 
