@@ -2174,7 +2174,7 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, u
 typedef enum SIGNDATATWEAK
 {
     kSignDataTweak_NoTweak = 1,
-    kSignDataTweak_RootIsParent,
+    kSignDataTweak_RootIsParent
 } SIGNDATATWEAK;
 
 static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, SIGNDATATWEAK enmTweak,
