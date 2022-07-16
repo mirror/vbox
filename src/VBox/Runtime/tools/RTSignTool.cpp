@@ -45,6 +45,8 @@
 #include <iprt/zero.h>
 #ifndef RT_OS_WINDOWS
 # include <iprt/formats/pecoff.h>
+#else
+# include <iprt/utf16.h>
 #endif
 #include <iprt/crypto/applecodesign.h>
 #include <iprt/crypto/digest.h>
@@ -54,28 +56,86 @@
 #include <iprt/crypto/store.h>
 #include <iprt/crypto/spc.h>
 #include <iprt/crypto/tsp.h>
+#include <iprt/cpp/ministring.h>
 #ifdef VBOX
 # include <VBox/sup.h> /* Certificates */
 #endif
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
 # include <iprt/win/imagehlp.h>
+# include <wincrypt.h>
+# include <ncrypt.h>
 #endif
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define OPT_HASH_PAGES                  1000
-#define OPT_NO_HASH_PAGES               1001
-#define OPT_CERT_FILE                   1002
-#define OPT_KEY_FILE                    1003
-#define OPT_ADD_CERT                    1004
+#define OPT_OFF_CERT_FILE                   0       /**< signtool /f file */
+#define OPT_OFF_CERT_SHA1                   1       /**< signtool /sha1 thumbprint */
+#define OPT_OFF_CERT_SUBJECT                2       /**< signtool /n name */
+#define OPT_OFF_CERT_STORE                  3       /**< signtool /s store */
+#define OPT_OFF_CERT_STORE_MACHINE          4       /**< signtool /sm */
+#define OPT_OFF_KEY_FILE                    5       /**< no signtool equivalent, other than maybe /f. */
+#define OPT_OFF_KEY_PASSWORD                6       /**< signtool /p pass */
+#define OPT_OFF_KEY_PASSWORD_FILE           7       /**< no signtool equivalent. */
+#define OPT_OFF_KEY_NAME                    8       /**< signtool /kc  name */
+#define OPT_OFF_KEY_PROVIDER                9       /**< signtool /csp name (CSP = cryptographic service provider) */
 
-#define OPT_TIMESTAMP_CERT_FILE         1010
-#define OPT_TIMESTAMP_KEY_FILE          1011
-#define OPT_TIMESTAMP_TYPE              1012
-#define OPT_TIMESTAMP_OVERRIDE          1016
+#define OPT_CERT_KEY_SWITCH_CASES(a_Instance, a_uBase, a_chOpt, a_ValueUnion, a_rcExit) \
+        case (a_uBase) + OPT_OFF_CERT_FILE: \
+        case (a_uBase) + OPT_OFF_CERT_SHA1: \
+        case (a_uBase) + OPT_OFF_CERT_SUBJECT: \
+        case (a_uBase) + OPT_OFF_CERT_STORE: \
+        case (a_uBase) + OPT_OFF_CERT_STORE_MACHINE: \
+        case (a_uBase) + OPT_OFF_KEY_FILE: \
+        case (a_uBase) + OPT_OFF_KEY_PASSWORD: \
+        case (a_uBase) + OPT_OFF_KEY_PASSWORD_FILE: \
+        case (a_uBase) + OPT_OFF_KEY_NAME: \
+        case (a_uBase) + OPT_OFF_KEY_PROVIDER: \
+            a_rcExit = a_Instance.handleOption((a_chOpt) - (a_uBase), &(a_ValueUnion)); \
+            break
+
+#define OPT_CERT_KEY_GETOPTDEF_ENTRIES(a_szPrefix, a_uBase) \
+        { a_szPrefix "cert-file",           (a_uBase) + OPT_OFF_CERT_FILE,          RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "cert-sha1",           (a_uBase) + OPT_OFF_CERT_SHA1,          RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "cert-subject",        (a_uBase) + OPT_OFF_CERT_SUBJECT,       RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "cert-store",          (a_uBase) + OPT_OFF_CERT_STORE,         RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "cert-machine-store",  (a_uBase) + OPT_OFF_CERT_STORE_MACHINE, RTGETOPT_REQ_NOTHING }, \
+        { a_szPrefix "key-file",            (a_uBase) + OPT_OFF_KEY_FILE,           RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "key-password",        (a_uBase) + OPT_OFF_KEY_PASSWORD,       RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "key-password-file",   (a_uBase) + OPT_OFF_KEY_PASSWORD_FILE,  RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "key-name",            (a_uBase) + OPT_OFF_KEY_NAME,           RTGETOPT_REQ_STRING }, \
+        { a_szPrefix "key-provider",        (a_uBase) + OPT_OFF_KEY_PROVIDER,       RTGETOPT_REQ_STRING }
+
+#define OPT_CERT_KEY_GETOPTDEF_COMPAT_ENTRIES(a_uBase) \
+        { "/f",                             (a_uBase) + OPT_OFF_CERT_FILE,          RTGETOPT_REQ_STRING }, \
+        { "/sha1",                          (a_uBase) + OPT_OFF_CERT_SHA1,          RTGETOPT_REQ_STRING }, \
+        { "/n",                             (a_uBase) + OPT_OFF_CERT_SUBJECT,       RTGETOPT_REQ_STRING }, \
+        { "/s",                             (a_uBase) + OPT_OFF_CERT_STORE,         RTGETOPT_REQ_STRING }, \
+        { "/sm",                            (a_uBase) + OPT_OFF_CERT_STORE_MACHINE, RTGETOPT_REQ_NOTHING }, \
+        { "/p",                             (a_uBase) + OPT_OFF_KEY_PASSWORD,       RTGETOPT_REQ_STRING }, \
+        { "/kc",                            (a_uBase) + OPT_OFF_KEY_NAME,           RTGETOPT_REQ_STRING }, \
+        { "/csp",                           (a_uBase) + OPT_OFF_KEY_PROVIDER,       RTGETOPT_REQ_STRING }
+
+#define OPT_CERT_KEY_SYNOPSIS(a_szPrefix) \
+        "[" a_szPrefix "cert-file <file.pem|file.crt>] " \
+        "[" a_szPrefix "cert-sha1 <fingerprint>] " \
+        "[" a_szPrefix "cert-subject <part-name>] " \
+        "[" a_szPrefix "cert-store <store>] " \
+        "[" a_szPrefix "cert-machine-store] " \
+        "[" a_szPrefix "key-file <file.pem|file.p12>] " \
+        "[" a_szPrefix "key-password <password>] " \
+        "[" a_szPrefix "key-password-file <file>|stdin] " \
+        "[" a_szPrefix "key-name <name>] " \
+        "[" a_szPrefix "key-provider <csp>] "
+
+#define OPT_HASH_PAGES                      1040
+#define OPT_NO_HASH_PAGES                   1041
+#define OPT_ADD_CERT                        1042
+
+#define OPT_TIMESTAMP_TYPE                  1043
+#define OPT_TIMESTAMP_OVERRIDE              1044
 
 
 /*********************************************************************************************************************************
@@ -141,34 +201,282 @@ typedef struct SHOWEXEPKCS7 : public SIGNTOOLPKCS7EXE
 typedef SHOWEXEPKCS7 *PSHOWEXEPKCS7;
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static RTEXITCODE HandleHelp(int cArgs, char **papszArgs);
+static RTEXITCODE HelpHelp(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel);
+static RTEXITCODE HandleVersion(int cArgs, char **papszArgs);
+static int HandleShowExeWorkerPkcs7DisplaySignerInfo(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7SIGNERINFO pSignerInfo);
+static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix,
+                                           PCRTCRPKCS7CONTENTINFO pContentInfo);
+
+
+/*********************************************************************************************************************************
+*   Certificate and Private Key Handling (options, ++).                                                                          *
+*********************************************************************************************************************************/
+/** @todo create a better fake certificate. */
+const unsigned char g_abFakeCertificate[] =
+{
+    0x30, 0x82, 0x03, 0xb2, 0x30, 0x82, 0x02, 0x9a, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x10, 0x31, /* 0x00000000: 0...0..........1 */
+    0xba, 0xd6, 0xbc, 0x5d, 0x9a, 0xe0, 0xb0, 0x4e, 0xd4, 0xfa, 0xcc, 0xfb, 0x47, 0x00, 0x5c, 0x30, /* 0x00000010: ...]...N....G.\0 */
+    0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x05, 0x05, 0x00, 0x30, 0x71, /* 0x00000020: ...*.H........0q */
+    0x31, 0x1c, 0x30, 0x1a, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0c, 0x13, 0x54, 0x69, 0x6d, 0x65, 0x73, /* 0x00000030: 1.0...U....Times */
+    0x74, 0x61, 0x6d, 0x70, 0x20, 0x53, 0x69, 0x67, 0x6e, 0x69, 0x6e, 0x67, 0x20, 0x32, 0x31, 0x0c, /* 0x00000040: tamp Signing 21. */
+    0x30, 0x0a, 0x06, 0x03, 0x55, 0x04, 0x0b, 0x0c, 0x03, 0x44, 0x65, 0x76, 0x31, 0x15, 0x30, 0x13, /* 0x00000050: 0...U....Dev1.0. */
+    0x06, 0x03, 0x55, 0x04, 0x0a, 0x0c, 0x0c, 0x54, 0x65, 0x73, 0x74, 0x20, 0x43, 0x6f, 0x6d, 0x70, /* 0x00000060: ..U....Test Comp */
+    0x61, 0x6e, 0x79, 0x31, 0x12, 0x30, 0x10, 0x06, 0x03, 0x55, 0x04, 0x07, 0x0c, 0x09, 0x53, 0x74, /* 0x00000070: any1.0...U....St */
+    0x75, 0x74, 0x74, 0x67, 0x61, 0x72, 0x74, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x08, /* 0x00000080: uttgart1.0...U.. */
+    0x0c, 0x02, 0x42, 0x42, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x44, /* 0x00000090: ..BB1.0...U....D */
+    0x45, 0x30, 0x1e, 0x17, 0x0d, 0x30, 0x30, 0x30, 0x31, 0x30, 0x31, 0x30, 0x30, 0x30, 0x31, 0x30, /* 0x000000a0: E0...00010100010 */
+    0x31, 0x5a, 0x17, 0x0d, 0x33, 0x36, 0x31, 0x32, 0x33, 0x31, 0x32, 0x32, 0x35, 0x39, 0x35, 0x39, /* 0x000000b0: 1Z..361231225959 */
+    0x5a, 0x30, 0x71, 0x31, 0x1c, 0x30, 0x1a, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0c, 0x13, 0x54, 0x69, /* 0x000000c0: Z0q1.0...U....Ti */
+    0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x20, 0x53, 0x69, 0x67, 0x6e, 0x69, 0x6e, 0x67, 0x20, /* 0x000000d0: mestamp Signing  */
+    0x32, 0x31, 0x0c, 0x30, 0x0a, 0x06, 0x03, 0x55, 0x04, 0x0b, 0x0c, 0x03, 0x44, 0x65, 0x76, 0x31, /* 0x000000e0: 21.0...U....Dev1 */
+    0x15, 0x30, 0x13, 0x06, 0x03, 0x55, 0x04, 0x0a, 0x0c, 0x0c, 0x54, 0x65, 0x73, 0x74, 0x20, 0x43, /* 0x000000f0: .0...U....Test C */
+    0x6f, 0x6d, 0x70, 0x61, 0x6e, 0x79, 0x31, 0x12, 0x30, 0x10, 0x06, 0x03, 0x55, 0x04, 0x07, 0x0c, /* 0x00000100: ompany1.0...U... */
+    0x09, 0x53, 0x74, 0x75, 0x74, 0x74, 0x67, 0x61, 0x72, 0x74, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, /* 0x00000110: .Stuttgart1.0... */
+    0x55, 0x04, 0x08, 0x0c, 0x02, 0x42, 0x42, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, /* 0x00000120: U....BB1.0...U.. */
+    0x13, 0x02, 0x44, 0x45, 0x30, 0x82, 0x01, 0x22, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, /* 0x00000130: ..DE0.."0...*.H. */
+    0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0f, 0x00, 0x30, 0x82, 0x01, 0x0a, /* 0x00000140: ............0... */
+    0x02, 0x82, 0x01, 0x01, 0x00, 0xdb, 0x18, 0x63, 0x33, 0xf2, 0x08, 0x90, 0x5a, 0xab, 0xda, 0x88, /* 0x00000150: .......c3...Z... */
+    0x73, 0x86, 0x49, 0xea, 0x8b, 0xaf, 0xcf, 0x67, 0x15, 0xa5, 0x39, 0xe6, 0xa2, 0x94, 0x0c, 0x3f, /* 0x00000160: s.I....g..9....? */
+    0xa1, 0x2e, 0x6c, 0xd2, 0xdf, 0x01, 0x65, 0x6d, 0xed, 0x6c, 0x4c, 0xac, 0xe7, 0x77, 0x7a, 0x45, /* 0x00000170: ..l...em.lL..wzE */
+    0x05, 0x6b, 0x24, 0xf3, 0xaf, 0x45, 0x35, 0x6e, 0x64, 0x0a, 0xac, 0x1d, 0x37, 0xe1, 0x33, 0xa4, /* 0x00000180: .k$..E5nd...7.3. */
+    0x92, 0xec, 0x45, 0xe8, 0x99, 0xc1, 0xde, 0x6f, 0xab, 0x7c, 0xf0, 0xdc, 0xe2, 0xc5, 0x42, 0xa3, /* 0x00000190: ..E....o.|....B. */
+    0xea, 0xf5, 0x8a, 0xf9, 0x0e, 0xe7, 0xb3, 0x35, 0xa2, 0x75, 0x5e, 0x87, 0xd2, 0x2a, 0xd1, 0x27, /* 0x000001a0: .......5.u^..*.' */
+    0xa6, 0x79, 0x9e, 0xfe, 0x90, 0xbf, 0x97, 0xa4, 0xa1, 0xd8, 0xf7, 0xd7, 0x05, 0x59, 0x44, 0x27, /* 0x000001b0: .y...........YD' */
+    0x39, 0x6e, 0x33, 0x01, 0x2e, 0x46, 0x92, 0x47, 0xbe, 0x50, 0x91, 0x26, 0x27, 0xe5, 0x4b, 0x3a, /* 0x000001c0: 9n3..F.G.P.&'.K: */
+    0x76, 0x26, 0x64, 0x92, 0x0c, 0xa0, 0x54, 0x43, 0x6f, 0x56, 0xcc, 0x7b, 0xd0, 0xe3, 0xd8, 0x39, /* 0x000001d0: v&d...TCoV.{...9 */
+    0x5f, 0xb9, 0x41, 0xda, 0x1c, 0x62, 0x88, 0x0c, 0x45, 0x03, 0x63, 0xf8, 0xff, 0xe5, 0x3e, 0x87, /* 0x000001e0: _.A..b..E.c...>. */
+    0x0c, 0x75, 0xc9, 0xdd, 0xa2, 0xc0, 0x1b, 0x63, 0x19, 0xeb, 0x09, 0x9d, 0xa1, 0xbb, 0x0f, 0x63, /* 0x000001f0: .u.....c.......c */
+    0x67, 0x1c, 0xa3, 0xfd, 0x2f, 0xd1, 0x2a, 0xda, 0xd8, 0x93, 0x66, 0x45, 0x54, 0xef, 0x8b, 0x6d, /* 0x00000200: g.....*...fET..m */
+    0x12, 0x15, 0x0f, 0xd4, 0xb5, 0x04, 0x17, 0x30, 0x5b, 0xfa, 0x12, 0x96, 0x48, 0x5b, 0x38, 0x65, /* 0x00000210: .......0[...H[8e */
+    0xfd, 0x8f, 0x0c, 0xa3, 0x11, 0x46, 0x49, 0xe0, 0x62, 0xc3, 0xcc, 0x34, 0xe6, 0xfb, 0xab, 0x51, /* 0x00000220: .....FI.b..4...Q */
+    0xc3, 0xd4, 0x0b, 0xdc, 0x39, 0x93, 0x87, 0x90, 0x10, 0x9f, 0xce, 0x43, 0x27, 0x31, 0xd5, 0x4e, /* 0x00000230: ....9......C'1.N */
+    0x52, 0x60, 0xf1, 0x93, 0xd5, 0x06, 0xc4, 0x4e, 0x65, 0xb6, 0x35, 0x4a, 0x64, 0x15, 0xf8, 0xaf, /* 0x00000240: R`.....Ne.5Jd... */
+    0x71, 0xb2, 0x42, 0x50, 0x89, 0x02, 0x03, 0x01, 0x00, 0x01, 0xa3, 0x46, 0x30, 0x44, 0x30, 0x0e, /* 0x00000250: q.BP.......F0D0. */
+    0x06, 0x03, 0x55, 0x1d, 0x0f, 0x01, 0x01, 0xff, 0x04, 0x04, 0x03, 0x02, 0x07, 0x80, 0x30, 0x13, /* 0x00000260: ..U...........0. */
+    0x06, 0x03, 0x55, 0x1d, 0x25, 0x04, 0x0c, 0x30, 0x0a, 0x06, 0x08, 0x2b, 0x06, 0x01, 0x05, 0x05, /* 0x00000270: ..U.%..0...+.... */
+    0x07, 0x03, 0x08, 0x30, 0x1d, 0x06, 0x03, 0x55, 0x1d, 0x0e, 0x04, 0x16, 0x04, 0x14, 0x52, 0x9d, /* 0x00000280: ...0...U......R. */
+    0x4d, 0xcd, 0x41, 0xe1, 0xd2, 0x68, 0x22, 0xd3, 0x10, 0x33, 0x01, 0xca, 0xff, 0x00, 0x1d, 0x27, /* 0x00000290: M.A..h"..3.....' */
+    0xa4, 0x01, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x05, 0x05, /* 0x000002a0: ..0...*.H....... */
+    0x00, 0x03, 0x82, 0x01, 0x01, 0x00, 0xc5, 0x5a, 0x51, 0x83, 0x68, 0x3f, 0x06, 0x39, 0x79, 0x13, /* 0x000002b0: .......ZQ.h?.9y. */
+    0xa6, 0xf0, 0x1a, 0xf9, 0x29, 0x16, 0x2d, 0xa2, 0x07, 0xaa, 0x9b, 0xc3, 0x13, 0x88, 0x39, 0x69, /* 0x000002c0: ....).-.......9i */
+    0xba, 0xf7, 0x0d, 0xfb, 0xc0, 0x6e, 0x3a, 0x0b, 0x49, 0x10, 0xd1, 0xbe, 0x36, 0x91, 0x3f, 0x9d, /* 0x000002d0: .....n:.I...6.?. */
+    0xa1, 0xe8, 0xc4, 0x91, 0xf9, 0x02, 0xe1, 0xf1, 0x01, 0x15, 0x09, 0xb7, 0xa1, 0xf1, 0xec, 0x43, /* 0x000002e0: ...............C */
+    0x0d, 0x73, 0xd1, 0x31, 0x02, 0x4a, 0xce, 0x21, 0xf2, 0xa7, 0x99, 0x7c, 0xee, 0x85, 0x54, 0xc0, /* 0x000002f0: .s.1.J.!...|..T. */
+    0x55, 0x9b, 0x19, 0x37, 0xe8, 0xcf, 0x94, 0x41, 0x10, 0x6e, 0x67, 0xdd, 0x86, 0xaf, 0xb7, 0xfe, /* 0x00000300: U..7...A.ng..... */
+    0x50, 0x05, 0xf6, 0xfb, 0x0a, 0xdf, 0x88, 0xb5, 0x59, 0x69, 0x98, 0x27, 0xf8, 0x81, 0x6a, 0x4a, /* 0x00000310: P.......Yi.'..jJ */
+    0x7c, 0xf3, 0x63, 0xa9, 0x41, 0x78, 0x76, 0x12, 0xdb, 0x0e, 0x94, 0x0a, 0xdb, 0x1d, 0x3c, 0x87, /* 0x00000320: |.c.Axv.......<. */
+    0x35, 0xca, 0x28, 0xeb, 0xb0, 0x62, 0x27, 0x69, 0xe2, 0xf3, 0x84, 0x48, 0xa2, 0x2d, 0xd7, 0x0e, /* 0x00000330: 5.(..b'i...H.-.. */
+    0x4b, 0x6d, 0x39, 0xa7, 0x3e, 0x04, 0x94, 0x8e, 0xb6, 0x4b, 0x91, 0x01, 0x68, 0xf9, 0xd2, 0x75, /* 0x00000340: Km9.>....K..h..u */
+    0x1b, 0xac, 0x42, 0x3b, 0x85, 0xfc, 0x5b, 0x48, 0x3a, 0x13, 0xe7, 0x1c, 0x17, 0xcd, 0x84, 0x89, /* 0x00000350: ..B;..[H:....... */
+    0x9e, 0x5f, 0xe3, 0x77, 0xc0, 0xae, 0x34, 0xc3, 0x87, 0x76, 0x4a, 0x23, 0x30, 0xa0, 0xe1, 0x45, /* 0x00000360: ._.w..4..vJ#0..E */
+    0x94, 0x2a, 0x5b, 0x6b, 0x5a, 0xf0, 0x1a, 0x7e, 0xa6, 0xc4, 0xed, 0xe4, 0xac, 0x5d, 0xdf, 0x87, /* 0x00000370: .*[kZ..~.....].. */
+    0x8f, 0xc5, 0xb4, 0x8c, 0xbc, 0x70, 0xc1, 0xf7, 0xb2, 0x72, 0xbd, 0x73, 0xc9, 0x4e, 0xed, 0x8d, /* 0x00000380: .....p...r.s.N.. */
+    0x29, 0x33, 0xe9, 0x14, 0xc1, 0x5e, 0xff, 0x39, 0xa8, 0xe7, 0x9a, 0x3b, 0x7a, 0x3c, 0xce, 0x5d, /* 0x00000390: )3...^.9...;z<.] */
+    0x0f, 0x3c, 0x82, 0x90, 0xff, 0x81, 0x82, 0x00, 0x82, 0x5f, 0xba, 0x08, 0x79, 0xb1, 0x97, 0xc3, /* 0x000003a0: .<......._..y... */
+    0x09, 0x75, 0xc0, 0x04, 0x9b, 0x67,                                                             /* 0x000003b0: .u...g           */
+};
+
+const unsigned char g_abFakeRsaKey[] =
+{
+    0x30, 0x82, 0x04, 0xa4, 0x02, 0x01, 0x00, 0x02, 0x82, 0x01, 0x01, 0x00, 0xdb, 0x18, 0x63, 0x33, /* 0x00000000: 0.............c3 */
+    0xf2, 0x08, 0x90, 0x5a, 0xab, 0xda, 0x88, 0x73, 0x86, 0x49, 0xea, 0x8b, 0xaf, 0xcf, 0x67, 0x15, /* 0x00000010: ...Z...s.I....g. */
+    0xa5, 0x39, 0xe6, 0xa2, 0x94, 0x0c, 0x3f, 0xa1, 0x2e, 0x6c, 0xd2, 0xdf, 0x01, 0x65, 0x6d, 0xed, /* 0x00000020: .9....?..l...em. */
+    0x6c, 0x4c, 0xac, 0xe7, 0x77, 0x7a, 0x45, 0x05, 0x6b, 0x24, 0xf3, 0xaf, 0x45, 0x35, 0x6e, 0x64, /* 0x00000030: lL..wzE.k$..E5nd */
+    0x0a, 0xac, 0x1d, 0x37, 0xe1, 0x33, 0xa4, 0x92, 0xec, 0x45, 0xe8, 0x99, 0xc1, 0xde, 0x6f, 0xab, /* 0x00000040: ...7.3...E....o. */
+    0x7c, 0xf0, 0xdc, 0xe2, 0xc5, 0x42, 0xa3, 0xea, 0xf5, 0x8a, 0xf9, 0x0e, 0xe7, 0xb3, 0x35, 0xa2, /* 0x00000050: |....B........5. */
+    0x75, 0x5e, 0x87, 0xd2, 0x2a, 0xd1, 0x27, 0xa6, 0x79, 0x9e, 0xfe, 0x90, 0xbf, 0x97, 0xa4, 0xa1, /* 0x00000060: u^..*.'.y....... */
+    0xd8, 0xf7, 0xd7, 0x05, 0x59, 0x44, 0x27, 0x39, 0x6e, 0x33, 0x01, 0x2e, 0x46, 0x92, 0x47, 0xbe, /* 0x00000070: ....YD'9n3..F.G. */
+    0x50, 0x91, 0x26, 0x27, 0xe5, 0x4b, 0x3a, 0x76, 0x26, 0x64, 0x92, 0x0c, 0xa0, 0x54, 0x43, 0x6f, /* 0x00000080: P.&'.K:v&d...TCo */
+    0x56, 0xcc, 0x7b, 0xd0, 0xe3, 0xd8, 0x39, 0x5f, 0xb9, 0x41, 0xda, 0x1c, 0x62, 0x88, 0x0c, 0x45, /* 0x00000090: V.{...9_.A..b..E */
+    0x03, 0x63, 0xf8, 0xff, 0xe5, 0x3e, 0x87, 0x0c, 0x75, 0xc9, 0xdd, 0xa2, 0xc0, 0x1b, 0x63, 0x19, /* 0x000000a0: .c...>..u.....c. */
+    0xeb, 0x09, 0x9d, 0xa1, 0xbb, 0x0f, 0x63, 0x67, 0x1c, 0xa3, 0xfd, 0x2f, 0xd1, 0x2a, 0xda, 0xd8, /* 0x000000b0: ......cg.....*.. */
+    0x93, 0x66, 0x45, 0x54, 0xef, 0x8b, 0x6d, 0x12, 0x15, 0x0f, 0xd4, 0xb5, 0x04, 0x17, 0x30, 0x5b, /* 0x000000c0: .fET..m.......0[ */
+    0xfa, 0x12, 0x96, 0x48, 0x5b, 0x38, 0x65, 0xfd, 0x8f, 0x0c, 0xa3, 0x11, 0x46, 0x49, 0xe0, 0x62, /* 0x000000d0: ...H[8e.....FI.b */
+    0xc3, 0xcc, 0x34, 0xe6, 0xfb, 0xab, 0x51, 0xc3, 0xd4, 0x0b, 0xdc, 0x39, 0x93, 0x87, 0x90, 0x10, /* 0x000000e0: ..4...Q....9.... */
+    0x9f, 0xce, 0x43, 0x27, 0x31, 0xd5, 0x4e, 0x52, 0x60, 0xf1, 0x93, 0xd5, 0x06, 0xc4, 0x4e, 0x65, /* 0x000000f0: ..C'1.NR`.....Ne */
+    0xb6, 0x35, 0x4a, 0x64, 0x15, 0xf8, 0xaf, 0x71, 0xb2, 0x42, 0x50, 0x89, 0x02, 0x03, 0x01, 0x00, /* 0x00000100: .5Jd...q.BP..... */
+    0x01, 0x02, 0x82, 0x01, 0x01, 0x00, 0xd0, 0x5e, 0x09, 0x3a, 0xc5, 0xdc, 0xcf, 0x2c, 0xec, 0x74, /* 0x00000110: .......^.:...,.t */
+    0x11, 0x81, 0x8d, 0x1d, 0x8f, 0x2a, 0xfa, 0x31, 0x4d, 0xe0, 0x90, 0x1a, 0xd8, 0xf5, 0x95, 0xc7, /* 0x00000120: .....*.1M....... */
+    0x70, 0x5c, 0x62, 0x42, 0xac, 0xe9, 0xd9, 0xf2, 0x14, 0xf1, 0xd0, 0x25, 0xbb, 0xeb, 0x06, 0xfe, /* 0x00000130: p\bB.......%.... */
+    0x09, 0xd6, 0x75, 0x67, 0xd7, 0x39, 0xc1, 0xa0, 0x67, 0x34, 0x4d, 0xd2, 0x12, 0x97, 0xaa, 0x5d, /* 0x00000140: ..ug.9..g4M....] */
+    0xeb, 0x0e, 0xb0, 0x16, 0x6c, 0x78, 0x8e, 0xa0, 0x75, 0xa3, 0xaa, 0x57, 0x88, 0x3b, 0x43, 0x4f, /* 0x00000150: ....lx..u..W.;CO */
+    0x75, 0x85, 0x67, 0xb0, 0x9b, 0xdd, 0x49, 0x0e, 0x6e, 0xdb, 0xea, 0xb3, 0xd4, 0x88, 0x54, 0xa0, /* 0x00000160: u.g...I.n.....T. */
+    0x46, 0x0d, 0x55, 0x6d, 0x98, 0xbd, 0x20, 0xf9, 0x9f, 0x61, 0x2d, 0x6f, 0xc7, 0xd7, 0x16, 0x66, /* 0x00000170: F.Um.. ..a-o...f */
+    0x72, 0xc7, 0x73, 0xbe, 0x9e, 0x48, 0xdc, 0x65, 0x12, 0x46, 0x35, 0x69, 0x55, 0xd8, 0x6b, 0x81, /* 0x00000180: r.s..H.e.F5iU.k. */
+    0x78, 0x40, 0x15, 0x93, 0x60, 0x31, 0x4e, 0x87, 0x15, 0x2a, 0x74, 0x74, 0x7b, 0xa0, 0x1f, 0x59, /* 0x00000190: x@..`1N..*tt{..Y */
+    0x8d, 0xc8, 0x3f, 0xdd, 0xf0, 0x13, 0x88, 0x2a, 0x4a, 0xf2, 0xf5, 0xf1, 0x9e, 0xf3, 0x2d, 0x9c, /* 0x000001a0: ..?....*J.....-. */
+    0x8e, 0xbc, 0xb1, 0x21, 0x45, 0xc7, 0x44, 0x0c, 0x6a, 0xfe, 0x4c, 0x20, 0xdc, 0x73, 0xda, 0x62, /* 0x000001b0: ...!E.D.j.L .s.b */
+    0x21, 0xcb, 0xdf, 0x06, 0xfc, 0x90, 0xc2, 0xbd, 0xd6, 0xde, 0xfb, 0xf6, 0x08, 0x69, 0x5d, 0xea, /* 0x000001c0: !............i]. */
+    0xb3, 0x7f, 0x93, 0x61, 0xf2, 0xc1, 0xd0, 0x61, 0x4f, 0xd5, 0x5b, 0x63, 0xba, 0xb0, 0x3b, 0x07, /* 0x000001d0: ...a...aO.[c..;. */
+    0x7a, 0x55, 0xcd, 0xa1, 0xae, 0x8a, 0x92, 0x21, 0xcc, 0x2f, 0x5b, 0xf8, 0x40, 0x6a, 0xcd, 0xd5, /* 0x000001e0: zU.....!..[.@j.. */
+    0x5f, 0x15, 0xf4, 0xb6, 0xbd, 0xe5, 0x91, 0xb9, 0xa8, 0xcc, 0x2a, 0xa8, 0xa6, 0x67, 0x57, 0x2b, /* 0x000001f0: _.........*..gW+ */
+    0x4b, 0xe9, 0x88, 0xe0, 0xbb, 0x58, 0xac, 0x69, 0x5f, 0x3c, 0x76, 0x28, 0xa6, 0x9d, 0xbc, 0x71, /* 0x00000200: K....X.i_<v(...q */
+    0x7f, 0xcb, 0x0c, 0xc0, 0xbd, 0x61, 0x02, 0x81, 0x81, 0x00, 0xfc, 0x62, 0x79, 0x5b, 0xac, 0xf6, /* 0x00000210: .....a.....by[.. */
+    0x9b, 0x8c, 0xaa, 0x76, 0x2a, 0x30, 0x0e, 0xcf, 0x6b, 0x88, 0x72, 0x54, 0x8c, 0xdf, 0xf3, 0x9d, /* 0x00000220: ...v*0..k.rT.... */
+    0x84, 0xbb, 0xe7, 0x9d, 0xd4, 0x04, 0x29, 0x3c, 0xb5, 0x9d, 0x60, 0x9a, 0xcc, 0x12, 0xf3, 0xfa, /* 0x00000230: ......)<..`..... */
+    0x64, 0x30, 0x23, 0x47, 0xc6, 0xa4, 0x8b, 0x6c, 0x73, 0x6c, 0x6b, 0x78, 0x82, 0xec, 0x05, 0x19, /* 0x00000240: d0#G...lslkx.... */
+    0xde, 0xdd, 0xde, 0x52, 0xc5, 0x20, 0xd1, 0x11, 0x58, 0x19, 0x07, 0x5a, 0x90, 0xdd, 0x22, 0x91, /* 0x00000250: ...R. ..X..Z..". */
+    0x89, 0x22, 0x3f, 0x12, 0x54, 0x1a, 0xb8, 0x79, 0xd8, 0x6c, 0xbc, 0xf5, 0x0d, 0xc7, 0x73, 0x5c, /* 0x00000260: ."?.T..y.l....s\ */
+    0xed, 0xba, 0x40, 0x2b, 0x72, 0x34, 0x34, 0x97, 0xfa, 0x49, 0xf6, 0x43, 0x7c, 0xbc, 0x61, 0x30, /* 0x00000270: ..@+r44..I.C|.a0 */
+    0x54, 0x22, 0x21, 0x5f, 0x77, 0x68, 0x6b, 0x83, 0x95, 0xc6, 0x8d, 0xb8, 0x25, 0x3a, 0xd3, 0xb2, /* 0x00000280: T"!_whk.....%:.. */
+    0xbe, 0x29, 0x94, 0x01, 0x15, 0xf0, 0x36, 0x9d, 0x3e, 0xff, 0x02, 0x81, 0x81, 0x00, 0xde, 0x3b, /* 0x00000290: .)....6.>......; */
+    0xd6, 0x4b, 0x38, 0x69, 0x9b, 0x71, 0x29, 0x89, 0xd4, 0x6d, 0x8c, 0x41, 0xee, 0xe2, 0x4d, 0xfc, /* 0x000002a0: .K8i.q)..m.A..M. */
+    0xf0, 0x9a, 0x73, 0xf1, 0x15, 0x94, 0xac, 0x1b, 0x68, 0x5f, 0x79, 0x15, 0x3a, 0x41, 0x55, 0x09, /* 0x000002b0: ..s.....h_y.:AU. */
+    0xc7, 0x1e, 0xec, 0x27, 0x67, 0xe2, 0xdc, 0x54, 0xa8, 0x09, 0xe6, 0x46, 0x92, 0x92, 0x03, 0x8d, /* 0x000002c0: ...'g..T...F.... */
+    0xe5, 0x96, 0xfb, 0x1a, 0xdd, 0x59, 0x6f, 0x92, 0xf1, 0xf6, 0x8f, 0x76, 0xb0, 0xc5, 0xe6, 0xd7, /* 0x000002d0: .....Yo....v.... */
+    0x1b, 0x25, 0xaf, 0x04, 0x9f, 0xd8, 0x71, 0x27, 0x97, 0x99, 0x23, 0x09, 0x7d, 0xef, 0x06, 0x13, /* 0x000002e0: .%....q'..#.}... */
+    0xab, 0xdc, 0xa2, 0xd8, 0x5f, 0xc5, 0xec, 0xf3, 0x62, 0x20, 0x72, 0x7b, 0xa8, 0xc7, 0x09, 0x24, /* 0x000002f0: ...._...b r{...$ */
+    0xaf, 0x72, 0xc9, 0xea, 0xb8, 0x2d, 0xda, 0x00, 0xc8, 0xfe, 0xb4, 0x9f, 0x9f, 0xc7, 0xa9, 0xf7, /* 0x00000300: .r...-.......... */
+    0x1d, 0xce, 0xb1, 0xdb, 0xc5, 0x8a, 0x4e, 0xe8, 0x88, 0x77, 0x68, 0xdd, 0xf8, 0x77, 0x02, 0x81, /* 0x00000310: ......N..wh..w.. */
+    0x80, 0x5b, 0xa5, 0x8e, 0x98, 0x01, 0xa8, 0xd3, 0x37, 0x33, 0x37, 0x11, 0x7e, 0xbe, 0x02, 0x07, /* 0x00000320: .[......737.~... */
+    0xf4, 0x56, 0x3f, 0xe9, 0x9f, 0xf1, 0x20, 0xc3, 0xf0, 0x4f, 0xdc, 0xf9, 0xfe, 0x40, 0xd3, 0x30, /* 0x00000330: .V?... ..O...@.0 */
+    0xc7, 0xe3, 0x2a, 0x92, 0xec, 0x56, 0xf8, 0x17, 0xa5, 0x7b, 0x4a, 0x37, 0x11, 0xcd, 0x27, 0x26, /* 0x00000340: ..*..V...{J7..'& */
+    0x8a, 0xba, 0x43, 0xda, 0x96, 0xc6, 0x0b, 0x6c, 0xe8, 0x78, 0x30, 0xea, 0x30, 0x4e, 0x7a, 0xd3, /* 0x00000350: ..C....l.x0.0Nz. */
+    0xd8, 0xd2, 0xd8, 0xca, 0x3d, 0xe2, 0xad, 0xa2, 0x74, 0x73, 0x1e, 0xbe, 0xb7, 0xad, 0x41, 0x61, /* 0x00000360: ....=...ts....Aa */
+    0x9b, 0xaa, 0xc9, 0xf9, 0xa4, 0xf1, 0x79, 0x4f, 0x42, 0x10, 0xc7, 0x36, 0x03, 0x4b, 0x0d, 0xdc, /* 0x00000370: ......yOB..6.K.. */
+    0xef, 0x3a, 0xa3, 0xab, 0x09, 0xe4, 0xe8, 0xdd, 0xc4, 0x3f, 0x06, 0x21, 0xa0, 0x23, 0x5a, 0x76, /* 0x00000380: .:.......?.!.#Zv */
+    0xea, 0xd0, 0xcf, 0x8b, 0x85, 0x5f, 0x16, 0x4b, 0x03, 0x62, 0x21, 0x3a, 0xcc, 0x2d, 0xa8, 0xd0, /* 0x00000390: ....._.K.b!:.-.. */
+    0x15, 0x02, 0x81, 0x80, 0x51, 0xf6, 0x89, 0xbb, 0xa6, 0x6b, 0xb4, 0xcb, 0xd0, 0xc1, 0x27, 0xda, /* 0x000003a0: ....Q....k....'. */
+    0xdb, 0x6e, 0xf9, 0xd6, 0xf7, 0x62, 0x81, 0xae, 0xc5, 0x72, 0x36, 0x3e, 0x66, 0x17, 0x99, 0xb0, /* 0x000003b0: .n...b...r6>f... */
+    0x14, 0xad, 0x52, 0x96, 0x03, 0xf2, 0x1e, 0x41, 0x76, 0x61, 0xb6, 0x3c, 0x02, 0x7d, 0x2a, 0x98, /* 0x000003c0: ..R....Ava.<.}*. */
+    0xb4, 0x18, 0x75, 0x38, 0x6b, 0x1d, 0x2b, 0x7f, 0x3a, 0xcf, 0x96, 0xb1, 0xc4, 0xa7, 0xd2, 0x9b, /* 0x000003d0: ..u8k.+.:....... */
+    0xd8, 0x1f, 0xb3, 0x64, 0xda, 0x15, 0x9d, 0xca, 0x91, 0x39, 0x48, 0x67, 0x00, 0x9c, 0xd4, 0x99, /* 0x000003e0: ...d.....9Hg.... */
+    0xc3, 0x45, 0x5d, 0xf0, 0x09, 0x32, 0xba, 0x21, 0x1e, 0xe2, 0x64, 0xb8, 0x50, 0x03, 0x17, 0xbe, /* 0x000003f0: .E]..2.!..d.P... */
+    0xd5, 0xda, 0x6b, 0xce, 0x34, 0xbe, 0x16, 0x03, 0x65, 0x1b, 0x2f, 0xa0, 0xa1, 0x95, 0xc6, 0x8b, /* 0x00000400: ..k.4...e....... */
+    0xc2, 0x3c, 0x59, 0x26, 0xbf, 0xb6, 0x07, 0x85, 0x53, 0x2d, 0xb6, 0x36, 0xa3, 0x91, 0xb9, 0xbb, /* 0x00000410: .<Y&....S-.6.... */
+    0x28, 0xaf, 0x2d, 0x53, 0x02, 0x81, 0x81, 0x00, 0xd7, 0xbc, 0x70, 0xd8, 0x18, 0x4f, 0x65, 0x8c, /* 0x00000420: (.-S......p..Oe. */
+    0x68, 0xca, 0x35, 0x77, 0x43, 0x50, 0x9b, 0xa1, 0xa3, 0x9a, 0x0e, 0x2d, 0x7b, 0x38, 0xf8, 0xba, /* 0x00000430: h.5wCP.....-{8.. */
+    0x14, 0x91, 0x3b, 0xc3, 0x3b, 0x1b, 0xa0, 0x6d, 0x45, 0xe4, 0xa8, 0x28, 0x97, 0xf6, 0x89, 0x13, /* 0x00000440: ..;.;..mE..(.... */
+    0xb6, 0x16, 0x6d, 0x65, 0x47, 0x8c, 0xa6, 0x21, 0xf8, 0x6a, 0xce, 0x4e, 0x44, 0x5e, 0x81, 0x47, /* 0x00000450: ..meG..!.j.ND^.G */
+    0xd9, 0xad, 0x8a, 0xb9, 0xd9, 0xe9, 0x3e, 0x33, 0x1e, 0x5f, 0xe9, 0xe9, 0xa7, 0xea, 0x60, 0x75, /* 0x00000460: ......>3._....`u */
+    0x02, 0x57, 0x71, 0xb5, 0xed, 0x47, 0x77, 0xda, 0x1a, 0x40, 0x38, 0xab, 0x82, 0xd2, 0x0d, 0xf5, /* 0x00000470: .Wq..Gw..@8..... */
+    0x0e, 0x8e, 0xa9, 0x24, 0xdc, 0x30, 0xc9, 0x98, 0xa2, 0x05, 0xcd, 0xca, 0x01, 0xcf, 0xae, 0x1d, /* 0x00000480: ...$.0.......... */
+    0xe9, 0x02, 0x47, 0x0e, 0x46, 0x1d, 0x52, 0x02, 0x9a, 0x99, 0x22, 0x23, 0x7f, 0xf8, 0x9e, 0xc2, /* 0x00000490: ..G.F.R..."#.... */
+    0x16, 0x86, 0xca, 0xa0, 0xa7, 0x34, 0xfb, 0xbc,                                                 /* 0x000004a0: .....4..         */
+};
+
+
 /**
  * Certificate w/ public key + private key pair for signing.
  */
-typedef struct SIGNTOOLKEYPAIR
+class SignToolKeyPair
 {
-    RTCRX509CERTIFICATE     Cert;
+protected:
+    /* Context: */
+    const char             *m_pszWhat;
+    bool                    m_fMandatory;
+
+    /* Parameters kept till finalizing parsing: */
+    const char             *m_pszCertFile;
+    const char             *m_pszCertSha1;
+    uint8_t                 m_abCertSha1[RTSHA1_HASH_SIZE];
+    const char             *m_pszCertSubject;
+    const char             *m_pszCertStore;
+    bool                    m_fMachineStore; /**< false = personal store */
+
+    const char             *m_pszKeyFile;
+    const char             *m_pszKeyPassword;
+    const char             *m_pszKeyName;
+    const char             *m_pszKeyProvider;
+
+    /** String buffer for m_pszKeyPassword when read from file. */
+    RTCString               m_strPassword;
+    /** Storage for pCertificate when it's loaded from a file. */
+    RTCRX509CERTIFICATE     m_DecodedCert;
+#ifdef RT_OS_WINDOWS
+    /** For the fake certificate */
+    RTCRX509CERTIFICATE     m_DecodedFakeCert;
+    /** The certificate store. */
+    HCERTSTORE              m_hStore;
+    /** The windows certificate context. */
+    PCCERT_CONTEXT          m_pCertCtx;
+    /** Whether hNCryptPrivateKey/hLegacyPrivateKey needs freeing or not. */
+    BOOL                    m_fFreePrivateHandle;
+#endif
+
+    /** Set if already finalized. */
+    bool                    m_fFinalized;
+
+public: /* used to be a struct, thus not prefix either. */
+    /* Result: */
     PCRTCRX509CERTIFICATE   pCertificate;
     RTCRKEY                 hPrivateKey;
+#ifdef RT_OS_WINDOWS
+    PCRTCRX509CERTIFICATE   pCertificateReal;
+    NCRYPT_KEY_HANDLE       hNCryptPrivateKey;
+    HCRYPTPROV              hLegacyPrivateKey;
+#endif
 
-    SIGNTOOLKEYPAIR()
-        : pCertificate(NULL)
+public:
+    SignToolKeyPair(const char *a_pszWhat, bool a_fMandatory = false)
+        : m_pszWhat(a_pszWhat)
+        , m_fMandatory(a_fMandatory)
+        , m_pszCertFile(NULL)
+        , m_pszCertSha1(NULL)
+        , m_pszCertSubject(NULL)
+        , m_pszCertStore("MY")
+        , m_fMachineStore(false)
+        , m_pszKeyFile(NULL)
+        , m_pszKeyPassword(NULL)
+        , m_pszKeyName(NULL)
+        , m_pszKeyProvider(NULL)
+#ifdef RT_OS_WINDOWS
+        , m_hStore(NULL)
+        , m_pCertCtx(NULL)
+        , m_fFreePrivateHandle(FALSE)
+#endif
+        , m_fFinalized(false)
+        , pCertificate(NULL)
         , hPrivateKey(NIL_RTCRKEY)
+#ifdef RT_OS_WINDOWS
+        , pCertificateReal(NULL)
+        , hNCryptPrivateKey(0)
+        , hLegacyPrivateKey(0)
+#endif
     {
-        RT_ZERO(Cert);
+        RT_ZERO(m_DecodedCert);
+#ifdef RT_OS_WINDOWS
+        RT_ZERO(m_DecodedFakeCert);
+#endif
     }
 
-    ~SIGNTOOLKEYPAIR()
+    ~SignToolKeyPair()
     {
         if (hPrivateKey != NIL_RTCRKEY)
         {
             RTCrKeyRelease(hPrivateKey);
             hPrivateKey = NIL_RTCRKEY;
         }
-        if (pCertificate == &Cert)
+        if (pCertificate == &m_DecodedCert)
         {
-            RTCrX509Certificate_Delete(&Cert);
+            RTCrX509Certificate_Delete(&m_DecodedCert);
             pCertificate = NULL;
         }
+#ifdef RT_OS_WINDOWS
+        if (pCertificate == &m_DecodedFakeCert)
+        {
+            RTCrX509Certificate_Delete(&m_DecodedFakeCert);
+            RTCrX509Certificate_Delete(&m_DecodedCert);
+            pCertificate = NULL;
+            pCertificateReal = NULL;
+        }
+#endif
+#ifdef RT_OS_WINDOWS
+        if (m_pCertCtx != NULL)
+        {
+             CertFreeCertificateContext(m_pCertCtx);
+             m_pCertCtx = NULL;
+        }
+        if (m_hStore != NULL)
+        {
+            CertCloseStore(m_hStore, 0);
+            m_hStore = NULL;
+        }
+#endif
     }
 
     bool isComplete(void) const
@@ -180,18 +488,283 @@ typedef struct SIGNTOOLKEYPAIR
     {
         return pCertificate == NULL && hPrivateKey == NIL_RTCRKEY;
     }
-} SIGNTOOLKEYPAIR;
+
+    RTEXITCODE handleOption(unsigned offOpt, PRTGETOPTUNION pValueUnion)
+    {
+        AssertReturn(!m_fFinalized, RTMsgErrorExitFailure("Cannot handle options after finalizeOptions was called!"));
+        switch (offOpt)
+        {
+            case OPT_OFF_CERT_FILE:
+                m_pszCertFile    = pValueUnion->psz;
+                m_pszCertSha1    = NULL;
+                m_pszCertSubject = NULL;
+                break;
+            case OPT_OFF_CERT_SHA1:
+            {
+                /* Crude normalization of input separators to colons, since it's likely
+                   to use spaces and our conversion function only does colons or nothing. */
+                char szDigest[RTSHA1_DIGEST_LEN * 3 + 1];
+                int rc = RTStrCopy(szDigest, sizeof(szDigest), pValueUnion->psz);
+                if (RT_SUCCESS(rc))
+                {
+                    char  *pszDigest = RTStrStrip(szDigest);
+                    size_t offDst    = 0;
+                    size_t offSrc    = 0;
+                    char   ch;
+                    while ((ch = pszDigest[offSrc++]) != '\0')
+                    {
+                        if (ch == ' ' || ch == '\t' || ch == ':')
+                        {
+                            while ((ch = pszDigest[offSrc]) == ' ' || ch == '\t' || ch == ':')
+                                offSrc++;
+                            ch = ch ? ':' : '\0';
+                        }
+                        pszDigest[offDst++] = ch;
+                    }
+                    pszDigest[offDst] = '\0';
+
+                    /** @todo add a more relaxed input mode to RTStrConvertHexBytes that can deal
+                     *        with spaces as well as multi-byte cluster of inputs. */
+                    rc = RTStrConvertHexBytes(pszDigest, m_abCertSha1, RTSHA1_HASH_SIZE, RTSTRCONVERTHEXBYTES_F_SEP_COLON);
+                    if (RT_SUCCESS(rc))
+                    {
+                        m_pszCertFile    = NULL;
+                        m_pszCertSha1    = pValueUnion->psz;
+                        m_pszCertSubject = NULL;
+                        break;
+                    }
+                }
+                return RTMsgErrorExitFailure("malformed SHA-1 certificate fingerprint (%Rrc): %s", rc, pValueUnion->psz);
+            }
+            case OPT_OFF_CERT_SUBJECT:
+                m_pszCertFile    = NULL;
+                m_pszCertSha1    = NULL;
+                m_pszCertSubject = pValueUnion->psz;
+                break;
+            case OPT_OFF_CERT_STORE:
+                m_pszCertStore   = pValueUnion->psz;
+                break;
+            case OPT_OFF_CERT_STORE_MACHINE:
+                m_fMachineStore  = true;
+                break;
+
+            case OPT_OFF_KEY_FILE:
+                m_pszKeyFile     = pValueUnion->psz;
+                m_pszKeyName     = NULL;
+                break;
+            case OPT_OFF_KEY_NAME:
+                m_pszKeyFile     = NULL;
+                m_pszKeyName     = pValueUnion->psz;
+                break;
+            case OPT_OFF_KEY_PROVIDER:
+                m_pszKeyProvider = pValueUnion->psz;
+                break;
+            case OPT_OFF_KEY_PASSWORD:
+                m_pszKeyPassword = pValueUnion->psz;
+                break;
+            case OPT_OFF_KEY_PASSWORD_FILE:
+            {
+                m_pszKeyPassword = NULL;
+
+                size_t const cchMax = 512;
+                int rc = m_strPassword.reserveNoThrow(cchMax + 1);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExitFailure("out of memory");
+
+                PRTSTREAM  pStrm  = g_pStdIn;
+                bool const fClose = strcmp(pValueUnion->psz, "stdin") != 0;
+                if (fClose)
+                {
+                    rc = RTStrmOpen(pValueUnion->psz, "r", &pStrm);
+                    if (RT_FAILURE(rc))
+                        return RTMsgErrorExitFailure("Failed to open password file '%s' for reading: %Rrc", pValueUnion->psz, rc);
+                }
+                rc = RTStrmGetLine(pStrm, m_strPassword.mutableRaw(), cchMax);
+                if (fClose)
+                    RTStrmClose(pStrm);
+                if (rc == VERR_BUFFER_OVERFLOW || rc == VINF_BUFFER_OVERFLOW)
+                    return RTMsgErrorExitFailure("Password from '%s' is too long (max %zu)", pValueUnion->psz, cchMax);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExitFailure("Error reading password from '%s': %Rrc", pValueUnion->psz, rc);
+
+                m_strPassword.jolt();
+                m_strPassword.stripRight();
+                m_pszKeyPassword = m_strPassword.c_str();
+                break;
+            }
+            default:
+                AssertFailedReturn(RTMsgErrorExitFailure("Invalid offOpt=%u!\n", offOpt));
+        }
+        return RTEXITCODE_SUCCESS;
+    }
+
+    RTEXITCODE finalizeOptions(unsigned cVerbosity)
+    {
+        RT_NOREF(cVerbosity);
+
+        /* Only do this once. */
+        if (m_fFinalized)
+            return RTEXITCODE_SUCCESS;
+        m_fFinalized = true;
+
+        /*
+         * Got a cert? Is it required?
+         */
+        bool const fHasKey  = (   m_pszKeyFile     != NULL
+                               || m_pszKeyName     != NULL);
+        bool const fHasCert = (   m_pszCertFile    != NULL
+                               || m_pszCertSha1    != NULL
+                               || m_pszCertSubject != NULL);
+        if (!fHasCert)
+        {
+            if (m_fMandatory)
+                return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Specifying a %s certificiate is required.", m_pszWhat);
+            return RTEXITCODE_SUCCESS;
+        }
+
+        /*
+         * Get the certificate.
+         */
+        RTERRINFOSTATIC ErrInfo;
+        /* From file: */
+        if (m_pszCertFile)
+        {
+            int rc = RTCrX509Certificate_ReadFromFile(&m_DecodedCert, m_pszCertFile, 0, &g_RTAsn1DefaultAllocator,
+                                                      RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("Error reading %s certificate from '%s': %Rrc%#RTeim",
+                                             m_pszWhat, m_pszCertFile, rc, &ErrInfo.Core);
+            pCertificate = &m_DecodedCert;
+        }
+        /* From certificate store by name (substring) or fingerprint: */
+        else
+        {
+#ifdef RT_OS_WINDOWS
+            m_hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, X509_ASN_ENCODING, NULL,
+                                     CERT_STORE_DEFER_CLOSE_UNTIL_LAST_FREE_FLAG | CERT_STORE_READONLY_FLAG
+                                     | CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_ENUM_ARCHIVED_FLAG
+                                     | (m_fMachineStore ? CERT_SYSTEM_STORE_LOCAL_MACHINE : CERT_SYSTEM_STORE_CURRENT_USER),
+                                     m_pszCertStore);
+            if (m_hStore == NULL)
+                return RTMsgErrorExitFailure("Failed to open %s store '%s': %Rwc (%u)", m_fMachineStore ? "machine" : "user",
+                                             m_pszCertStore, GetLastError(), GetLastError());
+
+            CRYPT_HASH_BLOB Thumbprint  = { RTSHA1_HASH_SIZE, m_abCertSha1 };
+            PRTUTF16        pwszSubject = NULL;
+            void const     *pvFindParam = &Thumbprint;
+            DWORD           fFind       = CERT_FIND_SHA1_HASH;
+            if (!m_pszCertSha1)
+            {
+                int rc = RTStrToUtf16(m_pszCertSubject, &pwszSubject);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExitFailure("RTStrToUtf16 failed: %Rrc, input %.*Rhxs",
+                                                 rc, strlen(m_pszCertSubject), m_pszCertSubject);
+                pvFindParam = pwszSubject;
+                fFind       = CERT_FIND_SUBJECT_STR;
+            }
+
+            while ((m_pCertCtx = CertFindCertificateInStore(m_hStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0 /*fFlags*/,
+                                                           fFind, pvFindParam, m_pCertCtx)) != NULL)
+            {
+                if (m_pCertCtx->dwCertEncodingType & X509_ASN_ENCODING)
+                {
+                    RTASN1CURSORPRIMARY PrimaryCursor;
+                    RTAsn1CursorInitPrimary(&PrimaryCursor, m_pCertCtx->pbCertEncoded, m_pCertCtx->cbCertEncoded,
+                                            RTErrInfoInitStatic(&ErrInfo),
+                                            &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, "CurCtx");
+                    int rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &m_DecodedCert, "Cert");
+                    if (RT_SUCCESS(rc))
+                    {
+                        pCertificate = &m_DecodedCert;
+                        break;
+                    }
+                    RTMsgError("failed to decode certificate %p: %Rrc%#RTeim", m_pCertCtx, rc, &ErrInfo.Core);
+                }
+            }
+
+            RTUtf16Free(pwszSubject);
+            if (!m_pCertCtx)
+                return RTMsgErrorExitFailure("No certificate found matching %s '%s' (%Rwc / %u)",
+                                             m_pszCertSha1 ? "thumbprint" : "subject substring",
+                                             m_pszCertSha1 ? m_pszCertSha1 : m_pszCertSubject, GetLastError(), GetLastError());
+
+            /* Use this for private key too? */
+            if (!fHasKey)
+            {
+                HCRYPTPROV_OR_NCRYPT_KEY_HANDLE hTmpPrivateKey = 0;
+                DWORD                           dwKeySpec      = 0;
+                if (CryptAcquireCertificatePrivateKey(m_pCertCtx,
+                                                      CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                                                      | CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG
+                                                      | CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG,
+                                                      NULL, &hTmpPrivateKey, &dwKeySpec, &m_fFreePrivateHandle))
+                {
+                    if (cVerbosity > 1)
+                        RTMsgInfo("hTmpPrivateKey=%p m_fFreePrivateHandle=%d dwKeySpec=%#x",
+                                  hTmpPrivateKey, m_fFreePrivateHandle, dwKeySpec);
+                    Assert(dwKeySpec == CERT_NCRYPT_KEY_SPEC);
+                    if (dwKeySpec == CERT_NCRYPT_KEY_SPEC)
+                        hNCryptPrivateKey = hTmpPrivateKey;
+                    else
+                        hLegacyPrivateKey = hTmpPrivateKey;   /** @todo remove or drop CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG */
+                    return loadFakePrivateKeyAndCert();
+                }
+                return RTMsgErrorExitFailure("CryptAcquireCertificatePrivateKey failed: %Rwc (%d)", GetLastError(), GetLastError());
+            }
+#else
+            return RTMsgErrorExitFailure("Certificate store support is missing on this host");
+#endif
+        }
+
+        /*
+         * Get hold of the private key (if someone above already did, they'd returned already).
+         */
+        Assert(hPrivateKey == NIL_RTCRKEY);
+        /* Use cert file if nothing else specified. */
+        if (!fHasKey && m_pszCertFile)
+            m_pszKeyFile = m_pszCertFile;
+
+        /* Load from file:*/
+        if (m_pszKeyFile)
+        {
+            int rc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, m_pszKeyFile, m_pszKeyPassword,
+                                           RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("Error reading the %s private key from '%s': %Rrc%#RTeim",
+                                             m_pszWhat, m_pszKeyFile, rc, &ErrInfo.Core);
+        }
+        /* From key store: */
+        else
+        {
+            return RTMsgErrorExitFailure("Key store support is missing on this host");
+        }
+
+        return RTEXITCODE_SUCCESS;
+    }
+
+#ifdef RT_OS_WINDOWS
+    RTEXITCODE loadFakePrivateKeyAndCert()
+    {
+        int rc = RTCrX509Certificate_ReadFromBuffer(&m_DecodedFakeCert, g_abFakeCertificate, sizeof(g_abFakeCertificate),
+                                                    0 /*fFlags*/, &g_RTAsn1DefaultAllocator, NULL, NULL);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("RTCrX509Certificate_ReadFromBuffer/g_abFakeCertificate failed: %Rrc", rc);
+        pCertificateReal = pCertificate;
+        pCertificate = &m_DecodedFakeCert;
+
+        rc = RTCrKeyCreateFromBuffer(&hPrivateKey, 0 /*fFlags*/, g_abFakeRsaKey, sizeof(g_abFakeRsaKey), NULL, NULL, NULL);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("RTCrKeyCreateFromBuffer/g_abFakeRsaKey failed: %Rrc", rc);
+        return RTEXITCODE_SUCCESS;
+    }
+
+#endif
+};
 
 
 /*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
+*   Workers.                                                                                                                     *
 *********************************************************************************************************************************/
-static RTEXITCODE HandleHelp(int cArgs, char **papszArgs);
-static RTEXITCODE HelpHelp(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel);
-static RTEXITCODE HandleVersion(int cArgs, char **papszArgs);
-static int HandleShowExeWorkerPkcs7DisplaySignerInfo(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7SIGNERINFO pSignerInfo);
-static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix,
-                                           PCRTCRPKCS7CONTENTINFO pContentInfo);
 
 
 /**
@@ -1236,10 +1809,176 @@ static RTEXITCODE SignToolPkcs7_AppendCertificate(PRTCRPKCS7SIGNEDDATA pSignedDa
     return RTEXITCODE_SUCCESS;
 }
 
+#ifdef RT_OS_WINDOWS
+
+static PCRTUTF16 GetBCryptNameFromCrDigest(RTCRDIGEST hDigest)
+{
+    switch (RTCrDigestGetType(hDigest))
+    {
+        case RTDIGESTTYPE_MD2:      return BCRYPT_MD2_ALGORITHM;
+        case RTDIGESTTYPE_MD4:      return BCRYPT_MD4_ALGORITHM;
+        case RTDIGESTTYPE_SHA1:     return BCRYPT_SHA1_ALGORITHM;
+        case RTDIGESTTYPE_SHA256:   return BCRYPT_SHA256_ALGORITHM;
+        case RTDIGESTTYPE_SHA384:   return BCRYPT_SHA384_ALGORITHM;
+        case RTDIGESTTYPE_SHA512:   return BCRYPT_SHA512_ALGORITHM;
+        default:
+            RTMsgError("No BCrypt translation for %s/%d!", RTCrDigestGetAlgorithmOid(hDigest), RTCrDigestGetType(hDigest));
+            return L"No BCrypt translation";
+    }
+}
+
+static RTEXITCODE
+SignToolPkcs7_Pkcs7SignStuffAgainWithReal(const char *pszWhat, SignToolKeyPair *pCertKeyPair, unsigned cVerbosity,
+                                          PRTCRPKCS7CONTENTINFO pContentInfo, void **ppvSigned, size_t *pcbSigned)
+
+{
+    RT_NOREF(cVerbosity);
+
+    /*
+     * First remove the fake certificate from the PKCS7 structure and insert the real one.
+     */
+    PRTCRPKCS7SIGNEDDATA pSignedData = pContentInfo->u.pSignedData;
+    unsigned iCert = pSignedData->Certificates.cItems;
+    while (iCert-- > 0)
+    {
+        PCRTCRPKCS7CERT pCert = pSignedData->Certificates.papItems[iCert];
+        if (   pCert->enmChoice == RTCRPKCS7CERTCHOICE_X509
+            && RTCrX509Certificate_MatchIssuerAndSerialNumber(pCert->u.pX509Cert,
+                                                              &pCertKeyPair->pCertificate->TbsCertificate.Issuer,
+                                                              &pCertKeyPair->pCertificate->TbsCertificate.SerialNumber))
+            RTCrPkcs7SetOfCerts_Erase(&pSignedData->Certificates, iCert);
+    }
+
+    /* Then insert the real signing certificate. */
+    RTEXITCODE rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pCertKeyPair->pCertificateReal);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    /*
+     * Modify the signer info to reflect the real certificate.
+     */
+    PRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[0];
+    RTCrX509Name_Delete(&pSignerInfo->IssuerAndSerialNumber.Name);
+    int rc = RTCrX509Name_Clone(&pSignerInfo->IssuerAndSerialNumber.Name,
+                                &pCertKeyPair->pCertificateReal->TbsCertificate.Issuer, &g_RTAsn1DefaultAllocator);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("(%s) RTCrX509Name_Clone failed: %Rrc", pszWhat, rc);
+
+    RTAsn1Integer_Delete(&pSignerInfo->IssuerAndSerialNumber.SerialNumber);
+    rc = RTAsn1Integer_Clone(&pSignerInfo->IssuerAndSerialNumber.SerialNumber,
+                             &pCertKeyPair->pCertificateReal->TbsCertificate.SerialNumber, &g_RTAsn1DefaultAllocator);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("(%s) RTAsn1Integer_Clone failed: %Rrc", pszWhat, rc);
+
+    /* There shouldn't be anything in the authenticated attributes that
+       we need to modify... */
+
+    /*
+     * Now a create a new signature using the real key.  Since we haven't modified
+     * the authenticated attributes, we can just hash them as-is.
+     */
+    /* Create the hash to sign. */
+    RTCRDIGEST hDigest;
+    rc = RTCrDigestCreateByObjId(&hDigest, &pSignerInfo->DigestAlgorithm.Algorithm);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("(%s) RTCrDigestCreateByObjId failed on '%s': %Rrc",
+                                     pszWhat, pSignerInfo->DigestAlgorithm.Algorithm.szObjId, rc);
+
+    rcExit = RTEXITCODE_FAILURE;
+    RTERRINFOSTATIC ErrInfo;
+    rc = RTCrPkcs7Attributes_HashAttributes(&pSignerInfo->AuthenticatedAttributes, hDigest, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        BCRYPT_PKCS1_PADDING_INFO PaddingInfo = { GetBCryptNameFromCrDigest(hDigest) };
+        DWORD                     cbSignature = 0;
+        SECURITY_STATUS rcNCrypt = NCryptSignHash(pCertKeyPair->hNCryptPrivateKey, &PaddingInfo,
+                                                  (PBYTE)RTCrDigestGetHash(hDigest), RTCrDigestGetHashSize(hDigest),
+                                                  NULL, 0, &cbSignature, NCRYPT_SILENT_FLAG | BCRYPT_PAD_PKCS1);
+        if (rcNCrypt == ERROR_SUCCESS)
+        {
+            if (cVerbosity)
+                RTMsgInfo("PaddingInfo: '%ls' cb=%#x, was %#zx\n",
+                          PaddingInfo.pszAlgId, cbSignature, pSignerInfo->EncryptedDigest.Asn1Core.cb);
+
+            rc = RTAsn1OctetString_AllocContent(&pSignerInfo->EncryptedDigest, NULL /*pvSrc*/, cbSignature,
+                                                &g_RTAsn1DefaultAllocator);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(pSignerInfo->EncryptedDigest.Asn1Core.uData.pv);
+                rcNCrypt = NCryptSignHash(pCertKeyPair->hNCryptPrivateKey, &PaddingInfo,
+                                          (PBYTE)RTCrDigestGetHash(hDigest), RTCrDigestGetHashSize(hDigest),
+                                          (PBYTE)pSignerInfo->EncryptedDigest.Asn1Core.uData.pv, cbSignature, &cbSignature,
+                                          /*NCRYPT_SILENT_FLAG |*/ BCRYPT_PAD_PKCS1);
+                if (rcNCrypt == ERROR_SUCCESS)
+                {
+                    /*
+                     * Now we need to re-encode the whole thing and decode it again.
+                     */
+                    PRTASN1CORE pRoot = RTCrPkcs7ContentInfo_GetAsn1Core(pContentInfo);
+                    uint32_t    cbRealSigned;
+                    rc = RTAsn1EncodePrepare(pRoot, RTASN1ENCODE_F_DER, &cbRealSigned, RTErrInfoInitStatic(&ErrInfo));
+                    if (RT_SUCCESS(rc))
+                    {
+                        void *pvRealSigned = RTMemAllocZ(cbRealSigned);
+                        if (pvRealSigned)
+                        {
+                            rc = RTAsn1EncodeToBuffer(pRoot, RTASN1ENCODE_F_DER, pvRealSigned, cbRealSigned,
+                                                      RTErrInfoInitStatic(&ErrInfo));
+                            if (RT_SUCCESS(rc))
+                            {
+                                /* Decode it */
+                                RTCrPkcs7ContentInfo_Delete(pContentInfo);
+
+                                RTASN1CURSORPRIMARY PrimaryCursor;
+                                RTAsn1CursorInitPrimary(&PrimaryCursor, pvRealSigned, cbRealSigned, RTErrInfoInitStatic(&ErrInfo),
+                                                        &g_RTAsn1DefaultAllocator, 0, pszWhat);
+                                rc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, pContentInfo, "CI");
+                                if (RT_SUCCESS(rc))
+                                {
+                                    Assert(RTCrPkcs7ContentInfo_IsSignedData(pContentInfo));
+
+                                    /* Almost done! Just replace output buffer. */
+                                    RTMemFree(*ppvSigned);
+                                    *ppvSigned = pvRealSigned;
+                                    *pcbSigned = cbRealSigned;
+                                    pvRealSigned = NULL;
+                                    rcExit = RTEXITCODE_SUCCESS;
+                                }
+                                else
+                                    RTMsgError("(%s) RTCrPkcs7ContentInfo_DecodeAsn1 failed: %Rrc%#RTeim",
+                                               pszWhat, rc, &ErrInfo.Core);
+                            }
+                            else
+                                RTMsgError("(%s) RTAsn1EncodeToBuffer failed: %Rrc%#RTeim", pszWhat, rc, &ErrInfo.Core);
+
+                            RTMemFree(pvRealSigned);
+                        }
+                        else
+                            RTMsgError("(%s) Failed to allocate %u bytes!", pszWhat, cbRealSigned);
+                    }
+                    else
+                        RTMsgError("(%s) RTAsn1EncodePrepare failed: %Rrc%#RTeim", pszWhat, rc, &ErrInfo.Core);
+                }
+                else
+                    RTMsgError("(%s) NCryptSignHash/2 failed: %Rwc %#x (%u)", pszWhat, rcNCrypt, rcNCrypt, rcNCrypt);
+            }
+            else
+                RTMsgError("(%s) RTAsn1OctetString_AllocContent(,,%#x) failed: %Rrc", pszWhat, cbSignature, rc);
+        }
+        else
+            RTMsgError("(%s) NCryptSignHash/1 failed: %Rwc %#x (%u)", pszWhat, rcNCrypt, rcNCrypt, rcNCrypt);
+    }
+    else
+        RTMsgError("(%s) RTCrPkcs7Attributes_HashAttributes failed: %Rrc%#RTeim", pszWhat, rc, &ErrInfo.Core);
+    RTCrDigestRelease(hDigest);
+    return rcExit;
+}
+
+#endif /* RT_OS_WINDOWS */
 
 static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
                                                PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts,
-                                               uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType, SIGNTOOLKEYPAIR *pCertKeyPair,
+                                               uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType, SignToolKeyPair *pCertKeyPair,
                                                unsigned cVerbosity, void **ppvSigned, size_t *pcbSigned,
                                                PRTCRPKCS7CONTENTINFO pContentInfo, PRTCRPKCS7SIGNEDDATA *ppSignedData)
 {
@@ -1257,12 +1996,12 @@ static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *
                                            pvToDataToSign, cbToDataToSign,enmDigestType, hAdditionalCerts, pAuthAttribs,
                                            NULL, &cbSigned, RTErrInfoInitStatic(&ErrInfo));
     if (rc != VERR_BUFFER_OVERFLOW)
-        return RTMsgErrorExitFailure("RTCrPkcs7SimpleSignSignedData failed: %Rrc%#RTeim", rc, &ErrInfo.Core);
+        return RTMsgErrorExitFailure("(%s) RTCrPkcs7SimpleSignSignedData failed: %Rrc%#RTeim", pszWhat, rc, &ErrInfo.Core);
 
     /* Allocate memory for it and do the actual signing. */
     void *pvSigned = RTMemAllocZ(cbSigned);
     if (!pvSigned)
-        return RTMsgErrorExitFailure("Failed to allocate %#zx bytes for %s signature", cbSigned, pszWhat);
+        return RTMsgErrorExitFailure("(%s) Failed to allocate %#zx bytes for %s signature", pszWhat, cbSigned, pszWhat);
     rc = RTCrPkcs7SimpleSignSignedData(fSignFlags, pCertKeyPair->pCertificate, pCertKeyPair->hPrivateKey,
                                        pvToDataToSign, cbToDataToSign, enmDigestType, hAdditionalCerts, pAuthAttribs,
                                        pvSigned, &cbSigned, RTErrInfoInitStatic(&ErrInfo));
@@ -1282,26 +2021,45 @@ static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *
         {
             if (RTCrPkcs7ContentInfo_IsSignedData(pContentInfo))
             {
-                *ppvSigned = pvSigned;
-                if (pcbSigned)
-                    *pcbSigned = cbSigned;
-                if (ppSignedData)
-                    *ppSignedData = pContentInfo->u.pSignedData;
-
-                if (cVerbosity)
+#ifdef RT_OS_WINDOWS
+                /*
+                 * If we're using a fake key+cert, we now have to re-do the signing using the real
+                 * key+cert and the windows crypto API.   This kludge is necessary because we can't
+                 * typically get that the encoded private key, so it isn't possible to feed it to
+                 * openssl.
+                 */
+                RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+                if (pCertKeyPair->pCertificateReal)
+                    rcExit = SignToolPkcs7_Pkcs7SignStuffAgainWithReal(pszWhat, pCertKeyPair, cVerbosity, pContentInfo,
+                                                                       &pvSigned, &cbSigned);
+                if (rcExit == RTEXITCODE_SUCCESS)
+#endif
                 {
-                    SHOWEXEPKCS7 ShowExe;
-                    RT_ZERO(ShowExe);
-                    ShowExe.cVerbosity = cVerbosity;
-                    HandleShowExeWorkerPkcs7Display(&ShowExe, pContentInfo->u.pSignedData, 0, pContentInfo);
+                    /*
+                     * Set returns and maybe display the result before returning.
+                     */
+                    *ppvSigned = pvSigned;
+                    if (pcbSigned)
+                        *pcbSigned = cbSigned;
+                    if (ppSignedData)
+                        *ppSignedData = pContentInfo->u.pSignedData;
+
+                    if (cVerbosity)
+                    {
+                        SHOWEXEPKCS7 ShowExe;
+                        RT_ZERO(ShowExe);
+                        ShowExe.cVerbosity = cVerbosity;
+                        HandleShowExeWorkerPkcs7Display(&ShowExe, pContentInfo->u.pSignedData, 0, pContentInfo);
+                    }
+                    return RTEXITCODE_SUCCESS;
                 }
-                return RTEXITCODE_SUCCESS;
             }
 
-            RTMsgError("RTCrPkcs7SimpleSignSignedData did not create SignedData: %s", pContentInfo->ContentType.szObjId);
+            RTMsgError("(%s) RTCrPkcs7SimpleSignSignedData did not create SignedData: %s",
+                       pszWhat, pContentInfo->ContentType.szObjId);
         }
         else
-            RTMsgError("RTCrPkcs7ContentInfo_DecodeAsn1 failed: %Rrc%#RTeim", rc, &ErrInfo.Core);
+            RTMsgError("(%s) RTCrPkcs7ContentInfo_DecodeAsn1 failed: %Rrc%#RTeim", pszWhat, rc, &ErrInfo.Core);
         RTCrPkcs7ContentInfo_Delete(pContentInfo);
     }
     RTMemFree(pvSigned);
@@ -1311,7 +2069,7 @@ static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *
 
 static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSignerInfo, PRTCRPKCS7SIGNEDDATA pSignedData,
                                                         unsigned cVerbosity,  bool fReplaceExisting, bool fTimestampTypeOld,
-                                                        RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampPair)
+                                                        RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampPair)
 {
     AssertReturn(fTimestampTypeOld, RTMsgErrorExitFailure("New style signatures not supported yet"));
 
@@ -1389,7 +2147,7 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
 
 static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, unsigned cVerbosity, unsigned iSignature,
                                                       bool fReplaceExisting, bool fTimestampTypeOld, RTTIMESPEC SigningTime,
-                                                      SIGNTOOLKEYPAIR *pTimestampPair)
+                                                      SignToolKeyPair *pTimestampPair)
 {
     AssertReturn(fTimestampTypeOld, RTMsgErrorExitFailure("New style signatures not supported yet"));
 
@@ -1408,8 +2166,8 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, u
 
 static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, bool fIsRootsParent,
                                          const char *pszContentTypeId, unsigned cVerbosity,  RTDIGESTTYPE enmSigType,
-                                         bool fReplaceExisting, SIGNTOOLKEYPAIR *pSigningCertKey, RTCRSTORE hAddCerts,
-                                         bool fTimestampTypeOld, RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
+                                         bool fReplaceExisting, SignToolKeyPair *pSigningCertKey, RTCRSTORE hAddCerts,
+                                         bool fTimestampTypeOld, RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampCertKey)
 {
     /*
      * Encode it.
@@ -1711,9 +2469,9 @@ static RTEXITCODE SignToolPkcs7_SpcAddImageHash(SIGNTOOLPKCS7EXE *pThis, RTCRSPC
 
 
 static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, unsigned cVerbosity, RTDIGESTTYPE enmSigType,
-                                                      bool fReplaceExisting,  bool fHashPages, SIGNTOOLKEYPAIR *pSigningCertKey,
+                                                      bool fReplaceExisting,  bool fHashPages, SignToolKeyPair *pSigningCertKey,
                                                       RTCRSTORE hAddCerts,  bool fTimestampTypeOld,
-                                                      RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
+                                                      RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampCertKey)
 {
     AssertReturn(fTimestampTypeOld || pTimestampCertKey->isNull(),
                  RTMsgErrorExitFailure("New style signatures not supported yet"));
@@ -1797,9 +2555,9 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
 
 
 static RTEXITCODE SignToolPkcs7_AddOrReplaceCatSignature(SIGNTOOLPKCS7 *pThis, unsigned cVerbosity, RTDIGESTTYPE enmSigType,
-                                                         bool fReplaceExisting, SIGNTOOLKEYPAIR *pSigningCertKey,
+                                                         bool fReplaceExisting, SignToolKeyPair *pSigningCertKey,
                                                          RTCRSTORE hAddCerts, bool fTimestampTypeOld,
-                                                         RTTIMESPEC SigningTime, SIGNTOOLKEYPAIR *pTimestampCertKey)
+                                                         RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampCertKey)
 {
     AssertReturn(fTimestampTypeOld || pTimestampCertKey->isNull(),
                  RTMsgErrorExitFailure("New style signatures not supported yet"));
@@ -2297,35 +3055,6 @@ static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
 *********************************************************************************************************************************/
 #ifndef IPRT_IN_BUILD_TOOL
 
-static RTEXITCODE HandleOptCertFile(SIGNTOOLKEYPAIR *pKeyPair, const char *pszFile)
-{
-    if (pKeyPair->pCertificate == &pKeyPair->Cert)
-        RTCrX509Certificate_Delete(&pKeyPair->Cert);
-    pKeyPair->pCertificate = NULL;
-
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTCrX509Certificate_ReadFromFile(&pKeyPair->Cert, pszFile, 0, &g_RTAsn1DefaultAllocator,
-                                              RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("Error reading certificate from '%s': %Rrc%#RTeim", pszFile, rc, &ErrInfo.Core);
-    pKeyPair->pCertificate = &pKeyPair->Cert;
-    return RTEXITCODE_SUCCESS;
-}
-
-static RTEXITCODE HandleOptKeyFile(SIGNTOOLKEYPAIR *pKeyPair, const char *pszFile)
-{
-    RTCrKeyRelease(pKeyPair->hPrivateKey);
-
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTCrKeyCreateFromFile(&pKeyPair->hPrivateKey, 0 /*fFlags*/, pszFile,
-                                   NULL /*pszPassword*/, RTErrInfoInitStatic(&ErrInfo));
-    if (RT_SUCCESS(rc))
-        return RTEXITCODE_SUCCESS;
-
-    pKeyPair->hPrivateKey = NIL_RTCRKEY;
-    return RTMsgErrorExitFailure("Error reading private key from '%s': %Rrc%#RTeim", pszFile, rc, &ErrInfo.Core);
-}
-
 static RTEXITCODE HandleOptAddCert(PRTCRSTORE phStore, const char *pszFile)
 {
     if (*phStore == NIL_RTCRSTORE)
@@ -2444,8 +3173,7 @@ static RTEXITCODE HelpAddTimestampExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP e
 
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
                         "add-timestamp-exe-signature [-v|--verbose] [--signature-index|-i <num>] "
-                        "[--timestamp-cert-file <file>] "
-                        "[--timestamp-key-file <file>] "
+                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "[--timestamp-type old|new] "
                         "[--timestamp-date <fake-isots>] "
                         "[--timestamp-year <fake-year>] "
@@ -2469,8 +3197,7 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--signature-index",      'i',                        RTGETOPT_REQ_UINT32 },
-        { "--timestamp-cert-file",  OPT_TIMESTAMP_CERT_FILE,    RTGETOPT_REQ_STRING },
-        { "--timestamp-key-file",   OPT_TIMESTAMP_KEY_FILE,     RTGETOPT_REQ_STRING },
+        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", 1000),
         { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
         { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
         { "--replace-existing",     'r',                        RTGETOPT_REQ_NOTHING },
@@ -2481,7 +3208,7 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
     unsigned                iSignature              = 0;
     bool                    fReplaceExisting        = false;
     bool                    fTimestampTypeOld       = true;
-    SIGNTOOLKEYPAIR         TimestampCertKey;
+    SignToolKeyPair         TimestampCertKey("timestamp", true);
     RTTIMESPEC              SigningTime;
     RTTimeNow(&SigningTime);
 
@@ -2497,9 +3224,8 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
         RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
         switch (ch)
         {
+            OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1000, ch, ValueUnion, rcExit2);
             case 'i':                       iSignature = ValueUnion.u32; break;
-            case OPT_TIMESTAMP_CERT_FILE:   rcExit2 = HandleOptCertFile(&TimestampCertKey, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_KEY_FILE:    rcExit2 = HandleOptKeyFile(&TimestampCertKey, ValueUnion.psz); break;
             case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
             case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
             case 'r':                       fReplaceExisting = true; break;
@@ -2508,8 +3234,9 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
             case 'h':                       return HelpAddTimestampExeSignature(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
             case VINF_GETOPT_NOT_OPTION:
-                /* check that we've got all the info we need: */
-                if (TimestampCertKey.isComplete())
+                /* Do final certificate and key option processing (first file only). */
+                rcExit2 = TimestampCertKey.finalizeOptions(cVerbosity);
+                if (rcExit2 == RTEXITCODE_SUCCESS)
                 {
                     /* Do the work: */
                     SIGNTOOLPKCS7EXE Exe;
@@ -2527,14 +3254,6 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
                     if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
                     rcExit2 = RTEXITCODE_SUCCESS;
-                }
-                else
-                {
-                    if (!TimestampCertKey.pCertificate)
-                        RTMsgError("No timestamp certificate was specified");
-                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY)
-                        RTMsgError("No timestamp private key was specified");
-                    rcExit2 = RTEXITCODE_SYNTAX;
                 }
                 break;
 
@@ -2569,11 +3288,9 @@ static RTEXITCODE HelpSignExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
                         "[--hash-pages] "
                         "[--no-hash-pages] "
                         "[--append] "
-                        "[--cert-file <file>] "
-                        "[--cert-key <file>] "
+                        OPT_CERT_KEY_SYNOPSIS("--")
                         "[--add-cert <file>] "
-                        "[--timestamp-cert-file <file>] "
-                        "[--timestamp-key-file <file>] "
+                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "[--timestamp-type old|new] "
                         "[--timestamp-date <fake-isots>] "
                         "[--timestamp-year <fake-year>] "
@@ -2607,10 +3324,9 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
         { "/nph",                   OPT_NO_HASH_PAGES,          RTGETOPT_REQ_NOTHING },
         { "--add-cert",             OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
         { "/ac",                    OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
-        { "--cert-file",            OPT_CERT_FILE,              RTGETOPT_REQ_STRING },
-        { "--key-file",             OPT_KEY_FILE,               RTGETOPT_REQ_STRING },
-        { "--timestamp-cert-file",  OPT_TIMESTAMP_CERT_FILE,    RTGETOPT_REQ_STRING },
-        { "--timestamp-key-file",   OPT_TIMESTAMP_KEY_FILE,     RTGETOPT_REQ_STRING },
+        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--",           1000),
+        OPT_CERT_KEY_GETOPTDEF_COMPAT_ENTRIES(         1000),
+        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", 1020),
         { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
         { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
         { "--verbose",              'v',                        RTGETOPT_REQ_NOTHING },
@@ -2622,10 +3338,10 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
     RTDIGESTTYPE            enmSigType              = RTDIGESTTYPE_SHA1;
     bool                    fReplaceExisting        = true;
     bool                    fHashPages              = false;
-    SIGNTOOLKEYPAIR         SigningCertKey;
+    SignToolKeyPair         SigningCertKey("signing", true);
     RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
     bool                    fTimestampTypeOld       = true;
-    SIGNTOOLKEYPAIR         TimestampCertKey;
+    SignToolKeyPair         TimestampCertKey("timestamp");
     RTTIMESPEC              SigningTime;
     RTTimeNow(&SigningTime);
 
@@ -2641,15 +3357,13 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
         RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
         switch (ch)
         {
+            OPT_CERT_KEY_SWITCH_CASES(SigningCertKey,   1000, ch, ValueUnion, rcExit2);
+            OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1020, ch, ValueUnion, rcExit2);
             case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
             case 'a':                       fReplaceExisting = false; break;
             case OPT_HASH_PAGES:            fHashPages = true; break;
             case OPT_NO_HASH_PAGES:         fHashPages = false; break;
-            case OPT_CERT_FILE:             rcExit2 = HandleOptCertFile(&SigningCertKey, ValueUnion.psz); break;
-            case OPT_KEY_FILE:              rcExit2 = HandleOptKeyFile(&SigningCertKey, ValueUnion.psz); break;
             case OPT_ADD_CERT:              rcExit2 = HandleOptAddCert(&hAddCerts, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_CERT_FILE:   rcExit2 = HandleOptCertFile(&TimestampCertKey, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_KEY_FILE:    rcExit2 = HandleOptKeyFile(&TimestampCertKey, ValueUnion.psz); break;
             case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
             case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
             case 'v':                       cVerbosity++; break;
@@ -2657,9 +3371,11 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
             case 'h':                       return HelpSignExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
             case VINF_GETOPT_NOT_OPTION:
-                /* check that we've got all the info we need: */
-                if (   SigningCertKey.isComplete()
-                    && (TimestampCertKey.isNull() || TimestampCertKey.isComplete()))
+                /* Do final certificate and key option processing (first file only). */
+                rcExit2 = SigningCertKey.finalizeOptions(cVerbosity);
+                if (rcExit2 == RTEXITCODE_SUCCESS)
+                    rcExit2 = TimestampCertKey.finalizeOptions(cVerbosity);
+                if (rcExit2 == RTEXITCODE_SUCCESS)
                 {
                     /* Do the work: */
                     SIGNTOOLPKCS7EXE Exe;
@@ -2679,19 +3395,6 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
                     if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
                     rcExit2 = RTEXITCODE_SUCCESS;
-                }
-                else
-                {
-                    if (!TimestampCertKey.pCertificate)
-                        RTMsgError("No signing certificate was specified");
-                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY)
-                        RTMsgError("No signing private key was specified");
-
-                    if (!TimestampCertKey.pCertificate && !TimestampCertKey.isNull())
-                        RTMsgError("No timestamp certificate was specified");
-                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY && !TimestampCertKey.isNull())
-                        RTMsgError("No timestamp private key was specified");
-                    rcExit2 = RTEXITCODE_SYNTAX;
                 }
                 break;
 
@@ -2723,14 +3426,12 @@ static RTEXITCODE HelpSignCat(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
     RT_NOREF_PV(enmLevel);
 
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "sign-exe [-v|--verbose] "
+                        "sign-cat [-v|--verbose] "
                         "[--type sha1|sha256] "
                         "[--append] "
-                        "[--cert-file <file>] "
-                        "[--cert-key <file>] "
+                        OPT_CERT_KEY_SYNOPSIS("--")
                         "[--add-cert <file>] "
-                        "[--timestamp-cert-file <file>] "
-                        "[--timestamp-key-file <file>] "
+                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "[--timestamp-type old|new] "
                         "[--timestamp-date <fake-isots>] "
                         "[--timestamp-year <fake-year>] "
@@ -2760,10 +3461,9 @@ static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
         { "/fd",                    't',                        RTGETOPT_REQ_STRING },
         { "--add-cert",             OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
         { "/ac",                    OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
-        { "--cert-file",            OPT_CERT_FILE,              RTGETOPT_REQ_STRING },
-        { "--key-file",             OPT_KEY_FILE,               RTGETOPT_REQ_STRING },
-        { "--timestamp-cert-file",  OPT_TIMESTAMP_CERT_FILE,    RTGETOPT_REQ_STRING },
-        { "--timestamp-key-file",   OPT_TIMESTAMP_KEY_FILE,     RTGETOPT_REQ_STRING },
+        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--",           1000),
+        OPT_CERT_KEY_GETOPTDEF_COMPAT_ENTRIES(         1000),
+        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", 1020),
         { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
         { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
         { "--verbose",              'v',                        RTGETOPT_REQ_NOTHING },
@@ -2774,10 +3474,10 @@ static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
     unsigned                cVerbosity              = 0;
     RTDIGESTTYPE            enmSigType              = RTDIGESTTYPE_SHA1;
     bool                    fReplaceExisting        = true;
-    SIGNTOOLKEYPAIR         SigningCertKey;
+    SignToolKeyPair         SigningCertKey("signing", true);
     RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
     bool                    fTimestampTypeOld       = true;
-    SIGNTOOLKEYPAIR         TimestampCertKey;
+    SignToolKeyPair         TimestampCertKey("timestamp");
     RTTIMESPEC              SigningTime;
     RTTimeNow(&SigningTime);
 
@@ -2793,13 +3493,11 @@ static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
         RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
         switch (ch)
         {
+            OPT_CERT_KEY_SWITCH_CASES(SigningCertKey,   1000, ch, ValueUnion, rcExit2);
+            OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1020, ch, ValueUnion, rcExit2);
             case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
             case 'a':                       fReplaceExisting = false; break;
-            case OPT_CERT_FILE:             rcExit2 = HandleOptCertFile(&SigningCertKey, ValueUnion.psz); break;
-            case OPT_KEY_FILE:              rcExit2 = HandleOptKeyFile(&SigningCertKey, ValueUnion.psz); break;
             case OPT_ADD_CERT:              rcExit2 = HandleOptAddCert(&hAddCerts, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_CERT_FILE:   rcExit2 = HandleOptCertFile(&TimestampCertKey, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_KEY_FILE:    rcExit2 = HandleOptKeyFile(&TimestampCertKey, ValueUnion.psz); break;
             case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
             case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
             case 'v':                       cVerbosity++; break;
@@ -2807,9 +3505,11 @@ static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
             case 'h':                       return HelpSignExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
             case VINF_GETOPT_NOT_OPTION:
-                /* check that we've got all the info we need: */
-                if (   SigningCertKey.isComplete()
-                    && (TimestampCertKey.isNull() || TimestampCertKey.isComplete()))
+                /* Do final certificate and key option processing (first file only). */
+                rcExit2 = SigningCertKey.finalizeOptions(cVerbosity);
+                if (rcExit2 == RTEXITCODE_SUCCESS)
+                    rcExit2 = TimestampCertKey.finalizeOptions(cVerbosity);
+                if (rcExit2 == RTEXITCODE_SUCCESS)
                 {
                     /* Do the work: */
                     SIGNTOOLPKCS7 Cat;
@@ -2828,19 +3528,6 @@ static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
                     if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
                     rcExit2 = RTEXITCODE_SUCCESS;
-                }
-                else
-                {
-                    if (!TimestampCertKey.pCertificate)
-                        RTMsgError("No signing certificate was specified");
-                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY)
-                        RTMsgError("No signing private key was specified");
-
-                    if (!TimestampCertKey.pCertificate && !TimestampCertKey.isNull())
-                        RTMsgError("No timestamp certificate was specified");
-                    if (TimestampCertKey.hPrivateKey == NIL_RTCRKEY && !TimestampCertKey.isNull())
-                        RTMsgError("No timestamp private key was specified");
-                    rcExit2 = RTEXITCODE_SYNTAX;
                 }
                 break;
 
