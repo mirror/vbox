@@ -215,6 +215,8 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
 /*********************************************************************************************************************************
 *   Certificate and Private Key Handling (options, ++).                                                                          *
 *********************************************************************************************************************************/
+#ifdef RT_OS_WINDOWS
+
 /** @todo create a better fake certificate. */
 const unsigned char g_abFakeCertificate[] =
 {
@@ -358,6 +360,8 @@ const unsigned char g_abFakeRsaKey[] =
     0xe9, 0x02, 0x47, 0x0e, 0x46, 0x1d, 0x52, 0x02, 0x9a, 0x99, 0x22, 0x23, 0x7f, 0xf8, 0x9e, 0xc2, /* 0x00000490: ..G.F.R..."#.... */
     0x16, 0x86, 0xca, 0xa0, 0xa7, 0x34, 0xfb, 0xbc,                                                 /* 0x000004a0: .....4..         */
 };
+
+#endif /* RT_OS_WINDOWS */
 
 
 /**
