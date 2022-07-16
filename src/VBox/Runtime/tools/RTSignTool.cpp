@@ -2171,8 +2171,14 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignature(SIGNTOOLPKCS7EXE *pThis, u
 }
 
 
-static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, bool fIsRootsParent,
-                                         const char *pszContentTypeId, unsigned cVerbosity,  RTDIGESTTYPE enmSigType,
+typedef enum SIGNDATATWEAK
+{
+    kSignDataTweak_NoTweak = 1,
+    kSignDataTweak_RootIsParent,
+} SIGNDATATWEAK;
+
+static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, SIGNDATATWEAK enmTweak,
+                                         const char *pszContentTypeId, unsigned cVerbosity, RTDIGESTTYPE enmSigType,
                                          bool fReplaceExisting, bool fNoSigningTime,
                                          SignToolKeyPair *pSigningCertKey, RTCRSTORE hAddCerts,
                                          bool fTimestampTypeOld, RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampCertKey)
@@ -2189,17 +2195,17 @@ static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSi
     if (cVerbosity >= 4)
         RTAsn1Dump(pToSignRoot, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
 
-    void *pvEncoded = (uint8_t *)RTMemTmpAllocZ(cbEncoded);
-    if (!pvEncoded)
+    uint8_t *pbEncoded = (uint8_t *)RTMemTmpAllocZ(cbEncoded );
+    if (!pbEncoded)
         return RTMsgErrorExitFailure("Failed to allocate %#z bytes for encoding data we're signing (%s)",
                                      cbEncoded, pszContentTypeId);
 
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
-    rc = RTAsn1EncodeToBuffer(pToSignRoot, RTASN1ENCODE_F_DER, pvEncoded, cbEncoded, RTErrInfoInitStatic(&ErrInfo));
+    rc = RTAsn1EncodeToBuffer(pToSignRoot, RTASN1ENCODE_F_DER, pbEncoded, cbEncoded, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
-        size_t const cbToSign = cbEncoded            - (fIsRootsParent ? pToSignRoot->cbHdr : 0);
-        void const  *pvToSign = (uint8_t *)pvEncoded + (fIsRootsParent ? pToSignRoot->cbHdr : 0);
+        size_t const cbToSign = cbEncoded - (enmTweak == kSignDataTweak_RootIsParent ? pToSignRoot->cbHdr : 0);
+        void const  *pvToSign = pbEncoded + (enmTweak == kSignDataTweak_RootIsParent ? pToSignRoot->cbHdr : 0);
 
         /*
          * Create additional authenticated attributes.
@@ -2264,7 +2270,7 @@ static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSi
     }
     else
         RTMsgError("RTAsn1EncodeToBuffer failed: %Rrc", rc);
-    RTMemTmpFree(pvEncoded);
+    RTMemTmpFree(pbEncoded);
     return rcExit;
 }
 
@@ -2487,7 +2493,7 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
                  RTMsgErrorExitFailure("New style signatures not supported yet"));
 
     /*
-     * We must construct the data to be backed into the PKCS#7 signature
+     * We must construct the data to be packed into the PKCS#7 signature
      * and signed.
      */
     PCRTASN1ALLOCATORVTABLE const   pAllocator = &g_RTAsn1DefaultAllocator;
@@ -2544,8 +2550,8 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
                      * Encode and sign the SPC data, timestamp it, and line it up for adding to the executable.
                      */
                     if (rcExit == RTEXITCODE_SUCCESS)
-                        rcExit = SignToolPkcs7_SignData(pThis, RTCrSpcIndirectDataContent_GetAsn1Core(&SpcIndData), false,
-                                                        RTCRSPCINDIRECTDATACONTENT_OID, cVerbosity,
+                        rcExit = SignToolPkcs7_SignData(pThis, RTCrSpcIndirectDataContent_GetAsn1Core(&SpcIndData),
+                                                        kSignDataTweak_NoTweak, RTCRSPCINDIRECTDATACONTENT_OID, cVerbosity,
                                                         enmSigType, fReplaceExisting, fNoSigningTime, pSigningCertKey, hAddCerts,
                                                         fTimestampTypeOld, SigningTime, pTimestampCertKey);
                 }
@@ -2595,7 +2601,8 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceCatSignature(SIGNTOOLPKCS7 *pThis, u
     /*
      * Do the signing.
      */
-    RTEXITCODE rcExit = SignToolPkcs7_SignData(pThis, pToSign, true, pszType, cVerbosity, enmSigType, fReplaceExisting,
+    RTEXITCODE rcExit = SignToolPkcs7_SignData(pThis, pToSign, kSignDataTweak_RootIsParent,
+                                               pszType, cVerbosity, enmSigType, fReplaceExisting,
                                                fNoSigningTime, pSigningCertKey, hAddCerts,
                                                fTimestampTypeOld, SigningTime, pTimestampCertKey);
 
