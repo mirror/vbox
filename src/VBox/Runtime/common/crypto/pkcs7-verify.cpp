@@ -327,22 +327,9 @@ static int rtCrPkcs7VerifySignerInfoAuthAttribs(PCRTCRPKCS7SIGNERINFO pSignerInf
         RTCrDigestRelease(*phDigest);
         *phDigest = hDigest;
 
-        /* ASSUMES that the attributes are encoded according to DER. */
-        uint8_t const  *pbData;
-        uint32_t        cbData;
-        void           *pvFree = NULL;
-        rc = RTAsn1EncodeQueryRawBits(RTCrPkcs7Attributes_GetAsn1Core(&pSignerInfo->AuthenticatedAttributes),
-                                      &pbData, &cbData, &pvFree, pErrInfo);
-        if (RT_SUCCESS(rc))
-        {
-            uint8_t bSetOfTag = ASN1_TAG_SET | ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_CONSTRUCTED;
-            rc = RTCrDigestUpdate(hDigest, &bSetOfTag, sizeof(bSetOfTag)); /* Replace the implict tag with a SET-OF tag. */
-            if (RT_SUCCESS(rc))
-                rc = RTCrDigestUpdate(hDigest, pbData + sizeof(bSetOfTag), cbData - sizeof(bSetOfTag)); /* Skip the implicit tag. */
-            if (RT_SUCCESS(rc))
-                rc = RTCrDigestFinal(hDigest, NULL, 0);
-            RTMemTmpFree(pvFree);
-        }
+        /** @todo The encoding step modifies the data, contradicting the const-ness
+         *        of the parameter. */
+        rc = RTCrPkcs7Attributes_HashAttributes((PRTCRPKCS7ATTRIBUTES)&pSignerInfo->AuthenticatedAttributes, hDigest, pErrInfo);
     }
     return rc;
 }

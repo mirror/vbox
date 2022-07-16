@@ -32,14 +32,43 @@
 #include <iprt/crypto/pkcs7.h>
 
 #include <iprt/errcore.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/crypto/digest.h>
 #include <iprt/crypto/tsp.h>
 
 #include "pkcs7-internal.h"
 
+/*
+ * PKCS #7 Attributes
+ */
+
+RTDECL(int) RTCrPkcs7Attributes_HashAttributes(PRTCRPKCS7ATTRIBUTES pAttributes, RTCRDIGEST hDigest, PRTERRINFO pErrInfo)
+{
+    /* ASSUMES that the attributes are encoded according to DER. */
+    uint8_t const  *pbData;
+    uint32_t        cbData;
+    void           *pvFree = NULL;
+    int rc = RTAsn1EncodeQueryRawBits(RTCrPkcs7Attributes_GetAsn1Core(pAttributes),
+                                      &pbData, &cbData, &pvFree, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t bSetOfTag = ASN1_TAG_SET | ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_CONSTRUCTED;
+        rc = RTCrDigestUpdate(hDigest, &bSetOfTag, sizeof(bSetOfTag)); /* Replace the implict tag with a SET-OF tag. */
+        if (RT_SUCCESS(rc))
+            rc = RTCrDigestUpdate(hDigest, pbData + sizeof(bSetOfTag), cbData - sizeof(bSetOfTag)); /* Skip the implicit tag. */
+        if (RT_SUCCESS(rc))
+            rc = RTCrDigestFinal(hDigest, NULL, 0);
+        else
+            RTErrInfoSet(pErrInfo, rc, "RTCrDigestUpdate failed");
+        RTMemTmpFree(pvFree);
+    }
+    return rc;
+}
+
 
 /*
- * PCKS #7 SignerInfo
+ * PKCS #7 SignerInfo
  */
 
 RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7SIGNERINFO *ppSignerInfo)
@@ -176,7 +205,7 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pT
 
 
 /*
- * PCKS #7 ContentInfo.
+ * PKCS #7 ContentInfo.
  */
 
 RTDECL(bool) RTCrPkcs7ContentInfo_IsSignedData(PCRTCRPKCS7CONTENTINFO pThis)

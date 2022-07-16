@@ -3524,6 +3524,7 @@
 # define RTCrPkcs7Attribute_SetMsNestedSignature        RT_MANGLER(RTCrPkcs7Attribute_SetMsNestedSignature)
 # define RTCrPkcs7Attribute_SetMsTimestamp              RT_MANGLER(RTCrPkcs7Attribute_SetMsTimestamp)
 # define RTCrPkcs7Attribute_SetSigningTime              RT_MANGLER(RTCrPkcs7Attribute_SetSigningTime)
+# define RTCrPkcs7Attributes_HashAttributes             RT_MANGLER(RTCrPkcs7Attributes_HashAttributes)
 # define RTCrPkcs7Attribute_DecodeAsn1                  RT_MANGLER(RTCrPkcs7Attribute_DecodeAsn1)
 # define RTCrPkcs7Attributes_DecodeAsn1                 RT_MANGLER(RTCrPkcs7Attributes_DecodeAsn1)
 # define RTCrPkcs7ContentInfo_DecodeAsn1                RT_MANGLER(RTCrPkcs7ContentInfo_DecodeAsn1)
