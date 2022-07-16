@@ -41,12 +41,15 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/utf16.h>
+#endif
 #include <iprt/uuid.h>
 #include <iprt/zero.h>
+#include <iprt/formats/asn1.h>
+#include <iprt/formats/mach-o.h>
 #ifndef RT_OS_WINDOWS
 # include <iprt/formats/pecoff.h>
-#else
-# include <iprt/utf16.h>
 #endif
 #include <iprt/crypto/applecodesign.h>
 #include <iprt/crypto/digest.h>
@@ -66,6 +69,7 @@
 # include <wincrypt.h>
 # include <ncrypt.h>
 #endif
+#include "internal/ldr.h" /* for IMAGE_XX_SIGNATURE defines */
 
 
 /*********************************************************************************************************************************
@@ -136,6 +140,7 @@
 #define OPT_TIMESTAMP_TYPE                  1043
 #define OPT_TIMESTAMP_OVERRIDE              1044
 #define OPT_NO_SIGNING_TIME                 1045
+#define OPT_FILE_TYPE                       1046
 
 
 /*********************************************************************************************************************************
@@ -147,6 +152,18 @@ typedef enum RTSIGNTOOLHELP
     RTSIGNTOOLHELP_USAGE,
     RTSIGNTOOLHELP_FULL
 } RTSIGNTOOLHELP;
+
+
+/** Filetypes. */
+typedef enum RTSIGNTOOLFILETYPE
+{
+    RTSIGNTOOLFILETYPE_INVALID = 0,
+    RTSIGNTOOLFILETYPE_DETECT,
+    RTSIGNTOOLFILETYPE_EXE,
+    RTSIGNTOOLFILETYPE_CAT,
+    RTSIGNTOOLFILETYPE_UNKNOWN,
+    RTSIGNTOOLFILETYPE_END
+} RTSIGNTOOLFILETYPE;
 
 
 /**
@@ -3186,6 +3203,139 @@ static RTEXITCODE HandleOptTimestampOverride(PRTTIMESPEC pSigningTime, const cha
     return RTEXITCODE_SUCCESS;
 }
 
+static RTEXITCODE HandleOptFileType(RTSIGNTOOLFILETYPE *penmFileType, const char *pszType)
+{
+    if (strcmp(pszType, "detect") == 0 || strcmp(pszType, "auto") == 0)
+        *penmFileType = RTSIGNTOOLFILETYPE_DETECT;
+    else if (strcmp(pszType, "exe") == 0)
+        *penmFileType = RTSIGNTOOLFILETYPE_EXE;
+    else if (strcmp(pszType, "cat") == 0)
+        *penmFileType = RTSIGNTOOLFILETYPE_CAT;
+    else
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown forced file type: %s", pszType);
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Detects the type of files @a pszFile is (by reading from it).
+ *
+ * @returns The file type, or RTSIGNTOOLFILETYPE_UNKNOWN (error displayed).
+ * @param   enmForceFileType    Usually set to RTSIGNTOOLFILETYPE_DETECT, but if
+ *                              not we'll return this without probing the file.
+ * @param   pszFile             The name of the file to detect the type of.
+ */
+static RTSIGNTOOLFILETYPE DetectFileType(RTSIGNTOOLFILETYPE enmForceFileType, const char *pszFile)
+{
+    /*
+     * Forced?
+     */
+    if (enmForceFileType != RTSIGNTOOLFILETYPE_DETECT)
+        return enmForceFileType;
+
+    /*
+     * Read the start of the file.
+     */
+    RTFILE hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("Error opening '%s' for reading: %Rrc", pszFile, rc);
+        return RTSIGNTOOLFILETYPE_UNKNOWN;
+    }
+
+    union
+    {
+        uint8_t     ab[256];
+        uint16_t    au16[256/2];
+        uint32_t    au32[256/4];
+    } uBuf;
+    RT_ZERO(uBuf);
+
+    size_t cbRead = 0;
+    rc = RTFileRead(hFile, &uBuf, sizeof(uBuf), &cbRead);
+    if (RT_FAILURE(rc))
+        RTMsgError("Error reading from '%s': %Rrc", pszFile, rc);
+
+    uint64_t cbFile;
+    int rcSize = RTFileQuerySize(hFile, &cbFile);
+    if (RT_FAILURE(rcSize))
+        RTMsgError("Error querying size of '%s': %Rrc", pszFile, rc);
+
+    RTFileClose(hFile);
+    if (RT_FAILURE(rc) || RT_FAILURE(rcSize))
+        return RTSIGNTOOLFILETYPE_UNKNOWN;
+
+    /*
+     * Try guess the kind of file.
+     */
+    /* All the executable magics we know: */
+    if (   uBuf.au16[0] == RT_H2LE_U16_C(IMAGE_DOS_SIGNATURE)
+        || uBuf.au16[0] == RT_H2LE_U16_C(IMAGE_NE_SIGNATURE)
+        || uBuf.au16[0] == RT_H2LE_U16_C(IMAGE_LX_SIGNATURE)
+        || uBuf.au16[0] == RT_H2LE_U16_C(IMAGE_LE_SIGNATURE)
+        || uBuf.au32[0] == RT_H2LE_U32_C(IMAGE_NT_SIGNATURE)
+        || uBuf.au32[0] == RT_H2LE_U32_C(IMAGE_ELF_SIGNATURE)
+        || uBuf.au32[0] == IMAGE_FAT_SIGNATURE
+        || uBuf.au32[0] == IMAGE_FAT_SIGNATURE_OE
+        || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE
+        || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE_OE
+        || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE
+        || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE_OE)
+        return RTSIGNTOOLFILETYPE_EXE;
+
+    /*
+     * Catalog files are PKCS#7 SignedData and starts with a ContentInfo, i.e.:
+     *  SEQUENCE {
+     *      contentType OBJECT IDENTIFIER,
+     *      content [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL
+     *  }
+     *
+     * We ASSUME that it's DER encoded and doesn't use an indefinite length form
+     * at the start and that contentType is signedData (1.2.840.113549.1.7.2).
+     *
+     * Example of a 10353 (0x2871) byte long file:
+     *                       vv-------- contentType -------vv
+     * 00000000  30 82 28 6D 06 09 2A 86 48 86 F7 0D 01 07 02 A0
+     * 00000010  82 28 5E 30 82 28 5A 02 01 01 31 0B 30 09 06 05
+     */
+    if (   uBuf.ab[0] == (ASN1_TAG_SEQUENCE | ASN1_TAGFLAG_CONSTRUCTED)
+        && uBuf.ab[1] != 0x80 /* not indefinite form */
+        && uBuf.ab[1] >  0x30)
+    {
+        size_t   off   = 1;
+        uint32_t cbRec = uBuf.ab[1];
+        if (cbRec & 0x80)
+        {
+            cbRec &= 0x7f;
+            off   += cbRec;
+            switch (cbRec)
+            {
+                case 1: cbRec =                     uBuf.ab[2]; break;
+                case 2: cbRec = RT_MAKE_U16(        uBuf.ab[3], uBuf.ab[2]); break;
+                case 3: cbRec = RT_MAKE_U32_FROM_U8(uBuf.ab[4], uBuf.ab[3], uBuf.ab[2], 0); break;
+                case 4: cbRec = RT_MAKE_U32_FROM_U8(uBuf.ab[5], uBuf.ab[4], uBuf.ab[3], uBuf.ab[2]); break;
+                default: cbRec = UINT32_MAX; break;
+            }
+        }
+        if (off <= 5)
+        {
+            off++;
+            if (off + cbRec == cbFile)
+            {
+                /* If the contentType is signedData we're going to treat it as a catalog file,
+                   we don't currently much care about the signed content of a cat file. */
+                static const uint8_t s_abSignedDataOid[] =
+                { ASN1_TAG_OID, 9 /*length*/, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02 };
+                if (memcmp(&uBuf.ab[off], s_abSignedDataOid, sizeof(s_abSignedDataOid)) == 0)
+                    return RTSIGNTOOLFILETYPE_CAT;
+            }
+        }
+    }
+
+    RTMsgError("Unable to detect type of '%s'", pszFile);
+    return RTSIGNTOOLFILETYPE_UNKNOWN;
+}
+
 #endif /* !IPRT_IN_BUILD_TOOL */
 
 
@@ -3305,7 +3455,7 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
 *********************************************************************************************************************************/
 #ifndef IPRT_IN_BUILD_TOOL
 
-static RTEXITCODE HelpSignExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+static RTEXITCODE HelpSign(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
 
@@ -3333,7 +3483,7 @@ static RTEXITCODE HelpSignExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 }
 
 
-static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
+static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
 {
     /*
      * Parse arguments.
@@ -3356,6 +3506,7 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
         OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", 1020),
         { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
         { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
+        { "--file-type",            OPT_FILE_TYPE,              RTGETOPT_REQ_STRING },
         { "--verbose",              'v',                        RTGETOPT_REQ_NOTHING },
         { "/v",                     'v',                        RTGETOPT_REQ_NOTHING },
         { "/debug",                 'v',                        RTGETOPT_REQ_NOTHING },
@@ -3366,6 +3517,7 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
     bool                    fReplaceExisting        = true;
     bool                    fHashPages              = false;
     bool                    fNoSigningTime          = false;
+    RTSIGNTOOLFILETYPE      enmForceFileType        = RTSIGNTOOLFILETYPE_DETECT;
     SignToolKeyPair         SigningCertKey("signing", true);
     RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
     bool                    fTimestampTypeOld       = true;
@@ -3395,168 +3547,65 @@ static RTEXITCODE HandleSignExe(int cArgs, char **papszArgs)
             case OPT_ADD_CERT:              rcExit2 = HandleOptAddCert(&hAddCerts, ValueUnion.psz); break;
             case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
             case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
+            case OPT_FILE_TYPE:             rcExit2 = HandleOptFileType(&enmForceFileType, ValueUnion.psz); break;
             case 'v':                       cVerbosity++; break;
             case 'V':                       return HandleVersion(cArgs, papszArgs);
-            case 'h':                       return HelpSignExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            case 'h':                       return HelpSign(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
             case VINF_GETOPT_NOT_OPTION:
-                /* Do final certificate and key option processing (first file only). */
+                /*
+                 * Do final certificate and key option processing (first file only).
+                 */
                 rcExit2 = SigningCertKey.finalizeOptions(cVerbosity);
                 if (rcExit2 == RTEXITCODE_SUCCESS)
                     rcExit2 = TimestampCertKey.finalizeOptions(cVerbosity);
                 if (rcExit2 == RTEXITCODE_SUCCESS)
                 {
-                    /* Do the work: */
-                    SIGNTOOLPKCS7EXE Exe;
-                    rcExit2 = SignToolPkcs7Exe_InitFromFile(&Exe, ValueUnion.psz, cVerbosity,
-                                                            RTLDRARCH_WHATEVER, true /*fAllowUnsigned*/);
-                    if (rcExit2 == RTEXITCODE_SUCCESS)
+                    /*
+                     * Detect file type.
+                     */
+                    RTSIGNTOOLFILETYPE enmFileType = DetectFileType(enmForceFileType, ValueUnion.psz);
+                    if (enmFileType == RTSIGNTOOLFILETYPE_EXE)
                     {
-                        rcExit2 = SignToolPkcs7_AddOrReplaceSignature(&Exe, cVerbosity, enmSigType, fReplaceExisting, fHashPages,
-                                                                      fNoSigningTime, &SigningCertKey, hAddCerts,
-                                                                      fTimestampTypeOld, SigningTime, &TimestampCertKey);
+                        /*
+                         * Sign executable image.
+                         */
+                        SIGNTOOLPKCS7EXE Exe;
+                        rcExit2 = SignToolPkcs7Exe_InitFromFile(&Exe, ValueUnion.psz, cVerbosity,
+                                                                RTLDRARCH_WHATEVER, true /*fAllowUnsigned*/);
                         if (rcExit2 == RTEXITCODE_SUCCESS)
-                            rcExit2 = SignToolPkcs7_Encode(&Exe, cVerbosity);
-                        if (rcExit2 == RTEXITCODE_SUCCESS)
-                            rcExit2 = SignToolPkcs7Exe_WriteSignatureToFile(&Exe, cVerbosity);
-                        SignToolPkcs7Exe_Delete(&Exe);
+                        {
+                            rcExit2 = SignToolPkcs7_AddOrReplaceSignature(&Exe, cVerbosity, enmSigType, fReplaceExisting,
+                                                                          fHashPages, fNoSigningTime, &SigningCertKey, hAddCerts,
+                                                                          fTimestampTypeOld, SigningTime, &TimestampCertKey);
+                            if (rcExit2 == RTEXITCODE_SUCCESS)
+                                rcExit2 = SignToolPkcs7_Encode(&Exe, cVerbosity);
+                            if (rcExit2 == RTEXITCODE_SUCCESS)
+                                rcExit2 = SignToolPkcs7Exe_WriteSignatureToFile(&Exe, cVerbosity);
+                            SignToolPkcs7Exe_Delete(&Exe);
+                        }
                     }
-                    if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
-                        rcExit = rcExit2;
-                    rcExit2 = RTEXITCODE_SUCCESS;
-                }
-                break;
-
-            default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-        }
-        if (rcExit2 != RTEXITCODE_SUCCESS)
-        {
-            rcExit = rcExit2;
-            break;
-        }
-    }
-
-    if (hAddCerts != NIL_RTCRSTORE)
-        RTCrStoreRelease(hAddCerts);
-    return rcExit;
-}
-
-#endif /*!IPRT_IN_BUILD_TOOL */
-
-
-/*********************************************************************************************************************************
-*   The 'sign-cat' command.                                                                                   *
-*********************************************************************************************************************************/
-#ifndef IPRT_IN_BUILD_TOOL
-
-static RTEXITCODE HelpSignCat(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
-{
-    RT_NOREF_PV(enmLevel);
-
-    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "sign-cat [-v|--verbose] "
-                        "[--type sha1|sha256] "
-                        "[--append] "
-                        OPT_CERT_KEY_SYNOPSIS("--")
-                        "[--add-cert <file>] "
-                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
-                        "[--timestamp-type old|new] "
-                        "[--timestamp-date <fake-isots>] "
-                        "[--timestamp-year <fake-year>] "
-                        "[--replace-existing|-r] "
-                        "<exe>\n");
-    if (enmLevel == RTSIGNTOOLHELP_FULL)
-        RTStrmWrappedPrintf(pStrm, 0,
-                            "Sign a catalog file.\n"
-                            "\n"
-                            "The --timestamp-override option can take a partial or full ISO timestamp.  It is merged "
-                            "with the current time if partial.\n"
-                            "\n");
-    return RTEXITCODE_SUCCESS;
-}
-
-
-static RTEXITCODE HandleSignCat(int cArgs, char **papszArgs)
-{
-    /*
-     * Parse arguments.
-     */
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "--append",               'a',                        RTGETOPT_REQ_NOTHING },
-        { "/as",                    'a',                        RTGETOPT_REQ_NOTHING },
-        { "--type",                 't',                        RTGETOPT_REQ_STRING },
-        { "/fd",                    't',                        RTGETOPT_REQ_STRING },
-        { "--add-cert",             OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
-        { "/ac",                    OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
-        { "--no-signing-time",      OPT_NO_SIGNING_TIME,        RTGETOPT_REQ_NOTHING },
-        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--",           1000),
-        OPT_CERT_KEY_GETOPTDEF_COMPAT_ENTRIES(         1000),
-        OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", 1020),
-        { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
-        { "--timestamp-override",   OPT_TIMESTAMP_OVERRIDE,     RTGETOPT_REQ_STRING },
-        { "--verbose",              'v',                        RTGETOPT_REQ_NOTHING },
-        { "/v",                     'v',                        RTGETOPT_REQ_NOTHING },
-        { "/debug",                 'v',                        RTGETOPT_REQ_NOTHING },
-    };
-
-    unsigned                cVerbosity              = 0;
-    RTDIGESTTYPE            enmSigType              = RTDIGESTTYPE_SHA1;
-    bool                    fReplaceExisting        = true;
-    bool                    fNoSigningTime          = false;
-    SignToolKeyPair         SigningCertKey("signing", true);
-    RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
-    bool                    fTimestampTypeOld       = true;
-    SignToolKeyPair         TimestampCertKey("timestamp");
-    RTTIMESPEC              SigningTime;
-    RTTimeNow(&SigningTime);
-
-    RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
-
-    RTEXITCODE      rcExit = RTEXITCODE_SUCCESS;
-    RTGETOPTUNION   ValueUnion;
-    int             ch;
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
-    {
-        RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
-        switch (ch)
-        {
-            OPT_CERT_KEY_SWITCH_CASES(SigningCertKey,   1000, ch, ValueUnion, rcExit2);
-            OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1020, ch, ValueUnion, rcExit2);
-            case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
-            case 'a':                       fReplaceExisting = false; break;
-            case OPT_NO_SIGNING_TIME:       fNoSigningTime = true; break;
-            case OPT_ADD_CERT:              rcExit2 = HandleOptAddCert(&hAddCerts, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
-            case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
-            case 'v':                       cVerbosity++; break;
-            case 'V':                       return HandleVersion(cArgs, papszArgs);
-            case 'h':                       return HelpSignExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
-
-            case VINF_GETOPT_NOT_OPTION:
-                /* Do final certificate and key option processing (first file only). */
-                rcExit2 = SigningCertKey.finalizeOptions(cVerbosity);
-                if (rcExit2 == RTEXITCODE_SUCCESS)
-                    rcExit2 = TimestampCertKey.finalizeOptions(cVerbosity);
-                if (rcExit2 == RTEXITCODE_SUCCESS)
-                {
-                    /* Do the work: */
-                    SIGNTOOLPKCS7 Cat;
-                    rcExit2 = SignToolPkcs7_InitFromFile(&Cat, ValueUnion.psz, cVerbosity);
-                    if (rcExit2 == RTEXITCODE_SUCCESS)
+                    else if (enmFileType == RTSIGNTOOLFILETYPE_CAT)
                     {
-                        rcExit2 = SignToolPkcs7_AddOrReplaceCatSignature(&Cat, cVerbosity, enmSigType, fReplaceExisting,
-                                                                         fNoSigningTime, &SigningCertKey, hAddCerts,
-                                                                         fTimestampTypeOld, SigningTime, &TimestampCertKey);
+                        /*
+                         * Sign catalog file.
+                         */
+                        SIGNTOOLPKCS7 Cat;
+                        rcExit2 = SignToolPkcs7_InitFromFile(&Cat, ValueUnion.psz, cVerbosity);
                         if (rcExit2 == RTEXITCODE_SUCCESS)
-                            rcExit2 = SignToolPkcs7_Encode(&Cat, cVerbosity);
-                        if (rcExit2 == RTEXITCODE_SUCCESS)
-                            rcExit2 = SignToolPkcs7_WriteSignatureToFile(&Cat, ValueUnion.psz, cVerbosity);
-                        SignToolPkcs7_Delete(&Cat);
+                        {
+                            rcExit2 = SignToolPkcs7_AddOrReplaceCatSignature(&Cat, cVerbosity, enmSigType, fReplaceExisting,
+                                                                             fNoSigningTime, &SigningCertKey, hAddCerts,
+                                                                             fTimestampTypeOld, SigningTime, &TimestampCertKey);
+                            if (rcExit2 == RTEXITCODE_SUCCESS)
+                                rcExit2 = SignToolPkcs7_Encode(&Cat, cVerbosity);
+                            if (rcExit2 == RTEXITCODE_SUCCESS)
+                                rcExit2 = SignToolPkcs7_WriteSignatureToFile(&Cat, ValueUnion.psz, cVerbosity);
+                            SignToolPkcs7_Delete(&Cat);
+                        }
                     }
+                    else
+                        rcExit2 = RTEXITCODE_FAILURE;
                     if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
                     rcExit2 = RTEXITCODE_SUCCESS;
@@ -5158,8 +5207,7 @@ const g_aCommands[] =
     { "add-nested-cat-signature",       HandleAddNestedCatSignature,        HelpAddNestedCatSignature },
 #ifndef IPRT_IN_BUILD_TOOL
     { "add-timestamp-exe-signature",    HandleAddTimestampExeSignature,     HelpAddTimestampExeSignature },
-    { "sign-exe",                       HandleSignExe,                      HelpSignExe  },
-    { "sign-cat",                       HandleSignCat,                      HelpSignCat  },
+    { "sign",                           HandleSign,                         HelpSign },
 #endif
 #ifndef IPRT_IN_BUILD_TOOL
     { "verify-exe",                     HandleVerifyExe,                    HelpVerifyExe },
