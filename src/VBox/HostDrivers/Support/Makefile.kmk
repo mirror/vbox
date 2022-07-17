@@ -125,12 +125,20 @@ else
 	'};' 'unsigned const g_cSUP$(1)TAs = RT_ELEMENTS(g_aSUP$(1)TAs);' '' ''
 endif
 
+if  ("$(KBUILD_TARGET)" == "win"    && defined(VBOX_SIGNING_MODE)) \
+ || ("$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE))
+ BLDPROGS += bldSUPSignedDummy
+ bldSUPSignedDummy_TEMPLATE         = VBoxBldProg
+ bldSUPSignedDummy_SOURCES          = bldSUPSignedDummy.cpp
+ bldSUPSignedDummy_ORDERDEPS.win    = $(VBOX_SIGN_IMAGE_ORDERDEPS)
+ bldSUPSignedDummy_POST_CMDS.win    = $(call VBOX_SIGN_IMAGE_FN,$(out),,2)
+ bldSUPSignedDummy_POST_CMDS.darwin = $(call VBOX_SIGN_MACHO_FN,$(out),org.virtualbox.org.bldtool.$(target))
+endif
+
 $$(VBOX_SUP_WIN_CERTS_FILE): $(MAKEFILE_CURRENT) \
 		$(foreach cert,$(VBOX_SUP_WIN_CERTS),$(VBOX_PATH_SUPR3_CERTIFICATES)/$(lastword $(subst =,$(SPACE) ,$(cert)))) \
 		$(VBOX_BIN2C) \
-		$(if-expr  ("$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)) \
-		        || ("$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE)) \
-		,$(VBOX_RTSIGNTOOL)) \
+		$(if-expr defined(bldSUPSignedDummy_SOURCES),$(VBOX_RTSIGNTOOL) $$(bldSUPSignedDummy_1_TARGET),) \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@ $@.cer
 	$(QUIET)$(APPEND) -n "$@" \
@@ -142,9 +150,8 @@ $$(VBOX_SUP_WIN_CERTS_FILE): $(MAKEFILE_CURRENT) \
 		"$(VBOX_PATH_SUPR3_CERTIFICATES)/$(lastword $(subst =,$(SP) ,$(cert)))" \
 		"$@")
 # The build certificate.
-if  ("$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && defined(VBOX_SIGNING_MODE)) \
- || ("$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE))
-	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --exe $(VBOX_RTSIGNTOOL) --output "$@.cer" --der
+ifdef bldSUPSignedDummy_SOURCES
+	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --exe "$(bldSUPSignedDummy_1_TARGET)" --output "$@.cer" --der
 	$(VBOX_BIN2C) -ascii --append SUPBuildCert "$@.cer" $@
 	$(QUIET)$(RM) -f -- $@.cer
 endif
