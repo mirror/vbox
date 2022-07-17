@@ -3356,8 +3356,7 @@ static RTEXITCODE HelpAddTimestampExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP e
                         "add-timestamp-exe-signature [-v|--verbose] [--signature-index|-i <num>] "
                         OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "[--timestamp-type old|new] "
-                        "[--timestamp-date <fake-isots>] "
-                        "[--timestamp-year <fake-year>] "
+                        "[--timestamp-override <partial-isots>] "
                         "[--replace-existing|-r] "
                         "<exe>\n");
     if (enmLevel == RTSIGNTOOLHELP_FULL)
@@ -3464,25 +3463,74 @@ static RTEXITCODE HelpSign(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
     RT_NOREF_PV(enmLevel);
 
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "sign-exe [-v|--verbose] "
-                        "[--type sha1|sha256] "
-                        "[--hash-pages] "
-                        "[--no-hash-pages] "
-                        "[--append] "
-                        OPT_CERT_KEY_SYNOPSIS("--")
+                        "sign [-v|--verbose] "
+                        "[--file-type exe|cat] "
+                        "[--type|/fd sha1|sha256] "
+                        "[--hash-pages|/ph] "
+                        "[--no-hash-pages|/nph] "
+                        "[--append/as] "
+                        "[--no-signing-time] "
                         "[--add-cert <file>] "
-                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "[--timestamp-type old|new] "
-                        "[--timestamp-date <fake-isots>] "
-                        "[--timestamp-year <fake-year>] "
+                        "[--timestamp-override <partial-isots>] "
+                        "[--verbose|/debug|-v] "
+                        OPT_CERT_KEY_SYNOPSIS("--")
+                        OPT_CERT_KEY_SYNOPSIS("--timestamp-")
                         "<exe>\n");
     if (enmLevel == RTSIGNTOOLHELP_FULL)
         RTStrmWrappedPrintf(pStrm, 0,
-                            "Create a new code signature for an executable.\n"
+                            "Create a new code signature for an executable or catalog.\n"
                             "\n"
-                            "The --timestamp-override option can take a partial or full ISO timestamp.  It is merged "
-                            "with the current time if partial.\n"
-                            "\n");
+                            "Options:\n"
+                            "  --append, /as\n"
+                            "    Append the signature if one already exists.  The default is to replace any existing signature.\n"
+                            "  --type sha1|sha256, /fd sha1|sha256\n"
+                            "    Signature type, SHA-1 or SHA-256.\n"
+                            "  --hash-pages, /ph, --no-page-hashes, /nph\n"
+                            "    Enables or disables page hashing.  Ignored for catalog files.  Default: --no-page-hashes\n"
+                            "  --add-cert <file>, /ac <file>\n"
+                            "    Adds (first) certificate from the file to the signature.  Both PEM and DER (binary) encodings "
+                            "are accepted.  Repeat to add more certiifcates.\n"
+                            "  --timestamp-override <partial-iso-timestamp>\n"
+                            "    This specifies the signing time as a ISO timestamp.  Partial timestamps are merged with the "
+                            "current time. This is applied to any timestamp signature as well as the signingTime attribute of "
+                            "main signature. Higher resolution than seconds is not supported.  Default: Current time.\n"
+                            "  --no-signing-time\n"
+                            "    Don't set the signing time on the main signature, only on the timestamp one.  Unfortunately, "
+                            "this doesn't work without modifying OpenSSL a little.\n"
+                            "  --timestamp-type old|new\n"
+                            "    Selects the timstamp type. 'old' is the old style /t <url> stuff from signtool.exe. "
+                            "'new' means a RTC-3161 timstamp - currently not implemented. Default: old\n"
+                            "\n"
+                            "Certificate and Key Options (--timestamp-cert-name etc for timestamps):\n"
+                            "  --cert-subject <partial name>, /n <partial name>\n"
+                            "   Locate the main signature signing certificate and key, unless anything else is given, "
+                            "by the given name substring.  Overrides any previous --cert-sha1 and --cert-file options.\n"
+                            "  --cert-sha1 <hex bytes>, /sha1 <hex bytes>\n"
+                            "   Locate the main signature signing certificate and key, unless anything else is given, "
+                            "by the given thumbprint.  The hex bytes can be space separated, colon separated, just "
+                            "bunched together, or a mix of these.  This overrids any previous --cert-name and --cert-file "
+                            "options.\n"
+                            "  --cert-store <name>, /s <store>\n"
+                            "   Certificate store to search when using --cert-name or --cert-sha1. Default: MY\n"
+                            "  --cert-machine-store, /sm\n"
+                            "   Use the machine store rather the ones of the current user.\n"
+                            "  --cert-file <file>, /f <file>\n"
+                            "   Load the certificate and key, unless anything else is given, from given file.  Both PEM and "
+                            "DER (binary) encodings are supported.  Keys file can be RSA or PKCS#12 formatted.\n"
+                            "  --key-file <file>\n"
+                            "    Load the private key from the given file.  Support RSA and PKCS#12 formatted files.\n"
+                            "  --key-password <password>, /p <password>\n"
+                            "    Password to use to decrypt a PKCS#12 password file.\n"
+                            "  --key-password-file <file>|stdin\n"
+                            "    Load password  to decrypt the password file from the given file or from stdin.\n"
+                            "  --key-name <name>, /kc <name>\n"
+                            "    The private key container name.  Not implemented.\n"
+                            "  --key-provider <name>, /csp <name>\n"
+                            "    The name of the crypto provider where the private key conatiner specified via --key-name "
+                            "can be found.\n"
+                            );
+
     return RTEXITCODE_SUCCESS;
 }
 
