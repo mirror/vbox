@@ -3968,8 +3968,13 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
 
-  VBOX_SIGNTOOL ?= $(VBOX_RETRY) "$(VBOX_PATH_SIGN_TOOLS)/signtool.exe"
-  VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/inf2cat.exe
+  VBOX_SIGNTOOL                ?= $(VBOX_RETRY) "$(VBOX_PATH_SIGN_TOOLS)/signtool.exe"
+  VBOX_SIGNTOOL_ORDERDEPS      ?=
+  VBOX_SIGNTOOL_SHA1           ?= $(VBOX_SIGNTOOL)
+  VBOX_SIGNTOOL_SHA1_ORDERDEPS ?= $(VBOX_SIGNTOOL_ORDERDEPS)
+  VBOX_SIGNTOOL_SHA2           ?= $(VBOX_SIGNTOOL)
+  VBOX_SIGNTOOL_SHA2_ORDERDEPS ?= $(VBOX_SIGNTOOL_ORDERDEPS)
+  VBOX_INF2CAT                 ?= $(VBOX_PATH_SELFSIGN)/inf2cat.exe
 
   ifeq ($(VBOX_SIGNING_MODE),test)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= MyTestCertificate
@@ -4044,7 +4049,7 @@ ifdef VBOX_SIGNING_MODE
          $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-dual_sign -digest_algo SHA2))
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     ifdef VBOX_CERTIFICATE_SUBJECT_NAME
-     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL_SHA1) \
 	sign /fd sha1 \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
@@ -4055,7 +4060,7 @@ ifdef VBOX_SIGNING_MODE
 	$(3) \
 	"$(1)" \
 	$(if-expr "$5" == "",\
-	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL) \
+	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL_SHA2) \
 	sign /as /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
@@ -4066,7 +4071,7 @@ ifdef VBOX_SIGNING_MODE
 	$(3) \
 	"$(1)",)
     else
-     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL_SHA2) \
 	sign /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
@@ -4098,7 +4103,7 @@ ifdef VBOX_SIGNING_MODE
    if $(intersects win_ev all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
     VBOX_SIGN_EV_FILE_FN  = $(call VBOX_CCS_SIGN_CMD,microsoftev,$1,$(if $2,$2,))
    else ifdef VBOX_CERTIFICATE_EV_SUBJECT_NAME
-    VBOX_SIGN_EV_FILE_FN  = $(VBOX_SIGNTOOL) \
+    VBOX_SIGN_EV_FILE_FN  = $(VBOX_SIGNTOOL_SHA2) \
 	sign /fd sha256 \
 	$(VBOX_CERTIFICATE_EV_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_EV_SUBJECT_NAME_ARGS) \
@@ -4156,7 +4161,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 5  Disables dual signing if non-empty.
   #
   # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
-  VBOX_SIGN_IMAGE_PLAN_B_FN = $(VBOX_SIGNTOOL) \
+  VBOX_SIGN_IMAGE_PLAN_B_FN = $(VBOX_SIGNTOOL_SHA1) \
   	sign /fd sha1\
   	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
   	$(VBOX_CERTIFICATE_STORE_ARGS) \
