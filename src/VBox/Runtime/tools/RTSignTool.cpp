@@ -171,6 +171,8 @@ typedef enum RTSIGNTOOLFILETYPE
  */
 typedef struct SIGNTOOLPKCS7
 {
+    /** The file type. */
+    RTSIGNTOOLFILETYPE          enmType;
     /** The raw signature. */
     uint8_t                    *pbBuf;
     /** Size of the raw signature. */
@@ -907,6 +909,7 @@ static RTEXITCODE SignToolPkcs7_InitFromFile(PSIGNTOOLPKCS7 pThis, const char *p
      */
     RT_ZERO(*pThis);
     pThis->pszFilename = pszFilename;
+    pThis->enmType     = RTSIGNTOOLFILETYPE_CAT;
 
     /*
      * Lazy bird uses RTFileReadAll and duplicates the allocation.
@@ -1256,8 +1259,9 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
      * Init the return structure.
      */
     RT_ZERO(*pThis);
-    pThis->hLdrMod = NIL_RTLDRMOD;
+    pThis->hLdrMod     = NIL_RTLDRMOD;
     pThis->pszFilename = pszFilename;
+    pThis->enmType     = RTSIGNTOOLFILETYPE_EXE;
 
     /*
      * Open the image and check if it's signed.
@@ -2195,8 +2199,8 @@ typedef enum SIGNDATATWEAK
 } SIGNDATATWEAK;
 
 static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSignRoot, SIGNDATATWEAK enmTweak,
-                                         const char *pszContentTypeId, unsigned cVerbosity, RTDIGESTTYPE enmSigType,
-                                         bool fReplaceExisting, bool fNoSigningTime,
+                                         const char *pszContentTypeId, unsigned cVerbosity, uint32_t fExtraFlags,
+                                         RTDIGESTTYPE enmSigType, bool fReplaceExisting, bool fNoSigningTime,
                                          SignToolKeyPair *pSigningCertKey, RTCRSTORE hAddCerts,
                                          bool fTimestampTypeOld, RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampCertKey)
 {
@@ -2237,7 +2241,10 @@ static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSi
             {
                 /*
                  * Ditch the old signature if so desired.
+                 * (It is okay to do this in the CAT case too, as we've already
+                 * encoded the data and won't touch pToSignRoot any more.)
                  */
+                pToSignRoot = NULL; /* (may become invalid if replacing) */
                 if (fReplaceExisting && pThis->pSignedData)
                 {
                     RTCrPkcs7ContentInfo_Delete(&pThis->ContentInfo);
@@ -2250,10 +2257,10 @@ static RTEXITCODE SignToolPkcs7_SignData(SIGNTOOLPKCS7 *pThis, PRTASN1CORE pToSi
                 /*
                  * Do the actual signing.
                  */
-                SIGNTOOLPKCS7  Src     = { NULL, 0, NULL };
+                SIGNTOOLPKCS7  Src     = { RTSIGNTOOLFILETYPE_DETECT, NULL, 0, NULL };
                 PSIGNTOOLPKCS7 pSigDst = !pThis->pSignedData ? pThis : &Src;
                 rcExit = SignToolPkcs7_Pkcs7SignStuff("image", pvToSign, cbToSign, &AuthAttribs, hAddCerts,
-                                                      RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP, enmSigType /** @todo ?? */,
+                                                      fExtraFlags | RTCRPKCS7SIGN_SD_F_NO_DATA_ENCAP, enmSigType /** @todo ?? */,
                                                       pSigningCertKey, cVerbosity,
                                                       (void **)&pSigDst->pbBuf, &pSigDst->cbBuf,
                                                       &pSigDst->ContentInfo, &pSigDst->pSignedData);
@@ -2568,7 +2575,7 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceSignature(SIGNTOOLPKCS7EXE *pThis, u
                      */
                     if (rcExit == RTEXITCODE_SUCCESS)
                         rcExit = SignToolPkcs7_SignData(pThis, RTCrSpcIndirectDataContent_GetAsn1Core(&SpcIndData),
-                                                        kSignDataTweak_NoTweak, RTCRSPCINDIRECTDATACONTENT_OID, cVerbosity,
+                                                        kSignDataTweak_NoTweak, RTCRSPCINDIRECTDATACONTENT_OID, cVerbosity, 0,
                                                         enmSigType, fReplaceExisting, fNoSigningTime, pSigningCertKey, hAddCerts,
                                                         fTimestampTypeOld, SigningTime, pTimestampCertKey);
                 }
@@ -2600,26 +2607,23 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceCatSignature(SIGNTOOLPKCS7 *pThis, u
     /*
      * Figure out what to sign first.
      */
-    PRTASN1CORE pToSign = &pThis->pSignedData->ContentInfo.Content.Asn1Core;
-    const char *pszType = pThis->pSignedData->ContentInfo.ContentType.szObjId;
+    uint32_t    fExtraFlags = 0;
+    PRTASN1CORE pToSign     = &pThis->pSignedData->ContentInfo.Content.Asn1Core;
+    const char *pszType     = pThis->pSignedData->ContentInfo.ContentType.szObjId;
+
+    if (!fReplaceExisting && pThis->pSignedData->SignerInfos.cItems == 0)
+        fReplaceExisting = true;
     if (!fReplaceExisting)
     {
-        if (pThis->pSignedData->SignerInfos.cItems == 0)
-            fReplaceExisting = false;
-        else
-        {
-            /** @todo figure out nested catalog signatures... It's marked as
-             * pkcs7-data and seems to be empty, i.e. it's detached. */
-            //pszType = RTCR_PKCS7_SIGNED_DATA_OID;
-            AssertFailedReturn(RTMsgErrorExitFailure("nested cat signing not implemented"));
-        }
+        pszType      = RTCR_PKCS7_DATA_OID;
+        fExtraFlags |= RTCRPKCS7SIGN_SD_F_DEATCHED;
     }
 
     /*
      * Do the signing.
      */
     RTEXITCODE rcExit = SignToolPkcs7_SignData(pThis, pToSign, kSignDataTweak_RootIsParent,
-                                               pszType, cVerbosity, enmSigType, fReplaceExisting,
+                                               pszType, cVerbosity, fExtraFlags, enmSigType, fReplaceExisting,
                                                fNoSigningTime, pSigningCertKey, hAddCerts,
                                                fTimestampTypeOld, SigningTime, pTimestampCertKey);
 
