@@ -424,6 +424,12 @@ protected:
     /** Set if already finalized. */
     bool                    m_fFinalized;
 
+    /** Store containing the intermediate certificates available to the host.
+     *   */
+    static RTCRSTORE        s_hStoreIntermediate;
+    /** Instance counter for helping cleaning up m_hStoreIntermediate. */
+    static uint32_t         s_cInstances;
+
 public: /* used to be a struct, thus not prefix either. */
     /* Result: */
     PCRTCRX509CERTIFICATE   pCertificate;
@@ -465,6 +471,7 @@ public:
 #ifdef RT_OS_WINDOWS
         RT_ZERO(m_DecodedFakeCert);
 #endif
+        s_cInstances++;
     }
 
     ~SignToolKeyPair()
@@ -500,6 +507,12 @@ public:
             m_hStore = NULL;
         }
 #endif
+        s_cInstances--;
+        if (s_cInstances == 0)
+        {
+            RTCrStoreRelease(s_hStoreIntermediate);
+            s_hStoreIntermediate = NIL_RTCRSTORE;
+        }
     }
 
     bool isComplete(void) const
@@ -782,7 +795,125 @@ public:
     }
 
 #endif
+
+    /**
+     * Search for intermediate CA.
+     *
+     * Currently this only do a single certificate path, so this may go south if
+     * there are multiple paths available.  It may work fine for a cross signing
+     * path, as long as the cross over is at the level immediately below the root.
+     */
+    PCRTCRCERTCTX findNextIntermediateCert(PCRTCRCERTCTX pPrev)
+    {
+        /*
+         * Make sure the store is loaded before we start.
+         */
+        if (s_hStoreIntermediate == NIL_RTCRSTORE)
+        {
+            Assert(!pPrev);
+            RTERRINFOSTATIC ErrInfo;
+            int rc = RTCrStoreCreateSnapshotById(&s_hStoreIntermediate,
+                                                 !m_fMachineStore
+                                                 ? RTCRSTOREID_USER_INTERMEDIATE_CAS : RTCRSTOREID_SYSTEM_INTERMEDIATE_CAS,
+                                                 RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc))
+            {
+                RTMsgError("RTCrStoreCreateSnapshotById/%s-intermediate-CAs failed: %Rrc%#RTeim",
+                           m_fMachineStore ? "user" : "machine", rc, &ErrInfo.Core);
+                return NULL;
+            }
+        }
+
+        /*
+         * Open the search handle for the parent of the previous/end certificate.
+         *
+         * We don't need to consider RTCRCERTCTX::pTaInfo here as we're not
+         * after trust anchors, only intermediate certificates.
+         */
+        PCRTCRX509CERTIFICATE pChildCert = pPrev ? pPrev->pCert : pCertificateReal ? pCertificateReal : pCertificate;
+        AssertReturnStmt(pChildCert, RTCrCertCtxRelease(pPrev), NULL);
+
+        RTCRSTORECERTSEARCH Search;
+        int rc = RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280(s_hStoreIntermediate, &pChildCert->TbsCertificate.Issuer,
+                                                                 &Search);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280 failed: %Rrc", rc);
+            return NULL;
+        }
+
+        /*
+         * We only gave the subject so, we have to check the serial number our selves.
+         */
+        PCRTCRCERTCTX pCertCtx;
+        while ((pCertCtx = RTCrStoreCertSearchNext(s_hStoreIntermediate, &Search)) != NULL)
+        {
+            if (   pCertCtx->pCert
+                && RTAsn1BitString_Compare(&pCertCtx->pCert->TbsCertificate.T1.IssuerUniqueId,
+                                           &pChildCert->TbsCertificate.T1.IssuerUniqueId) == 0 /* compares presentness too */
+                && !RTCrX509Certificate_IsSelfSigned(pCertCtx->pCert))
+            {
+                break; /** @todo compare valid periode too and keep a best match when outside the desired period? */
+            }
+            RTCrCertCtxRelease(pCertCtx);
+        }
+
+        RTCrStoreCertSearchDestroy(s_hStoreIntermediate, & Search);
+        RTCrCertCtxRelease(pPrev);
+        return pCertCtx;
+    }
+
+    /**
+     * Merges the user specified certificates with the signing certificate and any
+     * intermediate CAs we can find in the system store.
+     *
+     * @returns Merged store, NIL_RTCRSTORE on failure (messaged).
+     * @param   hUserSpecifiedCertificates  The user certificate store.
+     */
+    RTCRSTORE assembleAllAdditionalCertificates(RTCRSTORE hUserSpecifiedCertificates)
+    {
+        RTCRSTORE hRetStore;
+        int rc = RTCrStoreCreateInMemEx(&hRetStore, 0, hUserSpecifiedCertificates);
+        if (RT_SUCCESS(rc))
+        {
+            /* Add the signing certificate: */
+            RTERRINFOSTATIC ErrInfo;
+            rc = RTCrStoreCertAddX509(hRetStore, RTCRCERTCTX_F_ENC_X509_DER | RTCRCERTCTX_F_ADD_IF_NOT_FOUND,
+                                      (PRTCRX509CERTIFICATE)(pCertificateReal ? pCertificateReal : pCertificate),
+                                      RTErrInfoInitStatic(&ErrInfo));
+            if (RT_SUCCESS(rc))
+            {
+                /* Add all intermediate CAs certificates we can find. */
+                PCRTCRCERTCTX pInterCaCert = NULL;
+                while ((pInterCaCert = findNextIntermediateCert(pInterCaCert)) != NULL)
+                {
+                    rc = RTCrStoreCertAddEncoded(hRetStore, RTCRCERTCTX_F_ENC_X509_DER | RTCRCERTCTX_F_ADD_IF_NOT_FOUND,
+                                                 pInterCaCert->pabEncoded, pInterCaCert->cbEncoded,
+                                                 RTErrInfoInitStatic(&ErrInfo));
+                    if (RT_FAILURE(rc))
+                    {
+                        RTMsgError("RTCrStoreCertAddEncoded/InterCA failed: %Rrc%#RTeim", rc, &ErrInfo.Core);
+                        RTCrCertCtxRelease(pInterCaCert);
+                        break;
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                    return hRetStore;
+            }
+            else
+                RTMsgError("RTCrStoreCertAddX509/signer failed: %Rrc%#RTeim", rc, &ErrInfo.Core);
+            RTCrStoreRelease(hRetStore);
+        }
+        else
+            RTMsgError("RTCrStoreCreateInMemEx failed: %Rrc", rc);
+        return NIL_RTCRSTORE;
+    }
+
 };
+
+/*static*/ RTCRSTORE SignToolKeyPair::s_hStoreIntermediate = NIL_RTCRSTORE;
+/*static*/ uint32_t  SignToolKeyPair::s_cInstances         = 0;
+
 
 
 /*********************************************************************************************************************************
@@ -2004,11 +2135,12 @@ SignToolPkcs7_Pkcs7SignStuffAgainWithReal(const char *pszWhat, SignToolKeyPair *
 
 #endif /* RT_OS_WINDOWS */
 
-static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
-                                               PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts,
-                                               uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType, SignToolKeyPair *pCertKeyPair,
-                                               unsigned cVerbosity, void **ppvSigned, size_t *pcbSigned,
-                                               PRTCRPKCS7CONTENTINFO pContentInfo, PRTCRPKCS7SIGNEDDATA *ppSignedData)
+static RTEXITCODE SignToolPkcs7_Pkcs7SignStuffInner(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
+                                                    PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts,
+                                                    uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType,
+                                                    SignToolKeyPair *pCertKeyPair, unsigned cVerbosity,
+                                                    void **ppvSigned, size_t *pcbSigned, PRTCRPKCS7CONTENTINFO pContentInfo,
+                                                    PRTCRPKCS7SIGNEDDATA *ppSignedData)
 {
     *ppvSigned = NULL;
     if (pcbSigned)
@@ -2095,6 +2227,26 @@ static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *
 }
 
 
+static RTEXITCODE SignToolPkcs7_Pkcs7SignStuff(const char *pszWhat, const void *pvToDataToSign, size_t cbToDataToSign,
+                                               PCRTCRPKCS7ATTRIBUTES pAuthAttribs, RTCRSTORE hAdditionalCerts,
+                                               uint32_t fExtraFlags, RTDIGESTTYPE enmDigestType, SignToolKeyPair *pCertKeyPair,
+                                               unsigned cVerbosity, void **ppvSigned, size_t *pcbSigned,
+                                               PRTCRPKCS7CONTENTINFO pContentInfo, PRTCRPKCS7SIGNEDDATA *ppSignedData)
+{
+    /*
+     * Gather all additional certificates before doing the actual work.
+     */
+    RTCRSTORE hAllAdditionalCerts = pCertKeyPair->assembleAllAdditionalCertificates(hAdditionalCerts);
+    if (hAllAdditionalCerts == NIL_RTCRSTORE)
+        return RTEXITCODE_FAILURE;
+    RTEXITCODE rcExit = SignToolPkcs7_Pkcs7SignStuffInner(pszWhat, pvToDataToSign, cbToDataToSign, pAuthAttribs,
+                                                          hAllAdditionalCerts, fExtraFlags, enmDigestType, pCertKeyPair,
+                                                          cVerbosity, ppvSigned, pcbSigned, pContentInfo, ppSignedData);
+    RTCrStoreRelease(hAllAdditionalCerts);
+    return rcExit;
+}
+
+
 static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSignerInfo, PRTCRPKCS7SIGNEDDATA pSignedData,
                                                         unsigned cVerbosity,  bool fReplaceExisting, bool fTimestampTypeOld,
                                                         RTTIMESPEC SigningTime, SignToolKeyPair *pTimestampPair)
@@ -2120,11 +2272,11 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
         void                *pvSigned      = NULL;
         PRTCRPKCS7SIGNEDDATA pTsSignedData = NULL;
         RTCRPKCS7CONTENTINFO TsContentInfo;
-        rcExit = SignToolPkcs7_Pkcs7SignStuff("timestamp", pSignerInfo->EncryptedDigest.Asn1Core.uData.pv,
-                                              pSignerInfo->EncryptedDigest.Asn1Core.cb, &AuthAttribs,
-                                              NIL_RTCRSTORE /*hAdditionalCerts*/, RTCRPKCS7SIGN_SD_F_DEATCHED,
-                                              RTDIGESTTYPE_SHA1, pTimestampPair, cVerbosity,
-                                              &pvSigned, NULL /*pcbSigned*/, &TsContentInfo, &pTsSignedData);
+        rcExit = SignToolPkcs7_Pkcs7SignStuffInner("timestamp", pSignerInfo->EncryptedDigest.Asn1Core.uData.pv,
+                                                   pSignerInfo->EncryptedDigest.Asn1Core.cb, &AuthAttribs,
+                                                   NIL_RTCRSTORE /*hAdditionalCerts*/, RTCRPKCS7SIGN_SD_F_DEATCHED,
+                                                   RTDIGESTTYPE_SHA1, pTimestampPair, cVerbosity,
+                                                   &pvSigned, NULL /*pcbSigned*/, &TsContentInfo, &pTsSignedData);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
 
@@ -2159,7 +2311,14 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
              * Make sure the signing certificate is included.
              */
             if (rcExit == RTEXITCODE_SUCCESS)
+            {
                 rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pTimestampPair->pCertificate);
+
+                PCRTCRCERTCTX pInterCaCtx = NULL;
+                while ((pInterCaCtx = pTimestampPair->findNextIntermediateCert(pInterCaCtx)) != NULL)
+                    if (rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pInterCaCtx->pCert);
+            }
 
             /*
              * Clean up.
@@ -3479,6 +3638,7 @@ static RTEXITCODE HelpSign(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
                         "<exe>\n");
     if (enmLevel == RTSIGNTOOLHELP_FULL)
         RTStrmWrappedPrintf(pStrm, 0,
+                            "\n"
                             "Create a new code signature for an executable or catalog.\n"
                             "\n"
                             "Options:\n"
