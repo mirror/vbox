@@ -132,6 +132,12 @@ typedef enum RTCRSTOREID
     /** Open the certificate store of the system containg trusted CAs
      * and certificates. */
     RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES,
+    /** Open the certificate store of the current user containing intermediate CAs.
+     * @remarks This may or may not include all the certificates in the system
+     *          store, that's host dependent.  So, you better look in both. */
+    RTCRSTOREID_USER_INTERMEDIATE_CAS,
+    /** Open the certificate store of the system containg intermediate CAs. */
+    RTCRSTOREID_SYSTEM_INTERMEDIATE_CAS,
     /** End of valid values. */
     RTCRSTOREID_END,
     /** Traditional enum type compression prevention hack. */
@@ -145,8 +151,6 @@ typedef enum RTCRSTOREID
  * There will be no duplicates in this one.
  *
  * @returns IPRT status code.
- * @retval  VWRN_ALREADY_EXISTS if the certificate is already present and
- *          RTCRCERTCTX_F_ADD_IF_NOT_FOUND was specified.
  * @param   phStore             Where to return the store handle. Use
  *                              RTCrStoreRelease to release it.
  * @param   enmStoreId          The store to snapshot.

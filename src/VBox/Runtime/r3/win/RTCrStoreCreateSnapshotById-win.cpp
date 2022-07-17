@@ -56,7 +56,7 @@ static int rtCrStoreAddCertsFromNative(RTCRSTORE hStore, DWORD fStore, PCRTUTF16
     DWORD fOpenStore = CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_READONLY_FLAG;
     HCERTSTORE hNativeStore = pfnOpenStore(CERT_STORE_PROV_SYSTEM_W, PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                                            NULL /* hCryptProv = default */, fStore | fOpenStore, pwszStoreName);
-    if (hStore)
+    if (hNativeStore)
     {
         PCCERT_CONTEXT pCurCtx = NULL;
         while ((pCurCtx = pfnEnumCerts(hNativeStore, pCurCtx)) != NULL)
@@ -136,16 +136,31 @@ RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStore
                 /*
                  * Do the work.
                  */
+                DWORD fStore = CERT_SYSTEM_STORE_CURRENT_USER;
                 switch (enmStoreId)
                 {
-                    case RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES:
                     case RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES:
+                    case RTCRSTOREID_SYSTEM_INTERMEDIATE_CAS:
+                        fStore = CERT_SYSTEM_STORE_LOCAL_MACHINE;
+                        RT_FALL_THRU();
+                    case RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES:
+                    case RTCRSTOREID_USER_INTERMEDIATE_CAS:
                     {
-                        DWORD fStore = enmStoreId == RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES
-                                     ? CERT_SYSTEM_STORE_CURRENT_USER : CERT_SYSTEM_STORE_LOCAL_MACHINE;
-                        static PCRTUTF16 const s_apwszStores[] =  { L"AuthRoot", L"CA", L"MY", L"Root" };
-                        for (uint32_t i = 0; i < RT_ELEMENTS(s_apwszStores); i++)
-                            rc = rtCrStoreAddCertsFromNative(hStore, fStore, s_apwszStores[i], pfnOpenStore, pfnCloseStore,
+                        /** @todo CA and MY in s_apwszRootStores are _very_ questionable!!! However,
+                         * curl may need them  to work correct and it doesn't seem to have any
+                         * intermediate ca file. :/ */
+                        static PCRTUTF16 const s_apwszRootStores[] = { L"AuthRoot", L"CA", L"MY", L"Root" };
+                        static PCRTUTF16 const s_apwszIntermediateStores[] = { L"CA", L"MY" };
+                        PCRTUTF16 const *papwszStores = s_apwszRootStores;
+                        uint32_t         cStores      = RT_ELEMENTS(s_apwszRootStores);
+                        if (enmStoreId == RTCRSTOREID_USER_INTERMEDIATE_CAS || enmStoreId == RTCRSTOREID_SYSTEM_INTERMEDIATE_CAS)
+                        {
+                            papwszStores = s_apwszIntermediateStores;
+                            cStores      = RT_ELEMENTS(s_apwszIntermediateStores);
+                        }
+
+                        for (uint32_t i = 0; i < cStores; i++)
+                            rc = rtCrStoreAddCertsFromNative(hStore, fStore, papwszStores[i], pfnOpenStore, pfnCloseStore,
                                                              pfnEnumCerts, rc, pErrInfo);
                         break;
                     }
