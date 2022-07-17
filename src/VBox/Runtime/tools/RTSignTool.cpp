@@ -3722,6 +3722,12 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
         { "/nph",                   OPT_NO_HASH_PAGES,          RTGETOPT_REQ_NOTHING },
         { "--add-cert",             OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
         { "/ac",                    OPT_ADD_CERT,               RTGETOPT_REQ_STRING },
+        { "--description",          'd',                        RTGETOPT_REQ_STRING },
+        { "--desc",                 'd',                        RTGETOPT_REQ_STRING },
+        { "/d",                     'd',                        RTGETOPT_REQ_STRING },
+        { "--description-url",      'D',                        RTGETOPT_REQ_STRING },
+        { "--desc-url",             'D',                        RTGETOPT_REQ_STRING },
+        { "/du",                    'D',                        RTGETOPT_REQ_STRING },
         { "--no-signing-time",      OPT_NO_SIGNING_TIME,        RTGETOPT_REQ_NOTHING },
         OPT_CERT_KEY_GETOPTDEF_ENTRIES("--",           1000),
         OPT_CERT_KEY_GETOPTDEF_COMPAT_ENTRIES(         1000),
@@ -3742,6 +3748,8 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
     RTSIGNTOOLFILETYPE      enmForceFileType        = RTSIGNTOOLFILETYPE_DETECT;
     SignToolKeyPair         SigningCertKey("signing", true);
     RTCRSTORE               hAddCerts               = NIL_RTCRSTORE; /* leaked if returning directly (--help, --version) */
+    const char             *pszDescription          = NULL; /** @todo implement putting descriptions into the OpusInfo stuff. */
+    const char             *pszDescriptionUrl       = NULL;
     bool                    fTimestampTypeOld       = true;
     SignToolKeyPair         TimestampCertKey("timestamp");
     RTTIMESPEC              SigningTime;
@@ -3763,6 +3771,8 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
             OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1020, ch, ValueUnion, rcExit2);
             case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
             case 'A':                       fReplaceExisting = false; break;
+            case 'd':                       pszDescription = ValueUnion.psz; break;
+            case 'D':                       pszDescriptionUrl = ValueUnion.psz; break;
             case OPT_HASH_PAGES:            fHashPages = true; break;
             case OPT_NO_HASH_PAGES:         fHashPages = false; break;
             case OPT_NO_SIGNING_TIME:       fNoSigningTime = true; break;
