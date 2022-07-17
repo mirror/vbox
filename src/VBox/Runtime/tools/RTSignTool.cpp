@@ -1561,7 +1561,7 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
     return RTEXITCODE_FAILURE;
 }
 
-#ifndef IPRT_IN_BUILD_TOOL
+#ifndef IPRT_SIGNTOOL_NO_SIGNING
 
 static PRTCRPKCS7ATTRIBUTE SignToolPkcs7_AuthAttribAppend(PRTCRPKCS7ATTRIBUTES pAuthAttribs)
 {
@@ -2627,7 +2627,7 @@ static RTEXITCODE SignToolPkcs7_AddOrReplaceCatSignature(SIGNTOOLPKCS7 *pThis, u
     return rcExit;
 }
 
-#endif /* !IPRT_IN_BUILD_TOOL */
+#endif /* !IPRT_SIGNTOOL_NO_SIGNING */
 
 
 /*********************************************************************************************************************************
@@ -3097,7 +3097,7 @@ static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
 /*********************************************************************************************************************************
 *   Option handlers shared by 'sign-exe', 'sign-cat', 'add-timestamp-exe-signature' and others.                                  *
 *********************************************************************************************************************************/
-#ifndef IPRT_IN_BUILD_TOOL
+#ifndef IPRT_SIGNTOOL_NO_SIGNING
 
 static RTEXITCODE HandleOptAddCert(PRTCRSTORE phStore, const char *pszFile)
 {
@@ -3336,13 +3336,13 @@ static RTSIGNTOOLFILETYPE DetectFileType(RTSIGNTOOLFILETYPE enmForceFileType, co
     return RTSIGNTOOLFILETYPE_UNKNOWN;
 }
 
-#endif /* !IPRT_IN_BUILD_TOOL */
+#endif /* !IPRT_SIGNTOOL_NO_SIGNING */
 
 
 /*********************************************************************************************************************************
 *   The 'add-timestamp-exe-signature' command.                                                                                   *
 *********************************************************************************************************************************/
-#ifndef IPRT_IN_BUILD_TOOL
+#ifndef IPRT_SIGNTOOL_NO_SIGNING
 
 static RTEXITCODE HelpAddTimestampExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
@@ -3447,13 +3447,13 @@ static RTEXITCODE HandleAddTimestampExeSignature(int cArgs, char **papszArgs)
     return rcExit;
 }
 
-#endif /*!IPRT_IN_BUILD_TOOL */
+#endif /*!IPRT_SIGNTOOL_NO_SIGNING */
 
 
 /*********************************************************************************************************************************
 *   The 'sign-exe' command.                                                                                   *
 *********************************************************************************************************************************/
-#ifndef IPRT_IN_BUILD_TOOL
+#ifndef IPRT_SIGNTOOL_NO_SIGNING
 
 static RTEXITCODE HelpSign(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
@@ -3627,7 +3627,7 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
     return rcExit;
 }
 
-#endif /*!IPRT_IN_BUILD_TOOL */
+#endif /*!IPRT_SIGNTOOL_NO_SIGNING */
 
 
 /*********************************************************************************************************************************
@@ -5205,7 +5205,7 @@ const g_aCommands[] =
     { "extract-exe-signature",          HandleExtractExeSignature,          HelpExtractExeSignature },
     { "add-nested-exe-signature",       HandleAddNestedExeSignature,        HelpAddNestedExeSignature },
     { "add-nested-cat-signature",       HandleAddNestedCatSignature,        HelpAddNestedCatSignature },
-#ifndef IPRT_IN_BUILD_TOOL
+#ifndef IPRT_SIGNTOOL_NO_SIGNING
     { "add-timestamp-exe-signature",    HandleAddTimestampExeSignature,     HelpAddTimestampExeSignature },
     { "sign",                           HandleSign,                         HelpSign },
 #endif

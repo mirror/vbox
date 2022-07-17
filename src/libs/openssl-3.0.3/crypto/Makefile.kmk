@@ -152,6 +152,33 @@ $(foreach sublib,$(VBOX_CRYPTO_SUBLIBS), $(eval $(def_VBoxExtPack_libcrypto_inhe
 endif # VBOX_NEED_EXTPACK_OPENSSL
 
 
+ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+#
+# The build program libcrypto version.
+#
+LIBRARIES += VBoxBldProg-libcrypto
+VBoxBldProg-libcrypto          = For bldRTSignTool
+VBoxBldProg-libcrypto_EXTENDS  = VBox-libcrypto
+VBoxBldProg-libcrypto_TEMPLATE = VBoxLibCryptoBldProg
+VBoxBldProg-libcrypto_DEFS     = $(VBox-libcrypto_DEFS)
+VBoxBldProg-libcrypto_SOURCES  = \
+	$(filter %.c %.cpp,$(VBox-libcrypto_SOURCES)) \
+	$(PATH_STAGE_LIB)/VBoxBldProg-libproviders$(VBOX_SUFF_LIB) \
+	$(foreach sublib,$(VBOX_CRYPTO_SUBLIBS), $(VBoxBldProg-$(sublib)_1_TARGET))
+define def_VBoxBldProg_libcrypto_inherit
+ LIBRARIES += VBoxBldProg-$(sublib)
+ VBoxBldProg-$(sublib) = bldRTSignTool version of $(sublib)
+ VBoxBldProg-$(sublib)_EXTENDS    = $(sublib)
+ VBoxBldProg-$(sublib)_EXTENDS_BY = appending
+ VBoxBldProg-$(sublib)_TEMPLATE   = VBoxSubLibCryptoBldProg
+ VBoxBldProg-$(sublib)_DEFPATH    = $($(sublib)_DEFPATH)
+ ## @todo kBuild: DEFPATH isn't inherited! FIXME!
+endef
+$(foreach sublib,$(VBOX_CRYPTO_SUBLIBS), $(eval $(def_VBoxBldProg_libcrypto_inherit)))
+
+endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+
+
 #
 # ...
 #

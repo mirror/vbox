@@ -74,6 +74,33 @@ ifdef VBOX_NEED_EXTPACK_OPENSSL
  VBoxExtPack-libproviders_DEFS = VBOX_IN_EXTPACK
 endif
 
+
+ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+#
+# The build program libproviders version.
+#
+LIBRARIES += VBoxBldProg-libproviders
+VBoxBldProg-libproviders          = For bldRTSignTool
+VBoxBldProg-libproviders_EXTENDS  = VBox-libproviders
+VBoxBldProg-libproviders_TEMPLATE = VBoxLibCryptoBldProg
+VBoxBldProg-libproviders_SOURCES  = \
+	$(filter %.c,$(VBox-libproviders_SOURCES)) \
+	$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(VBoxBldProg-$(sublib)_1_TARGET))
+
+define def_VBoxBldProg_libproviders_inherit
+ LIBRARIES += VBoxBldProg-$(sublib)
+ VBoxBldProg-$(sublib) = bldRTSignTool version of $(sublib)
+ VBoxBldProg-$(sublib)_EXTENDS    = $(sublib)
+ VBoxBldProg-$(sublib)_EXTENDS_BY = appending
+ VBoxBldProg-$(sublib)_TEMPLATE   = VBoxSubLibCryptoBldProg
+ VBoxBldProg-$(sublib)_DEFPATH    = $($(sublib)_DEFPATH)
+ ## @todo kBuild: DEFPATH isn't inherited! FIXME!
+endef
+$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(eval $(def_VBoxBldProg_libproviders_inherit)))
+
+endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
 #

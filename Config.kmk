@@ -902,6 +902,10 @@ endif
 #VBOX_WITH_MSM_INSTALL = 1
 # Enables full VM encryption support @bugref{9955}.
 VBOX_WITH_FULL_VM_ENCRYPTION = 1
+# Enables the 'sign' command in bldRTSignTool.  We may need this on windows.
+if1of ($(KBUILD_TARGET), win)
+ VBOX_WITH_BLD_RTSIGNTOOL_SIGNING = 1
+endif
 ## @}
 
 
@@ -4778,6 +4782,19 @@ endif
 SDK_VBOX_OPENSSL-x86_LIBS               ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB)
+
+ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+ SDK_VBOX_OPENSSL_BLDPROG               := OpenSSL - Build tools verison (i.e. bldRTSignTool)
+ SDK_VBOX_OPENSSL_BLDPROG_INCS          ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+ SDK_VBOX_OPENSSL_BLDPROG_ORDERDEPS     ?= $(crypto-headers_1_TARGET)
+ if  !defined(VBOX_ONLY_SDK) \
+  && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
+  SDK_VBOX_OPENSSL_BLDPROG_DEPS         ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+ endif
+ SDK_VBOX_OPENSSL_BLDPROG_LIBS          ?= \
+ 	$(PATH_STAGE_LIB)/VBoxBldProg-libssl$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
+endif
 
 SDK_VBOX_OPENSSL2              := This is what you should be using!  It links against VBoxRT.
 SDK_VBOX_OPENSSL2_EXTENDS      := VBOX_OPENSSL

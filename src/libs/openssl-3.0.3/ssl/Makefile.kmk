@@ -90,5 +90,15 @@ ifdef VBOX_NEED_EXTPACK_OPENSSL
  VBoxExtPack-libssl_DEFS = VBOX_IN_EXTPACK
 endif
 
+
+ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+ #
+ # The build program version.
+ #
+ LIBRARIES += VBoxBldProg-libssl
+ VBoxBldProg-libssl_EXTENDS = VBox-libssl
+ VBoxBldProg-libssl_TEMPLATE = VBoxLibCryptoBldProg
+endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
