@@ -4039,17 +4039,17 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  File description. Optional.
   # @param 3  Additional parameters. Optional.
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
-  # @param 5  Disables dual signing if non-empty.
+  # @param 5  Disables dual signing if non-empty, picking the SHA2 signature (since 2022-07-18).
   # @param 6  non-zero for alternative command separator.  This is used for generating repacking scripts.
   ifndef VBOX_SIGN_FILE_FN
    if $(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-    VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA1) \
+    VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo $(if-expr "$5" == "",SHA1,SHA2)) \
         $(if-expr "$5" == "",\
          $(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6) \
          $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-dual_sign -digest_algo SHA2))
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     ifdef VBOX_CERTIFICATE_SUBJECT_NAME
-     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL_SHA1) \
+     VBOX_SIGN_FILE_FN     = $(if-expr "$5" == "",$(VBOX_SIGNTOOL_SHA1) \
 	sign /fd sha1 \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
@@ -4059,9 +4059,8 @@ ifdef VBOX_SIGNING_MODE
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
 	"$(1)" \
-	$(if-expr "$5" == "",\
-	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL_SHA2) \
-	sign /as /fd sha256 \
+       $(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6))$(VBOX_SIGNTOOL_SHA2) \
+	sign $(if-expr "$5" == "",/as,) /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME_ARGS) \
@@ -4069,7 +4068,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TSA_SHA2_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
-	"$(1)",)
+	"$(1)"
     else
      VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL_SHA2) \
 	sign /fd sha256 \
