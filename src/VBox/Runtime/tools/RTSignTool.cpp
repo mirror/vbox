@@ -141,6 +141,7 @@
 #define OPT_TIMESTAMP_OVERRIDE              1044
 #define OPT_NO_SIGNING_TIME                 1045
 #define OPT_FILE_TYPE                       1046
+#define OPT_IGNORED                         1047
 
 
 /*********************************************************************************************************************************
@@ -3710,8 +3711,9 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--append",               'a',                        RTGETOPT_REQ_NOTHING },
-        { "/as",                    'a',                        RTGETOPT_REQ_NOTHING },
+        { "--append",               'A',                        RTGETOPT_REQ_NOTHING },
+        { "/as",                    'A',                        RTGETOPT_REQ_NOTHING },
+        { "/a",                     OPT_IGNORED,                RTGETOPT_REQ_NOTHING }, /* select best cert automatically */
         { "--type",                 't',                        RTGETOPT_REQ_STRING },
         { "/fd",                    't',                        RTGETOPT_REQ_STRING },
         { "--hash-pages",           OPT_HASH_PAGES,             RTGETOPT_REQ_NOTHING },
@@ -3760,7 +3762,7 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
             OPT_CERT_KEY_SWITCH_CASES(SigningCertKey,   1000, ch, ValueUnion, rcExit2);
             OPT_CERT_KEY_SWITCH_CASES(TimestampCertKey, 1020, ch, ValueUnion, rcExit2);
             case 't':                       rcExit2 = HandleOptSignatureType(&enmSigType, ValueUnion.psz); break;
-            case 'a':                       fReplaceExisting = false; break;
+            case 'A':                       fReplaceExisting = false; break;
             case OPT_HASH_PAGES:            fHashPages = true; break;
             case OPT_NO_HASH_PAGES:         fHashPages = false; break;
             case OPT_NO_SIGNING_TIME:       fNoSigningTime = true; break;
@@ -3768,6 +3770,7 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
             case OPT_TIMESTAMP_TYPE:        rcExit2 = HandleOptTimestampType(&fTimestampTypeOld, ValueUnion.psz); break;
             case OPT_TIMESTAMP_OVERRIDE:    rcExit2 = HandleOptTimestampOverride(&SigningTime, ValueUnion.psz); break;
             case OPT_FILE_TYPE:             rcExit2 = HandleOptFileType(&enmForceFileType, ValueUnion.psz); break;
+            case OPT_IGNORED:               break;
             case 'v':                       cVerbosity++; break;
             case 'V':                       return HandleVersion(cArgs, papszArgs);
             case 'h':                       return HelpSign(g_pStdOut, RTSIGNTOOLHELP_FULL);
