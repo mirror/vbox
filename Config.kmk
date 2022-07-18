@@ -4230,6 +4230,13 @@ ifdef VBOX_SIGNING_MODE
   endif
   ## Enable signing of the additions.
   VBOX_SIGN_ADDITIONS   ?= 1
+  ## Set if we should incldue the legacy timestamp CA.
+  ifndef VBOX_WITH_VBOX_LEGACY_TS_CA
+   if "$(findstring 55287c0d517e273696d67c690dd5d9f0a1d6d725,$(VBOX_TSA_URL_ARGS))" != ""
+    VBOX_WITH_VBOX_LEGACY_TS_CA = 1
+   endif
+  endif
+  VBOX_LEGACY_TS_CA_FILE = $(PATH_ROOT)/src/VBox/HostDrivers/Support/Certificates/Timestamp-VBoxLegacyWinCA.crt
 
  else ifeq ($(KBUILD_HOST),darwin)
   #

@@ -292,7 +292,7 @@ if defined(VBOX_WITH_ADDITIONS_ISO.win.amd64) || defined(VBOX_WITH_ADDITIONS_ISO
    GUESTADDITIONS_FILESPEC.win += cert/vbox-sha256-r3.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3.cer
   endif
  endif
- if "$(findstring 55287c0d517e273696d67c690dd5d9f0a1d6d725,$(VBOX_TSA_URL_ARGS))" != ""
+ ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
   GUESTADDITIONS_FILESPEC.win += cert/vbox-legacy-timestamp-ca.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-legacy-timestamp-ca.cer
  endif
  GUESTADDITIONS_FILESPEC.win += windows11-bypass.reg=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/windows11-bypass.reg
