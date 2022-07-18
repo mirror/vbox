@@ -34,6 +34,10 @@
 #else  /* VBOX */
 # ifdef RT_OS_WINDOWS /* No unistd.h on windows, avoid redef warnings of the [U]INTxx_MAX defines caused by no inttypes.h/stdint.h. */
 #  define YY_NO_UNISTD_H
+#  undef INT8_MIN
+#  undef INT16_MIN
+#  undef INT32_MIN
+#  undef INT64_MIN
 #  undef INT8_MAX
 #  undef INT16_MAX
 #  undef INT32_MAX
@@ -54,6 +58,9 @@
 # include <iprt/ctype.h>
 # include <iprt/err.h>
 # define isdigit(a_ch) RT_C_IS_DIGIT(a_ch)
+# ifdef _MSC_VER
+#  include <io.h> /* win_flex: isatty */
+# endif
 #endif /* VBOX */
 
 #include <dt_impl.h>
