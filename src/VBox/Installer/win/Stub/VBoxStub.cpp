@@ -1072,7 +1072,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 #ifdef VBOX_WITH_CODE_SIGNING
     bool fEnableSilentCert         = true;
     bool fInstallTimestampCA       = true;
-    bool fForceTimestampCaInstall  = false;
+    bool fForceTimestampCaInstall  = true;
 #endif
     bool fIgnoreReboot             = false;
     char szExtractPath[RTPATH_MAX] = {0};
@@ -1101,7 +1101,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "-no-silent-cert",    'c',                         RTGETOPT_REQ_NOTHING },
         { "/no-silent-cert",    'c',                         RTGETOPT_REQ_NOTHING },
         { "--no-install-timestamp-ca", 't',                  RTGETOPT_REQ_NOTHING },
-        { "--force-install-timestamp-ca", 'T',               RTGETOPT_REQ_NOTHING },
+        { "--no-force-install-timestamp-ca", 'T',            RTGETOPT_REQ_NOTHING },
 #endif
         { "--logging",          'l',                         RTGETOPT_REQ_NOTHING },
         { "-logging",           'l',                         RTGETOPT_REQ_NOTHING },
@@ -1163,10 +1163,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 fEnableSilentCert = false;
                 break;
             case 't':
-                fInstallTimestampCA = false;
+                fForceTimestampCaInstall = fInstallTimestampCA = false;
                 break;
             case 'T':
-                fForceTimestampCaInstall = fInstallTimestampCA = true;
+                fForceTimestampCaInstall = false;
                 break;
 #endif
             case 'l':
