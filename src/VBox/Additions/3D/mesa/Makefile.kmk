@@ -1150,6 +1150,11 @@ VBoxMesaWglLib-x86_BLD_TRG_ARCH = x86
 VBoxMesaGalliumAuxLib_TEMPLATE = VBoxMesa3DGuestR3Lib
 VBoxMesaGalliumAuxLib_INCS = \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir
+VBoxMesaGalliumAuxLib_DEPS = \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_builder_opcodes.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_intrinsics.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_intrinsics_indices.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_opcodes.h
 
 # Auto-generated
 VBoxMesaGalliumAuxLib_SOURCES = \
@@ -1335,6 +1340,11 @@ VBoxMesaNineLib_TEMPLATE   = VBoxMesa3DGuestR3Lib
 VBoxMesaNineLib_INCS       = \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir \
 	$(VBOX_MESA_SUBDIR)/include/D3D9
+VBoxMesaNineLib_DEPS = \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_builder_opcodes.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_intrinsics.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_intrinsics_indices.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA_SUBDIR)/src/compiler/nir/nir_opcodes.h
 VBoxMesaNineLib_DEFS.win   = COBJMACROS INC_OLE2
 # -wd4028: formal parameter 4 different from declaration
 #    'nine_context_set_vertex_shader_constant_f' parameter is declared 'const unsigned pConstantData_size'
