@@ -59,6 +59,10 @@ public:
 
     settings::RecordingScreenSettings &i_getData(void);
 
+    int32_t i_reference(void);
+    int32_t i_release(void);
+    int32_t i_getReferences(void);
+
 private:
 
     // wrapped IRecordingScreenSettings methods

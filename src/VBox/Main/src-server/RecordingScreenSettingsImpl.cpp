@@ -41,11 +41,15 @@ struct RecordingScreenSettings::Data
 {
     Data()
         : pParent(NULL)
+        , cRefs(0)
     { }
 
     RecordingSettings * const                pParent;
     const ComObjPtr<RecordingScreenSettings> pPeer;
     uint32_t                                 uScreenId;
+    /** Internal reference count to track sharing of this screen settings object among
+     *  other recording settings objects. */
+    int32_t                                  cRefs;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::RecordingScreenSettings> bd;
@@ -145,7 +149,7 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
     m->uScreenId = aThat->m->uScreenId;
     m->bd.share(aThat->m->bd);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     int vrc = i_initInternal();
     if (RT_SUCCESS(vrc))
@@ -155,11 +159,11 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
     else
     {
         autoInitSpan.setFailed();
-        rc = E_UNEXPECTED;
+        hrc = E_UNEXPECTED;
     }
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 /**
@@ -213,12 +217,15 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
  */
 void RecordingScreenSettings::uninit()
 {
-    LogFlowThisFuncEnter();
+    LogThisFunc(("%p\n", this));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    /* Make sure nobody holds an internal reference to it anymore. */
+    AssertReturnVoid(m->cRefs == 0);
 
     m->bd.free();
 
@@ -930,6 +937,8 @@ int RecordingScreenSettings::i_initInternal(void)
 {
     AssertPtrReturn(m, VERR_INVALID_POINTER);
 
+    i_reference();
+
     int vrc = i_parseOptionsString(m->bd->strOptions, *m->bd.data());
     if (RT_FAILURE(vrc))
         return vrc;
@@ -982,6 +991,8 @@ HRESULT RecordingScreenSettings::i_loadSettings(const settings::RecordingScreenS
  */
 HRESULT RecordingScreenSettings::i_saveSettings(settings::RecordingScreenSettings &data)
 {
+    LogThisFunc(("%p: Screen %RU32\n", this, m ? m->uScreenId : UINT32_MAX));
+
     /* sanity */
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -1070,6 +1081,50 @@ settings::RecordingScreenSettings &RecordingScreenSettings::i_getData(void)
 
     AssertPtr(m);
     return *m->bd.data();
+}
+
+/**
+ * Increments the reference count.
+ *
+ * @returns New reference count.
+ *
+ * @note    Internal reference count, to track object sharing across different recording settings objects
+ *          which share the same screen recording data.
+ */
+int32_t RecordingScreenSettings::i_reference(void)
+{
+    int cNewRefs = ASMAtomicIncS32(&m->cRefs); RT_NOREF(cNewRefs);
+    LogThisFunc(("%p: cRefs -> %RI32\n", this, cNewRefs));
+    return cNewRefs;
+}
+
+/**
+ * Decrements the reference count.
+ *
+ * @returns New reference count.
+ *
+ * @note    Internal reference count, to track object sharing across different recording settings objects
+ *          which share the same screen recording data.
+ */
+int32_t RecordingScreenSettings::i_release(void)
+{
+    int32_t cNewRefs = ASMAtomicDecS32(&m->cRefs); RT_NOREF(cNewRefs);
+    LogThisFunc(("%p: cRefs -> %RI32\n", this, cNewRefs));
+    AssertReturn(cNewRefs >= 0, 0);
+    return cNewRefs;
+}
+
+/**
+ * Returns the current reference count.
+ *
+ * @returns Current reference count.
+ *
+ * @note    Internal reference count, to track object sharing across different recording settings objects
+ *          which share the same screen recording data.
+ */
+int32_t RecordingScreenSettings::i_getReferences(void)
+{
+    return ASMAtomicReadS32(&m->cRefs);
 }
 
 /**
