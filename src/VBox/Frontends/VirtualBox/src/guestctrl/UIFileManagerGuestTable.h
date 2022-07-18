@@ -113,6 +113,7 @@ private:
         State_SessionPossible,
         State_SessionRunning,
         State_MachinePaused,
+        State_SessionError,
         State_Max
     };
 

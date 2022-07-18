@@ -484,6 +484,10 @@ void UIFileManagerGuestTable::retranslateUi()
                 strWarningText = UIFileManager::tr("<p>Guest control session is running.</p>");
                 icon = UIIconPool::iconSet(":/status_check_16px.png");
                 break;
+            case State_SessionError:
+                strWarningText = UIFileManager::tr("<p>Some error has occurred. PLease check the log panel.</p>");
+                icon = UIIconPool::iconSet(":/status_error_16px.png");
+                break;
             default:
                 break;
         }
@@ -1319,6 +1323,9 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         if (m_pGuestSessionWidget)
             m_pGuestSessionWidget->markForError(cErrorInfo.GetResultDetail() == VERR_AUTHENTICATION_FAILURE);
     }
+
+    setStateAndEnableWidgets();
+
     if (m_comGuestSession.isOk())
     {
         emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
@@ -1351,8 +1358,6 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
     }
     else
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
-
-    setStateAndEnableWidgets();
 }
 
 void UIFileManagerGuestTable::sltOpenGuestSession(QString strUserName, QString strPassword)
@@ -1392,6 +1397,11 @@ void UIFileManagerGuestTable::setState()
     if (!m_comGuestSession.isNull() && m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
         m_enmState = State_SessionRunning;
+        return;
+    }
+    if (!m_comGuestSession.isNull() && m_comGuestSession.GetStatus() == KGuestSessionStatus_Error)
+    {
+        m_enmState = State_SessionError;
         return;
     }
     m_enmState = State_SessionPossible;
@@ -1436,7 +1446,9 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
     /*Manage the guest session (login) widget: */
     if (m_pGuestSessionWidget)
     {
-        m_pGuestSessionWidget->setLoginWidgetsEnabled(m_enmState == State_SessionPossible || m_enmState == State_SessionRunning);
+        m_pGuestSessionWidget->setLoginWidgetsEnabled(m_enmState == State_SessionPossible ||
+                                                      m_enmState == State_SessionRunning ||
+                                                      m_enmState == State_SessionError);
         if (m_enmState == State_SessionPossible)
             m_pGuestSessionWidget->switchSessionOpenMode();
         else if (m_enmState == State_SessionRunning)
