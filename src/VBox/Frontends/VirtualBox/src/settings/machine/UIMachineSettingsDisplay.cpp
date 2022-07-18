@@ -942,8 +942,9 @@ void UIMachineSettingsDisplay::prepareTabRecording()
 
             pLayoutRecording->addStretch();
         }
-
+#ifdef VBOX_WITH_RECORDING
         m_pTabWidget->addTab(m_pTabRecording, QString());
+#endif
     }
 }
 
