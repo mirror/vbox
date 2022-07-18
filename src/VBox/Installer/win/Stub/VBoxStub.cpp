@@ -804,8 +804,38 @@ static RTEXITCODE ProcessPackage(unsigned iPackage, const char *pszMsiArgs, cons
     return rcExit;
 }
 
-
 #ifdef VBOX_WITH_CODE_SIGNING
+
+# ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+/**
+ * Install the timestamp CA currently needed to support legacy Windows versions.
+ *
+ * See @bugref{8691} for details.
+ *
+ * @returns Fully complained exit code.
+ */
+static RTEXITCODE InstallTimestampCA(bool fForce)
+{
+    /*
+     * Windows 10 desktop should be fine with attestation signed drivers, however
+     * the driver guard (DG) may alter that.  Not sure yet how to detect, but
+     * OTOH 1809 and later won't accept the SHA-1 stuff regardless, so out of
+     * options there.
+     *
+     * The Windows 2016 server and later is not fine with attestation signed
+     * drivers, so we need to do the legacy trick there.
+     */
+    if (   !fForce
+        && RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(10, 0, 0)
+        && RTSystemGetNtProductType() == VER_NT_WORKSTATION)
+        return RTEXITCODE_SUCCESS;
+
+    if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", g_abVBoxLegacyWinCA, sizeof(g_abVBoxLegacyWinCA)))
+        return ShowError("Failed add the legacy Windows timestamp CA to the root certificate store.");
+    return RTEXITCODE_SUCCESS;
+}
+# endif  /* VBOX_WITH_VBOX_LEGACY_TS_CA*/
+
 /**
  * Install the public certificate into TrustedPublishers so the installer won't
  * prompt the user during silent installs.
@@ -820,21 +850,12 @@ static RTEXITCODE InstallCertificates(void)
                             "TrustedPublisher",
                             g_aVBoxStubTrustedCerts[i].pab,
                             g_aVBoxStubTrustedCerts[i].cb))
-            return ShowError("Failed to construct install certificate.");
+            return ShowError("Failed to add our certificate(s) to trusted publisher store.");
     }
-
-# ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
-    if (   RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(10, 0, 0)
-        || false /** @todo windows server 2016 and later */ )
-    {
-        if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", g_abVBoxLegacyWinCA, sizeof(g_abVBoxLegacyWinCA)))
-            return ShowError("Failed to construct install certificate.");
-    }
-# endif
     return RTEXITCODE_SUCCESS;
 }
-#endif /* VBOX_WITH_CODE_SIGNING */
 
+#endif /* VBOX_WITH_CODE_SIGNING */
 
 /**
  * Copies the "<exepath>.custom" directory to the extraction path if it exists.
@@ -1050,6 +1071,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     bool fEnableLogging            = false;
 #ifdef VBOX_WITH_CODE_SIGNING
     bool fEnableSilentCert         = true;
+    bool fInstallTimestampCA       = true;
+    bool fForceTimestampCaInstall  = false;
 #endif
     bool fIgnoreReboot             = false;
     char szExtractPath[RTPATH_MAX] = {0};
@@ -1077,6 +1100,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "--no-silent-cert",   'c',                         RTGETOPT_REQ_NOTHING },
         { "-no-silent-cert",    'c',                         RTGETOPT_REQ_NOTHING },
         { "/no-silent-cert",    'c',                         RTGETOPT_REQ_NOTHING },
+        { "--no-install-timestamp-ca", 't',                  RTGETOPT_REQ_NOTHING },
+        { "--force-install-timestamp-ca", 'T',               RTGETOPT_REQ_NOTHING },
 #endif
         { "--logging",          'l',                         RTGETOPT_REQ_NOTHING },
         { "-logging",           'l',                         RTGETOPT_REQ_NOTHING },
@@ -1136,6 +1161,12 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 #ifdef VBOX_WITH_CODE_SIGNING
             case 'c':
                 fEnableSilentCert = false;
+                break;
+            case 't':
+                fInstallTimestampCA = false;
+                break;
+            case 'T':
+                fForceTimestampCaInstall = fInstallTimestampCA = true;
                 break;
 #endif
             case 'l':
@@ -1226,9 +1257,20 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                          "--msi-prop <prop> <value>\n"
                          "    Adds <prop>=<value> to the MSI parameters,\n"
                          "    quoting the property value if necessary\n"
+#ifdef VBOX_WITH_CODE_SIGNING
                          "--no-silent-cert\n"
                          "    Do not install VirtualBox Certificate automatically\n"
                          "    when --silent option is specified\n"
+#endif
+#ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+                         "--force-install-timestamp-ca\n"
+                         "    Install the timestamp CA needed for supporting\n"
+                         "    legacy Windows versions regardless of the version or\n"
+                         "    type of Windows VirtualBox is being installed on.\n"
+                         "    Default: All except Windows 10 & 11 desktop\n"
+                         "--no-install-timestamp-ca\n"
+                         "    Do not install the above mentioned timestamp CA.\n"
+#endif
                          "--path\n"
                          "    Sets the path of the extraction directory\n"
                          "--reinstall\n"
@@ -1401,6 +1443,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 {
                     rcExit = CopyCustomDir(szExtractPath);
 #ifdef VBOX_WITH_CODE_SIGNING
+# ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+                    if (rcExit == RTEXITCODE_SUCCESS && fInstallTimestampCA)
+                        rcExit = InstallTimestampCA(fForceTimestampCaInstall);
+# endif
                     if (rcExit == RTEXITCODE_SUCCESS && fEnableSilentCert && g_fSilent)
                         rcExit = InstallCertificates();
 #endif
