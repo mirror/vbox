@@ -23,6 +23,7 @@
 #include "RecordingSettingsImpl.h"
 #include "MachineImpl.h"
 
+#include <iprt/asm.h> /* For ASMAtomicXXX. */
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
 #include <VBox/settings.h>
