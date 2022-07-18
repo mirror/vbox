@@ -779,6 +779,16 @@ public:
         return RTEXITCODE_SUCCESS;
     }
 
+    /** Returns the real certificate. */
+    PCRTCRX509CERTIFICATE getRealCertificate() const
+    {
+#ifdef RT_OS_WINDOWS
+        if (pCertificateReal)
+            return pCertificateReal;
+#endif
+        return pCertificate;
+    }
+
 #ifdef RT_OS_WINDOWS
     RTEXITCODE loadFakePrivateKeyAndCert()
     {
@@ -2006,7 +2016,8 @@ SignToolPkcs7_Pkcs7SignStuffAgainWithReal(const char *pszWhat, SignToolKeyPair *
      * First remove the fake certificate from the PKCS7 structure and insert the real one.
      */
     PRTCRPKCS7SIGNEDDATA pSignedData = pContentInfo->u.pSignedData;
-    unsigned iCert = pSignedData->Certificates.cItems;
+    unsigned             iCert       = pSignedData->Certificates.cItems;
+    unsigned             cErased     = 0;
     while (iCert-- > 0)
     {
         PCRTCRPKCS7CERT pCert = pSignedData->Certificates.papItems[iCert];
@@ -2014,11 +2025,18 @@ SignToolPkcs7_Pkcs7SignStuffAgainWithReal(const char *pszWhat, SignToolKeyPair *
             && RTCrX509Certificate_MatchIssuerAndSerialNumber(pCert->u.pX509Cert,
                                                               &pCertKeyPair->pCertificate->TbsCertificate.Issuer,
                                                               &pCertKeyPair->pCertificate->TbsCertificate.SerialNumber))
+        {
             RTCrPkcs7SetOfCerts_Erase(&pSignedData->Certificates, iCert);
+            cErased++;
+        }
     }
+    if (cErased == 0)
+        return RTMsgErrorExitFailure("(%s) Failed to find temporary signing certificate in PKCS#7 from OpenSSL: %u certs",
+                                     pszWhat, pSignedData->Certificates.cItems);
 
     /* Then insert the real signing certificate. */
-    RTEXITCODE rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pCertKeyPair->pCertificateReal);
+    PCRTCRX509CERTIFICATE const pRealCertificate = pCertKeyPair->getRealCertificate();
+    RTEXITCODE rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pRealCertificate);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -2028,13 +2046,13 @@ SignToolPkcs7_Pkcs7SignStuffAgainWithReal(const char *pszWhat, SignToolKeyPair *
     PRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[0];
     RTCrX509Name_Delete(&pSignerInfo->IssuerAndSerialNumber.Name);
     int rc = RTCrX509Name_Clone(&pSignerInfo->IssuerAndSerialNumber.Name,
-                                &pCertKeyPair->pCertificateReal->TbsCertificate.Issuer, &g_RTAsn1DefaultAllocator);
+                                &pRealCertificate->TbsCertificate.Issuer, &g_RTAsn1DefaultAllocator);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("(%s) RTCrX509Name_Clone failed: %Rrc", pszWhat, rc);
 
     RTAsn1Integer_Delete(&pSignerInfo->IssuerAndSerialNumber.SerialNumber);
     rc = RTAsn1Integer_Clone(&pSignerInfo->IssuerAndSerialNumber.SerialNumber,
-                             &pCertKeyPair->pCertificateReal->TbsCertificate.SerialNumber, &g_RTAsn1DefaultAllocator);
+                             &pRealCertificate->TbsCertificate.SerialNumber, &g_RTAsn1DefaultAllocator);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("(%s) RTAsn1Integer_Clone failed: %Rrc", pszWhat, rc);
 
@@ -2272,7 +2290,7 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
         return RTMsgErrorExitFailure("RTCrPkcs7SetOfAttributes_Init failed: %Rrc", rc);
 
     RTEXITCODE rcExit = SignToolPkcs7_AddAuthAttribsForTimestamp(&AuthAttribs, fTimestampTypeOld, SigningTime,
-                                                                 pTimestampPair->pCertificate);
+                                                                 pTimestampPair->getRealCertificate());
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         /*
@@ -2321,7 +2339,7 @@ static RTEXITCODE SignToolPkcs7_AddTimestampSignatureEx(PRTCRPKCS7SIGNERINFO pSi
              */
             if (rcExit == RTEXITCODE_SUCCESS)
             {
-                rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pTimestampPair->pCertificate);
+                rcExit = SignToolPkcs7_AppendCertificate(pSignedData, pTimestampPair->getRealCertificate());
 
                 PCRTCRCERTCTX pInterCaCtx = NULL;
                 while ((pInterCaCtx = pTimestampPair->findNextIntermediateCert(pInterCaCtx)) != NULL)
