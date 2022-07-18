@@ -49,3 +49,10 @@ RTDECL(uint64_t) RTSystemGetNtVersion(void)
     return RTSYSTEM_MAKE_NT_VERSION(g_WinOsInfoEx.dwMajorVersion, g_WinOsInfoEx.dwMinorVersion, g_WinOsInfoEx.dwBuildNumber);
 }
 
+
+RTDECL(uint8_t) RTSystemGetNtProductType(void)
+{
+    Assert(g_WinOsInfoEx.dwOSVersionInfoSize > 0);
+    return g_WinOsInfoEx.wProductType; /* It's a byte, not a word as 'w' normally indicates. (Baka Maikurosofuto!) */
+}
+

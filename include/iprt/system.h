@@ -354,6 +354,11 @@ RTDECL(uint32_t) RTSystemGetNtBuildNo(void);
  */
 RTDECL(uint64_t) RTSystemGetNtVersion(void);
 
+/**
+ * Get the Windows NT product type (OSVERSIONINFOW::wProductType).
+ */
+RTDECL(uint8_t) RTSystemGetNtProductType(void);
+
 #endif /* RT_OS_WINDOWS */
 
 /** @} */
