@@ -56,6 +56,10 @@ ifdef VBOX_SIGNING_MODE
    $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256-r3.cer,$(VBOX_PATH_ADDITIONS)/VBoxCertUtil.exe,1)
   endif
  endif
+ if "$(findstring 55287c0d517e273696d67c690dd5d9f0a1d6d725,$(VBOX_TSA_URL_ARGS))" != ""
+AdditionsInstCertFiles_SOURCES += \
+	../../../HostDrivers/Support/Certificates/Timestamp-VBoxLegacyWinCA.crt=>vbox-legacy-timestamp-ca.cer
+ endif
 endif
 
 #
