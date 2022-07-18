@@ -66,6 +66,9 @@ ifdef VBOX_SIGNING_MODE
  VBoxStub.cpp_DEPS += $(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h
  VBoxStub.cpp_INCS += $(VBoxStub_0_OUTDIR)
  VBoxStub.cpp_DEFS += VBOX_WITH_CODE_SIGNING
+ ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+  VBoxStub.cpp_DEFS += VBOX_WITH_VBOX_LEGACY_TS_CA
+ endif
 
  $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h:  | $$(dir $$@) $(VBOX_RTSIGNTOOL) $(PATH_STAGE_SYS)/VBoxSup.sys
 	$(RM) -f -- "$@" "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
@@ -91,6 +94,9 @@ ifdef VBOX_SIGNING_MODE
 	$(APPEND) -n "$@" \
               "};"
 	$(RM) -f -- "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
+ ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+	$(VBOX_BIN2C) -ascii --append VBoxLegacyWinCA "$(VBOX_LEGACY_TS_CA_FILE)" $@
+ endif
 
  VBoxStubPublicCert.h:: $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h
 

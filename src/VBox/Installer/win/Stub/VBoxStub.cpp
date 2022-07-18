@@ -48,6 +48,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/thread.h>
 #include <iprt/utf16.h>
 
@@ -821,6 +822,15 @@ static RTEXITCODE InstallCertificates(void)
                             g_aVBoxStubTrustedCerts[i].cb))
             return ShowError("Failed to construct install certificate.");
     }
+
+# ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+    if (   RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(10, 0, 0)
+        || false /** @todo windows server 2016 and later */ )
+    {
+        if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", g_abVBoxLegacyWinCA, sizeof(g_abVBoxLegacyWinCA)))
+            return ShowError("Failed to construct install certificate.");
+    }
+# endif
     return RTEXITCODE_SUCCESS;
 }
 #endif /* VBOX_WITH_CODE_SIGNING */
