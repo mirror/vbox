@@ -911,7 +911,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sVBoxInstallPath = os.environ.get('VBOX_INSTALL_PATH', None);
         if sVBoxInstallPath is not None:
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
-
+        if self.fpApiVer >= 6.1:
+            # We need to explicitly specify the location, otherwise the log would end up at a random location.
+            sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt');
+            asArgs.extend(['--msi-log-file', sLogFile]);
+        else: # Prior to 6.1 the location was hardcoded.
+            sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
         fRc2, iRc = self._sudoExecuteSync(asArgs);
         if fRc2 is False:
             if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
@@ -919,8 +924,6 @@ class VBoxInstallerTestDriver(TestDriverBase):
             else:
                 reporter.error('Installer failed, exit code: %s' % (iRc,));
             fRc = False;
-
-        sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
         if os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/installer', "Verbose MSI installation log file");
         self._waitForTestManagerConnectivity(30);
