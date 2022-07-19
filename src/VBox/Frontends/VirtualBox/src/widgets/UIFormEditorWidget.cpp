@@ -463,8 +463,8 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Return the parent table-view reference. */
-    QITableView *parentTable() const;
+    /** Returns the parent table-view reference. */
+    QITableView *view() const;
 
     /** Updates row generation values. */
     void updateGeneration();
@@ -955,7 +955,7 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     /* Add new lines: */
     beginInsertRows(QModelIndex(), 0, values.size() - 1);
     foreach (const CFormValue &comValue, values)
-        m_dataList << new UIFormEditorRow(parentTable(), m_pFormEditorWidget, comValue);
+        m_dataList << new UIFormEditorRow(view(), m_pFormEditorWidget, comValue);
     endInsertRows();
 }
 
@@ -1221,7 +1221,7 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
 void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
 {
     /* Create dialog on-the-fly: */
-    QPointer<QIDialog> pDialog = new QIDialog(parentTable());
+    QPointer<QIDialog> pDialog = new QIDialog(view());
     if (pDialog)
     {
         /* We will need that pointer: */
@@ -1280,9 +1280,9 @@ void UIFormEditorModel::prepare()
     m_icons["Assign Public IP"]    = UIIconPool::iconSet(":/assign_public_ip_16px.png");
 }
 
-QITableView *UIFormEditorModel::parentTable() const
+QITableView *UIFormEditorModel::view() const
 {
-    return qobject_cast<QITableView*>(parent());
+    return m_pFormEditorWidget->view();
 }
 
 void UIFormEditorModel::updateGeneration()
@@ -1393,6 +1393,11 @@ UIFormEditorWidget::~UIFormEditorWidget()
     cleanup();
 }
 
+UIFormEditorView *UIFormEditorWidget::view() const
+{
+    return m_pTableView;
+}
+
 QHeaderView *UIFormEditorWidget::horizontalHeader() const
 {
     AssertPtrReturn(m_pTableView, 0);
@@ -1403,6 +1408,12 @@ QHeaderView *UIFormEditorWidget::verticalHeader() const
 {
     AssertPtrReturn(m_pTableView, 0);
     return m_pTableView->verticalHeader();
+}
+
+void UIFormEditorWidget::setWhatsThis(const QString &strWhatsThis)
+{
+    AssertPtrReturnVoid(m_pTableView);
+    m_pTableView->setWhatsThis(strWhatsThis);
 }
 
 void UIFormEditorWidget::clearForm()
