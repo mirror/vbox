@@ -163,9 +163,7 @@ void UIToolsView::sltMinimumHeightHintChanged(int iHint)
 void UIToolsView::retranslateUi()
 {
     /* Translate this: */
-#if 0 /* we will leave that for accessibility needs. */
-    setToolTip(tr("Contains a list of VirtualBox tools"));
-#endif  /* to be integrated to accessibility interface. */
+    setWhatsThis(tr("Contains a list of VirtualBox tools."));
 }
 
 void UIToolsView::prepare()

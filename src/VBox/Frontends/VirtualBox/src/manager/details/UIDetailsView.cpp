@@ -150,7 +150,7 @@ void UIDetailsView::sltMinimumWidthHintChanged(int iHint)
 void UIDetailsView::retranslateUi()
 {
     /* Translate this: */
-    setWhatsThis(tr("Contains a list of Virtual Machine details"));
+    setWhatsThis(tr("Contains a list of Virtual Machine details."));
 }
 
 void UIDetailsView::resizeEvent(QResizeEvent *pEvent)
