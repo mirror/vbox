@@ -672,6 +672,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, 
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
 /**
  * Registers this proxy window as a local drop target.
  *
@@ -682,33 +683,32 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
     if (m_pDropTarget) /* Already registered as drop target? */
         return VINF_SUCCESS;
 
-    int rc;
-    try
+# ifdef RT_EXCEPTIONS_ENABLED
+    try { m_pDropTarget = new VBoxDnDDropTarget(this /* pParent */); }
+    catch (std::bad_alloc &)
+# else
+    m_pDropTarget = new VBoxDnDDropTarget(this /* pParent */);
+    if (!m_pDropTarget)
+# endif
     {
-        m_pDropTarget = new VBoxDnDDropTarget(this /* pParent */);
-        HRESULT hr = CoLockObjectExternal(m_pDropTarget, TRUE /* fLock */,
-                                          FALSE /* fLastUnlockReleases */);
-        if (SUCCEEDED(hr))
-            hr = RegisterDragDrop(m_hWnd, m_pDropTarget);
-
-        if (FAILED(hr))
-        {
-            if (hr != DRAGDROP_E_INVALIDHWND) /* Could be because the DnD host service is not available. */
-                LogRel(("DnD: Creating drop target failed with hr=%Rhrc\n", hr));
-            rc = VERR_NOT_SUPPORTED; /* Report back DnD as not being supported. */
-        }
-        else
-        {
-            rc = VINF_SUCCESS;
-        }
-    }
-    catch (std::bad_alloc)
-    {
-        rc = VERR_NO_MEMORY;
+        LogFunc(("VERR_NO_MEMORY!\n"));
+        return VERR_NO_MEMORY;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    HRESULT hrc = CoLockObjectExternal(m_pDropTarget, TRUE /* fLock */, FALSE /* fLastUnlockReleases */);
+    if (SUCCEEDED(hrc))
+    {
+        hrc = RegisterDragDrop(m_hWnd, m_pDropTarget);
+        if (SUCCEEDED(hrc))
+        {
+            LogFlowFuncLeaveRC(VINF_SUCCESS);
+            return VINF_SUCCESS;
+        }
+    }
+    if (hrc != DRAGDROP_E_INVALIDHWND) /* Could be because the DnD host service is not available. */
+        LogRel(("DnD: Creating drop target failed with hr=%Rhrc\n", hrc));
+    LogFlowFuncLeaveRC(VERR_NOT_SUPPORTED);
+    return VERR_NOT_SUPPORTED; /* Report back DnD as not being supported. */
 }
 
 /**
@@ -740,6 +740,7 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
 /**
@@ -828,118 +829,123 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &a_lstFormats, VBOXDNDACTIONL
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Save all allowed actions. */
+    this->m_lstActionsAllowed = a_fDndLstActionsAllowed;
+
+    /*
+     * Check if reported formats from host are compatible with this client.
+     */
+    size_t cFormatsSup    = this->m_lstFmtSup.size();
+    ULONG  cFormatsActive = 0;
+
+    LPFORMATETC paFormatEtc = (LPFORMATETC)RTMemTmpAllocZ(sizeof(paFormatEtc[0]) * cFormatsSup);
+    AssertReturn(paFormatEtc, VERR_NO_TMP_MEMORY);
+
+    LPSTGMEDIUM paStgMeds   = (LPSTGMEDIUM)RTMemTmpAllocZ(sizeof(paStgMeds[0]) * cFormatsSup);
+    AssertReturnStmt(paFormatEtc, RTMemTmpFree(paFormatEtc), VERR_NO_TMP_MEMORY);
+
+    LogRel2(("DnD: Reported formats:\n"));
+    for (size_t i = 0; i < a_lstFormats.size(); i++)
+    {
+        bool fSupported = false;
+        for (size_t a = 0; a < this->m_lstFmtSup.size(); a++)
+        {
+            const char *pszFormat = a_lstFormats.at(i).c_str();
+            LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->m_lstFmtSup.at(a).c_str(), pszFormat));
+
+            fSupported = RTStrICmp(this->m_lstFmtSup.at(a).c_str(), pszFormat) == 0;
+            if (fSupported)
+            {
+                this->m_lstFmtActive.append(a_lstFormats.at(i));
+
+                /** @todo Put this into a \#define / struct. */
+                if (!RTStrICmp(pszFormat, "text/uri-list"))
+                {
+                    paFormatEtc[cFormatsActive].cfFormat = CF_HDROP;
+                    paFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
+                    paFormatEtc[cFormatsActive].lindex   = -1;
+                    paFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
+
+                    paStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
+                    cFormatsActive++;
+                }
+                else if (   !RTStrICmp(pszFormat, "text/plain")
+                         || !RTStrICmp(pszFormat, "text/html")
+                         || !RTStrICmp(pszFormat, "text/plain;charset=utf-8")
+                         || !RTStrICmp(pszFormat, "text/plain;charset=utf-16")
+                         || !RTStrICmp(pszFormat, "text/plain")
+                         || !RTStrICmp(pszFormat, "text/richtext")
+                         || !RTStrICmp(pszFormat, "UTF8_STRING")
+                         || !RTStrICmp(pszFormat, "TEXT")
+                         || !RTStrICmp(pszFormat, "STRING"))
+                {
+                    paFormatEtc[cFormatsActive].cfFormat = CF_TEXT;
+                    paFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
+                    paFormatEtc[cFormatsActive].lindex   = -1;
+                    paFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
+
+                    paStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
+                    cFormatsActive++;
+                }
+                else /* Should never happen. */
+                    AssertReleaseMsgFailedBreak(("Format specification for '%s' not implemented\n", pszFormat));
+                break;
+            }
+        }
+
+        LogRel2(("DnD: \t%s: %RTbool\n", a_lstFormats.at(i).c_str(), fSupported));
+    }
+
+    /*
+     * Warn in the log if this guest does not accept anything.
+     */
+    Assert(cFormatsActive <= cFormatsSup);
+    if (cFormatsActive)
+    {
+        LogRel2(("DnD: %RU32 supported formats found:\n", cFormatsActive));
+        for (size_t i = 0; i < cFormatsActive; i++)
+            LogRel2(("DnD: \t%s\n", this->m_lstFmtActive.at(i).c_str()));
+    }
+    else
+        LogRel(("DnD: Warning: No supported drag and drop formats on the guest found!\n"));
+
+    /*
+     * Prepare the startup info for DoDragDrop().
+     */
+
+    /* Translate our drop actions into allowed Windows drop effects. */
+    m_startupInfo.dwOKEffects = DROPEFFECT_NONE;
+    if (a_fDndLstActionsAllowed)
+    {
+        if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_COPY)
+            m_startupInfo.dwOKEffects |= DROPEFFECT_COPY;
+        if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_MOVE)
+            m_startupInfo.dwOKEffects |= DROPEFFECT_MOVE;
+        if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_LINK)
+            m_startupInfo.dwOKEffects |= DROPEFFECT_LINK;
+    }
+
+    LogRel2(("DnD: Supported drop actions: 0x%x\n", m_startupInfo.dwOKEffects));
+
+#ifdef RT_EXCEPTIONS_ENABLED
     try
     {
-        /* Save all allowed actions. */
-        this->m_lstActionsAllowed = a_fDndLstActionsAllowed;
-
-        /*
-         * Check if reported formats from host are compatible with this client.
-         */
-        size_t cFormatsSup    = this->m_lstFmtSup.size();
-        ULONG  cFormatsActive = 0;
-
-        LPFORMATETC pFormatEtc = new FORMATETC[cFormatsSup];
-        RT_BZERO(pFormatEtc, sizeof(FORMATETC) * cFormatsSup);
-
-        LPSTGMEDIUM pStgMeds   = new STGMEDIUM[cFormatsSup];
-        RT_BZERO(pStgMeds, sizeof(STGMEDIUM) * cFormatsSup);
-
-        LogRel2(("DnD: Reported formats:\n"));
-        for (size_t i = 0; i < a_lstFormats.size(); i++)
-        {
-            bool fSupported = false;
-            for (size_t a = 0; a < this->m_lstFmtSup.size(); a++)
-            {
-                const char *pszFormat = a_lstFormats.at(i).c_str();
-                LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->m_lstFmtSup.at(a).c_str(), pszFormat));
-
-                fSupported = RTStrICmp(this->m_lstFmtSup.at(a).c_str(), pszFormat) == 0;
-                if (fSupported)
-                {
-                    this->m_lstFmtActive.append(a_lstFormats.at(i));
-
-                    /** @todo Put this into a \#define / struct. */
-                    if (!RTStrICmp(pszFormat, "text/uri-list"))
-                    {
-                        pFormatEtc[cFormatsActive].cfFormat = CF_HDROP;
-                        pFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
-                        pFormatEtc[cFormatsActive].lindex   = -1;
-                        pFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
-
-                        pStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
-                        cFormatsActive++;
-                    }
-                    else if (   !RTStrICmp(pszFormat, "text/plain")
-                             || !RTStrICmp(pszFormat, "text/html")
-                             || !RTStrICmp(pszFormat, "text/plain;charset=utf-8")
-                             || !RTStrICmp(pszFormat, "text/plain;charset=utf-16")
-                             || !RTStrICmp(pszFormat, "text/plain")
-                             || !RTStrICmp(pszFormat, "text/richtext")
-                             || !RTStrICmp(pszFormat, "UTF8_STRING")
-                             || !RTStrICmp(pszFormat, "TEXT")
-                             || !RTStrICmp(pszFormat, "STRING"))
-                    {
-                        pFormatEtc[cFormatsActive].cfFormat = CF_TEXT;
-                        pFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
-                        pFormatEtc[cFormatsActive].lindex   = -1;
-                        pFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
-
-                        pStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
-                        cFormatsActive++;
-                    }
-                    else /* Should never happen. */
-                        AssertReleaseMsgFailedBreak(("Format specification for '%s' not implemented\n", pszFormat));
-                    break;
-                }
-            }
-
-            LogRel2(("DnD: \t%s: %RTbool\n", a_lstFormats.at(i).c_str(), fSupported));
-        }
-
-        /*
-         * Warn in the log if this guest does not accept anything.
-         */
-        Assert(cFormatsActive <= cFormatsSup);
-        if (cFormatsActive)
-        {
-            LogRel2(("DnD: %RU32 supported formats found:\n", cFormatsActive));
-            for (size_t i = 0; i < cFormatsActive; i++)
-                LogRel2(("DnD: \t%s\n", this->m_lstFmtActive.at(i).c_str()));
-        }
-        else
-            LogRel(("DnD: Warning: No supported drag and drop formats on the guest found!\n"));
-
-        /*
-         * Prepare the startup info for DoDragDrop().
-         */
-
-        /* Translate our drop actions into allowed Windows drop effects. */
-        m_startupInfo.dwOKEffects = DROPEFFECT_NONE;
-        if (a_fDndLstActionsAllowed)
-        {
-            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_COPY)
-                m_startupInfo.dwOKEffects |= DROPEFFECT_COPY;
-            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_MOVE)
-                m_startupInfo.dwOKEffects |= DROPEFFECT_MOVE;
-            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_LINK)
-                m_startupInfo.dwOKEffects |= DROPEFFECT_LINK;
-        }
-
-        LogRel2(("DnD: Supported drop actions: 0x%x\n", m_startupInfo.dwOKEffects));
-
         m_startupInfo.pDropSource = new VBoxDnDDropSource(this);
-        m_startupInfo.pDataObject = new VBoxDnDDataObject(pFormatEtc, pStgMeds, cFormatsActive);
-
-        if (pFormatEtc)
-            delete pFormatEtc;
-        if (pStgMeds)
-            delete pStgMeds;
+        m_startupInfo.pDataObject = new VBoxDnDDataObject(paFormatEtc, paStgMeds, cFormatsActive);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
+#else
+    m_startupInfo.pDropSource = new VBoxDnDDropSource(this);
+    m_startupInfo.pDataObject = new VBoxDnDDataObject(paFormatEtc, paStgMeds, cFormatsActive);
+    if (!m_startupInfo.pDropSource || !m_startupInfo.pDataObject)
+#endif
     {
+        LogFunc(("VERR_NO_MEMORY!"));
         rc = VERR_NO_MEMORY;
     }
+
+    RTMemTmpFree(paFormatEtc);
+    RTMemTmpFree(paStgMeds);
 
     if (RT_SUCCESS(rc))
         rc = makeFullscreen();
@@ -1744,18 +1750,35 @@ DECLCALLBACK(int) VBoxDnDInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
         /* Create the proxy window. At the moment we
          * only support one window at a time. */
         VBoxDnDWnd *pWnd = NULL;
-        try
-        {
-            pWnd = new VBoxDnDWnd();
-            rc = pWnd->Initialize(pCtx);
-
-            /* Add proxy window to our proxy windows list. */
-            if (RT_SUCCESS(rc))
-                pCtx->lstWnd.append(pWnd);
-        }
-        catch (std::bad_alloc)
+#ifdef RT_EXCEPTIONS_ENABLED
+        try { pWnd = new VBoxDnDWnd(); }
+        catch (std::bad_alloc &)
+#else
+        pWnd = new VBoxDnDWnd();
+        if (!pWnd)
+#endif
         {
             rc = VERR_NO_MEMORY;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            rc = pWnd->Initialize(pCtx);
+            if (RT_SUCCESS(rc))
+            {
+                /* Add proxy window to our proxy windows list. */
+#ifdef RT_EXCEPTIONS_ENABLED
+                try { pCtx->lstWnd.append(pWnd); /** @todo the list implementation sucks wrt exception handling. */ }
+                catch (std::bad_alloc &)
+                {
+                    delete pWnd;
+                    rc = VERR_NO_MEMORY;
+                }
+#else
+                pCtx->lstWnd.append(pWnd); /** @todo the list implementation sucks wrt exception handling. */
+#endif
+            }
+            else
+                delete pWnd;
         }
     }
 

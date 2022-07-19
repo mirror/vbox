@@ -31,16 +31,17 @@
 
 
 VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats)
-    : m_cRefs(1),
-      m_uIdxCur(0)
+    : m_cRefs(1)
+    , m_uIdxCur(0)
+    , m_cFormats(0)
+    , m_paFormatEtc(NULL)
+
 {
-    HRESULT hr;
-
-    try
+    LogFlowFunc(("pFormatEtc=%p, cFormats=%RU32\n", pFormatEtc, cFormats));
+    /** @todo r=bird: Use an init() function! */
+    m_paFormatEtc = (LPFORMATETC)RTMemAllocZ(sizeof(*m_paFormatEtc) * cFormats);
+    if (m_paFormatEtc)
     {
-        LogFlowFunc(("pFormatEtc=%p, cFormats=%RU32\n", pFormatEtc, cFormats));
-        m_paFormatEtc  = new FORMATETC[cFormats];
-
         for (ULONG i = 0; i < cFormats; i++)
         {
             LogFlowFunc(("Format %RU32: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
@@ -48,16 +49,10 @@ VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormat
                          pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
             VBoxDnDEnumFormatEtc::CopyFormat(&m_paFormatEtc[i], &pFormatEtc[i]);
         }
-
         m_cFormats = cFormats;
-        hr = S_OK;
     }
-    catch (std::bad_alloc &)
-    {
-        hr = E_OUTOFMEMORY;
-    }
-
-    LogFlowFunc(("hr=%Rhrc\n", hr));
+    else
+        Log(("Failed to allocate memory for %u formats!\n"));
 }
 
 VBoxDnDEnumFormatEtc::~VBoxDnDEnumFormatEtc(void)
@@ -65,12 +60,13 @@ VBoxDnDEnumFormatEtc::~VBoxDnDEnumFormatEtc(void)
     if (m_paFormatEtc)
     {
         for (ULONG i = 0; i < m_cFormats; i++)
-        {
-            if(m_paFormatEtc[i].ptd)
+            if (m_paFormatEtc[i].ptd)
+            {
                 CoTaskMemFree(m_paFormatEtc[i].ptd);
-        }
+                m_paFormatEtc[i].ptd = NULL;
+            }
 
-        delete[] m_paFormatEtc;
+        RTMemFree(m_paFormatEtc);
         m_paFormatEtc = NULL;
     }
 
@@ -148,13 +144,12 @@ STDMETHODIMP VBoxDnDEnumFormatEtc::Reset(void)
 
 STDMETHODIMP VBoxDnDEnumFormatEtc::Clone(IEnumFORMATETC **ppEnumFormatEtc)
 {
-    HRESULT hResult =
-        CreateEnumFormatEtc(m_cFormats, m_paFormatEtc, ppEnumFormatEtc);
+    HRESULT hrc = CreateEnumFormatEtc(m_cFormats, m_paFormatEtc, ppEnumFormatEtc);
 
-    if (hResult == S_OK)
+    if (hrc == S_OK)
         ((VBoxDnDEnumFormatEtc *) *ppEnumFormatEtc)->m_uIdxCur = m_uIdxCur;
 
-    return hResult;
+    return hrc;
 }
 
 /* static */
@@ -179,17 +174,17 @@ HRESULT VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(UINT nNumFormats, LPFORMATETC 
     AssertPtrReturn(pFormatEtc, E_INVALIDARG);
     AssertPtrReturn(ppEnumFormatEtc, E_INVALIDARG);
 
-    HRESULT hr;
-    try
+#ifdef RT_EXCEPTIONS_ENABLED
+    try { *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc, nNumFormats); }
+    catch (std::bad_alloc &)
+#else
+    *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc, nNumFormats);
+    if (!*ppEnumFormatEtc)
+#endif
     {
-        *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc, nNumFormats);
-        hr = S_OK;
-    }
-    catch(std::bad_alloc &)
-    {
-        hr = E_OUTOFMEMORY;
+        return E_OUTOFMEMORY;
     }
 
-    return hr;
+    return S_OK;
 }
 
