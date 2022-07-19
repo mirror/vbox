@@ -911,7 +911,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sVBoxInstallPath = os.environ.get('VBOX_INSTALL_PATH', None);
         if sVBoxInstallPath is not None:
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
-        if self.fpApiVer >= 6.1:
+        fGreaterOrEqual61 = True; ## @todo Parse the version from the executable.
+        if fGreaterOrEqual61:
             # We need to explicitly specify the location, otherwise the log would end up at a random location.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt');
             asArgs.extend(['--msi-log-file', sLogFile]);
