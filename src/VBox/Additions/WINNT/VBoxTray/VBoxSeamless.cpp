@@ -59,7 +59,7 @@ static VBOXSEAMLESSCONTEXT g_Ctx = { 0 };
 
 void VBoxLogString(HANDLE hDriver, char *pszStr);
 
-DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
+static DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
     LogFlowFuncEnter();
 
@@ -112,7 +112,7 @@ DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance
     return rc;
 }
 
-void VBoxSeamlessDestroy(void *pInstance)
+static DECLCALLBACK(void) VBoxSeamlessDestroy(void *pInstance)
 {
     LogFlowFuncEnter();
 
