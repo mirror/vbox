@@ -29,7 +29,7 @@
 
 UICloudMachineSettingsDialogPage::UICloudMachineSettingsDialogPage(QWidget *pParent,
                                                                    bool fFullScale /* = true */)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pParent(qobject_cast<UICloudMachineSettingsDialog*>(pParent))
     , m_fFullScale(fFullScale)
 {
@@ -52,6 +52,12 @@ void UICloudMachineSettingsDialogPage::makeSureDataCommitted()
 {
     AssertPtrReturnVoid(m_pFormEditor.data());
     m_pFormEditor->makeSureEditorDataCommitted();
+}
+
+void UICloudMachineSettingsDialogPage::retranslateUi()
+{
+    AssertPtrReturnVoid(m_pFormEditor.data());
+    m_pFormEditor->setWhatsThis(tr("Contains a list of cloud machine settings."));
 }
 
 void UICloudMachineSettingsDialogPage::prepare()
@@ -81,6 +87,9 @@ void UICloudMachineSettingsDialogPage::prepare()
             pLayout->addWidget(m_pFormEditor);
         }
     }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UICloudMachineSettingsDialogPage::updateEditor()
