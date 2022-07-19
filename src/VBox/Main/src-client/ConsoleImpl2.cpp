@@ -989,7 +989,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         fWinGuest = guestTypeFamilyId == Bstr("Windows");
         fOs2Guest = osTypeId.startsWith("OS2");
         fW9xGuest = osTypeId.startsWith("Windows9");    /* Does not include Windows Me. */
-        fDosGuest = osTypeId.startsWith("DOS");
+        fDosGuest = osTypeId.startsWith("DOS") || osTypeId.startsWith("Windows31");
     }
 
     ULONG maxNetworkAdapters;
