@@ -478,10 +478,13 @@ void UIRecordingSettingsEditor::prepareWidgets()
                 {
                     if (m_pLabelMode)
                         m_pLabelMode->setBuddy(m_pComboMode);
+#ifdef VBOX_WITH_AUDIO_RECORDING
                     m_pComboMode->addItem(QString(), QVariant::fromValue(UISettingsDefs::RecordingMode_VideoAudio));
                     m_pComboMode->addItem(QString(), QVariant::fromValue(UISettingsDefs::RecordingMode_VideoOnly));
                     m_pComboMode->addItem(QString(), QVariant::fromValue(UISettingsDefs::RecordingMode_AudioOnly));
-
+#else
+                    m_pComboMode->addItem(QString(), QVariant::fromValue(UISettingsDefs::RecordingMode_VideoOnly));
+#endif
                     pLayoutSettings->addWidget(m_pComboMode, 0, 1, 1, 3);
                 }
 
@@ -742,33 +745,36 @@ void UIRecordingSettingsEditor::prepareWidgets()
                             pLayoutRecordingAudioQuality->addWidget(m_pSliderAudioQuality);
                         }
                         /* Prepare recording audio quality scale layout: */
-                        QHBoxLayout *pLayoutRecordingAudioQialityScale = new QHBoxLayout;
-                        if (pLayoutRecordingAudioQialityScale)
+                        QHBoxLayout *pLayoutRecordingAudioQualityScale = new QHBoxLayout;
+                        if (pLayoutRecordingAudioQualityScale)
                         {
-                            pLayoutRecordingAudioQialityScale->setContentsMargins(0, 0, 0, 0);
+                            pLayoutRecordingAudioQualityScale->setContentsMargins(0, 0, 0, 0);
 
                             /* Prepare recording audio quality min label: */
                             m_pLabelAudioQualityMin = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMin)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMin);
-                            pLayoutRecordingAudioQialityScale->addStretch();
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMin);
+                            pLayoutRecordingAudioQualityScale->addStretch();
                             /* Prepare recording audio quality med label: */
                             m_pLabelAudioQualityMed = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMed)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMed);
-                            pLayoutRecordingAudioQialityScale->addStretch();
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMed);
+                            pLayoutRecordingAudioQualityScale->addStretch();
                             /* Prepare recording audio quality max label: */
                             m_pLabelAudioQualityMax = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMax)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMax);
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMax);
 
-                            pLayoutRecordingAudioQuality->addLayout(pLayoutRecordingAudioQialityScale);
+                            pLayoutRecordingAudioQuality->addLayout(pLayoutRecordingAudioQualityScale);
                         }
                     }
 
                     pLayoutSettings->addWidget(m_pWidgetAudioQualitySettings, 7, 1, 2, 1);
                 }
-
+#ifndef VBOX_WITH_AUDIO_RECORDING
+                m_pWidgetAudioQualitySettings->hide();
+                m_pLabelAudioQuality->hide();
+#endif
                 /* Prepare recording size hint label: */
                 m_pLabelSizeHint = new QLabel(pWidgetSettings);
                 if (m_pLabelSizeHint)
