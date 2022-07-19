@@ -174,8 +174,8 @@ Function W2K_Prepare
     SetOutPath "$INSTDIR\cert"
     FILE "$%PATH_OUT%\bin\additions\vbox-legacy-timestamp-ca.cer"
     FILE "$%PATH_OUT%\bin\additions\VBoxCertUtil.exe"
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-trusted-publisher --root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" "false"
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" "false"
+    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-trusted-publisher --root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" "true"
+    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" "true"
   ${EndIf}
 !endif
 

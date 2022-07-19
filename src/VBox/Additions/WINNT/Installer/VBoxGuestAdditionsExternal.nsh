@@ -22,8 +22,8 @@
 ; will be aborted.
 ;
 ; @param   Command line (full qualified and quoted).
-; @param   If set to "true" the installer aborts if the external program reports
-;          an exit code other than 0, "false" just prints a warning and continues
+; @param   If set to "false" the installer aborts if the external program reports
+;          an exit code other than 0, "true" just prints a warning and continues
 ;          execution.
 ;
 !macro _cmdExecute cmdline optional
