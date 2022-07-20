@@ -915,7 +915,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
         fGreaterOrEqual61 = True; ## @todo Parse the --version output from the executable.
-        fSupportsForceInstallTimestampCA = True; ## @todo Parse the --help output.
+        fSupportsForceTsCAInstall = True; ## @todo Parse the --help output.
 
         # Gather installer arguments.
         asArgs = [sExe, '-vvvv', '--silent', '--logging'];
@@ -931,7 +931,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         else: # Prior to 6.1 the location was hardcoded.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
 
-        if fSupportsForceInstallTimestampCA and self._fWinForcedInstallTimestampCA:
+        if fSupportsForceTsCAInstall and self._fWinForcedInstallTimestampCA:
             asArgs.extend(['--force-install-timestamp-ca']);
 
         # Install it.
