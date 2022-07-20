@@ -49,6 +49,11 @@
 /* ASSUMES GNU C */
 # define alloca(cb) __builtin_alloca(cb)
 
+#elif defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS)
+# include <iprt/types.h>
+void * _alloca(size_t);
+# define alloca _alloca
+
 #else
 # include <stdlib.h>
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_NETBSD)
