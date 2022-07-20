@@ -604,12 +604,12 @@ static DECLCALLBACK(RTEXITCODE) handleSetVideoMode(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    DWORD xres = atoi(argv[0]);
-    DWORD yres = atoi(argv[1]);
-    DWORD bpp  = atoi(argv[2]);
+    DWORD xres = RTStrToUInt32(argv[0]);
+    DWORD yres = RTStrToUInt32(argv[1]);
+    DWORD bpp  = RTStrToUInt32(argv[2]);
     DWORD scr  = 0;
     if (argc == 4)
-        scr = atoi(argv[3]);
+        scr = RTStrToUInt32(argv[3]);
 
     HMODULE hmodUser = GetModuleHandle("user32.dll");
     if (hmodUser)
@@ -719,19 +719,19 @@ static HKEY getVideoKey(bool writable)
     /* Scan device entries */
     for (iDevice = 0; iDevice < cDevices; iDevice++)
     {
-        char szValueName[64];
-        RTStrPrintf(szValueName, sizeof(szValueName), "\\Device\\Video%u", adwObjectNumberList[iDevice]);
+        RTUTF16 wszValueName[64];
+        RTUtf16Printf(wszValueName, RT_ELEMENTS(wszValueName), "\\Device\\Video%u", adwObjectNumberList[iDevice]);
 
-        char szVideoLocation[256];
-        cbValue = sizeof(szVideoLocation);
-        status = RegQueryValueExA(hkeyDeviceMap, szValueName, NULL, &dwKeyType, (LPBYTE)&szVideoLocation[0], &cbValue);
+        RTUTF16 wszVideoLocation[256];
+        cbValue = sizeof(wszVideoLocation);
+        status = RegQueryValueExW(hkeyDeviceMap, wszValueName, NULL, &dwKeyType, (LPBYTE)&wszVideoLocation[0], &cbValue);
 
         /* This value starts with '\REGISTRY\Machine' */
         if (   status == ERROR_SUCCESS
             && dwKeyType == REG_SZ
-            && _strnicmp(szVideoLocation, "\\REGISTRY\\Machine", 17) == 0)
+            && RTUtf16NICmpAscii(wszVideoLocation, RT_STR_TUPLE("\\REGISTRY\\Machine")) == 0)
         {
-            status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, &szVideoLocation[18], 0,
+            status = RegOpenKeyExW(HKEY_LOCAL_MACHINE, &wszVideoLocation[18], 0,
                                    KEY_READ | (writable ? KEY_WRITE : 0), &hkeyVideo);
             if (status == ERROR_SUCCESS)
             {
@@ -1083,9 +1083,9 @@ static DECLCALLBACK(RTEXITCODE) handleAddCustomMode(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    DWORD xres = atoi(argv[0]);
-    DWORD yres = atoi(argv[1]);
-    DWORD bpp  = atoi(argv[2]);
+    DWORD xres = RTStrToUInt32(argv[0]);
+    DWORD yres = RTStrToUInt32(argv[1]);
+    DWORD bpp  = RTStrToUInt32(argv[2]);
 
     /** @todo better check including xres mod 8 = 0! */
     if (   (xres > (1 << 16))
@@ -1144,9 +1144,9 @@ static DECLCALLBACK(RTEXITCODE) handleRemoveCustomMode(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    DWORD xres = atoi(argv[0]);
-    DWORD yres = atoi(argv[1]);
-    DWORD bpp  = atoi(argv[2]);
+    DWORD xres = RTStrToUInt32(argv[0]);
+    DWORD yres = RTStrToUInt32(argv[1]);
+    DWORD bpp  = RTStrToUInt32(argv[2]);
 
     HKEY hkeyVideo = getVideoKey(true);
 
