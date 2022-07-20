@@ -5761,16 +5761,16 @@
     uuid="A7DDC6A5-DAA8-4485-B860-E9F2E98A7794"
     >
     <desc>
-      Recording features enumeration.
+      Recording feature flags. More than one flag may be set.
     </desc>
 
-    <const name="None"                  value="0">
+    <const name="None"                  value="0x0">
       <desc>No feature set.</desc>
     </const>
-    <const name="Video"                 value="1">
+    <const name="Video"                 value="0x1">
       <desc>Video recording.</desc>
     </const>
-    <const name="Audio"                 value="2">
+    <const name="Audio"                 value="0x2">
       <desc>Audio recording.</desc>
     </const>
   </enum>
