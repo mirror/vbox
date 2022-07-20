@@ -6292,6 +6292,10 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
  */
 static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32DeviceCaps, uint32_t *pu32FIFOCaps)
 {
+#ifndef VBOX_WITH_VMSVGA3D
+    RT_NOREF(pThisCC);
+#endif
+
     /* Device caps. */
     *pu32DeviceCaps = SVGA_CAP_GMR
                     | SVGA_CAP_GMR2
