@@ -243,6 +243,7 @@ Var g_bWithAutoLogon                    ; Cmd line: Install VBoxGINA / VBoxCredP
 Var g_bWithWDDM                         ; Cmd line: Install the WDDM graphics driver instead of the XPDM one
 Var g_bOnlyExtract                      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
 Var g_bPostInstallStatus                ; Cmd line: Post the overall installation status to some external program (VBoxTray)
+Var g_bInstallTimestampCA               ; Cmd line: Force installing the timestamp CA on the system
 
 ; Platform parts of this installer
 !include "VBoxGuestAdditionsLog.nsh"
@@ -364,6 +365,14 @@ Function HandleCommandLine
         StrCpy $g_bPostInstallStatus "true"
         ${Break}
 !endif
+
+      ${Case} '/install_timestamp_ca' ; Not officially documented
+        StrCpy $g_bInstallTimestampCA "true"
+        ${Break}
+
+      ${Case} '/no_install_timestamp_ca' ; Ditto
+        StrCpy $g_bInstallTimestampCA "false"
+        ${Break}
 
       ${Case} '/reboot'
         StrCpy $g_bRebootOnExit "true"
@@ -938,6 +947,7 @@ Function .onInit
   StrCpy $g_bCapXPDM "false"
   StrCpy $g_bCapWDDM "false"
   StrCpy $g_bPostInstallStatus "false"
+  StrCpy $g_bInstallTimestampCA "unset" ; Tri-state: "unset", "true" and "false"
 
   ; We need a special directory set to SysWOW64 because some
   ; shell operations don't support file redirection (yet)
