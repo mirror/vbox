@@ -91,10 +91,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('      build share and will be copied off it.');
         reporter.log('  --no-puel-extpack');
         reporter.log('      Indicates that the PUEL extension pack should not be installed if found.');
-        reporter.log('      The default is to install it if found in the vbox-build.');
+        reporter.log('      The default is to install it when found in the vbox-build.');
         reporter.log('  --no-kernel-drivers');
-        reporter.log('      Indicates that the kernel drivers should not be installed on platforms where this is supported.');
-        reporter.log('      The default is to install them.');
+        reporter.log('      Indicates that the kernel drivers should not be installed on platforms');
+        reporter.log('      where this is optional. The default is to install them.');
         reporter.log('  --forced-win-install-timestamp-ca, --no-forced-win-install-timestamp-ca');
         reporter.log('      Whether to force installation of the legacy Windows timestamp CA.');
         reporter.log('      If not forced, it will only installed on the hosts that needs it.');
