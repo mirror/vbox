@@ -333,7 +333,7 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
         rc = RTLdrLoadSystem("psapi.dll", true /*fNoUnload*/, &hMod);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLdrGetSymbol(hMod, "GetModuleBaseName", (void **)&g_pfnGetModuleBaseName);
+            rc = RTLdrGetSymbol(hMod, "GetModuleBaseNameA", (void **)&g_pfnGetModuleBaseName);
             AssertStmt(RT_SUCCESS(rc), g_pfnGetModuleBaseName = NULL);
 
             rc = RTLdrGetSymbol(hMod, "EnumProcesses", (void **)&g_pfnEnumProcesses);
