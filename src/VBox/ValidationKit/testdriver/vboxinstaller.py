@@ -73,6 +73,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._fUnpackedBuildFiles = False;
         self._fAutoInstallPuelExtPack = True;
         self._fKernelDrivers          = True;
+        self._fWinInstallTimestampCA  = False;
 
     #
     # Base method we override
@@ -94,6 +95,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('  --no-kernel-drivers');
         reporter.log('      Indicates that the kernel drivers should not be installed on platforms where this is supported.');
         reporter.log('      The default is to install them.');
+        reporter.log('  --win-install-timestamp-ca');
+        reporter.log('      Forces installation of the legacy timestamp CA. Windows hosts only.');
+        reporter.log('      The default is not installing it (false).');
         reporter.log('  --');
         reporter.log('      Indicates the end of our parameters and the start of the sub');
         reporter.log('      testdriver and its arguments.');
@@ -122,6 +126,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
             self._fKernelDrivers = False;
         elif asArgs[iArg] == '--kernel-drivers':
             self._fKernelDrivers = True;
+        elif asArgs[iArg] == '--no-win-install-timestamp-ca':
+            self._fWinInstallTimestampCA = False;
+        elif asArgs[iArg] == '--win-install-timestamp-ca':
+            self._fWinInstallTimestampCA = True;
         else:
             return TestDriverBase.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -918,6 +926,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
             asArgs.extend(['--msi-log-file', sLogFile]);
         else: # Prior to 6.1 the location was hardcoded.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
+        if  fGreaterOrEqual61 \
+        and self._fWinInstallTimestampCA:
+            # Force installing the legacy timestamp CA so that we can test stuff on Windows hosts < Windows 10.
+            asArgs.extend(['--force-install-timestamp-ca']);
+        elif not fGreaterOrEqual61:
+            reporter.info('WARNING: We do not have support for the timestamp CA here! Testing might fail.');
         fRc2, iRc = self._sudoExecuteSync(asArgs);
         if fRc2 is False:
             if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
@@ -1192,4 +1206,3 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
 if __name__ == '__main__':
     sys.exit(VBoxInstallerTestDriver().main(sys.argv));
-
