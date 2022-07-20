@@ -2071,6 +2071,8 @@ RuntimeBldProg_SOURCES.win = \
 	common/string/RTUtf16CopyAscii.cpp \
 	common/string/RTUtf16End.cpp \
 	common/string/RTUtf16NLenEx.cpp \
+	common/string/RTUtf16ICmpAscii.cpp \
+	common/string/RTUtf16NICmpAscii.cpp \
 	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \

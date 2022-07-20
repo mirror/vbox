@@ -72,14 +72,12 @@
 /* kernel32.dll: */
 //typedef DWORD   (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(VOID);
 typedef HANDLE  (WINAPI *PFNCREATETOOLHELP32SNAPSHOT)(DWORD, DWORD);
-typedef BOOL    (WINAPI *PFNPROCESS32FIRST)(HANDLE, LPPROCESSENTRY32);
 typedef BOOL    (WINAPI *PFNPROCESS32FIRSTW)(HANDLE, LPPROCESSENTRY32W);
-typedef BOOL    (WINAPI *PFNPROCESS32NEXT)(HANDLE, LPPROCESSENTRY32);
 typedef BOOL    (WINAPI *PFNPROCESS32NEXTW)(HANDLE, LPPROCESSENTRY32W);
 
 /* psapi.dll: */
 typedef BOOL    (WINAPI *PFNENUMPROCESSES)(LPDWORD, DWORD, LPDWORD);
-typedef DWORD   (WINAPI *PFNGETMODULEBASENAME)(HANDLE, HMODULE, LPTSTR, DWORD);
+typedef DWORD   (WINAPI *PFNGETMODULEBASENAMEW)(HANDLE, HMODULE, LPWSTR, DWORD);
 
 /* advapi32.dll: */
 typedef BOOL    (WINAPI *PFNCREATEPROCESSWITHLOGON)(LPCWSTR, LPCWSTR, LPCWSTR, DWORD, LPCWSTR, LPWSTR, DWORD,
@@ -132,12 +130,10 @@ typedef struct RTPROCWINACCOUNTINFO
 static RTONCE                           g_rtProcWinResolveOnce          = RTONCE_INITIALIZER;
 /* kernel32.dll: */
 static PFNCREATETOOLHELP32SNAPSHOT      g_pfnCreateToolhelp32Snapshot   = NULL;
-static PFNPROCESS32FIRST                g_pfnProcess32First             = NULL;
-static PFNPROCESS32NEXT                 g_pfnProcess32Next              = NULL;
 static PFNPROCESS32FIRSTW               g_pfnProcess32FirstW            = NULL;
 static PFNPROCESS32NEXTW                g_pfnProcess32NextW             = NULL;
 /* psapi.dll: */
-static PFNGETMODULEBASENAME             g_pfnGetModuleBaseName          = NULL;
+static PFNGETMODULEBASENAMEW            g_pfnGetModuleBaseNameW         = NULL;
 static PFNENUMPROCESSES                 g_pfnEnumProcesses              = NULL;
 /* advapi32.dll: */
 static PFNCREATEPROCESSWITHLOGON        g_pfnCreateProcessWithLogonW    = NULL;
@@ -316,25 +312,23 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
      * kernel32.dll APIs introduced after NT4.
      */
     g_pfnCreateToolhelp32Snapshot   = (PFNCREATETOOLHELP32SNAPSHOT)GetProcAddress(g_hModKernel32, "CreateToolhelp32Snapshot");
-    g_pfnProcess32First             = (PFNPROCESS32FIRST          )GetProcAddress(g_hModKernel32, "Process32First");
     g_pfnProcess32FirstW            = (PFNPROCESS32FIRSTW         )GetProcAddress(g_hModKernel32, "Process32FirstW");
-    g_pfnProcess32Next              = (PFNPROCESS32NEXT           )GetProcAddress(g_hModKernel32, "Process32Next");
     g_pfnProcess32NextW             = (PFNPROCESS32NEXTW          )GetProcAddress(g_hModKernel32, "Process32NextW");
 
     /*
      * psapi.dll APIs, if none of the above are available.
      */
     if (   !g_pfnCreateToolhelp32Snapshot
-        || !g_pfnProcess32First
-        || !g_pfnProcess32Next)
+        || !g_pfnProcess32FirstW
+        || !g_pfnProcess32NextW)
     {
-        Assert(!g_pfnCreateToolhelp32Snapshot && !g_pfnProcess32First && !g_pfnProcess32Next);
+        Assert(!g_pfnCreateToolhelp32Snapshot && !g_pfnProcess32FirstW && !g_pfnProcess32NextW);
 
         rc = RTLdrLoadSystem("psapi.dll", true /*fNoUnload*/, &hMod);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLdrGetSymbol(hMod, "GetModuleBaseNameA", (void **)&g_pfnGetModuleBaseName);
-            AssertStmt(RT_SUCCESS(rc), g_pfnGetModuleBaseName = NULL);
+            rc = RTLdrGetSymbol(hMod, "GetModuleBaseNameW", (void **)&g_pfnGetModuleBaseNameW);
+            AssertStmt(RT_SUCCESS(rc), g_pfnGetModuleBaseNameW = NULL);
 
             rc = RTLdrGetSymbol(hMod, "EnumProcesses", (void **)&g_pfnEnumProcesses);
             AssertStmt(RT_SUCCESS(rc), g_pfnEnumProcesses = NULL);
@@ -621,7 +615,7 @@ static bool rtProcWinFindTokenByProcessAndPsApi(const char * const *papszNames, 
     /*
      * Load PSAPI.DLL and resolve the two symbols we need.
      */
-    if (   !g_pfnGetModuleBaseName
+    if (   !g_pfnGetModuleBaseNameW
         || !g_pfnEnumProcesses)
         return false;
 
@@ -658,9 +652,8 @@ static bool rtProcWinFindTokenByProcessAndPsApi(const char * const *papszNames, 
          * We ASSUME that the caller won't be specifying any names longer
          * than RTPATH_MAX.
          */
-        DWORD cbProcName  = RTPATH_MAX;
-        char *pszProcName = (char *)RTMemTmpAlloc(RTPATH_MAX);
-        if (pszProcName)
+        PRTUTF16 pwszProcName = (PRTUTF16)RTMemTmpAllocZ(RTPATH_MAX * sizeof(pwszProcName[0]));
+        if (pwszProcName)
         {
             for (size_t i = 0; papszNames[i] && !fFound; i++)
             {
@@ -670,17 +663,17 @@ static bool rtProcWinFindTokenByProcessAndPsApi(const char * const *papszNames, 
                     HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, paPids[iPid]);
                     if (hProc)
                     {
-                        *pszProcName = '\0';
-                        DWORD cbRet = g_pfnGetModuleBaseName(hProc, 0 /*hModule = exe */, pszProcName, cbProcName);
+                        *pwszProcName = '\0';
+                        DWORD cbRet = g_pfnGetModuleBaseNameW(hProc, 0 /*hModule = exe */, pwszProcName, RTPATH_MAX);
                         if (   cbRet > 0
-                            && _stricmp(pszProcName, papszNames[i]) == 0
+                            && RTUtf16ICmpAscii(pwszProcName, papszNames[i]) == 0
                             && RT_SUCCESS(rtProcWinGetProcessTokenHandle(paPids[iPid], pSid, UINT32_MAX, phToken)))
                             fFound = true;
                         CloseHandle(hProc);
                     }
                 }
             }
-            RTMemTmpFree(pszProcName);
+            RTMemTmpFree(pwszProcName);
         }
         else
             rc = VERR_NO_TMP_MEMORY;
@@ -717,7 +710,7 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
      * and reliable.  Fallback to EnumProcess on NT4.
      */
     bool fFallback = true;
-    if (g_pfnProcess32Next && g_pfnProcess32First && g_pfnCreateToolhelp32Snapshot)
+    if (g_pfnProcess32NextW && g_pfnProcess32FirstW && g_pfnCreateToolhelp32Snapshot)
     {
         HANDLE hSnap = g_pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         Assert(hSnap != INVALID_HANDLE_VALUE);
@@ -726,14 +719,14 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
             fFallback = false;
             for (size_t i = 0; papszNames[i] && !fFound; i++)
             {
-                PROCESSENTRY32 ProcEntry;
+                PROCESSENTRY32W ProcEntry;
                 ProcEntry.dwSize = sizeof(PROCESSENTRY32);
-/** @todo use W APIs here.   */
-                if (g_pfnProcess32First(hSnap, &ProcEntry))
+                ProcEntry.szExeFile[0] = '\0';
+                if (g_pfnProcess32FirstW(hSnap, &ProcEntry))
                 {
                     do
                     {
-                        if (_stricmp(ProcEntry.szExeFile, papszNames[i]) == 0)
+                        if (RTUtf16ICmpAscii(ProcEntry.szExeFile, papszNames[i]) == 0)
                         {
                             int rc = rtProcWinGetProcessTokenHandle(ProcEntry.th32ProcessID, pSid, idDesiredSession, phToken);
                             if (RT_SUCCESS(rc))
@@ -742,15 +735,10 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
                                 break;
                             }
                         }
-                    } while (g_pfnProcess32Next(hSnap, &ProcEntry));
+                    } while (g_pfnProcess32NextW(hSnap, &ProcEntry));
                 }
-#ifdef RT_STRICT
                 else
-                {
-                    DWORD dwErr = GetLastError();
-                    AssertMsgFailed(("dwErr=%u (%x)\n", dwErr, dwErr));
-                }
-#endif
+                    AssertMsgFailed(("dwErr=%u (%x)\n", GetLastError(), GetLastError()));
             }
             CloseHandle(hSnap);
         }
