@@ -623,6 +623,9 @@ struct NvramSettings
 /** List for keeping a recording feature list. */
 typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
 
+/**
+ * Recording settings for a single screen (e.g. virtual monitor).
+ */
 struct RecordingScreenSettings
 {
     RecordingScreenSettings();
@@ -656,20 +659,16 @@ struct RecordingScreenSettings
      */
     struct Audio
     {
-        Audio()
-            : enmAudioCodec(RecordingAudioCodec_Opus)
-            , uHz(22050)
-            , cBits(16)
-            , cChannels(2) { }
-
         /** The audio codec type to use. */
-        RecordingAudioCodec_T enmAudioCodec; /** @todo Implement with next settings version bump. */
+        RecordingAudioCodec_T    enmAudioCodec; // requires settings version 1.19 (VirtualBox 7.0)
+        /** Codec deadline to use. */
+        RecordingCodecDeadline_T enmDeadline;   // requires settings version 1.19 (VirtualBox 7.0)
         /** Hz rate. */
-        uint16_t              uHz;           /** @todo Implement with next settings version bump. */
+        uint16_t                 uHz;           // requires settings version 1.19 (VirtualBox 7.0)
         /** Bits per sample. */
-        uint8_t               cBits;         /** @todo Implement with next settings version bump. */
+        uint8_t                  cBits;         // requires settings version 1.19 (VirtualBox 7.0)
         /** Number of audio channels. */
-        uint8_t               cChannels;     /** @todo Implement with next settings version bump. */
+        uint8_t                  cChannels;     // requires settings version 1.19 (VirtualBox 7.0)
     } Audio;
 
     /**
@@ -677,23 +676,18 @@ struct RecordingScreenSettings
      */
     struct Video
     {
-        Video()
-            : enmCodec(RecordingVideoCodec_VP8)
-            , ulWidth(1024)
-            , ulHeight(768)
-            , ulRate(512)
-            , ulFPS(25) { }
-
         /** The codec to use. */
-        RecordingVideoCodec_T enmCodec;  /** @todo Implement with next settings version bump. */
+        RecordingVideoCodec_T    enmCodec;    // requires settings version 1.19 (VirtualBox 7.0)
+        /** Codec deadline to use. */
+        RecordingCodecDeadline_T enmDeadline; // requires settings version 1.19 (VirtualBox 7.0)
         /** Target frame width in pixels (X). */
-        uint32_t              ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
+            uint32_t             ulWidth;     // requires settings version 1.14 (VirtualBox 4.3)
         /** Target frame height in pixels (Y). */
-        uint32_t              ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t                 ulHeight;    // requires settings version 1.14 (VirtualBox 4.3)
         /** Encoding rate. */
-        uint32_t              ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t                 ulRate;      // requires settings version 1.14 (VirtualBox 4.3)
         /** Frames per second (FPS). */
-        uint32_t              ulFPS;     // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t                 ulFPS;       // requires settings version 1.14 (VirtualBox 4.3)
     } Video;
 
     /**
@@ -701,9 +695,6 @@ struct RecordingScreenSettings
      */
     struct File
     {
-        File()
-            : ulMaxSizeMB(0) { }
-
         /** Maximum size (in MB) the file is allowed to have.
          *  When reaching the limit, recording will stop. 0 means no limit. */
         uint32_t     ulMaxSizeMB; // requires settings version 1.14 (VirtualBox 4.3)
