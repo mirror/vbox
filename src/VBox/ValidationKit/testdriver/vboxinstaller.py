@@ -73,7 +73,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._fUnpackedBuildFiles = False;
         self._fAutoInstallPuelExtPack = True;
         self._fKernelDrivers          = True;
-        self._fWinInstallTimestampCA  = False;
+        self._fWinForcedInstallTimestampCA = True;
 
     #
     # Base method we override
@@ -95,9 +95,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('  --no-kernel-drivers');
         reporter.log('      Indicates that the kernel drivers should not be installed on platforms where this is supported.');
         reporter.log('      The default is to install them.');
-        reporter.log('  --win-install-timestamp-ca');
-        reporter.log('      Forces installation of the legacy timestamp CA. Windows hosts only.');
-        reporter.log('      The default is not installing it (false).');
+        reporter.log('  --forced-win-install-timestamp-ca, --no-forced-win-install-timestamp-ca');
+        reporter.log('      Whether to force installation of the legacy Windows timestamp CA.');
+        reporter.log('      If not forced, it will only installed on the hosts that needs it.');
+        reporter.log('      Default: --no-forced-win-install-timestamp-ca');
         reporter.log('  --');
         reporter.log('      Indicates the end of our parameters and the start of the sub');
         reporter.log('      testdriver and its arguments.');
@@ -126,10 +127,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
             self._fKernelDrivers = False;
         elif asArgs[iArg] == '--kernel-drivers':
             self._fKernelDrivers = True;
-        elif asArgs[iArg] == '--no-win-install-timestamp-ca':
-            self._fWinInstallTimestampCA = False;
-        elif asArgs[iArg] == '--win-install-timestamp-ca':
-            self._fWinInstallTimestampCA = True;
+        elif asArgs[iArg] == '--no-forced-win-install-timestamp-ca':
+            self._fWinForcedInstallTimestampCA = False;
+        elif asArgs[iArg] == '--forced-win-install-timestamp-ca':
+            self._fWinForcedInstallTimestampCA = True;
         else:
             return TestDriverBase.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -913,7 +914,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
-        fGreaterOrEqual61 = True; ## @todo Parse the version from the executable.
+        fGreaterOrEqual61 = True; ## @todo Parse the --version output from the executable.
+        fSupportsForceInstallTimestampCA = True; ## @todo Parse the --help output.
 
         # Gather installer arguments.
         asArgs = [sExe, '-vvvv', '--silent', '--logging'];
@@ -929,12 +931,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
         else: # Prior to 6.1 the location was hardcoded.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
 
-        if  fGreaterOrEqual61 \
-        and self._fWinInstallTimestampCA:
-            # Force installing the legacy timestamp CA so that we can test stuff on Windows hosts < Windows 10.
+        if fSupportsForceInstallTimestampCA and self._fWinForcedInstallTimestampCA:
             asArgs.extend(['--force-install-timestamp-ca']);
-        elif not fGreaterOrEqual61:
-            reporter.log('WARNING: We do not have support for the timestamp CA here! Testing might fail.');
 
         # Install it.
         fRc2, iRc = self._sudoExecuteSync(asArgs);
