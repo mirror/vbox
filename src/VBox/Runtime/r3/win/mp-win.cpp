@@ -34,6 +34,7 @@
 #include <iprt/mp.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/cpuset.h>
 #include <iprt/ldr.h>
