@@ -31,8 +31,10 @@
 #define LOG_GROUP RTLOGGROUP_THREAD
 #include <iprt/nt/nt-and-windows.h>
 
-#include <errno.h>
-#include <process.h>
+#ifndef IPRT_NO_CRT
+# include <errno.h>
+# include <process.h>
+#endif
 
 #include <iprt/thread.h>
 #include "internal/iprt.h"
@@ -83,7 +85,6 @@ static PFNOLEUNINITIALIZE volatile  g_pfnOleUninitialize = NULL;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_PROTO;
 static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName);
 DECLINLINE(void) rtThreadWinSetThreadName(PRTTHREADINT pThread, DWORD idThread);
 
@@ -347,7 +348,11 @@ static bool rtThreadNativeWinCoInitialize(unsigned fFlags)
 /**
  * Wrapper which unpacks the param stuff and calls thread function.
  */
+#ifndef IPRT_NO_CRT
 static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
+#else
+static DWORD __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
+#endif
 {
     DWORD           dwThreadId = GetCurrentThreadId();
     PRTTHREADINT    pThread = (PRTTHREADINT)pvArgs;
@@ -367,8 +372,13 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
 
     TlsSetValue(g_dwSelfTLS, NULL);
     rtThreadNativeUninitComAndOle();
+#ifndef IPRT_NO_CRT
     _endthreadex(rc);
-    return rc;
+    return rc; /* not reached */
+#else
+    for (;;)
+        ExitThread(rc);
+#endif
 }
 
 
@@ -388,8 +398,9 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
      * Create the thread.
      */
     pThread->hThread = (uintptr_t)INVALID_HANDLE_VALUE;
+#ifndef IPRT_NO_CRT
     unsigned    uThreadId = 0;
-    uintptr_t   hThread   = _beginthreadex(NULL, cbStack, rtThreadNativeMain, pThread, 0, &uThreadId);
+    uintptr_t   hThread   = _beginthreadex(NULL /*pSecAttrs*/, cbStack, rtThreadNativeMain, pThread, 0 /*fFlags*/, &uThreadId);
     if (hThread != 0 && hThread != ~0U)
     {
         pThread->hThread = hThread;
@@ -397,6 +408,17 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
         return VINF_SUCCESS;
     }
     return RTErrConvertFromErrno(errno);
+#else
+    DWORD  idThread = 0;
+    HANDLE hThread = CreateThread(NULL /*pSecAttrs*/, cbStack, rtThreadNativeMain, pThread, 0 /*fFlags*/, &idThread);
+    if (hThread != NULL)
+    {
+        pThread->hThread = (uintptr_t)hThread;
+        *pNativeThread = idThread;
+        return VINF_SUCCESS;
+    }
+    return RTErrConvertFromWin32(GetLastError());
+#endif
 }
 
 
