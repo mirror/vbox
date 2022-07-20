@@ -913,25 +913,30 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
-        # Install the new one.
+        fGreaterOrEqual61 = True; ## @todo Parse the version from the executable.
+
+        # Gather installer arguments.
         asArgs = [sExe, '-vvvv', '--silent', '--logging'];
         asArgs.extend(['--msiparams', 'REBOOT=ReallySuppress']);
         sVBoxInstallPath = os.environ.get('VBOX_INSTALL_PATH', None);
         if sVBoxInstallPath is not None:
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
-        fGreaterOrEqual61 = True; ## @todo Parse the version from the executable.
+
         if fGreaterOrEqual61:
             # We need to explicitly specify the location, otherwise the log would end up at a random location.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt');
             asArgs.extend(['--msi-log-file', sLogFile]);
         else: # Prior to 6.1 the location was hardcoded.
             sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
+
         if  fGreaterOrEqual61 \
         and self._fWinInstallTimestampCA:
             # Force installing the legacy timestamp CA so that we can test stuff on Windows hosts < Windows 10.
             asArgs.extend(['--force-install-timestamp-ca']);
         elif not fGreaterOrEqual61:
-            reporter.info('WARNING: We do not have support for the timestamp CA here! Testing might fail.');
+            reporter.log('WARNING: We do not have support for the timestamp CA here! Testing might fail.');
+
+        # Install it.
         fRc2, iRc = self._sudoExecuteSync(asArgs);
         if fRc2 is False:
             if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
@@ -939,9 +944,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
             else:
                 reporter.error('Installer failed, exit code: %s' % (iRc,));
             fRc = False;
+
+        # Add the installer log if present and wait for the network connection to be restore after the filter driver upset.
         if os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/installer', "Verbose MSI installation log file");
         self._waitForTestManagerConnectivity(30);
+
         return fRc;
 
     def _isProcessPresent(self, sName):
