@@ -1575,6 +1575,24 @@ HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T>
     return S_OK;
 }
 
+HRESULT SystemProperties::getSupportedRecordingFeatures(std::vector<RecordingFeature_T> &aSupportedRecordingFeatures)
+{
+#ifdef VBOX_WITH_RECORDING
+    static const RecordingFeature_T aRecordingFeatures[] =
+    {
+# ifdef VBOX_WITH_AUDIO_RECORDING
+        RecordingFeature_Audio,
+# endif
+        RecordingFeature_Video,
+    };
+    aSupportedRecordingFeatures.assign(aRecordingFeatures,
+                                       aRecordingFeatures + RT_ELEMENTS(aRecordingFeatures));
+#else  /* !VBOX_WITH_RECORDING */
+    aSupportedRecordingFeatures.clear();
+#endif /* VBOX_WITH_RECORDING */
+    return S_OK;
+}
+
 HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<RecordingAudioCodec_T> &aSupportedRecordingAudioCodecs)
 {
     static const RecordingAudioCodec_T aRecordingAudioCodecs[] =

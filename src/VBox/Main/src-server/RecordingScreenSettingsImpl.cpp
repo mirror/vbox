@@ -590,6 +590,41 @@ HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
     return S_OK;
 }
 
+HRESULT RecordingScreenSettings::getAudioDeadline(RecordingCodecDeadline_T *aDeadline)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aDeadline = m->bd->Audio.enmDeadline;
+
+    return S_OK;
+}
+
+HRESULT RecordingScreenSettings::setAudioDeadline(RecordingCodecDeadline_T aDeadline)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    if (!m->pParent->i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio deadline while recording is enabled"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->Audio.enmDeadline != aDeadline)
+    {
+        m->bd.backup();
+        m->bd->Audio.enmDeadline = aDeadline;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
+
+    return S_OK;
+}
+
 HRESULT RecordingScreenSettings::getAudioHz(ULONG *aHz)
 {
     AutoCaller autoCaller(this);
@@ -724,6 +759,41 @@ HRESULT RecordingScreenSettings::setVideoCodec(RecordingVideoCodec_T aCodec)
     {
         m->bd.backup();
         m->bd->Video.enmCodec = aCodec;
+
+        alock.release();
+
+        m->pParent->i_onSettingsChanged();
+    }
+
+    return S_OK;
+}
+
+HRESULT RecordingScreenSettings::getVideoDeadline(RecordingCodecDeadline_T *aDeadline)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aDeadline = m->bd->Video.enmDeadline;
+
+    return S_OK;
+}
+
+HRESULT RecordingScreenSettings::setVideoDeadline(RecordingCodecDeadline_T aDeadline)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    if (!m->pParent->i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change video deadline while recording is enabled"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->Video.enmDeadline != aDeadline)
+    {
+        m->bd.backup();
+        m->bd->Video.enmDeadline = aDeadline;
 
         alock.release();
 

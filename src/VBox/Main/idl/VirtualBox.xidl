@@ -5804,6 +5804,30 @@
   </enum>
 
   <enum
+    name="RecordingCodecDeadline"
+    uuid="53627ae1-31cf-4303-9cd5-0c22fd2637cf"
+    >
+    <desc>
+      Recording codec deadline.
+
+      How (and if at all) this deadline is being implemented depends on the codec being used.
+    </desc>
+
+    <const name="Default"               value="0">
+      <desc>Default deadline.</desc>
+    </const>
+    <const name="Realtime"              value="1">
+      <desc>Realtime quality, often resulting in poor / basic quality.</desc>
+    </const>
+    <const name="Good"                  value="2">
+      <desc>Balance between realtime and best deadline.</desc>
+    </const>
+    <const name="Best"                  value="3">
+      <desc>Best quality, slowest.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="RecordingVideoCodec"
     uuid="93791063-3e8c-4310-987c-ddb43ff03ffe"
     >
@@ -5886,7 +5910,7 @@
 
   <interface
     name="IRecordingScreenSettings" extends="$unknown"
-    uuid="678fbd9a-93af-42a7-7f13-79ad6ef1a18d"
+    uuid="92eb5328-c0b3-4ad2-ae25-75b12c52871f"
     wsmap="managed"
     rest="managed"
     >
@@ -5965,13 +5989,22 @@
 
     <attribute name="options" type="wstring">
       <desc>
-        This setting contains any additional recording options
-        required in comma-separated key=value format. This setting
-        cannot be changed while recording is enabled.
+        <para>This setting contains any additional recording options
+        required in comma-separated key=value format, which are currently not
+        represented via own attribtues.</para>
+        <para>Consider these options as experimental and mostly for codec-specific
+        settings, and are subject to change.</para>
+
+        This setting cannot be changed while recording is enabled.
 
         The following keys and their corresponding values are available:
 
         <table>
+          <tr>
+            <td>vc_enabled</td>
+            <td>Enables video recording when set to <pre>true</pre>, otherwise
+                set to <pre>false</pre> to disable.</td>
+          </tr>
           <tr>
             <td>ac_enabled</td>
             <td>Enables audio recording when set to <pre>true</pre>, otherwise
@@ -5993,6 +6026,13 @@
         <note>
           Only the Opus codec is supported currently.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="audioDeadline" type="RecordingCodecDeadline" default="Default">
+      <desc>
+        Determines the audio deadline to use.
+        This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
@@ -6027,6 +6067,13 @@
         <note>
           Only the VP8 codec is supported currently.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="videoDeadline" type="RecordingCodecDeadline" default="Default">
+      <desc>
+        Determines the video deadline to use.
+        This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
@@ -12344,7 +12391,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="a2a3be3d-664a-47e9-a4c5-add220d4ebb1"
+    uuid="3624830f-4ac4-404f-bc58-cf20ed8836b0"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12756,6 +12803,13 @@
     <attribute name="supportedExportOptions" type="ExportOptions" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="ExportOptions"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingFeatures" type="RecordingFeature" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="RecordingFeature"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
