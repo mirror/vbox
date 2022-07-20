@@ -6023,7 +6023,11 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 
                 PVMSVGA3DSURFACE pSurface;
                 rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
-                AssertRCReturnVoid(rc);
+                if (RT_FAILURE(rc))
+                {
+                    AssertMsgFailed(("sid = %u, rc = %Rrc\n", sid, rc));
+                    continue;
+                }
 
                 /* The guest might have invalidated the surface in which case pSurface->pBackendSurface is NULL. */
                 /** @todo This is not needed for "single DX device" mode. */

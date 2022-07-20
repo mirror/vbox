@@ -3401,7 +3401,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
     else
     {
         LogFunc(("Can't allocate buffer for context id %#x\n", CBCtx));
-        ASSERT_GUEST_FAILED();
+        AssertFailed();
         CBstatus = SVGA_CB_STATUS_QUEUE_FULL;
     }
 
