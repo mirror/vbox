@@ -34,9 +34,11 @@
 #include <iprt/nt/nt-and-windows.h>
 #include <Userenv.h>
 #include <tlhelp32.h>
-#include <process.h>
-#include <errno.h>
-#include <Strsafe.h>
+#ifndef IPRT_NO_CRT
+# include <process.h>
+# include <errno.h>
+# include <Strsafe.h>
+#endif
 #include <LsaLookup.h>
 #include <Lmcons.h>
 
