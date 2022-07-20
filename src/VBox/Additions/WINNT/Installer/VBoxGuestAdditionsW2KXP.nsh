@@ -173,7 +173,7 @@ Function W2K_Prepare
   StrCpy $bDoInstallCA "false" ; Set a default value
 
   ; If not explicitly specified, let the detected Windows version decide what to do.
-  ${If} $g_bInstallTimestampCA == 'unset':
+  ${If} $g_bInstallTimestampCA == "unset"
     ${If} $g_strWinVersion != "10"
       ; On guest OSes < Windows 10 we always go for the PreW10 drivers and install our legacy timestamp CA.
       StrCpy $bDoInstallCA "true"
