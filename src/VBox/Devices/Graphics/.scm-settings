@@ -68,6 +68,5 @@
 --filter-out-dirs  "/shaders/."
 
 /vmsvga_glext/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
-/vmsvga_glext-new/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 
 /DevVGATmpl.h:                          --no-fix-header-guards
