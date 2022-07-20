@@ -914,8 +914,11 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
-        fGreaterOrEqual61 = True; ## @todo Parse the --version output from the executable.
-        fSupportsForceTsCAInstall = True; ## @todo Parse the --help output.
+        # We need the help text to detect supported options below.
+        reporter.log('Executing: %s' % ([sExe, '--silent', '--help'], ));
+        reporter.flushall();
+        (iExitCode, sHelp, _) = utils.processOutputUnchecked([sExe, '--silent', '--help'], fIgnoreEncoding = True);
+        reporter.log('Exit code: %d, %u chars of help text' % (iExitCode, len(sHelp),));
 
         # Gather installer arguments.
         asArgs = [sExe, '-vvvv', '--silent', '--logging'];
@@ -924,14 +927,14 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if sVBoxInstallPath is not None:
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
 
-        if fGreaterOrEqual61:
-            # We need to explicitly specify the location, otherwise the log would end up at a random location.
-            sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt');
+        if sHelp.find("--msi-log-file") >= 0:
+            ## @todo why do we use the TMP dir?  This belongs in the scratch dir (which may be a lot faster than TMP).
+            sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt'); # Specify location to prevent a random one.
             asArgs.extend(['--msi-log-file', sLogFile]);
-        else: # Prior to 6.1 the location was hardcoded.
-            sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
+        else:
+            sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt'); # Hardcoded TMP location.
 
-        if fSupportsForceTsCAInstall and self._fWinForcedInstallTimestampCA:
+        if self._fWinForcedInstallTimestampCA and sHelp.find("--force-install-timestamp-ca") >= 0:
             asArgs.extend(['--force-install-timestamp-ca']);
 
         # Install it.
