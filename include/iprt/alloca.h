@@ -51,8 +51,15 @@
 
 #elif defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS)
 # include <iprt/types.h>
-void * _alloca(size_t);
+
+RT_C_DECLS_BEGIN
+# ifdef RT_ARCH_X86
+void * __cdecl _alloca(size_t);
+# else
+void          *_alloca(size_t);
+# endif
 # define alloca _alloca
+RT_C_DECLS_END
 
 #else
 # include <stdlib.h>
