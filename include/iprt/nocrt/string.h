@@ -54,7 +54,15 @@ char *  RT_NOCRT(strcat)(char *pszDst, const char *pszSrc);
 char *  RT_NOCRT(strncat)(char *pszDst, const char *pszSrc, size_t cch);
 size_t  RT_NOCRT(strlen)(const char *psz);
 size_t  RT_NOCRT(strnlen)(const char *psz, size_t cch);
+size_t  RT_NOCRT(strcspn)(const char *psz, const char *pszBreakChars);
+char *  RT_NOCRT(strpbrk)(const char *psz, const char *pszBreakChars);
 char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
+
+size_t  RT_NOCRT(wcslen)(const wchar_t *pwsz);
+wchar_t *RT_NOCRT(wcscat)(wchar_t *pwszDst, const wchar_t *pwszSrc);
+wchar_t *RT_NOCRT(wcschr)(const wchar_t *pwszDst, wchar_t wc);
+wchar_t *RT_NOCRT(wcscpy)(wchar_t *pwszDst, const wchar_t *pwszSrc);
+int     RT_NOCRT(_wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 # define memchr   RT_NOCRT(memchr)
@@ -64,6 +72,7 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 # define memrchr  RT_NOCRT(memrchr)
 # define memmove  RT_NOCRT(memmove)
 # define memset   RT_NOCRT(memset)
+
 # define strcat   RT_NOCRT(strcat)
 # define strncat  RT_NOCRT(strncat)
 # define strchr   RT_NOCRT(strchr)
@@ -77,7 +86,15 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 # define strncat  RT_NOCRT(strncat)
 # define strlen   RT_NOCRT(strlen)
 # define strnlen  RT_NOCRT(strnlen)
+# define strcspn  RT_NOCRT(strcspn)
+# define strpbrk  RT_NOCRT(strpbrk)
 # define strstr   RT_NOCRT(strstr)
+
+# define wcslen   RT_NOCRT(wcslen)
+# define wcscat   RT_NOCRT(wcscat)
+# define wcschr   RT_NOCRT(wcschr)
+# define wcscpy   RT_NOCRT(wcscpy)
+# define _wcsicmp RT_NOCRT(_wcsicmp)
 #endif
 
 RT_C_DECLS_END
