@@ -61,7 +61,6 @@
 # include <OpenGL/gl3ext.h>
 # define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
 # include <OpenGL/gl.h>
-# include <OpenGL/glext.h>
 # include "DevVGA-SVGA3d-cocoa.h"
 /* work around conflicting definition of GLhandleARB in VMware's glext.h */
 //#define GL_ARB_shader_objects
@@ -69,6 +68,7 @@
 typedef void (APIENTRYP PFNGLFOGCOORDPOINTERPROC) (GLenum type, GLsizei stride, const GLvoid *pointer);
 typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, GLint *params);
+# if 0
 # define GL_RGBA_S3TC 0x83A2
 # define GL_ALPHA8_EXT 0x803c
 # define GL_LUMINANCE8_EXT 0x8040
@@ -76,17 +76,23 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 # define GL_LUMINANCE4_ALPHA4_EXT 0x8043
 # define GL_LUMINANCE8_ALPHA8_EXT 0x8045
 # define GL_INT_2_10_10_10_REV 0x8D9F
+# endif
 
 #else
 # include <X11/Xlib.h>
 # include <X11/Xatom.h>
 # include <GL/gl.h>
 # include <GL/glx.h>
-# include <GL/glext.h>
 # define VBOX_VMSVGA3D_GL_HACK_LEVEL 0x103
 #endif
 
 #ifdef VMSVGA3D_OPENGL
+# ifndef __glext_h__
+#  undef GL_GLEXT_VERSION    /** @todo r=bird: We include GL/glext.h above which also defines this and we'll end up with
+                              * a clash if the system one does not use the same header guard as ours.  So, I'm wondering
+                              * whether this include is really needed, and if it is, whether we should use a unique header
+                              * guard macro on it, so we'll have the same problems everywhere... */
+# endif
 # include "vmsvga_glext/glext.h"
 # include "shaderlib/shaderlib.h"
 #endif
