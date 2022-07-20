@@ -2250,6 +2250,34 @@ RuntimeGuestR3_SOURCES.win.x86               += \
 	r3/win/vcc-fakes-shell32.cpp \
 	r3/win/vcc-fakes-shell32-A.asm \
 
+ifdef VBOX_WITH_NOCRT_STATIC
+ RuntimeGuestR3_SOURCES +=
+ RuntimeGuestR3_SOURCES.x86 += \
+ 	common/string/memcpy.asm \
+ 	common/string/memchr.asm \
+ 	common/string/memcmp.asm \
+ 	common/string/memmove.asm \
+ 	common/string/memset.asm \
+ 	common/string/strlen.asm \
+ 	common/string/strchr.asm \
+ 	common/string/strcmp.asm \
+ 	common/string/strncmp.asm
+ RuntimeGuestR3_SOURCES.amd64 += \
+ 	common/string/memcpy.asm \
+ 	common/string/memchr.asm \
+ 	common/string/memcmp.asm \
+ 	common/string/memmove.asm \
+ 	common/string/memset.asm \
+ 	common/string/strlen.asm \
+ 	common/string/strchr.asm \
+ 	common/string/strcmp.asm \
+ 	common/string/strncmp.asm
+ RuntimeR3NoCrt_SOURCES.win += \
+ 	r3/win/nocrt-startup-exe-win.cpp \
+ 	r3/win/nocrt-alloc-win.cpp \
+ 	r3/win/nocrt-streams-win.cpp
+endif
+
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
