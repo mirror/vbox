@@ -837,9 +837,9 @@ VBOX_WITH_RECORDING = 1
 # Enable VPX (VP8 / VP9 codec), required for video capturing.
 VBOX_WITH_LIBVPX = 1
 # Enables audio support for recording (depends on VBOX_WITH_RECORDING).
-VBOX_WITH_AUDIO_RECORDING = 1
+VBOX_WITH_AUDIO_RECORDING =
 # Enables libopus (Opus), required for encoding audio into the recorded data.
-VBOX_WITH_LIBOPUS = 1
+VBOX_WITH_LIBOPUS =
 # Enable SEE (+ AVX) optimizations for Opus.
 VBOX_WITH_OPUS_SSE = 1
 # Enable shared folders

@@ -415,7 +415,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
                         vrc = vrc2;
                 }
             }
-#endif
+#endif /* VBOX_WITH_LIBVPX */
             pBlocks->List.pop_front();
             delete pBlock;
         }
@@ -487,7 +487,9 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 
         LogFunc(("Common blocks: %zu\n", mapBlocksCommon.size()));
     }
-#endif
+#else
+    RT_NOREF(mapBlocksCommon);
+#endif /* VBOX_WITH_AUDIO_RECORDING */
 
     unlock();
 
