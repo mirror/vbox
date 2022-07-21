@@ -123,7 +123,11 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
             # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            oVM = oVBox.openMachine(sSettingsFile)
+            if self.fpApiVer >= 7.0:
+                # Needs a password parameter since 7.0.
+                oVM = oVBox.openMachine(sSettingsFile, "")
+            else:
+                oVM = oVBox.openMachine(sSettingsFile)
             ## @todo r=klaus: count known hard disk images, should be cImages
 
             reporter.log('unregistering VM')
@@ -195,7 +199,11 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
             # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            oVM = oVBox.openMachine(sSettingsFile)
+            if self.fpApiVer >= 7.0:
+                # Needs a password parameter since 7.0.
+                oVM = oVBox.openMachine(sSettingsFile, "")
+            else:
+                oVM = oVBox.openMachine(sSettingsFile)
             reporter.log('API reports %i snapshots' % (oVM.snapshotCount))
             fRc = fRc and oVM.snapshotCount == cSnapshots
 
@@ -218,4 +226,3 @@ if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from tdApi1 import tdApi1;      # pylint: disable=relative-import
     sys.exit(tdApi1([SubTstDrvTreeDepth1]).main(sys.argv))
-
