@@ -139,9 +139,6 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
-    /** Repopulates auth type combo-box. */
-    void repopulateComboAuthType();
-
     /** Updates widget availability. */
     void updateWidgetAvailability();
     /** Updates recording file size hint. */
@@ -159,29 +156,34 @@ private:
     /** @name Values
      * @{ */
         /** Holds whether feature is enabled. */
-        bool                           m_fFeatureEnabled;
+        bool  m_fFeatureEnabled;
+
         /** Holds whether options are available. */
-        bool                           m_fOptionsAvailable;
+        bool  m_fOptionsAvailable;
         /** Holds whether screen options are available. */
-        bool                           m_fScreenOptionsAvailable;
+        bool  m_fScreenOptionsAvailable;
+
         /** Holds the mode. */
         UISettingsDefs::RecordingMode  m_enmMode;
+
         /** Holds the folder. */
-        QString                        m_strFolder;
+        QString  m_strFolder;
         /** Holds the file path. */
-        QString                        m_strFilePath;
+        QString  m_strFilePath;
+
         /** Holds the frame width. */
-        int                            m_iFrameWidth;
+        int  m_iFrameWidth;
         /** Holds the frame height. */
-        int                            m_iFrameHeight;
+        int  m_iFrameHeight;
         /** Holds the frame rate. */
-        int                            m_iFrameRate;
+        int  m_iFrameRate;
         /** Holds the bit rate. */
-        int                            m_iBitRate;
+        int  m_iBitRate;
         /** Holds the audio quality rate. */
-        int                            m_iAudioQualityRate;
+        int  m_iAudioQualityRate;
+
         /** Holds the screens. */
-        QVector<BOOL>                  m_screens;
+        QVector<BOOL>  m_screens;
     /** @} */
 
     /** @name Widgets

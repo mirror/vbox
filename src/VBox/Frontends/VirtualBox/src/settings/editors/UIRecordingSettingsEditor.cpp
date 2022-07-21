@@ -41,7 +41,7 @@ UIRecordingSettingsEditor::UIRecordingSettingsEditor(QWidget *pParent /* = 0 */)
     , m_fFeatureEnabled(false)
     , m_fOptionsAvailable(false)
     , m_fScreenOptionsAvailable(false)
-    , m_enmMode(UISettingsDefs::RecordingMode_VideoAudio)
+    , m_enmMode(UISettingsDefs::RecordingMode_Max)
     , m_iFrameWidth(0)
     , m_iFrameHeight(0)
     , m_iFrameRate(0)
@@ -742,27 +742,27 @@ void UIRecordingSettingsEditor::prepareWidgets()
                             pLayoutRecordingAudioQuality->addWidget(m_pSliderAudioQuality);
                         }
                         /* Prepare recording audio quality scale layout: */
-                        QHBoxLayout *pLayoutRecordingAudioQialityScale = new QHBoxLayout;
-                        if (pLayoutRecordingAudioQialityScale)
+                        QHBoxLayout *pLayoutRecordingAudioQualityScale = new QHBoxLayout;
+                        if (pLayoutRecordingAudioQualityScale)
                         {
-                            pLayoutRecordingAudioQialityScale->setContentsMargins(0, 0, 0, 0);
+                            pLayoutRecordingAudioQualityScale->setContentsMargins(0, 0, 0, 0);
 
                             /* Prepare recording audio quality min label: */
                             m_pLabelAudioQualityMin = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMin)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMin);
-                            pLayoutRecordingAudioQialityScale->addStretch();
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMin);
+                            pLayoutRecordingAudioQualityScale->addStretch();
                             /* Prepare recording audio quality med label: */
                             m_pLabelAudioQualityMed = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMed)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMed);
-                            pLayoutRecordingAudioQialityScale->addStretch();
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMed);
+                            pLayoutRecordingAudioQualityScale->addStretch();
                             /* Prepare recording audio quality max label: */
                             m_pLabelAudioQualityMax = new QLabel(m_pWidgetAudioQualitySettings);
                             if (m_pLabelAudioQualityMax)
-                                pLayoutRecordingAudioQialityScale->addWidget(m_pLabelAudioQualityMax);
+                                pLayoutRecordingAudioQualityScale->addWidget(m_pLabelAudioQualityMax);
 
-                            pLayoutRecordingAudioQuality->addLayout(pLayoutRecordingAudioQialityScale);
+                            pLayoutRecordingAudioQuality->addLayout(pLayoutRecordingAudioQualityScale);
                         }
                     }
 
