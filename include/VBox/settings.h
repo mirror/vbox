@@ -625,6 +625,10 @@ typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
 
 /**
  * Recording settings for a single screen (e.g. virtual monitor).
+ *
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
  */
 struct RecordingScreenSettings
 {
@@ -640,6 +644,10 @@ struct RecordingScreenSettings
 
     static const char *getDefaultOptions(void);
 
+    static int featuresFromString(const com::Utf8Str &strFeatures, RecordingFeatureMap &featureMap);
+
+    static void featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures);
+
     bool operator==(const RecordingScreenSettings &d) const;
 
     /** Whether to record this screen or not. */
@@ -647,7 +655,7 @@ struct RecordingScreenSettings
     /** Destination to record to. */
     RecordingDestination_T enmDest;
     /** Which features are enable or not. */
-    RecordingFeatureMap    featureMap; /** @todo Implement with next settings version bump. */
+    RecordingFeatureMap    featureMap; // requires settings version 1.19 (VirtualBox 7.0)
     /** Maximum time (in s) to record. If set to 0, no time limit is set. */
     uint32_t               ulMaxTimeS; // requires settings version 1.14 (VirtualBox 4.3)
     /** Options string for hidden / advanced / experimental features.
@@ -710,6 +718,10 @@ typedef std::map<uint32_t, RecordingScreenSettings> RecordingScreenSettingsMap;
 
 /**
  * Common recording settings, shared among all per-screen recording settings.
+ *
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
  */
 struct RecordingCommonSettings
 {

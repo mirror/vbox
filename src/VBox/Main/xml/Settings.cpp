@@ -2789,6 +2789,54 @@ const char *RecordingScreenSettings::getDefaultOptions(void)
 }
 
 /**
+ * Returns a recording settings feature map from a given string.
+ *
+ * @returns VBox status code.
+ * @param   strFeatures         String of features to convert.
+ * @param   featureMap          Where to return the converted features on success.
+ */
+/* static */
+int RecordingScreenSettings::featuresFromString(const com::Utf8Str &strFeatures, RecordingFeatureMap &featureMap)
+{
+    featureMap.clear();
+
+    RTCList<RTCString> lstFeatures = strFeatures.split(" ");
+    for (size_t i = 0; i < lstFeatures.size(); i++)
+    {
+        if (lstFeatures.at(i).compare("video", RTCString::CaseInsensitive))
+            featureMap[RecordingFeature_Video] = true;
+        else if (lstFeatures.at(i).compare("audio", RTCString::CaseInsensitive))
+            featureMap[RecordingFeature_Audio] = true;
+        /* ignore everything else */
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Converts a feature map to a serializable string.
+ *
+ * @param   featureMap          Feature map to convert.
+ * @param   strFeatures         Where to return the features converted as a string.
+ */
+/* static */
+void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures)
+{
+    RecordingFeatureMap::const_iterator itFeature = featureMap.begin();
+    while (itFeature != featureMap.end())
+    {
+        if (itFeature->first == RecordingFeature_Video && itFeature->second)
+            strFeatures += "video ";
+        if (itFeature->first == RecordingFeature_Audio && itFeature->second)
+            strFeatures += "audio ";
+        strFeatures += " ";
+
+        ++itFeature;
+    }
+    strFeatures.strip();
+}
+
+/**
  * Applies the default settings.
  */
 void RecordingScreenSettings::applyDefaults(void)
@@ -6018,6 +6066,9 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             RecordingScreenSettings &screenSettings = recording.mapScreens[idxScreen];
 
             (*itScreen)->getAttributeValue("enabled",   screenSettings.fEnabled);
+            Utf8Str strFeatures;
+            (*itScreen)->getAttributeValue("featuresEnabled", strFeatures);
+            RecordingScreenSettings::featuresFromString(strFeatures, screenSettings.featureMap);
             (*itScreen)->getAttributeValue("maxTimeS",  screenSettings.ulMaxTimeS);
             (*itScreen)->getAttributeValue("options",   screenSettings.strOptions);
             (*itScreen)->getAttributeValue("dest",      (uint32_t &)screenSettings.enmDest);
@@ -8053,6 +8104,9 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
 
                 pelmScreen->setAttribute("id",                  itScreen->first); /* The key equals the monitor ID. */
                 pelmScreen->setAttribute("enabled",             itScreen->second.fEnabled);
+                com::Utf8Str strFeatures;
+                RecordingScreenSettings::featuresToString(itScreen->second.featureMap, strFeatures);
+                pelmScreen->setAttribute("featuresEnabled",     strFeatures);
                 if (itScreen->second.ulMaxTimeS)
                     pelmScreen->setAttribute("maxTimeS",        itScreen->second.ulMaxTimeS);
                 if (itScreen->second.strOptions.isNotEmpty())
