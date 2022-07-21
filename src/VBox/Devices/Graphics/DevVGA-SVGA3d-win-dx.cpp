@@ -916,6 +916,27 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
                                                 &pDevice,
                                                 &pDXDevice->FeatureLevel,
                                                 &pImmediateContext);
+#ifdef DEBUG
+    if (FAILED(hr))
+    {
+        /* Device creation may fail because _DEBUG flag requires "D3D11 SDK Layers for Windows 10" ("Graphics Tools"):
+         *   Settings/System/Apps/Optional features/Add a feature/Graphics Tools
+         * Retry without the flag.
+         */
+        Flags &= ~D3D11_CREATE_DEVICE_DEBUG;
+        hr = pBackend->pfnD3D11CreateDevice(pAdapter,
+                                            D3D_DRIVER_TYPE_HARDWARE,
+                                            NULL,
+                                            Flags,
+                                            s_aFeatureLevels,
+                                            RT_ELEMENTS(s_aFeatureLevels),
+                                            D3D11_SDK_VERSION,
+                                            &pDevice,
+                                            &pDXDevice->FeatureLevel,
+                                            &pImmediateContext);
+    }
+#endif
+
     if (SUCCEEDED(hr))
     {
         LogRel(("VMSVGA: Feature level %#x\n", pDXDevice->FeatureLevel));
