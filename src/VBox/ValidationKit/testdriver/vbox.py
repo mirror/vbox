@@ -805,7 +805,11 @@ class VirtualBoxEventHandlerBase(EventHandlerBase):
         elif eType == vboxcon.VBoxEventType_OnGuestPropertyChanged:
             try:
                 oEvtIt = self.oVBoxMgr.queryInterface(oEvtBase, 'IGuestPropertyChangedEvent');
-                return self.onGuestPropertyChange(oEvtIt.machineId, oEvtIt.name, oEvtIt.value, oEvtIt.flags, oEvtIt.fWasDeleted);
+                if hasattr(oEvtIt, 'fWasDeleted'): # Since 7.0 we have a dedicated flag
+                    fWasDeleted = oEvtIt.fWasDeleted;
+                else:
+                    fWasDeleted = False; # Don't indicate deletion here -- there can be empty guest properties.
+                return self.onGuestPropertyChange(oEvtIt.machineId, oEvtIt.name, oEvtIt.value, oEvtIt.flags, fWasDeleted);
             except:
                 reporter.logXcpt();
         ## @todo implement the other events.
