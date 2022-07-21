@@ -54,9 +54,11 @@ namespace UISettingsDefs
     /** Recording mode enum is used in Display setting page to determine the recording mode. */
     enum RecordingMode
     {
-        RecordingMode_VideoAudio = 0,
-        RecordingMode_VideoOnly  = 1,
-        RecordingMode_AudioOnly  = 2
+        RecordingMode_None       = 0,
+        RecordingMode_VideoAudio = 1,
+        RecordingMode_VideoOnly  = 2,
+        RecordingMode_AudioOnly  = 3,
+        RecordingMode_Max        = 4
     };
 
     /** Determines configuration access level for passed @a enmSessionState and @a enmMachineState. */

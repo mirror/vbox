@@ -2775,6 +2775,7 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
     QString strResult;
     switch (enmRecordingMode)
     {
+        case UISettingsDefs::RecordingMode_None:       strResult = QApplication::translate("UICommon", "None", "UISettingsDefs::RecordingMode"); break;
         case UISettingsDefs::RecordingMode_VideoAudio: strResult = QApplication::translate("UICommon", "Video/Audio", "UISettingsDefs::RecordingMode"); break;
         case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("UICommon", "Video Only",  "UISettingsDefs::RecordingMode"); break;
         case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("UICommon", "Audio Only",  "UISettingsDefs::RecordingMode"); break;
@@ -2785,18 +2786,6 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
         }
     }
     return strResult;
-}
-
-/* UISettingsDefs::RecordingMode <= QString: */
-template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &strRecordingMode)
-{
-    if (strRecordingMode.compare("Video/Audio", Qt::CaseInsensitive) == 0)
-        return UISettingsDefs::RecordingMode_VideoAudio;
-    if (strRecordingMode.compare("Video Only", Qt::CaseInsensitive) == 0)
-        return UISettingsDefs::RecordingMode_VideoOnly;
-    if (strRecordingMode.compare("Audio Only", Qt::CaseInsensitive) == 0)
-        return UISettingsDefs::RecordingMode_AudioOnly;
-    return UISettingsDefs::RecordingMode_VideoAudio;
 }
 
 template<> QString toInternalString(const VMActivityOverviewColumn &enmVMActivityOverviewColumn)
