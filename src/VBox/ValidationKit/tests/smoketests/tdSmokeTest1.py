@@ -146,7 +146,7 @@ class tdSmokeTest1(vbox.TestDriver):
 
         # Simple test.
         self.logVmInfo(oVM);
-        # Try waiting for a bit longer (5 minutes) until the CD is available to avoid running into timeouts.
+        # Try waiting for a bit longer (15 minutes) until the CD is available to avoid running into timeouts.
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True, cMsCdWait = 15 * 60 * 1000);
         if oSession is not None:
             self.addTask(oTxsSession);
@@ -161,4 +161,3 @@ class tdSmokeTest1(vbox.TestDriver):
 
 if __name__ == '__main__':
     sys.exit(tdSmokeTest1().main(sys.argv));
-
