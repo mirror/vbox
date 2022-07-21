@@ -123,7 +123,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
             # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            if self.fpApiVer >= 7.0:
+            if self.oTstDrv.fpApiVer >= 7.0:
                 # Needs a password parameter since 7.0.
                 oVM = oVBox.openMachine(sSettingsFile, "")
             else:
@@ -199,7 +199,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
             # re-register to test loading of settings
             reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            if self.fpApiVer >= 7.0:
+            if self.oTstDrv.fpApiVer >= 7.0:
                 # Needs a password parameter since 7.0.
                 oVM = oVBox.openMachine(sSettingsFile, "")
             else:
