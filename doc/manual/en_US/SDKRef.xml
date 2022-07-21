@@ -4150,6 +4150,10 @@ AuthResult AUTHCALL AuthEntry(
           <link linkend="IAudioSettings">IAudioSettings</link> for more information.</para>
         </listitem>
 
+        <listitem><para>The <link linkend="IVirtualBox__openMachine">IVirtualBox::openMachine</link> call now
+          requires an additional password parameter. If the machine is not encrypted the parameter is ignored.</para>
+        </listitem>
+
         <listitem><para>When a new VM is being created, the default audio driver will be now
           <link linkend="AudioDriverType__Default">AudioDriverType_Default</link>. This driver
           type will automatically choose the best audio driver (backend) for the host OS &VBOX_PRODUCT;
