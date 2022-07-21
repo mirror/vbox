@@ -139,6 +139,11 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
+    /** Populates mode combo-box. */
+    void populateComboMode();
+
+    /** Updates widget visibility. */
+    void updateWidgetVisibility();
     /** Updates widget availability. */
     void updateWidgetAvailability();
     /** Updates recording file size hint. */
@@ -163,8 +168,10 @@ private:
         /** Holds whether screen options are available. */
         bool  m_fScreenOptionsAvailable;
 
+        /** Holds the list of supported modes. */
+        QVector<UISettingsDefs::RecordingMode>  m_supportedValues;
         /** Holds the mode. */
-        UISettingsDefs::RecordingMode  m_enmMode;
+        UISettingsDefs::RecordingMode           m_enmMode;
 
         /** Holds the folder. */
         QString  m_strFolder;

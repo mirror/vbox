@@ -31,6 +31,9 @@
 #include "UIFilmContainer.h"
 #include "UIRecordingSettingsEditor.h"
 
+/* COM includes: */
+#include "CSystemProperties.h"
+
 /* Defines: */
 #define VIDEO_CAPTURE_BIT_RATE_MIN 32
 #define VIDEO_CAPTURE_BIT_RATE_MAX 2048
@@ -131,12 +134,8 @@ void UIRecordingSettingsEditor::setMode(UISettingsDefs::RecordingMode enmMode)
     if (m_enmMode != enmMode)
     {
         m_enmMode = enmMode;
-        if (m_pComboMode)
-        {
-            const int iIndex = m_pComboMode->findData(QVariant::fromValue(enmMode));
-            if (iIndex != -1)
-                m_pComboMode->setCurrentIndex(iIndex);
-        }
+        populateComboMode();
+        updateWidgetVisibility();
     }
 }
 
@@ -819,6 +818,60 @@ void UIRecordingSettingsEditor::prepareConnections()
             this, &UIRecordingSettingsEditor::sltHandleVideoBitRateSliderChange);
     connect(m_pSpinboxVideoQuality, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIRecordingSettingsEditor::sltHandleVideoBitRateSpinboxChange);
+}
+
+void UIRecordingSettingsEditor::populateComboMode()
+{
+    if (m_pComboMode)
+    {
+        /* Clear combo first of all: */
+        m_pComboMode->clear();
+
+        /* Load currently supported recording features: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        int iSupportedFlag = 0;
+        foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
+            iSupportedFlag |= enmFeature;
+        m_supportedValues.clear();
+        if (!iSupportedFlag)
+            m_supportedValues << UISettingsDefs::RecordingMode_None;
+        else
+        {
+            if (   (iSupportedFlag & KRecordingFeature_Video)
+                && (iSupportedFlag & KRecordingFeature_Audio))
+                m_supportedValues << UISettingsDefs::RecordingMode_VideoAudio;
+            if (iSupportedFlag & KRecordingFeature_Video)
+                m_supportedValues << UISettingsDefs::RecordingMode_VideoOnly;
+            if (iSupportedFlag & KRecordingFeature_Audio)
+                m_supportedValues << UISettingsDefs::RecordingMode_AudioOnly;
+        }
+
+        /* Make sure requested value if sane is present as well: */
+        if (   m_enmMode != UISettingsDefs::RecordingMode_Max
+            && !m_supportedValues.contains(m_enmMode))
+            m_supportedValues.prepend(m_enmMode);
+
+        /* Update combo with all the supported values: */
+        foreach (const UISettingsDefs::RecordingMode &enmType, m_supportedValues)
+            m_pComboMode->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pComboMode->findData(QVariant::fromValue(m_enmMode));
+        if (iIndex != -1)
+            m_pComboMode->setCurrentIndex(iIndex);
+
+        /* Retranslate finally: */
+        retranslateUi();
+    }
+}
+
+void UIRecordingSettingsEditor::updateWidgetVisibility()
+{
+    /* Only the Audio stuff can be totally disabled, so we will add the code for hiding Audio stuff only: */
+    const bool fAudioSettingsVisible =    m_supportedValues.isEmpty()
+                                       || m_supportedValues.contains(UISettingsDefs::RecordingMode_AudioOnly);
+    m_pWidgetAudioQualitySettings->setVisible(fAudioSettingsVisible);
+    m_pLabelAudioQuality->setVisible(fAudioSettingsVisible);
 }
 
 void UIRecordingSettingsEditor::updateWidgetAvailability()
