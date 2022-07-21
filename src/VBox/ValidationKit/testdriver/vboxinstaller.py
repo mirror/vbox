@@ -928,8 +928,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
 
         if sHelp.find("--msi-log-file") >= 0:
-            ## @todo why do we use the TMP dir?  This belongs in the scratch dir (which may be a lot faster than TMP).
-            sLogFile = os.path.join(tempfile.gettempdir(), 'VBoxInstallLog.txt'); # Specify location to prevent a random one.
+            sLogFile = os.path.join(self.sScratchPath, 'VBoxInstallLog.txt'); # Specify location to prevent a random one.
             asArgs.extend(['--msi-log-file', sLogFile]);
         else:
             sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt'); # Hardcoded TMP location.
