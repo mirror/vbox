@@ -638,7 +638,7 @@ struct RecordingScreenSettings
 
     void applyDefaults(void);
 
-    bool areDefaultSettings(void) const;
+    bool areDefaultSettings(uint32_t idScreen = UINT32_MAX) const;
 
     bool isFeatureEnabled(RecordingFeature_T enmFeature) const;
 

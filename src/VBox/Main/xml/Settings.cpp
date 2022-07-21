@@ -2869,10 +2869,18 @@ void RecordingScreenSettings::applyDefaults(void)
 
 /**
  * Check if all settings have default values.
+ *
+ * @returns \c true if default, \c false if not.
+ * @param   idScreen            Screen ID of screen settings to check.
+ *                              Set to UINT32_MAX if not specified / optional.
  */
-bool RecordingScreenSettings::areDefaultSettings(void) const
+bool RecordingScreenSettings::areDefaultSettings(uint32_t idScreen /* = UINT32_MAX */) const
 {
-    return    fEnabled                                        == false
+    return    (   fEnabled                                    == false
+               /* Screen 0 is special: There we ALWAYS enable recording by default. */
+               || (   idScreen                                == 0
+                   && fEnabled                                == true)
+              )
            && enmDest                                         == RecordingDestination_File
            && ulMaxTimeS                                      == 0
            && strOptions                                      == RecordingScreenSettings::getDefaultOptions()
@@ -2994,6 +3002,13 @@ void RecordingSettings::applyDefaults(void)
     {
         /* Always add screen 0 to the default configuration. */
         RecordingScreenSettings screenSettings;
+
+        /* Make sure to enable this per default.
+         * Otherwise enabling recording without any screen enabled at all makes no sense.
+         *
+         * Note: When tweaking this, make sure to also alter RecordingScreenSettings::areDefaultSettings(). */
+        screenSettings.fEnabled = true;
+
         mapScreens[0] = screenSettings;
     }
     catch (std::bad_alloc &)
@@ -3015,7 +3030,7 @@ bool RecordingSettings::areDefaultSettings(void) const
     RecordingScreenSettingsMap::const_iterator itScreen = mapScreens.begin();
     while (itScreen != mapScreens.end())
     {
-        if (!itScreen->second.areDefaultSettings())
+        if (!itScreen->second.areDefaultSettings(itScreen->first /* Screen ID */))
             return false;
         ++itScreen;
     }
