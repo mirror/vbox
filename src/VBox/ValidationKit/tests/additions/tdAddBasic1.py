@@ -403,15 +403,22 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         for sGstFile, _ in aasLogFiles:
             self.txsRmFile(oSession, oTxsSession, sGstFile, 10 * 1000, fIgnoreErrors = True);
 
-        #
-        # The actual install.
         # Enable installing the optional auto-logon modules (VBoxGINA/VBoxCredProv).
         # Also tell the installer to produce the appropriate log files.
+        sExe   = '${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix;
+        asArgs = [ sExe, '/S', '/l', '/with_autologon' ];
+
+        # As we don't have a console command line to parse for the Guest Additions installer (only a message box) and
+        # unknown / unsupported parameters get ignored with silent installs anyway, we safely can add the following parameter(s)
+        # even if older Guest Addition installers might not support those.
+        if self.fpApiVer >= 6.1:
+            asArgs.extend([ '/install_timestamp_ca' ]);
+
+        #
+        # Do the actual install.
         #
         fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000,
-                               '${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix,
-                              ('${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix, '/S', '/l', '/with_autologon'),
-                              fCheckSessionStatus = True);
+                              sExe, asArgs, fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
         # from the guest. Note: There won't be a install_ui.log because of the silent installation.
