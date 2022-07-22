@@ -15,7 +15,7 @@
   <para>
     &product-name; is a cross-platform virtualization application. What
     does that mean? For one thing, it installs on your existing Intel or
-    AMD-based computers, whether they are running Windows, Mac OS X,
+    AMD-based computers, whether they are running Windows, macOS,
     Linux, or Oracle Solaris operating systems (OSes). Secondly, it
     extends the capabilities of your existing computer so that it can
     run multiple OSes, inside multiple virtual machines, at the same
@@ -35,12 +35,12 @@
 
   <para>
     The following screenshot shows how &product-name;, installed on an
-    Apple Mac OS X computer, is running Windows Server 2016 in a virtual
+    Apple Mac computer, is running Windows Server 2016 in a virtual
     machine window.
   </para>
 
   <figure id="fig-win2016-intro">
-    <title>Windows Server 2016 Virtual Machine, Displayed on a Mac OS X Host</title>
+    <title>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</title>
     <mediaobject>
       <imageobject>
         <imagedata align="center" fileref="images/vm-vista-running.png"
@@ -167,7 +167,7 @@
           <emphasis role="bold">Host operating system (host
           OS).</emphasis> This is the OS of the physical computer on
           which &product-name; was installed. There are versions of
-          &product-name; for Windows, Mac OS X, Linux, and Oracle
+          &product-name; for Windows, macOS, Linux, and Oracle
           Solaris hosts. See <xref linkend="hostossupport" />.
         </para>
 
@@ -540,45 +540,14 @@
 
           <listitem>
             <para>
-              Windows 10 RTM (1507 / 2015 LTSB) build 10240
+              Windows 10
             </para>
           </listitem>
 
           <listitem>
-            <para>
-              Windows 10 Anniversary Update (1607 / 2016 LTSB) build
-              14393
-            </para>
-          </listitem>
-
           <listitem>
             <para>
-              Windows 10 Fall Creators Update (1709) build 16299
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 April 2018 Update (1803) build 17134
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 October 2018 Update (1809 / 2019 LTSC) build
-              17763
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 May 2019 Update (19H1 / 1903) build 18362
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 November 2019 Update (19H2 / 1909) build 18363
+              Windows 11 21H2
             </para>
           </listitem>
 
@@ -606,31 +575,37 @@
             </para>
           </listitem>
 
+          <listitem>
+            <para>
+              Windows Server 2022
+            </para>
+          </listitem>
+
         </itemizedlist>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Mac OS X hosts (64-bit):</emphasis>
+          <emphasis role="bold">macOS hosts (64-bit):</emphasis>
         </para>
 
         <itemizedlist>
 
           <listitem>
             <para>
-              10.13 (High Sierra)
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              10.14 (Mojave)
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               10.15 (Catalina)
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              11 (Big Sur)
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              12 (Monterey)
             </para>
           </listitem>
 
@@ -652,13 +627,13 @@
 
           <listitem>
             <para>
-              Ubuntu 18.04 LTS, 19.03 and 19.10
+              Ubuntu 18.04 LTS, 20.04 LTS and 22.04
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Debian GNU/Linux 9 ("Stretch") and 10 ("Buster")
+              Debian GNU/Linux 10 ("Buster") and 11 ("Bullseye")
             </para>
           </listitem>
 
@@ -670,13 +645,13 @@
 
           <listitem>
             <para>
-              CentOS/Red Hat Enterprise Linux 6, 7 and 8
+              CentOS/Red Hat Enterprise Linux 7 and 8
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Fedora 30 and 31
+              Fedora 35 and 36
             </para>
           </listitem>
 
@@ -694,7 +669,7 @@
 
           <listitem>
             <para>
-              openSUSE Leap 15.1
+              openSUSE Leap 15.3
             </para>
           </listitem>
 
@@ -725,7 +700,7 @@
 
           <listitem>
             <para>
-              Oracle Solaris 11
+              Oracle Solaris 11.4
             </para>
           </listitem>
 
@@ -903,7 +878,7 @@
 
       <listitem>
         <para>
-          On a Mac OS X host, in the Finder, double-click on the
+          On a macOS host, in the Finder, double-click on the
           <emphasis role="bold">VirtualBox</emphasis> item in the
           Applications folder. You may want to drag this item onto your
           Dock.
