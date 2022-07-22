@@ -642,7 +642,10 @@ class Process(TdTaskBase):
             if sys.platform == 'win32':
                 if winbase.processPollByHandle(self.hWin):
                     try:
-                        (uPid, uStatus) = os.waitpid(self.hWin, 0);
+                        if hasattr(self.hWin, '__int__'): # Needed for newer pywin32 versions.
+                            (uPid, uStatus) = os.waitpid(self.hWin.__int__(), 0);
+                        else:
+                            (uPid, uStatus) = os.waitpid(self.hWin, 0);
                         if uPid in (self.hWin, self.uPid,):
                             self.hWin.Detach(); # waitpid closed it, so it's now invalid.
                             self.hWin = None;
