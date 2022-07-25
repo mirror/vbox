@@ -44,7 +44,9 @@
 #include <iprt/stdarg.h>
 #ifdef IN_RING3
 # include <iprt/env.h>
-# include <stdio.h>
+# ifndef IPRT_NO_CRT
+#  include <stdio.h>
+# endif
 # ifdef RT_OS_WINDOWS
 #  include <iprt/win/windows.h>
 # endif
@@ -219,6 +221,7 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 
 # ifdef IN_RING3
         /* print to stderr, helps user and gdb debugging. */
+#  ifndef IPRT_NO_CRT
         fprintf(stderr,
                 "\n!!Assertion Failed!!\n"
                 "Expression: %s\n"
@@ -227,10 +230,27 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
                 RT_VALID_PTR(pszFile) ? pszFile : "<none>",
                 uLine,
                 RT_VALID_PTR(pszFunction) ? pszFunction : "");
-# ifdef IPRT_WITH_ASSERT_STACK
+#   ifdef IPRT_WITH_ASSERT_STACK
         fprintf(stderr, "Stack     :\n%s\n", szStack);
-# endif
+#   endif
         fflush(stderr);
+#  else
+        char szMsg[2048];
+        size_t cchMsg = RTStrPrintf(szMsg, sizeof(szMsg),
+                                    "\n!!Assertion Failed!!\n"
+                                    "Expression: %s\n"
+                                    "Location  : %s(%d) %s\n",
+                                    RT_VALID_PTR(pszExpr) ? pszExpr : "<none>",
+                                    RT_VALID_PTR(pszFile) ? pszFile : "<none>",
+                                    uLine,
+                                    RT_VALID_PTR(pszFunction) ? pszFunction : "");
+        RTLogWriteStdErr(szMsg, cchMsg);
+#   ifdef IPRT_WITH_ASSERT_STACK
+        RTLogWriteStdErr(RT_STR_TUPLE("Stack     :\n"));
+        RTLogWriteStdErr(szStack, strlen(szStack));
+        RTLogWriteStdErr(RT_STR_TUPLE("\n"));
+#   endif
+#  endif
 # endif
 #endif /* !IN_RING0 */
 
@@ -326,10 +346,14 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
         /* print to stderr, helps user and gdb debugging. */
         char szMsg[sizeof(g_szRTAssertMsg2)];
         va_copy(vaCopy, va);
-        RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, vaCopy);
+        size_t cchMsg = RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, vaCopy);
         va_end(vaCopy);
-        fprintf(stderr, "%s", szMsg);
+#  ifndef IPRT_NO_CRT
+        fwrite(szMsg, 1, cchMsg, stderr);
         fflush(stderr);
+#  else
+        RTLogWriteStdErr(szMsg, cchMsg);
+#  endif
 # endif
 #endif /* !IN_RING0 */
 
