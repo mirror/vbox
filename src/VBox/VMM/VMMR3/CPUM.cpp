@@ -4393,6 +4393,10 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             /* Register statistic counters for MSRs. */
             cpumR3MsrRegStats(pVM);
 
+            /* There shouldn't be any more calls to CPUMR3SetGuestCpuIdFeature and
+               CPUMR3ClearGuestCpuIdFeature now, so do some final CPUID polishing (NX). */
+            cpumR3CpuIdRing3InitDone(pVM);
+
             /* Create VMX-preemption timer for nested guests if required.  Must be
                done here as CPUM is initialized before TM. */
             if (pVM->cpum.s.GuestFeatures.fVmx)
