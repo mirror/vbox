@@ -59,7 +59,7 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>Audio: Added "default" host driver type to make it possible to move VMs (appliances) between different platforms
           without the need of changing the audio driver explicitly. When the "default" driver is selected, the best audio backend
-          option for a platform will be used.</para>
+          option for a platform will be used. This is the default for newly created VMs.</para>
       </listitem>
 
       <listitem>
