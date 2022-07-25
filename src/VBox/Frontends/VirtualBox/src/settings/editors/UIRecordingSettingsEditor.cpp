@@ -828,10 +828,7 @@ void UIRecordingSettingsEditor::populateComboMode()
         m_pComboMode->clear();
 
         /* Load currently supported recording features: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        int iSupportedFlag = 0;
-        foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
-            iSupportedFlag |= enmFeature;
+        const int iSupportedFlag = uiCommon().supportedRecordingFeatures();
         m_supportedValues.clear();
         if (!iSupportedFlag)
             m_supportedValues << UISettingsDefs::RecordingMode_None;

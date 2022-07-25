@@ -780,6 +780,8 @@ void UIMachineSettingsDisplay::polishPage()
     m_pTabRemoteDisplay->setEnabled(isMachineInValidMode());
     m_pEditorVRDESettings->setVRDEOptionsAvailable(isMachineOffline() || isMachineSaved());
 
+    /* Polish 'Recording' visibility: */
+    m_pTabWidget->setTabVisible(m_pTabWidget->indexOf(m_pTabRecording), uiCommon().supportedRecordingFeatures());
     /* Polish 'Recording' availability: */
     m_pTabRecording->setEnabled(isMachineInValidMode());
     // Recording options should be enabled only if:

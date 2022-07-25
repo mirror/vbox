@@ -2305,6 +2305,15 @@ QString UICommon::usbToolTip(const CHostVideoInputDevice &comWebcam)
     return records.join("<br>");
 }
 
+int UICommon::supportedRecordingFeatures() const
+{
+    int iSupportedFlag = 0;
+    CSystemProperties comProperties = virtualBox().GetSystemProperties();
+    foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
+        iSupportedFlag |= enmFeature;
+    return iSupportedFlag;
+}
+
 /* static */
 QString UICommon::helpFile()
 {

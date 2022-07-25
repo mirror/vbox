@@ -1491,6 +1491,11 @@ void UIIndicatorsPool::updatePool()
 
     /* Acquire status-bar restrictions: */
     m_restrictions = gEDataManager->restrictedStatusBarIndicators(uiCommon().managedVMUuid());
+    /* Make sure 'Recording' is restricted as well if no features supported: */
+    if (   !m_restrictions.contains(IndicatorType_Recording)
+        && !uiCommon().supportedRecordingFeatures())
+        m_restrictions << IndicatorType_Recording;
+
     /* Remove restricted indicators: */
     foreach (const IndicatorType &indicatorType, m_restrictions)
     {
