@@ -8671,6 +8671,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || strStateKeyStore.isNotEmpty()
             || hardwareMachine.nvramSettings.strKeyId.isNotEmpty()
             || hardwareMachine.nvramSettings.strKeyStore.isNotEmpty()
+            /* Default for newly created VMs in VBox 7.0.
+             * Older VMs might have a specific audio driver set (also for VMs created with < VBox 7.0). */
+            || hardwareMachine.audioAdapter.driverType == AudioDriverType_Default
             || recordingSettings.areDefaultSettings() == false
             || strLogKeyId.isNotEmpty()
             || strLogKeyStore.isEmpty())
