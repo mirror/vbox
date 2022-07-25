@@ -36,8 +36,6 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include <stdio.h>
-
 #ifdef VBOX_VBGLR3_XFREE86
 /* Rather than try to resolve all the header file conflicts, I will just
    prototype what we need here. */
@@ -49,7 +47,12 @@ extern "C" void* xf86memset(const void*,int,xf86size_t);
 # define memset xf86memset
 #endif /* VBOX_VBGLR3_XFREE86 */
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VIDEO_PROP_PREFIX "/VirtualBox/GuestAdd/Vbgl/Video/"
+
 
 /**
  * Enable or disable video acceleration.
@@ -537,36 +540,63 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
          */
         if (RT_SUCCESS(rc))
         {
-            unsigned        cx       = 0;
-            unsigned        cy       = 0;
-            unsigned        cBits    = 0;
-            unsigned        x        = 0;
-            unsigned        y        = 0;
-            unsigned        fEnabled = 1;
-            char            ch1      = 0;
-            char            ch2      = 0;
-            int cMatches = sscanf(szModeParms, "%5ux%5ux%2u%c%5ux%5u,%1u%c", &cx, &cy, &cBits, &ch1, &x, &y, &fEnabled, &ch2);
-            if (   (cMatches == 7 && ch1 == ',')
-                ||  cMatches == 3)
+            /* Mandatory chunk: 640x480x32 */
+            char       *pszNext;
+            uint32_t    cx = 0;
+            rc = VERR_PARSE_ERROR;
+            rc2 = RTStrToUInt32Ex(szModeParms, &pszNext, 10, &cx);
+            if (rc2 == VWRN_TRAILING_CHARS && *pszNext == 'x')
             {
-                if (pcx)
-                    *pcx = cx;
-                if (pcy)
-                    *pcy = cy;
-                if (pcBits)
-                    *pcBits = cBits;
-                if (px)
-                    *px = x;
-                if (py)
-                    *py = y;
-                if (pfEnabled)
-                    *pfEnabled = RT_BOOL(fEnabled);
-                rc = VINF_SUCCESS;
+                uint32_t cy = 0;
+                rc2 = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &cy);
+                if (rc2 == VWRN_TRAILING_CHARS && *pszNext == 'x')
+                {
+                    uint8_t cBits = 0;
+                    rc2 = RTStrToUInt8Ex(pszNext + 1, &pszNext, 10, &cBits);
+                    if (rc2 == VINF_SUCCESS || rc2 == VWRN_TRAILING_CHARS)
+                    {
+                        /* Optional chunk: ,32x64,1  (we fail if this is partially there) */
+                        uint32_t x        = 0;
+                        uint32_t y        = 0;
+                        uint8_t  fEnabled = 1;
+                        if (rc2 == VINF_SUCCESS)
+                            rc = VINF_SUCCESS;
+                        else if (*pszNext == ',')
+                        {
+                            rc2 = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &x);
+                            if (rc2 == VWRN_TRAILING_CHARS && *pszNext == 'x')
+                            {
+                                rc2 = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &y);
+                                if (rc2 == VWRN_TRAILING_CHARS && *pszNext == ',')
+                                {
+                                    rc2 = RTStrToUInt8Ex(pszNext + 1, &pszNext, 10, &fEnabled);
+                                    if (rc2 == VINF_SUCCESS)
+                                        rc = VINF_SUCCESS;
+                                }
+                            }
+                        }
+
+                        /*
+                         * Set result if successful.
+                         */
+                        if (rc == VINF_SUCCESS)
+                        {
+                            if (pcx)
+                                *pcx = cx;
+                            if (pcy)
+                                *pcy = cy;
+                            if (pcBits)
+                                *pcBits = cBits;
+                            if (px)
+                                *px = x;
+                            if (py)
+                                *py = y;
+                            if (pfEnabled)
+                                *pfEnabled = RT_BOOL(fEnabled);
+                        }
+                    }
+                }
             }
-            else if (cMatches < 0)
-                rc = VERR_READ_ERROR;
-            else
-                rc = VERR_PARSE_ERROR;
         }
     }
 
