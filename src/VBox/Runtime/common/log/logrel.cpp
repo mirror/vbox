@@ -31,31 +31,6 @@
 #include <iprt/log.h>
 #include "internal/iprt.h"
 
-#ifndef IN_RC
-# include <iprt/alloc.h>
-# include <iprt/process.h>
-# include <iprt/semaphore.h>
-# include <iprt/thread.h>
-# include <iprt/mp.h>
-#endif
-#ifdef IN_RING3
-# include <iprt/file.h>
-# include <iprt/path.h>
-#endif
-#include <iprt/time.h>
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/errcore.h>
-#include <iprt/param.h>
-
-#include <iprt/stdarg.h>
-#include <iprt/string.h>
-#include <iprt/ctype.h>
-#ifdef IN_RING3
-# include <iprt/alloca.h>
-# include <stdio.h>
-#endif
-
 
 /**
  * Write to a logger instance, defaulting to the release one.
