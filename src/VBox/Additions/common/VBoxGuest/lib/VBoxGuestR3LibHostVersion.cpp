@@ -28,7 +28,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <stdio.h>          /* Required for sscanf */
 #include <iprt/string.h>
 #include <VBox/log.h>
 
@@ -38,6 +37,7 @@
 #endif
 
 #include "VBoxGuestR3LibInternal.h"
+
 
 /**
  * Checks for a Guest Additions update by comparing the installed version on the
