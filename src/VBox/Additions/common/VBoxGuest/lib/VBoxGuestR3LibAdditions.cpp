@@ -312,7 +312,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
     rc = vbglR3WinOpenAdditionRegisterKey(&hKey);
     if (RT_SUCCESS(rc))
     {
-        rc = vbglR3QueryRegistryString(hKey, L"InstallDir", _MAX_PATH * sizeof(RTUTF16), ppszPath);
+        rc = vbglR3QueryRegistryString(hKey, L"InstallDir", MAX_PATH * sizeof(RTUTF16), ppszPath);
         if (RT_SUCCESS(rc))
             RTPathChangeToUnixSlashes(*ppszPath, true /*fForce*/);
         rc = vbglR3WinCloseRegKey(hKey, rc);
