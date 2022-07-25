@@ -1161,7 +1161,8 @@ ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxC_SOURCES += \
 	src-client/GuestDnDPrivate.cpp \
 	src-client/GuestDnDSourceImpl.cpp \
-	src-client/GuestDnDTargetImpl.cpp
+	src-client/GuestDnDTargetImpl.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/DragAndDrop/DnDUtils.cpp
 endif
 ifdef VBOX_WITH_XPCOM
  VBoxC_SOURCES += \

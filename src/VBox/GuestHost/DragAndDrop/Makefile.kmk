@@ -27,7 +27,8 @@ VBOX_DND_GUESTHOST_FILES := \
 	DnDMIME.cpp \
 	DnDPath.cpp \
 	DnDTransferObject.cpp \
-	DnDTransferList.cpp
+	DnDTransferList.cpp \
+	DnDUtils.cpp
 
 #
 # DnDGuestR3Lib - For tools on the guest side,
@@ -60,4 +61,3 @@ VBoxDnDHostR3Lib_SOURCES   += \
 	$(VBOX_PATH_HOSTSERVICES_COMMON)/message.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

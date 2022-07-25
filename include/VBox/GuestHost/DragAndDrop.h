@@ -34,6 +34,8 @@
 #include <iprt/fs.h>
 #include <iprt/list.h>
 
+#include <VBox/GuestHost/DragAndDropDefs.h>
+
 /** DnDURIDroppedFiles flags. */
 typedef uint32_t DNDURIDROPPEDFILEFLAGS;
 
@@ -88,6 +90,8 @@ const char *DnDDroppedFilesGetDirAbs(PDNDDROPPEDFILES pDF);
 int DnDDroppedFilesReopen(PDNDDROPPEDFILES pDF);
 int DnDDroppedFilesReset(PDNDDROPPEDFILES pDF, bool fDelete);
 int DnDDroppedFilesRollback(PDNDDROPPEDFILES pDF);
+
+const char *DnDActionToStr(VBOXDNDACTION uAction);
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
