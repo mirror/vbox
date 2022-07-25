@@ -88,15 +88,17 @@ static int32_t volatile     g_cUsers = 0;
 /** Whether we're currently initializing the IPRT. */
 static bool volatile        g_fInitializing = false;
 
+#if !defined(IPRT_NO_CRT) || !defined(RT_OS_WINDOWS)
 /** The process path.
  * This is used by RTPathExecDir and RTProcGetExecutablePath and set by rtProcInitName. */
 DECL_HIDDEN_DATA(char)      g_szrtProcExePath[RTPATH_MAX];
 /** The length of g_szrtProcExePath. */
 DECL_HIDDEN_DATA(size_t)    g_cchrtProcExePath;
-/** The length of directory path component of g_szrtProcExePath. */
-DECL_HIDDEN_DATA(size_t)    g_cchrtProcDir;
 /** The offset of the process name into g_szrtProcExePath. */
 DECL_HIDDEN_DATA(size_t)    g_offrtProcName;
+#endif
+/** The length of directory path component of g_szrtProcExePath. */
+DECL_HIDDEN_DATA(size_t)    g_cchrtProcDir;
 
 /** The IPRT init flags. */
 static uint32_t             g_fInitFlags;

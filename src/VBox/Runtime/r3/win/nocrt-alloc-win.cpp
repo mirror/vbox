@@ -103,13 +103,3 @@ RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag)
     return HeapAlloc(GetProcessHeap(), 0, cbNew);
 }
 
-
-#undef RTMemReallocZTag
-RTDECL(void *) RTMemReallocZTag(void *pvOld, size_t cbOld, size_t cbNew, const char *pszTag)
-{
-    RT_NOREF(pszTag, cbOld);
-    if (pvOld)
-        return HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, pvOld, cbNew);
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbNew);
-}
-

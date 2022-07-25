@@ -35,9 +35,11 @@
 #include <iprt/thread.h>
 #include <VBox/sup.h>
 #include <iprt/errcore.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef IPRT_NO_CRT
+# include <errno.h>
+# include <stdio.h>
+# include <stdlib.h>
+#endif
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

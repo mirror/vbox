@@ -34,7 +34,24 @@
 
 RT_C_DECLS_BEGIN
 
+typedef void FNRTNOCRTATEXITCALLBACK(void) /*RT_NOEXCEPT*/;
+typedef FNRTNOCRTATEXITCALLBACK *PFNRTNOCRTATEXITCALLBACK;
+#if defined(_MSC_VER) && defined(RT_WITHOUT_NOCRT_WRAPPERS) /* Clashes with compiler internal prototype or smth. */
+int          rtnocrt_atexit(PFNRTNOCRTATEXITCALLBACK) RT_NOEXCEPT;
+# define     atexit rtnocrt_atexit
+#else
+int          RT_NOCRT(atexit)(PFNRTNOCRTATEXITCALLBACK) RT_NOEXCEPT;
+#endif
+
+#if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
+# define atexit     RT_NOCRT(atexit)
+#endif
+
+
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
+/*
+ * Only for external libraries and such.
+ */
 
 DECLINLINE(void *) RT_NOCRT(malloc)(size_t cb)
 {
@@ -64,6 +81,7 @@ DECLINLINE(void) RT_NOCRT(free)(void *pv)
 # endif
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
+
 
 RT_C_DECLS_END
 

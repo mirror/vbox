@@ -40,6 +40,22 @@
 #include <iprt/string.h>
 #include <iprt/utf16.h>
 
+#ifdef IPRT_NO_CRT
+# include <iprt/asm.h>
+# include <iprt/nocrt/stdlib.h>
+#endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+#ifdef IPRT_NO_CRT
+typedef struct RTNOCRTATEXITCHUNK
+{
+    PFNRTNOCRTATEXITCALLBACK apfnCallbacks[256];
+} RTNOCRTATEXITCHUNK;
+#endif
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -51,6 +67,15 @@ DECL_HIDDEN_DATA(size_t)    g_cchrtProcExeDir = 0;
 DECL_HIDDEN_DATA(size_t)    g_offrtProcName = 0;
 RT_C_DECLS_END
 
+#ifdef IPRT_NO_CRT
+/** The first atexit() registration chunk. */
+static RTNOCRTATEXITCHUNK   g_aAtExitPrealloc;
+/** Array of atexit() callback chunk pointers. */
+static RTNOCRTATEXITCHUNK  *g_apAtExit[8192 / 256] = { &g_aAtExitPrealloc, };
+/** Chunk and callback index in one. */
+static volatile uint32_t    g_idxNextAtExit        = 0;
+#endif
+
 
 /*********************************************************************************************************************************
 *   External Symbols                                                                                                             *
@@ -59,6 +84,90 @@ extern DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams); /*
 
 extern int main(int argc, char **argv, char **envp);    /* in program */
 
+
+#ifdef IPRT_NO_CRT
+extern "C"
+int rtnocrt_atexit(PFNRTNOCRTATEXITCALLBACK pfnCallback) RT_NOEXCEPT
+{
+    AssertPtr(pfnCallback);
+
+    /*
+     * Allocate a table index.
+     */
+    uint32_t idx = ASMAtomicIncU32(&g_idxNextAtExit) - 1;
+    AssertReturnStmt(idx < RT_ELEMENTS(g_apAtExit) * RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks),
+                     ASMAtomicDecU32(&g_idxNextAtExit), -1);
+
+    /*
+     * Make sure the table chunk is there.
+     */
+    uint32_t            idxChunk = idx / RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks);
+    RTNOCRTATEXITCHUNK *pChunk   = ASMAtomicReadPtrT(&g_apAtExit[idxChunk], RTNOCRTATEXITCHUNK *);
+    if (!pChunk)
+    {
+        pChunk = (RTNOCRTATEXITCHUNK *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*pChunk));
+        AssertReturn(pChunk, -1); /* don't try decrement, someone could be racing us... */
+
+        if (!ASMAtomicCmpXchgPtr(&g_apAtExit[idxChunk], pChunk, NULL))
+        {
+            HeapFree(GetProcessHeap(), 0, pChunk);
+
+            pChunk = ASMAtomicReadPtrT(&g_apAtExit[idxChunk], RTNOCRTATEXITCHUNK *);
+            Assert(pChunk);
+        }
+    }
+
+    /*
+     * Add our callback.
+     */
+    pChunk->apfnCallbacks[idxChunk % RT_ELEMENTS(pChunk->apfnCallbacks)] = pfnCallback;
+    return 0;
+}
+#endif
+
+
+static int rtTerminateProcess(int32_t rcExit, bool fDoAtExit)
+{
+#ifdef IPRT_NO_CRT
+    /*
+     * Run atexit callback in reverse order.
+     */
+    if (fDoAtExit)
+    {
+        uint32_t idxAtExit = ASMAtomicReadU32(&g_idxNextAtExit);
+        if (idxAtExit-- > 0)
+        {
+            uint32_t idxChunk    = idxAtExit / RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks);
+            uint32_t idxCallback = idxAtExit % RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks);
+            for (;;)
+            {
+                RTNOCRTATEXITCHUNK *pChunk = ASMAtomicReadPtrT(&g_apAtExit[idxChunk], RTNOCRTATEXITCHUNK *);
+                if (pChunk)
+                {
+                    do
+                    {
+                        PFNRTNOCRTATEXITCALLBACK pfnCallback = pChunk->apfnCallbacks[idxCallback];
+                        if (pfnCallback) /* Can be NULL see registration code */
+                            pfnCallback();
+                    } while (idxCallback-- > 0);
+                }
+                if (idxChunk == 0)
+                    break;
+                idxChunk--;
+                idxCallback = RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks) - 1;
+            }
+        }
+    }
+#else
+    RT_NOREF(fDoAtExit);
+#endif
+
+    /*
+     * Terminate.
+     */
+    for (;;)
+        NtTerminateProcess(NtCurrentProcess(), rcExit);
+}
 
 
 DECL_NO_INLINE(static, void) initProcExecPath(void)
@@ -78,14 +187,14 @@ DECL_NO_INLINE(static, void) initProcExecPath(void)
                 g_cchrtProcExeDir--;
         }
         else
-            RTMsgErrorExitFailure("initProcExecPath: RTUtf16ToUtf8Ex failed: %Rrc\n", rc);
+            RTMsgError("initProcExecPath: RTUtf16ToUtf8Ex failed: %Rrc\n", rc);
     }
     else
-        RTMsgErrorExitFailure("initProcExecPath: GetModuleFileNameW failed: %Rhrc\n", GetLastError());
+        RTMsgError("initProcExecPath: GetModuleFileNameW failed: %Rhrc\n", GetLastError());
 }
 
 
-void CustomMainEntrypoint(PPEB pPeb)
+DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
 {
     /*
      * Initialize stuff.
@@ -113,6 +222,7 @@ void CustomMainEntrypoint(PPEB pPeb)
                 /*
                  * Call the main function.
                  */
+                AssertCompile(sizeof(rcExit) == sizeof(int));
                 rcExit = (RTEXITCODE)main(cArgs, papszArgv, NULL /*envp*/);
             }
             else
@@ -124,7 +234,6 @@ void CustomMainEntrypoint(PPEB pPeb)
     else
         rcExit = RTMsgErrorExitFailure("No command line\n");
 
-    for (;;)
-        NtTerminateProcess(NtCurrentProcess(), rcExit);
+    rtTerminateProcess(rcExit, true /*fDoAtExit*/);
 }
 
