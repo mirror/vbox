@@ -629,7 +629,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            LogRel2(("DnD: Host responded with default action '%s' (%RU32 bytes format data) to guest->host drag event\n",
+            LogRel2(("DnD: Guest responded with pending action '%s' (%RU32 bytes format data) to guest->host drag event\n",
                      DnDActionToStr(pCBData->uDefAction), pCBData->cbFormat));
 
             if (   pCBData->cbFormat  == 0
