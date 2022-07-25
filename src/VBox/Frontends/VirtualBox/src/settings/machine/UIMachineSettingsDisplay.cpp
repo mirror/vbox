@@ -301,6 +301,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pTabRemoteDisplay(0)
     , m_pEditorVRDESettings(0)
     , m_pTabRecording(0)
+    , m_pEditorRecordingSettings(0)
 {
     prepare();
 }
@@ -780,10 +781,16 @@ void UIMachineSettingsDisplay::polishPage()
     m_pTabRemoteDisplay->setEnabled(isMachineInValidMode());
     m_pEditorVRDESettings->setVRDEOptionsAvailable(isMachineOffline() || isMachineSaved());
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     /* Polish 'Recording' visibility: */
     m_pTabWidget->setTabVisible(m_pTabWidget->indexOf(m_pTabRecording), uiCommon().supportedRecordingFeatures());
     /* Polish 'Recording' availability: */
     m_pTabRecording->setEnabled(isMachineInValidMode());
+#else
+    /* Polish 'Recording' availability: */
+    m_pTabWidget->setTabEnabled(2, isMachineInValidMode() && uiCommon().supportedRecordingFeatures());
+    m_pTabRecording->setEnabled(isMachineInValidMode() && uiCommon().supportedRecordingFeatures());
+#endif
     // Recording options should be enabled only if:
     // 1. Machine is in 'offline' or 'saved' state,
     // 2. Machine is in 'online' state and video recording is *disabled* currently.
