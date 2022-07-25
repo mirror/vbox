@@ -32,7 +32,6 @@
 #include <iprt/types.h>                 /* darwin: UINT32_C and others. */
 
 #ifdef RT_OS_WINDOWS
-# include <process.h>
 # include <iprt/win/windows.h>
 #else
 # include <unistd.h>
@@ -48,11 +47,14 @@
 # define INCL_DOSMISC
 # include <os2.h>
 #endif
-#include <locale.h>
+#ifndef IPRT_NO_CRT
+# include <locale.h>
+#endif
 
 #include <iprt/initterm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -286,6 +288,7 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
             return VINF_SUCCESS;
         }
 
+#if !defined(IPRT_NO_CRT) || !defined(RT_OS_WINDOWS)
         if (!(fFlags & RTR3INIT_FLAGS_UTF8_ARGV))
         {
             /*
@@ -293,7 +296,7 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
              */
             char **papszArgs;
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
             /* HACK ALERT! Try convert from unicode versions if possible.
                Unfortunately for us, __wargv is only initialized if we have a unicode
                main function.  So, use getoptarv.cpp code to do the conversions and
@@ -313,7 +316,7 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
                           ("cArgsFromCmdLine=%d cArgs=%d pszCmdLine='%s' rc=%Rrc\n", cArgsFromCmdLine, cArgs, pszCmdLine));
             }
             else
-#endif
+# endif
             {
                 papszArgs = (char **)RTMemAllocZTag((cArgs + 1) * sizeof(char *), "will-leak:rtR3InitArgv");
                 if (!papszArgs)
@@ -341,6 +344,7 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
             *ppapszArgs = papszArgs;
         }
         else
+#endif /* !IPRT_NO_CRT || !RT_OS_WINDOWS */
         {
             /*
              * The arguments are already UTF-8, no conversion needed.
@@ -387,17 +391,19 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
     DosError(FERR_DISABLEHARDERR);
 #endif
 
+#ifndef IPRT_NO_CRT
     /*
      * Init C runtime locale before we do anything that may end up converting
      * paths or we'll end up using the "C" locale for path conversion.
      */
     setlocale(LC_CTYPE, "");
+#endif
 
     /*
      * The Process ID.
      */
 #ifdef _MSC_VER
-    g_ProcessSelf = _getpid(); /* crappy ansi compiler */
+    g_ProcessSelf = GetCurrentProcessId(); /* since NT 3.1, not 3.51+ as listed on geoffchappell.com */
 #else
     g_ProcessSelf = getpid();
 #endif
@@ -539,7 +545,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
     /*
      * Enable alignment checks.
      */
-    const char *pszAlignmentChecks = getenv("IPRT_ALIGNMENT_CHECKS");
+    const char *pszAlignmentChecks = RTEnvGet("IPRT_ALIGNMENT_CHECKS"); /** @todo add RTEnvGetBool */
     g_fRTAlignmentChecks = pszAlignmentChecks != NULL
                         && pszAlignmentChecks[0] == '1'
                         && pszAlignmentChecks[1] == '\0';
