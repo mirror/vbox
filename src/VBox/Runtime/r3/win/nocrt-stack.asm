@@ -95,5 +95,3 @@ BEGINPROC __guard_dispatch_icall_fptr
         int3
 ENDPROC   __guard_dispatch_icall_fptr
 
-
-

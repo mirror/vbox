@@ -32,4 +32,3 @@ BEGINPROC mainCRTStartup
         jmp     CustomMainEntrypoint
 ENDPROC   mainCRTStartup
 
-
