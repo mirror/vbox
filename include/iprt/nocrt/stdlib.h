@@ -30,9 +30,40 @@
 #endif
 
 #include <iprt/types.h>
+#include <iprt/mem.h>
 
 RT_C_DECLS_BEGIN
 
+#ifdef IPRT_NO_CRT_FOR_3RD_PARTY
+
+DECLINLINE(void *) RT_NOCRT(malloc)(size_t cb)
+{
+    return RTMemAlloc(cb);
+}
+
+DECLINLINE(void *) RT_NOCRT(calloc)(size_t cItems, size_t cbItem)
+{
+    return RTMemAllocZ(cItems * cbItem); /* caller responsible for overflow issues. */
+}
+
+DECLINLINE(void *) RT_NOCRT(realloc)(void *pvOld, size_t cbNew)
+{
+    return RTMemRealloc(pvOld, cbNew);
+}
+
+DECLINLINE(void) RT_NOCRT(free)(void *pv)
+{
+    RTMemFree(pv);
+}
+
+# if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
+#  define malloc    RT_NOCRT(malloc)
+#  define calloc    RT_NOCRT(calloc)
+#  define realloc   RT_NOCRT(realloc)
+#  define free      RT_NOCRT(free)
+# endif
+
+#endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
 
 RT_C_DECLS_END
 
