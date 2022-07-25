@@ -207,6 +207,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_UNRECOGNIZED_VOLUME:     return VERR_MEDIA_NOT_RECOGNIZED;
         case ERROR_ELEVATION_REQUIRED:      return VERR_PROC_ELEVATION_REQUIRED;
 
+        case ERROR_ENVVAR_NOT_FOUND:        return VERR_ENV_VAR_NOT_FOUND;
+
 
         /*
          * Winsocket errors are mostly BSD errno.h wrappers.

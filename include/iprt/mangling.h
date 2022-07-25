@@ -879,6 +879,7 @@
 # define RTEnvCreateChangeRecord                        RT_MANGLER(RTEnvCreateChangeRecord)
 # define RTEnvCreateChangeRecordEx                      RT_MANGLER(RTEnvCreateChangeRecordEx)
 # define RTEnvDestroy                                   RT_MANGLER(RTEnvDestroy)
+# define RTEnvDup                                       RT_MANGLER(RTEnvDup)
 # define RTEnvDupEx                                     RT_MANGLER(RTEnvDupEx)
 # define RTEnvExist                                     RT_MANGLER(RTEnvExist)
 # define RTEnvExistsBad                                 RT_MANGLER(RTEnvExistsBad)

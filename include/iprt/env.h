@@ -323,6 +323,18 @@ RTDECL(int) RTEnvUnsetUtf8(const char *pszVar);
  */
 RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar);
 
+
+/**
+ * Returns the value of a environment variable from the default
+ * environment block in a heap buffer.
+ *
+ * @returns Pointer to a string containing the value, free it using RTStrFree.
+ *          NULL if the variable was not found or we're out of memory.
+ *
+ * @param   pszVar      The environment variable name (UTF-8).
+ */
+RTDECL(char *) RTEnvDup(const char *pszVar);
+
 /**
  * Duplicates the value of a environment variable if it exists.
  *
