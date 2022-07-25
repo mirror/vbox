@@ -71,7 +71,9 @@
 #include <iprt/log.h>
 #include <iprt/string.h>
 
-#include <errno.h>
+#ifndef IPRT_NO_CRT
+# include <errno.h>
+#endif
 
 
 /*********************************************************************************************************************************
