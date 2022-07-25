@@ -80,6 +80,20 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag)
 }
 
 
+#undef RTMemAllocVarTag
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag)
+{
+    return RTMemAllocTag(cbUnaligned, pszTag);
+}
+
+
+#undef RTMemAllocZVarTag
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag)
+{
+    return RTMemAllocZTag(cbUnaligned, pszTag);
+}
+
+
 #undef RTMemReallocTag
 RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag)
 {
