@@ -64,6 +64,23 @@ local int gz_init(state)
     return 0;
 }
 
+#ifdef IPRT_NO_CRT                                                                                      /* VBox */
+DECLINLINE(int) gz_write_wrap(gz_statep state, void const *pvSrc, size_t cbToWrite)                     /* VBox */
+{                                                                                                       /* VBox */
+    size_t cbWritten;                                                                                   /* VBox */
+    int ret = RTFileWrite(state->fd, pvSrc, cbToWrite, &cbWritten);                                     /* VBox */
+    if (RT_SUCCESS(ret))                                                                                /* VBox */
+        ret = (int)cbWritten;                                                                           /* VBox */
+    else {                                                                                              /* VBox */
+        char szDefine[80];                                                                              /* VBox */
+        RTErrQueryDefine(ret, szDefine, sizeof(szDefine), false);                                       /* VBox */
+        gz_error(state, Z_ERRNO, szDefine);                                                             /* VBox */
+        ret = -1;                                                                                       /* VBox */
+    }                                                                                                   /* VBox */
+    return ret;                                                                                         /* VBox */
+}                                                                                                       /* VBox */
+#endif /* IPRT_NO_CRT */                                                                                /* VBox */
+
 /* Compress whatever is at avail_in and next_in and write to the output file.
    Return -1 if there is an error writing to the output file or if gz_init()
    fails to allocate memory, otherwise 0.  flush is assumed to be a valid
@@ -86,11 +103,17 @@ local int gz_comp(state, flush)
     if (state->direct) {
         while (strm->avail_in) {
             put = strm->avail_in > max ? max : strm->avail_in;
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
             writ = write(state->fd, strm->next_in, put);
             if (writ < 0) {
                 gz_error(state, Z_ERRNO, zstrerror());
                 return -1;
             }
+#else                                                                                                   /* VBox */
+            writ = gz_write_wrap(state, strm->next_in, put);                                            /* VBox */
+            if (writ < 0)                                                                               /* VBox */
+                return -1;                                                                              /* VBox */
+#endif                                                                                                  /* VBox */
             strm->avail_in -= (unsigned)writ;
             strm->next_in += writ;
         }
@@ -116,11 +139,17 @@ local int gz_comp(state, flush)
             while (strm->next_out > state->x.next) {
                 put = strm->next_out - state->x.next > (int)max ? max :
                       (unsigned)(strm->next_out - state->x.next);
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
                 writ = write(state->fd, state->x.next, put);
                 if (writ < 0) {
                     gz_error(state, Z_ERRNO, zstrerror());
                     return -1;
                 }
+#else                                                                                                   /* VBox */
+                writ = gz_write_wrap(state, state->x.next, put);                                        /* VBox */
+                if (writ < 0)                                                                           /* VBox */
+                    return -1;                                                                          /* VBox */
+#endif                                                                                                  /* VBox */
                 state->x.next += writ;
             }
             if (strm->avail_out == 0) {
@@ -670,7 +699,11 @@ int ZEXPORT gzclose_w(file)
     }
     gz_error(state, Z_OK, NULL);
     free(state->path);
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     if (close(state->fd) == -1)
+#else                                                                                                   /* VBox */
+    if (RT_FAILURE(RTFileClose(state->fd)))                                                             /* VBox */
+#endif                                                                                                  /* VBox */
         ret = Z_ERRNO;
     free(state);
     return ret;

@@ -44,6 +44,9 @@ VBox-zlib_SOURCES = \
 
 VBox-zlib-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
+ifdef VBOX_WITH_NOCRT_STATIC
+VBox-zlib-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
+endif
 VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.

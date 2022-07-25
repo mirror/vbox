@@ -256,6 +256,17 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define Tracecv(c,x)
 #endif
 
+#ifdef IPRT_NO_CRT                                                                                      /* VBox */
+#  undef Assert                                                                                         /* VBox */
+#  include <iprt/assert.h>                                                                              /* VBox */
+#  undef Assert                                                                                         /* VBox */
+#  ifdef ZLIB_DEBUG                                                                                     /* VBox */
+#     define Assert(cond, msg) AssertMsg(cond, (msg))                                                   /* VBox */
+#  else                                                                                                 /* VBox */
+#     define Assert(cond, msg) do {} while (0)                                                          /* VBox */
+#  endif                                                                                                /* VBox */
+#endif                                                                                                  /* VBox */
+
 #ifndef Z_SOLO
    voidpf ZLIB_INTERNAL zcalloc OF((voidpf opaque, unsigned items,
                                     unsigned size));

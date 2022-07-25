@@ -18,7 +18,9 @@
 #  define ZLIB_INTERNAL
 #endif
 
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #include <stdio.h>
+#endif                                                                                                  /* VBox */
 #include "zlib.h"
 #ifdef STDC
 #  include <string.h>
@@ -29,18 +31,27 @@
 #ifndef _POSIX_SOURCE
 #  define _POSIX_SOURCE
 #endif
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #include <fcntl.h>
-
+#endif
+                                                                                                        /* VBox */
 #ifdef _WIN32
 #  include <stddef.h>
 #endif
 
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
 #  include <io.h>
 #endif
+#else                                                                                                   /* VBox */
+#  include <iprt/file.h>                                                                                /* VBox */
+#  include <iprt/errcore.h>                                                                             /* VBox */
+#endif                                                                                                  /* VBox */
 
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #if defined(_WIN32)
 #  define WIDECHAR
+#endif                                                                                                  /* VBox */
 #endif
 
 #ifdef WINAPI_FAMILY
@@ -53,6 +64,13 @@
 #ifdef NO_DEFLATE       /* for compatibility with old definition */
 #  define NO_GZCOMPRESS
 #endif
+
+#ifdef IPRT_NO_CRT                                                                                      /* VBox */
+#  include <iprt/string.h>                                                                              /* VBox */
+#  define HAVE_VSNPRINTF                                                                                /* VBox */
+#  define snprintf  RTStrPrintf                                                                         /* VBox */
+#  define vsnprintf RTStrPrintfV                                                                        /* VBox */
+#else  /* !IPRT_NO_CRT */                                                                               /* VBox */
 
 #if defined(STDC99) || (defined(__TURBOC__) && __TURBOC__ >= 0x550)
 #  ifndef HAVE_VSNPRINTF
@@ -109,6 +127,8 @@
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #  define snprintf _snprintf
 #endif
+                                                                                                        /* VBox */
+#endif /* !IPRT_NO_CRT */                                                                               /* VBox */
 
 #ifndef local
 #  define local static
@@ -124,7 +144,7 @@
 #endif
 
 /* get errno and strerror definition */
-#if defined UNDER_CE
+#if defined UNDER_CE || (defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS))
 #  include <windows.h>
 #  define zstrerror() gz_strwinerror((DWORD)GetLastError())
 #else
@@ -175,7 +195,11 @@ typedef struct {
                             /* x.pos: current position in uncompressed data */
         /* used for both reading and writing */
     int mode;               /* see gzip modes above */
+#ifndef IPRT_NO_CRT
     int fd;                 /* file descriptor */
+#else
+    RTFILE fd;                 /* file descriptor */
+#endif
     char *path;             /* path or fd for error messages */
     unsigned size;          /* buffer size, zero if not allocated yet */
     unsigned want;          /* requested buffer size, default is GZBUFSIZE */
@@ -204,7 +228,7 @@ typedef gz_state FAR *gz_statep;
 
 /* shared functions */
 void ZLIB_INTERNAL gz_error OF((gz_statep, int, const char *));
-#if defined UNDER_CE
+#if defined UNDER_CE || (defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS))
 char ZLIB_INTERNAL *gz_strwinerror OF((DWORD error));
 #endif
 

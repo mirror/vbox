@@ -32,15 +32,33 @@ local int gz_load(state, buf, len, have)
         get = len - *have;
         if (get > max)
             get = max;
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
         ret = read(state->fd, buf + *have, get);
         if (ret <= 0)
             break;
+#else                                                                                                   /* VBox */
+        {                                                                                               /* VBox */
+            size_t cbRead;                                                                              /* VBox */
+            ret = RTFileRead(state->fd, buf + *have, get, &cbRead);                                     /* VBox */
+            if (RT_SUCCESS(ret))                                                                        /* VBox */
+                ret = (int)cbRead;                                                                      /* VBox */
+            else                                                                                        /* VBox */
+            {                                                                                           /* VBox */
+                char szDefine[80];                                                                      /* VBox */
+                RTErrQueryDefine(ret, szDefine, sizeof(szDefine), false);                               /* VBox */
+                gz_error(state, Z_ERRNO, szDefine);                                                     /* VBox */
+                return -1;                                                                              /* VBox */
+            }                                                                                           /* VBox */
+        }                                                                                               /* VBox */
+#endif                                                                                                  /* VBox */
         *have += (unsigned)ret;
     } while (*have < len);
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     if (ret < 0) {
         gz_error(state, Z_ERRNO, zstrerror());
         return -1;
     }
+#endif                                                                                                  /* VBox */
     if (ret == 0)
         state->eof = 1;
     return 0;
@@ -646,7 +664,13 @@ int ZEXPORT gzclose_r(file)
     err = state->err == Z_BUF_ERROR ? Z_BUF_ERROR : Z_OK;
     gz_error(state, Z_OK, NULL);
     free(state->path);
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     ret = close(state->fd);
+#else                                                                                                   /* VBox */
+    ret = RTFileClose(state->fd);                                                                       /* VBox */
+    if (RT_SUCCESS(ret))                                                                                /* VBox */
+        ret = 0;                                                                                        /* VBox */
+#endif                                                                                                  /* VBox */
     free(state);
     return ret ? Z_ERRNO : err;
 }

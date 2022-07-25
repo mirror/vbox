@@ -97,7 +97,14 @@ local gzFile gz_open(path, fd, mode)
 {
     gz_statep state;
     z_size_t len;
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     int oflag;
+#else                                                                                                   /* VBox */
+    uint64_t fOpen;                                                                                     /* VBox */
+    int rc;                                                                                             /* VBox */
+# define O_CLOEXEC                                                                                      /* VBox */
+# define O_EXCL                                                                                         /* VBox */
+#endif                                                                                                  /* VBox */
 #ifdef O_CLOEXEC
     int cloexec = 0;
 #endif
@@ -219,6 +226,7 @@ local gzFile gz_open(path, fd, mode)
 #endif
 
     /* compute the flags for open() */
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     oflag =
 #ifdef O_LARGEFILE
         O_LARGEFILE |
@@ -238,26 +246,53 @@ local gzFile gz_open(path, fd, mode)
           (state->mode == GZ_WRITE ?
            O_TRUNC :
            O_APPEND)));
+#else  /* IPRT_NO_CRT */                                                                                /* VBox */
+    fOpen = RTFILE_O_DENY_NONE                                                                          /* VBox */
+          | (0666 << RTFILE_O_CREATE_MODE_SHIFT)                                                        /* VBox */
+          | (cloexec ? 0 : RTFILE_O_INHERIT)                                                            /* VBox */
+          | (state->mode == GZ_READ                                                                     /* VBox */
+             ? RTFILE_O_READ | RTFILE_O_OPEN                                                            /* VBox */
+             : RTFILE_O_WRITE                                                                           /* VBox */
+               | (exclusive                                                                             /* VBox */
+                  ? RTFILE_O_CREATE                                                                     /* VBox */
+                  : state->mode == GZ_WRITE                                                             /* VBox */
+                    ? RTFILE_O_CREATE_REPLACE                                                           /* VBox */
+                    : RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND)                                           /* VBox */
+            );                                                                                          /* VBox */
+#endif /* IPRT_NO_CRT */                                                                                /* VBox */
 
     /* open the file with the appropriate flags (or just use fd) */
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     state->fd = fd > -1 ? fd : (
 #ifdef WIDECHAR
         fd == -2 ? _wopen(path, oflag, 0666) :
 #endif
         open((const char *)path, oflag, 0666));
     if (state->fd == -1) {
+#else  /* IPRT_NO_CRT */
+    rc = RTFileOpen(&state->fd, path, fOpen);
+    if (RT_FAILURE(rc)) {
+#endif /* IPRT_NO_CRT */
         free(state->path);
         free(state);
         return NULL;
     }
     if (state->mode == GZ_APPEND) {
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
         LSEEK(state->fd, 0, SEEK_END);  /* so gzoffset() is correct */
+#else
+        RTFileSeek(state->fd, 0, RTFILE_SEEK_END, NULL);
+#endif
         state->mode = GZ_WRITE;         /* simplify later checks */
     }
 
     /* save the current position for rewinding (only if reading) */
     if (state->mode == GZ_READ) {
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
         state->start = LSEEK(state->fd, 0, SEEK_CUR);
+#else
+        state->start = RTFileTell(state->fd);
+#endif
         if (state->start == -1) state->start = 0;
     }
 
@@ -358,7 +393,11 @@ int ZEXPORT gzrewind(file)
         return -1;
 
     /* back up and start over */
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     if (LSEEK(state->fd, state->start, SEEK_SET) == -1)
+#else
+    if (RT_FAILURE(RTFileSeek(state->fd, state->start, RTFILE_SEEK_CURRENT, NULL)))
+#endif
         return -1;
     gz_reset(state);
     return 0;
@@ -399,8 +438,13 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
     /* if within raw area while reading, just go there */
     if (state->mode == GZ_READ && state->how == COPY &&
             state->x.pos + offset >= 0) {
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
         ret = LSEEK(state->fd, offset - (z_off64_t)state->x.have, SEEK_CUR);
         if (ret == -1)
+#else
+        ret = RTFileSeek(state->fd, offset - (z_off64_t)state->x.have, SEEK_CUR, NULL);
+        if (RT_FAILURE(ret))
+#endif
             return -1;
         state->x.have = 0;
         state->eof = 0;
@@ -495,8 +539,13 @@ z_off64_t ZEXPORT gzoffset64(file)
         return -1;
 
     /* compute and return effective offset in file */
+#ifndef IPRT_NO_CRT                                                                                     /* VBox */
     offset = LSEEK(state->fd, 0, SEEK_CUR);
     if (offset == -1)
+#else
+    offset = RTFileTell(state->fd);
+    if ((uint64_t)offset == UINT64_MAX)
+#endif
         return -1;
     if (state->mode == GZ_READ)             /* reading */
         offset -= state->strm.avail_in;     /* don't count buffered input */
