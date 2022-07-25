@@ -44,6 +44,7 @@ void *  RT_NOCRT(memset)(void *pvDst, int ch, size_t cb);
 char *  RT_NOCRT(strcat)(char *pszDst, const char *pszSrc);
 char *  RT_NOCRT(strncat)(char *pszDst, const char *pszSrc, size_t cch);
 char *  RT_NOCRT(strchr)(const char *psz, int ch);
+char *  RT_NOCRT(strrchr)(const char *psz, int ch);
 int     RT_NOCRT(strcmp)(const char *psz1, const char *psz2);
 int     RT_NOCRT(strncmp)(const char *psz1, const char *psz2, size_t cch);
 int     RT_NOCRT(stricmp)(const char *psz1, const char *psz2);
@@ -63,6 +64,7 @@ wchar_t *RT_NOCRT(wcscat)(wchar_t *pwszDst, const wchar_t *pwszSrc);
 wchar_t *RT_NOCRT(wcschr)(const wchar_t *pwszDst, wchar_t wc);
 wchar_t *RT_NOCRT(wcscpy)(wchar_t *pwszDst, const wchar_t *pwszSrc);
 int     RT_NOCRT(_wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
+size_t  RT_NOCRT(wcstombs)(char *pszDst, const wchar_t *pszSrc, size_t cbDst);
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 # define memchr   RT_NOCRT(memchr)
@@ -76,6 +78,7 @@ int     RT_NOCRT(_wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
 # define strcat   RT_NOCRT(strcat)
 # define strncat  RT_NOCRT(strncat)
 # define strchr   RT_NOCRT(strchr)
+# define strrchr  RT_NOCRT(strrchr)
 # define strcmp   RT_NOCRT(strcmp)
 # define strncmp  RT_NOCRT(strncmp)
 # define stricmp  RT_NOCRT(stricmp)
@@ -95,6 +98,7 @@ int     RT_NOCRT(_wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
 # define wcschr   RT_NOCRT(wcschr)
 # define wcscpy   RT_NOCRT(wcscpy)
 # define _wcsicmp RT_NOCRT(_wcsicmp)
+# define wcstombs RT_NOCRT(wcstombs)
 #endif
 
 RT_C_DECLS_END
