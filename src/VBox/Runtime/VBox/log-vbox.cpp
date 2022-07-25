@@ -130,6 +130,7 @@
 # if defined(RT_OS_WINDOWS)
 #  include <iprt/win/windows.h>
 # elif defined(RT_OS_LINUX)
+#  include <stdio.h>
 #  include <unistd.h>
 # elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
 #  include <sys/param.h>
@@ -144,6 +145,7 @@
 # elif defined(RT_OS_SOLARIS)
 #  define _STRUCTURED_PROC 1
 #  undef _FILE_OFFSET_BITS /* procfs doesn't like this */
+#  include <stdio.h>
 #  include <sys/procfs.h>
 #  include <unistd.h>
 # elif defined(RT_OS_OS2)
@@ -162,7 +164,11 @@
 # include <iprt/process.h>
 # include <iprt/string.h>
 # include <iprt/mem.h>
-# include <stdio.h>
+# ifdef IPRT_NO_CRT
+#  include <iprt/stream.h>
+# else
+#  include <stdio.h>
+# endif
 #endif
 #if defined(IN_RING0) && defined(RT_OS_DARWIN)
 # include <iprt/asm-amd64-x86.h>
@@ -204,8 +210,13 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
      * Assert the group definitions.
      */
 #define ASSERT_LOG_GROUP(grp)  ASSERT_LOG_GROUP2(LOG_GROUP_##grp, #grp)
-#define ASSERT_LOG_GROUP2(def, str) \
-    do { if (strcmp(g_apszGroups[def], str)) {printf("%s='%s' expects '%s'\n", #def, g_apszGroups[def], str); RTAssertDoPanic(); } } while (0)
+#ifdef IPRT_NO_CRT
+#  define ASSERT_LOG_GROUP2(def, str) \
+    do { if (strcmp(g_apszGroups[def], str)) { RTPrintf("%s='%s' expects '%s'\n", #def, g_apszGroups[def], str); RTAssertDoPanic(); } } while (0)
+# else
+#  define ASSERT_LOG_GROUP2(def, str) \
+    do { if (strcmp(g_apszGroups[def], str)) { printf("%s='%s' expects '%s'\n", #def, g_apszGroups[def], str); RTAssertDoPanic(); } } while (0)
+# endif
     ASSERT_LOG_GROUP(DEFAULT);
     ASSERT_LOG_GROUP(AUDIO_MIXER);
     ASSERT_LOG_GROUP(AUDIO_MIXER_BUFFER);
