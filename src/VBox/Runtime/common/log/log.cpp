@@ -57,7 +57,9 @@
 #include <iprt/ctype.h>
 #ifdef IN_RING3
 # include <iprt/alloca.h>
-# include <stdio.h>
+# ifndef IPRT_NO_CRT
+#  include <stdio.h>
+# endif
 #endif
 
 
@@ -3611,7 +3613,11 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 #if defined(RT_STRICT) && defined(IN_RING3)
             else
             {
+# ifndef IPRT_NO_CRT
                 fprintf(stderr, "pBufDesc->offBuf >= pBufDesc->cbBuf (%#x >= %#x)\n", pBufDesc->offBuf, pBufDesc->cbBuf);
+# else
+                RTLogWriteStdErr(RT_STR_TUPLE("pBufDesc->offBuf >= pBufDesc->cbBuf\n"));
+# endif
                 AssertBreakpoint(); AssertBreakpoint();
             }
 #endif
@@ -3722,7 +3728,11 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             { /* likely */ }
             else
             {
+# ifndef IPRT_NO_CRT
                 fprintf(stderr, "offBuf >= cbBuf (%#x >= %#x)\n", offBuf, cbBuf);
+# else
+                RTLogWriteStdErr(RT_STR_TUPLE("offBuf >= cbBuf\n"));
+# endif
                 AssertBreakpoint(); AssertBreakpoint();
             }
 #endif
