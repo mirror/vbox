@@ -485,8 +485,13 @@ STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 int VBoxDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
-    m_enmStatus = Status_Aborted;
-    return RTSemEventSignal(m_EvtDropped);
+    if (m_enmStatus == Status_Dropping)
+    {
+        m_enmStatus = Status_Aborted;
+        return RTSemEventSignal(m_EvtDropped);
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
