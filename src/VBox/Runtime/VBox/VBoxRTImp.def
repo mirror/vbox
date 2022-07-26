@@ -1003,7 +1003,6 @@ EXPORTS
     RTEnvFreeUtf16Block
     RTEnvGet
     RTEnvGetEx
-    RTEnvGetExecEnvP
     RTEnvPut
     RTEnvPutEx
     RTEnvQueryUtf16Block

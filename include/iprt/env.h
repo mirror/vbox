@@ -141,6 +141,10 @@ RTDECL(int) RTEnvReset(RTENV hEnv);
  * @returns NULL if Env is NULL or invalid.
  *
  * @param   Env     Environment block handle.
+ *
+ * @note    This is NOT available on Windows.  It is also not a stable export
+ *          and will hopefully be replaced before long (see todo).
+ *
  * @todo    This needs to change to return a copy of the env vars like
  *          RTEnvQueryUtf16Block does!
  */

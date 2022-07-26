@@ -302,8 +302,9 @@ int main()
     /*
      * execve envp and we're done.
      */
+#ifndef RT_OS_WINDOWS
     RTTestSub(hTest, "RTEnvGetExecEnvP");
-    const char * const *papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
+    papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
     CHECK(papsz != NULL);
     papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
     CHECK(papsz != NULL);
@@ -312,6 +313,7 @@ int main()
     CHECK(papsz != NULL);
     papsz = RTEnvGetExecEnvP(Env);
     CHECK(papsz != NULL);
+#endif
 
     CHECK_RC(RTEnvDestroy(Env), VINF_SUCCESS);
 

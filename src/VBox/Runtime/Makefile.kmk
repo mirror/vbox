@@ -2259,7 +2259,6 @@ ifdef VBOX_WITH_NOCRT_STATIC
 	r3/stream.cpp \
  	common/misc/json.cpp \
  	common/string/ministring.cpp \
- 	generic/env-generic.cpp \
 	generic/RTLogWriteStdErr-generic.cpp \
 	generic/RTLogWriteStdOut-generic.cpp \
  	,$(RuntimeGuestR3_SOURCES)) \

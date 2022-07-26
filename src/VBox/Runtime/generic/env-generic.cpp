@@ -40,17 +40,21 @@
 #include <iprt/utf16.h>
 #include "internal/magics.h"
 
-#include <stdlib.h>
-#if !defined(RT_OS_WINDOWS)
-# include <unistd.h>
-#endif
-#ifdef RT_OS_DARWIN
-# include <crt_externs.h>
-#endif
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
+#ifdef RT_OS_WINDOWS
+# include <iprt/nt/nt.h>
+#else
+# include <stdlib.h>
+# if !defined(RT_OS_WINDOWS)
+#  include <unistd.h>
+# endif
+# ifdef RT_OS_DARWIN
+#  include <crt_externs.h>
+# endif
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
 RT_C_DECLS_BEGIN
 extern char **environ;
 RT_C_DECLS_END
+# endif
 #endif
 
 
@@ -65,19 +69,11 @@ RT_C_DECLS_END
 /** Macro that unlocks the specified environment block. */
 #define RTENV_UNLOCK(pEnvInt)   do { } while (0)
 
-/** @def RTENV_HAVE_WENVIRON
- * Indicates that we have a _wenviron variable with UTF-16 strings that we
- * better use instead of the current-cp strings in environ. */
-#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
-# define RTENV_HAVE_WENVIRON 1
-#endif
-
 /** @def RTENV_IMPLEMENTS_UTF8_DEFAULT_ENV_API
  * Indicates the RTEnv*Utf8 APIs are implemented. */
 #if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 # define RTENV_IMPLEMENTS_UTF8_DEFAULT_ENV_API 1
 #endif
-
 
 /** @def RTENV_ALLOW_EQUAL_FIRST_IN_VAR
  * Allows a variable to start with an '=' sign by default.  This is used by
@@ -124,6 +120,7 @@ typedef struct RTENVINTERNAL
 } RTENVINTERNAL, *PRTENVINTERNAL;
 
 
+#ifndef RT_OS_WINDOWS
 /**
  * Internal worker that resolves the pointer to the default
  * process environment. (environ)
@@ -133,12 +130,13 @@ typedef struct RTENVINTERNAL
  */
 static const char * const *rtEnvDefault(void)
 {
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
     return *(_NSGetEnviron());
-#else
+# else
     return environ;
-#endif
+# endif
 }
+#endif
 
 
 /**
@@ -253,131 +251,199 @@ RTDECL(int) RTEnvDestroy(RTENV Env)
 RT_EXPORT_SYMBOL(RTEnvDestroy);
 
 
-RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
+static int rtEnvCloneDefault(PRTENV phEnv)
 {
-    /*
-     * Validate input and figure out how many variable to clone and where to get them.
-     */
-    bool fCaseSensitive = true;
-    bool fPutEnvBlock   = false;
-    bool fFirstEqual    = false;
-    size_t cVars;
-    const char * const *papszEnv;
-#ifdef RTENV_HAVE_WENVIRON
-    PCRTUTF16 const * papwszEnv = NULL;
-#endif
-    PRTENVINTERNAL pIntEnvToClone;
-    AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
-    if (EnvToClone == RTENV_DEFAULT)
-    {
-        cVars = 0;
-        pIntEnvToClone = NULL;
-#ifdef RTENV_HAVE_WENVIRON
-        papszEnv  = NULL;
-        papwszEnv = (PCRTUTF16 * const)_wenviron;
-        if (!papwszEnv)
-        {
-            _wgetenv(L"Path"); /* Force the CRT to initalize it. */
-            papwszEnv = (PCRTUTF16 * const)_wenviron;
-        }
-        if (papwszEnv)
-            while (papwszEnv[cVars])
-                cVars++;
-#else
-        papszEnv = rtEnvDefault();
-        if (papszEnv)
-            while (papszEnv[cVars])
-                cVars++;
-#endif
-
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-        /* DOS systems was case insensitive.  A prime example is the 'Path'
-           variable on windows which turns into the 'PATH' variable. */
-        fCaseSensitive = false;
-#endif
 #ifdef RTENV_ALLOW_EQUAL_FIRST_IN_VAR
-        fFirstEqual = true;
+    bool const fFirstEqual = true;
+#else
+    bool const fFirstEqual = false;
 #endif
-    }
-    else
-    {
-        pIntEnvToClone = EnvToClone;
-        AssertPtrReturn(pIntEnvToClone, VERR_INVALID_HANDLE);
-        AssertReturn(pIntEnvToClone->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
-        RTENV_LOCK(pIntEnvToClone);
 
-        fPutEnvBlock = pIntEnvToClone->fPutEnvBlock;
-        fFirstEqual = pIntEnvToClone->fFirstEqual;
-        papszEnv = pIntEnvToClone->papszEnv;
-        cVars = pIntEnvToClone->cVars;
+#ifdef RT_OS_WINDOWS
+    /*
+     * Lock the PEB, get the process environment.
+     *
+     * On older windows version GetEnviornmentStringsW will not copy the
+     * environment block, but return the pointer stored in the PEB.  This
+     * should be safer wrt to concurrent changes.
+     */
+    PPEB pPeb = RTNtCurrentPeb();
+
+    RtlAcquirePebLock();
+
+    /* Count variables in the block: */
+    size_t    cVars    = 0;
+    PCRTUTF16 pwszzEnv = pPeb->ProcessParameters ? pPeb->ProcessParameters->Environment : NULL;
+    if (pwszzEnv)
+    {
+        PCRTUTF16 pwsz = pwszzEnv;
+        while (*pwsz)
+        {
+            cVars++;
+            pwsz += RTUtf16Len(pwsz) + 1;
+        }
     }
+
+    PRTENVINTERNAL pIntEnv;
+    int rc = rtEnvCreate(&pIntEnv, cVars + 1 /* NULL */, false /*fCaseSensitive*/, false /*fPutEnvBlock*/, fFirstEqual);
+    if (RT_SUCCESS(rc))
+    {
+        size_t iDst;
+        for (iDst = 0; iDst < cVars && *pwszzEnv; iDst++, pwszzEnv += RTUtf16Len(pwszzEnv) + 1)
+        {
+            int rc2 = RTUtf16ToUtf8(pwszzEnv, &pIntEnv->papszEnv[iDst]);
+            if (RT_SUCCESS(rc2))
+            {
+                /* Make sure it contains an '='. */
+                if (strchr(pIntEnv->papszEnv[iDst], '='))
+                    continue;
+                rc2 = RTStrAAppend(&pIntEnv->papszEnv[iDst], "=");
+                if (RT_SUCCESS(rc2))
+                    continue;
+            }
+
+            /* failed fatally. */
+            pIntEnv->cVars = iDst + 1;
+            RtlReleasePebLock();
+            RTEnvDestroy(pIntEnv);
+            return rc2;
+        }
+
+        Assert(!*pwszzEnv); Assert(iDst == cVars);
+        pIntEnv->cVars = iDst;
+        pIntEnv->papszEnv[iDst] = NULL;
+
+        /* done */
+        *phEnv = pIntEnv;
+    }
+
+    RtlReleasePebLock();
+    return rc;
+
+#else /* !RT_OS_WINDOWS */
+
+    /*
+     * Figure out how many variable to clone.
+     */
+    const char * const *papszEnv = rtEnvDefault();
+    size_t              cVars = 0;
+    if (papszEnv)
+        while (papszEnv[cVars])
+            cVars++;
+
+    bool fCaseSensitive = true;
+# if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+    /* DOS systems was case insensitive.  A prime example is the 'Path'
+       variable on windows which turns into the 'PATH' variable. */
+    fCaseSensitive = false;
+# endif
 
     /*
      * Create the duplicate.
      */
     PRTENVINTERNAL pIntEnv;
-    int rc = rtEnvCreate(&pIntEnv, cVars + 1 /* NULL */, fCaseSensitive, fPutEnvBlock, fFirstEqual);
+    int rc = rtEnvCreate(&pIntEnv, cVars + 1 /* NULL */, fCaseSensitive, false /*fPutEnvBlock*/, fFirstEqual);
     if (RT_SUCCESS(rc))
     {
         pIntEnv->cVars = cVars;
         pIntEnv->papszEnv[pIntEnv->cVars] = NULL;
-        if (EnvToClone == RTENV_DEFAULT)
+
+        /* ASSUMES the default environment is in the current codepage. */
+        size_t  iDst = 0;
+        for (size_t iSrc = 0; iSrc < cVars; iSrc++)
         {
-            /* ASSUMES the default environment is in the current codepage. */
-            size_t  iDst = 0;
-            for (size_t iSrc = 0; iSrc < cVars; iSrc++)
+            int rc2 = RTStrCurrentCPToUtf8(&pIntEnv->papszEnv[iDst], papszEnv[iSrc]);
+            if (RT_SUCCESS(rc2))
             {
-#ifdef RTENV_HAVE_WENVIRON
-                int rc2 = RTUtf16ToUtf8(papwszEnv[iSrc], &pIntEnv->papszEnv[iDst]);
-#else
-                int rc2 = RTStrCurrentCPToUtf8(&pIntEnv->papszEnv[iDst], papszEnv[iSrc]);
-#endif
-                if (RT_SUCCESS(rc2))
-                {
-                    /* Make sure it contains an '='. */
-                    iDst++;
-                    if (strchr(pIntEnv->papszEnv[iDst - 1], '='))
-                        continue;
-                    rc2 = RTStrAAppend(&pIntEnv->papszEnv[iDst - 1], "=");
-                    if (RT_SUCCESS(rc2))
-                        continue;
-                }
-                else if (rc2 == VERR_NO_TRANSLATION)
-                {
-                    rc = VWRN_ENV_NOT_FULLY_TRANSLATED;
+                /* Make sure it contains an '='. */
+                iDst++;
+                if (strchr(pIntEnv->papszEnv[iDst - 1], '='))
                     continue;
-                }
-
-                /* failed fatally. */
-                pIntEnv->cVars = iDst;
-                RTEnvDestroy(pIntEnv);
-                return rc2;
+                rc2 = RTStrAAppend(&pIntEnv->papszEnv[iDst - 1], "=");
+                if (RT_SUCCESS(rc2))
+                    continue;
             }
-            pIntEnv->cVars = iDst;
-        }
-        else
-        {
-            for (size_t iVar = 0; iVar < cVars; iVar++)
+            else if (rc2 == VERR_NO_TRANSLATION)
             {
-                char *pszVar = RTStrDup(papszEnv[iVar]);
-                if (RT_UNLIKELY(!pszVar))
-                {
-                    RTENV_UNLOCK(pIntEnvToClone);
-
-                    pIntEnv->cVars = iVar;
-                    RTEnvDestroy(pIntEnv);
-                    return VERR_NO_STR_MEMORY;
-                }
-                pIntEnv->papszEnv[iVar] = pszVar;
+                rc = VWRN_ENV_NOT_FULLY_TRANSLATED;
+                continue;
             }
+
+            /* failed fatally. */
+            pIntEnv->cVars = iDst;
+            RTEnvDestroy(pIntEnv);
+            return rc2;
+        }
+        pIntEnv->cVars = iDst;
+
+        /* done */
+        *phEnv = pIntEnv;
+    }
+
+    return rc;
+#endif /* !RT_OS_WINDOWS */
+}
+
+
+/**
+ * Clones a non-default environment instance.
+ *
+ * @param   phEnv           Where to return the handle to the cloned environment.
+ * @param   pIntEnvToClone  The source environment. Caller takes care of
+ *                          locking.
+ */
+static int rtEnvCloneNonDefault(PRTENV phEnv, PRTENVINTERNAL pIntEnvToClone)
+{
+    PRTENVINTERNAL pIntEnv;
+    size_t const cVars = pIntEnvToClone->cVars;
+    int rc = rtEnvCreate(&pIntEnv, cVars + 1 /* NULL */,
+                         pIntEnvToClone->pfnCompare != RTStrNICmp,
+                         pIntEnvToClone->fPutEnvBlock,
+                         pIntEnvToClone->fFirstEqual);
+    if (RT_SUCCESS(rc))
+    {
+        pIntEnv->cVars = cVars;
+        pIntEnv->papszEnv[cVars] = NULL;
+
+        const char * const * const papszEnv = pIntEnvToClone->papszEnv;
+        for (size_t iVar = 0; iVar < cVars; iVar++)
+        {
+            char *pszVar = RTStrDup(papszEnv[iVar]);
+            if (RT_UNLIKELY(!pszVar))
+            {
+                pIntEnv->cVars = iVar;
+                RTEnvDestroy(pIntEnv);
+                return VERR_NO_STR_MEMORY;
+            }
+            pIntEnv->papszEnv[iVar] = pszVar;
         }
 
         /* done */
-        *pEnv = pIntEnv;
+        *phEnv = pIntEnv;
     }
+    return rc;
+}
 
-    if (pIntEnvToClone)
+
+RTDECL(int) RTEnvClone(PRTENV phEnv, RTENV hEnvToClone)
+{
+    /*
+     * Validate input and what kind of source block we're working with.
+     */
+    int rc;
+    AssertPtrReturn(phEnv, VERR_INVALID_POINTER);
+    if (hEnvToClone == RTENV_DEFAULT)
+        rc = rtEnvCloneDefault(phEnv);
+    else
+    {
+        PRTENVINTERNAL pIntEnvToClone = hEnvToClone;
+        AssertPtrReturn(pIntEnvToClone, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnvToClone->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+
+        RTENV_LOCK(pIntEnvToClone);
+        rc = rtEnvCloneNonDefault(phEnv, pIntEnvToClone);
         RTENV_UNLOCK(pIntEnvToClone);
+    }
     return rc;
 }
 RT_EXPORT_SYMBOL(RTEnvClone);
@@ -916,6 +982,7 @@ RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar)
 RT_EXPORT_SYMBOL(RTEnvExistEx);
 
 
+#ifndef RT_OS_WINDOWS
 RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
 {
     const char * const *papszRet;
@@ -978,6 +1045,7 @@ RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
     return papszRet;
 }
 RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);
+#endif /* !RT_OS_WINDOWS */
 
 
 /**
