@@ -166,7 +166,8 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
 /** @todo r=bird: Mixing ANSI and TCHAR crap again.  This code is a mess.  We
  * always use the wide version of the API and convert to UTF-8/whatever. */
 
-        sprintf(szFileVersionLocation, TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"), lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
+        RTStrPrintf(szFileVersionLocation, sizeof(szFileVersionLocation),
+                    "\\StringFileInfo\\%04x%04x\\FileVersion", lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
         fRet = VerQueryValue(pVersionInfo, szFileVersionLocation, (LPVOID *)&pszFileVersion, &cbFileVersion);
         if (fRet)
         {
@@ -443,7 +444,9 @@ static void vgsvcPageSharingInspectGuest(void)
                     if (!pModule)
                         break;
 
-/** @todo FullPathName not an UTF-8 string is! An ANSI string it is. */
+/** @todo FullPathName not an UTF-8 string is! An ANSI string it is
+ * according to the SYSTEM locale.  Best use RtlAnsiStringToUnicodeString to
+ * convert to UTF-16. */
                     strcpy(pModule->Info.szModule,
                            (const char *)&pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
                     GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
@@ -453,14 +456,14 @@ static void vgsvcPageSharingInspectGuest(void)
                     if (!lpPath)
                     {
                         /* Seen just file names in XP; try to locate the file in the system32 and system32\drivers directories. */
-                        strcat(szFullFilePath, "\\");
-                        strcat(szFullFilePath, (const char *)pSystemModules->Modules[i].FullPathName);
+                        RTStrCat(szFullFilePath, sizeof(szFullFilePath), "\\");
+                        RTStrCat(szFullFilePath, sizeof(szFullFilePath), (const char *)pSystemModules->Modules[i].FullPathName);
                         VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                         if (RTFileExists(szFullFilePath) == false)
                         {
                             GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
-                            strcat(szFullFilePath, "\\drivers\\");
-                            strcat(szFullFilePath, (const char *)pSystemModules->Modules[i].FullPathName);
+                            RTStrCat(szFullFilePath, sizeof(szFullFilePath), "\\drivers\\");
+                            RTStrCat(szFullFilePath, sizeof(szFullFilePath), (const char *)pSystemModules->Modules[i].FullPathName);
                             VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                             if (RTFileExists(szFullFilePath) == false)
                             {
@@ -480,7 +483,7 @@ static void vgsvcPageSharingInspectGuest(void)
                             continue;
                         }
 
-                        strcat(szFullFilePath, lpPath);
+                        RTStrCat(szFullFilePath, sizeof(szFullFilePath), lpPath);
                     }
 
                     strcpy(pModule->Info.szExePath, szFullFilePath);
