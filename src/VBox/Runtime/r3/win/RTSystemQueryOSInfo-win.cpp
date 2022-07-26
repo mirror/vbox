@@ -110,7 +110,8 @@ static RTWINPRODTYPE rtSystemWinGetProductInfo(DWORD dwOSMajorVersion, DWORD dwO
 /**
  * Appends the product type if available (Vista & 2003 only for some reason).
  *
- * @param   pszTmp      The buffer. Assumes it's big enough.
+ * @param   pszTmp      The buffer.
+ * @param   cbTmp       The buffer size.
  */
 static void rtSystemWinAppendProductType(char *pszTmp, size_t cbTmp)
 {
