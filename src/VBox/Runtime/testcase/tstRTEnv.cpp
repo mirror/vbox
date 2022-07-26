@@ -304,7 +304,7 @@ int main()
      */
 #ifndef RT_OS_WINDOWS
     RTTestSub(hTest, "RTEnvGetExecEnvP");
-    papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
+    char const * const *papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
     CHECK(papsz != NULL);
     papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
     CHECK(papsz != NULL);
