@@ -48,12 +48,6 @@ using namespace DragAndDropSvc;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/* Enable this define to see the proxy window(s) when debugging
- * their behavior. Don't have this enabled in release builds! */
-#ifdef DEBUG
-//# define VBOX_DND_DEBUG_WND
-#endif
-
 /** The drag and drop window's window class. */
 #define VBOX_DND_WND_CLASS            "VBoxTrayDnDWnd"
 
@@ -227,12 +221,16 @@ void VBoxDnDWnd::Destroy(void)
         wc.lpszClassName = VBOX_DND_WND_CLASS;
         wc.hInstance     = hInstance;
         wc.style         = CS_NOCLOSE;
-#ifdef VBOX_DND_DEBUG_WND
-        wc.style        |= CS_HREDRAW | CS_VREDRAW;
-        wc.hbrBackground = (HBRUSH)(CreateSolidBrush(RGB(255, 0, 0)));
-#else
-        wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
-#endif
+
+        if (g_cVerbosity)
+        {
+            /* Make it a solid red color so that we can see the window. */
+            wc.style        |= CS_HREDRAW | CS_VREDRAW;
+            wc.hbrBackground = (HBRUSH)(CreateSolidBrush(RGB(255, 0, 0)));
+        }
+        else
+            wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+
         if (!RegisterClassEx(&wc))
         {
             DWORD dwErr = GetLastError();
@@ -243,21 +241,20 @@ void VBoxDnDWnd::Destroy(void)
 
     if (RT_SUCCESS(rc))
     {
-        DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
-        DWORD dwStyle = WS_POPUP;
-#ifdef VBOX_DND_DEBUG_WND
-        dwExStyle &= ~WS_EX_TRANSPARENT; /* Remove transparency bit. */
-        dwStyle |= WS_VISIBLE; /* Make the window visible. */
-#endif
+        DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
+        DWORD dwStyle   = WS_POPUP;
+        if (g_cVerbosity)
+        {
+            dwStyle |= WS_VISIBLE;
+        }
+        else
+            dwExStyle |= WS_EX_TRANSPARENT;
+
         pThis->m_hWnd = CreateWindowEx(dwExStyle,
-                                     VBOX_DND_WND_CLASS, VBOX_DND_WND_CLASS,
-                                     dwStyle,
-#ifdef VBOX_DND_DEBUG_WND
-                                     CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, NULL, NULL,
-#else
-                                     -200, -200, 100, 100, NULL, NULL,
-#endif
-                                     hInstance, pThis /* lParm */);
+                                       VBOX_DND_WND_CLASS, VBOX_DND_WND_CLASS,
+                                       dwStyle,
+                                       -200, -200, 100, 100, NULL, NULL,
+                                       hInstance, pThis /* lParm */);
         if (!pThis->m_hWnd)
         {
             DWORD dwErr = GetLastError();
@@ -266,25 +263,27 @@ void VBoxDnDWnd::Destroy(void)
         }
         else
         {
-#ifndef VBOX_DND_DEBUG_WND
-            SetWindowPos(pThis->m_hWnd, HWND_TOPMOST, -200, -200, 0, 0,
-                           SWP_NOACTIVATE | SWP_HIDEWINDOW
-                         | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
-            LogFlowFunc(("Proxy window created, hWnd=0x%x\n", pThis->m_hWnd));
-#else
-            LogFlowFunc(("Debug proxy window created, hWnd=0x%x\n", pThis->m_hWnd));
+            BOOL fRc = SetWindowPos(pThis->m_hWnd, HWND_TOPMOST, -200, -200, 0, 0,
+                                      SWP_NOACTIVATE | SWP_HIDEWINDOW
+                                    | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
+            AssertMsg(fRc, ("Unable to set window position, error=%ld\n", GetLastError()));
 
-            /*
-             * Install some mouse tracking.
-             */
-            TRACKMOUSEEVENT me;
-            RT_ZERO(me);
-            me.cbSize    = sizeof(TRACKMOUSEEVENT);
-            me.dwFlags   = TME_HOVER | TME_LEAVE | TME_NONCLIENT;
-            me.hwndTrack = pThis->m_hWnd;
-            BOOL fRc = TrackMouseEvent(&me);
-            Assert(fRc);
-#endif
+            LogFlowFunc(("Proxy window created, hWnd=0x%x\n", pThis->m_hWnd));
+
+            if (g_cVerbosity)
+            {
+                /*
+                 * Install some mouse tracking.
+                 */
+                TRACKMOUSEEVENT me;
+                RT_ZERO(me);
+                me.cbSize    = sizeof(TRACKMOUSEEVENT);
+                me.dwFlags   = TME_HOVER | TME_LEAVE | TME_NONCLIENT;
+                me.hwndTrack = pThis->m_hWnd;
+
+                fRc = TrackMouseEvent(&me);
+                AssertMsg(fRc, ("Unable to enable debug mouse tracking, error=%ld\n", GetLastError()));
+            }
         }
     }
 
@@ -829,6 +828,23 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &a_lstFormats, VBOXDNDACTIONL
     if (RT_FAILURE(rc))
         return rc;
 
+    if (g_cVerbosity)
+    {
+        RTCString strMsg("Enter: Host -> Guest\n\n");
+        strMsg += RTCStringFmt("Allowed actions: %#x\n", a_fDndLstActionsAllowed);
+        strMsg += "Formats:\n";
+        for (size_t i = 0; i < this->m_lstFmtSup.size(); i++)
+        {
+            if (i > 0)
+                strMsg += "\n";
+            strMsg += this->m_lstFmtSup.at(i);
+        }
+
+        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                          strMsg.c_str(), "VirtualBox Drag'n Drop",
+                          15 * 1000 /* Time to display in msec */, NIIF_INFO);
+    }
+
     /* Save all allowed actions. */
     this->m_lstActionsAllowed = a_fDndLstActionsAllowed;
 
@@ -1015,6 +1031,11 @@ int VBoxDnDWnd::OnHgLeave(void)
     if (m_enmMode == GH) /* Wrong mode? Bail out. */
         return VERR_WRONG_ORDER;
 
+    if (g_cVerbosity)
+        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                          "Leave: Host -> Guest", "VirtualBox Drag'n Drop",
+                          15 * 1000 /* Time to display in msec */, NIIF_INFO);
+
     int rc = Abort();
 
     LogFlowFuncLeaveRC(rc);
@@ -1037,6 +1058,11 @@ int VBoxDnDWnd::OnHgDrop(void)
     int rc = VINF_SUCCESS;
     if (m_enmState == Dragging)
     {
+        if (g_cVerbosity)
+            hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                              "Drop: Host -> Guest", "VirtualBox Drag'n Drop",
+                              15 * 1000 /* Time to display in msec */, NIIF_INFO);
+
         if (m_lstFmtActive.size() >= 1)
         {
             /** @todo What to do when multiple formats are available? */
@@ -1324,13 +1350,22 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
  */
 int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t dndActionDefault)
 {
-    RT_NOREF(dndActionDefault);
-
     LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, strFormat=%s, dndActionDefault=0x%x\n",
                      m_enmMode, m_enmState, m_pDropTarget, strFormat.c_str(), dndActionDefault));
     int rc;
     if (m_enmMode == GH)
     {
+        if (g_cVerbosity)
+        {
+            RTCString strMsg("Drop: Guest -> Host\n\n");
+            strMsg += RTCStringFmt("Action: %#x\n", dndActionDefault);
+            strMsg += RTCStringFmt("Format: %s\n", strFormat.c_str());
+
+            hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                              strMsg.c_str(), "VirtualBox Drag'n Drop",
+                              15 * 1000 /* Time to display in msec */, NIIF_INFO);
+        }
+
         if (m_enmState == Dragging)
         {
             AssertPtr(m_pDropTarget);
@@ -1502,6 +1537,7 @@ int VBoxDnDWnd::makeFullscreen(void)
         r.top    = 0;
         r.right  = GetSystemMetrics(SM_CXSCREEN);
         r.bottom = GetSystemMetrics(SM_CYSCREEN);
+
         rc = VINF_SUCCESS;
     }
 
@@ -1520,11 +1556,9 @@ int VBoxDnDWnd::makeFullscreen(void)
                            r.top,
                            r.right  - r.left,
                            r.bottom - r.top,
-#ifdef VBOX_DND_DEBUG_WND
-                           SWP_SHOWWINDOW | SWP_FRAMECHANGED);
-#else
-                           SWP_SHOWWINDOW | SWP_NOOWNERZORDER | SWP_NOREDRAW | SWP_NOACTIVATE);
-#endif
+                             g_cVerbosity
+                           ? SWP_SHOWWINDOW | SWP_FRAMECHANGED
+                           : SWP_SHOWWINDOW | SWP_NOOWNERZORDER | SWP_NOREDRAW | SWP_NOACTIVATE);
         if (fRc)
         {
             LogFlowFunc(("Virtual screen is %ld,%ld,%ld,%ld (%ld x %ld)\n",
@@ -1862,6 +1896,12 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
     int rc = VbglR3DnDConnect(&pCtx->cmdCtx);
     if (RT_FAILURE(rc))
         return rc;
+
+    if (g_cVerbosity)
+        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                          RTCStringFmt("Running (worker client ID %RU32)", pCtx->cmdCtx.uClientID).c_str(),
+                          "VirtualBox Drag'n Drop",
+                          15 * 1000 /* Time to display in msec */, NIIF_INFO);
 
     /** @todo At the moment we only have one DnD proxy window. */
     Assert(pCtx->lstWnd.size() == 1);
