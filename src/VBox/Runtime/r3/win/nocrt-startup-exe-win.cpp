@@ -45,6 +45,8 @@
 # include <iprt/nocrt/stdlib.h>
 #endif
 
+#include "internal/compiler-vcc.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -157,6 +159,8 @@ static int rtTerminateProcess(int32_t rcExit, bool fDoAtExit)
                 idxCallback = RT_ELEMENTS(g_apAtExit[0]->apfnCallbacks) - 1;
             }
         }
+
+        rtVccInitializersRunTerm();
     }
 #else
     RT_NOREF(fDoAtExit);
@@ -202,38 +206,51 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
     InitStdHandles(pPeb->ProcessParameters);
     initProcExecPath();
 
-    /*
-     * Get and convert the command line to argc/argv format.
-     */
     RTEXITCODE rcExit;
-    UNICODE_STRING const *pCmdLine = pPeb->ProcessParameters ? &pPeb->ProcessParameters->CommandLine : NULL;
-    if (pCmdLine)
+#ifdef IPRT_NO_CRT
+    AssertCompile(sizeof(rcExit) == sizeof(int));
+    rcExit = (RTEXITCODE)rtVccInitializersRunInit();
+    if (rcExit == RTEXITCODE_SUCCESS)
+#endif
     {
-        char *pszCmdLine = NULL;
-        int rc = RTUtf16ToUtf8Ex(pCmdLine->Buffer, pCmdLine->Length / sizeof(WCHAR), &pszCmdLine, 0, NULL);
-        if (RT_SUCCESS(rc))
+        /*
+         * Get and convert the command line to argc/argv format.
+         */
+        UNICODE_STRING const *pCmdLine = pPeb->ProcessParameters ? &pPeb->ProcessParameters->CommandLine : NULL;
+        if (pCmdLine)
         {
-            char **papszArgv;
-            int    cArgs = 0;
-            rc = RTGetOptArgvFromString(&papszArgv, &cArgs, pszCmdLine,
-                                        RTGETOPTARGV_CNV_MODIFY_INPUT | RTGETOPTARGV_CNV_QUOTE_MS_CRT,  NULL);
+            char *pszCmdLine = NULL;
+            int rc = RTUtf16ToUtf8Ex(pCmdLine->Buffer, pCmdLine->Length / sizeof(WCHAR), &pszCmdLine, 0, NULL);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Call the main function.
-                 */
-                AssertCompile(sizeof(rcExit) == sizeof(int));
-                rcExit = (RTEXITCODE)main(cArgs, papszArgv, NULL /*envp*/);
+                char **papszArgv;
+                int    cArgs = 0;
+                rc = RTGetOptArgvFromString(&papszArgv, &cArgs, pszCmdLine,
+                                            RTGETOPTARGV_CNV_MODIFY_INPUT | RTGETOPTARGV_CNV_QUOTE_MS_CRT,  NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Call the main function.
+                     */
+                    AssertCompile(sizeof(rcExit) == sizeof(int));
+                    rcExit = (RTEXITCODE)main(cArgs, papszArgv, NULL /*envp*/);
+                }
+                else
+                    rcExit = RTMsgErrorExitFailure("Error parsing command line: %Rrc\n", rc);
             }
             else
-                rcExit = RTMsgErrorExitFailure("Error parsing command line: %Rrc\n", rc);
+                rcExit = RTMsgErrorExitFailure("Failed to convert command line to UTF-8: %Rrc\n", rc);
         }
         else
-            rcExit = RTMsgErrorExitFailure("Failed to convert command line to UTF-8: %Rrc\n", rc);
+            rcExit = RTMsgErrorExitFailure("No command line\n");
+        rtTerminateProcess(rcExit, true /*fDoAtExit*/);
     }
+#ifdef IPRT_NO_CRT
     else
-        rcExit = RTMsgErrorExitFailure("No command line\n");
-
-    rtTerminateProcess(rcExit, true /*fDoAtExit*/);
+    {
+        RTMsgError("A C static initializor failed (%d)\n", rcExit);
+        rtTerminateProcess(rcExit, false /*fDoAtExit*/);
+    }
+#endif
 }
 

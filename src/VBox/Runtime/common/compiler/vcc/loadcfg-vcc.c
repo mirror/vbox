@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - PE/Windows Load Configuration.
+ * IPRT - Visual C++ Compiler - PE/Windows Load Configuration.
  *
  * @note This is a C file and not C++ because the compiler generates fixups
  *       that upsets the linker (ADDR32 + ADDR32_4 instead of ADDR64).
@@ -34,6 +34,8 @@
 #include "internal/iprt.h"
 #include <iprt/formats/pecoff.h>
 
+#include "internal/compiler-vcc.h"
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -63,8 +65,6 @@ extern uintptr_t    __guard_xfg_dispatch_icall_fptr;        /**< nocrt-guard-win
 extern uintptr_t    __guard_xfg_table_dispatch_icall_fptr;  /**< nocrt-guard-win.asm */
 #endif
 
-extern RT_CONCAT(IMAGE_LOAD_CONFIG_DIRECTORY, ARCH_BITS) const  _load_config_used;
-
 
 /**
  * The load configuration for the PE image.
@@ -76,7 +76,7 @@ extern RT_CONCAT(IMAGE_LOAD_CONFIG_DIRECTORY, ARCH_BITS) const  _load_config_use
  * @todo use _MSC_VER to reduce this for older linkers which doesn't support all
  *       the machinactions we include here for the 2019 (14.29.30139.0) linker.
  */
-const IMAGE_LOAD_CONFIG_DIRECTORY64 _load_config_used =
+RT_CONCAT(IMAGE_LOAD_CONFIG_DIRECTORY, ARCH_BITS) const _load_config_used =
 {
     /* .Size                                = */    sizeof(_load_config_used),
     /* .TimeDateStamp                       = */    0,
