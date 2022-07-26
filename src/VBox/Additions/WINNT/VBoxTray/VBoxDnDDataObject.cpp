@@ -32,11 +32,6 @@
 #include "VBoxHelpers.h"
 #include "VBoxDnD.h"
 
-#ifdef DEBUG
-  /* Enable the following line to get much more debug output about
-   * (un)known clipboard formats. */
-//# define VBOX_DND_DEBUG_FORMATS
-#endif
 
 /** @todo Implement IDataObjectAsyncCapability interface? */
 
@@ -50,95 +45,14 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
     , m_pvData(NULL)
     , m_cbData(0)
 {
-
-    /*
-     * Allocate arrays for format related stuff.
-     */
-    /** @todo r=bird: Use an init function */
-    int   rc = VERR_NO_MEMORY;
-    ULONG cFixedFormats = 1;
-    ULONG cAllFormats   = cFormats + cFixedFormats;
-    m_paFormatEtc = (LPFORMATETC)RTMemAllocZ(sizeof(m_paFormatEtc[0]) * cAllFormats);
-    if (m_paFormatEtc)
-    {
-        m_paStgMedium = (LPSTGMEDIUM)RTMemAllocZ(sizeof(m_paStgMedium[0]) * cAllFormats);
-        if (m_EvtDropped)
-        {
-
-            /*
-             * Registration of dynamic formats needed?
-             */
-            LogFlowFunc(("%RU32 dynamic formats\n", cFormats));
-            if (cFormats)
-            {
-                AssertPtr(pFormatEtc);
-                AssertPtr(pStgMed);
-
-                for (ULONG i = 0; i < cFormats; i++)
-                {
-                    LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
-                                 i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                    m_paFormatEtc[i] = pFormatEtc[i];
-                    m_paStgMedium[i] = pStgMed[i];
-                }
-            }
-
-            rc = RTSemEventCreate(&m_EvtDropped);
-            AssertRCStmt(rc, m_EvtDropped = NIL_RTSEMEVENT);
-
-            /*
-             * Register fixed formats.
-             */
-#if 0
-            /* CF_HDROP. */
-            RegisterFormat(&mpFormatEtc[cFormats], CF_HDROP);
-            mpStgMedium[cFormats++].tymed = TYMED_HGLOBAL;
-
-            /* IStream. */
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR));
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_FILECONTENTS),
-                           TYMED_ISTREAM, 0 /* lIndex */);
-
-            /* Required for e.g. Windows Media Player. */
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_FILENAME));
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_FILENAMEW));
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_SHELLIDLIST));
-            RegisterFormat(&mpFormatEtc[cFormats++],
-                           RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
-#endif
-            m_cFormats  = cFormats;
-            m_enmStatus = Status_Initialized;
-        }
-    }
-    LogFlowFunc(("cFormats=%RU32 - %Rrc!\n", cFormats, rc));
+    int rc2 = Init(pFormatEtc, pStgMed, cFormats);
+    AssertRC(rc2);
 }
 
 VBoxDnDDataObject::~VBoxDnDDataObject(void)
 {
-    if (m_paFormatEtc)
-    {
-        RTMemFree(m_paFormatEtc);
-        m_paFormatEtc = NULL;
-    }
-
-    if (m_paStgMedium)
-    {
-        RTMemFree(m_paStgMedium);
-        m_paStgMedium = NULL;
-    }
-
-    if (m_pvData)
-    {
-        RTMemFree(m_pvData);
-        m_pvData = NULL;
-    }
-
-    LogFlowFunc(("mRefCount=%RI32\n", m_cRefs));
+    int rc2 = Destroy();
+    AssertRC(rc2);
 }
 
 /*
@@ -147,11 +61,13 @@ VBoxDnDDataObject::~VBoxDnDDataObject(void)
 
 STDMETHODIMP_(ULONG) VBoxDnDDataObject::AddRef(void)
 {
+    AssertReturn(m_cRefs < 32, m_cRefs); /* Paranoia. */
     return InterlockedIncrement(&m_cRefs);
 }
 
 STDMETHODIMP_(ULONG) VBoxDnDDataObject::Release(void)
 {
+    AssertReturn(m_cRefs > 0, 0);
     LONG lCount = InterlockedDecrement(&m_cRefs);
     if (lCount == 0)
     {
@@ -476,6 +392,114 @@ STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 /*
  * Own stuff.
  */
+
+int VBoxDnDDataObject::Init(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
+{
+    AssertReturn(m_enmStatus == Status_Uninitialized, VERR_WRONG_ORDER);
+
+    int rc = RTSemEventCreate(&m_EvtDropped);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Allocate arrays for format related stuff.
+     */
+    ULONG cFixedFormats = 1;
+    ULONG cAllFormats   = cFormats + cFixedFormats;
+    m_paFormatEtc = (LPFORMATETC)RTMemAllocZ(sizeof(m_paFormatEtc[0]) * cAllFormats);
+    if (m_paFormatEtc)
+    {
+        m_paStgMedium = (LPSTGMEDIUM)RTMemAllocZ(sizeof(m_paStgMedium[0]) * cAllFormats);
+        if (m_EvtDropped)
+        {
+            /*
+             * Registration of dynamic formats needed?
+             */
+            LogFlowFunc(("%RU32 dynamic formats\n", cFormats));
+            if (cFormats)
+            {
+                AssertPtr(pFormatEtc);
+                AssertPtr(pStgMed);
+
+                for (ULONG i = 0; i < cFormats; i++)
+                {
+                    LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
+                                 i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
+                    m_paFormatEtc[i] = pFormatEtc[i];
+                    m_paStgMedium[i] = pStgMed[i];
+                }
+            }
+
+            /*
+             * Register fixed formats.
+             */
+#if 0
+            /* CF_HDROP. */
+            RegisterFormat(&mpFormatEtc[cFormats], CF_HDROP);
+            mpStgMedium[cFormats++].tymed = TYMED_HGLOBAL;
+
+            /* IStream. */
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR));
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_FILECONTENTS),
+                           TYMED_ISTREAM, 0 /* lIndex */);
+
+            /* Required for e.g. Windows Media Player. */
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_FILENAME));
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_FILENAMEW));
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_SHELLIDLIST));
+            RegisterFormat(&mpFormatEtc[cFormats++],
+                           RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
+#endif
+            m_cFormats  = cFormats;
+            m_enmStatus = Status_Initialized;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("cFormats=%RU32 - %Rrc\n", cFormats, rc));
+    return rc;
+}
+
+int VBoxDnDDataObject::Destroy(void)
+{
+    if (m_enmStatus == Status_Uninitialized)
+        return VINF_SUCCESS;
+
+    AssertReturn(m_cRefs == 0, VERR_WRONG_ORDER);
+
+    if (m_paFormatEtc)
+    {
+        RTMemFree(m_paFormatEtc);
+        m_paFormatEtc = NULL;
+    }
+
+    if (m_paStgMedium)
+    {
+        RTMemFree(m_paStgMedium);
+        m_paStgMedium = NULL;
+    }
+
+    if (m_pvData)
+    {
+        RTMemFree(m_pvData);
+        m_pvData = NULL;
+    }
+
+    int rc = RTSemEventDestroy(m_EvtDropped);
+    AssertRCReturn(rc, rc);
+    m_EvtDropped = NIL_RTSEMEVENT;
+
+    m_enmStatus = Status_Uninitialized;
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Aborts waiting for data being "dropped".

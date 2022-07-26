@@ -30,29 +30,15 @@
 
 
 
-VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats)
+VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG uIdx, ULONG cToCopy, ULONG cTotal)
     : m_cRefs(1)
     , m_uIdxCur(0)
     , m_cFormats(0)
     , m_paFormatEtc(NULL)
 
 {
-    LogFlowFunc(("pFormatEtc=%p, cFormats=%RU32\n", pFormatEtc, cFormats));
-    /** @todo r=bird: Use an init() function! */
-    m_paFormatEtc = (LPFORMATETC)RTMemAllocZ(sizeof(*m_paFormatEtc) * cFormats);
-    if (m_paFormatEtc)
-    {
-        for (ULONG i = 0; i < cFormats; i++)
-        {
-            LogFlowFunc(("Format %RU32: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
-                         i, pFormatEtc[i].cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc[i].cfFormat),
-                         pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-            VBoxDnDEnumFormatEtc::CopyFormat(&m_paFormatEtc[i], &pFormatEtc[i]);
-        }
-        m_cFormats = cFormats;
-    }
-    else
-        Log(("Failed to allocate memory for %u formats!\n"));
+    int rc2 = Init(pFormatEtc, uIdx, cToCopy, cTotal);
+    AssertRC(rc2);
 }
 
 VBoxDnDEnumFormatEtc::~VBoxDnDEnumFormatEtc(void)
@@ -71,6 +57,49 @@ VBoxDnDEnumFormatEtc::~VBoxDnDEnumFormatEtc(void)
     }
 
     LogFlowFunc(("m_lRefCount=%RI32\n", m_cRefs));
+}
+
+/**
+ * Initializes the class by copying the required formats.
+ *
+ * @returns VBox status code.
+ * @param   pFormatEtc          Format Etc to use for initialization.
+ * @param   uIdx                Index (zero-based) of format
+ * @param   cToCopy             Number of formats \a pFormatEtc to copy, starting from \a uIdx.
+ * @param   cTotal              Number of total formats \a pFormatEtc holds.
+ */
+int VBoxDnDEnumFormatEtc::Init(LPFORMATETC pFormatEtc, ULONG uIdx, ULONG cToCopy, ULONG cTotal)
+{
+    AssertPtrReturn(pFormatEtc,            VERR_INVALID_POINTER);
+    AssertReturn(uIdx <= cTotal,           VERR_INVALID_PARAMETER);
+    AssertReturn(uIdx + cToCopy <= cTotal, VERR_INVALID_PARAMETER);
+    /* cFormats can be 0. */
+
+    if (!cToCopy)
+        return VINF_SUCCESS;
+
+    AssertReturn(m_paFormatEtc == NULL && m_cFormats == 0, VERR_WRONG_ORDER);
+
+    int rc = VINF_SUCCESS;
+
+    m_paFormatEtc = (LPFORMATETC)RTMemAllocZ(sizeof(FORMATETC) * cToCopy);
+    if (m_paFormatEtc)
+    {
+        for (ULONG i = 0; i < cToCopy; i++)
+        {
+            LPFORMATETC const pFormatCur = &pFormatEtc[uIdx + i];
+
+            LogFlowFunc(("Format %RU32 (index %RU32): cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
+                         i, uIdx + i, pFormatCur->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatCur->cfFormat),
+                         pFormatCur->tymed, pFormatCur->dwAspect));
+            VBoxDnDEnumFormatEtc::CopyFormat(&m_paFormatEtc[i], pFormatCur);
+        }
+
+        m_cFormats = cToCopy;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
 }
 
 /*
@@ -152,33 +181,53 @@ STDMETHODIMP VBoxDnDEnumFormatEtc::Clone(IEnumFORMATETC **ppEnumFormatEtc)
     return hrc;
 }
 
+/**
+ * Copies a format etc from \a pSource to \a aDest (deep copy).
+ *
+ * @returns VBox status code.
+ * @param   pDest               Where to copy \a pSource to.
+ * @param   pSource             Source to copy.
+ */
 /* static */
-void VBoxDnDEnumFormatEtc::CopyFormat(LPFORMATETC pDest, LPFORMATETC pSource)
+int VBoxDnDEnumFormatEtc::CopyFormat(LPFORMATETC pDest, LPFORMATETC pSource)
 {
-    AssertPtrReturnVoid(pDest);
-    AssertPtrReturnVoid(pSource);
+    AssertPtrReturn(pDest  , VERR_INVALID_POINTER);
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
     *pDest = *pSource;
 
     if (pSource->ptd)
     {
         pDest->ptd = (DVTARGETDEVICE*)CoTaskMemAlloc(sizeof(DVTARGETDEVICE));
+        AssertPtrReturn(pDest->ptd, VERR_NO_MEMORY);
         *(pDest->ptd) = *(pSource->ptd);
     }
+
+    return VINF_SUCCESS;
 }
 
+/**
+ * Creates an IEnumFormatEtc interface from a given format etc structure.
+ *
+ * @returns HRESULT
+ * @param   nNumFormats         Number of formats to copy from \a pFormatEtc.
+ * @param   pFormatEtc          Format etc to use for creation.
+ * @param   ppEnumFormatEtc     Where to return the created IEnumFormatEtc interface on success.
+ */
 /* static */
 HRESULT VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(UINT nNumFormats, LPFORMATETC pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc)
 {
-    AssertReturn(nNumFormats, E_INVALIDARG);
+    /* cNumFormats can be 0. */
     AssertPtrReturn(pFormatEtc, E_INVALIDARG);
     AssertPtrReturn(ppEnumFormatEtc, E_INVALIDARG);
 
 #ifdef RT_EXCEPTIONS_ENABLED
-    try { *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc, nNumFormats); }
+    try { *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc,
+                                                      0 /* uIdx */,  nNumFormats /* cToCopy */, nNumFormats /* cTotal */); }
     catch (std::bad_alloc &)
 #else
-    *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc, nNumFormats);
+    *ppEnumFormatEtc = new VBoxDnDEnumFormatEtc(pFormatEtc,
+                                                0 /* uIdx */, nNumFormats /* cToCopy */, nNumFormats /* cTotal */);
     if (!*ppEnumFormatEtc)
 #endif
     {
