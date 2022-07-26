@@ -113,6 +113,7 @@ EXPORTS
     LdrLockLoaderLock                     ;;= _LdrLockLoaderLock@12
     LdrUnlockLoaderLock                   ;;= _LdrUnlockLoaderLock@8
 
+    RtlAcquirePebLock                     ;;= _RtlAcquirePebLock@0
     RtlAddAccessAllowedAce                ;;= _RtlAddAccessAllowedAce@16
     RtlAddAccessDeniedAce                 ;;= _RtlAddAccessDeniedAce@16
     RtlAllocateHeap                       ;;= _RtlAllocateHeap@12
@@ -138,6 +139,7 @@ EXPORTS
     RtlInitializeSid                      ;;= _RtlInitializeSid@12
     RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
     RtlReAllocateHeap                     ;;= _RtlReAllocateHeap@16
+    RtlReleasePebLock                     ;;= _RtlReleasePebLock@0
     RtlRestoreLastWin32Error              ;;= _RtlRestoreLastWin32Error@4
     RtlSetDaclSecurityDescriptor          ;;= _RtlSetDaclSecurityDescriptor@16
     RtlSetLastWin32Error                  ;;= _RtlSetLastWin32Error@4

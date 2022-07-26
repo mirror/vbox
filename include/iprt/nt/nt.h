@@ -1612,6 +1612,10 @@ DECL_FORCE_INLINE(uint32_t) RTNtLastErrorValue(void)  { return __readgsdword(RT_
 #endif
 #define NtCurrentPeb()           RTNtCurrentPeb()
 
+#ifdef IN_RING3
+RT_DECL_NTAPI(void) RtlAcquirePebLock(void);
+RT_DECL_NTAPI(void) RtlReleasePebLock(void);
+#endif
 
 /** @} */
 
