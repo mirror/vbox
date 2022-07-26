@@ -42,7 +42,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Title of the program to show. 
+/** Title of the program to show.
  *  Also shown as part of message boxes. */
 #define VBOX_VBOXTRAY_TITLE                     "VBoxTray"
 
