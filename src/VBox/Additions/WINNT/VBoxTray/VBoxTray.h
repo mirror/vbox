@@ -38,6 +38,14 @@
 
 #include "VBoxDispIf.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Title of the program to show. 
+ *  Also shown as part of message boxes. */
+#define VBOX_VBOXTRAY_TITLE                     "VBoxTray"
+
 /*
  * Windows messsages.
  */
@@ -57,6 +65,11 @@
 #define TIMERID_VBOXTRAY_CAPS_TIMER             1001
 #define TIMERID_VBOXTRAY_DT_TIMER               1002
 #define TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER  1003
+
+
+/*********************************************************************************************************************************
+*   Common structures                                                                                                            *
+*********************************************************************************************************************************/
 
 /**
  * The environment information for services.
@@ -122,17 +135,6 @@ typedef struct _VBOXSERVICEDESC
     DECLCALLBACKMEMBER(void, pfnDestroy,(void *pInstance));
 } VBOXSERVICEDESC, *PVBOXSERVICEDESC;
 
-extern VBOXSERVICEDESC g_SvcDescDisplay;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-extern VBOXSERVICEDESC g_SvcDescClipboard;
-#endif
-extern VBOXSERVICEDESC g_SvcDescSeamless;
-extern VBOXSERVICEDESC g_SvcDescVRDP;
-extern VBOXSERVICEDESC g_SvcDescIPC;
-extern VBOXSERVICEDESC g_SvcDescLA;
-#ifdef VBOX_WITH_DRAG_AND_DROP
-extern VBOXSERVICEDESC g_SvcDescDnD;
-#endif
 
 /**
  * The service initialization info and runtime variables.
@@ -173,6 +175,23 @@ typedef struct _VBOXGLOBALMESSAGE
     UINT     uMsgID;
 } VBOXGLOBALMESSAGE, *PVBOXGLOBALMESSAGE;
 
+
+/*********************************************************************************************************************************
+*   Externals                                                                                                                    *
+*********************************************************************************************************************************/
+extern VBOXSERVICEDESC g_SvcDescDisplay;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+extern VBOXSERVICEDESC g_SvcDescClipboard;
+#endif
+extern VBOXSERVICEDESC g_SvcDescSeamless;
+extern VBOXSERVICEDESC g_SvcDescVRDP;
+extern VBOXSERVICEDESC g_SvcDescIPC;
+extern VBOXSERVICEDESC g_SvcDescLA;
+#ifdef VBOX_WITH_DRAG_AND_DROP
+extern VBOXSERVICEDESC g_SvcDescDnD;
+#endif
+
+extern int          g_cVerbosity;
 extern HINSTANCE    g_hInstance;
 extern HWND         g_hwndToolWindow;
 extern uint32_t     g_fGuestDisplaysChanged;

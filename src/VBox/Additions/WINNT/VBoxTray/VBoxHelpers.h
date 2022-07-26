@@ -23,16 +23,18 @@
 
 // #define DEBUG_DISPLAY_CHANGE
 
+/** @todo r=andy WTF? Remove this!! */
 #ifdef DEBUG_DISPLAY_CHANGE
 #   define DDCLOG(a) Log(a)
 #else
 #   define DDCLOG(a) do {} while (0)
 #endif /* !DEBUG_DISPLAY_CHANGE */
 
-extern int hlpReportStatus(VBoxGuestFacilityStatus statusCurrent);
+extern int  hlpReportStatus(VBoxGuestFacilityStatus statusCurrent);
 extern void hlpReloadCursor(void);
 extern void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary, unsigned uResized, int iNewWidth, int iNewHeight, int iNewPosX, int iNewPosY);
-extern int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
+extern int  hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
+extern void hlpShowMessageBox(const char *pszTitle, UINT uStyle, const char *pszFmt, ...);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHelpers_h */
 

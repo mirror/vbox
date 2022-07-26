@@ -41,11 +41,14 @@
 
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
+#include <iprt/getopt.h>
 #include <iprt/ldr.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/system.h>
 #include <iprt/time.h>
+#include <iprt/utf16.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -131,6 +134,7 @@ static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg);
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+int                   g_cVerbosity             = 0;
 HANDLE                g_hStopSem;
 HANDLE                g_hSeamlessWtNotifyEvent = 0;
 HANDLE                g_hSeamlessKmNotifyEvent = 0;
@@ -558,42 +562,55 @@ static DECLCALLBACK(void) vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLO
 
 /**
  * Creates the default release logger outputting to the specified file.
- * Pass NULL for disabled logging.
  *
  * @return  IPRT status code.
+ * @param   pszLogFile          Path to log file to use.
  */
-static int vboxTrayLogCreate(void)
+static int vboxTrayLogCreate(const char *pszLogFile)
 {
     /* Create release (or debug) logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-#ifdef DEBUG /* See below, debug logger not release. */
-    static const char s_szEnvVarPfx[] = "VBOXTRAY_LOG";
-    static const char s_szGroupSettings[] = "all.e.l.f";
-#else
     static const char s_szEnvVarPfx[] = "VBOXTRAY_RELEASE_LOG";
-    static const char s_szGroupSettings[] = "all";
-#endif
+
     RTERRINFOSTATIC ErrInfo;
     int rc = RTLogCreateEx(&g_pLoggerRelease, s_szEnvVarPfx,
                            RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_USECRLF,
-                           s_szGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
+                           "all.e", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
                            0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
-                           RTErrInfoInitStatic(&ErrInfo), NULL /*pszFilenameFmt*/);
+                           RTErrInfoInitStatic(&ErrInfo), "%s", pszLogFile ? pszLogFile : "");
     if (RT_SUCCESS(rc))
     {
-#ifdef DEBUG
-        /* Register this logger as the _debug_ logger.
-           Note! This means any Log() statement preceeding this may cause a
-                 20yy-*VBoxTray*.log file to have been created and it will stay
-                 open till the process quits as we don't destroy it when
-                 replacing it here. */
-        RTLogSetDefaultInstance(g_pLoggerRelease);
-#else
         /* Register this logger as the release logger. */
         RTLogRelSetDefaultInstance(g_pLoggerRelease);
-#endif
+
+        /* Register this logger as the _debug_ logger. */
+        RTLogSetDefaultInstance(g_pLoggerRelease);
+
+        switch (g_cVerbosity) /* Not very elegant, but has to do it for now. */
+        {
+            case 1:
+                rc = RTLogGroupSettings(g_pLoggerRelease, "all.e.l");
+                break;
+
+            case 2:
+                rc = RTLogGroupSettings(g_pLoggerRelease, "all.e.l.l2");
+                break;
+
+            case 3:
+                rc = RTLogGroupSettings(g_pLoggerRelease, "all.e.l.l2.l3");
+                break;
+
+            case 4:
+                RT_FALL_THROUGH();
+            default:
+                rc = RTLogGroupSettings(g_pLoggerRelease, "all.e.l.l2.l3.f");
+                break;
+        }
+        if (RT_FAILURE(rc))
+            RTMsgError("Setting debug logging failed, rc=%Rrc\n", rc);
+
         /* Explicitly flush the log in case of VBOXTRAY_RELEASE_LOG=buffered. */
         RTLogFlush(g_pLoggerRelease);
     }
@@ -984,27 +1001,127 @@ static int vboxTrayServiceMain(void)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
-    int rc = RTR3InitExeNoArguments(0);
+
+    int rc = RTR3InitExe(__argc, &__argv, RTR3INIT_FLAGS_STANDALONE_APP);
     if (RT_FAILURE(rc))
-        return RTEXITCODE_INIT;
+        return RTMsgInitFailure(rc);
+
+    LPWSTR pwszCmdLine = GetCommandLineW();
+    if (!pwszCmdLine)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "GetCommandLineW failed");
+
+    char *pszCmdLine;
+    rc = RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine); /* leaked */
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", rc);
+
+    char szLogFile[RTPATH_MAX] = {0};
+
+    int    cArgs;
+    char **papszArgs;
+    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Parse the top level arguments until we find a command.
+         */
+        static const RTGETOPTDEF s_aOptions[] =
+        {
+            { "--help",             'h',                         RTGETOPT_REQ_NOTHING },
+            { "-help",              'h',                         RTGETOPT_REQ_NOTHING },
+            { "/help",              'h',                         RTGETOPT_REQ_NOTHING },
+            { "/?",                 'h',                         RTGETOPT_REQ_NOTHING },
+            { "--logfile",          'l',                         RTGETOPT_REQ_STRING  },
+            { "-l",                 'l',                         RTGETOPT_REQ_STRING  },
+            { "/l",                 'l',                         RTGETOPT_REQ_STRING  },
+            { "--verbose",          'v',                         RTGETOPT_REQ_NOTHING },
+            { "-v",                 'v',                         RTGETOPT_REQ_NOTHING },
+            { "/v",                 'v',                         RTGETOPT_REQ_NOTHING },
+            { "--version",          'V',                         RTGETOPT_REQ_NOTHING },
+            { "-version",           'V',                         RTGETOPT_REQ_NOTHING },
+            { "/version",           'V',                         RTGETOPT_REQ_NOTHING },
+            { "/V",                 'V',                         RTGETOPT_REQ_NOTHING }
+        };
+
+        RTGETOPTSTATE GetState;
+        rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+
+        int ch;
+        RTGETOPTUNION ValueUnion;
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        {
+            switch (ch)
+            {
+                case 'h':
+                    hlpShowMessageBox(VBOX_VBOXTRAY_TITLE, MB_ICONINFORMATION, "-- %s v%u.%u.%ur%u --\n"
+                         "\n"
+                         "Command Line Parameters:\n\n"
+                         "-l, --logfile <file>\n"
+                         "    Enables logging to a file\n"
+                         "-v, --verbose\n"
+                         "    Increases verbosity\n"
+                         "-V, --version\n"
+                         "   Displays version number and exit\n"
+                         "-?, -h, --help\n"
+                         "   Displays this help text and exit\n"
+                         "\n"
+                         "Examples:\n"
+                         "  %s -vvv\n",
+                         VBOX_VBOXTRAY_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
+                         papszArgs[0], papszArgs[0]);
+                    return RTEXITCODE_SUCCESS;
+
+                case 'l':
+                    if (*ValueUnion.psz == '\0')
+                        szLogFile[0] = '\0';
+                    else
+                    {
+                        rc = RTPathAbs(ValueUnion.psz, szLogFile, sizeof(szLogFile));
+                        if (RT_FAILURE(rc))
+                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Log file path is too long (%Rrc)", rc);
+                    }
+                    break;
+
+                case 'v':
+                    g_cVerbosity++;
+                    break;
+
+                case 'V':
+                    hlpShowMessageBox(VBOX_VBOXTRAY_TITLE, MB_ICONINFORMATION,
+                                      "Version: %u.%u.%ur%u",
+                                      VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+                    return RTEXITCODE_SUCCESS;
+
+                default:
+                    rc = RTGetOptPrintError(ch, &ValueUnion);
+                    break;
+            }
+        }
+
+        RTGetOptArgvFree(papszArgs);
+    }
+    else
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", rc);
 
     /* Note: Do not use a global namespace ("Global\\") for mutex name here,
      * will blow up NT4 compatibility! */
-    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxTray");
+    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, VBOX_VBOXTRAY_TITLE);
     if (   hMutexAppRunning != NULL
         && GetLastError() == ERROR_ALREADY_EXISTS)
     {
         /* VBoxTray already running? Bail out. */
         CloseHandle (hMutexAppRunning);
         hMutexAppRunning = NULL;
-        return 0;
+        return RTEXITCODE_SUCCESS;
     }
 
-    LogRel(("%s r%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
-
-    rc = vboxTrayLogCreate();
+    rc = vboxTrayLogCreate(szLogFile[0] ? szLogFile : NULL);
     if (RT_SUCCESS(rc))
     {
+        LogRel(("Verbosity level: %d\n", g_cVerbosity));
+
         rc = VbglR3Init();
         if (RT_SUCCESS(rc))
         {
@@ -1153,9 +1270,11 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             {
                 case WM_LBUTTONDBLCLK:
                     break;
-#ifdef DEBUG
                 case WM_RBUTTONDOWN:
                 {
+                    if (!g_cVerbosity) /* Don't show menu when running in non-verbose mode. */
+                        break;
+
                     POINT lpCursor;
                     if (GetCursorPos(&lpCursor))
                     {
@@ -1191,7 +1310,6 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                     }
                     break;
                 }
-#endif
             }
             return 0;
         }

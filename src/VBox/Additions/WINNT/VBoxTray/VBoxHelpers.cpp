@@ -20,6 +20,7 @@
 #include <iprt/string.h>
 #include <iprt/alloca.h>
 #include <iprt/system.h>
+#include <iprt/utf16.h>
 #include <VBox/Log.h>
 #include <VBox/VBoxGuestLib.h>
 
@@ -328,5 +329,47 @@ int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID,
         return RTErrConvertFromWin32(dwErr);
     }
     return VINF_SUCCESS;
+}
+
+/**
+ * Shows a message box with a printf() style formatted string.
+ *
+ * @param   pszTitle            Title of the message box.
+ * @param   uStyle              Style of message box to use (see MSDN, MB_ defines).
+ *                              When 0 is specified, MB_ICONINFORMATION will be used.
+ * @param   pszFmt              Printf-style format string to show in the message box body.
+ * @param   ...                 Arguments for format string.
+ */
+void hlpShowMessageBox(const char *pszTitle, UINT uStyle, const char *pszFmt, ...)
+{
+    if (!uStyle)
+        uStyle = MB_ICONINFORMATION;
+
+    char       *pszMsg;
+    va_list     va;
+    va_start(va, pszFmt);
+    int rc = RTStrAPrintfV(&pszMsg, pszFmt, va);
+    va_end(va);
+    if (rc >= 0)
+    {
+        PRTUTF16 pwszTitle;
+        rc = RTStrToUtf16(pszTitle, &pwszTitle);
+        if (RT_SUCCESS(rc))
+        {
+            PRTUTF16 pwszMsg;
+            rc = RTStrToUtf16(pszMsg, &pwszMsg);
+            if (RT_SUCCESS(rc))
+            {
+                MessageBoxW(GetDesktopWindow(), pwszMsg, pwszTitle, uStyle);
+                RTUtf16Free(pwszMsg);
+            }
+            else
+                MessageBoxA(GetDesktopWindow(), pszMsg, pszTitle, uStyle);
+            RTUtf16Free(pwszTitle);
+        }
+    }
+    else /* Should never happen! */
+        AssertMsgFailed(("Failed to format error text of format string: %s!\n", pszFmt));
+    RTStrFree(pszMsg);
 }
 
