@@ -125,6 +125,9 @@
  %undef %1
 %endmacro
 
+;;
+; Empty define
+%define RT_NOTHING
 
 ;; Define ASM_FORMAT_PE64 if applicable.
 %ifdef ASM_FORMAT_PE
@@ -482,19 +485,55 @@ GLOBALNAME %1
 
 ;;
 ; Global marker which is DECLASM() compatible.
-%macro GLOBALNAME_EX 2
-%ifndef ASM_FORMAT_BIN
- %ifdef ASM_FORMAT_ELF
-global NAME(%1):%2
+;
+; @param %1     The symbol name - subjected to NAME().
+; @param %2     ELF and PE attributes: 'function', 'object', 'data', 'notype'.
+;               PE ignores all but 'function' (yasm only).  Other formats ignores
+;               this completely.
+; @param %3     Symbol visibility: 'hidden', 'protected', 'internal', and
+;                                   RT_NOTHING (for 'default' visibility).
+;               These are ELF attributes, but 'hidden' is translated to
+;               'private_extern' for the Macho-O format.
+;               Ignored by other formats.
+;
+%macro GLOBALNAME_EX 3
+%ifdef ASM_FORMAT_ELF
+global NAME(%1):%2 %3
+
+%elifdef ASM_FORMAT_PE
+ %ifidn %2,function
+  %ifdef __YASM__      ; nasm does not support any attributes, it errors out. So, nasm is no good with control flow guard atm.
+global NAME(%1):function
+  %else
+global NAME(%1)
+  %endif
  %else
 global NAME(%1)
  %endif
+
+%elifdef ASM_FORMAT_MACHO
+ %ifidn %3,hidden
+global NAME(%1):private_extern
+ %else
+global NAME(%1)
+ %endif
+
+%elifndef ASM_FORMAT_BIN
+global NAME(%1)
+
 %endif
+
 NAME(%1):
 %endmacro
 
 ;;
 ; Global exported marker which is DECLASM() compatible.
+;
+; @param %1     The symbol name - subjected to NAME().
+; @param %2     ELF and PE attributes: 'function', 'object', 'data', 'notype'.
+;               PE ignores all but 'function' (yasm only).  Other formats ignores
+;               this completely.
+;
 %macro EXPORTEDNAME_EX 2
  %ifdef ASM_FORMAT_PE
   export %1=NAME(%1)
@@ -504,7 +543,7 @@ NAME(%1):
    export NAME(%1) NAME(%1)
   %endif
 %endif
-GLOBALNAME_EX %1, %2
+GLOBALNAME_EX %1, %2, RT_NOTHING
 %endmacro
 
 ;;
@@ -517,7 +556,7 @@ GLOBALNAME_EX %1, %2
 global     NAME(%1):function
 proc_frame NAME(%1)
  %else
-GLOBALNAME_EX %1, function hidden
+GLOBALNAME_EX %1, function, hidden
  %endif
 .start_of_prologue:
 %endmacro
@@ -546,7 +585,7 @@ EXPORTEDNAME_EX %1, function
  %ifdef RT_ASM_WITH_SEH64
 endproc_frame
  %endif
-GLOBALNAME_EX %1 %+ _EndProc, function hidden
+GLOBALNAME_EX %1 %+ _EndProc, , hidden ; no function here, this isn't a valid code flow target.
 %ifdef ASM_FORMAT_ELF
  %ifndef __NASM__ ; nasm does this in the global directive.
 size NAME(%1)               NAME(%1 %+ _EndProc) - NAME(%1)
