@@ -1471,7 +1471,7 @@ private:
     void readTeleporter(const xml::ElementNode &elmTeleporter, MachineUserData &userData);
     void readDebugging(const xml::ElementNode &elmDbg, Debugging &dbg);
     void readAutostart(const xml::ElementNode &elmAutostart, Autostart &autostrt);
-    void readRecordingSettings(const xml::ElementNode &elmRecording, RecordingSettings &recording);
+    void readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, RecordingSettings &recording);
     void readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups);
     bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
