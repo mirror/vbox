@@ -166,17 +166,29 @@ int VGSvcWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszVa
  *
  * @returns Success indicator.
  */
-static bool vgsvcUtilGetFileVersionOwn(LPSTR pVerData, PDWORD pdwMajor, PDWORD pdwMinor, PDWORD pdwBuildNumber,
-                                       PDWORD pdwRevisionNumber)
+static bool vgsvcUtilGetFileVersionOwn(LPSTR pVerData, uint32_t *puMajor, uint32_t *puMinor,
+                                       uint32_t *puBuildNumber, uint32_t *puRevisionNumber)
 {
     UINT    cchStrValue = 0;
     LPTSTR  pStrValue   = NULL;
     if (!VerQueryValueA(pVerData, "\\StringFileInfo\\040904b0\\FileVersion", (LPVOID *)&pStrValue, &cchStrValue))
         return false;
 
-    /** @todo r=bird: get rid of this. Avoid sscanf like the plague! */
-    if (sscanf(pStrValue, "%ld.%ld.%ld.%ld", pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber) != 4)
-        return false;
+    char *pszNext = pStrValue;
+    int rc = RTStrToUInt32Ex(pszNext, &pszNext, 0, puMajor);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puMinor);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puBuildNumber);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puRevisionNumber);
+    AssertReturn(rc == VINF_SUCCESS || rc == VWRN_TRAILING_CHARS /*??*/, false);
 
     return true;
 }
@@ -187,17 +199,17 @@ static bool vgsvcUtilGetFileVersionOwn(LPSTR pVerData, PDWORD pdwMajor, PDWORD p
  *
  * @returns VBox status code.
  * @param   pszFilename         ASCII & ANSI & UTF-8 compliant name.
- * @param   pdwMajor            Where to return the major version number.
- * @param   pdwMinor            Where to return the minor version number.
- * @param   pdwBuildNumber      Where to return the build number.
- * @param   pdwRevisionNumber   Where to return the revision number.
+ * @param   puMajor             Where to return the major version number.
+ * @param   puMinor             Where to return the minor version number.
+ * @param   puBuildNumber       Where to return the build number.
+ * @param   puRevisionNumber    Where to return the revision number.
  */
-static int vgsvcUtilGetFileVersion(const char *pszFilename, PDWORD pdwMajor, PDWORD pdwMinor, PDWORD pdwBuildNumber,
-                                   PDWORD pdwRevisionNumber)
+static int vgsvcUtilGetFileVersion(const char *pszFilename, uint32_t *puMajor, uint32_t *puMinor, uint32_t *puBuildNumber,
+                                   uint32_t *puRevisionNumber)
 {
     int rc;
 
-    *pdwMajor = *pdwMinor = *pdwBuildNumber = *pdwRevisionNumber = 0;
+    *puMajor = *puMinor = *puBuildNumber = *puRevisionNumber = 0;
 
     /*
      * Get the file version info.
@@ -216,7 +228,7 @@ static int vgsvcUtilGetFileVersion(const char *pszFilename, PDWORD pdwMajor, PDW
                  * since this will give us the correct revision number when
                  * it goes beyond the range of an uint16_t / WORD.
                  */
-                if (vgsvcUtilGetFileVersionOwn(pVerData, pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber))
+                if (vgsvcUtilGetFileVersionOwn(pVerData, puMajor, puMinor, puBuildNumber, puRevisionNumber))
                     rc = VINF_SUCCESS;
                 else
                 {
@@ -225,10 +237,10 @@ static int vgsvcUtilGetFileVersion(const char *pszFilename, PDWORD pdwMajor, PDW
                     VS_FIXEDFILEINFO    *pFileInfo = NULL;
                     if (VerQueryValue(pVerData, "\\", (LPVOID *)&pFileInfo, &cbFileInfoIgnored))
                     {
-                        *pdwMajor          = HIWORD(pFileInfo->dwFileVersionMS);
-                        *pdwMinor          = LOWORD(pFileInfo->dwFileVersionMS);
-                        *pdwBuildNumber    = HIWORD(pFileInfo->dwFileVersionLS);
-                        *pdwRevisionNumber = LOWORD(pFileInfo->dwFileVersionLS);
+                        *puMajor          = HIWORD(pFileInfo->dwFileVersionMS);
+                        *puMinor          = LOWORD(pFileInfo->dwFileVersionMS);
+                        *puBuildNumber    = HIWORD(pFileInfo->dwFileVersionLS);
+                        *puRevisionNumber = LOWORD(pFileInfo->dwFileVersionLS);
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -290,10 +302,10 @@ int VGSvcUtilWinGetFileVersionString(const char *pszPath, const char *pszFilenam
     int rc = RTPathJoin(szFullPath, sizeof(szFullPath), pszPath, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        DWORD dwMajor, dwMinor, dwBuild, dwRev;
-        rc = vgsvcUtilGetFileVersion(szFullPath, &dwMajor, &dwMinor, &dwBuild, &dwRev);
+        uint32_t uMajor, uMinor, uBuild, uRev;
+        rc = vgsvcUtilGetFileVersion(szFullPath, &uMajor, &uMinor, &uBuild, &uRev);
         if (RT_SUCCESS(rc))
-            RTStrPrintf(pszVersion, cbVersion, "%u.%u.%ur%u", dwMajor, dwMinor, dwBuild, dwRev);
+            RTStrPrintf(pszVersion, cbVersion, "%u.%u.%ur%u", uMajor, uMinor, uBuild, uRev);
     }
     return rc;
 }
