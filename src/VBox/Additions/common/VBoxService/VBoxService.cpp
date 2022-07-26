@@ -56,7 +56,6 @@
 #ifndef _MSC_VER
 # include <unistd.h>
 #endif
-#include <errno.h>
 #ifndef RT_OS_WINDOWS
 # include <signal.h>
 # ifdef RT_OS_OS2
