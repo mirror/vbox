@@ -72,6 +72,8 @@ public:
 
     static const char* ClipboardFormatToString(CLIPFORMAT fmt);
 
+    int Init(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats);
+    int Destroy(void);
     int Abort(void);
     void SetStatus(Status status);
     int Signal(const RTCString &strFormat, const void *pvData, size_t cbData);
@@ -209,7 +211,7 @@ class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-    VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
+    VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG uIdx, ULONG cToCopy, ULONG cTotal);
     virtual ~VBoxDnDEnumFormatEtc(void);
 
 public:
@@ -225,7 +227,11 @@ public:
 
 public:
 
-    static void CopyFormat(LPFORMATETC pFormatDest, LPFORMATETC pFormatSource);
+    int Init(LPFORMATETC pFormatEtc, ULONG uIdx, ULONG cToCopy, ULONG cTotal);
+
+public:
+
+    static int     CopyFormat(LPFORMATETC pFormatDest, LPFORMATETC pFormatSource);
     static HRESULT CreateEnumFormatEtc(UINT cFormats, LPFORMATETC pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc);
 
 private:
