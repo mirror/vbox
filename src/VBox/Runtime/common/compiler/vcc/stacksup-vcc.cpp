@@ -29,7 +29,11 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
+
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+
+#include "internal/compiler-vcc.h"
 
 
 /*********************************************************************************************************************************
@@ -105,6 +109,14 @@ DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
 }
 
 
+extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
+{
+    RTAssertMsg2("\n\n!!Used uninitialized variable %s at %p!!\n\n",
+                 pszVar ? pszVar : "", ASMReturnAddress());
+    RT_BREAKPOINT();
+}
+
+
 /** @todo reimplement in assembly (feeling too lazy right now). */
 extern "C" void __fastcall _RTC_CheckStackVars2(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar, RTC_ALLOC_ENTRY *pHead)
 {
@@ -132,3 +144,4 @@ extern "C" void __fastcall _RTC_CheckStackVars2(uint8_t *pbFrame, RTC_VAR_DESC_T
 
     _RTC_CheckStackVars(pbFrame, pVar);
 }
+
