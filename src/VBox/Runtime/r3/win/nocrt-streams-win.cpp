@@ -34,6 +34,7 @@
 #include <iprt/nt/nt-and-windows.h>
 
 #include <iprt/ctype.h>
+#include <iprt/file.h>
 #include <iprt/string.h>
 
 
@@ -43,7 +44,7 @@
 *********************************************************************************************************************************/
 typedef struct PRINTFBUF
 {
-    HANDLE  hHandle;
+    HANDLE  hNative;
     size_t  offBuf;
     char    szBuf[128];
 } PRINTFBUF;
@@ -51,18 +52,30 @@ typedef struct PRINTFBUF
 struct RTSTREAM
 {
     int     iStream;
-    HANDLE  hHandle;
+    HANDLE  hNative;
+    RTFILE  hFile;
 };
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#define MAKE_SURE_WE_HAVE_HFILE_RETURN(a_pStream) do { \
+        if ((a_pStream)->hFile != NIL_RTFILE) \
+            break; \
+        int rc = RTFileFromNative(&(a_pStream)->hFile, (uintptr_t)(a_pStream)->hNative); \
+        AssertRCReturn(rc, rc); \
+    } while (0)
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 RTSTREAM g_aStdStreams[3] =
 {
-    { 0, NULL },
-    { 1, NULL },
-    { 2, NULL },
+    { 0, NULL, NIL_RTFILE },
+    { 1, NULL, NIL_RTFILE },
+    { 2, NULL, NIL_RTFILE },
 };
 
 RTSTREAM *g_pStdIn  = &g_aStdStreams[0];
@@ -75,9 +88,9 @@ DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams)
 {
     if (pParams)
     {
-        g_pStdIn->hHandle  = pParams->StandardInput;
-        g_pStdOut->hHandle = pParams->StandardOutput;
-        g_pStdErr->hHandle = pParams->StandardError;
+        g_pStdIn->hNative  = pParams->StandardInput;
+        g_pStdOut->hNative = pParams->StandardOutput;
+        g_pStdErr->hNative = pParams->StandardError;
     }
 }
 
@@ -87,7 +100,7 @@ static void FlushPrintfBuffer(PRINTFBUF *pBuf)
     if (pBuf->offBuf)
     {
         DWORD cbWritten = 0;
-        WriteFile(pBuf->hHandle, pBuf->szBuf, (DWORD)pBuf->offBuf, &cbWritten, NULL);
+        WriteFile(pBuf->hNative, pBuf->szBuf, (DWORD)pBuf->offBuf, &cbWritten, NULL);
         pBuf->offBuf   = 0;
         pBuf->szBuf[0] = '\0';
     }
@@ -126,7 +139,7 @@ static DECLCALLBACK(size_t) MyPrintfOutputter(void *pvArg, const char *pachChars
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
 {
     PRINTFBUF Buf;
-    Buf.hHandle  = pStream->hHandle;
+    Buf.hNative  = pStream->hNative;
     Buf.offBuf   = 0;
     Buf.szBuf[0] = '\0';
 
@@ -147,7 +160,7 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
 RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list va)
 {
     PRINTFBUF Buf;
-    Buf.hHandle  = g_pStdOut->hHandle;
+    Buf.hNative  = g_pStdOut->hNative;
     Buf.offBuf   = 0;
     Buf.szBuf[0] = '\0';
 
@@ -162,5 +175,37 @@ RTR3DECL(int) RTPrintf(const char *pszFormat, ...)
     int rc = RTPrintfV(pszFormat, va);
     va_end(va);
     return rc;
+}
+
+
+#if 0
+RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    MAKE_SURE_WE_HAVE_HFILE_RETURN(pStream);
+    return RTFileRead(pStream->hFile, pvBuf, cbToRead, pcbRead);
+}
+#endif
+
+
+RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    MAKE_SURE_WE_HAVE_HFILE_RETURN(pStream);
+    return RTFileWrite(pStream->hFile, pvBuf, cbToWrite, pcbWritten);
+}
+
+
+RTR3DECL(int) RTStrmFlush(PRTSTREAM pStream)
+{
+    MAKE_SURE_WE_HAVE_HFILE_RETURN(pStream);
+    return RTFileFlush(pStream->hFile);
+}
+
+
+RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
+{
+    AssertReturn(fBinary != (int)false, VERR_NOT_IMPLEMENTED);
+    AssertReturn(fCurrentCodeSet <= (int)false, VERR_NOT_IMPLEMENTED);
+    RT_NOREF(pStream);
+    return VINF_SUCCESS;
 }
 
