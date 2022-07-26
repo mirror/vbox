@@ -86,8 +86,11 @@
 
 RT_C_DECLS_BEGIN
 
+extern unsigned _fltused;
+
 int  rtVccInitializersRunInit(void) RT_NOEXCEPT;
 void rtVccInitializersRunTerm(void) RT_NOEXCEPT;
+
 
 RT_C_DECLS_END
 

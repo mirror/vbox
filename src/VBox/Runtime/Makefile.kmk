@@ -2306,6 +2306,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	common/compiler/vcc/tlsdir-vcc.c \
  	common/compiler/vcc/initializers-c-cpp-vcc.cpp \
  	common/compiler/vcc/stacksup-vcc.cpp \
+ 	common/compiler/vcc/fltused-vcc.cpp \
  	r3/win/nocrt-startup-exe-win.cpp \
  	r3/win/nocrt-alloc-win.cpp \
  	r3/win/nocrt-streams-win.cpp
