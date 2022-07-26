@@ -60,9 +60,9 @@ static bool s_fSkipRDPDetection = false;
 /** Structure for storing the looked up user information. */
 typedef struct VBOXSERVICEVMINFOUSER
 {
-    WCHAR wszUser[_MAX_PATH];
-    WCHAR wszAuthenticationPackage[_MAX_PATH];
-    WCHAR wszLogonDomain[_MAX_PATH];
+    WCHAR wszUser[MAX_PATH];
+    WCHAR wszAuthenticationPackage[MAX_PATH];
+    WCHAR wszLogonDomain[MAX_PATH];
     /** Number of assigned user processes. */
     ULONG ulNumProcs;
     /** Last (highest) session ID. This
@@ -825,9 +825,9 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
         vgsvcVMInfoWinSafeCopy(pUserInfo->wszLogonDomain, sizeof(pUserInfo->wszLogonDomain),
                                &pSessionData->LogonDomain, "Logon domain name");
 
-        TCHAR           szOwnerName[_MAX_PATH]  = { 0 };
+        TCHAR           szOwnerName[MAX_PATH]   = { 0 };
         DWORD           dwOwnerNameSize         = sizeof(szOwnerName);
-        TCHAR           szDomainName[_MAX_PATH] = { 0 };
+        TCHAR           szDomainName[MAX_PATH]  = { 0 };
         DWORD           dwDomainNameSize        = sizeof(szDomainName);
         SID_NAME_USE    enmOwnerType            = SidTypeInvalid;
         if (!LookupAccountSid(NULL,
@@ -1187,9 +1187,9 @@ int VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList
                         PVBOXSERVICEVMINFOUSER pCurUser = &pUserInfo[a];
                         AssertPtr(pCurUser);
 
-                        if (   !wcscmp(userSession.wszUser, pCurUser->wszUser)
-                            && !wcscmp(userSession.wszLogonDomain, pCurUser->wszLogonDomain)
-                            && !wcscmp(userSession.wszAuthenticationPackage, pCurUser->wszAuthenticationPackage))
+                        if (   !RTUtf16Cmp(userSession.wszUser, pCurUser->wszUser)
+                            && !RTUtf16Cmp(userSession.wszLogonDomain, pCurUser->wszLogonDomain)
+                            && !RTUtf16Cmp(userSession.wszAuthenticationPackage, pCurUser->wszAuthenticationPackage))
                         {
                             /*
                              * Only respect the highest session for the current user.
@@ -1318,16 +1318,16 @@ int VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList
 int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
 {
     int rc;
-    char szSysDir[_MAX_PATH] = {0};
-    char szWinDir[_MAX_PATH] = {0};
-    char szDriversDir[_MAX_PATH + 32] = {0};
+    char szSysDir[MAX_PATH] = {0};
+    char szWinDir[MAX_PATH] = {0};
+    char szDriversDir[MAX_PATH + 32] = {0};
 
     /* ASSUME: szSysDir and szWinDir and derivatives are always ASCII compatible. */
-    GetSystemDirectory(szSysDir, _MAX_PATH);
-    GetWindowsDirectory(szWinDir, _MAX_PATH);
+    GetSystemDirectory(szSysDir, MAX_PATH);
+    GetWindowsDirectory(szWinDir, MAX_PATH);
     RTStrPrintf(szDriversDir, sizeof(szDriversDir), "%s\\drivers", szSysDir);
 #ifdef RT_ARCH_AMD64
-    char szSysWowDir[_MAX_PATH + 32] = {0};
+    char szSysWowDir[MAX_PATH + 32] = {0};
     RTStrPrintf(szSysWowDir, sizeof(szSysWowDir), "%s\\SysWow64", szWinDir);
 #endif
 
