@@ -2273,9 +2273,10 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	r3/win/nocrt-RTLogWriteStdErr-win.cpp \
  	r3/win/nocrt-RTLogWriteStdOut-win.cpp
  RuntimeGuestR3_SOURCES.x86 += \
- 	r3/win/nocrt-atexit.asm \
- 	r3/win/nocrt-mainCRTStartup.asm \
- 	r3/win/nocrt-stack.asm \
+ 	r3/win/nocrt-atexit-win.asm \
+ 	r3/win/nocrt-mainCRTStartup-win.asm \
+ 	r3/win/nocrt-stack-win.asm \
+ 	r3/win/nocrt-guard-win.asm \
  	common/string/memcpy.asm \
  	common/string/memchr.asm \
  	common/string/memcmp.asm \
@@ -2287,9 +2288,10 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	common/string/strncmp.asm \
  	common/string/strcpy.asm
  RuntimeGuestR3_SOURCES.amd64 += \
- 	r3/win/nocrt-atexit.asm \
- 	r3/win/nocrt-mainCRTStartup.asm \
- 	r3/win/nocrt-stack.asm \
+ 	r3/win/nocrt-atexit-win.asm \
+ 	r3/win/nocrt-mainCRTStartup-win.asm \
+ 	r3/win/nocrt-stack-win.asm \
+ 	r3/win/nocrt-guard-win.asm \
  	common/string/memcpy.asm \
  	common/string/memchr.asm \
  	common/string/memcmp.asm \
@@ -2302,8 +2304,10 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	common/string/strcpy.asm
  RuntimeGuestR3_SOURCES.win += \
  	r3/win/nocrt-startup-exe-win.cpp \
+ 	r3/win/nocrt-loadcfg-win.c \
  	r3/win/nocrt-alloc-win.cpp \
- 	r3/win/nocrt-streams-win.cpp
+ 	r3/win/nocrt-streams-win.cpp \
+ 	r3/win/nocrt-stacksup-win.cpp
 endif
 
 
