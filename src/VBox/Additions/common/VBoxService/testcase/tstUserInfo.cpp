@@ -26,6 +26,7 @@
 
 #include <iprt/initterm.h>
 #include <iprt/path.h>
+#include <iprt/env.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
@@ -69,7 +70,7 @@ int main()
 
     /* Dump env bits. */
     RTPrintf("Environment:\n\n");
-    RTPrintf("APPDATA = %s\n", getenv("APPDATA"));
+    RTPrintf("APPDATA = %s\n", RTEnvGet("APPDATA"));
 #endif
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
