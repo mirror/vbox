@@ -57,6 +57,7 @@
 # include <unistd.h>
 #endif
 #ifndef RT_OS_WINDOWS
+# include <errno.h>
 # include <signal.h>
 # ifdef RT_OS_OS2
 #  define pthread_sigmask sigprocmask
