@@ -2800,7 +2800,8 @@ RuntimeR3NoCrt_INCS     := include
 RuntimeR3NoCrt_DEFS     := \
 	RT_NO_STRICT \
 	IPRT_NO_ALLOCA_TROUBLE \
-	IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES
+	IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES \
+       IPRT_MINIMAL_STREAM
 RuntimeR3NoCrt_SOURCES  := \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \

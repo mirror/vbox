@@ -177,14 +177,15 @@ RTR3DECL(int) RTPrintf(const char *pszFormat, ...)
     return rc;
 }
 
+#ifndef IPRT_MINIMAL_STREAM
 
-#if 0
+# if 0
 RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     MAKE_SURE_WE_HAVE_HFILE_RETURN(pStream);
     return RTFileRead(pStream->hFile, pvBuf, cbToRead, pcbRead);
 }
-#endif
+# endif
 
 
 RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
@@ -209,3 +210,4 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
     return VINF_SUCCESS;
 }
 
+#endif
