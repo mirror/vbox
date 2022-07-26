@@ -4741,7 +4741,7 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
     {
         // settings before 1.3 used lower case so make sure this is case-insensitive
         strTemp.toUpper();
-        if (strTemp == "DEFAULT")
+        if (strTemp == "DEFAULT") /* Keep this to be backwards compatible for settings < r152556. */
             aa.driverType = AudioDriverType_Default;
         else if (strTemp == "NULL")
             aa.driverType = AudioDriverType_Null;
@@ -4765,6 +4765,14 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
             aa.driverType = AudioDriverType_MMPM;
         else
             throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
+
+        /* When loading settings >= 1.19 (VBox 7.0), the attribute "useDefault" will determine if the VM should use
+         * the OS' default audio driver or not. This additional attribute is necessary in order to be backwards compatible
+         * with older VBox versions. */
+        bool fUseDefault = false;
+        if (   elmAudioAdapter.getAttributeValue("useDefault", &fUseDefault) /* Overrides "driver" above (if set). */
+            && fUseDefault)
+            aa.driverType = AudioDriverType_Default;
 
         // now check if this is actually supported on the current host platform;
         // people might be opening a file created on a Windows host, and that
@@ -7484,23 +7492,43 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (pcszCodec)
             pelmAudio->setAttribute("codec", pcszCodec);
 
-        const char *pcszDriver;
-        switch (hw.audioAdapter.driverType)
+        /*
+         * Keep settings >= 1.19 compatible with older VBox versions (on a best effort basis, of course).
+         * So use a dedicated attribute for the new "Default" audio driver type, which did not exist prior
+         * settings 1.19 (VBox 7.0) and explicitly set the driver type to something older VBox versions
+         * know about.
+         */
+        AudioDriverType_T driverType = hw.audioAdapter.driverType;
+
+        if (driverType == AudioDriverType_Default)
         {
-            case AudioDriverType_Default: pcszDriver = "Default"; break;
-            case AudioDriverType_WinMM: pcszDriver = "WinMM"; break;
-            case AudioDriverType_DirectSound: pcszDriver = "DirectSound"; break;
-            case AudioDriverType_WAS: pcszDriver = "WAS"; break;
-            case AudioDriverType_ALSA: pcszDriver = "ALSA"; break;
-            case AudioDriverType_OSS: pcszDriver = "OSS"; break;
-            case AudioDriverType_Pulse: pcszDriver = "Pulse"; break;
-            case AudioDriverType_CoreAudio: pcszDriver = "CoreAudio"; break;
-            case AudioDriverType_SolAudio: pcszDriver = "SolAudio"; break;
-            case AudioDriverType_MMPM: pcszDriver = "MMPM"; break;
-            default: /*case AudioDriverType_Null:*/ pcszDriver = "Null"; break;
+            /* Only recognized by VBox >= 7.0. */
+            pelmAudio->setAttribute("useDefault", true);
+
+            /* Make sure to set the actual driver type to the OS' default driver type.
+             * This is required for VBox < 7.0. */
+            driverType = getHostDefaultAudioDriver();
         }
+
+        const char *pcszDriver = NULL;
+        switch (driverType)
+        {
+            case AudioDriverType_Default: /* Handled above. */                  break;
+            case AudioDriverType_WinMM:             pcszDriver = "WinMM";       break;
+            case AudioDriverType_DirectSound:       pcszDriver = "DirectSound"; break;
+            case AudioDriverType_WAS:               pcszDriver = "WAS";         break;
+            case AudioDriverType_ALSA:              pcszDriver = "ALSA";        break;
+            case AudioDriverType_OSS:               pcszDriver = "OSS";         break;
+            case AudioDriverType_Pulse:             pcszDriver = "Pulse";       break;
+            case AudioDriverType_CoreAudio:         pcszDriver = "CoreAudio";   break;
+            case AudioDriverType_SolAudio:          pcszDriver = "SolAudio";    break;
+            case AudioDriverType_MMPM:              pcszDriver = "MMPM";        break;
+            default: /*case AudioDriverType_Null:*/ pcszDriver = "Null";        break;
+        }
+
         /* Deliberately have the audio driver explicitly in the config file,
          * otherwise an unwritten default driver triggers auto-detection. */
+        AssertStmt(pcszDriver != NULL, pcszDriver = "Null");
         pelmAudio->setAttribute("driver", pcszDriver);
 
         if (hw.audioAdapter.fEnabled || m->sv < SettingsVersion_v1_16)
@@ -8560,6 +8588,7 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T enmDrvT
         case AudioDriverType_Default:
             RT_FALL_THROUGH();
         case AudioDriverType_Null:
+            return true; /* Default and Null audio are always allowed. */
 #ifdef RT_OS_WINDOWS
         case AudioDriverType_WAS:
             /* We only support WAS on systems we tested so far (Vista+). */
