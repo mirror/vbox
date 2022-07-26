@@ -6061,8 +6061,11 @@ void MachineConfigFile::readAutostart(const xml::ElementNode &elmAutostart, Auto
  * Called for reading the \<VideoCapture\> element under \<Machine|Hardware\>,
  * or \<Recording\> under \<Machine\>,
  */
-void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecording, RecordingSettings &recording)
+void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, RecordingSettings &recording)
 {
+    if (cMonitors > 64)
+        throw ConfigFileError(this, &elmRecording, N_("Invalid monitor count given"));
+
     elmRecording.getAttributeValue("enabled", recording.common.fEnabled);
 
     /* Note: Since settings 1.19 the recording settings have a dedicated XML branch "Recording" outside of "Hardware". */
@@ -6077,6 +6080,8 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
         /* Sanity checks. */
         if (cScreens != plstScreens.size())
             throw ConfigFileError(this, &elmRecording, N_("Recording/@screens attribute does not match stored screen objects"));
+        if (cScreens > 64)
+            throw ConfigFileError(this, &elmRecording, N_("Recording/@screens attribute is invalid"));
 
         for (xml::ElementNodesList::iterator itScreen  = plstScreens.begin();
                                              itScreen != plstScreens.end();
@@ -6131,17 +6136,17 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
         elmRecording.getAttributeValue("fps",       screen0.Video.ulFPS);
 
         /* Convert the enabled screens to the former uint64_t bit array and vice versa. */
-        uint64_t cScreens = 0;
-        elmRecording.getAttributeValue("screens",   cScreens);
+        uint64_t uScreensBitmap = 0;
+        elmRecording.getAttributeValue("screens",   uScreensBitmap);
 
         /* Note: For settings < 1.19 the "screens" attribute is a bit field for all screens
          *       which are ENABLED for recording. The settings for recording are for all the same though. */
-        for (unsigned i = 0; i <  cScreens; i++)
+        for (unsigned i = 0; i < cMonitors; i++)
         {
             /* Apply settings of screen 0 to screen i and enable it. */
             recording.mapScreens[i] = screen0;
 
-            if (cScreens & RT_BIT_64(i)) /* Screen i enabled? */
+            if (uScreensBitmap & RT_BIT_64(i)) /* Screen i enabled? */
                 recording.mapScreens[i].fEnabled = true;
         }
     }
@@ -6274,13 +6279,13 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
             /* The recording settings were part of the Hardware branch, called "VideoCapture". */
             const xml::ElementNode *pelmVideoCapture = pelmHardware->findChildElement("VideoCapture");
             if (pelmVideoCapture)
-                readRecordingSettings(*pelmVideoCapture, pSnap->recordingSettings);
+                readRecordingSettings(*pelmVideoCapture, pSnap->hardware.graphicsAdapter.cMonitors, pSnap->recordingSettings);
         }
         else /* >= VBox 7.0 */
         {
             const xml::ElementNode *pelmRecording = pElement->findChildElement("Recording");
             if (pelmRecording)
-                readRecordingSettings(*pelmRecording, pSnap->recordingSettings);
+                readRecordingSettings(*pelmRecording, pSnap->hardware.graphicsAdapter.cMonitors, pSnap->recordingSettings);
         }
         // note: Groups exist only for Machine, not for Snapshot
 
@@ -6475,10 +6480,10 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             if (   m->sv >= SettingsVersion_v1_14
                 && m->sv <  SettingsVersion_v1_19
                 && pelmMachineChild->nameEquals("VideoCapture"))   /* For settings >= 1.14 (< VBox 7.0). */
-                readRecordingSettings(*pelmMachineChild, recordingSettings);
+                readRecordingSettings(*pelmMachineChild, hardwareMachine.graphicsAdapter.cMonitors, recordingSettings);
             else if (   m->sv >= SettingsVersion_v1_19
                      && pelmMachineChild->nameEquals("Recording")) /* Only exists for settings >= 1.19 (VBox 7.0). */
-                readRecordingSettings(*pelmMachineChild, recordingSettings);
+                readRecordingSettings(*pelmMachineChild, hardwareMachine.graphicsAdapter.cMonitors, recordingSettings);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -8115,6 +8120,8 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
     if (recording.areDefaultSettings()) /* Omit branch if we still have the default settings (i.e. nothing to save). */
         return;
 
+    AssertReturnVoid(recording.mapScreens.size() <= 64); /* Make sure we never exceed the bitmap of 64 monitors. */
+
     /* Note: Since settings 1.19 the recording settings have a dedicated XML branch outside of Hardware. */
     if (m->sv >= SettingsVersion_v1_19 /* VBox >= 7.0 */)
     {
@@ -8195,17 +8202,17 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
             pelmVideoCapture->setAttribute("enabled", recording.common.fEnabled);
 
         /* Convert the enabled screens to the former uint64_t bit array and vice versa. */
-        uint64_t u64VideoCaptureScreens = 0;
+        uint64_t uScreensBitmap = 0;
         RecordingScreenSettingsMap::const_iterator itScreen = recording.mapScreens.begin();
         while (itScreen != recording.mapScreens.end())
         {
             if (itScreen->second.fEnabled)
-               u64VideoCaptureScreens |= RT_BIT_64(itScreen->first);
+                uScreensBitmap |= RT_BIT_64(itScreen->first);
             ++itScreen;
         }
 
-        if (u64VideoCaptureScreens)
-            pelmVideoCapture->setAttribute("screens",      u64VideoCaptureScreens);
+        if (uScreensBitmap)
+            pelmVideoCapture->setAttribute("screens",      uScreensBitmap);
 
         Assert(recording.mapScreens.size());
         const RecordingScreenSettingsMap::const_iterator itScreen0Settings = recording.mapScreens.find(0);
