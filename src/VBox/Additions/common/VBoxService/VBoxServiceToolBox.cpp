@@ -19,8 +19,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <stdio.h>
-
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>
@@ -236,7 +234,7 @@ static int vgsvcToolboxStrmInit(void)
 {
     /* Set stdout's mode to binary. This is required for outputting all the machine-readable
      * data correctly. */
-    int rc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Current code set, not changed */);
+    int rc = RTStrmSetMode(g_pStdOut, true /* Binary mode */, -1 /* Current code set, not changed */);
     if (RT_FAILURE(rc))
         RTMsgError("Unable to set stdout to binary mode, rc=%Rrc\n", rc);
 
