@@ -21,10 +21,8 @@
 # pragma once
 #endif
 
-#include <stdio.h>
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
-# include <process.h> /* Needed for file version information. */
 #endif
 
 #include <iprt/list.h>
