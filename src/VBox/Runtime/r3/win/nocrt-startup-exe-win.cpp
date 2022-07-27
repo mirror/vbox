@@ -79,7 +79,9 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
     /*
      * Initialize stuff.
      */
+#ifdef IPRT_NO_CRT
     rtVccInitSecurityCookie();
+#endif
     InitStdHandles(pPeb->ProcessParameters);
     rtVccWinInitProcExecPath();
 
