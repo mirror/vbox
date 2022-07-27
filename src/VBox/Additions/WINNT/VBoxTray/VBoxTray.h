@@ -23,11 +23,6 @@
 
 #include <iprt/win/windows.h>
 
-#include <tchar.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <process.h>
-
 #include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
