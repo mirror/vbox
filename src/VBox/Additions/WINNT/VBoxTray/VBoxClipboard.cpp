@@ -27,9 +27,9 @@
 
 #include <iprt/asm.h>
 #include <iprt/errcore.h>
-#include <iprt/mem.h>
 #include <iprt/ldr.h>
-
+#include <iprt/mem.h>
+#include <iprt/utf16.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
@@ -38,8 +38,6 @@
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
-
-#include <strsafe.h>
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <iprt/win/shlobj.h>
@@ -417,24 +415,19 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                  */
                                 if (fFormat == VBOX_SHCL_FMT_UNICODETEXT)
                                 {
-                                    size_t cbActual = 0;
-                                    HRESULT hrc = StringCbLengthW((LPWSTR)pvMem, cb, &cbActual);
-                                    if (FAILED(hrc))
+                                    size_t cwcActual = 0;
+                                    rc = RTUtf16NLenEx((PCRTUTF16)pvMem, cb / sizeof(RTUTF16), &cwcActual);
+                                    if (RT_SUCCESS(rc))
+                                        cb = (uint32_t)((cwcActual + 1 /* '\0' */) * sizeof(RTUTF16));
+                                    else
                                     {
-                                        LogRel(("Shared Clipboard: Received host data is invalid (%RU32 vs. %zu)\n",
-                                                cb, cbActual));
+                                        LogRel(("Shared Clipboard: Invalid UTF16 string from host: cb=%RU32, cwcActual=%zu, rc=%Rrc\n",
+                                                cb, cwcActual, rc));
 
                                         /* Discard invalid data. */
                                         GlobalUnlock(hMem);
                                         GlobalFree(hMem);
                                         hMem = NULL;
-                                    }
-                                    else
-                                    {
-                                        /* cbActual is the number of bytes, excluding those used
-                                         * for the terminating null character.
-                                         */
-                                        cb = (uint32_t)(cbActual + 2);
                                     }
                                 }
                                 else if (fFormat == VBOX_SHCL_FMT_HTML)
