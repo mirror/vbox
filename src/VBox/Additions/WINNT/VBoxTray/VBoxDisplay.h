@@ -21,6 +21,18 @@
 # pragma once
 #endif
 
+/** @todo r=bird: This file has the same name as ../include/VBoxDisplay.h
+ *        which some of the VBoxTray source files also wish to include.
+ *
+ *        The result is a certifiable mess. To quote a Tina Fey's character in
+ *        Ponyo: "BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA!!!"
+ *
+ *        There are too many 'ing header files here.  Most of them can be merged
+ *        into VBoxTray.h (or a VBoxTrayInternal.h file).
+ *
+ */
+
+
 DWORD VBoxDisplayGetCount();
 DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD *pNumDevices, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes);
 
