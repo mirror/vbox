@@ -21,12 +21,13 @@
 *********************************************************************************************************************************/
 #define _WIN32_WINNT 0x0601
 #include "VBoxTray.h"
-#include <iprt/log.h>
-#include <iprt/errcore.h>
-#include <iprt/assert.h>
-#include <iprt/system.h>
 
-#include <malloc.h>
+#include <iprt/alloca.h>
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
+#include <iprt/system.h>
 
 
 /*********************************************************************************************************************************
@@ -172,8 +173,6 @@ static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags
 {
     UINT32 cPathInfoArray = 0;
     UINT32 cModeInfoArray = 0;
-    DISPLAYCONFIG_PATH_INFO *pPathInfoArray;
-    DISPLAYCONFIG_MODE_INFO *pModeInfoArray;
     DWORD winEr = gCtx.pfnGetDisplayConfigBufferSizes(fFlags, &cPathInfoArray, &cModeInfoArray);
     if (winEr != ERROR_SUCCESS)
     {
@@ -181,17 +180,19 @@ static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags
         return winEr;
     }
 
-    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(cPathInfoArray * sizeof(DISPLAYCONFIG_PATH_INFO));
+    DISPLAYCONFIG_PATH_INFO *pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)RTMemAlloc(  cPathInfoArray
+                                                                                    * sizeof(DISPLAYCONFIG_PATH_INFO));
     if (!pPathInfoArray)
     {
-        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
+        WARN(("VBoxTray: (WDDM) RTMemAlloc failed!\n"));
         return ERROR_OUTOFMEMORY;
     }
-    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(cModeInfoArray * sizeof(DISPLAYCONFIG_MODE_INFO));
+    DISPLAYCONFIG_MODE_INFO *pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)RTMemAlloc(  cModeInfoArray
+                                                                                    * sizeof(DISPLAYCONFIG_MODE_INFO));
     if (!pModeInfoArray)
     {
-        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
-        free(pPathInfoArray);
+        WARN(("VBoxTray: (WDDM) RTMemAlloc failed!\n"));
+        RTMemFree(pPathInfoArray);
         return ERROR_OUTOFMEMORY;
     }
 
@@ -199,8 +200,8 @@ static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags
     if (winEr != ERROR_SUCCESS)
     {
         WARN(("VBoxTray: (WDDM) Failed QueryDisplayConfig\n"));
-        free(pPathInfoArray);
-        free(pModeInfoArray);
+        RTMemFree(pPathInfoArray);
+        RTMemFree(pModeInfoArray);
         return winEr;
     }
 
@@ -217,10 +218,10 @@ static DWORD vboxDispIfWddmDcClone(VBOXDISPIF_WDDM_DISPCFG *pCfg, VBOXDISPIF_WDD
 
     if (pCfg->cPathInfoArray)
     {
-        pCfgDst->pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(pCfg->cPathInfoArray * sizeof (DISPLAYCONFIG_PATH_INFO));
+        pCfgDst->pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)RTMemAlloc(pCfg->cPathInfoArray * sizeof (DISPLAYCONFIG_PATH_INFO));
         if (!pCfgDst->pPathInfoArray)
         {
-            WARN(("VBoxTray: (WDDM) malloc failed!\n"));
+            WARN(("VBoxTray: (WDDM) RTMemAlloc failed!\n"));
             return ERROR_OUTOFMEMORY;
         }
 
@@ -231,13 +232,13 @@ static DWORD vboxDispIfWddmDcClone(VBOXDISPIF_WDDM_DISPCFG *pCfg, VBOXDISPIF_WDD
 
     if (pCfg->cModeInfoArray)
     {
-        pCfgDst->pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(pCfg->cModeInfoArray * sizeof (DISPLAYCONFIG_MODE_INFO));
+        pCfgDst->pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)RTMemAlloc(pCfg->cModeInfoArray * sizeof (DISPLAYCONFIG_MODE_INFO));
         if (!pCfgDst->pModeInfoArray)
         {
-            WARN(("VBoxTray: (WDDM) malloc failed!\n"));
+            WARN(("VBoxTray: (WDDM) RTMemAlloc failed!\n"));
             if (pCfgDst->pPathInfoArray)
             {
-                free(pCfgDst->pPathInfoArray);
+                RTMemFree(pCfgDst->pPathInfoArray);
                 pCfgDst->pPathInfoArray = NULL;
             }
             return ERROR_OUTOFMEMORY;
@@ -255,9 +256,9 @@ static DWORD vboxDispIfWddmDcClone(VBOXDISPIF_WDDM_DISPCFG *pCfg, VBOXDISPIF_WDD
 static VOID vboxDispIfWddmDcTerm(VBOXDISPIF_WDDM_DISPCFG *pCfg)
 {
     if (pCfg->pPathInfoArray)
-        free(pCfg->pPathInfoArray);
+        RTMemFree(pCfg->pPathInfoArray);
     if (pCfg->pModeInfoArray)
-        free(pCfg->pModeInfoArray);
+        RTMemFree(pCfg->pModeInfoArray);
     /* sanity */
     memset(pCfg, 0, sizeof (*pCfg));
 }
@@ -350,7 +351,7 @@ static VOID vboxDispIfWddmDcSettingsInvalidateModeIndeces(VBOXDISPIF_WDDM_DISPCF
 
     if (pCfg->pModeInfoArray)
     {
-        free(pCfg->pModeInfoArray);
+        RTMemFree(pCfg->pModeInfoArray);
         pCfg->pModeInfoArray = NULL;
     }
     pCfg->cModeInfoArray = 0;
@@ -359,16 +360,17 @@ static VOID vboxDispIfWddmDcSettingsInvalidateModeIndeces(VBOXDISPIF_WDDM_DISPCF
 static DWORD vboxDispIfWddmDcSettingsModeAdd(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT *pIdx)
 {
     UINT32 cModeInfoArray = pCfg->cModeInfoArray + 1;
-    DISPLAYCONFIG_MODE_INFO *pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(cModeInfoArray * sizeof (DISPLAYCONFIG_MODE_INFO));
+    DISPLAYCONFIG_MODE_INFO *pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)RTMemAlloc(  cModeInfoArray
+                                                                                    * sizeof (DISPLAYCONFIG_MODE_INFO));
     if (!pModeInfoArray)
     {
-        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
+        WARN(("VBoxTray: (WDDM) RTMemAlloc failed!\n"));
         return ERROR_OUTOFMEMORY;
     }
 
     memcpy (pModeInfoArray, pCfg->pModeInfoArray, pCfg->cModeInfoArray * sizeof(DISPLAYCONFIG_MODE_INFO));
     memset(&pModeInfoArray[cModeInfoArray-1], 0, sizeof (pModeInfoArray[0]));
-    free(pCfg->pModeInfoArray);
+    RTMemFree(pCfg->pModeInfoArray);
     *pIdx = cModeInfoArray-1;
     pCfg->pModeInfoArray = pModeInfoArray;
     pCfg->cModeInfoArray = cModeInfoArray;
@@ -524,10 +526,10 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
         return winEr;
     }
 
-    DISPLAYCONFIG_PATH_INFO *pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(cDisplays * sizeof(DISPLAYCONFIG_PATH_INFO));
+    DISPLAYCONFIG_PATH_INFO *pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)RTMemAlloc(cDisplays * sizeof(DISPLAYCONFIG_PATH_INFO));
     if (!pPathInfoArray)
     {
-        WARN(("malloc failed\n"));
+        WARN(("RTMemAlloc failed\n"));
         return ERROR_OUTOFMEMORY;
     }
 
@@ -553,7 +555,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
                 if (winEr != ERROR_SUCCESS)
                 {
                     WARN(("VBoxTray:(WDDM) vboxDispIfWddmDcCreate Failed winEr %d\n", winEr));
-                    free(pPathInfoArray);
+                    RTMemFree(pPathInfoArray);
                     return winEr;
                 }
                 fAllCfgInited = TRUE;
@@ -620,7 +622,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
         }
     }
 
-    free(pCfg->pPathInfoArray);
+    RTMemFree(pCfg->pPathInfoArray);
     pCfg->pPathInfoArray = pPathInfoArray;
     pCfg->cPathInfoArray = cDisplays;
     if (fAllCfgInited)
@@ -931,13 +933,13 @@ static void vboxRrRetryStopLocked()
     {
         if (pMon->paDisplayDevices)
         {
-            free(pMon->paDisplayDevices);
+            RTMemFree(pMon->paDisplayDevices);
             pMon->paDisplayDevices = NULL;
         }
 
         if (pMon->paDeviceModes)
         {
-            free(pMon->paDeviceModes);
+            RTMemFree(pMon->paDeviceModes);
             pMon->paDeviceModes = NULL;
         }
 
@@ -979,22 +981,22 @@ static void VBoxRrRetrySchedule(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 
     if (cDevModes)
     {
-        pMon->paDisplayDevices = (DISPLAY_DEVICE*)malloc(sizeof (*paDisplayDevices) * cDevModes);
+        pMon->paDisplayDevices = (DISPLAY_DEVICE*)RTMemAlloc(sizeof (*paDisplayDevices) * cDevModes);
         Assert(pMon->paDisplayDevices);
         if (!pMon->paDisplayDevices)
         {
-            Log(("malloc failed!"));
+            Log(("RTMemAlloc failed!"));
             vboxRrRetryStopLocked();
             LeaveCriticalSection(&pMon->CritSect);
             return;
         }
         memcpy(pMon->paDisplayDevices, paDisplayDevices, sizeof (*paDisplayDevices) * cDevModes);
 
-        pMon->paDeviceModes = (DEVMODE*)malloc(sizeof (*paDeviceModes) * cDevModes);
+        pMon->paDeviceModes = (DEVMODE*)RTMemAlloc(sizeof (*paDeviceModes) * cDevModes);
         Assert(pMon->paDeviceModes);
         if (!pMon->paDeviceModes)
         {
-            Log(("malloc failed!"));
+            Log(("RTMemAlloc failed!"));
             vboxRrRetryStopLocked();
             LeaveCriticalSection(&pMon->CritSect);
             return;
@@ -1939,7 +1941,9 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                 if (pSrcModeInfo == NULL)
                 {
                     /* No mode yet. Add the new mode to the ModeInfo array. */
-                    DISPLAYCONFIG_MODE_INFO *paModeInfo = (DISPLAYCONFIG_MODE_INFO *)realloc(DispCfg.pModeInfoArray, (DispCfg.cModeInfoArray + 1) * sizeof(DISPLAYCONFIG_MODE_INFO));
+                    DISPLAYCONFIG_MODE_INFO *paModeInfo = (DISPLAYCONFIG_MODE_INFO *)RTMemRealloc(DispCfg.pModeInfoArray,
+                                                                                                    (DispCfg.cModeInfoArray + 1)
+                                                                                                  * sizeof(paModeInfo[0]));
                     if (!paModeInfo)
                     {
                         WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
@@ -2165,10 +2169,9 @@ static DWORD vboxDispIfWddmResizeDisplay2(PCVBOXDISPIF const pIf, DISPLAY_DEVICE
             }
             else
             {
-                DISPLAYCONFIG_MODE_INFO *pModeInfo, *pModeInfoNew;
-
-                pModeInfo = (DISPLAYCONFIG_MODE_INFO *)realloc(DispCfg.pModeInfoArray, (DispCfg.cModeInfoArray + 2) * sizeof(DISPLAYCONFIG_MODE_INFO));
-
+                DISPLAYCONFIG_MODE_INFO *pModeInfo = (DISPLAYCONFIG_MODE_INFO *)RTMemRealloc(DispCfg.pModeInfoArray,
+                                                                                               (DispCfg.cModeInfoArray + 2)
+                                                                                             * sizeof(pModeInfo[0]));
                 if (!pModeInfo)
                 {
                     WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
@@ -2181,7 +2184,7 @@ static DWORD vboxDispIfWddmResizeDisplay2(PCVBOXDISPIF const pIf, DISPLAY_DEVICE
                 pPathInfo->sourceInfo.id = idx;
                 pPathInfo->targetInfo.id = idx;
 
-                pModeInfoNew = &pModeInfo[DispCfg.cModeInfoArray];
+                DISPLAYCONFIG_MODE_INFO *pModeInfoNew = &pModeInfo[DispCfg.cModeInfoArray];
 
                 pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
                 pModeInfoNew->id = idx;

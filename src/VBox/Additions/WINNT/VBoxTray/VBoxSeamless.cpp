@@ -15,21 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEFAULT
 #define _WIN32_WINNT 0x0500
 #include <iprt/win/windows.h>
 
+#include <VBox/log.h>
+
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
+#include <iprt/mem.h>
 #include <iprt/system.h>
 
-#include <VBoxDisplay.h>
-#include <VBoxHook.h>
-
-#ifdef DEBUG
-# define LOG_ENABLED
-# define LOG_GROUP LOG_GROUP_DEFAULT
-#endif
-#include <VBox/log.h>
+#include <VBoxDisplay.h> /** @todo r=bird: Presumably the ../include/VBoxDisplay.h file rather than ./VBoxDisplay.h. WTF???  */
+#include <VBoxHook.h> /* from ../include/ */
 
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
@@ -37,6 +39,9 @@
 
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct _VBOXSEAMLESSCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -55,9 +60,19 @@ typedef struct
     HRGN    hrgn;
 } VBOX_ENUM_PARAM, *PVBOX_ENUM_PARAM;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static VBOXSEAMLESSCONTEXT g_Ctx = { 0 };
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 void VBoxLogString(HANDLE hDriver, char *pszStr);
+
+
 
 static DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
@@ -161,7 +176,7 @@ static void VBoxSeamlessRemoveHook(void)
 
     if (pCtx->lpEscapeData)
     {
-        free(pCtx->lpEscapeData);
+        RTMemFree(pCtx->lpEscapeData);
         pCtx->lpEscapeData = NULL;
     }
 }
@@ -317,20 +332,16 @@ void VBoxSeamlessCheckWindows(bool fForce)
 
     if (param.hrgn)
     {
-        DWORD cbSize;
-
-        cbSize = GetRegionData(param.hrgn, 0, NULL);
+        DWORD cbSize = GetRegionData(param.hrgn, 0, NULL);
         if (cbSize)
         {
-            PVBOXDISPIFESCAPE lpEscapeData = (PVBOXDISPIFESCAPE)malloc(VBOXDISPIFESCAPE_SIZE(cbSize));
+            PVBOXDISPIFESCAPE lpEscapeData = (PVBOXDISPIFESCAPE)RTMemAllocZ(VBOXDISPIFESCAPE_SIZE(cbSize));
             if (lpEscapeData)
             {
                 lpEscapeData->escapeCode = VBOXESC_SETVISIBLEREGION;
                 LPRGNDATA lpRgnData = VBOXDISPIFESCAPE_DATA(lpEscapeData, RGNDATA);
 
-                memset(lpRgnData, 0, cbSize);
                 cbSize = GetRegionData(param.hrgn, cbSize, lpRgnData);
-
                 if (cbSize)
                 {
 #ifdef LOG_ENABLED
@@ -352,14 +363,14 @@ void VBoxSeamlessCheckWindows(bool fForce)
                         VBoxDispIfSeamlessSubmit(&gVBoxDispIfSeamless, lpEscapeData, cbSize);
 
                         if (pCtx->lpEscapeData)
-                            free(pCtx->lpEscapeData);
+                            RTMemFree(pCtx->lpEscapeData);
                         pCtx->lpEscapeData = lpEscapeData;
                     }
                     else
                         Log(("VBoxTray: Visible rectangles haven't changed; ignore\n"));
                 }
                 if (lpEscapeData != pCtx->lpEscapeData)
-                    free(lpEscapeData);
+                    RTMemFree(lpEscapeData);
             }
         }
 
