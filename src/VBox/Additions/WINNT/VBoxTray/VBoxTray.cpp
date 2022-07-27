@@ -138,7 +138,7 @@ int                   g_cVerbosity             = 0;
 HANDLE                g_hStopSem;
 HANDLE                g_hSeamlessWtNotifyEvent = 0;
 HANDLE                g_hSeamlessKmNotifyEvent = 0;
-HINSTANCE             g_hInstance;
+HINSTANCE             g_hInstance              = NULL;
 HWND                  g_hwndToolWindow;
 NOTIFYICONDATA        g_NotifyIconData;
 
@@ -998,122 +998,88 @@ static int vboxTrayServiceMain(void)
 /**
  * Main function
  */
-#ifdef IPRT_NO_CRT
 int main(int cArgs, char **papszArgs)
-#else
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-#endif
 {
-    char szLogFile[RTPATH_MAX] = {0};
-
-#ifdef IPRT_NO_CRT
     int rc = RTR3InitExe(cArgs, &papszArgs, RTR3INIT_FLAGS_STANDALONE_APP);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
-#else
-    RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
-    /** @todo r=bird: WTF do you use __argc & __argv here only to parse the
-     *        command line furthe down?!? Makes no effing sense, espcially given
-     *        that RTR3InitExe will return valid UTF-8, doing exactly the
-     *        same stuff as you do here.
-     *        aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAARG! */
-    int rc = RTR3InitExe(__argc, &__argv, RTR3INIT_FLAGS_STANDALONE_APP);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
 
-    LPWSTR pwszCmdLine = GetCommandLineW();
-    if (!pwszCmdLine)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "GetCommandLineW failed");
-
-    char *pszCmdLine;
-    rc = RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine); /* leaked */
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", rc);
-
-    int    cArgs;
-    char **papszArgs;
-    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
-    if (RT_SUCCESS(rc))
-#endif
+    /*
+     * Parse the top level arguments until we find a command.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        /*
-         * Parse the top level arguments until we find a command.
-         */
-        static const RTGETOPTDEF s_aOptions[] =
+        { "--help",             'h',                         RTGETOPT_REQ_NOTHING },
+        { "-help",              'h',                         RTGETOPT_REQ_NOTHING },
+        { "/help",              'h',                         RTGETOPT_REQ_NOTHING },
+        { "/?",                 'h',                         RTGETOPT_REQ_NOTHING },
+        { "--logfile",          'l',                         RTGETOPT_REQ_STRING  },
+        { "--verbose",          'v',                         RTGETOPT_REQ_NOTHING },
+        { "--version",          'V',                         RTGETOPT_REQ_NOTHING },
+    };
+
+    char szLogFile[RTPATH_MAX] = {0};
+
+    RTGETOPTSTATE GetState;
+    rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (ch)
         {
-            { "--help",             'h',                         RTGETOPT_REQ_NOTHING },
-            { "-help",              'h',                         RTGETOPT_REQ_NOTHING },
-            { "/help",              'h',                         RTGETOPT_REQ_NOTHING },
-            { "/?",                 'h',                         RTGETOPT_REQ_NOTHING },
-            { "--logfile",          'l',                         RTGETOPT_REQ_STRING  },
-            { "--verbose",          'v',                         RTGETOPT_REQ_NOTHING },
-            { "--version",          'V',                         RTGETOPT_REQ_NOTHING },
-        };
+            case 'h':
+                hlpShowMessageBox(VBOX_PRODUCT " - " VBOX_VBOXTRAY_TITLE,
+                                  MB_ICONINFORMATION,
+                     "-- " VBOX_PRODUCT " %s v%u.%u.%ur%u --\n\n"
+                     "Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                     "All rights reserved.\n\n"
+                     "Command Line Parameters:\n\n"
+                     "-l, --logfile <file>\n"
+                     "    Enables logging to a file\n"
+                     "-v, --verbose\n"
+                     "    Increases verbosity\n"
+                     "-V, --version\n"
+                     "   Displays version number and exit\n"
+                     "-?, -h, --help\n"
+                     "   Displays this help text and exit\n"
+                     "\n"
+                     "Examples:\n"
+                     "  %s -vvv\n",
+                     VBOX_VBOXTRAY_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
+                     papszArgs[0], papszArgs[0]);
+                return RTEXITCODE_SUCCESS;
 
-        RTGETOPTSTATE GetState;
-        rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+            case 'l':
+                if (*ValueUnion.psz == '\0')
+                    szLogFile[0] = '\0';
+                else
+                {
+                    rc = RTPathAbs(ValueUnion.psz, szLogFile, sizeof(szLogFile));
+                    if (RT_FAILURE(rc))
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed on log file path: %Rrc (%s)",
+                                              rc, ValueUnion.psz);
+                }
+                break;
 
-        int ch;
-        RTGETOPTUNION ValueUnion;
-        while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
-        {
-            switch (ch)
-            {
-                case 'h':
-                    hlpShowMessageBox(VBOX_VBOXTRAY_TITLE, MB_ICONINFORMATION, "-- %s v%u.%u.%ur%u --\n"
-                         "\n"
-                         "Command Line Parameters:\n\n"
-                         "-l, --logfile <file>\n"
-                         "    Enables logging to a file\n"
-                         "-v, --verbose\n"
-                         "    Increases verbosity\n"
-                         "-V, --version\n"
-                         "   Displays version number and exit\n"
-                         "-?, -h, --help\n"
-                         "   Displays this help text and exit\n"
-                         "\n"
-                         "Examples:\n"
-                         "  %s -vvv\n",
-                         VBOX_VBOXTRAY_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
-                         papszArgs[0], papszArgs[0]);
-                    return RTEXITCODE_SUCCESS;
+            case 'v':
+                g_cVerbosity++;
+                break;
 
-                case 'l':
-                    if (*ValueUnion.psz == '\0')
-                        szLogFile[0] = '\0';
-                    else
-                    {
-                        rc = RTPathAbs(ValueUnion.psz, szLogFile, sizeof(szLogFile));
-                        if (RT_FAILURE(rc))
-                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed on log file path: %Rrc (%s)",
-                                                  rc, ValueUnion.psz);
-                    }
-                    break;
+            case 'V':
+                hlpShowMessageBox(VBOX_VBOXTRAY_TITLE, MB_ICONINFORMATION,
+                                  "Version: %u.%u.%ur%u",
+                                  VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+                return RTEXITCODE_SUCCESS;
 
-                case 'v':
-                    g_cVerbosity++;
-                    break;
-
-                case 'V':
-                    hlpShowMessageBox(VBOX_VBOXTRAY_TITLE, MB_ICONINFORMATION,
-                                      "Version: %u.%u.%ur%u",
-                                      VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-                    return RTEXITCODE_SUCCESS;
-
-                default:
-                    rc = RTGetOptPrintError(ch, &ValueUnion);
-                    break;
-            }
+            default:
+                rc = RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
-
-        RTGetOptArgvFree(papszArgs);
     }
-#ifndef IPRT_NO_CRT
-    else
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", rc);
-#endif
 
     /* Note: Do not use a global namespace ("Global\\") for mutex name here,
      * will blow up NT4 compatibility! */
@@ -1142,11 +1108,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
             /* Set the instance handle. */
 #ifdef IPRT_NO_CRT
+            Assert(g_hInstance == NULL); /* Make sure this isn't set before by WinMain(). */
             g_hInstance = GetModuleHandleW(NULL);
-#else
-            g_hInstance = hInstance;
 #endif
-
             hlpReportStatus(VBoxGuestFacilityStatus_Init);
             rc = vboxTrayCreateToolWindow();
             if (RT_SUCCESS(rc))
@@ -1220,8 +1184,19 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     vboxTrayLogDestroy();
 
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
+
+#ifndef IPRT_NO_CRT
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
+
+    g_hInstance = hInstance;
+
+    return main(__argc, __argv);
+}
+#endif /* IPRT_NO_CRT */
 
 /**
  * Window procedure for our main tool window.
