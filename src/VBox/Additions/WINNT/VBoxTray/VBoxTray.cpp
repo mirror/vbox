@@ -224,8 +224,8 @@ static int vboxTrayCreateTrayIcon(void)
     g_NotifyIconData.uCallbackMessage = WM_VBOXTRAY_TRAY_ICON;
     g_NotifyIconData.hIcon            = hIcon;
 
-    sprintf(g_NotifyIconData.szTip, "%s Guest Additions %d.%d.%dr%d",
-            VBOX_PRODUCT, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+    RTStrPrintf(g_NotifyIconData.szTip, sizeof(g_NotifyIconData.szTip), "%s Guest Additions %d.%d.%dr%d",
+                VBOX_PRODUCT, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
     int rc = VINF_SUCCESS;
     if (!Shell_NotifyIcon(NIM_ADD, &g_NotifyIconData))
@@ -998,10 +998,25 @@ static int vboxTrayServiceMain(void)
 /**
  * Main function
  */
+#ifdef IPRT_NO_CRT
+int main(int cArgs, char **papszArgs)
+#else
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#endif
 {
-    RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
+    char szLogFile[RTPATH_MAX] = {0};
 
+#ifdef IPRT_NO_CRT
+    int rc = RTR3InitExe(cArgs, &papszArgs, RTR3INIT_FLAGS_STANDALONE_APP);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+#else
+    RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
+    /** @todo r=bird: WTF do you use __argc & __argv here only to parse the
+     *        command line furthe down?!? Makes no effing sense, espcially given
+     *        that RTR3InitExe will return valid UTF-8, doing exactly the
+     *        same stuff as you do here.
+     *        aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAARG! */
     int rc = RTR3InitExe(__argc, &__argv, RTR3INIT_FLAGS_STANDALONE_APP);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
@@ -1015,12 +1030,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", rc);
 
-    char szLogFile[RTPATH_MAX] = {0};
-
     int    cArgs;
     char **papszArgs;
     rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
     if (RT_SUCCESS(rc))
+#endif
     {
         /*
          * Parse the top level arguments until we find a command.
@@ -1080,7 +1094,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
                     {
                         rc = RTPathAbs(ValueUnion.psz, szLogFile, sizeof(szLogFile));
                         if (RT_FAILURE(rc))
-                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Log file path is too long (%Rrc)", rc);
+                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed on log file path: %Rrc (%s)",
+                                                  rc, ValueUnion.psz);
                     }
                     break;
 
@@ -1102,8 +1117,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
         RTGetOptArgvFree(papszArgs);
     }
+#ifndef IPRT_NO_CRT
     else
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", rc);
+#endif
 
     /* Note: Do not use a global namespace ("Global\\") for mutex name here,
      * will blow up NT4 compatibility! */
@@ -1130,8 +1147,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             LogRel(("Windows version %u.%u build %u (uNtVersion=%#RX64)\n", RTSYSTEM_NT_VERSION_GET_MAJOR(uNtVersion),
                     RTSYSTEM_NT_VERSION_GET_MINOR(uNtVersion), RTSYSTEM_NT_VERSION_GET_BUILD(uNtVersion), uNtVersion ));
 
-            /* Save instance handle. */
+            /* Set the instance handle. */
+#ifdef IPRT_NO_CRT
+            g_hInstance = GetModuleHandleW(NULL);
+#else
             g_hInstance = hInstance;
+#endif
 
             hlpReportStatus(VBoxGuestFacilityStatus_Init);
             rc = vboxTrayCreateToolWindow();
