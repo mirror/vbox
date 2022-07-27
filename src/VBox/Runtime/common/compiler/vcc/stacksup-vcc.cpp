@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 
 #include "internal/compiler-vcc.h"
@@ -89,6 +90,18 @@ typedef struct RTC_ALLOC_ENTRY
 *********************************************************************************************************************************/
 extern "C" void __fastcall _RTC_CheckStackVars(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar); /* nocrt-stack.asm */
 extern "C" uintptr_t __security_cookie;
+
+
+/**
+ * Initializes the security cookie value.
+ *
+ * This must be called as the first thing by the startup code.  We must also no
+ * do anything fancy here.
+ */
+void rtVccInitSecurityCookie(void) RT_NOEXCEPT
+{
+    __security_cookie = (uintptr_t)ASMReadTSC() ^ (uintptr_t)&__security_cookie;
+}
 
 
 DECLASM(void) _RTC_StackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar)

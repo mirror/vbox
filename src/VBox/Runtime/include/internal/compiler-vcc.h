@@ -88,8 +88,11 @@ RT_C_DECLS_BEGIN
 
 extern unsigned _fltused;
 
+void rtVccInitSecurityCookie(void) RT_NOEXCEPT;
+void rtVccWinInitProcExecPath(void) RT_NOEXCEPT;
 int  rtVccInitializersRunInit(void) RT_NOEXCEPT;
 void rtVccInitializersRunTerm(void) RT_NOEXCEPT;
+void rtVccTermRunAtExit(void) RT_NOEXCEPT;
 
 
 RT_C_DECLS_END

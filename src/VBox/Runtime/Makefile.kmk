@@ -2258,7 +2258,6 @@ ifdef VBOX_WITH_NOCRT_STATIC
 	r3/alloc-ef.cpp \
 	r3/stream.cpp \
  	common/misc/json.cpp \
- 	common/string/ministring.cpp \
 	generic/RTLogWriteStdErr-generic.cpp \
 	generic/RTLogWriteStdOut-generic.cpp \
  	,$(RuntimeGuestR3_SOURCES)) \
@@ -2304,12 +2303,15 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	common/string/strncmp.asm \
  	common/string/strcpy.asm
  RuntimeGuestR3_SOURCES.win += \
+ 	common/compiler/vcc/atexit-vcc.cpp \
  	common/compiler/vcc/loadcfg-vcc.c \
  	common/compiler/vcc/tlsdir-vcc.c \
  	common/compiler/vcc/initializers-c-cpp-vcc.cpp \
  	common/compiler/vcc/stacksup-vcc.cpp \
  	common/compiler/vcc/fltused-vcc.cpp \
  	r3/win/nocrt-startup-exe-win.cpp \
+ 	r3/win/nocrt-startup-dll-win.cpp \
+ 	r3/win/nocrt-startup-common-win.cpp \
  	r3/win/nocrt-alloc-win.cpp \
  	r3/win/nocrt-streams-win.cpp \
        generic/new-delete-generic.cpp
