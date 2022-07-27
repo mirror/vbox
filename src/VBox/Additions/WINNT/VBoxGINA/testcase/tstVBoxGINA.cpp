@@ -15,47 +15,45 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define UNICODE
 #include <iprt/win/windows.h>
-#include <stdio.h>
+#include <iprt/stream.h>
 
 int main()
 {
     DWORD dwErr;
 
-    /**
+    /*
      * Be sure that:
      * - the debug VBoxGINA gets loaded instead of a maybe installed
      *   release version in "C:\Windows\system32".
      */
 
     HMODULE hMod = LoadLibraryW(L"VBoxGINA.dll");
-    if (!hMod)
+    if (hMod)
     {
-        dwErr = GetLastError();
-        wprintf(L"VBoxGINA.dll not found, error=%ld\n", dwErr);
-    }
-    else
-    {
-        wprintf(L"VBoxGINA found\n");
+        RTPrintf("VBoxGINA found\n");
 
         FARPROC pfnDebug = GetProcAddress(hMod, "VBoxGINADebug");
         if (!pfnDebug)
         {
-            dwErr = GetLastError();
-            wprintf(L"Could not load VBoxGINADebug, error=%ld\n", dwErr);
+            RTPrintf("Calling VBoxGINA ...\n");
+            dwErr = pfnDebug();
         }
         else
         {
-            wprintf(L"Calling VBoxGINA ...\n");
-            dwErr = pfnDebug();
+            dwErr = GetLastError();
+            RTPrintf("Could not load VBoxGINADebug, error=%u\n", dwErr);
         }
 
         FreeLibrary(hMod);
     }
+    else
+    {
+        dwErr = GetLastError();
+        RTPrintf("VBoxGINA.dll not found, error=%u\n", dwErr);
+    }
 
-    wprintf(L"Test returned: %ld\n", dwErr);
-
+    RTPrintf("Test returned: %s (%u)\n", dwErr == ERROR_SUCCESS ? "SUCCESS" : "FAILURE", dwErr);
     return dwErr == ERROR_SUCCESS ? 0 : 1;
 }
 

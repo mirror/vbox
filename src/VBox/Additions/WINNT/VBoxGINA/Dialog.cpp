@@ -15,11 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/win/windows.h>
-#include <stdio.h>      /* Needed for swprintf() */
 
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/errcore.h>
+#include <iprt/utf16.h>
 
 #include "Dialog.h"
 #include "WinWlx.h"
@@ -27,6 +30,9 @@
 #include "VBoxGINA.h"
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /*
  * Dialog IDs for legacy Windows OSes (e.g. NT 4.0).
  */
@@ -84,12 +90,21 @@
 #define IDT_LOGGEDONDLG_POLL              IDT_BASE + 1
 #define IDT_LOCKEDDLG_POLL                IDT_BASE + 2
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static DLGPROC g_pfnWlxLoggedOutSASDlgProc = NULL;
 static DLGPROC g_pfnWlxLockedSASDlgProc = NULL;
 
 static PWLX_DIALOG_BOX_PARAM g_pfnWlxDialogBoxParam = NULL;
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 int WINAPI MyWlxDialogBoxParam (HANDLE, HANDLE, LPWSTR, HWND, DLGPROC, LPARAM);
+
 
 void hookDialogBoxes(PVOID pWinlogonFunctions, DWORD dwWlxVersion)
 {
@@ -189,11 +204,11 @@ int credentialsToUI(HWND hwndDlg,
              * (Kerberos style) using an "@", e.g. "<user-name>@full.qualified.domain".
              *
              */
-            size_t l = wcslen(pwszDomain);
+            size_t l = RTUtf16Len(pwszDomain);
             if (l > 255)
                 VBoxGINAVerbose(0, "VBoxGINA::MyWlxLoggedOutSASDlgProc: Warning! FQDN (domain) is too long (max 255 bytes), will be truncated!\n");
 
-            if (wcslen(pwszUser) > 0) /* We need a user name that we can use in caes of a FQDN */
+            if (*pwszUser) /* We need a user name that we can use in caes of a FQDN */
             {
                 if (l > 16) /* Domain name is longer than 16 chars, cannot be a NetBIOS name anymore */
                 {
@@ -201,7 +216,7 @@ int credentialsToUI(HWND hwndDlg,
                     bIsFQDN = TRUE;
                 }
                 else if (   l > 0
-                         && wcsstr(pwszDomain, L".") != NULL) /* if we found a dot (.) in the domain name, this has to be a FQDN */
+                         && RTUtf16Chr(pwszDomain, L'.') != NULL) /* if we found a dot (.) in the domain name, this has to be a FQDN */
                 {
                     VBoxGINAVerbose(0, "VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN (dot)!\n");
                     bIsFQDN = TRUE;
@@ -209,7 +224,7 @@ int credentialsToUI(HWND hwndDlg,
 
                 if (bIsFQDN)
                 {
-                    swprintf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), L"%s@%s", pwszUser, pwszDomain);
+                    RTUtf16Printf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), "%ls@%ls", pwszUser, pwszDomain);
                     VBoxGINAVerbose(0, "VBoxGINA::MyWlxLoggedOutSASDlgProc: FQDN user name is now: %s!\n", szUserFQDN);
                 }
             }
