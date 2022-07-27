@@ -34,7 +34,7 @@ int main()
         RTPrintf("VBoxGINA found\n");
 
         FARPROC pfnDebug = GetProcAddress(hMod, "VBoxGINADebug");
-        if (!pfnDebug)
+        if (pfnDebug)
         {
             RTPrintf("Calling VBoxGINA ...\n");
             dwErr = pfnDebug();
