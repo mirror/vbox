@@ -1246,7 +1246,21 @@
 
       <listitem>
         <para>
-          &product-name; contains code from the libdevmapper librarary
+          &product-name; contains code from the libdrm library which is
+          governed by the license in
+          <xref linkend="licMIT" xrefstyle="template: %n" /> and
+        </para>
+
+        <para>
+          Copyright 1999, 2000 Precision Insight, Inc., Cedar Park, Texas.;
+          Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
+          All Rights Reserved.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          &product-name; contains code from the libdevmapper library
           which is governed by the license in
           <xref linkend="licGPL" xrefstyle="template: %n" /> and
         </para>
