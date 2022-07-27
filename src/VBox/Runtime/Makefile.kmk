@@ -2274,6 +2274,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
  RuntimeGuestR3_SOURCES.x86 += \
  	r3/win/nocrt-atexit-win.asm \
  	r3/win/nocrt-mainCRTStartup-win.asm \
+ 	r3/win/nocrt-WinMainCRTStartup-win.asm \
  	common/compiler/vcc/guard-vcc.asm \
  	common/compiler/vcc/stack-vcc.asm \
  	common/string/memcpy.asm \
@@ -2289,6 +2290,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
  RuntimeGuestR3_SOURCES.amd64 += \
  	r3/win/nocrt-atexit-win.asm \
  	r3/win/nocrt-mainCRTStartup-win.asm \
+ 	r3/win/nocrt-WinMainCRTStartup-win.asm \
  	common/compiler/vcc/guard-vcc.asm \
  	common/compiler/vcc/stack-vcc.asm \
  	common/string/memcpy.asm \
@@ -2309,7 +2311,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
  	common/compiler/vcc/fltused-vcc.cpp \
  	r3/win/nocrt-startup-exe-win.cpp \
  	r3/win/nocrt-alloc-win.cpp \
- 	r3/win/nocrt-streams-win.cpp
+ 	r3/win/nocrt-streams-win.cpp \
+       generic/new-delete-generic.cpp
 endif
 
 
