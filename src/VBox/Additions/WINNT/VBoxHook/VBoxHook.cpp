@@ -20,10 +20,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
+
 #include <VBoxHook.h>
 #include <VBox/VBoxGuestLib.h>
 #ifdef DEBUG
-# include <stdio.h>
+# include <VBox/VBoxGuest.h>
+# include <VBox/VMMDev.h>
+# include <iprt/string.h>
 #endif
 
 
@@ -183,9 +186,6 @@ BOOL VBoxHookRemoveWindowTracker()
 
 
 #ifdef DEBUG
-# include <VBox/VBoxGuest.h>
-# include <VBox/VMMDev.h>
-
 /**
  * dprintf worker using VBoxGuest.sys and VMMDevReq_LogString.
  */
@@ -224,7 +224,7 @@ static void WriteLog(const char *pszFormat, ...)
 
     va_list va;
     va_start(va, pszFormat);
-    size_t cch = vsprintf(s_uBuf.Req.szString, pszFormat, va);
+    size_t cch = RTStrPrintf(s_uBuf.Req.szString, sizeof(s_uBuf.Req.szString), pszFormat, va);
     va_end(va);
 
     s_uBuf.Req.header.size += (uint32_t)cch;
@@ -237,6 +237,5 @@ static void WriteLog(const char *pszFormat, ...)
                     &s_uBuf.Req, s_uBuf.Req.header.size,
                     &cbReturned, NULL);
 }
-
 #endif /* DEBUG */
 
