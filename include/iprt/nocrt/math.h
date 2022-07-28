@@ -45,10 +45,6 @@
 # pragma once
 #endif
 
-#if !defined(__GNUC__) /* && !defined(__YOUR_COMPILER__) */
-# error "IPRT: Adjust this header for your compiler"
-#endif
-
 #include <iprt/types.h>
 /*#include <machine/_limits.h>*/
 
@@ -90,7 +86,7 @@ extern const union __nan_un {
 #define HUGE_VAL    (RT_NOCRT(__infinity).__ud)
 #endif
 
-#if 1/* __ISO_C_VISIBLE >= 1999*/
+#if 1 && !defined(_MSC_VER) /* __ISO_C_VISIBLE >= 1999*/ /** @todo Adjust section for MSC */
 #define FP_ILOGB0   (-__INT_MAX)
 #define FP_ILOGBNAN __INT_MAX
 
