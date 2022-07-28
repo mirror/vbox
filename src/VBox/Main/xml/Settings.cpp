@@ -6278,8 +6278,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
             readAutostart(*pelmAutostart, pSnap->autostart);
         if (m->sv < SettingsVersion_v1_19)
         {
-            /* The recording settings were part of the Hardware branch, called "VideoCapture". */
-            const xml::ElementNode *pelmVideoCapture = pelmHardware->findChildElement("VideoCapture");
+            const xml::ElementNode *pelmVideoCapture = pElement->findChildElement("VideoCapture");
             if (pelmVideoCapture)
                 readRecordingSettings(*pelmVideoCapture, pSnap->hardware.graphicsAdapter.cMonitors, pSnap->recordingSettings);
         }
