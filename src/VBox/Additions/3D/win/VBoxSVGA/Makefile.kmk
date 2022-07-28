@@ -25,11 +25,12 @@ VBoxSVGA_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
 #  -wd4005: vcc120: '__useHeader' : macro redefinition
 #  -wd4100: unreferenced formal parameter
 #  -wd4200: nonstandard extension used : zero-sized array in struct/union
+#  -wd4204: vmw_screen_ioctl.c(392): warning C4204: nonstandard extension used: non-constant aggregate initializer
 #  -wd4211: nonstandard extension used : redefined extern to static
 #  -wd4245: 'return' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
 #  -wd4255: no function prototype given
 #  -wd4668: 'something' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-VBoxSVGA_CFLAGS   = -wd4005 -wd4100 -wd4200 -wd4211 -wd4245 -wd4255 -wd4668
+VBoxSVGA_CFLAGS   = -wd4005 -wd4100 -wd4200 -wd4204 -wd4211 -wd4245 -wd4255 -wd4668
 VBoxSVGA_INCS     = \
 	$(VBoxSVGA_0_OUTDIR)/../VBoxMesaUtilLib/$(VBOX_MESA)/src \
 	$(VBOX_PATH_3D)/win/include \
