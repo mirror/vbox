@@ -190,7 +190,6 @@ DECLINLINE(int) RTOnceEx(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnC
     return RTOnceSlow(pOnce, pfnOnce, pfnCleanUp, pvUser);
 }
 
-
 /**
  * Resets an execute once variable.
  *
@@ -200,6 +199,19 @@ DECLINLINE(int) RTOnceEx(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnC
  * @param   pOnce           Pointer to the execute once variable.
  */
 RTDECL(void) RTOnceReset(PRTONCE pOnce);
+
+/**
+ * Check whether the execute once variable was successfullly initialized.
+ */
+DECLINLINE(bool) RTOnceWasInitialized(PRTONCE pOnce)
+{
+    int32_t const iState = ASMAtomicUoReadS32(&pOnce->iState);
+    int32_t const rc     = ASMAtomicUoReadS32(&pOnce->rc);
+    return RT_SUCCESS(rc)
+        && (   iState == RTONCESTATE_DONE
+            || iState == RTONCESTATE_DONE_CREATING_SEM
+            || iState == RTONCESTATE_DONE_HAVE_SEM);
+}
 
 /** @} */
 
