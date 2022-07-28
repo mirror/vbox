@@ -784,7 +784,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             RTFLOAT80U2 r80;
                             r80.lrd = va_arg(args, long double);
 #  ifndef IN_BLD_PROG
-                            cchNum = RTStrFormatR80U2(&szTmp[0], sizeof(szTmp), &r80, cchWidth, cchPrecision, 0);
+                            cchNum = RTStrFormatR80u2(&szTmp[0], sizeof(szTmp), &r80, cchWidth, cchPrecision, 0);
 #  else
                             cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("<long double>"));
                             RT_NOREF_PV(r80);
