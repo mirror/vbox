@@ -76,6 +76,7 @@ namespace std
         explicit nothrow_t()
         {}
     };
+    extern __declspec(selectany) nothrow_t const nothrow;
 }
 
 
