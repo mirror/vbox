@@ -46,9 +46,10 @@
 /*********************************************************************************************************************************
 *   External Symbols                                                                                                             *
 *********************************************************************************************************************************/
-extern DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams); /* nocrt-streams-win.cpp */ /** @todo put in header */
-
 extern int main(int argc, char **argv, char **envp);    /* in program */
+#ifdef IPRT_NO_CRT
+extern DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams); /* nocrt-streams-win.cpp */ /** @todo put in header */
+#endif
 
 
 static int rtTerminateProcess(int32_t rcExit, bool fDoAtExit)
@@ -81,8 +82,9 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
      */
 #ifdef IPRT_NO_CRT
     rtVccInitSecurityCookie();
-#endif
+#else
     InitStdHandles(pPeb->ProcessParameters);
+#endif
     rtVccWinInitProcExecPath();
 
     RTEXITCODE rcExit;

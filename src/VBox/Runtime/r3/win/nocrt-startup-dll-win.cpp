@@ -57,8 +57,6 @@ static volatile int32_t g_cAttached = 0;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-extern DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams); /* nocrt-streams-win.cpp */ /** @todo put in header */
-
 extern "C" BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID pvReserved);
 
 
@@ -76,8 +74,6 @@ DECL_NO_INLINE(static, BOOL) rtVccDllMainProcessAttach(HINSTANCE hInstance, LPVO
      */
     if (g_cAttached == 0)
     {
-        PPEB pPeb = RTNtCurrentPeb();
-        InitStdHandles(pPeb->ProcessParameters);
         rtVccWinInitProcExecPath();
 
         int rc = rtVccInitializersRunInit();
