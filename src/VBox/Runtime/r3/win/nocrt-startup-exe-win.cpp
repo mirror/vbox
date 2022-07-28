@@ -47,7 +47,7 @@
 *   External Symbols                                                                                                             *
 *********************************************************************************************************************************/
 extern int main(int argc, char **argv, char **envp);    /* in program */
-#ifdef IPRT_NO_CRT
+#ifndef IPRT_NO_CRT
 extern DECLHIDDEN(void) InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams); /* nocrt-streams-win.cpp */ /** @todo put in header */
 #endif
 
