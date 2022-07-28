@@ -31,7 +31,7 @@
 #define RTZIP_USE_STORE 1
 #define RTZIP_USE_ZLIB 1
 //#define RTZIP_USE_BZLIB 1
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(IPRT_NO_CRT)
 # define RTZIP_USE_LZF 1
 #endif
 #define RTZIP_LZF_BLOCK_BY_BLOCK
@@ -1172,8 +1172,10 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
             unsigned cbOutput = lzf_decompress(&pZip->abBuffer[0], Hdr.cbData, pvBuf, cbUncompressed);
             if (cbOutput != cbUncompressed)
             {
+# ifndef IPRT_NO_CRT /* no errno */
                 AssertMsgFailed(("Decompression error, errno=%d. cbOutput=%#x cbUncompressed=%#x\n",
                                  errno, cbOutput, cbUncompressed));
+# endif
                 return VERR_GENERAL_FAILURE; /** @todo Get better error codes for RTZip! */
             }
             cbBuf -= cbUncompressed;
@@ -1185,8 +1187,10 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
             unsigned cbOutput = lzf_decompress(&pZip->abBuffer[0], Hdr.cbData, pZip->u.LZF.abSpill, cbUncompressed);
             if (cbOutput != cbUncompressed)
             {
+# ifndef IPRT_NO_CRT /* no errno */
                 AssertMsgFailed(("Decompression error, errno=%d. cbOutput=%#x cbUncompressed=%#x\n",
                                  errno, cbOutput, cbUncompressed));
+# endif
                 return VERR_GENERAL_FAILURE; /** @todo Get better error codes for RTZip! */
             }
             pZip->u.LZF.pbSpill = &pZip->u.LZF.abSpill[0];
@@ -1857,9 +1861,11 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
             unsigned cbDstActual = lzf_decompress(pvSrc, (unsigned)cbSrc, pvDst, (unsigned)cbDst);  /** @todo deal with size type overflows */
             if (RT_UNLIKELY(cbDstActual < 1))
             {
+# ifndef IPRT_NO_CRT /* no errno */
                 if (errno == E2BIG)
                     return VERR_BUFFER_OVERFLOW;
                 Assert(errno == EINVAL);
+# endif
                 return VERR_GENERAL_FAILURE;
             }
             if (pcbDstActual)
