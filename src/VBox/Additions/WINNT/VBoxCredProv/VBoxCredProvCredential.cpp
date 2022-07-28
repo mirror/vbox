@@ -546,7 +546,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
              * (jdoe@my-domain.sub.net.com -> jdoe in domain my-domain.sub.net.com.)
              */
             PWSTR pwszExtractedDomain = NULL;
-            if (ExtractAccoutData(pwszUser, &pwszExtractedName, &pwszExtractedDomain))
+            if (ExtractAccountData(pwszUser, &pwszExtractedName, &pwszExtractedDomain))
             {
                 /* Update user name. */
                 if (pwszExtractedName)
@@ -841,65 +841,62 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
  *
  * This might be a principal or FQDN string.
  *
- * @return  TRUE if extraction of the account name was successful, FALSE if not.
- * @param   pwszAccountData         (Raw) account data string to extract data from.
- * @param   ppwszAccoutName         Where to store the extracted account name on success.
- *                                  Needs to be free'd with CoTaskMemFree().
- * @param   ppwszDomain             Where to store the extracted domain name on success.
- *                                  Needs to be free'd with CoTaskMemFree().
+ * @return  success indicator. Will fail if input not in a user@domain format.
+ * @param   pwszAccountData     Raw account data string to extract data from.
+ * @param   ppwszAccountName    Where to store the extracted account name on
+ *                              success. Needs to be freed with CoTaskMemFree().
+ * @param   ppwszDomain         Where to store the extracted domain name on
+ *                              success. Needs to be freed with CoTaskMemFree().
  */
-BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
+/*static*/ bool VBoxCredProvCredential::ExtractAccountData(PWSTR pwszAccountData, PWSTR *ppwszAccountName, PWSTR *ppwszDomain)
 {
     AssertPtrReturn(pwszAccountData, FALSE);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Getting account name for \"%ls\" ...\n",
                         pwszAccountData);
-    HRESULT hr = E_FAIL;
+
+/** @todo  r=bird: The original code seemed a little confused about whether
+ *         the domain stuff was optional or not, as it declared pwszDomain
+ *         very early and freed it in the error path.  Not entirely sure what
+ *         to make of that... */
 
     /* Try to figure out whether this is a principal name (user@domain). */
-    LPWSTR pPos = NULL;
-    if (   (pPos  = StrChrW(pwszAccountData, L'@')) != NULL
-        &&  pPos != pwszAccountData)
+    LPWSTR const pwszAt = StrChrW(pwszAccountData, L'@');
+    if (pwszAt && pwszAt != pwszAccountData)
     {
-        size_t cbSize = (pPos - pwszAccountData) * sizeof(WCHAR);
-        LPWSTR pwszName = (LPWSTR)CoTaskMemAlloc(cbSize + sizeof(WCHAR)); /* Space for terminating zero. */
-        LPWSTR pwszDomain = NULL;
-        AssertPtr(pwszName);
-        hr = StringCbCopyN(pwszName, cbSize + sizeof(WCHAR), pwszAccountData, cbSize);
-        if (SUCCEEDED(hr))
+        if (pwszAt[1])
         {
-            *ppwszAccoutName = pwszName;
-            pPos++; /* Skip @, point to domain name (if any). */
-            if (    pPos != NULL
-                && *pPos != L'\0')
+            size_t cwcUser  = (size_t)(pwszAt - pwszAccountData) + 1;
+            LPWSTR pwszName = (LPWSTR)CoTaskMemAlloc(cwcUser * sizeof(WCHAR));
+            if (pwszName)
             {
-                hr = SHStrDupW(pPos, &pwszDomain);
-                if (SUCCEEDED(hr))
+                int rc = RTUtf16CopyEx(pwszName, cwcUser, pwszAccountData, cwcUser - 1);
+                if (RT_SUCCESS(rc))
                 {
-                    *ppwszDomain = pwszDomain;
+                    LPWSTR pwszDomain = NULL;
+                    HRESULT hr = SHStrDupW(&pwszAt[1], &pwszDomain);
+                    if (SUCCEEDED(hr))
+                    {
+                        *ppwszAccountName = pwszName;
+                        *ppwszDomain      = pwszDomain;
+                        return true;
+                    }
+
+                    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccountData: Error copying domain data, hr=%08x\n", hr);
                 }
                 else
-                    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Error copying domain data, hr=%08x\n", hr);
+                    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccountData: Error copying account data, rc=%Rrc\n", rc);
+                CoTaskMemFree(pwszName);
             }
             else
-            {
-                hr = E_FAIL;
-                VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: No domain name found!\n");
-            }
+                VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccountData: allocation failure.\n");
         }
         else
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Error copying account data, hr=%08x\n", hr);
-
-        if (hr != S_OK)
-        {
-            CoTaskMemFree(pwszName);
-            if (pwszDomain)
-                CoTaskMemFree(pwszDomain);
-        }
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccountData: No domain name found!\n");
     }
     else
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: No valid principal account name found!\n");
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccountData: No valid principal account name found!\n");
 
-    return (hr == S_OK);
+    return false;
 }
 
 
@@ -930,10 +927,8 @@ HRESULT VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszStri
             default:
             {
                 if (   m_apwszFields[dwFieldID]
-                    && RTUtf16Len(m_apwszFields[dwFieldID]))
-                {
+                    && m_apwszFields[dwFieldID][0])
                     hr = SHStrDupW(m_apwszFields[dwFieldID], &pwszString);
-                }
                 else /* Fill in an empty value. */
                     hr = SHStrDupW(L"", &pwszString);
                 break;
@@ -954,9 +949,7 @@ HRESULT VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszStri
                         hr);
 
     if (ppwszString)
-    {
         *ppwszString = pwszString;
-    }
     else if (pwszString)
         CoTaskMemFree(pwszString);
 
@@ -1132,7 +1125,7 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
 
             if (SUCCEEDED(hr))
             {
-                LSA_STRING lsaszKerberosName;
+#if 0 /* eeek. leaving this as an example of how not to handle a string constant. */
                 size_t cchKerberosName;
                 hr = StringCchLengthA(NEGOSSP_NAME_A, USHORT_MAX, &cchKerberosName);
                 if (SUCCEEDED(hr))
@@ -1140,10 +1133,12 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
                     USHORT usLength;
                     hr = SizeTToUShort(cchKerberosName, &usLength);
                     if (SUCCEEDED(hr))
+#endif
                     {
+                        LSA_STRING lsaszKerberosName;
                         lsaszKerberosName.Buffer        = (PCHAR)NEGOSSP_NAME_A;
-                        lsaszKerberosName.Length        = usLength;
-                        lsaszKerberosName.MaximumLength = lsaszKerberosName.Length + 1;
+                        lsaszKerberosName.Length        = sizeof(NEGOSSP_NAME_A) - 1;
+                        lsaszKerberosName.MaximumLength = sizeof(NEGOSSP_NAME_A);
 
                         ULONG ulAuthPackage = 0;
 
@@ -1165,8 +1160,9 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
                         else
                             VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: LsaLookupAuthenticationPackage failed with ntStatus=%ld\n", s);
                     }
+#if 0
                 }
-
+#endif
                 LsaDeregisterLogonProcess(hLSA);
             }
             else

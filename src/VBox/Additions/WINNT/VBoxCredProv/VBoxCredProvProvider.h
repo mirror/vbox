@@ -23,7 +23,6 @@
 
 #include <iprt/win/credentialprovider.h>
 #include <iprt/win/windows.h>
-#include <strsafe.h>
 
 #include <VBox/VBoxGuestLib.h>
 

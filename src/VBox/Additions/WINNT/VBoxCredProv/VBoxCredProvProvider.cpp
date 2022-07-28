@@ -212,7 +212,6 @@ HRESULT
 VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsageScenario, DWORD dwFlags)
 {
     HRESULT hr = S_OK;
-    DWORD dwErr;
 
     VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario: enmUsageScenario=%d, dwFlags=%ld\n",
                         enmUsageScenario, dwFlags);
@@ -226,7 +225,7 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
         {
             VBoxCredProvReportStatus(VBoxGuestFacilityStatus_Active);
 
-            dwErr = LoadConfiguration();
+            DWORD dwErr = LoadConfiguration();
             if (dwErr != ERROR_SUCCESS)
                 VBoxCredProvVerbose(0, "VBoxCredProv: Error while loading configuration, error=%ld\n", dwErr);
             /* Do not stop running on a misconfigured system. */
@@ -238,37 +237,37 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
             if (!HandleCurrentSession())
                 break;
 
+            hr = S_OK;
             if (!m_pPoller)
             {
-                try
+#ifdef RT_EXCEPTIONS_ENABLED
+                try { m_pPoller = new VBoxCredProvPoller(); }
+                catch (std::bad_alloc &) { hr = E_OUTOFMEMORY; }
+#else
+                m_pPoller = new VBoxCredProvPoller();
+                AssertStmt(m_pPoller, hr = E_OUTOFMEMORY);
+#endif
+                if (SUCCEEDED(hr))
                 {
-                    m_pPoller = new VBoxCredProvPoller();
-                    AssertPtr(m_pPoller);
                     int rc = m_pPoller->Initialize(this);
                     if (RT_FAILURE(rc))
                         VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario: Error initializing poller thread, rc=%Rrc\n", rc);
-                }
-                catch (std::bad_alloc &ex)
-                {
-                    NOREF(ex);
-                    hr = E_OUTOFMEMORY;
+/** @todo r=bird: Why is the initialize failure ignored here? */
                 }
             }
 
             if (   SUCCEEDED(hr)
                 && !m_pCred)
             {
-                try
-                {
-                    m_pCred = new VBoxCredProvCredential();
-                    AssertPtr(m_pPoller);
+#ifdef RT_EXCEPTIONS_ENABLED
+                try { m_pCred = new VBoxCredProvCredential(); }
+                catch (std::bad_alloc &) { hr = E_OUTOFMEMORY; }
+#else
+                m_pCred = new VBoxCredProvCredential();
+                AssertStmt(m_pCred, hr = E_OUTOFMEMORY);
+#endif
+                if (SUCCEEDED(hr))
                     hr = m_pCred->Initialize(m_enmUsageScenario);
-                }
-                catch (std::bad_alloc &ex)
-                {
-                    NOREF(ex);
-                    hr = E_OUTOFMEMORY;
-                }
             }
             else
             {
@@ -276,6 +275,9 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
             }
 
             /* If we failed, do some cleanup. */
+/** @todo r=bird: Why aren't we cleaning up m_pPoller too? Very confusing given
+ * that m_pCred wasn't necessarily even created above.  Always explain the WHY
+ * when doing something that isn't logical like here! */
             if (FAILED(hr))
             {
                 if (m_pCred != NULL)
@@ -290,7 +292,6 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
         case CPUS_CHANGE_PASSWORD: /* Asks us to provide a way to change the password. */
         case CPUS_CREDUI:          /* Displays an own UI. We don't need that. */
         case CPUS_PLAP:            /* See Pre-Logon-Access Provider. Not needed (yet). */
-
             hr = E_NOTIMPL;
             break;
 
@@ -570,20 +571,17 @@ VBoxCredProvProvider::OnCredentialsProvided(void)
 HRESULT
 VBoxCredProvProviderCreate(REFIID interfaceID, void **ppvInterface)
 {
-    HRESULT hr;
+    VBoxCredProvProvider *pProvider;
+#ifdef RT_EXCEPTIONS_ENABLED
+    try { pProvider = new VBoxCredProvProvider(); }
+    catch (std::bad_alloc &) { AssertFailedReturn(E_OUTOFMEMORY); }
+#else
+    pProvider = new VBoxCredProvProvider();
+    AssertReturn(pProvider, E_OUTOFMEMORY);
+#endif
 
-    try
-    {
-        VBoxCredProvProvider *pProvider = new VBoxCredProvProvider();
-        AssertPtr(pProvider);
-        hr = pProvider->QueryInterface(interfaceID, ppvInterface);
-        pProvider->Release();
-    }
-    catch (std::bad_alloc &ex)
-    {
-        NOREF(ex);
-        hr = E_OUTOFMEMORY;
-    }
+    HRESULT hr = pProvider->QueryInterface(interfaceID, ppvInterface);
+    pProvider->Release();
 
     return hr;
 }
