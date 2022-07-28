@@ -57,7 +57,7 @@ void UICloudMachineSettingsDialogPage::makeSureDataCommitted()
 void UICloudMachineSettingsDialogPage::retranslateUi()
 {
     AssertPtrReturnVoid(m_pFormEditor.data());
-    m_pFormEditor->setWhatsThis(tr("Contains a list of cloud machine settings."));
+    m_pFormEditor->setWhatsThis(UICloudMachineSettingsDialog::tr("Contains a list of cloud machine settings."));
 }
 
 void UICloudMachineSettingsDialogPage::prepare()

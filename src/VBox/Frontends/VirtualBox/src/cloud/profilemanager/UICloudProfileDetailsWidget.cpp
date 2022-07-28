@@ -28,6 +28,7 @@
 #include "QITableWidget.h"
 #include "UICommon.h"
 #include "UICloudProfileDetailsWidget.h"
+#include "UICloudProfileManager.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -64,14 +65,14 @@ void UICloudProfileDetailsWidget::retranslateUi()
     /// @todo add description tool-tips
 
     /* Translate name-editor label: */
-    m_pLabelName->setText(tr("Name:"));
+    m_pLabelName->setText(UICloudProfileManager::tr("Name:"));
     /* Translate name-editor: */
     retranslateEditor();
 
     /* Translate table-widget label: */
-    m_pLabelTableWidget->setText(tr("Properties:"));
+    m_pLabelTableWidget->setText(UICloudProfileManager::tr("Properties:"));
     /* Translate table-widget: */
-    m_pTableWidget->setWhatsThis(tr("Contains cloud profile settings"));
+    m_pTableWidget->setWhatsThis(UICloudProfileManager::tr("Contains cloud profile settings"));
 
     /* Translate buttons: */
     retranslateButtons();
@@ -87,8 +88,8 @@ void UICloudProfileDetailsWidget::retranslateEditor()
 {
     /* Translate placeholders: */
     m_pEditorName->setPlaceholderText(  m_oldData.m_strName.isNull()
-                                      ? tr("Enter a name for the new profile...")
-                                      : tr("Enter a name for this profile..."));
+                                      ? UICloudProfileManager::tr("Enter a name for the new profile...")
+                                      : UICloudProfileManager::tr("Enter a name for this profile..."));
 }
 
 void UICloudProfileDetailsWidget::retranslateButtons()
@@ -97,29 +98,29 @@ void UICloudProfileDetailsWidget::retranslateButtons()
     if (m_pButtonBox)
     {
         /* Common: 'Reset' button: */
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current profile details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(UICloudProfileManager::tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UICloudProfileManager::tr("Reset changes in current profile details"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UICloudProfileManager::tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
 
         if (m_oldData.m_strName.isNull())
         {
             /* Provider: 'Add' button: */
-            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Add"));
-            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Add a new profile with following name"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UICloudProfileManager::tr("Add"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(UICloudProfileManager::tr("Add a new profile with following name"));
             m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
             m_pButtonBox->button(QDialogButtonBox::Ok)->
-                setToolTip(tr("Add Profile (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+                setToolTip(UICloudProfileManager::tr("Add Profile (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
         }
         else
         {
             /* Profile: 'Apply' button: */
-            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current profile details"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UICloudProfileManager::tr("Apply"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(UICloudProfileManager::tr("Apply changes in current profile details"));
             m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
             m_pButtonBox->button(QDialogButtonBox::Ok)->
-                setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+                setToolTip(UICloudProfileManager::tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
         }
     }
 }
@@ -356,7 +357,7 @@ void UICloudProfileDetailsWidget::updateTableToolTips()
         if (pItemK)
         {
             const QString strToolTip = pItemK->data(Qt::UserRole).toString();
-            pItemK->setToolTip(tr(strToolTip.toUtf8().constData()));
+            pItemK->setToolTip(UICloudProfileManager::tr(strToolTip.toUtf8().constData()));
         }
     }
 }

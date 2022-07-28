@@ -272,10 +272,10 @@ QString UIInputDialogCloudConsoleApplication::argument() const
 
 void UIInputDialogCloudConsoleApplication::retranslateUi()
 {
-    setWindowTitle(tr("Add Application"));
-    m_pLabelName->setText(tr("Name:"));
-    m_pLabelPath->setText(tr("Path:"));
-    m_pLabelArgument->setText(tr("Argument:"));
+    setWindowTitle(UICloudConsoleManager::tr("Add Application"));
+    m_pLabelName->setText(UICloudConsoleManager::tr("Name:"));
+    m_pLabelPath->setText(UICloudConsoleManager::tr("Path:"));
+    m_pLabelArgument->setText(UICloudConsoleManager::tr("Argument:"));
 }
 
 void UIInputDialogCloudConsoleApplication::prepare()
@@ -381,9 +381,9 @@ QString UIInputDialogCloudConsoleProfile::argument() const
 
 void UIInputDialogCloudConsoleProfile::retranslateUi()
 {
-    setWindowTitle(tr("Add Profile"));
-    m_pLabelName->setText(tr("Name:"));
-    m_pLabelArgument->setText(tr("Argument:"));
+    setWindowTitle(UICloudConsoleManager::tr("Add Profile"));
+    m_pLabelName->setText(UICloudConsoleManager::tr("Name:"));
+    m_pLabelArgument->setText(UICloudConsoleManager::tr("Argument:"));
 }
 
 void UIInputDialogCloudConsoleProfile::prepare()
@@ -487,8 +487,8 @@ void UICloudConsoleManagerWidget::retranslateUi()
 
     /* Translate tree-widget: */
     m_pTreeWidget->setHeaderLabels(   QStringList()
-                                   << tr("Application")
-                                   << tr("List in Menu"));
+                                   << UICloudConsoleManager::tr("Application")
+                                   << UICloudConsoleManager::tr("List in Menu"));
 }
 
 void UICloudConsoleManagerWidget::sltResetCloudConsoleDetailsChanges()

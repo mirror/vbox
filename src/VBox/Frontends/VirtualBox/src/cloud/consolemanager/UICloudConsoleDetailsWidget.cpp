@@ -27,6 +27,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "UICloudConsoleDetailsWidget.h"
+#include "UICloudConsoleManager.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -102,34 +103,34 @@ void UICloudConsoleDetailsWidget::clearData()
 void UICloudConsoleDetailsWidget::retranslateUi()
 {
     /* Translate editor labels: */
-    m_pLabelApplicationName->setText(tr("Name:"));
-    m_pLabelApplicationPath->setText(tr("Path:"));
-    m_pLabelApplicationArgument->setText(tr("Argument:"));
-    m_pLabelProfileName->setText(tr("Name:"));
-    m_pLabelProfileArgument->setText(tr("Argument:"));
+    m_pLabelApplicationName->setText(UICloudConsoleManager::tr("Name:"));
+    m_pLabelApplicationPath->setText(UICloudConsoleManager::tr("Path:"));
+    m_pLabelApplicationArgument->setText(UICloudConsoleManager::tr("Argument:"));
+    m_pLabelProfileName->setText(UICloudConsoleManager::tr("Name:"));
+    m_pLabelProfileArgument->setText(UICloudConsoleManager::tr("Argument:"));
 
     /* Translate editor placeholders: */
-    m_pEditorApplicationName->setPlaceholderText(tr("Enter a name for this console application..."));
-    m_pEditorApplicationPath->setPlaceholderText(tr("Enter a path for this console application..."));
-    m_pEditorApplicationArgument->setPlaceholderText(tr("Enter an argument for this console application..."));
-    m_pEditorProfileName->setPlaceholderText(tr("Enter a name for this console profile..."));
-    m_pEditorProfileArgument->setPlaceholderText(tr("Enter an argument for this console profile..."));
+    m_pEditorApplicationName->setPlaceholderText(UICloudConsoleManager::tr("Enter a name for this console application..."));
+    m_pEditorApplicationPath->setPlaceholderText(UICloudConsoleManager::tr("Enter a path for this console application..."));
+    m_pEditorApplicationArgument->setPlaceholderText(UICloudConsoleManager::tr("Enter an argument for this console application..."));
+    m_pEditorProfileName->setPlaceholderText(UICloudConsoleManager::tr("Enter a name for this console profile..."));
+    m_pEditorProfileArgument->setPlaceholderText(UICloudConsoleManager::tr("Enter an argument for this console profile..."));
 
     /* Translate buttons: */
     if (m_pButtonBox)
     {
         /* 'Reset' button: */
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current console details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(UICloudConsoleManager::tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UICloudConsoleManager::tr("Reset changes in current console details"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UICloudConsoleManager::tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         /* 'Apply' button: */
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current console details"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UICloudConsoleManager::tr("Apply"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(UICloudConsoleManager::tr("Apply changes in current console details"));
         m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
         m_pButtonBox->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UICloudConsoleManager::tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Retranslate validation: */
