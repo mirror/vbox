@@ -154,11 +154,11 @@ void UIItemExtensionPack::updateFields()
 QString UIItemExtensionPack::defaultText() const
 {
     return   m_fIsUsable
-           ? tr("%1, %2: %3, %4", "col.2 text, col.3 name: col.3 text, col.1 name")
+           ? UIExtensionPackManager::tr("%1, %2: %3, %4", "col.2 text, col.3 name: col.3 text, col.1 name")
                .arg(text(1))
                .arg(parentTree()->headerItem()->text(2)).arg(text(2))
                .arg(parentTree()->headerItem()->text(0))
-           : tr("%1, %2: %3",     "col.2 text, col.3 name: col.3 text")
+           : UIExtensionPackManager::tr("%1, %2: %3",     "col.2 text, col.3 name: col.3 text")
                .arg(text(1))
                .arg(parentTree()->headerItem()->text(2)).arg(text(2));
 }
@@ -200,10 +200,10 @@ void UIExtensionPackManagerWidget::retranslateUi()
 
     /* Translate tree-widget: */
     m_pTreeWidget->setHeaderLabels(   QStringList()
-                                   << tr("Active")
-                                   << tr("Name")
-                                   << tr("Version"));
-    m_pTreeWidget->setWhatsThis(tr("Registered extension packs"));
+                                   << UIExtensionPackManager::tr("Active")
+                                   << UIExtensionPackManager::tr("Name")
+                                   << UIExtensionPackManager::tr("Version"));
+    m_pTreeWidget->setWhatsThis(UIExtensionPackManager::tr("Registered extension packs"));
 }
 
 void UIExtensionPackManagerWidget::sltInstallExtensionPack()
@@ -218,11 +218,11 @@ void UIExtensionPackManagerWidget::sltInstallExtensionPack()
         if (!QDir(strBaseFolder).exists())
             strBaseFolder = QDir::homePath();
     }
-    const QString strTitle = tr("Select an extension package file");
+    const QString strTitle = UIExtensionPackManager::tr("Select an extension package file");
     QStringList extensions;
     for (int i = 0; i < VBoxExtPackFileExts.size(); ++i)
         extensions << QString("*.%1").arg(VBoxExtPackFileExts[i]);
-    const QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
+    const QString strFilter = UIExtensionPackManager::tr("Extension package files (%1)").arg(extensions.join(" "));
     const QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, window(), strTitle, 0, true, true);
     QString strFilePath;
     if (!fileNames.isEmpty())
