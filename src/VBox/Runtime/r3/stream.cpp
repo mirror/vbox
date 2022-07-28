@@ -32,7 +32,7 @@
 /** @def RTSTREAM_STANDALONE
  * Standalone streams w/o depending on stdio.h, using our RTFile API for
  * file/whatever access. */
-#if defined(IPRT_NO_CRT) || defined(DOXYGEN_RUNNING)
+#if (defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS)) || defined(DOXYGEN_RUNNING)
 # define RTSTREAM_STANDALONE
 #endif
 
@@ -780,7 +780,7 @@ static int rtStrmInputGetEchoCharsNative(uintptr_t hNative, bool *pfEchoChars)
     }
 #else
     struct termios Termios;
-    int rcPosix = tcgetattr((int)fh, &Termios);
+    int rcPosix = tcgetattr((int)hNative, &Termios);
     if (!rcPosix)
         *pfEchoChars = RT_BOOL(Termios.c_lflag & ECHO);
     else
@@ -842,7 +842,7 @@ static int rtStrmInputSetEchoCharsNative(uintptr_t hNative, bool fEchoChars)
     }
 #else
     struct termios Termios;
-    int rcPosix = tcgetattr(fh, &Termios);
+    int rcPosix = tcgetattr((int)hNative, &Termios);
     if (!rcPosix)
     {
         if (fEchoChars)
@@ -850,7 +850,7 @@ static int rtStrmInputSetEchoCharsNative(uintptr_t hNative, bool fEchoChars)
         else
             Termios.c_lflag &= ~ECHO;
 
-        rcPosix = tcsetattr(fh, TCSAFLUSH, &Termios);
+        rcPosix = tcsetattr((int)hNative, TCSAFLUSH, &Termios);
         if (rcPosix == 0)
             rc = VINF_SUCCESS;
         else
