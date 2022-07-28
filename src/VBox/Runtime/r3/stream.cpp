@@ -75,7 +75,12 @@
 #include "internal/alignmentchecks.h"
 #include "internal/magics.h"
 
-#ifndef RTSTREAM_STANDALONE
+#ifdef RTSTREAM_STANDALONE
+# ifdef _MSC_VER
+#  define IPRT_COMPILER_VCC_WITH_C_INIT_TERM_SECTIONS
+#  include "internal/compiler-vcc.h"
+# endif
+#else
 # include <stdio.h>
 # include <errno.h>
 # if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
@@ -1286,6 +1291,71 @@ static int rtStrmBufCopyTo(PRTSTREAM pStream, const void *pvSrc, size_t cbSrc, s
     }
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Worker for rtStrmFlushAndCloseAll.
+ */
+static void rtStrmFlushAndClose(PRTSTREAM pStream, bool fStaticStream)
+{
+    if (!fStaticStream)
+        pStream->u32Magic = ~RTSTREAM_MAGIC;
+
+    if (pStream->pchBuf)
+    {
+        if (   pStream->enmBufDir == RTSTREAMBUFDIR_WRITE
+            && pStream->offBufFirst < pStream->offBufEnd
+            && RT_SUCCESS(pStream->i32Error) )
+            rtStrmBufFlushWrite(pStream, pStream->offBufEnd - pStream->offBufFirst);
+        RTMemFree(pStream->pchBuf);
+        pStream->pchBuf      = NULL;
+        pStream->offBufFirst = 0;
+        pStream->offBufEnd   = 0;
+    }
+
+    PRTCRITSECT pCritSect = pStream->pCritSect;
+    pStream->pCritSect = NULL;
+    if (pCritSect)
+    {
+        RTCritSectDelete(pCritSect);
+        RTMemFree(pCritSect);
+    }
+
+    if (pStream->hFile != NIL_RTFILE)
+    {
+        if (!fStaticStream)
+            RTFileClose(pStream->hFile);
+        /* else: no structure or memory behind RTFILE yet, so okay to just drop it. */
+        pStream->hFile = NIL_RTFILE;
+    }
+
+    if (!fStaticStream)
+        RTMemFree(pStream);
+}
+
+
+/**
+ * Flushes and cleans up the standard streams, should flush and close all others
+ * too but doesn't yet...
+ */
+DECLCALLBACK(void) rtStrmFlushAndCloseAll(void)
+{
+    /*
+     * Flush the standard handles.
+     */
+    rtStrmFlushAndClose(&g_StdOut, true);
+    rtStrmFlushAndClose(&g_StdErr, true);
+    rtStrmFlushAndClose(&g_StdIn,  true);
+
+    /*
+     * Make a list of the rest and flush+close those too.
+     */
+    /** @todo */
+}
+
+# ifdef IPRT_COMPILER_TERM_CALLBACK
+IPRT_COMPILER_TERM_CALLBACK(rtStrmFlushAndCloseAll);
+# endif
 
 #endif /* RTSTREAM_STANDALONE */
 

@@ -48,6 +48,8 @@
 # pragma section(".CRT$XTA",  read, long)   /* start C terminators  */
 # pragma section(".CRT$XTAA", read, long)
 # pragma section(".CRT$XTZ",  read, long)
+# define IPRT_COMPILER_TERM_CALLBACK(a_fn) \
+    __declspec(allocate(".CRT$XTAA")) PFNRT RT_CONCAT(g_rtVccTermCallback_, a_fn) = a_fn
 #endif
 
 #ifdef IPRT_COMPILER_VCC_WITH_CPP_INIT_SECTIONS
