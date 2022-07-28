@@ -291,12 +291,15 @@ endif
 
 
 #
-# RuntimeR3 - Static Runtime for Ring-3 executables.
+# RuntimeBaseR3 - Commmon Base Runtime Target for Ring-3 executables.
 #
-RuntimeR3_TEMPLATE      = VBoxR3Static
-RuntimeR3_SDKS          = VBOX_LIBXML2
-RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
-RuntimeR3_DEFS          = \
+# Note! This is not make itself, it's only used as a base target config to be
+#       inherited from by RuntimeR3(.lib) and VBoxR3(.dll).
+#
+RuntimeBaseR3_TEMPLATE      = VBoxR3Static
+RuntimeBaseR3_SDKS          = VBOX_LIBXML2
+RuntimeBaseR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
+RuntimeBaseR3_DEFS          = \
 	IN_RT_R3 \
 	LDR_WITH_NATIVE \
 	LDR_WITH_ELF32 \
@@ -308,37 +311,37 @@ RuntimeR3_DEFS          = \
 	RT_WITHOUT_NOCRT_WRAPPERS \
 	NOFILEID
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
- RuntimeR3_DEFS         += \
+ RuntimeBaseR3_DEFS         += \
  	IN_SUP_R3
 endif
-#RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
+#RuntimeBaseR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_LZJB
- RuntimeR3_DEFS        += RTZIP_USE_LZJB
+ RuntimeBaseR3_DEFS        += RTZIP_USE_LZJB
 endif
 ifdef IPRT_WITH_LZO
- RuntimeR3_DEFS        += RTZIP_USE_LZO
+ RuntimeBaseR3_DEFS        += RTZIP_USE_LZO
 endif
 ifn1of ($(KBUILD_TARGET), win)
- RuntimeR3_DEFS        += RT_WITH_ICONV_CACHE
+ RuntimeBaseR3_DEFS        += RT_WITH_ICONV_CACHE
 endif
 ifdef IPRT_WITH_FUTEX_BASED_SEMS
- RuntimeR3_DEFS.linux  += IPRT_WITH_FUTEX_BASED_SEMS
+ RuntimeBaseR3_DEFS.linux  += IPRT_WITH_FUTEX_BASED_SEMS
 endif
 ifdef IPRT_HTTP_WITH_WEBDAV
- RuntimeR3_DEFS        += IPRT_HTTP_WITH_WEBDAV
+ RuntimeBaseR3_DEFS        += IPRT_HTTP_WITH_WEBDAV
 endif
 ifdef IPRT_WITHOUT_PAM
- RuntimeR3_DEFS        += IPRT_WITHOUT_PAM
+ RuntimeBaseR3_DEFS        += IPRT_WITHOUT_PAM
 endif
-RuntimeR3_INCS          = \
+RuntimeBaseR3_INCS          = \
 	include \
 	$(SDK_VBOX_ZLIB_INCS) \
 	$(SDK_VBOX_LZF_INCS)
 
-# RuntimeR3_INCS.solaris  = \
+# RuntimeBaseR3_INCS.solaris  = \
 #    /usr/include
 
-RuntimeR3_SOURCES       = \
+RuntimeBaseR3_SOURCES      := \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/alloc/heapoffset.cpp \
@@ -783,22 +786,22 @@ RuntimeR3_SOURCES       = \
 
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
-# RuntimeR3_SOURCES += common/time/timesupA.asm
+# RuntimeBaseR3_SOURCES += common/time/timesupA.asm
 #else
- RuntimeR3_SOURCES += common/time/timesupref.cpp
+ RuntimeBaseR3_SOURCES += common/time/timesupref.cpp
 #endif
 
-RuntimeR3_SOURCES.x86 += \
+RuntimeBaseR3_SOURCES.x86 += \
 	generic/RTMpGetDescription-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm
-RuntimeR3_SOURCES.amd64 += \
+RuntimeBaseR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm
-RuntimeR3_SOURCES.arm32 := \
+RuntimeBaseR3_SOURCES.arm32 := \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
 	common/asm/ASMBitFirstSet-generic.cpp \
@@ -809,7 +812,7 @@ RuntimeR3_SOURCES.arm32 := \
 	common/asm/ASMMemFirstMismatchingU8-generic.cpp \
 	common/asm/ASMMemFirstNonZero-generic.cpp \
 	common/misc/zero-alt.S
-RuntimeR3_SOURCES.arm64 := \
+RuntimeBaseR3_SOURCES.arm64 := \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
 	common/asm/ASMBitFirstSet-generic.cpp \
@@ -820,7 +823,7 @@ RuntimeR3_SOURCES.arm64 := \
 	common/asm/ASMMemFirstMismatchingU8-generic.cpp \
 	common/asm/ASMMemFirstNonZero-generic.cpp \
 	common/misc/zero-alt.S
-RuntimeR3_SOURCES.sparc32 += \
+RuntimeBaseR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
@@ -835,7 +838,7 @@ RuntimeR3_SOURCES.sparc32 += \
 	common/asm/asm-fake.cpp \
 	common/misc/zero-alt.S \
 	common/string/RTStrMemFind32.cpp
-RuntimeR3_SOURCES.sparc64 += \
+RuntimeBaseR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
@@ -852,11 +855,11 @@ RuntimeR3_SOURCES.sparc64 += \
 	common/string/RTStrMemFind32.cpp
 
 ifdef IPRT_WITH_LZJB
- RuntimeR3_SOURCES += common/misc/lzjb.c
+ RuntimeBaseR3_SOURCES += common/misc/lzjb.c
 endif
 
 # AMD64 / x86 assembly code.
-RuntimeR3_SOURCES.x86 += \
+RuntimeBaseR3_SOURCES.x86 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
@@ -881,7 +884,7 @@ RuntimeR3_SOURCES.x86 += \
 	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm \
        common/string/RTStrEnd.asm
-RuntimeR3_SOURCES.amd64 += \
+RuntimeBaseR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
@@ -910,7 +913,7 @@ RuntimeR3_SOURCES.amd64 += \
        common/string/RTStrEnd.asm
 
 # Some versions of GCC might require this.
-RuntimeR3_SOURCES.x86 += \
+RuntimeBaseR3_SOURCES.x86 += \
 	common/asm/ASMAtomicXchgU64.asm \
 	common/asm/ASMAtomicCmpXchgU64.asm \
 	common/asm/ASMAtomicCmpXchgExU64.asm \
@@ -918,34 +921,34 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicUoReadU64.asm
 
 # Some non-assembly for non-AMD64 / non-x86 targets:
-RuntimeR3_SOURCES.arm32 += \
+RuntimeBaseR3_SOURCES.arm32 += \
 	common/string/RTStrEnd.cpp \
 	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
-RuntimeR3_SOURCES.arm64 += \
+RuntimeBaseR3_SOURCES.arm64 += \
 	common/string/RTStrEnd.cpp \
 	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
-RuntimeR3_SOURCES.sparc32 += \
+RuntimeBaseR3_SOURCES.sparc32 += \
 	common/string/RTStrEnd.cpp \
 	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
-RuntimeR3_SOURCES.sparc64 += \
+RuntimeBaseR3_SOURCES.sparc64 += \
 	common/string/RTStrEnd.cpp \
 	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
 
 # VBox specific stuff.
-RuntimeR3_SOURCES += \
+RuntimeBaseR3_SOURCES += \
 	VBox/RTAssertShouldPanic-vbox.cpp \
 	VBox/log-vbox.cpp
 ifneq ($(KBUILD_TARGET),win)
-RuntimeR3_SOURCES += \
+RuntimeBaseR3_SOURCES += \
 	common/err/errmsgxpcom.cpp
 endif
 if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-RuntimeR3_SOURCES += \
+RuntimeBaseR3_SOURCES += \
 	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
 endif
 
 VBOX_WITH_NT_DIRENUM = 1
-RuntimeR3_SOURCES.win = \
+RuntimeBaseR3_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
 	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
@@ -1043,14 +1046,14 @@ RuntimeR3_SOURCES.win = \
 	win/RTErrConvertFromWin32.cpp \
 	common/string/mempcpy.asm
 
-RuntimeR3_SOURCES.win.amd64 := \
+RuntimeBaseR3_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
 	common/string/memrchr.asm
-RuntimeR3_SOURCES.win.x86   := \
+RuntimeBaseR3_SOURCES.win.x86   := \
 	$(RuntimeWin32ASM_SOURCES) \
 	common/string/memrchr.asm
 
-RuntimeR3_SOURCES.linux = \
+RuntimeBaseR3_SOURCES.linux = \
 	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -1136,28 +1139,28 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 ifdef IPRT_WITH_FUTEX_BASED_SEMS
- RuntimeR3_SOURCES.linux += \
+ RuntimeBaseR3_SOURCES.linux += \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp \
  	r3/linux/semmutex-linux.cpp
 else
- RuntimeR3_SOURCES.linux.x86 += \
+ RuntimeBaseR3_SOURCES.linux.x86 += \
  	r3/posix/semevent-posix.cpp \
  	r3/posix/semeventmulti-posix.cpp \
  	r3/posix/semmutex-posix.cpp
- RuntimeR3_SOURCES.linux.amd64 += \
+ RuntimeBaseR3_SOURCES.linux.amd64 += \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  ifdef RT_NEW_LINUX_MUTEX_CODE
-  RuntimeR3_SOURCES.linux.amd64 += \
+  RuntimeBaseR3_SOURCES.linux.amd64 += \
  	r3/linux/semmutex-linux.cpp
  else
-  RuntimeR3_SOURCES.linux.amd64 += \
+  RuntimeBaseR3_SOURCES.linux.amd64 += \
  	r3/posix/semmutex-posix.cpp
  endif
 endif
 
-RuntimeR3_SOURCES.os2   = \
+RuntimeBaseR3_SOURCES.os2   = \
 	common/string/memrchr.asm \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -1243,7 +1246,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
-RuntimeR3_SOURCES.darwin = \
+RuntimeBaseR3_SOURCES.darwin = \
 	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
@@ -1332,23 +1335,23 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
-RuntimeR3_SOURCES.darwin.x86   += \
+RuntimeBaseR3_SOURCES.darwin.x86   += \
 	common/string/mempcpy.asm \
 	common/string/memrchr.asm
-RuntimeR3_SOURCES.darwin.amd64 += \
+RuntimeBaseR3_SOURCES.darwin.amd64 += \
 	common/string/mempcpy.asm \
 	common/string/memrchr.asm
-RuntimeR3_SOURCES.darwin.arm32 += \
+RuntimeBaseR3_SOURCES.darwin.arm32 += \
 	common/string/mempcpy.cpp \
 	common/string/memrchr.cpp \
 	r3/darwin/RTMpGetDescription-generic.cpp
-RuntimeR3_SOURCES.darwin.arm64 += \
+RuntimeBaseR3_SOURCES.darwin.arm64 += \
 	common/string/mempcpy.cpp \
 	common/string/memrchr.cpp \
 	r3/darwin/RTMpGetDescription-generic.cpp
 
 ## @todo Make BSD sched, implement RTMP*.
-RuntimeR3_SOURCES.freebsd = \
+RuntimeBaseR3_SOURCES.freebsd = \
 	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -1437,7 +1440,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
-RuntimeR3_SOURCES.netbsd = \
+RuntimeBaseR3_SOURCES.netbsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetMode-generic.cpp \
@@ -1521,7 +1524,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
-RuntimeR3_SOURCES.solaris = \
+RuntimeBaseR3_SOURCES.solaris = \
 	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -1604,26 +1607,26 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
 	r3/solaris/RTSystemShutdown-solaris.cpp \
 	r3/solaris/thread-affinity-solaris.cpp
-RuntimeR3_SOURCES.solaris.amd64 = \
+RuntimeBaseR3_SOURCES.solaris.amd64 = \
 	common/string/memrchr.asm \
 	common/string/mempcpy.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
-RuntimeR3_SOURCES.solaris.x86 = \
+RuntimeBaseR3_SOURCES.solaris.x86 = \
 	common/string/memrchr.asm \
 	common/string/mempcpy.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
-RuntimeR3_SOURCES.solaris.sparc32 = \
+RuntimeBaseR3_SOURCES.solaris.sparc32 = \
 	common/string/memrchr.cpp \
 	common/string/mempcpy.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp
-RuntimeR3_SOURCES.solaris.sparc64 = \
+RuntimeBaseR3_SOURCES.solaris.sparc64 = \
 	common/string/memrchr.cpp \
 	common/string/mempcpy.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp
 
-RuntimeR3_SOURCES.haiku = \
+RuntimeBaseR3_SOURCES.haiku = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetMode-generic.cpp \
@@ -1697,11 +1700,92 @@ RuntimeR3_SOURCES.haiku = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
-RuntimeR3_SOURCES.haiku.x86   += common/string/memrchr.asm
-RuntimeR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
+RuntimeBaseR3_SOURCES.haiku.x86   += common/string/memrchr.asm
+RuntimeBaseR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
+
+#
+# RuntimeR3 - Static Runtime for Ring-3 executables.
+#
+RuntimeR3_TEMPLATE = VBoxR3Static
+RuntimeR3_EXTENDS  = RuntimeBaseR3
+ifdef VBOX_WITH_NOCRT_STATIC
+ if1of ($(KBUILD_TARGET), win)
+  RuntimeR3_SOURCES = $(filter-out \
+  	r3/alloc.cpp \
+  	r3/alloc-ef.cpp \
+  	r3/xml.cpp \
+  	common/zip/xarvfs.cpp \
+  	common/misc/json.cpp \
+  	generic/RTLogWriteStdErr-generic.cpp \
+  	generic/RTLogWriteStdOut-generic.cpp \
+  	,$(RuntimeBaseR3_SOURCES))
+  RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
+  	common/misc/setjmp.asm \
+  	common/string/memcpy.asm \
+  	common/string/memchr.asm \
+  	common/string/memcmp.asm \
+  	common/string/memmove.asm \
+  	common/string/memset.asm \
+  	common/string/strlen.asm \
+  	common/string/strchr.asm \
+  	common/string/strcmp.asm \
+  	common/string/strncmp.asm \
+  	common/string/strcpy.asm \
+   	common/string/strrchr.cpp \
+   	common/string/strstr.cpp \
+   	common/string/strcspn.cpp \
+   	common/string/strpbrk.cpp
+  RuntimeR3_SOURCES.amd64 = $(RuntimeBaseR3_SOURCES.amd64) \
+  	common/misc/setjmp.asm \
+  	common/string/memcpy.asm \
+  	common/string/memchr.asm \
+  	common/string/memcmp.asm \
+  	common/string/memmove.asm \
+  	common/string/memset.asm \
+  	common/string/strlen.asm \
+  	common/string/strchr.asm \
+  	common/string/strcmp.asm \
+  	common/string/strncmp.asm \
+  	common/string/strcpy.asm \
+   	common/string/strrchr.cpp \
+   	common/string/strstr.cpp \
+   	common/string/strcspn.cpp \
+   	common/string/strpbrk.cpp
+  RuntimeR3_SOURCES.win = $(filter-out \
+  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+  	,$(RuntimeBaseR3_SOURCES.win)) \
+        \
+  	common/compiler/vcc/atexit-vcc.cpp \
+  	common/compiler/vcc/loadcfg-vcc.c \
+  	common/compiler/vcc/tlsdir-vcc.c \
+  	common/compiler/vcc/initializers-c-cpp-vcc.cpp \
+  	common/compiler/vcc/stacksup-vcc.cpp \
+  	common/compiler/vcc/fltused-vcc.cpp \
+  	common/compiler/vcc/purecall-vcc.cpp \
+  	r3/win/nocrt-startup-exe-win.cpp \
+  	r3/win/nocrt-startup-dll-win.cpp \
+  	r3/win/nocrt-startup-common-win.cpp \
+  	r3/win/nocrt-alloc-win.cpp \
+  	r3/win/nocrt-RTLogWriteStdErr-win.cpp \
+  	r3/win/nocrt-RTLogWriteStdOut-win.cpp \
+  	generic/new-delete-generic.cpp
+  RuntimeR3_SOURCES.win.amd64 = $(RuntimeBaseR3_SOURCES.win.amd64) \
+  	r3/win/nocrt-atexit-win.asm \
+  	r3/win/nocrt-mainCRTStartup-win.asm \
+  	r3/win/nocrt-WinMainCRTStartup-win.asm \
+  	common/compiler/vcc/guard-vcc.asm \
+  	common/compiler/vcc/stack-vcc.asm
+  RuntimeR3_SOURCES.win.x86 = $(RuntimeBaseR3_SOURCES.win.x86) \
+  	r3/win/nocrt-atexit-win.asm \
+  	r3/win/nocrt-mainCRTStartup-win.asm \
+  	r3/win/nocrt-WinMainCRTStartup-win.asm \
+  	common/compiler/vcc/guard-vcc.asm \
+  	common/compiler/vcc/stack-vcc.asm
+ endif
+endif
 
 #
 # Generate RTIsoMaker / VISO help text from the manpage xml.
@@ -1737,7 +1821,7 @@ endif
 #
 RuntimeR3-x86_EXTENDS         := RuntimeR3
 RuntimeR3-x86_BLD_TRG_ARCH    := x86
-RuntimeR3-x86_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
+RuntimeR3-x86_DEFS             = $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
 
 
 #
@@ -1747,12 +1831,12 @@ RuntimeR3-x86_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS
 #       for build programs.
 #
 RuntimeBldProg_TEMPLATE        := VBoxAdvBldProg
-RuntimeBldProg_EXTENDS         := RuntimeR3
+RuntimeBldProg_EXTENDS         := RuntimeBaseR3
 RuntimeBldProg_BLD_TRG         := $(KBUILD_HOST)
 RuntimeBldProg_BLD_TRG_ARCH    := $(KBUILD_HOST_ARCH)
 RuntimeBldProg_BLD_TRG_CPU     := $(KBUILD_HOST_CPU)
-RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
-RuntimeBldProg_SOURCES         = \
+RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeBaseR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
+RuntimeBldProg_SOURCES          = \
 	common/alloc/alloc.cpp \
 	common/alloc/memcache.cpp \
 	common/asn1/asn1-basics.cpp \
@@ -2063,7 +2147,7 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
-       , $(RuntimeR3_SOURCES.darwin))
+       , $(RuntimeBaseR3_SOURCES.darwin))
 
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
@@ -2212,37 +2296,20 @@ RuntimeBldProg_SOURCES.os2 += \
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
-## @todo change this to EXTEND the RuntimeR3 target.
-RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
-RuntimeGuestR3_DEFS                     := $(filter-out IN_SUP_R3, $(RuntimeGuestR3_DEFS))
-RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
-RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
-RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
-RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
-RuntimeGuestR3_SOURCES                  := $(filter-out \
+RuntimeGuestR3_EXTENDS                  := RuntimeR3
+RuntimeGuestR3_DEFS                      = $(filter-out RTCRITSECT_STRICT RT_NO_GIP IN_SUP_R3, $(RuntimeR3_DEFS))
+RuntimeGuestR3_SOURCES                   = $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
-	common/zip/xarvfs.cpp \
 	generic/RTLogWriteUser-generic.cpp \
-	r3/xml.cpp \
-	, $(RuntimeR3_SOURCES))
-RuntimeGuestR3_SOURCES              += \
+	, $(RuntimeR3_SOURCES)) \
+	\
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)      := $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST)        := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
-RuntimeGuestR3_SOURCES.x86                   := $(RuntimeR3_SOURCES.x86)
-RuntimeGuestR3_SOURCES.amd64                 := $(RuntimeR3_SOURCES.amd64)
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
-RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
-RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
-RuntimeGuestR3_DEFS.win.x86                  += VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
-RuntimeGuestR3_SOURCES.win.x86               += \
+RuntimeGuestR3_DEFS.win.x86              = $(RuntimeR3_DEFS.win.x86) \
+	VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
+RuntimeGuestR3_SOURCES.win.x86           = $(RuntimeR3_SOURCES.win.x86) \
 	r3/win/vcc-fakes-kernel32.cpp \
 	r3/win/vcc-fakes-kernel32-A.asm \
 	r3/win/vcc-fakes-ntdll.cpp \
@@ -2251,70 +2318,6 @@ RuntimeGuestR3_SOURCES.win.x86               += \
 	r3/win/vcc-fakes-ws2_32-A.asm \
 	r3/win/vcc-fakes-shell32.cpp \
 	r3/win/vcc-fakes-shell32-A.asm \
-
-ifdef VBOX_WITH_NOCRT_STATIC
- RuntimeGuestR3_SOURCES := $(filter-out \
- 	r3/alloc.cpp \
-	r3/alloc-ef.cpp \
- 	common/misc/json.cpp \
-	generic/RTLogWriteStdErr-generic.cpp \
-	generic/RTLogWriteStdOut-generic.cpp \
- 	,$(RuntimeGuestR3_SOURCES)) \
- 	common/string/strrchr.cpp \
- 	common/string/strstr.cpp \
- 	common/string/strcspn.cpp \
- 	common/string/strpbrk.cpp
- RuntimeGuestR3_SOURCES.win := $(filter-out \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	,$(RuntimeGuestR3_SOURCES.win)) \
- 	r3/win/nocrt-RTLogWriteStdErr-win.cpp \
- 	r3/win/nocrt-RTLogWriteStdOut-win.cpp
- RuntimeGuestR3_SOURCES.x86 += \
- 	r3/win/nocrt-atexit-win.asm \
- 	r3/win/nocrt-mainCRTStartup-win.asm \
- 	r3/win/nocrt-WinMainCRTStartup-win.asm \
- 	common/compiler/vcc/guard-vcc.asm \
- 	common/compiler/vcc/stack-vcc.asm \
- 	common/string/memcpy.asm \
- 	common/string/memchr.asm \
- 	common/string/memcmp.asm \
- 	common/string/memmove.asm \
- 	common/string/memset.asm \
- 	common/string/strlen.asm \
- 	common/string/strchr.asm \
- 	common/string/strcmp.asm \
- 	common/string/strncmp.asm \
- 	common/string/strcpy.asm
- RuntimeGuestR3_SOURCES.amd64 += \
- 	r3/win/nocrt-atexit-win.asm \
- 	r3/win/nocrt-mainCRTStartup-win.asm \
- 	r3/win/nocrt-WinMainCRTStartup-win.asm \
- 	common/compiler/vcc/guard-vcc.asm \
- 	common/compiler/vcc/stack-vcc.asm \
- 	common/string/memcpy.asm \
- 	common/string/memchr.asm \
- 	common/string/memcmp.asm \
- 	common/string/memmove.asm \
- 	common/string/memset.asm \
- 	common/string/strlen.asm \
- 	common/string/strchr.asm \
- 	common/string/strcmp.asm \
- 	common/string/strncmp.asm \
- 	common/string/strcpy.asm
- RuntimeGuestR3_SOURCES.win += \
- 	common/compiler/vcc/atexit-vcc.cpp \
- 	common/compiler/vcc/loadcfg-vcc.c \
- 	common/compiler/vcc/tlsdir-vcc.c \
- 	common/compiler/vcc/initializers-c-cpp-vcc.cpp \
- 	common/compiler/vcc/stacksup-vcc.cpp \
- 	common/compiler/vcc/fltused-vcc.cpp \
- 	common/compiler/vcc/purecall-vcc.cpp \
- 	r3/win/nocrt-startup-exe-win.cpp \
- 	r3/win/nocrt-startup-dll-win.cpp \
- 	r3/win/nocrt-startup-common-win.cpp \
- 	r3/win/nocrt-alloc-win.cpp \
-       generic/new-delete-generic.cpp
-endif
 
 
 #
@@ -2354,7 +2357,7 @@ VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)
 else if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
-VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeR3_DEFS)) \
+VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeBaseR3_DEFS)) \
 	IPRT_WITH_OPENSSL \
 	IPRT_WITH_XAR \
 	IPRT_WITH_GHIDRA_DBG_MOD \
@@ -2375,13 +2378,13 @@ if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_ONLY_VALIDATIONKIT)
   VBoxRT_DEFS                 += IPRT_WITH_DTRACE IPRT_DTRACE_INCLUDE=\"dtrace/iprt.h\"
  endif
 endif
-VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
-VBoxRT_DEFS.$(KBUILD_TARGET)  := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
+VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeBaseR3_DEFS.$(KBUILD_TYPE))
+VBoxRT_DEFS.$(KBUILD_TARGET)  := $(RuntimeBaseR3_DEFS.$(KBUILD_TARGET))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \
-		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeR3_SOURCES), \
-		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
+		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeBaseR3_SOURCES), \
+		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeBaseR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/dbg/dbgmodghidra.cpp \
 	common/fuzz/fuzz.cpp \
@@ -2416,21 +2419,21 @@ if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_ONLY_VALIDATIONKIT)
  VBoxRT_SOURCES               += \
  	iprt.d
 endif
-VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
-VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.$(KBUILD_TARGET).x86   := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
-VBoxRT_SOURCES.$(KBUILD_TARGET).amd64 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
-VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.x86            := $(RuntimeR3_SOURCES.x86)
-VBoxRT_SOURCES.amd64          := $(RuntimeR3_SOURCES.amd64)
+VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeBaseR3_SOURCES.$(KBUILD_TARGET))
+VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeBaseR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.$(KBUILD_TARGET).x86   := $(RuntimeBaseR3_SOURCES.$(KBUILD_TARGET).x86)
+VBoxRT_SOURCES.$(KBUILD_TARGET).amd64 := $(RuntimeBaseR3_SOURCES.$(KBUILD_TARGET).amd64)
+VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeBaseR3_SOURCES.$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.x86            := $(RuntimeBaseR3_SOURCES.x86)
+VBoxRT_SOURCES.amd64          := $(RuntimeBaseR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
 	 $(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_CLEAN.win              += \
 	$(VBoxRT_0_OUTDIR)/VBoxRT.def
-VBoxRT_INCS                   := $(RuntimeR3_INCS)
-VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
-VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+VBoxRT_INCS                   := $(RuntimeBaseR3_INCS)
+VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeBaseR3_INCS.$(KBUILD_TARGET))
+VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeBaseR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
 	$(SDK_VBOX_LZF_LIBS) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
