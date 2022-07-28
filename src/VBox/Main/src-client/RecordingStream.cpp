@@ -36,6 +36,7 @@ RecordingStream::RecordingStream(RecordingContext *a_pCtx)
     : pCtx(a_pCtx)
     , enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
     , tsStartMs(0)
+    , ScreenSettings(UINT32_MAX)
 {
     File.pWEBM = NULL;
     File.hFile = NIL_RTFILE;
@@ -44,6 +45,7 @@ RecordingStream::RecordingStream(RecordingContext *a_pCtx)
 RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
     : enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
     , tsStartMs(0)
+    , ScreenSettings(uScreen)
 {
     File.pWEBM = NULL;
     File.hFile = NIL_RTFILE;

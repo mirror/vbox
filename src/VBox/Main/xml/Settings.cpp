@@ -2768,7 +2768,8 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && strLogoImagePath        == d.strLogoImagePath);
 }
 
-RecordingScreenSettings::RecordingScreenSettings(void)
+RecordingScreenSettings::RecordingScreenSettings(uint32_t a_idScreen /* = UINT32_MAX */)
+    : idScreen(a_idScreen)
 {
     applyDefaults();
 }
@@ -2780,6 +2781,8 @@ RecordingScreenSettings::~RecordingScreenSettings()
 
 /**
  * Returns the default options string for screen recording settings.
+ *
+ * @returns Default options string for a given screen.
  */
 /* static */
 const char *RecordingScreenSettings::getDefaultOptions(void)
@@ -2845,7 +2848,13 @@ void RecordingScreenSettings::applyDefaults(void)
      * Set sensible defaults.
      */
 
-    fEnabled             = false;
+    /*
+     * Enable screen 0 by default.
+     * Otherwise enabling recording without any screen enabled at all makes no sense.
+     *
+     * Note: When tweaking this, make sure to also alter RecordingScreenSettings::areDefaultSettings().
+     */
+    fEnabled             = idScreen == 0 ? true : false;;
     enmDest              = RecordingDestination_File;
     ulMaxTimeS           = 0;
     strOptions           = RecordingScreenSettings::getDefaultOptions();
@@ -2871,10 +2880,8 @@ void RecordingScreenSettings::applyDefaults(void)
  * Check if all settings have default values.
  *
  * @returns \c true if default, \c false if not.
- * @param   idScreen            Screen ID of screen settings to check.
- *                              Set to UINT32_MAX if not specified / optional.
  */
-bool RecordingScreenSettings::areDefaultSettings(uint32_t idScreen /* = UINT32_MAX */) const
+bool RecordingScreenSettings::areDefaultSettings(void) const
 {
     return    (   fEnabled                                    == false
                /* Screen 0 is special: There we ALWAYS enable recording by default. */
@@ -3001,15 +3008,9 @@ void RecordingSettings::applyDefaults(void)
     try
     {
         /* Always add screen 0 to the default configuration. */
-        RecordingScreenSettings screenSettings;
+        RecordingScreenSettings screenSettings(0 /* Screen ID */);
 
-        /* Make sure to enable this per default.
-         * Otherwise enabling recording without any screen enabled at all makes no sense.
-         *
-         * Note: When tweaking this, make sure to also alter RecordingScreenSettings::areDefaultSettings(). */
-        screenSettings.fEnabled = true;
-
-        mapScreens[0] = screenSettings;
+        mapScreens[0 /* Screen ID */] = screenSettings;
     }
     catch (std::bad_alloc &)
     {
@@ -3030,7 +3031,7 @@ bool RecordingSettings::areDefaultSettings(void) const
     RecordingScreenSettingsMap::const_iterator itScreen = mapScreens.begin();
     while (itScreen != mapScreens.end())
     {
-        if (!itScreen->second.areDefaultSettings(itScreen->first /* Screen ID */))
+        if (!itScreen->second.areDefaultSettings())
             return false;
         ++itScreen;
     }
@@ -6146,8 +6147,9 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             /* Apply settings of screen 0 to screen i and enable it. */
             recording.mapScreens[i] = screen0;
 
-            if (uScreensBitmap & RT_BIT_64(i)) /* Screen i enabled? */
-                recording.mapScreens[i].fEnabled = true;
+            /* Screen i enabled? */
+            recording.mapScreens[i].idScreen = i;
+            recording.mapScreens[i].fEnabled = RT_BOOL(uScreensBitmap & RT_BIT_64(i));
         }
     }
 }

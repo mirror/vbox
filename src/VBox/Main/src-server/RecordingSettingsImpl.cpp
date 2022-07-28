@@ -772,7 +772,7 @@ int RecordingSettings::i_syncToMachineDisplays(uint32_t cDisplays)
     {
         if (m->mapScreenObj.find(i) == m->mapScreenObj.end())
         {
-            settings::RecordingScreenSettings defaultScreenSettings; /* Apply default settings. */
+            settings::RecordingScreenSettings defaultScreenSettings(i /* Screen ID */); /* Apply default settings. */
 
             int vrc2 = i_createScreenObj(m->mapScreenObj, i /* Screen ID */, defaultScreenSettings);
             AssertRC(vrc2);

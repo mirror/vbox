@@ -632,13 +632,13 @@ typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
  */
 struct RecordingScreenSettings
 {
-    RecordingScreenSettings();
+    RecordingScreenSettings(uint32_t idScreen = UINT32_MAX);
 
     virtual ~RecordingScreenSettings();
 
     void applyDefaults(void);
 
-    bool areDefaultSettings(uint32_t idScreen = UINT32_MAX) const;
+    bool areDefaultSettings(void) const;
 
     bool isFeatureEnabled(RecordingFeature_T enmFeature) const;
 
@@ -650,6 +650,9 @@ struct RecordingScreenSettings
 
     bool operator==(const RecordingScreenSettings &d) const;
 
+    /** Screen ID.
+     *  UINT32_MAX if not set. */
+    uint32_t               idScreen;
     /** Whether to record this screen or not. */
     bool                   fEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
     /** Destination to record to. */
