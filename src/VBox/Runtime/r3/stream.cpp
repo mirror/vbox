@@ -67,8 +67,12 @@
 #include <iprt/err.h>
 #ifdef RTSTREAM_STANDALONE
 # include <iprt/file.h>
+# include <iprt/list.h>
 #endif
 #include <iprt/mem.h>
+#ifdef RTSTREAM_STANDALONE
+# include <iprt/once.h>
+#endif
 #include <iprt/param.h>
 #include <iprt/string.h>
 
@@ -174,6 +178,11 @@ typedef struct RTSTREAM
     /** Critical section for serializing access to the stream. */
     PRTCRITSECT         pCritSect;
 #endif
+#ifdef RTSTREAM_STANDALONE
+    /** Entry in g_StreamList (for automatic flushing and closing at
+     * exit/unload). */
+    RTLISTNODE          ListEntry;
+#endif
 } RTSTREAM;
 
 
@@ -220,7 +229,10 @@ static RTSTREAM    g_StdIn =
     /* .fBinary = */            false,
     /* .fRecheckMode = */       true,
 #ifndef HAVE_FWRITE_UNLOCKED
-    /* .pCritSect = */          NULL
+    /* .pCritSect = */          NULL,
+#endif
+#ifdef RTSTREAM_STANDALONE
+    /* .ListEntry = */          { NULL, NULL },
 #endif
 };
 
@@ -248,7 +260,10 @@ static RTSTREAM    g_StdErr =
     /* .fBinary = */            false,
     /* .fRecheckMode = */       true,
 #ifndef HAVE_FWRITE_UNLOCKED
-    /* .pCritSect = */          NULL
+    /* .pCritSect = */          NULL,
+#endif
+#ifdef RTSTREAM_STANDALONE
+    /* .ListEntry = */          { NULL, NULL },
 #endif
 };
 
@@ -276,7 +291,10 @@ static RTSTREAM    g_StdOut =
     /* .fBinary = */            false,
     /* .fRecheckMode = */       true,
 #ifndef HAVE_FWRITE_UNLOCKED
-    /* .pCritSect = */          NULL
+    /* .pCritSect = */          NULL,
+#endif
+#ifdef RTSTREAM_STANDALONE
+    /* .ListEntry = */          { NULL, NULL },
 #endif
 };
 
@@ -288,6 +306,25 @@ RTDATADECL(PRTSTREAM)   g_pStdErr = &g_StdErr;
 
 /** Pointer to the standard output stream. */
 RTDATADECL(PRTSTREAM)   g_pStdOut = &g_StdOut;
+
+#ifdef RTSTREAM_STANDALONE
+/** Run-once initializer for the stream list (g_StreamList + g_StreamListCritSect). */
+static RTONCE           g_StreamListOnce = RTONCE_INITIALIZER;
+/** List of user created streams (excludes the standard streams). */
+static RTLISTANCHOR     g_StreamList;
+/** Critical section protecting the stream list. */
+static RTCRITSECT       g_StreamListCritSect;
+
+
+/** @callback_method_impl{FNRTONCE}   */
+static DECLCALLBACK(int32_t) rtStrmListInitOnce(void *pvUser)
+{
+    RT_NOREF(pvUser);
+    RTListInit(&g_StreamList);
+    return RTCritSectInit(&g_StreamListCritSect);
+}
+
+#endif
 
 
 #ifndef HAVE_FWRITE_UNLOCKED
@@ -442,6 +479,14 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
         return VINF_SUCCESS;
     }
 
+#ifdef RTSTREAM_STANDALONE
+    /*
+     * Make the the stream list is initialized before we allocate anything.
+     */
+    int rc2 = RTOnce(&g_StreamListOnce, rtStrmListInitOnce, NULL);
+    AssertRCReturn(rc2, rc2);
+#endif
+
     /*
      * Allocate the stream handle and try open it.
      */
@@ -479,6 +524,12 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
 #endif
         if (RT_SUCCESS(rc))
         {
+#ifdef RTSTREAM_STANDALONE
+            /* We keep a list of these for cleanup purposes. */
+            RTCritSectEnter(&g_StreamListCritSect);
+            RTListAppend(&g_StreamList, &pStream->ListEntry);
+            RTCritSectLeave(&g_StreamListCritSect);
+#endif
             *ppStream = pStream;
             return VINF_SUCCESS;
         }
@@ -558,6 +609,11 @@ RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
     /*
      * Invalidate the stream and destroy the critical section first.
      */
+#ifdef RTSTREAM_STANDALONE
+    RTCritSectEnter(&g_StreamListCritSect);
+    RTListNodeRemove(&pStream->ListEntry);
+    RTCritSectLeave(&g_StreamListCritSect);
+#endif
     pStream->u32Magic = 0xdeaddead;
 #ifndef HAVE_FWRITE_UNLOCKED
     if (pStream->pCritSect)
@@ -1294,13 +1350,10 @@ static int rtStrmBufCopyTo(PRTSTREAM pStream, const void *pvSrc, size_t cbSrc, s
 
 
 /**
- * Worker for rtStrmFlushAndCloseAll.
+ * Worker for rtStrmFlushAndCloseAll and rtStrmFlushAndClose.
  */
-static void rtStrmFlushAndClose(PRTSTREAM pStream, bool fStaticStream)
+static RTFILE rtStrmFlushAndCleanup(PRTSTREAM pStream)
 {
-    if (!fStaticStream)
-        pStream->u32Magic = ~RTSTREAM_MAGIC;
-
     if (pStream->pchBuf)
     {
         if (   pStream->enmBufDir == RTSTREAMBUFDIR_WRITE
@@ -1314,23 +1367,29 @@ static void rtStrmFlushAndClose(PRTSTREAM pStream, bool fStaticStream)
     }
 
     PRTCRITSECT pCritSect = pStream->pCritSect;
-    pStream->pCritSect = NULL;
     if (pCritSect)
     {
+        pStream->pCritSect = NULL;
         RTCritSectDelete(pCritSect);
         RTMemFree(pCritSect);
     }
 
-    if (pStream->hFile != NIL_RTFILE)
-    {
-        if (!fStaticStream)
-            RTFileClose(pStream->hFile);
-        /* else: no structure or memory behind RTFILE yet, so okay to just drop it. */
-        pStream->hFile = NIL_RTFILE;
-    }
+    RTFILE hFile = pStream->hFile;
+    pStream->hFile = NIL_RTFILE;
+    return hFile;
+}
 
-    if (!fStaticStream)
-        RTMemFree(pStream);
+
+/**
+ * Worker for rtStrmFlushAndCloseAll.
+ */
+static void rtStrmFlushAndClose(PRTSTREAM pStream)
+{
+    pStream->u32Magic = ~RTSTREAM_MAGIC;
+    RTFILE hFile = rtStrmFlushAndCleanup(pStream);
+    if (hFile != NIL_RTFILE)
+        RTFileClose(hFile);
+    RTMemFree(pStream);
 }
 
 
@@ -1343,14 +1402,23 @@ DECLCALLBACK(void) rtStrmFlushAndCloseAll(void)
     /*
      * Flush the standard handles.
      */
-    rtStrmFlushAndClose(&g_StdOut, true);
-    rtStrmFlushAndClose(&g_StdErr, true);
-    rtStrmFlushAndClose(&g_StdIn,  true);
+    rtStrmFlushAndCleanup(&g_StdOut);
+    rtStrmFlushAndCleanup(&g_StdErr);
+    rtStrmFlushAndCleanup(&g_StdIn);
 
     /*
      * Make a list of the rest and flush+close those too.
      */
-    /** @todo */
+    if (RTOnceWasInitialized(&g_StreamListOnce))
+    {
+        RTCritSectDelete(&g_StreamListCritSect);
+
+        PRTSTREAM pStream;
+        while ((pStream = RTListRemoveFirst(&g_StreamList, RTSTREAM, ListEntry)) != NULL)
+            rtStrmFlushAndClose(pStream);
+
+        RTOnceReset(&g_StreamListOnce);
+    }
 }
 
 # ifdef IPRT_COMPILER_TERM_CALLBACK
