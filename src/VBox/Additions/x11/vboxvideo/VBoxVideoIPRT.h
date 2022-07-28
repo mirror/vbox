@@ -63,10 +63,6 @@ RT_C_DECLS_END
 #include <X11/Xfuncproto.h>
 #include <stdint.h>
 #if defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
-/* XFree86 did not have these.  Not that I care much for micro-optimisations
- * in most cases anyway. */
-# define _X_LIKELY(x) (x)
-# define _X_UNLIKELY(x) (x)
 # ifndef offsetof
 #  define offsetof(type, member) ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
 # endif
@@ -75,6 +71,15 @@ RT_C_DECLS_END
 # include <stddef.h>
 # include <string.h>
 #endif  /* !(defined(IN_XF86_MODULE) && !defined(NO_ANSIC)) */
+
+/* XFree86 (and newer Xfuncproto.h) do not have these.  Not that I care much for micro-optimisations
+ * in most cases anyway. */
+#ifndef _X_LIKELY
+# define _X_LIKELY(x) (x)
+#endif
+#ifndef _X_UNLIKELY
+# define _X_UNLIKELY(x) (x)
+#endif
 
 RT_C_DECLS_BEGIN
 extern int RTASSERTVAR[1];
