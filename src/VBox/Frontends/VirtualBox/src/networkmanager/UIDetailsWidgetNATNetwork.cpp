@@ -31,6 +31,7 @@
 #include "UIIconPool.h"
 #include "UIDetailsWidgetNATNetwork.h"
 #include "UIMessageCenter.h"
+#include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
 
@@ -145,69 +146,74 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
     /* Translate tab-widget: */
     if (m_pTabWidget)
     {
-        m_pTabWidget->setTabText(0, tr("&General Options"));
-        m_pTabWidget->setTabText(1, tr("&Port Forwarding"));
+        m_pTabWidget->setTabText(0, UINetworkManager::tr("&General Options"));
+        m_pTabWidget->setTabText(1, UINetworkManager::tr("&Port Forwarding"));
     }
 
     if (m_pLabelNetworkName)
-        m_pLabelNetworkName->setText(tr("N&ame:"));
+        m_pLabelNetworkName->setText(UINetworkManager::tr("N&ame:"));
     if (m_pEditorNetworkName)
-        m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
+        m_pEditorNetworkName->setToolTip(UINetworkManager::tr("Holds the name for this network."));
     if (m_pLabelNetworkIPv4Prefix)
-        m_pLabelNetworkIPv4Prefix->setText(tr("IPv&4 Prefix:"));
+        m_pLabelNetworkIPv4Prefix->setText(UINetworkManager::tr("IPv&4 Prefix:"));
     if (m_pEditorNetworkIPv4Prefix)
-        m_pEditorNetworkIPv4Prefix->setToolTip(tr("Holds the IPv4 prefix for this network."));
+        m_pEditorNetworkIPv4Prefix->setToolTip(UINetworkManager::tr("Holds the IPv4 prefix for this network."));
     if (m_pLabelNetworkIPv6Prefix)
-        m_pLabelNetworkIPv6Prefix->setText(tr("IPv&6 Prefix:"));
+        m_pLabelNetworkIPv6Prefix->setText(UINetworkManager::tr("IPv&6 Prefix:"));
     if (m_pEditorNetworkIPv6Prefix)
-        m_pEditorNetworkIPv6Prefix->setToolTip(tr("Holds the IPv6 prefix for this network."));
+        m_pEditorNetworkIPv6Prefix->setToolTip(UINetworkManager::tr("Holds the IPv6 prefix for this network."));
     if (m_pCheckboxSupportsDHCP)
     {
-        m_pCheckboxSupportsDHCP->setText(tr("Enable &DHCP"));
-        m_pCheckboxSupportsDHCP->setToolTip(tr("When checked, this network will support DHCP."));
+        m_pCheckboxSupportsDHCP->setText(UINetworkManager::tr("Enable &DHCP"));
+        m_pCheckboxSupportsDHCP->setToolTip(UINetworkManager::tr("When checked, this network will support DHCP."));
     }
     if (m_pCheckboxIPv6)
     {
-        m_pCheckboxIPv6->setText(tr("&Enable IPv6"));
-        m_pCheckboxIPv6->setToolTip(tr("When checked, this network will support IPv6."));
+        m_pCheckboxIPv6->setText(UINetworkManager::tr("&Enable IPv6"));
+        m_pCheckboxIPv6->setToolTip(UINetworkManager::tr("When checked, this network will support IPv6."));
     }
     if (m_pCheckboxAdvertiseDefaultIPv6Route)
     {
-        m_pCheckboxAdvertiseDefaultIPv6Route->setText(tr("Advertise Default IPv6 &Route"));
-        m_pCheckboxAdvertiseDefaultIPv6Route->setToolTip(tr("When checked, this network will be advertised as the default IPv6 route."));
+        m_pCheckboxAdvertiseDefaultIPv6Route->setText(UINetworkManager::tr("Advertise Default IPv6 &Route"));
+        m_pCheckboxAdvertiseDefaultIPv6Route->setToolTip(UINetworkManager::tr("When checked, this network will be advertised "
+                                                                              "as the default IPv6 route."));
     }
     if (m_pButtonBoxOptions)
     {
-        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current interface details"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current "
+                                                                                                 "interface details"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current "
+                                                                                             "interface details"));
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Translate 'Forwarding' tab content: */
     if (m_pTabWidgetForwarding)
     {
-        m_pTabWidgetForwarding->setTabText(0, tr("IPv&4"));
-        m_pTabWidgetForwarding->setTabText(1, tr("IPv&6"));
+        m_pTabWidgetForwarding->setTabText(0, UINetworkManager::tr("IPv&4"));
+        m_pTabWidgetForwarding->setTabText(1, UINetworkManager::tr("IPv&6"));
     }
     if (m_pButtonBoxForwarding)
     {
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current interface details"));
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current "
+                                                                                                    "interface details"));
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current "
+                                                                                                "interface details"));
         m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 }
 

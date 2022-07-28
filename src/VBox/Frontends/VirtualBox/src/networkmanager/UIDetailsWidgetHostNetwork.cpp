@@ -30,6 +30,7 @@
 #include "UIIconPool.h"
 #include "UIDetailsWidgetHostNetwork.h"
 #include "UIMessageCenter.h"
+#include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
 
@@ -258,33 +259,33 @@ void UIDetailsWidgetHostNetwork::retranslateUi()
 {
 #ifdef VBOX_WS_MAC
     if (m_pLabelName)
-        m_pLabelName->setText(tr("&Name:"));
+        m_pLabelName->setText(UINetworkManager::tr("&Name:"));
     if (m_pEditorName)
-        m_pEditorName->setToolTip(tr("Holds the name for this network."));
+        m_pEditorName->setToolTip(UINetworkManager::tr("Holds the name for this network."));
     if (m_pLabelMask)
-        m_pLabelMask->setText(tr("&Mask:"));
+        m_pLabelMask->setText(UINetworkManager::tr("&Mask:"));
     if (m_pEditorMask)
-        m_pEditorMask->setToolTip(tr("Holds the mask for this network."));
+        m_pEditorMask->setToolTip(UINetworkManager::tr("Holds the mask for this network."));
     if (m_pLabelLBnd)
-        m_pLabelLBnd->setText(tr("&Lower Bound:"));
+        m_pLabelLBnd->setText(UINetworkManager::tr("&Lower Bound:"));
     if (m_pEditorLBnd)
-        m_pEditorLBnd->setToolTip(tr("Holds the lower address bound for this network."));
+        m_pEditorLBnd->setToolTip(UINetworkManager::tr("Holds the lower address bound for this network."));
     if (m_pLabelUBnd)
-        m_pLabelUBnd->setText(tr("&Upper Bound:"));
+        m_pLabelUBnd->setText(UINetworkManager::tr("&Upper Bound:"));
     if (m_pEditorUBnd)
-        m_pEditorUBnd->setToolTip(tr("Holds the upper address bound for this network."));
+        m_pEditorUBnd->setToolTip(UINetworkManager::tr("Holds the upper address bound for this network."));
     if (m_pButtonBox)
     {
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current network details"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current network details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current network details"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current network details"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBox->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
 #else /* !VBOX_WS_MAC */
@@ -292,79 +293,79 @@ void UIDetailsWidgetHostNetwork::retranslateUi()
     /* Translate tab-widget: */
     if (m_pTabWidget)
     {
-        m_pTabWidget->setTabText(0, tr("&Adapter"));
-        m_pTabWidget->setTabText(1, tr("&DHCP Server"));
+        m_pTabWidget->setTabText(0, UINetworkManager::tr("&Adapter"));
+        m_pTabWidget->setTabText(1, UINetworkManager::tr("&DHCP Server"));
     }
 
     /* Translate 'Interface' tab content: */
     if (m_pButtonAutomatic)
-        m_pButtonAutomatic->setText(tr("Configure Adapter &Automatically"));
+        m_pButtonAutomatic->setText(UINetworkManager::tr("Configure Adapter &Automatically"));
     if (m_pButtonManual)
-        m_pButtonManual->setText(tr("Configure Adapter &Manually"));
+        m_pButtonManual->setText(UINetworkManager::tr("Configure Adapter &Manually"));
     if (m_pLabelIPv4)
-        m_pLabelIPv4->setText(tr("&IPv4 Address:"));
+        m_pLabelIPv4->setText(UINetworkManager::tr("&IPv4 Address:"));
     if (m_pEditorIPv4)
-        m_pEditorIPv4->setToolTip(tr("Holds the host IPv4 address for this adapter."));
+        m_pEditorIPv4->setToolTip(UINetworkManager::tr("Holds the host IPv4 address for this adapter."));
     if (m_pLabelNMv4)
-        m_pLabelNMv4->setText(tr("IPv4 Network &Mask:"));
+        m_pLabelNMv4->setText(UINetworkManager::tr("IPv4 Network &Mask:"));
     if (m_pEditorNMv4)
-        m_pEditorNMv4->setToolTip(tr("Holds the host IPv4 network mask for this adapter."));
+        m_pEditorNMv4->setToolTip(UINetworkManager::tr("Holds the host IPv4 network mask for this adapter."));
     if (m_pLabelIPv6)
-        m_pLabelIPv6->setText(tr("I&Pv6 Address:"));
+        m_pLabelIPv6->setText(UINetworkManager::tr("I&Pv6 Address:"));
     if (m_pEditorIPv6)
-        m_pEditorIPv6->setToolTip(tr("Holds the host IPv6 address for this adapter if IPv6 is supported."));
+        m_pEditorIPv6->setToolTip(UINetworkManager::tr("Holds the host IPv6 address for this adapter if IPv6 is supported."));
     if (m_pLabelNMv6)
-        m_pLabelNMv6->setText(tr("IPv6 Prefix &Length:"));
+        m_pLabelNMv6->setText(UINetworkManager::tr("IPv6 Prefix &Length:"));
     if (m_pEditorNMv6)
-        m_pEditorNMv6->setToolTip(tr("Holds the host IPv6 prefix length for this adapter if IPv6 is supported."));
+        m_pEditorNMv6->setToolTip(UINetworkManager::tr("Holds the host IPv6 prefix length for this adapter if IPv6 is supported."));
     if (m_pButtonBoxInterface)
     {
-        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current interface details"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current interface details"));
         m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Translate 'DHCP server' tab content: */
     if (m_pCheckBoxDHCP)
     {
-        m_pCheckBoxDHCP->setText(tr("&Enable Server"));
-        m_pCheckBoxDHCP->setToolTip(tr("When checked, the DHCP Server will be enabled for this network on machine start-up."));
+        m_pCheckBoxDHCP->setText(UINetworkManager::tr("&Enable Server"));
+        m_pCheckBoxDHCP->setToolTip(UINetworkManager::tr("When checked, the DHCP Server will be enabled for this network on machine start-up."));
     }
     if (m_pLabelDHCPAddress)
-        m_pLabelDHCPAddress->setText(tr("Server Add&ress:"));
+        m_pLabelDHCPAddress->setText(UINetworkManager::tr("Server Add&ress:"));
     if (m_pEditorDHCPAddress)
-        m_pEditorDHCPAddress->setToolTip(tr("Holds the address of the DHCP server servicing the network associated with this host-only adapter."));
+        m_pEditorDHCPAddress->setToolTip(UINetworkManager::tr("Holds the address of the DHCP server servicing the network associated with this host-only adapter."));
     if (m_pLabelDHCPMask)
-        m_pLabelDHCPMask->setText(tr("Server &Mask:"));
+        m_pLabelDHCPMask->setText(UINetworkManager::tr("Server &Mask:"));
     if (m_pEditorDHCPMask)
-        m_pEditorDHCPMask->setToolTip(tr("Holds the network mask of the DHCP server servicing the network associated with this host-only adapter."));
+        m_pEditorDHCPMask->setToolTip(UINetworkManager::tr("Holds the network mask of the DHCP server servicing the network associated with this host-only adapter."));
     if (m_pLabelDHCPLowerAddress)
-        m_pLabelDHCPLowerAddress->setText(tr("&Lower Address Bound:"));
+        m_pLabelDHCPLowerAddress->setText(UINetworkManager::tr("&Lower Address Bound:"));
     if (m_pEditorDHCPLowerAddress)
-        m_pEditorDHCPLowerAddress->setToolTip(tr("Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
+        m_pEditorDHCPLowerAddress->setToolTip(UINetworkManager::tr("Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
     if (m_pLabelDHCPUpperAddress)
-        m_pLabelDHCPUpperAddress->setText(tr("&Upper Address Bound:"));
+        m_pLabelDHCPUpperAddress->setText(UINetworkManager::tr("&Upper Address Bound:"));
     if (m_pEditorDHCPUpperAddress)
-        m_pEditorDHCPUpperAddress->setToolTip(tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
+        m_pEditorDHCPUpperAddress->setToolTip(UINetworkManager::tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
     if (m_pButtonBoxServer)
     {
-        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current DHCP server details"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current DHCP server details"));
         m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBoxServer->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 #endif /* !VBOX_WS_MAC */
 }

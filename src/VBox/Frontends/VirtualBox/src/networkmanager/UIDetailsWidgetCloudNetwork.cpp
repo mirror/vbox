@@ -36,6 +36,7 @@
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
 
@@ -92,7 +93,7 @@ int UISubnetSelectionDialog::exec()
 
 void UISubnetSelectionDialog::retranslateUi()
 {
-    setWindowTitle(tr("Select Subnet"));
+    setWindowTitle(UINetworkManager::tr("Select Subnet"));
 }
 
 void UISubnetSelectionDialog::sltInit()
@@ -240,35 +241,37 @@ void UIDetailsWidgetCloudNetwork::updateButtonStates()
 void UIDetailsWidgetCloudNetwork::retranslateUi()
 {
     if (m_pLabelNetworkName)
-        m_pLabelNetworkName->setText(tr("N&ame:"));
+        m_pLabelNetworkName->setText(UINetworkManager::tr("N&ame:"));
     if (m_pEditorNetworkName)
-        m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
+        m_pEditorNetworkName->setToolTip(UINetworkManager::tr("Holds the name for this network."));
     if (m_pLabelProviderName)
-        m_pLabelProviderName->setText(tr("&Provider:"));
+        m_pLabelProviderName->setText(UINetworkManager::tr("&Provider:"));
     if (m_pComboProviderName)
-        m_pComboProviderName->setToolTip(tr("Holds the cloud provider for this network."));
+        m_pComboProviderName->setToolTip(UINetworkManager::tr("Holds the cloud provider for this network."));
     if (m_pLabelProfileName)
-        m_pLabelProfileName->setText(tr("P&rofile:"));
+        m_pLabelProfileName->setText(UINetworkManager::tr("P&rofile:"));
     if (m_pComboProfileName)
-        m_pComboProfileName->setToolTip(tr("Holds the cloud profile for this network."));
+        m_pComboProfileName->setToolTip(UINetworkManager::tr("Holds the cloud profile for this network."));
     if (m_pLabelNetworkId)
-        m_pLabelNetworkId->setText(tr("&Id:"));
+        m_pLabelNetworkId->setText(UINetworkManager::tr("&Id:"));
     if (m_pEditorNetworkId)
-        m_pEditorNetworkId->setToolTip(tr("Holds the id for this network."));
+        m_pEditorNetworkId->setToolTip(UINetworkManager::tr("Holds the id for this network."));
     if (m_pButtonNetworkId)
-        m_pButtonNetworkId->setToolTip(tr("Selects the id for this network."));
+        m_pButtonNetworkId->setToolTip(UINetworkManager::tr("Selects the id for this network."));
     if (m_pButtonBoxOptions)
     {
-        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setText(UINetworkManager::tr("Apply"));
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current interface details"));
-        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Reset changes in current "
+                                                                                                 "interface details"));
+        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setStatusTip(UINetworkManager::tr("Apply changes in current "
+                                                                                             "interface details"));
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Reset Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UINetworkManager::tr("Apply Changes (%1)").arg(m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 }
 

@@ -189,10 +189,10 @@ void UIItemHostNetwork::updateFields()
     QString strToolTip;
 
     /* Network information: */
-    strToolTip += strHeader.arg(tr("Name"), m_strName);
-    strToolTip += strHeader.arg(tr("Mask"), m_strMask);
-    strToolTip += strHeader.arg(tr("Lower Bound"), m_strLBnd);
-    strToolTip += strHeader.arg(tr("Upper Bound"), m_strUBnd);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Name"), m_strName);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Mask"), m_strMask);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Lower Bound"), m_strLBnd);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Upper Bound"), m_strUBnd);
 
 #else /* !VBOX_WS_MAC */
 
@@ -202,7 +202,8 @@ void UIItemHostNetwork::updateFields()
                                     QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
     setText(HostNetworkColumn_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
                                     QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
-    setText(HostNetworkColumn_DHCP, m_dhcpserver.m_fEnabled ? tr("Enabled", "DHCP Server") : tr("Disabled", "DHCP Server"));
+    setText(HostNetworkColumn_DHCP, m_dhcpserver.m_fEnabled ? UINetworkManager::tr("Enabled", "DHCP Server")
+                                                            : UINetworkManager::tr("Disabled", "DHCP Server"));
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -211,52 +212,52 @@ void UIItemHostNetwork::updateFields()
     QString strToolTip;
 
     /* Interface information: */
-    strToolTip += strHeader.arg(tr("Adapter"))
+    strToolTip += strHeader.arg(UINetworkManager::tr("Adapter"))
                            .arg(m_interface.m_fDHCPEnabled ?
-                                tr("Automatically configured", "interface") :
-                                tr("Manually configured", "interface"));
-    strToolTip += strSubHeader.arg(tr("IPv4 Address"))
+                                UINetworkManager::tr("Automatically configured", "interface") :
+                                UINetworkManager::tr("Manually configured", "interface"));
+    strToolTip += strSubHeader.arg(UINetworkManager::tr("IPv4 Address"))
                               .arg(m_interface.m_strAddress.isEmpty() ?
-                                   tr ("Not set", "address") :
+                                   UINetworkManager::tr ("Not set", "address") :
                                    m_interface.m_strAddress) +
-                  strSubHeader.arg(tr("IPv4 Network Mask"))
+                  strSubHeader.arg(UINetworkManager::tr("IPv4 Network Mask"))
                               .arg(m_interface.m_strMask.isEmpty() ?
-                                   tr ("Not set", "mask") :
+                                   UINetworkManager::tr ("Not set", "mask") :
                                    m_interface.m_strMask);
     if (m_interface.m_fSupportedIPv6)
     {
-        strToolTip += strSubHeader.arg(tr("IPv6 Address"))
+        strToolTip += strSubHeader.arg(UINetworkManager::tr("IPv6 Address"))
                                   .arg(m_interface.m_strAddress6.isEmpty() ?
-                                       tr("Not set", "address") :
+                                       UINetworkManager::tr("Not set", "address") :
                                        m_interface.m_strAddress6) +
-                      strSubHeader.arg(tr("IPv6 Prefix Length"))
+                      strSubHeader.arg(UINetworkManager::tr("IPv6 Prefix Length"))
                                   .arg(m_interface.m_strPrefixLength6.isEmpty() ?
-                                       tr("Not set", "length") :
+                                       UINetworkManager::tr("Not set", "length") :
                                        m_interface.m_strPrefixLength6);
     }
 
     /* DHCP server information: */
-    strToolTip += strHeader.arg(tr("DHCP Server"))
+    strToolTip += strHeader.arg(UINetworkManager::tr("DHCP Server"))
                            .arg(m_dhcpserver.m_fEnabled ?
-                                tr("Enabled", "server") :
-                                tr("Disabled", "server"));
+                                UINetworkManager::tr("Enabled", "server") :
+                                UINetworkManager::tr("Disabled", "server"));
     if (m_dhcpserver.m_fEnabled)
     {
-        strToolTip += strSubHeader.arg(tr("Address"))
+        strToolTip += strSubHeader.arg(UINetworkManager::tr("Address"))
                                   .arg(m_dhcpserver.m_strAddress.isEmpty() ?
-                                       tr("Not set", "address") :
+                                       UINetworkManager::tr("Not set", "address") :
                                        m_dhcpserver.m_strAddress) +
-                      strSubHeader.arg(tr("Network Mask"))
+                      strSubHeader.arg(UINetworkManager::tr("Network Mask"))
                                   .arg(m_dhcpserver.m_strMask.isEmpty() ?
-                                       tr("Not set", "mask") :
+                                       UINetworkManager::tr("Not set", "mask") :
                                        m_dhcpserver.m_strMask) +
-                      strSubHeader.arg(tr("Lower Bound"))
+                      strSubHeader.arg(UINetworkManager::tr("Lower Bound"))
                                   .arg(m_dhcpserver.m_strLowerAddress.isEmpty() ?
-                                       tr("Not set", "bound") :
+                                       UINetworkManager::tr("Not set", "bound") :
                                        m_dhcpserver.m_strLowerAddress) +
-                      strSubHeader.arg(tr("Upper Bound"))
+                      strSubHeader.arg(UINetworkManager::tr("Upper Bound"))
                                   .arg(m_dhcpserver.m_strUpperAddress.isEmpty() ?
-                                       tr("Not set", "bound") :
+                                       UINetworkManager::tr("Not set", "bound") :
                                        m_dhcpserver.m_strUpperAddress);
     }
 #endif /* !VBOX_WS_MAC */
@@ -309,7 +310,8 @@ void UIItemNATNetwork::updateFields()
     setText(NATNetworkColumn_Name, m_strName);
     setText(NATNetworkColumn_IPv4, m_strPrefixIPv4);
     setText(NATNetworkColumn_IPv6, m_strPrefixIPv6);
-    setText(NATNetworkColumn_DHCP, m_fSupportsDHCP ? tr("Enabled", "DHCP Server") : tr("Disabled", "DHCP Server"));
+    setText(NATNetworkColumn_DHCP, m_fSupportsDHCP ? UINetworkManager::tr("Enabled", "DHCP Server")
+                                                   : UINetworkManager::tr("Disabled", "DHCP Server"));
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -318,13 +320,15 @@ void UIItemNATNetwork::updateFields()
     QString strToolTip;
 
     /* Network information: */
-    strToolTip += strHeader.arg(tr("Network Name"), m_strName);
-    strToolTip += strHeader.arg(tr("Network IPv4 Prefix"), m_strPrefixIPv4);
-    strToolTip += strHeader.arg(tr("Network IPv6 Prefix"), m_strPrefixIPv6);
-    strToolTip += strHeader.arg(tr("Supports DHCP"), m_fSupportsDHCP ? tr("yes") : tr("no"));
-    strToolTip += strHeader.arg(tr("Supports IPv6"), m_fSupportsIPv6 ? tr("yes") : tr("no"));
+    strToolTip += strHeader.arg(UINetworkManager::tr("Network Name"), m_strName);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Network IPv4 Prefix"), m_strPrefixIPv4);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Network IPv6 Prefix"), m_strPrefixIPv6);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Supports DHCP"), m_fSupportsDHCP ? UINetworkManager::tr("yes")
+                                                                                       : UINetworkManager::tr("no"));
+    strToolTip += strHeader.arg(UINetworkManager::tr("Supports IPv6"), m_fSupportsIPv6 ? UINetworkManager::tr("yes")
+                                                                                       : UINetworkManager::tr("no"));
     if (m_fSupportsIPv6 && m_fAdvertiseDefaultIPv6Route)
-        strToolTip += strSubHeader.arg(tr("Default IPv6 route"), tr("yes"));
+        strToolTip += strSubHeader.arg(UINetworkManager::tr("Default IPv6 route"), UINetworkManager::tr("yes"));
 
     /* Assign tool-tip finally: */
     setToolTip(NATNetworkColumn_Name, strTable.arg(strToolTip));
@@ -348,9 +352,9 @@ void UIItemCloudNetwork::updateFields()
     QString strToolTip;
 
     /* Network information: */
-    strToolTip += strHeader.arg(tr("Network Name"), m_strName);
-    strToolTip += strHeader.arg(tr("Provider"), m_strProvider);
-    strToolTip += strHeader.arg(tr("Profile"), m_strProfile);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Network Name"), m_strName);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Provider"), m_strProvider);
+    strToolTip += strHeader.arg(UINetworkManager::tr("Profile"), m_strProfile);
 
     /* Assign tool-tip finally: */
     setToolTip(CloudNetworkColumn_Name, strTable.arg(strToolTip));
@@ -429,7 +433,7 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("DHCP Server");
 #endif /* !VBOX_WS_MAC */
         m_pTreeWidgetHostNetwork->setHeaderLabels(fields);
-        m_pTreeWidgetHostNetwork->setWhatsThis(tr("Registered host networks"));
+        m_pTreeWidgetHostNetwork->setWhatsThis(UINetworkManager::tr("Registered host networks"));
     }
 
     /* Translate NAT network tree-widget: */
@@ -441,7 +445,7 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("IPv6 Prefix")
                                    << UINetworkManager::tr("DHCP Server");
         m_pTreeWidgetNATNetwork->setHeaderLabels(fields);
-        m_pTreeWidgetNATNetwork->setWhatsThis(tr("Registered NAT networks"));
+        m_pTreeWidgetNATNetwork->setWhatsThis(UINetworkManager::tr("Registered NAT networks"));
     }
 
     /* Translate cloud network tree-widget: */
@@ -452,7 +456,7 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("Provider")
                                    << UINetworkManager::tr("Profile");
         m_pTreeWidgetCloudNetwork->setHeaderLabels(fields);
-        m_pTreeWidgetCloudNetwork->setWhatsThis(tr("Registered cloud networks"));
+        m_pTreeWidgetCloudNetwork->setWhatsThis(UINetworkManager::tr("Registered cloud networks"));
     }
 }
 
