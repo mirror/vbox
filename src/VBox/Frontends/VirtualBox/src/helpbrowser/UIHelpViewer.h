@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHelpBrowserWidget class declaration.
+ * VBox Qt GUI - UIHelpViewer class declaration.
  */
 
 /*

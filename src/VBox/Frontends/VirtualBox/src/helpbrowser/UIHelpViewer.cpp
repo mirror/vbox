@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHelpBrowserWidget class implementation.
+ * VBox Qt GUI - UIHelpViewer class implementation.
  */
 
 /*
@@ -217,11 +217,11 @@ void UIContextMenuNavigationAction::prepare()
     m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_16px.png", ":/help_browser_backward_disabled_16px.png"));
     m_pAddBookmarkButton->setIcon(UIIconPool::iconSet(":/help_browser_add_bookmark_16px.png", ":/help_browser_add_bookmark_disabled_16px.png"));
 
-    m_pHomeButton->setToolTip(tr("Return to Start Page"));
-    m_pReloadPageButton->setToolTip(tr("Reload the Current Page"));
-    m_pForwardButton->setToolTip(tr("Go Forward to Next Page"));
-    m_pBackwardButton->setToolTip(tr("Go Back to Previous Page"));
-    m_pAddBookmarkButton->setToolTip(tr("Add a New Bookmark"));
+    m_pHomeButton->setToolTip(UIHelpBrowserWidget::tr("Return to Start Page"));
+    m_pReloadPageButton->setToolTip(UIHelpBrowserWidget::tr("Reload the Current Page"));
+    m_pForwardButton->setToolTip(UIHelpBrowserWidget::tr("Go Forward to Next Page"));
+    m_pBackwardButton->setToolTip(UIHelpBrowserWidget::tr("Go Back to Previous Page"));
+    m_pAddBookmarkButton->setToolTip(UIHelpBrowserWidget::tr("Add a New Bookmark"));
 
     pMainLayout->addWidget(m_pBackwardButton);
     pMainLayout->addWidget(m_pForwardButton);
@@ -469,7 +469,7 @@ void UIHelpViewer::setSource(const QUrl &url)
 #endif
     QTextDocument *pDocument = document();
     if (!pDocument || pDocument->isEmpty())
-        setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
+        setText(UIHelpBrowserWidget::tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
     if (m_pFindInPageWidget && m_pFindInPageWidget->isVisible())
     {
         document()->undo();
