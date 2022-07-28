@@ -762,6 +762,54 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     }
 
                     /*
+                     * Floating point.
+                     *
+                     * We currently don't really implement these yet, there is just a very basic
+                     * formatting regardless of the requested type.
+                     */
+                    case 'e': /* [-]d.dddddde+-dd[d] */
+                    case 'E': /* [-]d.ddddddE+-dd[d] */
+                    case 'f': /* [-]dddd.dddddd / inf / nan */
+                    case 'F': /* [-]dddd.dddddd / INF / NAN */
+                    case 'g': /* Either f or e, depending on the magnitue and precision. */
+                    case 'G': /* Either f or E, depending on the magnitue and precision. */
+                    case 'a': /* [-]0xh.hhhhhhp+-dd */
+                    case 'A': /* [-]0Xh.hhhhhhP+-dd */
+                    {
+#ifdef IN_RING3
+                        size_t cchNum;
+# ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+                        if (chArgSize == 'L')
+                        {
+                            RTFLOAT80U2 r80;
+                            r80.lrd = va_arg(args, long double);
+#  ifndef IN_BLD_PROG
+                            cchNum = RTStrFormatR80U2(&szTmp[0], sizeof(szTmp), &r80, cchWidth, cchPrecision, 0);
+#  else
+                            cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("<long double>"));
+                            RT_NOREF_PV(r80);
+                            break;
+#  endif
+                        }
+                        else
+# endif
+                        {
+                            RTFLOAT64U r64;
+                            r64.rd = va_arg(args, double);
+# ifndef IN_BLD_PROG
+                            cchNum = RTStrFormatR64(&szTmp[0], sizeof(szTmp), &r64, cchWidth, cchPrecision, 0);
+# else
+                            cchNum = RTStrFormatNumber(&szTmp[0], r64.au64[0], 16, 0, 0, RTSTR_F_SPECIAL | RTSTR_F_64BIT);
+# endif
+                        }
+                        cch += pfnOutput(pvArgOutput, &szTmp[0], cchNum);
+#else  /* !IN_RING3 */
+                        AssertFailed();
+#endif /* !IN_RING3 */
+                        break;
+                    }
+
+                    /*
                      * Nested extensions.
                      */
                     case 'M': /* replace the format string (not stacked yet). */
