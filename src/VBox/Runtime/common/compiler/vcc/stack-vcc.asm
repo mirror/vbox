@@ -133,13 +133,18 @@ BEGINPROC __chkstk
 ENDPROC   __chkstk
 
 
+;;
+; This just initializes a global and calls _RTC_SetErrorFuncW to NULL, and
+; since we don't have either of those we have nothing to do here.
 BEGINPROC _RTC_InitBase
-        int3
+        ret
 ENDPROC   _RTC_InitBase
 
 
+;;
+; Nothing to do here.
 BEGINPROC _RTC_Shutdown
-        int3
+        ret
 ENDPROC   _RTC_Shutdown
 
 
@@ -322,7 +327,7 @@ ENDPROC   FASTCALL_NAME(_RTC_AllocaHelper, 12)
 ;
 ALIGNCODE(16)
 BEGINPROC FASTCALL_NAME(__security_check_cookie, 4)
-        cmp     xCX, [__security_cookie xWrtRIP]
+        cmp     xCX, [NAME(__security_cookie) xWrtRIP]
         jne     .corrupted
         ;; amd64 version checks if the top 16 bits are zero, we skip that for now.
         ret

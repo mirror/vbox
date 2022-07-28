@@ -45,7 +45,7 @@
 section .0000cfg rdata align=8
 
 GLOBALNAME __guard_check_icall_fptr
-        RTCCPTR_DEF     __guard_check_icall_nop
+        RTCCPTR_DEF     NAME(__guard_check_icall_nop)
 
 %ifdef RT_ARCH_AMD64
 GLOBALNAME __guard_dispatch_icall_fptr
