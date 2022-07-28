@@ -177,16 +177,16 @@ void UIMediumSearchWidget::retranslateUi()
 {
     if (m_pSearchComboxBox)
     {
-        m_pSearchComboxBox->setItemText(SearchByName, UIMediumSearchWidget::tr("Search By Name"));
-        m_pSearchComboxBox->setItemText(SearchByUUID, UIMediumSearchWidget::tr("Search By UUID"));
-        m_pSearchComboxBox->setToolTip(UIMediumSearchWidget::tr("Select the search type"));
+        m_pSearchComboxBox->setItemText(SearchByName, tr("Search By Name"));
+        m_pSearchComboxBox->setItemText(SearchByUUID, tr("Search By UUID"));
+        m_pSearchComboxBox->setToolTip(tr("Select the search type"));
     }
     if (m_pSearchTermLineEdit)
-        m_pSearchTermLineEdit->setToolTip("Enter the search term and press Return");
+        m_pSearchTermLineEdit->setToolTip(tr("Enter the search term and press Return"));
     if (m_pShowPreviousMatchButton)
-        m_pShowPreviousMatchButton->setToolTip("Show the previous item matching the search term");
+        m_pShowPreviousMatchButton->setToolTip(tr("Show the previous item matching the search term"));
     if (m_pShowNextMatchButton)
-        m_pShowNextMatchButton->setToolTip("Show the next item matching the search term");
+        m_pShowNextMatchButton->setToolTip(tr("Show the next item matching the search term"));
 }
 
 void UIMediumSearchWidget::showEvent(QShowEvent *pEvent)

@@ -103,39 +103,39 @@ void UIMediumDetailsWidget::setOptionsEnabled(bool fEnabled)
 void UIMediumDetailsWidget::retranslateUi()
 {
     /* Translate tab-widget: */
-    m_pTabWidget->setTabText(0, tr("&Attributes"));
-    m_pTabWidget->setTabText(1, tr("&Information"));
+    m_pTabWidget->setTabText(0, UIMediumManager::tr("&Attributes"));
+    m_pTabWidget->setTabText(1, UIMediumManager::tr("&Information"));
 
     /* Translate 'Options' tab content. */
 
     /* Translate labels: */
-    m_pLabelType->setText(tr("&Type:"));
-    m_pLabelLocation->setText(tr("&Location:"));
-    m_pLabelDescription->setText(tr("&Description:"));
-    m_pLabelSize->setText(tr("&Size:"));
+    m_pLabelType->setText(UIMediumManager::tr("&Type:"));
+    m_pLabelLocation->setText(UIMediumManager::tr("&Location:"));
+    m_pLabelDescription->setText(UIMediumManager::tr("&Description:"));
+    m_pLabelSize->setText(UIMediumManager::tr("&Size:"));
 
     /* Translate fields: */
-    m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
+    m_pComboBoxType->setToolTip(UIMediumManager::tr("Holds the type of this medium."));
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
-    m_pEditorLocation->setToolTip(tr("Holds the location of this medium."));
-    m_pButtonLocation->setToolTip(tr("Choose Medium Location"));
-    m_pEditorDescription->setToolTip(tr("Holds the description of this medium."));
-    m_pEditorSize->setToolTip(tr("Holds the size of this medium."));
+    m_pEditorLocation->setToolTip(UIMediumManager::tr("Holds the location of this medium."));
+    m_pButtonLocation->setToolTip(UIMediumManager::tr("Choose Medium Location"));
+    m_pEditorDescription->setToolTip(UIMediumManager::tr("Holds the description of this medium."));
+    m_pEditorSize->setToolTip(UIMediumManager::tr("Holds the size of this medium."));
 
     /* Translate button-box: */
     if (m_pButtonBox)
     {
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(UIMediumManager::tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UIMediumManager::tr("Apply"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current medium details"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current medium details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UIMediumManager::tr("Reset changes in current medium details"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(UIMediumManager::tr("Apply changes in current medium details"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+            setToolTip(UIMediumManager::tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
         m_pButtonBox->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+            setToolTip(UIMediumManager::tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Translate 'Details' tab content. */
@@ -768,17 +768,19 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
 {
     /* Translate 'Interface' tab content: */
 //    if (!pWidget || pWidget == m_pErrorPaneType)
-//        m_pErrorPaneType->setToolTip(tr("Cannot change from type <b>%1</b> to <b>%2</b>.")
+//        m_pErrorPaneType->setToolTip(UIMediumManager::tr("Cannot change from type <b>%1</b> to <b>%2</b>.")
 //                                     .arg(m_oldData.m_options.m_enmType).arg(m_newData.m_options.m_enmType));
     if (!pWidget || pWidget == m_pErrorPaneLocation)
-        m_pErrorPaneLocation->setToolTip(tr("Location cannot be empty."));
+        m_pErrorPaneLocation->setToolTip(UIMediumManager::tr("Location cannot be empty."));
 //    if (!pWidget || pWidget == m_pErrorPaneDescription)
-//        m_pErrorPaneDescription->setToolTip(tr("Cannot change medium description from <b>%1</b> to <b>%2</b>.")
-//                                               .arg(m_oldData.m_options.m_strDescription).arg(m_newData.m_options.m_strDescription));
+//        m_pErrorPaneDescription->setToolTip(UIMediumManager::tr("Cannot change medium description from <b>%1</b> to <b>%2</b>.")
+//                                                                .arg(m_oldData.m_options.m_strDescription)
+//                                                                .arg(m_newData.m_options.m_strDescription));
     if (!pWidget || pWidget == m_pErrorPaneSize)
-        m_pErrorPaneSize->setToolTip(tr("Cannot change medium size from <b>%1</b> to <b>%2</b> as storage shrinking is currently not implemented.")
-                                        .arg(UITranslator::formatSize(m_oldData.m_options.m_uLogicalSize))
-                                        .arg(UITranslator::formatSize(m_newData.m_options.m_uLogicalSize)));
+        m_pErrorPaneSize->setToolTip(UIMediumManager::tr("Cannot change medium size from <b>%1</b> to <b>%2</b> as storage "
+                                                         "shrinking is currently not implemented.")
+                                                         .arg(UITranslator::formatSize(m_oldData.m_options.m_uLogicalSize))
+                                                         .arg(UITranslator::formatSize(m_newData.m_options.m_uLogicalSize)));
 }
 
 void UIMediumDetailsWidget::updateButtonStates()
@@ -816,19 +818,21 @@ QString UIMediumDetailsWidget::mediumTypeTip(KMediumType enmType)
     switch (enmType)
     {
         case KMediumType_Normal:
-            return tr("This type of medium is attached directly or indirectly, preserved when taking snapshots.");
+            return UIMediumManager::tr("This type of medium is attached directly or indirectly, preserved when taking "
+                                       "snapshots.");
         case KMediumType_Immutable:
-            return tr("This type of medium is attached indirectly, changes are wiped out the next time the "
-                      "virtual machine is started.");
+            return UIMediumManager::tr("This type of medium is attached indirectly, changes are wiped out the next time the "
+                                       "virtual machine is started.");
         case KMediumType_Writethrough:
-            return tr("This type of medium is attached directly, ignored when taking snapshots.");
+            return UIMediumManager::tr("This type of medium is attached directly, ignored when taking snapshots.");
         case KMediumType_Shareable:
-            return tr("This type of medium is attached directly, allowed to be used concurrently by several machines.");
+            return UIMediumManager::tr("This type of medium is attached directly, allowed to be used concurrently by several "
+                                       "machines.");
         case KMediumType_Readonly:
-            return tr("This type of medium is attached directly, and can be used by several machines.");
+            return UIMediumManager::tr("This type of medium is attached directly, and can be used by several machines.");
         case KMediumType_MultiAttach:
-            return tr("This type of medium is attached indirectly, so that one base medium can be used for several "
-                      "VMs which have their own differencing medium to store their modifications.");
+            return UIMediumManager::tr("This type of medium is attached indirectly, so that one base medium can be used for "
+                                       "several VMs which have their own differencing medium to store their modifications.");
         default:
             break;
     }
