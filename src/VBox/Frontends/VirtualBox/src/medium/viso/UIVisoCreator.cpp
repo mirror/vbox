@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVisoCreator class implementation.
+ * VBox Qt GUI - UIVisoCreator classes implementation.
  */
 
 /*
@@ -118,9 +118,9 @@ QMenu *UIVisoCreatorWidget::menu() const
 void UIVisoCreatorWidget::retranslateUi()
 {
     if (m_pHostBrowser)
-        m_pHostBrowser->setTitle(UIVisoCreatorWidget::tr("Host File System"));
+        m_pHostBrowser->setTitle(tr("Host File System"));
     if (m_pVISOContentBrowser)
-        m_pVISOContentBrowser->setTitle(UIVisoCreatorWidget::tr("VISO Content"));
+        m_pVISOContentBrowser->setTitle(tr("VISO Content"));
 }
 
 void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
@@ -765,5 +765,5 @@ void UIVisoCreatorDialog::saveDialogGeometry()
 
 void UIVisoCreatorDialog::updateWindowTitle()
 {
-    setWindowTitle(QString("%1 - %2.%3").arg(tr("VISO Creator")).arg(visoName()).arg("viso"));
+    setWindowTitle(QString("%1 - %2.%3").arg(UIVisoCreatorWidget::tr("VISO Creator")).arg(visoName()).arg("viso"));
 }

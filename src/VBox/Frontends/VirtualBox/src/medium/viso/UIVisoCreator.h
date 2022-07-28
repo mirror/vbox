@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVisoCreator class declaration.
+ * VBox Qt GUI - UIVisoCreator classes declaration.
  */
 
 /*

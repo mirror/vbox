@@ -59,8 +59,6 @@ private:
 
     QCheckBox *m_pShowHiddenObjectsCheckBox;
     QILabel *m_pShowHiddenObjectsLabel;
-
-    friend class UIVisoCreator;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorOptionsPanel_h */
