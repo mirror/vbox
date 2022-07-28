@@ -2302,6 +2302,8 @@ RuntimeGuestR3_SOURCES                   = $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
+ 	common/zip/xarvfs.cpp \
+ 	r3/xml.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES)) \
 	\
