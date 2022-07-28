@@ -61,7 +61,7 @@ extern RTDATADECL(PRTSTREAM)    g_pStdOut;
  * @returns iprt status code.
  * @param   pszFilename     Path to the file to open.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b|t]
+ *                          Format: <a|r|w>[+][b]
  * @param   ppStream        Where to store the opened stream.
  */
 RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream);
@@ -71,7 +71,7 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
  *
  * @returns iprt status code.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b|t]
+ *                          Format: <a|r|w>[+][b]
  * @param   ppStream        Where to store the opened stream.
  * @param   pszFilenameFmt  Filename path format string.
  * @param   args            Arguments to the format string.
@@ -84,7 +84,7 @@ RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char 
  *
  * @returns iprt status code.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b|t]
+ *                          Format: <a|r|w>[+][b]
  * @param   ppStream        Where to store the opened stream.
  * @param   pszFilenameFmt  Filename path format string.
  * @param   ...             Arguments to the format string.
@@ -96,6 +96,11 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
  *
  * @returns iprt status code.
  * @param   pStream         The stream to close.
+ *
+ * @note    The stream will be closed and freed even when failure is returned.
+ *          It cannot be used again after this call.  The error status is only
+ *          to indicate that the flushing of buffers or the closing of the
+ *          underlying file handle failed.
  */
 RTR3DECL(int) RTStrmClose(PRTSTREAM pStream);
 
@@ -136,6 +141,7 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
  * This works only for standard input streams.
  *
  * @returns iprt status code.
+ * @retval  VERR_INVALID_FUNCTION if not a TTY.
  * @param   pStream         The stream.
  * @param   pfEchoChars     Where to store the flag whether typed characters are echoed.
  */
@@ -146,6 +152,7 @@ RTR3DECL(int) RTStrmInputGetEchoChars(PRTSTREAM pStream, bool *pfEchoChars);
  * This works only for standard input streams.
  *
  * @returns iprt status code.
+ * @retval  VERR_INVALID_FUNCTION if not a TTY.
  * @param   pStream         The stream.
  * @param   fEchoChars      Flag whether echoing typed characters is wanted.
  */
