@@ -1067,7 +1067,7 @@ typedef union RTFLOAT64U
     } s64;
 #endif
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#if 1 /** @todo exclude targets which doesn't have a 64-bit double type. (currently none) */
     /** Double view. */
     double      rd;
 #endif
