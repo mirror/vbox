@@ -94,12 +94,12 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 ifeq ($(VBOX_GSOAP_INSTALLED),)
  VBOX_GSOAP_INSTALLED = 1
- VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS)/common/gsoap/*)))
+ VBOX_PATH_GSOAP := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/gsoap/*)))
  ifeq ($(VBOX_PATH_GSOAP),)
-  VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST)/gsoap/*)))
+  VBOX_PATH_GSOAP := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST)/gsoap/*)))
  endif
  if "$(VBOX_PATH_GSOAP)" == "" && defined(KBUILD_DEVTOOLS_HST)
-  VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/gsoap/*)))
+  VBOX_PATH_GSOAP := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/gsoap/*)))
  endif
  ifeq ($(VBOX_PATH_GSOAP),)
   $(warning VBOX_PATH_GSOAP not found...)
