@@ -273,7 +273,7 @@ static RTSTREAM    g_StdOut =
     /* .u32Magic = */           RTSTREAM_MAGIC,
     /* .i32Error = */           0,
 #ifndef RTSTREAM_STANDALONE
-    /* .pFile = */              stderr,
+    /* .pFile = */              stdout,
 #else
     /* .enmStdHandle = */       RTHANDLESTD_OUTPUT,
     /* .hFile = */              NIL_RTFILE,
