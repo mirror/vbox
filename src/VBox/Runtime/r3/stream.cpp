@@ -1880,6 +1880,8 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbToWr
     HANDLE hCon;
     if (rtStrmIsConsoleUnlocked(pStream, &hCon))
         rc = rtStrmWriteWinConsoleLocked(pStream, pvBuf, cbToWrite, pcbWritten, hCon);
+#else
+    if (0) { }
 #endif /* RT_OS_WINDOWS && !RTSTREAM_STANDALONE */
 
     /*
