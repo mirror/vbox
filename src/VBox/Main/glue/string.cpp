@@ -42,10 +42,14 @@ Bstr &Bstr::printf(const char *pszFormat, ...)
     va_start(va, pszFormat);
     HRESULT hrc = printfVNoThrow(pszFormat, va);
     va_end(va);
+#ifdef RT_EXCEPTIONS_ENABLED
     if (hrc == S_OK)
     { /* likely */ }
     else
         throw std::bad_alloc();
+#else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+#endif
     return *this;
 }
 
@@ -62,10 +66,14 @@ HRESULT Bstr::printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
 Bstr &Bstr::printfV(const char *pszFormat, va_list va)
 {
     HRESULT hrc = printfVNoThrow(pszFormat, va);
+#ifdef RT_EXCEPTIONS_ENABLED
     if (hrc == S_OK)
     { /* likely */ }
     else
         throw std::bad_alloc();
+#else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+#endif
     return *this;
 }
 
@@ -182,7 +190,9 @@ void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
     }
     else /* ASSUME: input is valid Utf-8. Fake out of memory error. */
         AssertLogRelMsgFailed(("%Rrc %.*Rhxs\n", vrc, RTStrNLen(a_pszSrc, a_cchMax), a_pszSrc));
+#ifdef RT_EXCEPTIONS_ENABLED
     throw std::bad_alloc();
+#endif
 }
 
 HRESULT Bstr::cleanupAndCopyFromNoThrow(const char *a_pszSrc, size_t a_cchMax) RT_NOEXCEPT
@@ -323,8 +333,12 @@ HRESULT Bstr::joltNoThrow(ssize_t cwcNew /* = -1*/) RT_NOEXCEPT
 void Bstr::jolt(ssize_t cwcNew /* = -1*/)
 {
     HRESULT hrc = joltNoThrow(cwcNew);
+# ifdef RT_EXCEPTIONS_ENABLED
     if (hrc != S_OK)
         throw std::bad_alloc();
+# else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+# endif
 }
 
 #endif /* !VBOX_WITH_XPCOM */
@@ -359,8 +373,12 @@ HRESULT Bstr::reserveNoThrow(size_t cwcMin, bool fForce /*= false*/) RT_NOEXCEPT
 void Bstr::reserve(size_t cwcMin, bool fForce /*= false*/)
 {
     HRESULT hrc = reserveNoThrow(cwcMin, fForce);
+#ifdef RT_EXCEPTIONS_ENABLED
     if (hrc != S_OK)
         throw std::bad_alloc();
+#else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+#endif
 }
 
 
@@ -549,7 +567,11 @@ Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
 {
     size_t cwcSrc;
     int rc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
+#ifdef RT_EXCEPTIONS_ENABLED
     AssertRCStmt(rc, throw std::bad_alloc());
+#else
+    AssertRCReturn(rc, *this);
+#endif
 
     size_t cwcOld = length();
     size_t cwcTotal = cwcOld + cwcSrc;
@@ -558,7 +580,11 @@ Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
     {
         PRTUTF16 pwszDst = &m_bstr[cwcOld];
         rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
+#ifdef RT_EXCEPTIONS_ENABLED
         AssertRCStmt(rc, throw std::bad_alloc());
+#else
+        AssertRC(rc);
+#endif
     }
     m_bstr[cwcTotal] = '\0';
     return *this;
@@ -592,8 +618,12 @@ Bstr &Bstr::appendPrintf(const char *pszFormat, ...)
     va_start(va, pszFormat);
     HRESULT hrc = appendPrintfVNoThrow(pszFormat, va);
     va_end(va);
+#ifdef RT_EXCEPTIONS_ENABLED
     if (hrc != S_OK)
         throw std::bad_alloc();
+#else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+#endif
     return *this;
 }
 
@@ -611,8 +641,12 @@ HRESULT Bstr::appendPrintfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
 Bstr &Bstr::appendPrintfV(const char *pszFormat, va_list va)
 {
     HRESULT hrc = appendPrintfVNoThrow(pszFormat, va);
+#ifdef RT_EXCEPTIONS_ENABLED
     if (hrc != S_OK)
         throw std::bad_alloc();
+#else
+    Assert(hrc == S_OK); RT_NOREF(hrc);
+#endif
     return *this;
 }
 
@@ -681,10 +715,14 @@ void Bstr::copyFrom(const OLECHAR *a_bstrSrc)
     if (a_bstrSrc && *a_bstrSrc)
     {
         m_bstr = ::SysAllocString(a_bstrSrc);
+#ifdef RT_EXCEPTIONS_ENABLED
         if (RT_LIKELY(m_bstr))
         { /* likely */ }
         else
             throw std::bad_alloc();
+#else
+        Assert(m_bstr);
+#endif
     }
     else
         m_bstr = NULL;
@@ -732,7 +770,11 @@ void Utf8Str::cloneTo(char **pstr) const
     if (RT_LIKELY(*pstr))
         memcpy(*pstr, c_str(), cb);
     else
+#ifdef RT_EXCEPTIONS_ENABLED
         throw std::bad_alloc();
+#else
+        AssertFailed();
+#endif
 }
 
 HRESULT Utf8Str::cloneToEx(char **pstr) const
@@ -881,7 +923,11 @@ void Utf8Str::copyFrom(CBSTR a_pbstr, size_t a_cwcMax)
             m_cbAllocated = 0;
             m_psz = NULL;
 
+#ifdef RT_EXCEPTIONS_ENABLED
             throw std::bad_alloc();
+#else
+            AssertFailed();
+#endif
         }
     }
     else
