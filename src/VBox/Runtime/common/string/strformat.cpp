@@ -776,7 +776,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     case 'a': /* [-]0xh.hhhhhhp+-dd */
                     case 'A': /* [-]0Xh.hhhhhhP+-dd */
                     {
-#if defined(IN_RING3) && !defined(IN_SUP_HARDENED_R3)
+#if defined(IN_RING3) && !defined(IN_SUP_HARDENED_R3) && !defined(IPRT_NO_FLOAT_FORMATTING)
                         size_t cchNum;
 # ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
                         if (chArgSize == 'L')
