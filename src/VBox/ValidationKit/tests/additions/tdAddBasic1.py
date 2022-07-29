@@ -408,10 +408,19 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         sExe   = '${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix;
         asArgs = [ sExe, '/S', '/l', '/with_autologon' ];
 
+        # Determine if we need to force installing the legacy timestamp CA to make testing succeed.
+        # Note: Don't force installing when the Guest Additions installer should do this automatically,
+        #       i.e, only force it for Windows Server 2016 and up.
+        fForceInstallTimeStampCA = False;
+        if self.fpApiVer >= 6.1 \
+           and oTestVm.getNonCanonicalGuestOsType() \
+              in [ 'Windows2016', 'Windows2019', 'Windows2022', 'Windows11' ]:
+              fForceInstallTimeStampCA = True;
+
         # As we don't have a console command line to parse for the Guest Additions installer (only a message box) and
         # unknown / unsupported parameters get ignored with silent installs anyway, we safely can add the following parameter(s)
         # even if older Guest Addition installers might not support those.
-        if self.fpApiVer >= 6.1:
+        if fForceInstallTimeStampCA:
             asArgs.extend([ '/install_timestamp_ca' ]);
 
         #
