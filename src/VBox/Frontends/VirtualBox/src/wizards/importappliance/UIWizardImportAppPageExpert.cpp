@@ -387,20 +387,20 @@ void UIWizardImportAppPageExpert::retranslateUi()
 
     /* Translate path selector label: */
     if (m_pLabelImportFilePath)
-        m_pLabelImportFilePath->setText(tr("&Machine Base Folder:"));
+        m_pLabelImportFilePath->setText(UIWizardImportApp::tr("&Machine Base Folder:"));
 
     /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)
-        m_pLabelMACImportPolicy->setText(tr("MAC Address &Policy:"));
+        m_pLabelMACImportPolicy->setText(UIWizardImportApp::tr("MAC Address &Policy:"));
 
     /* Translate additional options label: */
     if (m_pLabelAdditionalOptions)
-        m_pLabelAdditionalOptions->setText(tr("Additional Options:"));
+        m_pLabelAdditionalOptions->setText(UIWizardImportApp::tr("Additional Options:"));
     /* Translate additional option check-box: */
     if (m_pCheckboxImportHDsAsVDI)
     {
-        m_pCheckboxImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
-        m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
+        m_pCheckboxImportHDsAsVDI->setText(UIWizardImportApp::tr("&Import hard drives as VDI"));
+        m_pCheckboxImportHDsAsVDI->setToolTip(UIWizardImportApp::tr("Import all the hard drives that belong to this appliance in VDI format."));
     }
     /* Translate file selector's tooltip: */
     if (m_pFileSelector)
