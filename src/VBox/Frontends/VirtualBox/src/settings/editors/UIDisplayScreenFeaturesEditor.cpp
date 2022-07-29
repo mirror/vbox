@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineDisplayScreenFeaturesEditor class implementation.
+ * VBox Qt GUI - UIDisplayScreenFeaturesEditor class implementation.
  */
 
 /*
@@ -21,10 +21,10 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UIMachineDisplayScreenFeaturesEditor.h"
+#include "UIDisplayScreenFeaturesEditor.h"
 
 
-UIMachineDisplayScreenFeaturesEditor::UIMachineDisplayScreenFeaturesEditor(QWidget *pParent /* = 0 */)
+UIDisplayScreenFeaturesEditor::UIDisplayScreenFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fEnable3DAcceleration(false)
     , m_pLabel(0)
@@ -33,7 +33,7 @@ UIMachineDisplayScreenFeaturesEditor::UIMachineDisplayScreenFeaturesEditor(QWidg
     prepare();
 }
 
-void UIMachineDisplayScreenFeaturesEditor::setEnable3DAcceleration(bool fOn)
+void UIDisplayScreenFeaturesEditor::setEnable3DAcceleration(bool fOn)
 {
     if (m_pCheckBoxEnable3DAcceleration)
     {
@@ -47,25 +47,25 @@ void UIMachineDisplayScreenFeaturesEditor::setEnable3DAcceleration(bool fOn)
     }
 }
 
-bool UIMachineDisplayScreenFeaturesEditor::isEnabled3DAcceleration() const
+bool UIDisplayScreenFeaturesEditor::isEnabled3DAcceleration() const
 {
     return   m_pCheckBoxEnable3DAcceleration
            ? m_pCheckBoxEnable3DAcceleration->checkState() == Qt::Checked
            : m_fEnable3DAcceleration;
 }
 
-int UIMachineDisplayScreenFeaturesEditor::minimumLabelHorizontalHint() const
+int UIDisplayScreenFeaturesEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
-void UIMachineDisplayScreenFeaturesEditor::setMinimumLayoutIndent(int iIndent)
+void UIDisplayScreenFeaturesEditor::setMinimumLayoutIndent(int iIndent)
 {
     if (m_pLayout)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMachineDisplayScreenFeaturesEditor::retranslateUi()
+void UIDisplayScreenFeaturesEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Extended Features:"));
@@ -77,7 +77,7 @@ void UIMachineDisplayScreenFeaturesEditor::retranslateUi()
     }
 }
 
-void UIMachineDisplayScreenFeaturesEditor::prepare()
+void UIDisplayScreenFeaturesEditor::prepare()
 {
     /* Prepare main layout: */
     m_pLayout = new QGridLayout(this);
@@ -101,7 +101,7 @@ void UIMachineDisplayScreenFeaturesEditor::prepare()
 
     /* Prepare connections: */
     connect(m_pCheckBoxEnable3DAcceleration, &QCheckBox::stateChanged,
-            this, &UIMachineDisplayScreenFeaturesEditor::sig3DAccelerationFeatureStatusChange);
+            this, &UIDisplayScreenFeaturesEditor::sig3DAccelerationFeatureStatusChange);
 
     /* Apply language settings: */
     retranslateUi();
