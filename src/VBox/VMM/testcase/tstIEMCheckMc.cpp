@@ -437,6 +437,12 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_pmulhw_u128            NULL
 #define iemAImpl_pmaddwd_u128           NULL
 
+#define iemAImpl_pmaxub_u64             NULL
+#define iemAImpl_pminub_u64             NULL
+
+#define iemAImpl_pmaxub_u128            NULL
+#define iemAImpl_pminub_u128            NULL
+
 /** @}  */
 
 

@@ -8843,9 +8843,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_imm_u128,(PRTUINT128U puDst, uint8_t uShi
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9111,9 +9110,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_imm_u128,(PRTUINT128U puDst, uint8_t uShi
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9501,6 +9499,106 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PCX86FXSTATE pFpuState, PRTUINT12
     puDst->ai32[1] = (int32_t)uSrc1.ai16[2] * puSrc->ai16[2] + (int32_t)uSrc1.ai16[3] * puSrc->ai16[3];
     puDst->ai32[2] = (int32_t)uSrc1.ai16[4] * puSrc->ai16[4] + (int32_t)uSrc1.ai16[5] * puSrc->ai16[5];
     puDst->ai32[3] = (int32_t)uSrc1.ai16[6] * puSrc->ai16[6] + (int32_t)uSrc1.ai16[7] * puSrc->ai16[7];
+    RT_NOREF(pFpuState);
+}
+
+#endif
+
+
+/*
+ * PMAXUB / VPMAXUB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.au8[0] = RT_MAX(uSrc1.au8[0], uSrc2.au8[0]);
+    uDst.au8[1] = RT_MAX(uSrc1.au8[1], uSrc2.au8[1]);
+    uDst.au8[2] = RT_MAX(uSrc1.au8[2], uSrc2.au8[2]);
+    uDst.au8[3] = RT_MAX(uSrc1.au8[3], uSrc2.au8[3]);
+    uDst.au8[4] = RT_MAX(uSrc1.au8[4], uSrc2.au8[4]);
+    uDst.au8[5] = RT_MAX(uSrc1.au8[5], uSrc2.au8[5]);
+    uDst.au8[6] = RT_MAX(uSrc1.au8[6], uSrc2.au8[6]);
+    uDst.au8[7] = RT_MAX(uSrc1.au8[7], uSrc2.au8[7]);
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au8[ 0] = RT_MAX(uSrc1.au8[ 0], puSrc->au8[ 0]);
+    puDst->au8[ 1] = RT_MAX(uSrc1.au8[ 1], puSrc->au8[ 1]);
+    puDst->au8[ 2] = RT_MAX(uSrc1.au8[ 2], puSrc->au8[ 2]);
+    puDst->au8[ 3] = RT_MAX(uSrc1.au8[ 3], puSrc->au8[ 3]);
+    puDst->au8[ 4] = RT_MAX(uSrc1.au8[ 4], puSrc->au8[ 4]);
+    puDst->au8[ 5] = RT_MAX(uSrc1.au8[ 5], puSrc->au8[ 5]);
+    puDst->au8[ 6] = RT_MAX(uSrc1.au8[ 6], puSrc->au8[ 6]);
+    puDst->au8[ 7] = RT_MAX(uSrc1.au8[ 7], puSrc->au8[ 7]);
+    puDst->au8[ 8] = RT_MAX(uSrc1.au8[ 8], puSrc->au8[ 8]);
+    puDst->au8[ 9] = RT_MAX(uSrc1.au8[ 9], puSrc->au8[ 9]);
+    puDst->au8[10] = RT_MAX(uSrc1.au8[10], puSrc->au8[10]);
+    puDst->au8[11] = RT_MAX(uSrc1.au8[11], puSrc->au8[11]);
+    puDst->au8[12] = RT_MAX(uSrc1.au8[12], puSrc->au8[12]);
+    puDst->au8[13] = RT_MAX(uSrc1.au8[13], puSrc->au8[13]);
+    puDst->au8[14] = RT_MAX(uSrc1.au8[14], puSrc->au8[14]);
+    puDst->au8[15] = RT_MAX(uSrc1.au8[15], puSrc->au8[15]);
+    RT_NOREF(pFpuState);
+}
+
+#endif
+
+
+/*
+ * PMINUB / VPMINUB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.au8[0] = RT_MIN(uSrc1.au8[0], uSrc2.au8[0]);
+    uDst.au8[1] = RT_MIN(uSrc1.au8[1], uSrc2.au8[1]);
+    uDst.au8[2] = RT_MIN(uSrc1.au8[2], uSrc2.au8[2]);
+    uDst.au8[3] = RT_MIN(uSrc1.au8[3], uSrc2.au8[3]);
+    uDst.au8[4] = RT_MIN(uSrc1.au8[4], uSrc2.au8[4]);
+    uDst.au8[5] = RT_MIN(uSrc1.au8[5], uSrc2.au8[5]);
+    uDst.au8[6] = RT_MIN(uSrc1.au8[6], uSrc2.au8[6]);
+    uDst.au8[7] = RT_MIN(uSrc1.au8[7], uSrc2.au8[7]);
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au8[ 0] = RT_MIN(uSrc1.au8[ 0], puSrc->au8[ 0]);
+    puDst->au8[ 1] = RT_MIN(uSrc1.au8[ 1], puSrc->au8[ 1]);
+    puDst->au8[ 2] = RT_MIN(uSrc1.au8[ 2], puSrc->au8[ 2]);
+    puDst->au8[ 3] = RT_MIN(uSrc1.au8[ 3], puSrc->au8[ 3]);
+    puDst->au8[ 4] = RT_MIN(uSrc1.au8[ 4], puSrc->au8[ 4]);
+    puDst->au8[ 5] = RT_MIN(uSrc1.au8[ 5], puSrc->au8[ 5]);
+    puDst->au8[ 6] = RT_MIN(uSrc1.au8[ 6], puSrc->au8[ 6]);
+    puDst->au8[ 7] = RT_MIN(uSrc1.au8[ 7], puSrc->au8[ 7]);
+    puDst->au8[ 8] = RT_MIN(uSrc1.au8[ 8], puSrc->au8[ 8]);
+    puDst->au8[ 9] = RT_MIN(uSrc1.au8[ 9], puSrc->au8[ 9]);
+    puDst->au8[10] = RT_MIN(uSrc1.au8[10], puSrc->au8[10]);
+    puDst->au8[11] = RT_MIN(uSrc1.au8[11], puSrc->au8[11]);
+    puDst->au8[12] = RT_MIN(uSrc1.au8[12], puSrc->au8[12]);
+    puDst->au8[13] = RT_MIN(uSrc1.au8[13], puSrc->au8[13]);
+    puDst->au8[14] = RT_MIN(uSrc1.au8[14], puSrc->au8[14]);
+    puDst->au8[15] = RT_MIN(uSrc1.au8[15], puSrc->au8[15]);
     RT_NOREF(pFpuState);
 }
 

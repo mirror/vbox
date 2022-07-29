@@ -9896,9 +9896,20 @@ FNIEMOP_DEF(iemOp_psubusw_Vx_Wx)
 /*  Opcode 0xf2 0x0f 0xd9 - invalid */
 
 /** Opcode      0x0f 0xda - pminub Pq, Qq */
-FNIEMOP_STUB(iemOp_pminub_Pq_Qq);
+FNIEMOP_DEF(iemOp_pminub_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PMINUB, pminub, Pq, Qq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, iemAImpl_pminub_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xda - pminub Vx, Wx */
-FNIEMOP_STUB(iemOp_pminub_Vx_Wx);
+FNIEMOP_DEF(iemOp_pminub_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PMINUB, pminub, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_pminub_u128);
+}
+
 /*  Opcode 0xf3 0x0f 0xda - invalid */
 /*  Opcode 0xf2 0x0f 0xda - invalid */
 
@@ -9960,9 +9971,20 @@ FNIEMOP_DEF(iemOp_paddusw_Vx_Wx)
 /*  Opcode 0xf2 0x0f 0xdd - invalid */
 
 /** Opcode      0x0f 0xde - pmaxub Pq, Qq */
-FNIEMOP_STUB(iemOp_pmaxub_Pq_Qq);
+FNIEMOP_DEF(iemOp_pmaxub_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PMAXUB, pmaxub, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, iemAImpl_pmaxub_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xde - pmaxub Vx, W */
-FNIEMOP_STUB(iemOp_pmaxub_Vx_Wx);
+FNIEMOP_DEF(iemOp_pmaxub_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PMAXUB, pmaxub, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_pmaxub_u128);
+}
+
 /*  Opcode 0xf3 0x0f 0xde - invalid */
 /*  Opcode 0xf2 0x0f 0xde - invalid */
 
@@ -9994,16 +10016,38 @@ FNIEMOP_STUB(iemOp_pavgb_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xe0 - invalid */
 
 /** Opcode      0x0f 0xe1 - psraw Pq, Qq */
-FNIEMOP_STUB(iemOp_psraw_Pq_Qq);
+FNIEMOP_DEF(iemOp_psraw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PSRAW, psraw, Pq, Qq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmxOpt_FullFull_To_Full, iemAImpl_psraw_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xe1 - psraw Vx, Wx */
-FNIEMOP_STUB(iemOp_psraw_Vx_Wx);
+FNIEMOP_DEF(iemOp_psraw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PSRAW, psraw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psraw_u128);
+}
+
 /*  Opcode 0xf3 0x0f 0xe1 - invalid */
 /*  Opcode 0xf2 0x0f 0xe1 - invalid */
 
 /** Opcode      0x0f 0xe2 - psrad Pq, Qq */
-FNIEMOP_STUB(iemOp_psrad_Pq_Qq);
+FNIEMOP_DEF(iemOp_psrad_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PSRAD, psrad, Pq, Qq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmxOpt_FullFull_To_Full, iemAImpl_psrad_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xe2 - psrad Vx, Wx */
-FNIEMOP_STUB(iemOp_psrad_Vx_Wx);
+FNIEMOP_DEF(iemOp_psrad_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PSRAD, psrad, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psrad_u128);
+}
+
 /*  Opcode 0xf3 0x0f 0xe2 - invalid */
 /*  Opcode 0xf2 0x0f 0xe2 - invalid */
 
