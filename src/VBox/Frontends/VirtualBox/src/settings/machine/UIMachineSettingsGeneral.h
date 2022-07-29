@@ -26,9 +26,9 @@
 
 /* Forward declarations: */
 class QITabWidget;
+class UIDescriptionEditor;
 class UIDiskEncryptionSettingsEditor;
 class UIDragAndDropEditor;
-class UIMachineDescriptionEditor;
 class UINameAndSystemEditor;
 class UISharedClipboardEditor;
 class UISnapshotFolderEditor;
@@ -158,9 +158,9 @@ private:
         UIDragAndDropEditor     *m_pEditorDragAndDrop;
 
         /** Holds the 'Description' tab instance. */
-        QWidget                    *m_pTabDescription;
+        QWidget             *m_pTabDescription;
         /** Holds the description editor instance. */
-        UIMachineDescriptionEditor *m_pEditorDescription;
+        UIDescriptionEditor *m_pEditorDescription;
 
         /** Holds the 'Encryption' tab instance. */
         QWidget                        *m_pTabEncryption;

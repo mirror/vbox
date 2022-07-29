@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMachineDescriptionEditor class declaration.
+ * VBox Qt GUI - UIDescriptionEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIMachineDescriptionEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIMachineDescriptionEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIDescriptionEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIDescriptionEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -28,14 +28,14 @@
 class QTextEdit;
 
 /** QWidget subclass used as machine description editor. */
-class SHARED_LIBRARY_STUFF UIMachineDescriptionEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIDescriptionEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIMachineDescriptionEditor(QWidget *pParent = 0);
+    UIDescriptionEditor(QWidget *pParent = 0);
 
     /** Defines editor @a strValue. */
     void setValue(const QString &strValue);
@@ -59,4 +59,4 @@ private:
     QTextEdit *m_pTextEdit;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMachineDescriptionEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIDescriptionEditor_h */
