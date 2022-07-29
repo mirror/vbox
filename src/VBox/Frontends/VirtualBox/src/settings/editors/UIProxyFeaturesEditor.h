@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGlobalProxyFeaturesEditor class declaration.
+ * VBox Qt GUI - UIProxyFeaturesEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIGlobalProxyFeaturesEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIGlobalProxyFeaturesEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIProxyFeaturesEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIProxyFeaturesEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,7 +34,7 @@ class QRadioButton;
 class QILineEdit;
 
 /** QWidget subclass used as global proxy features editor. */
-class SHARED_LIBRARY_STUFF UIGlobalProxyFeaturesEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIProxyFeaturesEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -48,7 +48,7 @@ signals:
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIGlobalProxyFeaturesEditor(QWidget *pParent = 0);
+    UIProxyFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines proxy @a enmMode. */
     void setProxyMode(KProxyMode enmMode);
@@ -102,4 +102,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIGlobalProxyFeaturesEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIProxyFeaturesEditor_h */

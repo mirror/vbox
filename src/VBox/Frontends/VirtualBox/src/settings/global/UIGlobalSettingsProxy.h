@@ -26,7 +26,7 @@
 #include "VBoxUtils.h"
 
 /* Forward declarations: */
-class UIGlobalProxyFeaturesEditor;
+class UIProxyFeaturesEditor;
 struct UIDataSettingsGlobalProxy;
 typedef UISettingsCache<UIDataSettingsGlobalProxy> UISettingsCacheGlobalProxy;
 
@@ -83,8 +83,8 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the global proxy features editor instance. */
-        UIGlobalProxyFeaturesEditor *m_pEditorGlobalProxyFeatures;
+        /** Holds the proxy features editor instance. */
+        UIProxyFeaturesEditor *m_pEditorProxyFeatures;
     /** @} */
 };
 

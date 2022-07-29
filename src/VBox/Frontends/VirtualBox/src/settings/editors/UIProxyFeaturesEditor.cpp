@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGlobalProxyFeaturesEditor class implementation.
+ * VBox Qt GUI - UIProxyFeaturesEditor class implementation.
  */
 
 /*
@@ -24,10 +24,10 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "UIGlobalProxyFeaturesEditor.h"
+#include "UIProxyFeaturesEditor.h"
 
 
-UIGlobalProxyFeaturesEditor::UIGlobalProxyFeaturesEditor(QWidget *pParent /* = 0 */)
+UIProxyFeaturesEditor::UIProxyFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmProxyMode(KProxyMode_Max)
     , m_pButtonGroup(0)
@@ -41,7 +41,7 @@ UIGlobalProxyFeaturesEditor::UIGlobalProxyFeaturesEditor(QWidget *pParent /* = 0
     prepare();
 }
 
-void UIGlobalProxyFeaturesEditor::setProxyMode(KProxyMode enmMode)
+void UIProxyFeaturesEditor::setProxyMode(KProxyMode enmMode)
 {
     /* Update cached value and
      * radio-buttons if value has changed: */
@@ -71,7 +71,7 @@ void UIGlobalProxyFeaturesEditor::setProxyMode(KProxyMode enmMode)
     sltHandleProxyModeChanged();
 }
 
-KProxyMode UIGlobalProxyFeaturesEditor::proxyMode() const
+KProxyMode UIProxyFeaturesEditor::proxyMode() const
 {
     return   m_pRadioButtonProxyEnabled && m_pRadioButtonProxyEnabled->isChecked()
            ? KProxyMode_Manual
@@ -82,7 +82,7 @@ KProxyMode UIGlobalProxyFeaturesEditor::proxyMode() const
            : m_enmProxyMode;
 }
 
-void UIGlobalProxyFeaturesEditor::setProxyHost(const QString &strHost)
+void UIProxyFeaturesEditor::setProxyHost(const QString &strHost)
 {
     /* Update cached value and
      * line-edit if value has changed: */
@@ -94,12 +94,12 @@ void UIGlobalProxyFeaturesEditor::setProxyHost(const QString &strHost)
     }
 }
 
-QString UIGlobalProxyFeaturesEditor::proxyHost() const
+QString UIProxyFeaturesEditor::proxyHost() const
 {
     return m_pEditorHost ? m_pEditorHost->text() : m_strProxyHost;
 }
 
-void UIGlobalProxyFeaturesEditor::retranslateUi()
+void UIProxyFeaturesEditor::retranslateUi()
 {
     /* Translate proxy mode editor: */
     if (m_pRadioButtonProxyAuto)
@@ -133,7 +133,7 @@ void UIGlobalProxyFeaturesEditor::retranslateUi()
                                      "</table>"));
 }
 
-void UIGlobalProxyFeaturesEditor::sltHandleProxyModeChanged()
+void UIProxyFeaturesEditor::sltHandleProxyModeChanged()
 {
     /* Update widgets availability: */
     m_pWidgetSettings->setEnabled(m_pRadioButtonProxyEnabled->isChecked());
@@ -142,7 +142,7 @@ void UIGlobalProxyFeaturesEditor::sltHandleProxyModeChanged()
     emit sigProxyModeChanged();
 }
 
-void UIGlobalProxyFeaturesEditor::prepare()
+void UIProxyFeaturesEditor::prepare()
 {
     /* Prepare main layout: */
     QGridLayout *pLayout = new QGridLayout(this);
@@ -217,9 +217,9 @@ void UIGlobalProxyFeaturesEditor::prepare()
 
     /* Prepare connections: */
     connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-            this, &UIGlobalProxyFeaturesEditor::sltHandleProxyModeChanged);
+            this, &UIProxyFeaturesEditor::sltHandleProxyModeChanged);
     connect(m_pEditorHost, &QILineEdit::textEdited,
-            this, &UIGlobalProxyFeaturesEditor::sigProxyHostChanged);
+            this, &UIProxyFeaturesEditor::sigProxyHostChanged);
 
     /* Apply language settings: */
     retranslateUi();

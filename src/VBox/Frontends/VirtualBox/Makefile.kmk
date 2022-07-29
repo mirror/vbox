@@ -908,7 +908,6 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIDisplayFeaturesEditor.h \
 	src/settings/editors/UIDragAndDropEditor.h \
 	src/settings/editors/UIExecutionCapEditor.h \
-	src/settings/editors/UIGlobalProxyFeaturesEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
 	src/settings/editors/UIHostComboEditor.h \
 	src/settings/editors/UIHotKeyEditor.h \
@@ -926,6 +925,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIParavirtProviderEditor.h \
 	src/settings/editors/UIPointingHIDEditor.h \
 	src/settings/editors/UIProcessorFeaturesEditor.h \
+	src/settings/editors/UIProxyFeaturesEditor.h \
 	src/settings/editors/UIRecordingSettingsEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
 	src/settings/editors/UISharedClipboardEditor.h \
@@ -1490,7 +1490,6 @@ UICommon_SOURCES = \
 	src/settings/editors/UIDisplayFeaturesEditor.cpp \
 	src/settings/editors/UIDragAndDropEditor.cpp \
 	src/settings/editors/UIExecutionCapEditor.cpp \
-	src/settings/editors/UIGlobalProxyFeaturesEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
 	src/settings/editors/UIHostComboEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
@@ -1508,6 +1507,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIParavirtProviderEditor.cpp \
 	src/settings/editors/UIPointingHIDEditor.cpp \
 	src/settings/editors/UIProcessorFeaturesEditor.cpp \
+	src/settings/editors/UIProxyFeaturesEditor.cpp \
 	src/settings/editors/UIRecordingSettingsEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \
 	src/settings/editors/UISharedClipboardEditor.cpp \

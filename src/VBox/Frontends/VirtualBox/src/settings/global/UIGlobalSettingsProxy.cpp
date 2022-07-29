@@ -19,10 +19,10 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIGlobalProxyFeaturesEditor.h"
 #include "UIGlobalSettingsProxy.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
+#include "UIProxyFeaturesEditor.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -103,10 +103,10 @@ void UIGlobalSettingsProxy::getFromCache()
 
     /* Load old data from cache: */
     const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
-    if (m_pEditorGlobalProxyFeatures)
+    if (m_pEditorProxyFeatures)
     {
-        m_pEditorGlobalProxyFeatures->setProxyMode(oldData.m_enmProxyMode);
-        m_pEditorGlobalProxyFeatures->setProxyHost(oldData.m_strProxyHost);
+        m_pEditorProxyFeatures->setProxyMode(oldData.m_enmProxyMode);
+        m_pEditorProxyFeatures->setProxyHost(oldData.m_strProxyHost);
     }
 
     /* Revalidate: */
@@ -123,10 +123,10 @@ void UIGlobalSettingsProxy::putToCache()
     UIDataSettingsGlobalProxy newData = m_pCache->base();
 
     /* Cache new data: */
-    if (m_pEditorGlobalProxyFeatures)
+    if (m_pEditorProxyFeatures)
     {
-        newData.m_enmProxyMode = m_pEditorGlobalProxyFeatures->proxyMode();
-        newData.m_strProxyHost = m_pEditorGlobalProxyFeatures->proxyHost();
+        newData.m_enmProxyMode = m_pEditorProxyFeatures->proxyMode();
+        newData.m_strProxyHost = m_pEditorProxyFeatures->proxyHost();
     }
     m_pCache->cacheCurrentData(newData);
 }
@@ -146,7 +146,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
 bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 {
     /* Pass if proxy is disabled: */
-    if (m_pEditorGlobalProxyFeatures->proxyMode() != KProxyMode_Manual)
+    if (m_pEditorProxyFeatures->proxyMode() != KProxyMode_Manual)
         return true;
 
     /* Pass by default: */
@@ -156,7 +156,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     UIValidationMessage message;
 
     /* Check for URL presence: */
-    if (m_pEditorGlobalProxyFeatures->proxyHost().trimmed().isEmpty())
+    if (m_pEditorProxyFeatures->proxyHost().trimmed().isEmpty())
     {
         message.second << tr("No proxy URL is currently specified.");
         fPass = false;
@@ -165,7 +165,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     else
 
     /* Check for URL validness: */
-    if (!QUrl(m_pEditorGlobalProxyFeatures->proxyHost().trimmed()).isValid())
+    if (!QUrl(m_pEditorProxyFeatures->proxyHost().trimmed()).isValid())
     {
         message.second << tr("Invalid proxy URL is currently specified.");
         fPass = true;
@@ -174,7 +174,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     else
 
     /* Check for password presence: */
-    if (!QUrl(m_pEditorGlobalProxyFeatures->proxyHost().trimmed()).password().isEmpty())
+    if (!QUrl(m_pEditorProxyFeatures->proxyHost().trimmed()).password().isEmpty())
     {
         message.second << tr("You have provided a proxy password. "
                              "Please be aware that the password will be saved in plain text. "
@@ -215,10 +215,10 @@ void UIGlobalSettingsProxy::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Prepare 'global proxy features' editor: */
-        m_pEditorGlobalProxyFeatures = new UIGlobalProxyFeaturesEditor(this);
-        if (m_pEditorGlobalProxyFeatures)
-            pLayout->addWidget(m_pEditorGlobalProxyFeatures);
+        /* Prepare 'proxy features' editor: */
+        m_pEditorProxyFeatures = new UIProxyFeaturesEditor(this);
+        if (m_pEditorProxyFeatures)
+            pLayout->addWidget(m_pEditorProxyFeatures);
 
         /* Add stretch to the end: */
         pLayout->addStretch();
@@ -227,9 +227,9 @@ void UIGlobalSettingsProxy::prepareWidgets()
 
 void UIGlobalSettingsProxy::prepareConnections()
 {
-    connect(m_pEditorGlobalProxyFeatures, &UIGlobalProxyFeaturesEditor::sigProxyModeChanged,
+    connect(m_pEditorProxyFeatures, &UIProxyFeaturesEditor::sigProxyModeChanged,
             this, &UIGlobalSettingsProxy::revalidate);
-    connect(m_pEditorGlobalProxyFeatures, &UIGlobalProxyFeaturesEditor::sigProxyHostChanged,
+    connect(m_pEditorProxyFeatures, &UIProxyFeaturesEditor::sigProxyHostChanged,
             this, &UIGlobalSettingsProxy::revalidate);
 }
 
