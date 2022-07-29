@@ -66,7 +66,7 @@ static void vboxDispLogDbgFormatStringV(char *pszBuffer, uint32_t cbBuffer, cons
                 vboxVDbgDoGetExeName(), GetCurrentProcessId(), GetCurrentThreadId(), pszFormat, &vaCopy);
     va_end(vaCopy);
 # else
-    int cch = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx] Disp: ", 
+    int cch = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx] Disp: ",
                         vboxVDbgDoGetExeName(), GetCurrentProcessId(), GetCurrentThreadId());
     AssertReturnVoid(cch > 0);
     AssertReturnVoid((unsigned)cch + 2 <= cbBuffer);
