@@ -183,7 +183,7 @@ void UIGAInstallationGroupBox::mark()
 {
     bool fError = !UIWizardNewVMUnattendedCommon::checkGAISOFile(path());
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->mark(fError, tr("Invalid Guest Additions installation media"));
+        m_pGAISOFilePathSelector->mark(fError, UIWizardNewVM::tr("Invalid Guest Additions installation media"));
 }
 
 bool UIGAInstallationGroupBox::isComplete() const
@@ -284,7 +284,7 @@ void UIAdditionalUnattendedOptions::retranslateUi()
         m_pHostnameDomainNameEditor->setFirstColumnWidth(iMaxWidth);
     }
     if (m_pProductKeyLineEdit)
-        m_pProductKeyLineEdit->setToolTip(tr("Holds the product key."));
+        m_pProductKeyLineEdit->setToolTip(UIWizardNewVM::tr("Holds the product key."));
 }
 
 QString UIAdditionalUnattendedOptions::hostname() const

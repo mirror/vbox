@@ -28,6 +28,7 @@
 #include "QILineEdit.h"
 #include "UICommon.h"
 #include "UIFilePathSelector.h"
+#include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMEditors.h"
 
 /* Other VBox includes: */
@@ -58,12 +59,12 @@ bool UICloneVMNamePathEditor::isComplete(const QString &strMachineGroup)
     AssertReturn(m_pNameLineEdit && m_pPathSelector, false);
 
     bool fInvalidName = m_pNameLineEdit->text().isEmpty();
-    m_pNameLineEdit->mark(fInvalidName, tr("Clone name cannot be empty"));
+    m_pNameLineEdit->mark(fInvalidName, UIWizardCloneVM::tr("Clone name cannot be empty"));
 
     const QString &strPath = m_pPathSelector->path();
     QDir dir(strPath);
     bool fInvalidPath = strPath.isEmpty() || !dir.exists() || !dir.isReadable();
-    m_pPathSelector->mark(fInvalidPath, tr("Path is invalid"));
+    m_pPathSelector->mark(fInvalidPath, UIWizardCloneVM::tr("Path is invalid"));
 
     /* Check if there is already a machine folder for this name and path: */
     bool fExists = false;
@@ -73,7 +74,7 @@ bool UICloneVMNamePathEditor::isComplete(const QString &strMachineGroup)
         QString strCloneFilePath =
             vbox.ComposeMachineFilename(m_pNameLineEdit->text(), strMachineGroup, QString(), m_pPathSelector->path());
         fExists = QDir(QDir::toNativeSeparators(QFileInfo(strCloneFilePath).absolutePath())).exists();
-        m_pNameLineEdit->mark(fExists, tr("The clone name is not unique"));
+        m_pNameLineEdit->mark(fExists, UIWizardCloneVM::tr("The clone name is not unique"));
     }
 
     return !fInvalidName && !fInvalidPath && !fExists;
@@ -144,7 +145,7 @@ void UICloneVMNamePathEditor::prepare()
     if (m_pNameLineEdit)
     {
         m_pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
-        m_pNameLineEdit->setText(tr("%1 Clone").arg(m_strOriginalName));
+        m_pNameLineEdit->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
         connect(m_pNameLineEdit, &UIMarkableLineEdit::textChanged,
                 this, &UICloneVMNamePathEditor::sigCloneNameChanged);
         if (m_pNameLabel)
@@ -177,9 +178,9 @@ void UICloneVMNamePathEditor::prepare()
 void UICloneVMNamePathEditor::retranslateUi()
 {
     if (m_pNameLabel)
-        m_pNameLabel->setText(tr("&Name:"));
+        m_pNameLabel->setText(UIWizardCloneVM::tr("&Name:"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(tr("&Path:"));
+        m_pPathLabel->setText(UIWizardCloneVM::tr("&Path:"));
     if (m_pNameLineEdit)
         m_pNameLineEdit->setToolTip("Holds a name for the new virtual machine.");
     if (m_pPathSelector)
@@ -319,8 +320,8 @@ void UICloneVMAdditionalOptionsEditor::prepare()
 
 void UICloneVMAdditionalOptionsEditor::retranslateUi()
 {
-    m_pMACComboBoxLabel->setText(tr("MAC Address P&olicy:"));
-    m_pMACComboBox->setToolTip(tr("Determines MAC address policy for clonning:"));
+    m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address P&olicy:"));
+    m_pMACComboBox->setToolTip(UIWizardCloneVM::tr("Determines MAC address policy for clonning:"));
     for (int i = 0; i < m_pMACComboBox->count(); ++i)
     {
         const MACAddressClonePolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressClonePolicy>();
@@ -328,20 +329,23 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
         {
             case MACAddressClonePolicy_KeepAllMACs:
                 {
-                    m_pMACComboBox->setItemText(i, tr("Include all network adapter MAC addresses"));
-                    m_pMACComboBox->setItemData(i, tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                    m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Include all network adapter MAC addresses"));
+                    m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Include all network adapter MAC addresses during "
+                                                                       "cloning."), Qt::ToolTipRole);
                     break;
                 }
             case MACAddressClonePolicy_KeepNATMACs:
                 {
-                    m_pMACComboBox->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                    m_pMACComboBox->setItemData(i, tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                    m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses"));
+                    m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses during "
+                                                                       "cloning."), Qt::ToolTipRole);
                     break;
                 }
             case MACAddressClonePolicy_StripAllMACs:
                 {
-                    m_pMACComboBox->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                    m_pMACComboBox->setItemData(i, tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
+                    m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
+                    m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters during "
+                                                                       "cloning."), Qt::ToolTipRole);
                     break;
                 }
             default:
@@ -350,16 +354,16 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
     }
 
     if (m_pAdditionalOptionsLabel)
-        m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
+        m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
     if (m_pKeepDiskNamesCheckBox)
     {
-        m_pKeepDiskNamesCheckBox->setToolTip(tr("Enables keeping the disk names during cloning."));
-        m_pKeepDiskNamesCheckBox->setText(tr("Keep &Disk Names"));
+        m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Enables keeping the disk names during cloning."));
+        m_pKeepDiskNamesCheckBox->setText(UIWizardCloneVM::tr("Keep &Disk Names"));
     }
     if (m_pKeepHWUUIDsCheckBox)
     {
-        m_pKeepHWUUIDsCheckBox->setToolTip(tr("Enables keeping hardware UUIDs during cloning."));
-        m_pKeepHWUUIDsCheckBox->setText(tr("Keep Hard&ware UUIDs"));
+        m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("Enables keeping hardware UUIDs during cloning."));
+        m_pKeepHWUUIDsCheckBox->setText(UIWizardCloneVM::tr("Keep Hard&ware UUIDs"));
     }
 }
 
@@ -477,13 +481,13 @@ void UICloneVMCloneTypeGroupBox::retranslateUi()
 {
     if (m_pFullCloneRadio)
     {
-        m_pFullCloneRadio->setText(tr("&Full clone"));
-        m_pFullCloneRadio->setToolTip(tr("When chosen, all the virtual disks of the source vm are also cloned."));
+        m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full clone"));
+        m_pFullCloneRadio->setToolTip(UIWizardCloneVM::tr("When chosen, all the virtual disks of the source vm are also cloned."));
     }
     if (m_pLinkedCloneRadio)
     {
-        m_pLinkedCloneRadio->setText(tr("&Linked clone"));
-        m_pLinkedCloneRadio->setToolTip(tr("When chosen, the cloned vm will save space by sharing the source VM's disk images."));
+        m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked clone"));
+        m_pLinkedCloneRadio->setToolTip(UIWizardCloneVM::tr("When chosen, the cloned vm will save space by sharing the source VM's disk images."));
     }
 }
 
@@ -547,15 +551,15 @@ void UICloneVMCloneModeGroupBox::retranslateUi()
 {
     if (m_pMachineRadio)
     {
-        m_pMachineRadio->setText(tr("Current &machine state"));
-        m_pMachineRadio->setToolTip(tr("When chosen, only the current state of the source vm is cloned."));
+        m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
+        m_pMachineRadio->setToolTip(UIWizardCloneVM::tr("When chosen, only the current state of the source vm is cloned."));
     }
     if (m_pMachineAndChildsRadio)
-        m_pMachineAndChildsRadio->setText(tr("Current &snapshot tree branch"));
+        m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
     if (m_pAllRadio)
     {
-        m_pAllRadio->setText(tr("&Everything"));
-        m_pAllRadio->setToolTip(tr("When chosen, all the saved states of the source vm are also cloned."));
+        m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
+        m_pAllRadio->setToolTip(UIWizardCloneVM::tr("When chosen, all the saved states of the source vm are also cloned."));
     }
 }
 
