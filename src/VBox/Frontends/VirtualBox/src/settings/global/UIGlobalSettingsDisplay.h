@@ -25,7 +25,7 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class UIGlobalDisplayFeaturesEditor;
+class UIDisplayFeaturesEditor;
 class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;
 struct UIDataSettingsGlobalDisplay;
@@ -84,7 +84,7 @@ private:
         /** Holds the scale-factor editor instance. */
         UIScaleFactorEditor            *m_pEditorScaleFactor;
         /** Holds the global display features editor instance. */
-        UIGlobalDisplayFeaturesEditor  *m_pEditorGlobalDisplayFeatures;
+        UIDisplayFeaturesEditor        *m_pEditorGlobalDisplayFeatures;
     /** @} */
 };
 

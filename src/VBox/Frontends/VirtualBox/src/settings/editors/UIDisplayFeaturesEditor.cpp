@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGlobalDisplayFeaturesEditor class implementation.
+ * VBox Qt GUI - UIDisplayFeaturesEditor class implementation.
  */
 
 /*
@@ -21,13 +21,13 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UIGlobalDisplayFeaturesEditor.h"
+#include "UIDisplayFeaturesEditor.h"
 #ifdef VBOX_WS_X11
 # include "VBoxUtils-x11.h"
 #endif
 
 
-UIGlobalDisplayFeaturesEditor::UIGlobalDisplayFeaturesEditor(QWidget *pParent /* = 0 */)
+UIDisplayFeaturesEditor::UIDisplayFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fActivateOnMouseHover(false)
     , m_fDisableHostScreenSaver(false)
@@ -38,7 +38,7 @@ UIGlobalDisplayFeaturesEditor::UIGlobalDisplayFeaturesEditor(QWidget *pParent /*
     prepare();
 }
 
-void UIGlobalDisplayFeaturesEditor::setActivateOnMouseHover(bool fOn)
+void UIDisplayFeaturesEditor::setActivateOnMouseHover(bool fOn)
 {
     /* Update cached value and
      * check-box if value has changed: */
@@ -50,14 +50,14 @@ void UIGlobalDisplayFeaturesEditor::setActivateOnMouseHover(bool fOn)
     }
 }
 
-bool UIGlobalDisplayFeaturesEditor::activateOnMouseHover() const
+bool UIDisplayFeaturesEditor::activateOnMouseHover() const
 {
     return   m_pCheckBoxActivateOnMouseHover
            ? m_pCheckBoxActivateOnMouseHover->checkState() == Qt::Checked
            : m_fActivateOnMouseHover;
 }
 
-void UIGlobalDisplayFeaturesEditor::setDisableHostScreenSaver(bool fOn)
+void UIDisplayFeaturesEditor::setDisableHostScreenSaver(bool fOn)
 {
     /* Update cached value and
      * check-box if value has changed: */
@@ -69,25 +69,25 @@ void UIGlobalDisplayFeaturesEditor::setDisableHostScreenSaver(bool fOn)
     }
 }
 
-bool UIGlobalDisplayFeaturesEditor::disableHostScreenSaver() const
+bool UIDisplayFeaturesEditor::disableHostScreenSaver() const
 {
     return   m_pCheckBoxDisableHostScreenSaver
            ? m_pCheckBoxDisableHostScreenSaver->checkState() == Qt::Checked
            : m_fDisableHostScreenSaver;
 }
 
-int UIGlobalDisplayFeaturesEditor::minimumLabelHorizontalHint() const
+int UIDisplayFeaturesEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
-void UIGlobalDisplayFeaturesEditor::setMinimumLayoutIndent(int iIndent)
+void UIDisplayFeaturesEditor::setMinimumLayoutIndent(int iIndent)
 {
     if (m_pLayout)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIGlobalDisplayFeaturesEditor::retranslateUi()
+void UIDisplayFeaturesEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Extended Features:"));
@@ -107,7 +107,7 @@ void UIGlobalDisplayFeaturesEditor::retranslateUi()
     }
 }
 
-void UIGlobalDisplayFeaturesEditor::prepare()
+void UIDisplayFeaturesEditor::prepare()
 {
     /* Prepare main layout: */
     m_pLayout = new QGridLayout(this);

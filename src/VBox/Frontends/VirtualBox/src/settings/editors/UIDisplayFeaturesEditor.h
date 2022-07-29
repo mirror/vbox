@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGlobalDisplayFeaturesEditor class declaration.
+ * VBox Qt GUI - UIDisplayFeaturesEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIGlobalDisplayFeaturesEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIGlobalDisplayFeaturesEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIDisplayFeaturesEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIDisplayFeaturesEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -29,15 +29,15 @@ class QCheckBox;
 class QGridLayout;
 class QLabel;
 
-/** QWidget subclass used as global display features editor. */
-class SHARED_LIBRARY_STUFF UIGlobalDisplayFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass used as display features editor. */
+class SHARED_LIBRARY_STUFF UIDisplayFeaturesEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIGlobalDisplayFeaturesEditor(QWidget *pParent = 0);
+    UIDisplayFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether 'activate on mouse hover' feature in @a fOn. */
     void setActivateOnMouseHover(bool fOn);
@@ -85,4 +85,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIGlobalDisplayFeaturesEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIDisplayFeaturesEditor_h */

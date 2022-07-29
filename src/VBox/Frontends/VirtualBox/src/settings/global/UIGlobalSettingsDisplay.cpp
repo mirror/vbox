@@ -21,7 +21,7 @@
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UIGlobalDisplayFeaturesEditor.h"
+#include "UIDisplayFeaturesEditor.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
 #include "UIScaleFactorEditor.h"
@@ -206,7 +206,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             pLayout->addWidget(m_pEditorScaleFactor);
 
         /* Prepare 'global display features' editor: */
-        m_pEditorGlobalDisplayFeatures = new UIGlobalDisplayFeaturesEditor(this);
+        m_pEditorGlobalDisplayFeatures = new UIDisplayFeaturesEditor(this);
         if (m_pEditorGlobalDisplayFeatures)
             pLayout->addWidget(m_pEditorGlobalDisplayFeatures);
 
