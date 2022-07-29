@@ -69,7 +69,7 @@ void UIMachinePreview::setMachine(const CMachine& comMachine)
     m_strPreviewName = tr("No preview");
     if (!m_comMachine.isNull())
         m_strPreviewName = m_comMachine.GetAccessible() ? m_comMachine.GetName() :
-                           QApplication::translate("UIVMListView", "Inaccessible");
+                           tr("Inaccessible");
 
     /* Resume: */
     restart();

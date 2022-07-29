@@ -111,8 +111,8 @@ void USBFilterTreeWidgetItem::updateFields()
 QString USBFilterTreeWidgetItem::defaultText() const
 {
     return   checkState(0) == Qt::Checked
-           ? tr("%1, Active", "col.1 text, col.1 state").arg(text(0))
-           : tr("%1",         "col.1 text")             .arg(text(0));
+           ? UIUSBFiltersEditor::tr("%1, Active", "col.1 text, col.1 state").arg(text(0))
+           : text(0);
 }
 
 

@@ -97,7 +97,7 @@ void UIVMLogViewerDialog::retranslateUi()
 {
     /* Translate window title: */
     if (!m_strMachineName.isEmpty())
-        setWindowTitle(tr("%1 - Log Viewer").arg(m_strMachineName));
+        setWindowTitle(UIVMLogViewerWidget::tr("%1 - Log Viewer").arg(m_strMachineName));
     else
         setWindowTitle(UIVMLogViewerWidget::tr("Log Viewer"));
 

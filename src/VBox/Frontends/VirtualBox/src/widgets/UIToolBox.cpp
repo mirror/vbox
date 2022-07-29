@@ -345,7 +345,7 @@ void UIToolBoxPage::setExpandCollapseIcon()
 void UIToolBoxPage::retranslateUi()
 {
     if (m_pTitleButton)
-        m_pTitleButton->setToolTip(tr("Expands the page \"%1\"").arg(m_strTitle.remove('&')));
+        m_pTitleButton->setToolTip(UIToolBox::tr("Expands the page \"%1\"").arg(m_strTitle.remove('&')));
 }
 
 
