@@ -412,10 +412,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Note: Don't force installing when the Guest Additions installer should do this automatically,
         #       i.e, only force it for Windows Server 2016 and up.
         fForceInstallTimeStampCA = False;
-        if self.fpApiVer >= 6.1 \
+        if     self.fpApiVer >= 6.1 \
            and oTestVm.getNonCanonicalGuestOsType() \
-              in [ 'Windows2016', 'Windows2019', 'Windows2022', 'Windows11' ]:
-              fForceInstallTimeStampCA = True;
+           in [ 'Windows2016', 'Windows2019', 'Windows2022', 'Windows11' ]:
+            fForceInstallTimeStampCA = True;
 
         # As we don't have a console command line to parse for the Guest Additions installer (only a message box) and
         # unknown / unsupported parameters get ignored with silent installs anyway, we safely can add the following parameter(s)
