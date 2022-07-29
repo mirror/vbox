@@ -1,6 +1,11 @@
 /* $Id$ */
 /** @file
  * VBox WDDM Display backdoor logger implementation
+ *
+ * We're unable to use standard r3 vbgl-based backdoor logging API because win8
+ * Metro apps can not do CreateFile/Read/Write by default.  This is why we use
+ * miniport escape functionality to issue backdoor log string to the miniport
+ * and submit it to host via standard r0 backdoor logging api accordingly.
  */
 
 /*
@@ -14,11 +19,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
-/* We're unable to use standard r3 vbgl-based backdoor logging API because win8 Metro apps
- * can not do CreateFile/Read/Write by default
- * this is why we use miniport escape functionality to issue backdoor log string to the miniport
- * and submit it to host via standard r0 backdoor logging api accordingly */
 
 #include <VBoxDispMpLogger.h>
 #include <iprt/win/windows.h>
@@ -34,8 +34,12 @@
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/mem.h>
+#include <iprt/process.h>
 
-#include <stdio.h>
+#ifndef IPRT_NO_CRT
+# include <stdio.h>
+#endif
+
 
 typedef enum
 {
@@ -150,17 +154,23 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString)
     }
 }
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszString, ...)
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszFormat, ...)
 {
     PVBOXDISPMPLOGGER pLogger = vboxDispMpLoggerGet();
     if (!pLogger)
         return;
 
-    char szBuffer[4096] = {0};
-    va_list pArgList;
-    va_start(pArgList, pszString);
-    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), pszString, pArgList);
-    va_end(pArgList);
+    char szBuffer[4096];
+    va_list va;
+    va_start(va, pszFormat);
+#ifdef IPRT_NO_CRT
+    RTStrPrintfV(szBuffer, sizeof(szBuffer), pszFormat, va);
+#else
+    int cch = _vsnprintf(szBuffer, sizeof(szBuffer), pszFormat, va);
+    AssertReturnVoid(cch >= 0);            /* unlikely that we'll have string encoding problems, but just in case. */
+    szBuffer[sizeof(szBuffer) - 1] = '\0'; /* doesn't necessarily terminate the buffer on overflow */
+#endif
+    va_end(va);
 
     VBoxDispMpLoggerLog(szBuffer);
 }
@@ -221,51 +231,39 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerDumpD3DCAPS9(struct _D3DCAPS9 *pCaps
 }
 
 /*
- * Prefix the output string with module name and pid/tid.
+ * Prefix the output string with exe name and pid/tid.
  */
-static const char *vboxUmLogGetModuleName(void)
+static const char *vboxUmLogGetExeName(void)
 {
+#ifdef IPRT_NO_CRT
+    /** @todo use RTProcShortName instead?   */
+    return RTProcExecutablePath(); /* should've been initialized by nocrt-startup-dll-win.cpp already */
+#else
     static int s_fModuleNameInited = 0;
     static char s_szModuleName[MAX_PATH];
-
     if (!s_fModuleNameInited)
     {
         const DWORD cchName = GetModuleFileNameA(NULL, s_szModuleName, RT_ELEMENTS(s_szModuleName));
         if (cchName == 0)
-        {
             return "<no module>";
-        }
         s_fModuleNameInited = 1;
     }
     return &s_szModuleName[0];
+#endif
 }
 
 DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString)
 {
     char szBuffer[4096];
-    const int cbBuffer = sizeof(szBuffer);
-    char *pszBuffer = &szBuffer[0];
-
-    int cbWritten = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx]: ",
-                              vboxUmLogGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
-    if (cbWritten < 0 || cbWritten >= cbBuffer)
-    {
-        AssertFailed();
-        pszBuffer[0] = 0;
-        cbWritten = 0;
-    }
-
-    const size_t cbLeft = cbBuffer - cbWritten;
-    const size_t cbString = strlen(pszString) + 1;
-    if (cbString <= cbLeft)
-    {
-        memcpy(pszBuffer + cbWritten, pszString, cbString);
-    }
-    else
-    {
-        memcpy(pszBuffer + cbWritten, pszString, cbLeft - 1);
-        pszBuffer[cbWritten + cbLeft - 1] = 0;
-    }
+#ifdef IPRT_NO_CRT
+    RTStrPrintf(szBuffer, sizeof(szBuffer), "['%s' 0x%lx.0x%lx]: %s",
+                vboxUmLogGetExeName(), GetCurrentProcessId(), GetCurrentThreadId(), pszString);
+#else
+    int cch = _snprintf(szBuffer, sizeof(szBuffer), "['%s' 0x%lx.0x%lx]: %s",
+                        vboxUmLogGetExeName(), GetCurrentProcessId(), GetCurrentThreadId(), pszString);
+    AssertReturnVoid(cch > 0);             /* unlikely that we'll have string encoding problems, but just in case. */
+    szBuffer[sizeof(szBuffer) - 1] = '\0'; /* the function doesn't necessarily terminate the buffer on overflow. */
+#endif
 
     VBoxDispMpLoggerLog(szBuffer);
 }

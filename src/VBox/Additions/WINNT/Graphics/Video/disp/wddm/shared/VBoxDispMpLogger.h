@@ -39,7 +39,7 @@ VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm(void);
 
 VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString);
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszString, ...);
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszFormat, ...);
 
 DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString);
 

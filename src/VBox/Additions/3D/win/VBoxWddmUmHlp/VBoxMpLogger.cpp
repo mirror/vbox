@@ -21,11 +21,17 @@
  * and submit it to host via standard r0 backdoor logging api accordingly
  */
 
+#define IPRT_NO_CRT_FOR_3RD_PARTY /* To get malloc and free wrappers in IPRT_NO_CRT mode. Doesn't link with IPRT in non-no-CRT mode. */
 #include "UmHlpInternal.h"
 
 #include <../../../common/wddm/VBoxMPIf.h>
-
-#include <stdio.h>
+#include <stdlib.h>
+#ifdef IPRT_NO_CRT
+# include <iprt/process.h>
+# include <iprt/string.h>
+#else
+# include <stdio.h>
+#endif
 
 DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
 {
@@ -69,21 +75,30 @@ DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
     }
 }
 
-DECLCALLBACK(void) VBoxDispMpLoggerLogF(const char *pszString, ...)
+DECLCALLBACK(void) VBoxDispMpLoggerLogF(const char *pszFormat, ...)
 {
-    char szBuffer[4096] = {0};
-    va_list pArgList;
-    va_start(pArgList, pszString);
-    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), pszString, pArgList);
-    va_end(pArgList);
+    /** @todo would make a whole lot more sense to just allocate
+     *        VBOXDISPIFESCAPE_DBGPRINT here and printf into it's buffer than
+     *        double buffering it like this */
+    char szBuffer[4096];
+    va_list va;
+    va_start(va, pszFormat);
+#ifdef IPRT_NO_CRT
+    RTStrPrintf(szBuffer, sizeof(szBuffer), pszFormat, va);
+#else
+    _vsnprintf(szBuffer, sizeof(szBuffer), pszFormat, va);
+    szBuffer[sizeof(szBuffer) - 1] = '\0'; /* Don't trust the _vsnprintf function terminate the string! */
+#endif
+    va_end(va);
 
     VBoxDispMpLoggerLog(szBuffer);
 }
 
-/*
- * Prefix the output string with module name and pid/tid.
+/**
+ * Prefix the output string with exe name and pid/tid.
  */
-static const char *vboxUmLogGetModuleName(void)
+#ifndef IPRT_NO_CRT
+static const char *vboxUmLogGetExeName(void)
 {
     static int s_fModuleNameInited = 0;
     static char s_szModuleName[MAX_PATH];
@@ -92,40 +107,30 @@ static const char *vboxUmLogGetModuleName(void)
     {
         const DWORD cchName = GetModuleFileNameA(NULL, s_szModuleName, RT_ELEMENTS(s_szModuleName));
         if (cchName == 0)
-        {
             return "<no module>";
-        }
         s_fModuleNameInited = 1;
     }
     return &s_szModuleName[0];
 }
+#endif
 
 DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString)
 {
+    /** @todo Allocate VBOXDISPIFESCAPE_DBGPRINT here and format right into it
+     *        instead? That would be a lot more flexible and a little faster. */
     char szBuffer[4096];
-    const int cbBuffer = sizeof(szBuffer);
-    char *pszBuffer = &szBuffer[0];
-
-    int cbWritten = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx]: ",
-                              vboxUmLogGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
-    if (cbWritten < 0 || cbWritten >= cbBuffer)
-    {
-        Assert(0);
-        pszBuffer[0] = 0;
-        cbWritten = 0;
-    }
-
-    const size_t cbLeft = cbBuffer - cbWritten;
-    const size_t cbString = strlen(pszString) + 1;
-    if (cbString <= cbLeft)
-    {
-        memcpy(pszBuffer + cbWritten, pszString, cbString);
-    }
-    else
-    {
-        memcpy(pszBuffer + cbWritten, pszString, cbLeft - 1);
-        pszBuffer[cbWritten + cbLeft - 1] = 0;
-    }
+#ifdef IPRT_NO_CRT
+    /** @todo use RTProcShortName instead of RTProcExecutablePath? Will avoid
+     *        chopping off log text if the executable path is too long. */
+    RTStrPrintf(szBuffer, sizeof(szBuffer), "['%s' 0x%lx.0x%lx]: %s",
+                RTProcExecutablePath() /* should've been initialized by nocrt-startup-dll-win.cpp already */,
+                GetCurrentProcessId(), GetCurrentThreadId(), pszString);
+#else
+    int cch = _snprintf(szBuffer, sizeof(szBuffer), "['%s' 0x%lx.0x%lx]: %s",
+                        vboxUmLogGetExeName(), GetCurrentProcessId(), GetCurrentThreadId(), pszString);
+    AssertReturnVoid(cch > 0);             /* unlikely that we'll have string encoding problems, but just in case. */
+    szBuffer[sizeof(szBuffer) - 1] = '\0'; /* the function doesn't necessarily terminate the buffer on overflow. */
+#endif
 
     VBoxDispMpLoggerLog(szBuffer);
 }

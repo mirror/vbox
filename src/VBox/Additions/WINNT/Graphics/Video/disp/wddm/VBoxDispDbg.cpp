@@ -18,48 +18,67 @@
 #include "VBoxDispD3DCmn.h"
 
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
-#include <Psapi.h>
+# include <Psapi.h>
 #endif
-
-#include <stdio.h>
-#include <stdarg.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
 
-static DWORD g_VBoxVDbgFIsModuleNameInited = 0;
-static char g_VBoxVDbgModuleName[MAX_PATH];
+#ifndef IPRT_NO_CRT
+# include <stdio.h>
+#endif
 
-char *vboxVDbgDoGetModuleName()
+
+#if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
+static const char *vboxVDbgDoGetExeName(void)
 {
-    if (!g_VBoxVDbgFIsModuleNameInited)
+# ifdef IPRT_NO_CRT
+    /** @todo use RTProcShortName instead?   */
+    return RTProcExecutablePath(); /* should've been initialized by nocrt-startup-dll-win.cpp already */
+# else
+    static bool volatile s_fInitialized = false;
+    static char          s_szExePath[MAX_PATH];
+    if (!s_fInitialized)
     {
-        DWORD cName = GetModuleFileNameA(NULL, g_VBoxVDbgModuleName, RT_ELEMENTS(g_VBoxVDbgModuleName));
+        DWORD cName = GetModuleFileNameA(NULL, s_szExePath, RT_ELEMENTS(s_szExePath));
         if (!cName)
         {
-#ifdef LOG_ENABLED
+#  ifdef LOG_ENABLED
             DWORD winEr = GetLastError();
-#endif
+#  endif
             WARN(("GetModuleFileNameA failed, winEr %d", winEr));
             return NULL;
         }
-        g_VBoxVDbgFIsModuleNameInited = TRUE;
+        s_fInitialized = TRUE;
     }
-    return g_VBoxVDbgModuleName;
+    return s_szExePath;
+#endif /* !IPRT_NO_CRT */
 }
 
-static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, const char * szString, va_list pArgList)
+static void vboxDispLogDbgFormatStringV(char *pszBuffer, uint32_t cbBuffer, const char *pszFormat, va_list va)
 {
-    uint32_t cbWritten = sprintf(szBuffer, "['%s' 0x%lx.0x%lx] Disp: ", vboxVDbgDoGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
-    if (cbWritten > cbBuffer)
-    {
-        AssertReleaseFailed();
-        return;
-    }
+# ifdef IPRT_NO_CRT
+    va_list vaCopy;
+    va_copy(vaCopy, va); /* The &va for a %N must not be taken from an parameter list, so copy it onto the stack. */
+    RTStrPrintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx] Disp: %N",
+                vboxVDbgDoGetExeName(), GetCurrentProcessId(), GetCurrentThreadId(), pszFormat, &vaCopy);
+    va_end(vaCopy);
+# else
+    int cch = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx] Disp: ", 
+                        vboxVDbgDoGetExeName(), GetCurrentProcessId(), GetCurrentThreadId());
+    AssertReturnVoid(cch > 0);
+    AssertReturnVoid((unsigned)cch + 2 <= cbBuffer);
+    cbBuffer  -= (unsigned)cch;
+    pszBuffer += (unsigned)cch;
 
-    _vsnprintf(szBuffer + cbWritten, cbBuffer - cbWritten, szString, pArgList);
+    cch = _vsnprintf(pszBuffer, cbBuffer, pszFormat, va);
+    pszBuffer[cbBuffer - 1] = '\0'; /* Don't trust _vsnprintf to terminate the output. */
+# endif
 }
 
+#endif /* VBOXWDDMDISP_DEBUG || LOG_TO_BACKDOOR_DRV */
 #if defined(VBOXWDDMDISP_DEBUG)
 LONG g_VBoxVDbgFIsDwm = -1;
 
@@ -107,16 +126,28 @@ DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
 PVBOXWDDMDISP_DEVICE g_VBoxVDbgInternalDevice = NULL;
 PVBOXWDDMDISP_RESOURCE g_VBoxVDbgInternalRc = NULL;
 
-VOID vboxVDbgDoPrintDmlCmd(const char* pszDesc, const char* pszCmd)
+VOID vboxVDbgDoPrintDmlCmd(const char *pszDesc, const char *pszCmd)
 {
+#ifdef IPRT_NO_CRT
+    /* DML isn't exactly following XML rules, docs + examples are not consistent
+       about escaping sequences even. But assume it groks the typical XML
+       escape sequences for now. */
+    vboxVDbgPrint(("<?dml?><exec cmd=\"%RMas\">%RMes</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd)); /** @todo escape the last pszCmd too? */
+#else
     vboxVDbgPrint(("<?dml?><exec cmd=\"%s\">%s</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd));
+#endif
 }
 
 VOID vboxVDbgDoPrintDumpCmd(const char* pszDesc, const void *pvData, uint32_t width, uint32_t height, uint32_t bpp, uint32_t pitch)
 {
-    char Cmd[1024];
-    sprintf(Cmd, "!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d", pvData, width, height, bpp, pitch);
-    vboxVDbgDoPrintDmlCmd(pszDesc, Cmd);
+    char szCmd[1024];
+#ifdef IPRT_NO_CRT
+    RTStrPrintf(szCmd, sizeof(szCmd), "!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d", pvData, width, height, bpp, pitch);
+#else
+    _snprintf(szCmd, sizeof(szCmd), "!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d", pvData, width, height, bpp, pitch);
+    szCmd[sizeof(szCmd) - 1] = '\0';
+#endif
+    vboxVDbgDoPrintDmlCmd(pszDesc, szCmd);
 }
 
 VOID vboxVDbgDoPrintLopLastCmd(const char* pszDesc)
@@ -139,13 +170,16 @@ static VOID vboxVDbgDoDumpSummary(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInf
 {
     const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
     IDirect3DResource9 *pD3DRc = pInfo->pD3DRc;
-    char rectBuf[24];
-    if (pInfo->pRect)
-        _snprintf(rectBuf, sizeof(rectBuf) / sizeof(rectBuf[0]), "(%ld:%ld);(%ld:%ld)",
-                pInfo->pRect->left, pInfo->pRect->top,
-                pInfo->pRect->right, pInfo->pRect->bottom);
+    const RECT * const  pRect  = pInfo->pRect;
+    char szRectBuf[24];
+    if (pRect)
+#ifdef IPRT_NO_CRT
+        RTStrPrintf(szRectBuf, sizeof(szRectBuf), "(%ld:%ld);(%ld:%ld)", pRect->left, pRect->top, pRect->right, pRect->bottom);
+#else
+        _snprintf(szRectBuf, sizeof(szRectBuf), "(%ld:%ld);(%ld:%ld)", pRect->left, pRect->top, pRect->right, pRect->bottom);
+#endif
     else
-        strcpy(rectBuf, "n/a");
+        strcpy(szRectBuf, "n/a");
 
     vboxVDbgPrint(("%s Sh(0x%p), Rc(0x%p), pAlloc(0x%x), pD3DIf(0x%p), Type(%s), Rect(%s), Locks(%d) %s",
                     pPrefix ? pPrefix : "",
@@ -154,7 +188,7 @@ static VOID vboxVDbgDoDumpSummary(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInf
                     pAlloc,
                     pD3DRc,
                     pD3DRc ? vboxDispLogD3DRcType(pD3DRc->GetType()) : "n/a",
-                    rectBuf,
+                    szRectBuf,
                     pAlloc ? pAlloc->LockInfo.cLocks : 0,
                     pSuffix ? pSuffix : ""));
 }
@@ -623,15 +657,18 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer)
 #if defined(VBOXWDDMDISP_DEBUG)
 BOOL vboxVDbgDoCheckExe(const char * pszName)
 {
-    char *pszModule = vboxVDbgDoGetModuleName();
+    char const *pszModule = vboxVDbgDoGetExeName();
     if (!pszModule)
         return FALSE;
-    size_t cbModule, cbName;
-    cbModule = strlen(pszModule);
-    cbName = strlen(pszName);
-    if (cbName > cbModule)
+    size_t cchModule = strlen(pszModule);
+    size_t cchName   = strlen(pszName);
+    if (cchName > cchModule)
         return FALSE;
-    if (_stricmp(pszName, pszModule + (cbModule - cbName)))
+# ifdef IPRT_NO_CRT
+    if (RTStrICmp(pszName, &pszModule[cchModule - cchName]))
+# else
+    if (_stricmp(pszName, &pszModule[cchModule - cchName]))
+# endif
         return FALSE;
     return TRUE;
 }
@@ -740,27 +777,28 @@ void vboxVDbgVEHandlerUnregister()
 }
 
 #endif /* VBOXWDDMDISP_DEBUG_VEHANDLER */
-
 #if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
-void vboxDispLogDrvF(char * szString, ...)
+
+void vboxDispLogDrvF(char const *pszFormat, ...)
 {
-    char szBuffer[4096] = {0};
-    va_list pArgList;
-    va_start(pArgList, szString);
-    vboxDispLogDbgFormatStringV(szBuffer, sizeof (szBuffer), szString, pArgList);
-    va_end(pArgList);
+    char szBuffer[4096];
+    va_list va;
+    va_start(va, pszFormat);
+    vboxDispLogDbgFormatStringV(szBuffer, sizeof(szBuffer), pszFormat, va);
+    va_end(va);
 
     VBoxDispMpLoggerLog(szBuffer);
 }
 
-void vboxDispLogDbgPrintF(char * szString, ...)
+void vboxDispLogDbgPrintF(const char *pszFormat, ...)
 {
-    char szBuffer[4096] = { 0 };
-    va_list pArgList;
-    va_start(pArgList, szString);
-    vboxDispLogDbgFormatStringV(szBuffer, sizeof(szBuffer), szString, pArgList);
-    va_end(pArgList);
+    char szBuffer[4096];
+    va_list va;
+    va_start(va, pszFormat);
+    vboxDispLogDbgFormatStringV(szBuffer, sizeof(szBuffer), pszFormat, va);
+    va_end(va);
 
     OutputDebugStringA(szBuffer);
 }
+
 #endif

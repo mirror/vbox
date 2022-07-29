@@ -187,7 +187,7 @@ DECLINLINE(const char*) vboxDispLogD3DRcType(D3DRESOURCETYPE enmType)
 
 VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerDumpD3DCAPS9(struct _D3DCAPS9 *pCaps);
 
-void vboxDispLogDrvF(char * szString, ...);
+void vboxDispLogDrvF(const char *pszFormat, ...);
 
 # define vboxDispDumpD3DCAPS9(_pCaps) do { VBoxDispMpLoggerDumpD3DCAPS9(_pCaps); } while (0)
 #else
@@ -196,7 +196,7 @@ void vboxDispLogDrvF(char * szString, ...);
 
 #ifdef VBOXWDDMDISP_DEBUG
 
-void vboxDispLogDbgPrintF(char * szString, ...);
+void vboxDispLogDbgPrintF(const char *pszFormat, ...);
 
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;
 typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
