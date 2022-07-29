@@ -145,6 +145,64 @@ FNIEMOP_DEF_1(iemOpCommonMmxOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU
 /**
  * Common worker for MMX instructions on the form:
  *      pxxx    mm1, mm2/mem64
+ * for instructions introduced with SSE.
+ */
+FNIEMOP_DEF_1(iemOpCommonMmxSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
+        /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint64_t *,          pDst, 0);
+        IEM_MC_ARG(uint64_t const *,    pSrc, 1);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(pDst, IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_MREG_U64_CONST(pSrc, IEM_GET_MODRM_RM_8(bRm));
+        IEM_MC_CALL_MMX_AIMPL_2(pfnU64, pDst, pSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(pDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(uint64_t *,                  pDst,       0);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+        IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(pDst, IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_CALL_MMX_AIMPL_2(pfnU64, pDst, pSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(pDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for MMX instructions on the form:
+ *      pxxx    mm1, mm2/mem64
  * that was introduced with SSE2.
  */
 FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PFNIEMAIMPLMEDIAF2U64, pfnU64, bool, fSupported)
@@ -9899,7 +9957,7 @@ FNIEMOP_DEF(iemOp_psubusw_Vx_Wx)
 FNIEMOP_DEF(iemOp_pminub_Pq_Qq)
 {
     IEMOP_MNEMONIC2(RM, PMINUB, pminub, Pq, Qq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, iemAImpl_pminub_u64);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, iemAImpl_pminub_u64);
 }
 
 
@@ -9974,7 +10032,7 @@ FNIEMOP_DEF(iemOp_paddusw_Vx_Wx)
 FNIEMOP_DEF(iemOp_pmaxub_Pq_Qq)
 {
     IEMOP_MNEMONIC2(RM, PMAXUB, pmaxub, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, iemAImpl_pmaxub_u64);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, iemAImpl_pmaxub_u64);
 }
 
 
