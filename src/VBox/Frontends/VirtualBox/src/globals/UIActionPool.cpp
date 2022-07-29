@@ -1334,7 +1334,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the currently viewed log"));
-        setToolTip(  QApplication::translate("UIActionPool", "Refresh the Currently Viewed Log")
+        setToolTip(  QApplication::translate("UIActionPool", "Refresh Viewed Log")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -1381,7 +1381,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Reload"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Reread all the log files and refresh pages"));
-        setToolTip(  QApplication::translate("UIActionPool", "Reread All the Log Files and Refresh Pages")
+        setToolTip(  QApplication::translate("UIActionPool", "Reload Log Files")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2349,7 +2349,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Add selected item(s) to VISO"));
-        setToolTip(QApplication::translate("UIActionPool", "Add Selected Item(s) to VISO")
+        setToolTip(QApplication::translate("UIActionPool", "Add Item(s) to VISO")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2384,7 +2384,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Remove"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected item(s) from VISO"));
-        setToolTip(QApplication::translate("UIActionPool", "Remove Selected Item(s) from VISO")
+        setToolTip(QApplication::translate("UIActionPool", "Remove Item(s) from VISO")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2419,7 +2419,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&New Directory"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Create a new directory under the current location"));
-        setToolTip(QApplication::translate("UIActionPool", "Create a New Directory Under the Current Location")
+        setToolTip(QApplication::translate("UIActionPool", "Create New Directory")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2454,7 +2454,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Rename the selected object"));
-        setToolTip(QApplication::translate("UIActionPool", "Rename the Selected Object")
+        setToolTip(QApplication::translate("UIActionPool", "Rename Object")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2547,7 +2547,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Add Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2581,7 +2581,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Add Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2615,7 +2615,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Add Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2649,7 +2649,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Create Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2683,7 +2683,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Create Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2717,7 +2717,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
         setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+        setToolTip(  QApplication::translate("UIActionPool", "Create Disk Image File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2848,7 +2848,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Activity Overview..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Activity Monitor"));
         setStatusTip(QApplication::translate("UIActionPool", "Navigate to the vm activity overview"));
-        setToolTip(  QApplication::translate("UIActionPool", "Navigate to the VM Activity Overview")
+        setToolTip(  QApplication::translate("UIActionPool", "Navigate to VM Activity Overview")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
