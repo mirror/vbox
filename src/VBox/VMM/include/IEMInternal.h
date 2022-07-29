@@ -1766,17 +1766,21 @@ FNIEMAIMPLMEDIAF2U64     iemAImpl_pshufb_u64, iemAImpl_pshufb_u64_fallback;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pand_u64, iemAImpl_pandn_u64, iemAImpl_por_u64, iemAImpl_pxor_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pcmpeqb_u64,  iemAImpl_pcmpeqw_u64,  iemAImpl_pcmpeqd_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pcmpgtb_u64,  iemAImpl_pcmpgtw_u64,  iemAImpl_pcmpgtd_u64;
-FNIEMAIMPLMEDIAF2U64     iemAImpl_paddb_u64;
-FNIEMAIMPLMEDIAF2U64     iemAImpl_paddw_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_paddb_u64, iemAImpl_paddsb_u64, iemAImpl_paddusb_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_paddw_u64, iemAImpl_paddsw_u64, iemAImpl_paddusw_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_paddd_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_paddq_u64;
-FNIEMAIMPLMEDIAF2U64     iemAImpl_psubb_u64;
-FNIEMAIMPLMEDIAF2U64     iemAImpl_psubw_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_psubb_u64, iemAImpl_psubsb_u64, iemAImpl_psubusb_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_psubw_u64, iemAImpl_psubsw_u64, iemAImpl_psubusw_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_psubd_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_psubq_u64;
-FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packsswb_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_pmaddwd_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_pmullw_u64, iemAImpl_pmulhw_u64;
+FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_psllw_u64, iemAImpl_psrlw_u64, iemAImpl_psraw_u64;
+FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_pslld_u64, iemAImpl_psrld_u64, iemAImpl_psrad_u64;
+FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_psllq_u64, iemAImpl_psrlq_u64;
+FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packsswb_u64, iemAImpl_packuswb_u64;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packssdw_u64;
-FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packuswb_u64;
 
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pshufb_u128, iemAImpl_pshufb_u128_fallback;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pand_u128, iemAImpl_pandn_u128, iemAImpl_por_u128, iemAImpl_pxor_u128;
@@ -1784,18 +1788,21 @@ FNIEMAIMPLMEDIAF2U128    iemAImpl_pcmpeqb_u128, iemAImpl_pcmpeqw_u128, iemAImpl_
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pcmpeqq_u128, iemAImpl_pcmpeqq_u128_fallback;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pcmpgtb_u128, iemAImpl_pcmpgtw_u128, iemAImpl_pcmpgtd_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pcmpgtq_u128, iemAImpl_pcmpgtq_u128_fallback;
-FNIEMAIMPLMEDIAF2U128    iemAImpl_paddb_u128;
-FNIEMAIMPLMEDIAF2U128    iemAImpl_paddw_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_paddb_u128, iemAImpl_paddsb_u128, iemAImpl_paddusb_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_paddw_u128, iemAImpl_paddsw_u128, iemAImpl_paddusw_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_paddd_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_paddq_u128;
-FNIEMAIMPLMEDIAF2U128    iemAImpl_psubb_u128;
-FNIEMAIMPLMEDIAF2U128    iemAImpl_psubw_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_psubb_u128, iemAImpl_psubsb_u128, iemAImpl_psubusb_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_psubw_u128, iemAImpl_psubsw_u128, iemAImpl_psubusw_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_psubd_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_psubq_u128;
-FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packsswb_u128;
-FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packssdw_u128;
-FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packuswb_u128;
-FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packusdw_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_pmullw_u128, iemAImpl_pmulhw_u128;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_pmaddwd_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packsswb_u128, iemAImpl_packuswb_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packssdw_u128, iemAImpl_packusdw_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psllw_u128, iemAImpl_psrlw_u128, iemAImpl_psraw_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pslld_u128, iemAImpl_psrld_u128, iemAImpl_psrad_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psllq_u128, iemAImpl_psrlq_u128;
 
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpshufb_u128,    iemAImpl_vpshufb_u128_fallback;
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpand_u128,      iemAImpl_vpand_u128_fallback;
@@ -1890,6 +1897,23 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_pshufhw_u128, iemAImpl_pshuflw_u128, iemAImpl_
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpshufhw_u256, iemAImpl_vpshuflw_u256, iemAImpl_vpshufd_u256;
 #endif
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpshufhw_u256_fallback, iemAImpl_vpshuflw_u256_fallback, iemAImpl_vpshufd_u256_fallback;
+/** @} */
+
+/** @name Media (SSE/MMX/AVX) operation: Shift Immediate Stuff (evil)
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHIFTU64,(uint64_t *puDst, uint8_t bShift));
+typedef FNIEMAIMPLMEDIAPSHIFTU64 *PFNIEMAIMPLMEDIAPSHIFTU64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHIFTU128,(PRTUINT128U puDst, uint8_t bShift));
+typedef FNIEMAIMPLMEDIAPSHIFTU128 *PFNIEMAIMPLMEDIAPSHIFTU128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHIFTU256,(PRTUINT256U puDst, uint8_t bShift));
+typedef FNIEMAIMPLMEDIAPSHIFTU256 *PFNIEMAIMPLMEDIAPSHIFTU256;
+FNIEMAIMPLMEDIAPSHIFTU64  iemAImpl_psllw_imm_u64,  iemAImpl_pslld_imm_u64,  iemAImpl_psllq_imm_u64;
+FNIEMAIMPLMEDIAPSHIFTU64  iemAImpl_psrlw_imm_u64,  iemAImpl_psrld_imm_u64,  iemAImpl_psrlq_imm_u64;
+FNIEMAIMPLMEDIAPSHIFTU64  iemAImpl_psraw_imm_u64,  iemAImpl_psrad_imm_u64;
+FNIEMAIMPLMEDIAPSHIFTU128 iemAImpl_psllw_imm_u128, iemAImpl_pslld_imm_u128, iemAImpl_psllq_imm_u128;
+FNIEMAIMPLMEDIAPSHIFTU128 iemAImpl_psrlw_imm_u128, iemAImpl_psrld_imm_u128, iemAImpl_psrlq_imm_u128;
+FNIEMAIMPLMEDIAPSHIFTU128 iemAImpl_psraw_imm_u128, iemAImpl_psrad_imm_u128;
+FNIEMAIMPLMEDIAPSHIFTU128 iemAImpl_pslldq_imm_u128, iemAImpl_psrldq_imm_u128;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operation: Move Byte Mask

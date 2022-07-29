@@ -3617,11 +3617,21 @@ IEMIMPL_MEDIA_F2 paddb,   1
 IEMIMPL_MEDIA_F2 paddw,   1
 IEMIMPL_MEDIA_F2 paddd,   1
 IEMIMPL_MEDIA_F2 paddq,   1
+IEMIMPL_MEDIA_F2 paddsb,  1
+IEMIMPL_MEDIA_F2 paddsw,  1
+IEMIMPL_MEDIA_F2 paddusb, 1
+IEMIMPL_MEDIA_F2 paddusw, 1
 IEMIMPL_MEDIA_F2 psubb,   1
 IEMIMPL_MEDIA_F2 psubw,   1
 IEMIMPL_MEDIA_F2 psubd,   1
 IEMIMPL_MEDIA_F2 psubq,   1
-
+IEMIMPL_MEDIA_F2 psubsb,  1
+IEMIMPL_MEDIA_F2 psubsw,  1
+IEMIMPL_MEDIA_F2 psubusb, 1
+IEMIMPL_MEDIA_F2 psubusw, 1
+IEMIMPL_MEDIA_F2 pmullw,  1
+IEMIMPL_MEDIA_F2 pmulhw,  1
+IEMIMPL_MEDIA_F2 pmaddwd, 1
 
 ;;
 ; Media instruction working on two full sized registers, but no FXSAVE state argument.
@@ -3666,6 +3676,14 @@ IEMIMPL_MEDIA_OPT_F2 packsswb, 1
 IEMIMPL_MEDIA_OPT_F2 packssdw, 1
 IEMIMPL_MEDIA_OPT_F2 packuswb, 1
 IEMIMPL_MEDIA_OPT_F2 packusdw, 0
+IEMIMPL_MEDIA_OPT_F2 psllw,    1
+IEMIMPL_MEDIA_OPT_F2 pslld,    1
+IEMIMPL_MEDIA_OPT_F2 psllq,    1
+IEMIMPL_MEDIA_OPT_F2 psrlw,    1
+IEMIMPL_MEDIA_OPT_F2 psrld,    1
+IEMIMPL_MEDIA_OPT_F2 psrlq,    1
+IEMIMPL_MEDIA_OPT_F2 psraw,    1
+IEMIMPL_MEDIA_OPT_F2 psrad,    1
 
 
 ;;
@@ -3896,6 +3914,86 @@ ENDPROC iemAImpl_ %+ %1 %+ _u256
 IEMIMPL_MEDIA_AVX_VPSHUFXX vpshufhw
 IEMIMPL_MEDIA_AVX_VPSHUFXX vpshuflw
 IEMIMPL_MEDIA_AVX_VPSHUFXX vpshufd
+
+
+;
+; Shifts with evil 8-bit immediates.
+;
+
+%macro IEMIMPL_MEDIA_MMX_PSHIFTXX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u64, 16
+        PROLOGUE_2_ARGS
+        IEMIMPL_MMX_PROLOGUE
+
+        movq    mm0, [A0]
+        lea     T0, [A1 + A1*4]         ; sizeof(psXX+ret) == 5
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T1, [T1 + T0]
+        call    T1
+        movq    [A0], mm0
+
+        IEMIMPL_MMX_EPILOGUE
+        EPILOGUE_2_ARGS
+%assign bImm 0
+%rep 256
+.imm %+ bImm:
+       %1       mm0, bImm
+       ret
+ %assign bImm bImm + 1
+%endrep
+.immEnd:                                ; 256*5 == 0x500
+dw 0xfaff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x104ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _imm_u64
+%endmacro
+
+IEMIMPL_MEDIA_MMX_PSHIFTXX psllw
+IEMIMPL_MEDIA_MMX_PSHIFTXX pslld
+IEMIMPL_MEDIA_MMX_PSHIFTXX psllq
+IEMIMPL_MEDIA_MMX_PSHIFTXX psrlw
+IEMIMPL_MEDIA_MMX_PSHIFTXX psrld
+IEMIMPL_MEDIA_MMX_PSHIFTXX psrlq
+IEMIMPL_MEDIA_MMX_PSHIFTXX psraw
+IEMIMPL_MEDIA_MMX_PSHIFTXX psrad
+
+
+%macro IEMIMPL_MEDIA_SSE_PSHIFTXX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
+        PROLOGUE_2_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A1 + A1*2]         ; sizeof(psXX+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_2_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _imm_u128
+%endmacro
+
+IEMIMPL_MEDIA_SSE_PSHIFTXX psllw
+IEMIMPL_MEDIA_SSE_PSHIFTXX pslld
+IEMIMPL_MEDIA_SSE_PSHIFTXX psllq
+IEMIMPL_MEDIA_SSE_PSHIFTXX psrlw
+IEMIMPL_MEDIA_SSE_PSHIFTXX psrld
+IEMIMPL_MEDIA_SSE_PSHIFTXX psrlq
+IEMIMPL_MEDIA_SSE_PSHIFTXX psraw
+IEMIMPL_MEDIA_SSE_PSHIFTXX psrad
+IEMIMPL_MEDIA_SSE_PSHIFTXX pslldq
+IEMIMPL_MEDIA_SSE_PSHIFTXX psrldq
 
 
 ;

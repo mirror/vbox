@@ -7803,6 +7803,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U
 
 #endif
 
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
@@ -7865,6 +7866,112 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddb_u256_fallback,(PX86XSAVEAREA pExtState, 
 
 
 /*
+ * PADDSB / VPADDSB
+ */
+#define SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(a_iWord) \
+        ( (uint16_t)((a_iWord) + 0x80) <= (uint16_t)0xff  \
+          ? (uint8_t)(a_iWord) \
+          : (uint8_t)0x7f + (uint8_t)(((a_iWord) >> 15) & 1) ) /* 0x7f = INT8_MAX; 0x80 = INT8_MIN; source bit 15 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0] + uSrc2.ai8[0]);
+    uDst.au8[1] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1] + uSrc2.ai8[1]);
+    uDst.au8[2] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[2] + uSrc2.ai8[2]);
+    uDst.au8[3] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[3] + uSrc2.ai8[3]);
+    uDst.au8[4] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[4] + uSrc2.ai8[4]);
+    uDst.au8[5] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[5] + uSrc2.ai8[5]);
+    uDst.au8[6] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[6] + uSrc2.ai8[6]);
+    uDst.au8[7] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[7] + uSrc2.ai8[7]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0]  + puSrc->ai8[0]);
+    puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1]  + puSrc->ai8[1]);
+    puDst->au8[2]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[2]  + puSrc->ai8[2]);
+    puDst->au8[3]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[3]  + puSrc->ai8[3]);
+    puDst->au8[4]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[4]  + puSrc->ai8[4]);
+    puDst->au8[5]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[5]  + puSrc->ai8[5]);
+    puDst->au8[6]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[6]  + puSrc->ai8[6]);
+    puDst->au8[7]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[7]  + puSrc->ai8[7]);
+    puDst->au8[8]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[8]  + puSrc->ai8[8]);
+    puDst->au8[9]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[9]  + puSrc->ai8[9]);
+    puDst->au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[10] + puSrc->ai8[10]);
+    puDst->au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[11] + puSrc->ai8[11]);
+    puDst->au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[12] + puSrc->ai8[12]);
+    puDst->au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[13] + puSrc->ai8[13]);
+    puDst->au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[14] + puSrc->ai8[14]);
+    puDst->au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[15] + puSrc->ai8[15]);
+}
+
+#endif
+
+
+/*
+ * PADDSB / VPADDSB
+ */
+#define SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(a_uWord) \
+        ( (uint16_t)(a_uWord) <= (uint16_t)0xff  \
+          ? (uint8_t)(a_uWord) \
+          : (uint8_t)0xff ) /* 0xff = UINT8_MAX */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[0] + uSrc2.au8[0]);
+    uDst.au8[1] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[1] + uSrc2.au8[1]);
+    uDst.au8[2] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[2] + uSrc2.au8[2]);
+    uDst.au8[3] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[3] + uSrc2.au8[3]);
+    uDst.au8[4] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[4] + uSrc2.au8[4]);
+    uDst.au8[5] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[5] + uSrc2.au8[5]);
+    uDst.au8[6] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[6] + uSrc2.au8[6]);
+    uDst.au8[7] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[7] + uSrc2.au8[7]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[0]  + puSrc->au8[0]);
+    puDst->au8[1]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[1]  + puSrc->au8[1]);
+    puDst->au8[2]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[2]  + puSrc->au8[2]);
+    puDst->au8[3]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[3]  + puSrc->au8[3]);
+    puDst->au8[4]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[4]  + puSrc->au8[4]);
+    puDst->au8[5]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[5]  + puSrc->au8[5]);
+    puDst->au8[6]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[6]  + puSrc->au8[6]);
+    puDst->au8[7]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[7]  + puSrc->au8[7]);
+    puDst->au8[8]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[8]  + puSrc->au8[8]);
+    puDst->au8[9]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[9]  + puSrc->au8[9]);
+    puDst->au8[10] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[10] + puSrc->au8[10]);
+    puDst->au8[11] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[11] + puSrc->au8[11]);
+    puDst->au8[12] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[12] + puSrc->au8[12]);
+    puDst->au8[13] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[13] + puSrc->au8[13]);
+    puDst->au8[14] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[14] + puSrc->au8[14]);
+    puDst->au8[15] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[15] + puSrc->au8[15]);
+}
+
+#endif
+
+
+/*
  * PADDW / VPADDW
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
@@ -7898,6 +8005,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U
 }
 
 #endif
+
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddw_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
@@ -7934,6 +8042,88 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddw_u256_fallback,(PX86XSAVEAREA pExtState, 
     puDst->au16[14] = puSrc1->au16[14] + puSrc2->au16[14];
     puDst->au16[15] = puSrc1->au16[15] + puSrc2->au16[15];
 }
+
+
+/*
+ * PADDSW / VPADDSW
+ */
+#define SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(a_iDword) \
+        ( (uint32_t)((a_iDword) + 0x8000) <= (uint16_t)0xffff  \
+          ? (uint16_t)(a_iDword) \
+          : (uint16_t)0x7fff + (uint16_t)(((a_iDword) >> 31) & 1) ) /* 0x7fff = INT16_MAX; 0x8000 = INT16_MIN; source bit 31 = sign */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] + uSrc2.ai16[0]);
+    uDst.au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] + uSrc2.ai16[1]);
+    uDst.au16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[2] + uSrc2.ai16[2]);
+    uDst.au16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[3] + uSrc2.ai16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] + puSrc->ai16[0]);
+    puDst->au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] + puSrc->ai16[1]);
+    puDst->au16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[2] + puSrc->ai16[2]);
+    puDst->au16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[3] + puSrc->ai16[3]);
+    puDst->au16[4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[4] + puSrc->ai16[4]);
+    puDst->au16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[5] + puSrc->ai16[5]);
+    puDst->au16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[6] + puSrc->ai16[6]);
+    puDst->au16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[7] + puSrc->ai16[7]);
+}
+
+#endif
+
+
+/*
+ * PADDUSW / VPADDUSW
+ */
+#define SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(a_uDword) \
+        ( (uint32_t)(a_uDword) <= (uint16_t)0xffff  \
+          ? (uint16_t)(a_uDword) \
+          : (uint16_t)0xffff ) /* 0xffff = UINT16_MAX */
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[0] + uSrc2.au16[0]);
+    uDst.au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[1] + uSrc2.au16[1]);
+    uDst.au16[2] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[2] + uSrc2.au16[2]);
+    uDst.au16[3] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[3] + uSrc2.au16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[0] + puSrc->au16[0]);
+    puDst->au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[1] + puSrc->au16[1]);
+    puDst->au16[2] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[2] + puSrc->au16[2]);
+    puDst->au16[3] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[3] + puSrc->au16[3]);
+    puDst->au16[4] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[4] + puSrc->au16[4]);
+    puDst->au16[5] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[5] + puSrc->au16[5]);
+    puDst->au16[6] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[6] + puSrc->au16[6]);
+    puDst->au16[7] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[7] + puSrc->au16[7]);
+}
+
+#endif
 
 
 /*
@@ -8139,6 +8329,107 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubb_u256_fallback,(PX86XSAVEAREA pExtState, 
 
 
 /*
+ * PSUBSB / VSUBSB
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0] - uSrc2.ai8[0]);
+    uDst.au8[1] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1] - uSrc2.ai8[1]);
+    uDst.au8[2] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[2] - uSrc2.ai8[2]);
+    uDst.au8[3] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[3] - uSrc2.ai8[3]);
+    uDst.au8[4] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[4] - uSrc2.ai8[4]);
+    uDst.au8[5] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[5] - uSrc2.ai8[5]);
+    uDst.au8[6] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[6] - uSrc2.ai8[6]);
+    uDst.au8[7] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[7] - uSrc2.ai8[7]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0]  - puSrc->ai8[0]);
+    puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1]  - puSrc->ai8[1]);
+    puDst->au8[2]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[2]  - puSrc->ai8[2]);
+    puDst->au8[3]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[3]  - puSrc->ai8[3]);
+    puDst->au8[4]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[4]  - puSrc->ai8[4]);
+    puDst->au8[5]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[5]  - puSrc->ai8[5]);
+    puDst->au8[6]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[6]  - puSrc->ai8[6]);
+    puDst->au8[7]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[7]  - puSrc->ai8[7]);
+    puDst->au8[8]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[8]  - puSrc->ai8[8]);
+    puDst->au8[9]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[9]  - puSrc->ai8[9]);
+    puDst->au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[10] - puSrc->ai8[10]);
+    puDst->au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[11] - puSrc->ai8[11]);
+    puDst->au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[12] - puSrc->ai8[12]);
+    puDst->au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[13] - puSrc->ai8[13]);
+    puDst->au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[14] - puSrc->ai8[14]);
+    puDst->au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[15] - puSrc->ai8[15]);
+}
+
+#endif
+
+
+/*
+ * PADDSB / VPADDSB
+ */
+#define SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(a_uWord) \
+        ( (uint16_t)(a_uWord) <= (uint16_t)0xff  \
+          ? (uint8_t)(a_uWord) \
+          : (uint8_t)0 )
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au8[0] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[0] - uSrc2.au8[0]);
+    uDst.au8[1] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[1] - uSrc2.au8[1]);
+    uDst.au8[2] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[2] - uSrc2.au8[2]);
+    uDst.au8[3] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[3] - uSrc2.au8[3]);
+    uDst.au8[4] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[4] - uSrc2.au8[4]);
+    uDst.au8[5] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[5] - uSrc2.au8[5]);
+    uDst.au8[6] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[6] - uSrc2.au8[6]);
+    uDst.au8[7] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[7] - uSrc2.au8[7]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au8[0]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[0]  - puSrc->au8[0]);
+    puDst->au8[1]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[1]  - puSrc->au8[1]);
+    puDst->au8[2]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[2]  - puSrc->au8[2]);
+    puDst->au8[3]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[3]  - puSrc->au8[3]);
+    puDst->au8[4]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[4]  - puSrc->au8[4]);
+    puDst->au8[5]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[5]  - puSrc->au8[5]);
+    puDst->au8[6]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[6]  - puSrc->au8[6]);
+    puDst->au8[7]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[7]  - puSrc->au8[7]);
+    puDst->au8[8]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[8]  - puSrc->au8[8]);
+    puDst->au8[9]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[9]  - puSrc->au8[9]);
+    puDst->au8[10] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[10] - puSrc->au8[10]);
+    puDst->au8[11] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[11] - puSrc->au8[11]);
+    puDst->au8[12] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[12] - puSrc->au8[12]);
+    puDst->au8[13] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[13] - puSrc->au8[13]);
+    puDst->au8[14] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[14] - puSrc->au8[14]);
+    puDst->au8[15] = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[15] - puSrc->au8[15]);
+}
+
+#endif
+
+
+/*
  * PSUBW / VPSUBW
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
@@ -8208,6 +8499,83 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubw_u256_fallback,(PX86XSAVEAREA pExtState, 
     puDst->au16[14] = puSrc1->au16[14] - puSrc2->au16[14];
     puDst->au16[15] = puSrc1->au16[15] - puSrc2->au16[15];
 }
+
+
+/*
+ * PSUBSW / VPSUBSW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] - uSrc2.ai16[0]);
+    uDst.au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] - uSrc2.ai16[1]);
+    uDst.au16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[2] - uSrc2.ai16[2]);
+    uDst.au16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[3] - uSrc2.ai16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] - puSrc->ai16[0]);
+    puDst->au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] - puSrc->ai16[1]);
+    puDst->au16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[2] - puSrc->ai16[2]);
+    puDst->au16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[3] - puSrc->ai16[3]);
+    puDst->au16[4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[4] - puSrc->ai16[4]);
+    puDst->au16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[5] - puSrc->ai16[5]);
+    puDst->au16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[6] - puSrc->ai16[6]);
+    puDst->au16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[7] - puSrc->ai16[7]);
+}
+
+#endif
+
+
+/*
+ * PSUBUSW / VPSUBUSW
+ */
+#define SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(a_uDword) \
+        ( (uint32_t)(a_uDword) <= (uint16_t)0xffff  \
+          ? (uint16_t)(a_uDword) \
+          : (uint16_t)0 )
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[0] - uSrc2.au16[0]);
+    uDst.au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[1] - uSrc2.au16[1]);
+    uDst.au16[2] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[2] - uSrc2.au16[2]);
+    uDst.au16[3] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[3] - uSrc2.au16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[0] - puSrc->au16[0]);
+    puDst->au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[1] - puSrc->au16[1]);
+    puDst->au16[2] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[2] - puSrc->au16[2]);
+    puDst->au16[3] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[3] - puSrc->au16[3]);
+    puDst->au16[4] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[4] - puSrc->au16[4]);
+    puDst->au16[5] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[5] - puSrc->au16[5]);
+    puDst->au16[6] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[6] - puSrc->au16[6]);
+    puDst->au16[7] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[7] - puSrc->au16[7]);
+}
+
+#endif
 
 
 /*
@@ -8303,6 +8671,840 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubq_u256_fallback,(PX86XSAVEAREA pExtState, 
     puDst->au64[3] = puSrc1->au64[3] - puSrc2->au64[3];
 }
 
+
+
+/*
+ * PMULLW / VPMULLW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.ai16[0] = uSrc1.ai16[0] * uSrc2.ai16[0];
+    uDst.ai16[1] = uSrc1.ai16[1] * uSrc2.ai16[1];
+    uDst.ai16[2] = uSrc1.ai16[2] * uSrc2.ai16[2];
+    uDst.ai16[3] = uSrc1.ai16[3] * uSrc2.ai16[3];
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->ai16[0] = uSrc1.ai16[0] * puSrc->ai16[0];
+    puDst->ai16[1] = uSrc1.ai16[1] * puSrc->ai16[1];
+    puDst->ai16[2] = uSrc1.ai16[2] * puSrc->ai16[2];
+    puDst->ai16[3] = uSrc1.ai16[3] * puSrc->ai16[3];
+    puDst->ai16[4] = uSrc1.ai16[4] * puSrc->ai16[4];
+    puDst->ai16[5] = uSrc1.ai16[5] * puSrc->ai16[5];
+    puDst->ai16[6] = uSrc1.ai16[6] * puSrc->ai16[6];
+    puDst->ai16[7] = uSrc1.ai16[7] * puSrc->ai16[7];
+}
+
+#endif
+
+
+/*
+ * PMULHW / VPMULHW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.ai16[0] = RT_HIWORD(uSrc1.ai16[0] * uSrc2.ai16[0]);
+    uDst.ai16[1] = RT_HIWORD(uSrc1.ai16[1] * uSrc2.ai16[1]);
+    uDst.ai16[2] = RT_HIWORD(uSrc1.ai16[2] * uSrc2.ai16[2]);
+    uDst.ai16[3] = RT_HIWORD(uSrc1.ai16[3] * uSrc2.ai16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT128U uSrc1 = *puDst;
+    puDst->ai16[0] = RT_HIWORD(uSrc1.ai16[0] * puSrc->ai16[0]);
+    puDst->ai16[1] = RT_HIWORD(uSrc1.ai16[1] * puSrc->ai16[1]);
+    puDst->ai16[2] = RT_HIWORD(uSrc1.ai16[2] * puSrc->ai16[2]);
+    puDst->ai16[3] = RT_HIWORD(uSrc1.ai16[3] * puSrc->ai16[3]);
+    puDst->ai16[4] = RT_HIWORD(uSrc1.ai16[4] * puSrc->ai16[4]);
+    puDst->ai16[5] = RT_HIWORD(uSrc1.ai16[5] * puSrc->ai16[5]);
+    puDst->ai16[6] = RT_HIWORD(uSrc1.ai16[6] * puSrc->ai16[6]);
+    puDst->ai16[7] = RT_HIWORD(uSrc1.ai16[7] * puSrc->ai16[7]);
+}
+
+#endif
+
+
+/*
+ * PSRLW / VPSRLW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 15)
+    {
+        uDst.au16[0] = uSrc1.au16[0] >> uSrc2.au8[0];
+        uDst.au16[1] = uSrc1.au16[1] >> uSrc2.au8[0];
+        uDst.au16[2] = uSrc1.au16[2] >> uSrc2.au8[0];
+        uDst.au16[3] = uSrc1.au16[3] >> uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 15)
+    {
+        uDst.au16[0] = uSrc1.au16[0] >> uShift;
+        uDst.au16[1] = uSrc1.au16[1] >> uShift;
+        uDst.au16[2] = uSrc1.au16[2] >> uShift;
+        uDst.au16[3] = uSrc1.au16[3] >> uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 15)
+    {
+        puDst->au16[0] = uSrc1.au16[0] >> puSrc->au8[0];
+        puDst->au16[1] = uSrc1.au16[1] >> puSrc->au8[0];
+        puDst->au16[2] = uSrc1.au16[2] >> puSrc->au8[0];
+        puDst->au16[3] = uSrc1.au16[3] >> puSrc->au8[0];
+        puDst->au16[4] = uSrc1.au16[4] >> puSrc->au8[0];
+        puDst->au16[5] = uSrc1.au16[5] >> puSrc->au8[0];
+        puDst->au16[6] = uSrc1.au16[6] >> puSrc->au8[0];
+        puDst->au16[7] = uSrc1.au16[7] >> puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 15)
+    {
+        puDst->au16[0] = uSrc1.au16[0] >> uShift;
+        puDst->au16[1] = uSrc1.au16[1] >> uShift;
+        puDst->au16[2] = uSrc1.au16[2] >> uShift;
+        puDst->au16[3] = uSrc1.au16[3] >> uShift;
+        puDst->au16[4] = uSrc1.au16[4] >> uShift;
+        puDst->au16[5] = uSrc1.au16[5] >> uShift;
+        puDst->au16[6] = uSrc1.au16[6] >> uShift;
+        puDst->au16[7] = uSrc1.au16[7] >> uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSRAW / VPSRAW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 15)
+    {
+        uDst.ai16[0] = uSrc1.ai16[0] >> uSrc2.au8[0];
+        uDst.ai16[1] = uSrc1.ai16[1] >> uSrc2.au8[0];
+        uDst.ai16[2] = uSrc1.ai16[2] >> uSrc2.au8[0];
+        uDst.ai16[3] = uSrc1.ai16[3] >> uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 15)
+    {
+        uDst.ai16[0] = uSrc1.ai16[0] >> uShift;
+        uDst.ai16[1] = uSrc1.ai16[1] >> uShift;
+        uDst.ai16[2] = uSrc1.ai16[2] >> uShift;
+        uDst.ai16[3] = uSrc1.ai16[3] >> uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 15)
+    {
+        puDst->ai16[0] = uSrc1.ai16[0] >> puSrc->au8[0];
+        puDst->ai16[1] = uSrc1.ai16[1] >> puSrc->au8[0];
+        puDst->ai16[2] = uSrc1.ai16[2] >> puSrc->au8[0];
+        puDst->ai16[3] = uSrc1.ai16[3] >> puSrc->au8[0];
+        puDst->ai16[4] = uSrc1.ai16[4] >> puSrc->au8[0];
+        puDst->ai16[5] = uSrc1.ai16[5] >> puSrc->au8[0];
+        puDst->ai16[6] = uSrc1.ai16[6] >> puSrc->au8[0];
+        puDst->ai16[7] = uSrc1.ai16[7] >> puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 15)
+    {
+        puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
+        puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
+        puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
+        puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
+        puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
+        puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
+        puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
+        puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSLLW / VPSLLW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 15)
+    {
+        uDst.au16[0] = uSrc1.au16[0] << uSrc2.au8[0];
+        uDst.au16[1] = uSrc1.au16[1] << uSrc2.au8[0];
+        uDst.au16[2] = uSrc1.au16[2] << uSrc2.au8[0];
+        uDst.au16[3] = uSrc1.au16[3] << uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllw_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 15)
+    {
+        uDst.au16[0] = uSrc1.au16[0] << uShift;
+        uDst.au16[1] = uSrc1.au16[1] << uShift;
+        uDst.au16[2] = uSrc1.au16[2] << uShift;
+        uDst.au16[3] = uSrc1.au16[3] << uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 15)
+    {
+        puDst->au16[0] = uSrc1.au16[0] << puSrc->au8[0];
+        puDst->au16[1] = uSrc1.au16[1] << puSrc->au8[0];
+        puDst->au16[2] = uSrc1.au16[2] << puSrc->au8[0];
+        puDst->au16[3] = uSrc1.au16[3] << puSrc->au8[0];
+        puDst->au16[4] = uSrc1.au16[4] << puSrc->au8[0];
+        puDst->au16[5] = uSrc1.au16[5] << puSrc->au8[0];
+        puDst->au16[6] = uSrc1.au16[6] << puSrc->au8[0];
+        puDst->au16[7] = uSrc1.au16[7] << puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllw_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 15)
+    {
+        puDst->au16[0] = uSrc1.au16[0] << uShift;
+        puDst->au16[1] = uSrc1.au16[1] << uShift;
+        puDst->au16[2] = uSrc1.au16[2] << uShift;
+        puDst->au16[3] = uSrc1.au16[3] << uShift;
+        puDst->au16[4] = uSrc1.au16[4] << uShift;
+        puDst->au16[5] = uSrc1.au16[5] << uShift;
+        puDst->au16[6] = uSrc1.au16[6] << uShift;
+        puDst->au16[7] = uSrc1.au16[7] << uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSRLD / VPSRLD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 31)
+    {
+        uDst.au32[0] = uSrc1.au32[0] >> uSrc2.au8[0];
+        uDst.au32[1] = uSrc1.au32[1] >> uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 31)
+    {
+        uDst.au32[0] = uSrc1.au32[0] >> uShift;
+        uDst.au32[1] = uSrc1.au32[1] >> uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 31)
+    {
+        puDst->au32[0] = uSrc1.au32[0] >> puSrc->au8[0];
+        puDst->au32[1] = uSrc1.au32[1] >> puSrc->au8[0];
+        puDst->au32[2] = uSrc1.au32[2] >> puSrc->au8[0];
+        puDst->au32[3] = uSrc1.au32[3] >> puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 31)
+    {
+        puDst->au32[0] = uSrc1.au32[0] >> uShift;
+        puDst->au32[1] = uSrc1.au32[1] >> uShift;
+        puDst->au32[2] = uSrc1.au32[2] >> uShift;
+        puDst->au32[3] = uSrc1.au32[3] >> uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSRAD / VPSRAD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RT_NOREF(pFpuState);
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 31)
+    {
+        uDst.ai32[0] = uSrc1.ai32[0] >> uSrc2.au8[0];
+        uDst.ai32[1] = uSrc1.ai32[1] >> uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 31)
+    {
+        uDst.ai32[0] = uSrc1.ai32[0] >> uShift;
+        uDst.ai32[1] = uSrc1.ai32[1] >> uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 31)
+    {
+        puDst->ai32[0] = uSrc1.ai32[0] >> puSrc->au8[0];
+        puDst->ai32[1] = uSrc1.ai32[1] >> puSrc->au8[0];
+        puDst->ai32[2] = uSrc1.ai32[2] >> puSrc->au8[0];
+        puDst->ai32[3] = uSrc1.ai32[3] >> puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 31)
+    {
+        puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
+        puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
+        puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
+        puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSLLD / VPSLLD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pslld_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 31)
+    {
+        uDst.au32[0] = uSrc1.au32[0] << uSrc2.au8[0];
+        uDst.au32[1] = uSrc1.au32[1] << uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pslld_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 31)
+    {
+        uDst.au32[0] = uSrc1.au32[0] << uShift;
+        uDst.au32[1] = uSrc1.au32[1] << uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pslld_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 31)
+    {
+        puDst->au32[0] = uSrc1.au32[0] << puSrc->au8[0];
+        puDst->au32[1] = uSrc1.au32[1] << puSrc->au8[0];
+        puDst->au32[2] = uSrc1.au32[2] << puSrc->au8[0];
+        puDst->au32[3] = uSrc1.au32[3] << puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pslld_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 31)
+    {
+        puDst->au32[0] = uSrc1.au32[0] << uShift;
+        puDst->au32[1] = uSrc1.au32[1] << uShift;
+        puDst->au32[2] = uSrc1.au32[2] << uShift;
+        puDst->au32[3] = uSrc1.au32[3] << uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSRLQ / VPSRLQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlq_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 63)
+    {
+        uDst.au64[0] = uSrc1.au64[0] >> uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlq_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 63)
+    {
+        uDst.au64[0] = uSrc1.au64[0] >> uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 63)
+    {
+        puDst->au64[0] = uSrc1.au64[0] >> puSrc->au8[0];
+        puDst->au64[1] = uSrc1.au64[1] >> puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrlq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 63)
+    {
+        puDst->au64[0] = uSrc1.au64[0] >> uShift;
+        puDst->au64[1] = uSrc1.au64[1] >> uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSLLQ / VPSLLQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllq_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    if (uSrc2.au64[0] <= 63)
+    {
+        uDst.au64[0] = uSrc1.au64[0] << uSrc2.au8[0];
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllq_imm_u64,(uint64_t *puDst, uint8_t uShift))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uDst;
+
+    if (uShift <= 63)
+    {
+        uDst.au64[0] = uSrc1.au64[0] << uShift;
+    }
+    else
+    {
+        uDst.au64[0] = 0;
+    }
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (puSrc->au64[0] <= 63)
+    {
+        puDst->au64[0] = uSrc1.au64[0] << puSrc->au8[0];
+        puDst->au64[1] = uSrc1.au64[1] << puSrc->au8[0];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psllq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift <= 63)
+    {
+        puDst->au64[0] = uSrc1.au64[0] << uShift;
+        puDst->au64[1] = uSrc1.au64[1] << uShift;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSRLDQ / VPSRLDQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psrldq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift < 16)
+    {
+        int i;
+
+        for (i = 0; i < 16 - uShift; ++i)
+            puDst->au8[i] = uSrc1.au8[i + uShift];
+        for (i = 16 - uShift; i < 16; ++i)
+            puDst->au8[i] = 0;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PSLLDQ / VPSLLDQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pslldq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    if (uShift < 16)
+    {
+        int i;
+
+        for (i = 0; i < uShift; ++i)
+            puDst->au8[i] = 0;
+        for (i = uShift; i < 16; ++i)
+            puDst->au8[i] = uSrc1.au8[i - uShift];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+#endif
+
+
+/*
+ * PMADDWD / VPMADDWD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.ai32[0] = (int32_t)uSrc1.ai16[0] * uSrc2.ai16[0] + (int32_t)uSrc1.ai16[1] * uSrc2.ai16[1];
+    uDst.ai32[1] = (int32_t)uSrc1.ai16[2] * uSrc2.ai16[2] + (int32_t)uSrc1.ai16[3] * uSrc2.ai16[3];
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai32[0] = (int32_t)uSrc1.ai16[0] * puSrc->ai16[0] + (int32_t)uSrc1.ai16[1] * puSrc->ai16[1];
+    puDst->ai32[1] = (int32_t)uSrc1.ai16[2] * puSrc->ai16[2] + (int32_t)uSrc1.ai16[3] * puSrc->ai16[3];
+    puDst->ai32[2] = (int32_t)uSrc1.ai16[4] * puSrc->ai16[4] + (int32_t)uSrc1.ai16[5] * puSrc->ai16[5];
+    puDst->ai32[3] = (int32_t)uSrc1.ai16[6] * puSrc->ai16[6] + (int32_t)uSrc1.ai16[7] * puSrc->ai16[7];
+    RT_NOREF(pFpuState);
+}
+
+#endif
 
 
 /*
@@ -9207,10 +10409,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u256_fallback,(PRTUINT256U puDst, P
 /*
  * PACKSSWB - signed words -> signed bytes
  */
-#define SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(a_iWord) \
-        ( (uint16_t)((a_iWord) + 0x80) <= (uint16_t)0xff  \
-          ? (uint8_t)(a_iWord) \
-          : (uint8_t)0x7f + (uint8_t)(((a_iWord) >> 15) & 1) ) /* 0x7f = INT8_MAX; 0x80 = INT8_MIN; source bit 15 = sign */
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
@@ -9455,10 +10653,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackuswb_u256_fallback,(PRTUINT256U puDst, PCR
 /*
  * PACKSSDW - signed dwords -> signed words
  */
-#define SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(a_iDword) \
-        ( (uint32_t)((a_iDword) + 0x8000) <= (uint16_t)0xffff  \
-          ? (uint16_t)(a_iDword) \
-          : (uint16_t)0x7fff + (uint16_t)(((a_iDword) >> 31) & 1) ) /* 0x7fff = INT16_MAX; 0x8000 = INT16_MIN; source bit 31 = sign */
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
