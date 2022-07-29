@@ -92,10 +92,9 @@ class WuiTestResultFailure(WuiFormContentBase):
         We add a way to get back to the test set to the actions.
         """
         aoActions = super(WuiTestResultFailure, self)._generateTopRowFormActions(oData);
-        if oData and oData.idTestResult is not None and oData.idTestResult > 0:
+        if oData and oData.idTestResult and int(oData.idTestResult) > 0:
             aoActions.append(WuiTmLink('Associated Test Set', WuiMain.ksScriptName,
                                        { WuiMain.ksParamAction: WuiMain.ksActionTestSetDetailsFromResult,
                                          TestSetData.ksParam_idTestResult: oData.idTestResult }
                                        ));
         return aoActions;
-
