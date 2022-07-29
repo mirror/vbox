@@ -198,11 +198,11 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream);
  * @param   pStream         The stream.
  * @param   pvBuf           Where to put the read bits.
  *                          Must be cbRead bytes or more.
- * @param   cbRead          Number of bytes to read.
+ * @param   cbToRead        Number of bytes to read.
  * @param   pcbRead         Where to store the number of bytes actually read.
  *                          If NULL cbRead bytes are read or an error is returned.
  */
-RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbRead, size_t *pcbRead);
+RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Writes to a file stream.
@@ -210,11 +210,11 @@ RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbRead, size_t
  * @returns iprt status code.
  * @param   pStream         The stream.
  * @param   pvBuf           Where to get the bits to write from.
- * @param   cbWrite         Number of bytes to write.
+ * @param   cbToWrite       Number of bytes to write.
  * @param   pcbWritten      Where to store the number of bytes actually written.
  *                          If NULL cbWrite bytes are written or an error is returned.
  */
-RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten);
+RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Reads from a file stream.
@@ -223,11 +223,11 @@ RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite
  * @param   pStream         The stream.
  * @param   pvBuf           Where to put the read bits.
  *                          Must be cbRead bytes or more.
- * @param   cbRead          Number of bytes to read.
+ * @param   cbToRead        Number of bytes to read.
  */
-DECLINLINE(int) RTStrmRead(PRTSTREAM pStream, void *pvBuf, size_t cbRead)
+DECLINLINE(int) RTStrmRead(PRTSTREAM pStream, void *pvBuf, size_t cbToRead)
 {
-    return RTStrmReadEx(pStream, pvBuf, cbRead, NULL);
+    return RTStrmReadEx(pStream, pvBuf, cbToRead, NULL);
 }
 
 /**
@@ -236,11 +236,11 @@ DECLINLINE(int) RTStrmRead(PRTSTREAM pStream, void *pvBuf, size_t cbRead)
  * @returns iprt status code.
  * @param   pStream         The stream.
  * @param   pvBuf           Where to get the bits to write from.
- * @param   cbWrite         Number of bytes to write.
+ * @param   cbToWrite       Number of bytes to write.
  */
-DECLINLINE(int) RTStrmWrite(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite)
+DECLINLINE(int) RTStrmWrite(PRTSTREAM pStream, const void *pvBuf, size_t cbToWrite)
 {
-    return RTStrmWriteEx(pStream, pvBuf, cbWrite, NULL);
+    return RTStrmWriteEx(pStream, pvBuf, cbToWrite, NULL);
 }
 
 /**
