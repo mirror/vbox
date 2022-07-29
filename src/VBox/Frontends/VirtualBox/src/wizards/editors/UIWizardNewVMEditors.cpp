@@ -162,8 +162,7 @@ void UIGAInstallationGroupBox::retranslateUi()
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-    setToolTip(UIWizardNewVM::tr("Enables installation of the guest additions  "
-                                 "after the guest OS install."));
+    setToolTip(UIWizardNewVM::tr("Enables installation of the guest additions after the guest OS install."));
 }
 
 QString UIGAInstallationGroupBox::path() const
