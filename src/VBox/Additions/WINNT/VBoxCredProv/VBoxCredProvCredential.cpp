@@ -841,7 +841,7 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
  *
  * This might be a principal or FQDN string.
  *
- * @return  success indicator. Will fail if input not in a user@domain format.
+ * @return  success indicator. Will fail if input not in a user\@domain format.
  * @param   pwszAccountData     Raw account data string to extract data from.
  * @param   ppwszAccountName    Where to store the extracted account name on
  *                              success. Needs to be freed with CoTaskMemFree().
