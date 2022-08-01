@@ -239,6 +239,9 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
     void *pv = rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
+# ifdef RT_STRICT
+    const uintptr_t uOld = (uintptr_t)pvOld; /* overzealous gcc 12 complains it's used over realloc */
+# endif
 
 # ifdef RTMEMALLOC_USE_TRACKER
     void *pvRealOld  = RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag, ASMReturnAddress());
@@ -248,7 +251,7 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 # else
     void *pv = realloc(pvOld, cbNew); NOREF(pszTag);
 # endif
-    AssertMsg(pv || !cbNew, ("realloc(%p, %#zx) failed!!!\n", pvOld, cbNew));
+    AssertMsg(pv || !cbNew, ("realloc(%p, %#zx) failed!!!\n", uOld, cbNew));
     AssertMsg(   cbNew < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1))
               || ( (cbNew & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
