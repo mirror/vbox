@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h
-#define GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayInternal_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,4 +27,4 @@ DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
                              DWORD aBitsPerPixel, LONG aPosX, LONG aPosY, BOOL fEnabled, BOOL fExtDispSup);
 
-#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayInternal_h */
