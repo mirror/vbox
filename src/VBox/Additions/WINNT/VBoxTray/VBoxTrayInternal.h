@@ -20,6 +20,18 @@
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
+/*
+ * St (session [state] tracking) functionality API
+ *
+ * !!!NOTE: this API is NOT thread-safe!!!
+ * it is supposed to be called & used from within the window message handler thread
+ * of the window passed to vboxStInit */
+int vboxStInit(HWND hWnd);
+void vboxStTerm(void);
+/* @returns true on "IsActiveConsole" state change */
+BOOL vboxStHandleEvent(WPARAM EventID);
+BOOL vboxStIsActiveConsole();
+BOOL vboxStCheckTimer(WPARAM wEvent);
 
 DWORD VBoxDisplayGetCount();
 DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD *pNumDevices, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes);
