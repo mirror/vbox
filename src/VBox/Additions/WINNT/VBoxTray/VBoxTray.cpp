@@ -905,7 +905,7 @@ static int vboxTrayServiceMain(void)
                                 else if (hWaitEvent[waitResult] == vboxDtGetNotifyEvent())
                                 {
                                     LogFunc(("Event 'Dt' triggered\n"));
-                                    VBoxTrayCheckDt();
+                                    vboxDtDoCheck();
                                     fHandled = TRUE;
                                 }
                             }

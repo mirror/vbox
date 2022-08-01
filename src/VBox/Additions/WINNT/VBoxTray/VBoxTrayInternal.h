@@ -70,7 +70,7 @@ BOOL vboxDtHandleEvent();
 BOOL vboxDtIsInputDesktop();
 HANDLE vboxDtGetNotifyEvent();
 BOOL vboxDtCheckTimer(WPARAM wParam);
-void VBoxTrayCheckDt();
+void vboxDtDoCheck();
 
 
 /*

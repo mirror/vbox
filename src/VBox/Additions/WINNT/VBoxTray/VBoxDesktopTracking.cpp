@@ -83,7 +83,7 @@ BOOL vboxDtCalculateIsInputDesktop()
     return fIsInputDt;
 }
 
-void VBoxTrayCheckDt()
+void vboxDtDoCheck()
 {
     BOOL fOldAllowedState = VBoxConsoleIsAllowed();
     if (vboxDtHandleEvent())
@@ -98,7 +98,7 @@ BOOL vboxDtCheckTimer(WPARAM wParam)
     if (wParam != gVBoxDt.idTimer)
         return FALSE;
 
-    VBoxTrayCheckDt();
+    vboxDtDoCheck();
 
     return TRUE;
 }
