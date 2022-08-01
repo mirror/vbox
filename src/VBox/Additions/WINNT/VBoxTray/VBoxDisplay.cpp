@@ -30,12 +30,6 @@
 #endif
 #include <iprt/system.h>
 
-#ifdef DEBUG /** @todo r=bird: these are all default values. sigh. */
-# define LOG_ENABLED
-# define LOG_GROUP LOG_GROUP_DEFAULT
-#endif
-#include <VBox/log.h>
-
 #include <VBoxDisplay.h>
 #include <VBoxHook.h>
 

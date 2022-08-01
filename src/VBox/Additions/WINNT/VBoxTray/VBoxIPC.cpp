@@ -37,12 +37,6 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 
-#ifdef DEBUG /** @todo r=bird: these are all default settings...  */
-# define LOG_ENABLED
-# define LOG_GROUP LOG_GROUP_DEFAULT
-#endif
-#include <VBox/log.h>
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *

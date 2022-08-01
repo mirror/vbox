@@ -22,13 +22,6 @@
 
 #include <VBox/VBoxGuestLib.h>
 
-#ifdef DEBUG
-# define LOG_ENABLED
-# define LOG_GROUP LOG_GROUP_DEFAULT
-#endif
-#include <VBox/log.h>
-
-
 
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
           notification stuff, since this is very similar to the VBoxClient code. */

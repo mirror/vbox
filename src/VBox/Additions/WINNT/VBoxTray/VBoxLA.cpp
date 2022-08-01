@@ -15,26 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define _WIN32_WINNT 0x0501
-#include <iprt/win/windows.h>
 
-#include "VBoxTray.h"
-#include "VBoxLA.h"
-
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/list.h>
 #include <iprt/ldr.h>
 #include <iprt/utf16.h>
 
-#ifdef DEBUG
-# define LOG_ENABLED
-# define LOG_GROUP LOG_GROUP_DEFAULT
-#endif
-#include <VBox/log.h>
+#define _WIN32_WINNT 0x0501
+#include <iprt/win/windows.h>
+
+#include "VBoxTray.h"
+#include "VBoxLA.h"
 
 
-
+/*********************************************************************************************************************************
+*   Defines                                                                                                                      *
+*********************************************************************************************************************************/
 #define REG_KEY_LEN 1024
 #define MAX_CLIENT_NAME_CHARS 1024
 

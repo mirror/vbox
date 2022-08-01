@@ -85,8 +85,7 @@ ifdef VBOX_WITH_GUEST_PROPS
 	VBoxLA.cpp
 endif
 ifdef VBOX_WITH_WDDM
- VBoxTray_DEFS   += VBOX_WITH_WDDM
- # VBoxTray_DEFS   += LOG_ENABLED
+ VBoxTray_DEFS    += VBOX_WITH_WDDM
  VBoxTray_SOURCES += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared/VBoxDispKmt.cpp
 endif
 

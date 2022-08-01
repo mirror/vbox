@@ -19,16 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEFAULT
-#define _WIN32_WINNT 0x0500
-#include <iprt/win/windows.h>
-
-#include <VBox/log.h>
-
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/system.h>
+
+#define _WIN32_WINNT 0x0500
+#include <iprt/win/windows.h>
 
 #include <VBoxDisplay.h> /** @todo r=bird: Presumably the ../include/VBoxDisplay.h file rather than ./VBoxDisplay.h. WTF???  */
 #include <VBoxHook.h> /* from ../include/ */

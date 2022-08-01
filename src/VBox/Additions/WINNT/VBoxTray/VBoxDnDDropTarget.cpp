@@ -16,6 +16,8 @@
  */
 
 #define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 #include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
 #include <iprt/win/shlobj.h> /* For DROPFILES and friends. */
@@ -30,8 +32,6 @@
 #include <iprt/path.h>
 #include <iprt/utf16.h>
 #include <iprt/uri.h>
-#include <VBox/log.h>
-
 
 
 VBoxDnDDropTarget::VBoxDnDDropTarget(VBoxDnDWnd *pParent)
