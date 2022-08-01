@@ -64,6 +64,10 @@ static const char g_szVDPlugin[] = "VDPluginCrypt";
 // Medium data definition
 //
 ////////////////////////////////////////////////////////////////////////////////
+#if __cplusplus < 201700 && RT_GNUC_PREREQ(11,0) /* gcc/libstdc++ 12.1.1 errors out here because unary_function is deprecated */
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 struct SnapshotRef
 {
@@ -148,6 +152,11 @@ struct BackRef
 };
 
 typedef std::list<BackRef> BackRefList;
+
+#if __cplusplus < 201700 && RT_GNUC_PREREQ(11,0)
+# pragma GCC diagnostic pop
+#endif
+
 
 struct Medium::Data
 {
