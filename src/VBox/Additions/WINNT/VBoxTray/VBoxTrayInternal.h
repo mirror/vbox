@@ -27,12 +27,4 @@ DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
                              DWORD aBitsPerPixel, LONG aPosX, LONG aPosY, BOOL fEnabled, BOOL fExtDispSup);
 
-#ifndef VBOX_WITH_WDDM
-static bool isVBoxDisplayDriverActive(void);
-#else
-/* @misha: getVBoxDisplayDriverType is used instead.
- * it seems bad to put static function declaration to header,
- * so it is moved to VBoxDisplay.cpp */
-#endif
-
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h */

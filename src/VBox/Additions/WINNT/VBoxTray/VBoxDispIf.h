@@ -63,10 +63,10 @@ typedef struct VBOXDISPIF
 #ifdef VBOX_WITH_WDDM
         struct
         {
-            /* ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
+            /** ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
             DECLCALLBACKMEMBER_EX(LONG, WINAPI, pfnChangeDisplaySettingsEx,(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode,
                                                                             HWND hwnd, DWORD dwflags, LPVOID lParam));
-            /* EnumDisplayDevices does not exist in NT. isVBoxDisplayDriverActive et al. are using these functions. */
+            /** EnumDisplayDevices does not exist in NT.*/
             DECLCALLBACKMEMBER_EX(BOOL, WINAPI, pfnEnumDisplayDevices,(IN LPCSTR lpDevice, IN DWORD iDevNum,
                                                                        OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags));
 
