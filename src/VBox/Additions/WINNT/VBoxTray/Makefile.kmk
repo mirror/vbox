@@ -30,6 +30,7 @@ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 else
  VBoxTray_DEFS   := VBOX_WITH_HGCM VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 endif
+VBoxTray_DEFS    += LOG_ENABLED
 VBoxTray_LDFLAGS  = -SubSystem:Windows
 VBoxTray_INCS     = \
 	../include \

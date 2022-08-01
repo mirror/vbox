@@ -20,6 +20,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 #include <iprt/win/windows.h>
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
@@ -42,7 +44,6 @@ using namespace DragAndDropSvc;
 #include <iprt/cpp/mtlist.h>
 
 #include <VBox/err.h>
-#include <VBox/log.h>
 
 
 /*********************************************************************************************************************************
