@@ -180,7 +180,7 @@ my_wildcard()
     else
         MY_FOLDER="$1-All.lst"
     fi
-    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore;*.png;*.bmp;*.jpg"
+    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore;*.png;*.bmp;*.jpg;*.jar"
     echo '        <F N="'"${2}"'/*" Recurse="1" Excludes="'"${EXCLUDES}"'"/>' >> "${MY_FOLDER}"
 }
 
@@ -257,20 +257,29 @@ my_generate_all_projects()
     my_generate_project "Add-linux"     "src/VBox/Additions/linux"              --begin-incs "include" "src/VBox/Additions/linux"               --end-includes "src/VBox/Additions/linux"
     my_generate_project "Add-os2"       "src/VBox/Additions/os2"                --begin-incs "include" "src/VBox/Additions/os2"                 --end-includes "src/VBox/Additions/os2"
     my_generate_project "Add-solaris"   "src/VBox/Additions/solaris"            --begin-incs "include" "src/VBox/Additions/solaris"             --end-includes "src/VBox/Additions/solaris"
-    my_generate_project "Add-win"       "src/VBox/Additions/WINNT"              --begin-incs "include" "src/VBox/Additions/WINNT"               --end-includes "src/VBox/Additions/WINNT"
     if test -z "$MY_OPT_MINIMAL"; then
         my_generate_project "Add-x11"   "src/VBox/Additions/x11"                --begin-incs "include" "src/VBox/Additions/x11"                 --end-includes "src/VBox/Additions/x11"
     fi
-    my_generate_project "Add-Control"   "src/VBox/Additions/common/VBoxControl"   --begin-incs "include" "src/VBox/Additions/common/VBoxControl"  --end-includes "src/VBox/Additions/common/VBoxControl"
-    my_generate_project "Add-GuestDrv"  "src/VBox/Additions/common/VBoxGuest"     --begin-incs "include" "src/VBox/Additions/common/VBoxGuest"    --end-includes "src/VBox/Additions/common/VBoxGuest"      "include/VBox/VBoxGuest*.*"
-    my_generate_project "Add-Lib"       "src/VBox/Additions/common/VBoxGuest/lib" --begin-incs "include" "src/VBox/Additions/common/VBoxGuest/lib" --end-includes "src/VBox/Additions/common/VBoxGuest/lib" "include/VBox/VBoxGuest/lib/*.*"
-    my_generate_project "Add-Service"   "src/VBox/Additions/common/VBoxService"   --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
-    my_generate_project "Add-VBoxVideo" "src/VBox/Additions/common/VBoxVideo"     --begin-incs "include" "src/VBox/Additions/common/VBoxVideo"    --end-includes "src/VBox/Additions/common/VBoxVideo"
+    my_generate_project "Add-Control"   "src/VBox/Additions/common/VBoxControl" --begin-incs "include" "src/VBox/Additions/common/VBoxControl"  --end-includes "src/VBox/Additions/common/VBoxControl"
+    my_generate_project "Add-VBoxGuest" "src/VBox/Additions/common/VBoxGuest"   --begin-incs "include" "src/VBox/Additions/common/VBoxGuest"    --end-includes "src/VBox/Additions/common/VBoxGuest"      "include/VBox/VBoxGuest*.*"
+    my_generate_project "Add-Vbgl"      "src/VBox/Additions/common/VBoxGuest/lib" --begin-incs "include" "src/VBox/Additions/common/VBoxGuest/lib" --end-includes "src/VBox/Additions/common/VBoxGuest/lib" "include/VBox/VBoxGuest/lib/*.*"
+    my_generate_project "Add-VBoxService" "src/VBox/Additions/common/VBoxService" --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
+    my_generate_project "Add-VBoxVideo" "src/VBox/Additions/common/VBoxVideo"   --begin-incs "include" "src/VBox/Additions/common/VBoxVideo"    --end-includes "src/VBox/Additions/common/VBoxVideo"
+    my_generate_project "Add-nt-Tray"   "src/VBox/Additions/WINNT/VBoxTray"     --begin-incs "include" "src/VBox/Additions/WINNT/include" "src/VBox/Additions/WINNT/VBoxTray" --end-includes "src/VBox/Additions/WINNT/VBoxTray"
     if test -z "$MY_OPT_MINIMAL"; then
-        my_generate_project "Add-pam"       "src/VBox/Additions/common/pam"         --begin-incs "include" "src/VBox/Additions/common/pam"          --end-includes "src/VBox/Additions/common/pam"
-        my_generate_project "Add-cmn-test"  "src/VBox/Additions/common/testcase"    --begin-incs "include" "src/VBox/Additions/common/testcase"     --end-includes "src/VBox/Additions/common/testcase"
-        my_generate_project "Add-CredProv"  "src/VBox/Additions/WINNT/VBoxCredProv" --begin-incs "include" "src/VBox/Additions/WINNT/VBoxCredProv"  --end-includes "src/VBox/Additions/WINNT/VBoxCredProv"
-        my_generate_project "Add-GINA"      "src/VBox/Additions/WINNT/VBoxGINA"     --begin-incs "include" "src/VBox/Additions/WINNT/VBoxGINA"      --end-includes "src/VBox/Additions/WINNT/VBoxGINA"
+        my_generate_project "Add-cmn-pam"       "src/VBox/Additions/common/pam"         --begin-incs "include" "src/VBox/Additions/common/pam"          --end-includes "src/VBox/Additions/common/pam"
+        my_generate_project "Add-cmn-test"      "src/VBox/Additions/common/testcase"    --begin-incs "include" "src/VBox/Additions/common/testcase"     --end-includes "src/VBox/Additions/common/testcase"
+        mesa=$(my_get_newest_ver src/VBox/Additions/3D/mesa/mesa)
+        my_generate_project "Add-3D-Mesa"       "${mesa}"                               --begin-incs "include" "${mesa}/include" --end-includes "${mesa}"
+        my_generate_project "Add-3D-win"        "src/VBox/Additions/3D/win"             --begin-incs "include" "src/VBox/Additions/3D/win/include" "${mesa}/include" --end-includes "src/VBox/Additions/3D/win"
+        my_generate_project "Add-nt-Graphics"   "src/VBox/Additions/WINNT/Graphics"     --begin-incs "include" "src/VBox/Additions/WINNT/Graphics/Video/common" "src/VBox/Additions/WINNT/include" "src/VBox/Additions/3D/win/include" "${mesa}/include" --end-includes "src/VBox/Additions/WINNT/Graphics"
+        my_generate_project "Add-nt-Installer"  "src/VBox/Additions/WINNT/Installer"    --begin-incs "include" "src/VBox/Additions/WINNT/include"       --end-includes "src/VBox/Additions/WINNT/Installer"
+        my_generate_project "Add-nt-Mouse"      "src/VBox/Additions/WINNT/Mouse"        --begin-incs "include" "src/VBox/Additions/WINNT/include"       --end-includes "src/VBox/Additions/WINNT/Mouse"
+        my_generate_project "Add-nt-SharedFolders" "src/VBox/Additions/WINNT/SharedFolders" --begin-incs "include" "src/VBox/Additions/WINNT/include"   --end-includes "src/VBox/Additions/WINNT/SharedFolders"
+        my_generate_project "Add-nt-tools"      "src/VBox/Additions/WINNT/tools"        --begin-incs "include" "src/VBox/Additions/WINNT/include"       --end-includes "src/VBox/Additions/WINNT/tools"
+        my_generate_project "Add-nt-CredProv"   "src/VBox/Additions/WINNT/VBoxCredProv" --begin-incs "include" "src/VBox/Additions/WINNT/VBoxCredProv"  --end-includes "src/VBox/Additions/WINNT/VBoxCredProv"
+        my_generate_project "Add-nt-GINA"       "src/VBox/Additions/WINNT/VBoxGINA"     --begin-incs "include" "src/VBox/Additions/WINNT/VBoxGINA"      --end-includes "src/VBox/Additions/WINNT/VBoxGINA"
+        my_generate_project "Add-nt-Hook"       "src/VBox/Additions/WINNT/VBoxHook"     --begin-incs "include" "src/VBox/Additions/WINNT/include"       --end-includes "src/VBox/Additions/WINNT/VBoxHook"
     fi
 
     # src/VBox/Debugger
