@@ -116,7 +116,7 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
                    unsigned uResized, int iNewWidth, int iNewHeight,
                    int iNewPosX, int iNewPosY)
 {
-    DDCLOG(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, uPrimary, uResized, iNewWidth, iNewHeight));
+    Log4Func(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, uPrimary, uResized, iNewWidth, iNewHeight));
 
     RECTL *paNewRects = (RECTL *)alloca (sizeof (RECTL) * nRects);
     memcpy (paNewRects, paRects, sizeof (RECTL) * nRects);
@@ -139,7 +139,7 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
     {
         /* Find the next adjacent original rect in x positive direction. */
         unsigned iNextRect = hlpNextAdjacentRectXP(paRects, nRects, iRect);
-        DDCLOG(("next %d -> %d\n", iRect, iNextRect));
+        Log4Func(("next %d -> %d\n", iRect, iNextRect));
 
         if (iNextRect == ~0 || iNextRect == uPrimary)
         {
@@ -153,9 +153,9 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
 
         if (delta != 0)
         {
-            DDCLOG(("XP intersection right %d left %d, diff %d\n",
-                     paNewRects[iRect].right, paNewRects[iNextRect].left,
-                     delta));
+            Log4Func(("XP intersection right %d left %d, diff %d\n",
+                      paNewRects[iRect].right, paNewRects[iNextRect].left,
+                      delta));
 
             paNewRects[iNextRect].left += delta;
             paNewRects[iNextRect].right += delta;
@@ -167,7 +167,7 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
     {
         /* Find the next adjacent original rect in x negative direction. */
         unsigned iNextRect = hlpNextAdjacentRectXN(paRects, nRects, iRect);
-        DDCLOG(("next %d -> %d\n", iRect, iNextRect));
+        Log4Func(("next %d -> %d\n", iRect, iNextRect));
 
         if (iNextRect == ~0 || iNextRect == uPrimary)
         {
@@ -181,9 +181,9 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
 
         if (delta != 0)
         {
-            DDCLOG(("XN intersection left %d right %d, diff %d\n",
-                     paNewRects[iRect].left, paNewRects[iNextRect].right,
-                     delta));
+            Log4Func(("XN intersection left %d right %d, diff %d\n",
+                      paNewRects[iRect].left, paNewRects[iNextRect].right,
+                      delta));
 
             paNewRects[iNextRect].left += delta;
             paNewRects[iNextRect].right += delta;
@@ -195,7 +195,7 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
     {
         /* Find the next adjacent original rect in y positive direction. */
         unsigned iNextRect = hlpNextAdjacentRectYP(paRects, nRects, iRect);
-        DDCLOG(("next %d -> %d\n", iRect, iNextRect));
+        Log4Func(("next %d -> %d\n", iRect, iNextRect));
 
         if (iNextRect == ~0 || iNextRect == uPrimary)
         {
@@ -209,9 +209,9 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
 
         if (delta != 0)
         {
-            DDCLOG(("YP intersection bottom %d top %d, diff %d\n",
-                     paNewRects[iRect].bottom, paNewRects[iNextRect].top,
-                     delta));
+            Log4Func(("YP intersection bottom %d top %d, diff %d\n",
+                      paNewRects[iRect].bottom, paNewRects[iNextRect].top,
+                      delta));
 
             paNewRects[iNextRect].top += delta;
             paNewRects[iNextRect].bottom += delta;
@@ -223,7 +223,7 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
     {
         /* Find the next adjacent original rect in x negative direction. */
         unsigned iNextRect = hlpNextAdjacentRectYN(paRects, nRects, iRect);
-        DDCLOG(("next %d -> %d\n", iRect, iNextRect));
+        Log4Func(("next %d -> %d\n", iRect, iNextRect));
 
         if (iNextRect == ~0 || iNextRect == uPrimary)
         {
@@ -237,9 +237,9 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
 
         if (delta != 0)
         {
-            DDCLOG(("YN intersection top %d bottom %d, diff %d\n",
-                     paNewRects[iRect].top, paNewRects[iNextRect].bottom,
-                     delta));
+            Log4Func(("YN intersection top %d bottom %d, diff %d\n",
+                      paNewRects[iRect].top, paNewRects[iNextRect].bottom,
+                      delta));
 
             paNewRects[iNextRect].top += delta;
             paNewRects[iNextRect].bottom += delta;
@@ -255,15 +255,15 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
         paRects[iRect].right  = paNewRects[iRect].right  - iOffsetX;
         paRects[iRect].top    = paNewRects[iRect].top    - iOffsetY;
         paRects[iRect].bottom = paNewRects[iRect].bottom - iOffsetY;
-        DDCLOG((" [%d]: %d,%d %dx%d -> %d,%d %dx%d%s\n",
-                iRect,
-                paRects[iRect].left, paRects[iRect].top,
-                paRects[iRect].right - paRects[iRect].left,
-                paRects[iRect].bottom - paRects[iRect].top,
-                paNewRects[iRect].left, paNewRects[iRect].top,
-                paNewRects[iRect].right - paNewRects[iRect].left,
-                paNewRects[iRect].bottom - paNewRects[iRect].top,
-                iRect == uPrimary? " <- primary": ""));
+        Log4Func((" [%d]: %d,%d %dx%d -> %d,%d %dx%d%s\n",
+                  iRect,
+                  paRects[iRect].left, paRects[iRect].top,
+                  paRects[iRect].right - paRects[iRect].left,
+                  paRects[iRect].bottom - paRects[iRect].top,
+                  paNewRects[iRect].left, paNewRects[iRect].top,
+                  paNewRects[iRect].right - paNewRects[iRect].left,
+                  paNewRects[iRect].bottom - paNewRects[iRect].top,
+                  iRect == uPrimary? " <- primary": ""));
     }
     return;
 }
