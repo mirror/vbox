@@ -28,6 +28,7 @@
 #ifdef VBOX_WITH_WDDM
 # include <iprt/asm.h>
 #endif
+#include <iprt/log.h>
 #include <iprt/system.h>
 
 #include <VBoxDisplay.h>

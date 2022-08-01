@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define _WIN32_WINNT 0x0601
 #include "VBoxTray.h"
+#include "VBoxTrayInternal.h"
 
 #include <iprt/alloca.h>
 #include <iprt/assert.h>

@@ -16,11 +16,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <VBox/log.h>
+#include <VBox/VBoxGuestLib.h>
+
 #include "VBoxHostVersion.h"
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 
-#include <VBox/VBoxGuestLib.h>
 
 
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific

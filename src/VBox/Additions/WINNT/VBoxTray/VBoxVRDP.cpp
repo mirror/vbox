@@ -17,6 +17,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
+#include <VBox/log.h>
 
 /* 0x0501 for SPI_SETDROPSHADOW */
 #define _WIN32_WINNT 0x0501

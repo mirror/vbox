@@ -15,23 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h
-#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
-
-/** @todo r=bird: This file has the same name as ../include/VBoxDisplay.h
- *        which some of the VBoxTray source files also wish to include.
- *
- *        The result is a certifiable mess. To quote a Tina Fey's character in
- *        Ponyo: "BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA BAKA!!!"
- *
- *        There are too many 'ing header files here.  Most of them can be merged
- *        into VBoxTray.h (or a VBoxTrayInternal.h file).
- *
- */
-
 
 DWORD VBoxDisplayGetCount();
 DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD *pNumDevices, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes);
@@ -47,4 +35,4 @@ static bool isVBoxDisplayDriverActive(void);
  * so it is moved to VBoxDisplay.cpp */
 #endif
 
-#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_Internal_h */

@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/system.h>
 

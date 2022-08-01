@@ -21,12 +21,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
-#include "VBoxTray.h"
-#include "VBoxTrayMsg.h"
-#include "VBoxHelpers.h"
-#include "VBoxIPC.h"
-
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -34,8 +28,15 @@
 #include <iprt/ldr.h>
 #include <iprt/list.h>
 #include <iprt/localipc.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/process.h>
+#include <iprt/win/windows.h>
+
+#include "VBoxTray.h"
+#include "VBoxTrayMsg.h"
+#include "VBoxHelpers.h"
+#include "VBoxIPC.h"
 
 
 /*********************************************************************************************************************************
