@@ -21,11 +21,9 @@
 # pragma once
 #endif
 
-void VBoxSeamlessEnable();
-void VBoxSeamlessDisable();
+void VBoxSeamlessEnable(void);
+void VBoxSeamlessDisable(void);
 void VBoxSeamlessCheckWindows(bool fForce);
-
-void VBoxSeamlessSetSupported(BOOL fSupported);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSeamless_h */
 

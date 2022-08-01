@@ -28,13 +28,12 @@
 #define _WIN32_WINNT 0x0500
 #include <iprt/win/windows.h>
 
-#include <VBoxDisplay.h> /** @todo r=bird: Presumably the ../include/VBoxDisplay.h file rather than ./VBoxDisplay.h. WTF???  */
 #include <VBoxHook.h> /* from ../include/ */
 
 #include "VBoxTray.h"
+#include "VBoxTrayInternal.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
-
 
 
 /*********************************************************************************************************************************
@@ -69,7 +68,7 @@ static VBOXSEAMLESSCONTEXT g_Ctx = { 0 };
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 void VBoxLogString(HANDLE hDriver, char *pszStr);
-
+static void vboxSeamlessSetSupported(BOOL fSupported);
 
 
 static DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
@@ -104,7 +103,7 @@ static DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppI
             if (   pCtx->pfnVBoxHookInstallWindowTracker
                 && pCtx->pfnVBoxHookRemoveWindowTracker)
             {
-                VBoxSeamlessSetSupported(TRUE);
+                vboxSeamlessSetSupported(TRUE);
 
                 *ppInstance = pCtx;
             }
@@ -135,7 +134,7 @@ static DECLCALLBACK(void) VBoxSeamlessDestroy(void *pInstance)
     PVBOXSEAMLESSCONTEXT pCtx = (PVBOXSEAMLESSCONTEXT)pInstance;
     AssertPtr(pCtx);
 
-    VBoxSeamlessSetSupported(FALSE);
+    vboxSeamlessSetSupported(FALSE);
 
     /* Inform the host that we no longer support the seamless window mode. */
     if (pCtx->pfnVBoxHookRemoveWindowTracker)
@@ -205,6 +204,11 @@ void VBoxSeamlessDisable(void)
     VBoxSeamlessRemoveHook();
 
     VBoxDispIfSeamlessTerm(&gVBoxDispIfSeamless);
+}
+
+void vboxSeamlessSetSupported(BOOL fSupported)
+{
+    VBoxConsoleCapSetSupported(VBOXCAPS_ENTRY_IDX_SEAMLESS, fSupported);
 }
 
 BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam) RT_NOTHROW_DEF

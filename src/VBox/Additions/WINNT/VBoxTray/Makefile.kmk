@@ -38,6 +38,9 @@ VBoxTray_INCS     = \
 	$(VBOX_GRAPHICS_INCS)
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
+	VBoxCaps.cpp \
+	VBoxConsole.cpp \
+	VBoxDesktopTracking.cpp \
 	VBoxDispIf.cpp \
 	VBoxSeamless.cpp \
 	VBoxSessionTracking.cpp \
