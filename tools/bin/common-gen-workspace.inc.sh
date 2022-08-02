@@ -383,6 +383,8 @@ my_generate_all_projects()
     my_generate_project "curl"          "${lib}"                                --begin-incs "include" "${lib}/include"                         --end-includes "${lib}"
     lib=$(my_get_newest_ver src/libs/softfloat)
     my_generate_project "softfloat"     "${lib}"                                --begin-incs "include" "${lib}/source/include"                  --end-includes "${lib}"
+    lib=$(my_get_newest_ver src/libs/libvorbis)
+    my_generate_project "libvorbis"     "${lib}"                                --begin-incs "include" "${lib}/include/vorbis"                  --end-includes "${lib}"
 
     # webtools
     my_generate_project "webtools"      "webtools"                              --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
@@ -429,4 +431,3 @@ my_generate_all_projects()
     # lib/xpcom
     my_generate_project "xpcom"         "src/libs/xpcom18a4"                    --begin-incs "include" "${XPCOM_INCS}"                          --end-includes "src/libs/xpcom18a4"
 }
-
