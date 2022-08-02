@@ -75,12 +75,18 @@
 #if ARCH_BITS == 32
 # define SIZE_T_MAX     0xffffffffU
 # define SSIZE_MAX      0x7fffffff
+# define INTPTR_MAX     0x7fffffff
+# define UINTPTR_MAX    0xffffffffU
 #elif ARCH_BITS == 64
 # define SIZE_T_MAX     UINT64_C(0xffffffffffffffff)
+# define SIZE_T_MAX     UINT64_C(0xffffffffffffffff)
 # define SSIZE_MAX      INT64_C(0x7fffffffffffffff)
+# define INTPTR_MAX     INT64_C(0x7fffffffffffffff)
+# define UINTPTR_MAX    UINT64_C(0xffffffffffffffff)
 #else
 # error "huh?"
 #endif
+#define SIZE_MAX        SIZE_T_MAX
 
 /*#define OFF_MAX         __OFF_MAX
 #define OFF_MIN         __OFF_MIN*/

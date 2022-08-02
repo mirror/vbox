@@ -38,18 +38,40 @@ class exception
 {
 public:
     exception() RT_NOEXCEPT
+#ifdef _MSC_VER
+        : m_pszWhat(NULL)
+#endif
     { }
 
-    exception(const exception &) RT_NOEXCEPT
-    { }
+    exception(const exception &a_rThat) RT_NOEXCEPT
+#ifdef _MSC_VER
+        : m_pszWhat(a_rThat.m_pszWhat)
+#endif
+    {
+        RT_NOREF(a_rThat);
+    }
+
+#ifdef _MSC_VER
+    exception(const char *a_pszWhat, int a_iIgnored = 0) RT_NOEXCEPT
+        : m_pszWhat(a_pszWhat)
+    { RT_NOREF(a_iIgnored); }
+#endif
 
     virtual ~exception() RT_NOEXCEPT
     {}
 
     virtual const char *what() const RT_NOEXCEPT
     {
+#ifdef _MSC_VER
+        if (m_pszWhat)
+            return m_pszWhat;
+#endif
         return "unknown exception";
     }
+#ifdef _MSC_VER
+protected:
+        const char *m_pszWhat;
+#endif
 };
 
 }

@@ -36,6 +36,25 @@ typedef long time_t;
 #else
 typedef int64_t time_t;
 #endif
+#ifdef _MSC_VER
+typedef int64_t __time64_t;
+#endif
+
+struct timespec
+{
+    time_t tv_sec;
+    long   tv_nsec;
+};
+
+struct tm
+{
+    int tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year;
+    int tm_wday, tm_yday, tm_isdst, tm_gmtoff;
+    const char *tm_zone;
+};
+
+struct tm *RT_NOCRT(localtime_r)(const time_t *, struct tm *);
+
 
 #endif /* !IPRT_INCLUDED_nocrt_time_h */
 

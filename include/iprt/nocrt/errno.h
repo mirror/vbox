@@ -1,5 +1,5 @@
 /** @file
- * IPRT / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - Dummy errno.h.
  */
 
 /*
@@ -23,14 +23,35 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_stddef_h
-#define IPRT_INCLUDED_nocrt_stddef_h
+#ifndef IPRT_INCLUDED_nocrt_errno_h
+#define IPRT_INCLUDED_nocrt_errno_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 #include <iprt/types.h>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+#ifdef IPRT_NO_CRT_FOR_3RD_PARTY
 
-#endif /* !IPRT_INCLUDED_nocrt_stddef_h */
+# define EINVAL 22
+# define ERANGE 34
+# define ENOMEM 12
+# define EACCES 13
+# define EAGAIN 35
+# define EFAULT 14
+# define EINTR 4
+# define ENOSYS 78
+# define ESRCH 3
+# define EEXIST 17
+
+RT_C_DECLS_BEGIN
+RTDECL(int *) rtNoCrtGetErrnoPtr(void);
+# define errno (*rtNoCrtGetErrnoPtr())
+
+RT_C_DECLS_END
+
+#endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
+
+
+#endif /* !IPRT_INCLUDED_nocrt_errno_h */
+

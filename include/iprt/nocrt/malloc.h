@@ -1,5 +1,5 @@
 /** @file
- * IPRT / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - Our own minimal malloc.h header (needed by xmmintrin.h).
  */
 
 /*
@@ -23,14 +23,16 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_stddef_h
-#define IPRT_INCLUDED_nocrt_stddef_h
+#ifndef IPRT_INCLUDED_nocrt_malloc_h
+#define IPRT_INCLUDED_nocrt_malloc_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include <iprt/types.h>
+/* Just map it onto stdlib.h and alloca.h for now. */
+#include <stdlib.h>
+#include <iprt/alloca.h>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+#endif /* !IPRT_INCLUDED_nocrt_malloc_h */
 
-#endif /* !IPRT_INCLUDED_nocrt_stddef_h */
+

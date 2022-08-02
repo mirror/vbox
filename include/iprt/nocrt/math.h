@@ -86,7 +86,7 @@ extern const union __nan_un {
 #define HUGE_VAL    (RT_NOCRT(__infinity).__ud)
 #endif
 
-#if 1 && !defined(_MSC_VER) /* __ISO_C_VISIBLE >= 1999*/ /** @todo Adjust section for MSC */
+#if 1 /* __ISO_C_VISIBLE >= 1999*/
 #define FP_ILOGB0   (-__INT_MAX)
 #define FP_ILOGBNAN __INT_MAX
 
@@ -102,7 +102,9 @@ extern const union __nan_un {
 #define NAN     (__nan.__uf)
 #endif /* __MATH_BUILTIN_CONSTANTS */
 
+#ifndef IPRT_NO_CRT
 #define MATH_ERRNO  1
+#endif
 #define MATH_ERREXCEPT  2
 #define math_errhandling    MATH_ERREXCEPT
 

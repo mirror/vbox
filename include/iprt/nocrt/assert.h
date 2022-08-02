@@ -1,9 +1,9 @@
 /** @file
- * IPRT / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - Our own assert.h header.
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle Corporation
+ * Copyright (C) 2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,26 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_stddef_h
-#define IPRT_INCLUDED_nocrt_stddef_h
+#ifndef IPRT_INCLUDED_nocrt_assert_h
+#define IPRT_INCLUDED_nocrt_assert_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include <iprt/types.h>
+#include <iprt/assert.h>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+DECL_FORCE_INLINE(void) rtCrtAssertPanic(void)
+{
+    RTAssertPanic();
+}
 
-#endif /* !IPRT_INCLUDED_nocrt_stddef_h */
+/* Mesa uses assert() in such a way that we must not have any 'do {} while'
+   wrappers in the expansion, so we partially cook our own assert here but
+   using the standard iprt/assert.h building blocks. */
+#define assert(a_Expr) (RT_LIKELY(!!(a_Expr)) ? (void)0 \
+                        : RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__), \
+                          rtCrtAssertPanic(), (void)0 )
+
+#endif /* !IPRT_INCLUDED_nocrt_assert_h */
+
+

@@ -1,9 +1,9 @@
 /** @file
- * IPRT / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - io.h (DOS, OS/2, Windows compilers).
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle Corporation
+ * Copyright (C) 2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,17 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_stddef_h
-#define IPRT_INCLUDED_nocrt_stddef_h
+#ifndef IPRT_INCLUDED_nocrt_io_h
+#define IPRT_INCLUDED_nocrt_io_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include <iprt/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
 
-#endif /* !IPRT_INCLUDED_nocrt_stddef_h */
+#endif /* !IPRT_INCLUDED_nocrt_io_h */
+
+
+

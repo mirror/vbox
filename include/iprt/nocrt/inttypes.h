@@ -31,15 +31,35 @@
 
 #include <iprt/types.h>
 
+#define PRId8  "RI8"
+#define PRIi8  "RI8"
+#define PRIx8  "RX8"
+#define PRIu8  "RU8"
+#define PRIo8  huh? anyone using this? great!
+
+#define PRId16 "RI16"
+#define PRIi16 "RI16"
+#define PRIx16 "RX16"
+#define PRIu16 "RU16"
+#define PRIo16 huh? anyone using this? great!
+
 #define PRId32 "RI32"
+#define PRIi32 "RI32"
 #define PRIx32 "RX32"
 #define PRIu32 "RU32"
 #define PRIo32 huh? anyone using this? great!
 
 #define PRId64 "RI64"
+#define PRIi64 "RI64"
 #define PRIx64 "RX64"
 #define PRIu64 "RU64"
 #define PRIo64 huh? anyone using this? great!
+
+#define PRIdMAX "RI64"
+#define PRIiMAX "RI64"
+#define PRIxMAX "RX64"
+#define PRIuMAX "RU64"
+#define PRIoMAX huh? anyone using this? great!
 
 #endif /* !IPRT_INCLUDED_nocrt_inttypes_h */
 

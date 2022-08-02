@@ -29,10 +29,16 @@
 # pragma once
 #endif
 
-#include <iprt/types.h>
+#include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/mem.h>
+#include <limits.h>
 
 RT_C_DECLS_BEGIN
+
+#define EXIT_SUCCESS    RTEXITCODE_SUCCESS
+#define EXIT_FAILURE    RTEXITCODE_FAILURE
+
 
 typedef void FNRTNOCRTATEXITCALLBACK(void) /*RT_NOEXCEPT*/;
 typedef FNRTNOCRTATEXITCALLBACK *PFNRTNOCRTATEXITCALLBACK;
@@ -73,11 +79,86 @@ DECLINLINE(void) RT_NOCRT(free)(void *pv)
     RTMemFree(pv);
 }
 
+DECLINLINE(const char *) RT_NOCRT(getenv)(const char *pszVar)
+{
+    return RTEnvGet(pszVar);
+}
+
+void       *RT_NOCRT(bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
+                              int (*pfnCompare)(const void *pv1, const void *pv2));
+void        RT_NOCRT(qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
+                            int (*pfnCompare)(const void *pv1, const void *pv2));
+void        RT_NOCRT(qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
+                              int (*pfnCompare)(const void *pv1, const void *pv2, void *pvUser), void *pvUser);
+
+/* Map exit & abort onto fatal assert. */
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(exit)(int iExitCode) { AssertMsgFailed(("exit: iExitCode=%d\n", iExitCode)); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(abort)(void) { AssertMsgFailed(("abort\n")); }
+
+/*
+ * Underscored versions:
+ */
+DECLINLINE(void *) RT_NOCRT(_malloc)(size_t cb)
+{
+    return RTMemAlloc(cb);
+}
+
+DECLINLINE(void *) RT_NOCRT(_calloc)(size_t cItems, size_t cbItem)
+{
+    return RTMemAllocZ(cItems * cbItem); /* caller responsible for overflow issues. */
+}
+
+DECLINLINE(void *) RT_NOCRT(_realloc)(void *pvOld, size_t cbNew)
+{
+    return RTMemRealloc(pvOld, cbNew);
+}
+
+DECLINLINE(void) RT_NOCRT(_free)(void *pv)
+{
+    RTMemFree(pv);
+}
+
+DECLINLINE(const char *) RT_NOCRT(_getenv)(const char *pszVar)
+{
+    return RTEnvGet(pszVar);
+}
+
+void       *RT_NOCRT(_bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
+                               int (*pfnCompare)(const void *pv1, const void *pv2));
+void        RT_NOCRT(_qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
+                             int (*pfnCompare)(const void *pv1, const void *pv2));
+void        RT_NOCRT(_qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
+                               int (*pfnCompare)(const void *pv1, const void *pv2, void *pvUser), void *pvUser);
+
+/* Map exit & abort onto fatal assert. */
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_exit)(int iExitCode) { AssertMsgFailed(("_exit: iExitCode=%d\n", iExitCode)); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_abort)(void) { AssertMsgFailed(("_abort\n")); }
+
+/* Some windows CRT error control functions we totally ignore (only underscored): */
+# define _set_error_mode(a_Mode)                    (0)
+# define _set_abort_behavior(a_fFlags, a_fMask)     (0)
+
+/*
+ * No-CRT aliases.
+ */
 # if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 #  define malloc    RT_NOCRT(malloc)
 #  define calloc    RT_NOCRT(calloc)
 #  define realloc   RT_NOCRT(realloc)
 #  define free      RT_NOCRT(free)
+#  define getenv    RT_NOCRT(getenv)
+#  define bsearch   RT_NOCRT(bsearch)
+#  define exit      RT_NOCRT(exit)
+#  define abort     RT_NOCRT(abort)
+
+#  define _malloc   RT_NOCRT(malloc)
+#  define _calloc   RT_NOCRT(calloc)
+#  define _realloc  RT_NOCRT(realloc)
+#  define _free     RT_NOCRT(free)
+#  define _getenv   RT_NOCRT(getenv)
+#  define _bsearch  RT_NOCRT(bsearch)
+#  define _exit     RT_NOCRT(exit)
+#  define _abort    RT_NOCRT(abort)
 # endif
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */

@@ -31,6 +31,49 @@
 
 #include <iprt/types.h>
 
+/*
+ * Common.
+ */
+#define FLT_RADIX       2
+
+
+/*
+ * float
+ */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+
+# define FLT_MAX        (3.40282347E+38F)
+# define FLT_MIN        (1.17549435E-38F)
+# define FLT_MAX_EXP    (128)
+# define FLT_MIN_EXP    (-125)
+# define FLT_EPSILON    (1.192092896E-07F)
+
+#endif
+
+/*
+ * double
+ */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+
+# define DBL_MAX        (1.7976931348623157E+308)
+# define DBL_MIN        (2.2250738585072014E-308)
+# define DBL_MAX_EXP    (1024)
+# define DBL_MIN_EXP    (-1021)
+# define DBL_EPSILON    (2.2204460492503131E-16)
+
+#endif
+
+/*
+ * long double
+ */
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(RT_OS_WINDOWS)
+# define LDBL_MAX        DBL_MAX
+# define LDBL_MIN        DBL_MIN
+# define LDBL_MAX_EXP    DBL_MAX_EXP
+# define LDBL_MIN_EXP    DBL_MIN_EXP
+# define LDBL_EPSIOLON   DBL_EPSIOLON
+#endif
+
 
 #endif /* !IPRT_INCLUDED_nocrt_float_h */
 

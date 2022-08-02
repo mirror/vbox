@@ -29,5 +29,20 @@
 # pragma once
 #endif
 
+#include <iprt/ctype.h>
+
+#define isspace(a_ch)       RT_C_IS_SPACE(a_ch)
+#define isblank(a_ch)       RT_C_IS_BLANK(a_ch)
+#define isdigit(a_ch)       RT_C_IS_DIGIT(a_ch)
+#define isxdigit(a_ch)      RT_C_IS_XDIGIT(a_ch)
+#define isalpha(a_ch)       RT_C_IS_ALPHA(a_ch)
+#define isalnum(a_ch)       RT_C_IS_ALNUM(a_ch)
+#define iscntrl(a_ch)       RT_C_IS_CNTRL(a_ch)
+#define isgraph(a_ch)       RT_C_IS_GRAPH(a_ch)
+#define ispunct(a_ch)       RT_C_IS_PUNCT(a_ch)
+#define isprint(a_ch)       RT_C_IS_PRINT(a_ch)
+#define isupper(a_ch)       RT_C_IS_UPPER(a_ch)
+#define islower(a_ch)       RT_C_IS_LOWER(a_ch)
+
 #endif /* !IPRT_INCLUDED_nocrt_ctype_h */
 

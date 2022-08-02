@@ -1,5 +1,5 @@
 /** @file
- * IPRT / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - Dummy cstdlib.
  */
 
 /*
@@ -23,14 +23,17 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_stddef_h
-#define IPRT_INCLUDED_nocrt_stddef_h
+#ifndef IPRT_INCLUDED_nocrt_cstdlib
+#define IPRT_INCLUDED_nocrt_cstdlib
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include <iprt/types.h>
+#include <iprt/nocrt/stdlib.h>
+#include <iprt/nocrt/cstddef>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
 
-#endif /* !IPRT_INCLUDED_nocrt_stddef_h */
+#endif /* !IPRT_INCLUDED_nocrt_cstdlib */
+
+
+
