@@ -63,7 +63,9 @@ int     RT_NOCRT(fgetc)(FILE *pFile);
 int     RT_NOCRT(getc)(FILE *pFile);
 int     RT_NOCRT(ferror)(FILE *pFile);
 void    RT_NOCRT(clearerr)(FILE *pFile);
-# define RT_NOCRT_EOF   (-1)
+# ifndef RT_NOCRT_EOF /* also in string */
+#  define RT_NOCRT_EOF  (-1)
+# endif
 # define EOF            RT_NOCRT_EOF
 
 /* Underscored variants: */

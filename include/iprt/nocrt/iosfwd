@@ -1,0 +1,65 @@
+/** @file
+ * IPRT / No-CRT - Minimal C++ iosfwd header.
+ */
+
+/*
+ * Copyright (C) 2022 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+#ifndef IPRT_INCLUDED_nocrt_iosfwd
+#define IPRT_INCLUDED_nocrt_iosfwd
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
+#include <iprt/nocrt/memory>
+#include <iprt/nocrt/string>
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4643) /* warning C4643: Forward declaring 'ios_base' in namespace std is not permitted by the C++ Standard */
+#endif
+
+namespace std
+{
+    using streamoff = RTFOFF;
+
+    class ios_base;
+
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_ios;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_streambuf;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_istream;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_ostream;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_iostream;
+
+
+    typedef basic_ios<char>             ios;
+    typedef basic_streambuf<char>       streambuf;
+    typedef basic_istream<char>         istream;
+    typedef basic_ostream<char>         ostream;
+    typedef basic_iostream<char>        iostream;
+}
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
+
+#endif /* !IPRT_INCLUDED_nocrt_iosfwd */
+

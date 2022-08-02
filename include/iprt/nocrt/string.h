@@ -31,6 +31,13 @@
 
 #include <iprt/types.h>
 
+/* Dummy for now, fix when/if needed. */
+typedef struct RT_NOCRT(mbstate_t)
+{
+    unsigned long whatever;
+} RT_NOCRT(mbstate_t);
+
+
 RT_C_DECLS_BEGIN
 
 void       *RT_NOCRT(memchr)(const void *pv, int ch, size_t cb);
