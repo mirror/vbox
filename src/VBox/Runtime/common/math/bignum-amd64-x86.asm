@@ -852,7 +852,7 @@ SEH64_END_PROLOGUE
 %ifdef RT_STRICT
         jnc     .uMulCarry_did_not_overflow
         int3
-.uMulCarry_did_not_overflow
+.uMulCarry_did_not_overflow:
 %endif
 
         ; Advance.
