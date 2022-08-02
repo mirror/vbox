@@ -122,4 +122,3 @@ RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_nocrt_sys_stat_h */
 
-

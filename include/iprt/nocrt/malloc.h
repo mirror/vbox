@@ -35,4 +35,3 @@
 
 #endif /* !IPRT_INCLUDED_nocrt_malloc_h */
 
-

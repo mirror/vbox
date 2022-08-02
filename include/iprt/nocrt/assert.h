@@ -45,4 +45,3 @@ DECL_FORCE_INLINE(void) rtCrtAssertPanic(void)
 
 #endif /* !IPRT_INCLUDED_nocrt_assert_h */
 
-

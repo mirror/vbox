@@ -35,5 +35,3 @@
 
 #endif /* !IPRT_INCLUDED_nocrt_io_h */
 
-
-
