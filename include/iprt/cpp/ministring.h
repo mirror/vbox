@@ -1094,6 +1094,8 @@ public:
      * @returns 0 based position of pszNeedle. npos if not found.
      */
     size_t find(const char *pszNeedle, size_t offStart = 0) const RT_NOEXCEPT;
+    size_t find_first_of(const char *pszNeedle, size_t offStart = 0) const RT_NOEXCEPT
+    { return find(pszNeedle, offStart); }
 
     /**
      * Find the given substring.
@@ -1126,6 +1128,8 @@ public:
      *          NULL or an empty string.
      */
     size_t find(const RTCString &rStrNeedle, size_t offStart = 0) const RT_NOEXCEPT;
+    size_t find_first_of(const RTCString &rStrNeedle, size_t offStart = 0) const RT_NOEXCEPT
+    { return find(rStrNeedle, offStart); }
 
     /**
      * Find the given character (byte).
@@ -1140,6 +1144,8 @@ public:
      *          string version to locate codepoints above U+7F.
      */
     size_t find(char chNeedle, size_t offStart = 0) const RT_NOEXCEPT;
+    size_t find_first_of(char chNeedle, size_t offStart = 0) const RT_NOEXCEPT
+    { return find(chNeedle, offStart); }
 
     /**
      * Replaces all occurences of cFind with cReplace in the member string.
