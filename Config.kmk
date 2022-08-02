@@ -8501,6 +8501,7 @@ if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_T
  	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS)) \
 	$(VBOX_NEWER_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBOXGUESTR3DLL_CXXFLAGS)
+ ifndef VBOX_WITH_NOCRT_STATIC
 # Hack begin
 # Does not work when building x86 for amd64 build (No rule to make target /oldnames.lib).
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86        = \
@@ -8508,14 +8509,15 @@ if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_T
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64      = \
 # 	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3DLL_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBOXGUESTR3DLL_LIBS.amd64))
 # Directly assign TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.
- TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86           = \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
- TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64         = \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+  TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+  TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+ endif # !VBOX_WITH_NOCRT_STATIC
 # Hack end
 endif
 
