@@ -65,8 +65,8 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
-#ifdef RTSTREAM_STANDALONE
 # include <iprt/file.h>
+#ifdef RTSTREAM_STANDALONE
 # include <iprt/list.h>
 #endif
 #include <iprt/mem.h>
@@ -409,7 +409,19 @@ DECLINLINE(void) rtStrmUnlock(PRTSTREAM pStream)
  * @returns iprt status code.
  * @param   pszFilename     Path to the file to open.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
+ *                          Format: <a|r|w>[+][b|t][x][e|N|E]
+ *                              - 'a': Open or create file and writes
+ *                                append tos it.
+ *                              - 'r': Open existing file and read from it.
+ *                              - 'w': Open or truncate existing file and write
+ *                                to it.
+ *                              - '+': Open for both read and write access.
+ *                              - 'b' / 't': binary / text
+ *                              - 'x': exclusively create, no open. Only
+ *                                possible with 'w'.
+ *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
+ *                                how Linux and FreeBSD expresses this, the
+ *                                latter is Visual C++).
  * @param   ppStream        Where to store the opened stream.
  */
 RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream)
@@ -420,64 +432,88 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
     AssertReturn(pszMode && *pszMode, VERR_INVALID_FLAGS);
     AssertReturn(pszFilename, VERR_INVALID_PARAMETER);
 
-    bool        fOk     = true;
-    bool        fBinary = false;
-#ifdef RTSTREAM_STANDALONE
-    uint64_t    fOpen   = RTFILE_O_DENY_NONE;
-#endif
-    switch (*pszMode)
+    /*
+     * Process the mode string.
+     */
+    char    chMode     = '\0';  /* a|r|w */
+    bool    fPlus      = false; /* + */
+    bool    fBinary    = false; /* b | !t */
+    bool    fExclusive = false; /* x */
+    bool    fNoInherit = false;  /* e (linux, freebsd) | N (win) | E (our for reverse) */
+    const char *psz = pszMode;
+    char        ch;
+    while ((ch = *psz++) != '\0')
     {
-        case 'a':
-        case 'w':
-        case 'r':
-            switch (pszMode[1])
-            {
-                case 'b':
-                    fBinary = true;
-                    RT_FALL_THRU();
-                case '\0':
-#ifdef RTSTREAM_STANDALONE
-                    fOpen |= *pszMode == 'a' ? RTFILE_O_OPEN_CREATE    | RTFILE_O_WRITE | RTFILE_O_APPEND
-                           : *pszMode == 'w' ? RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE
-                           :                   RTFILE_O_OPEN           | RTFILE_O_READ;
-#endif
-                    break;
+        switch (ch)
+        {
+            case 'a':
+            case 'r':
+            case 'w':
+                chMode = ch;
+                break;
+            case '+':
+                fPlus = true;
+                break;
+            case 'b':
+                fBinary = true;
+                break;
+            case 't':
+                fBinary = false;
+                break;
+            case 'x':
+                fExclusive = true;
+                break;
+            case 'e':
+            case 'N':
+                fNoInherit = true;
+                break;
+            case 'E':
+                fNoInherit = false;
+                break;
+            default:
+                AssertMsgFailedReturn(("Invalid ch='%c' in pszMode='%s', '<a|r|w>[+][b|t][x][e|N|E]'\n", pszMode),
+                                      VERR_INVALID_FLAGS);
+        }
+    }
 
-                case '+':
-#ifdef RTSTREAM_STANDALONE
-                    fOpen |= *pszMode == 'a' ? RTFILE_O_OPEN_CREATE    | RTFILE_O_READ | RTFILE_O_WRITE | RTFILE_O_APPEND
-                           : *pszMode == 'w' ? RTFILE_O_CREATE_REPLACE | RTFILE_O_READ | RTFILE_O_WRITE
-                           :                   RTFILE_O_OPEN           | RTFILE_O_READ | RTFILE_O_WRITE;
-#endif
-                    switch (pszMode[2])
-                    {
-                        case '\0':
-                            break;
-
-                        case 'b':
-                            fBinary = true;
-                            break;
-
-                        default:
-                            fOk = false;
-                            break;
-                    }
-                    break;
-
-                default:
-                    fOk = false;
-                    break;
-            }
-            break;
+    /*
+     * Translate into to RTFILE_O_* flags:
+     */
+    uint64_t fOpen;
+    switch (chMode)
+    {
+        case 'a': fOpen = RTFILE_O_OPEN_CREATE    | RTFILE_O_WRITE | RTFILE_O_APPEND; break;
+        case 'w': fOpen = !fExclusive
+                        ? RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE
+                        : RTFILE_O_CREATE         | RTFILE_O_WRITE;  break;
+        case 'r': fOpen = RTFILE_O_OPEN           | RTFILE_O_READ;
         default:
-            fOk = false;
-            break;
+            AssertMsgReturn(chMode, ("No main mode (a|r|w) specified in '%s'!\n", pszMode), VERR_INVALID_FLAGS);
     }
-    if (!fOk)
-    {
-        AssertMsgFailed(("Invalid pszMode='%s', '<a|r|w>[+][b]'\n", pszMode));
-        return VINF_SUCCESS;
-    }
+    AssertMsgReturn(!fExclusive || chMode == 'w', ("the 'x' flag is only allowed with 'w'! (%s)\n", pszMode),
+                    VERR_INVALID_FLAGS);
+    if (fExclusive)
+        fOpen |= RTFILE_O_READ | RTFILE_O_WRITE;
+    if (fPlus)
+        fOpen |= RTFILE_O_READ | RTFILE_O_WRITE;
+    if (!fNoInherit)
+        fOpen |= RTFILE_O_INHERIT;
+    fOpen |= RTFILE_O_DENY_NONE;
+    fOpen |= 0666 << RTFILE_O_CREATE_MODE_SHIFT;
+
+#ifndef RTSTREAM_STANDALONE
+    /*
+     * Normalize mode for fdopen.
+     */
+    char szNormalizedMode[8];
+    szNormalizedMode[0] = chMode;
+    size_t off = 1;
+    if (fPlus)
+        szNormalizedMode[off++] = '+';
+    if (fBinary)
+        szNormalizedMode[off++] = 'b';
+    szNormalizedMode[off] = '\0';
+#endif
 
 #ifdef RTSTREAM_STANDALONE
     /*
@@ -515,23 +551,63 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
 #ifndef HAVE_FWRITE_UNLOCKED
         pStream->pCritSect          = NULL;
 #endif
-#ifdef RTSTREAM_STANDALONE
-        rc = RTFileOpen(&pStream->hFile, pszFilename, fOpen);
-#else
-        pStream->pFile = fopen(pszFilename, pszMode);
-        rc = pStream->pFile ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
-        if (pStream->pFile)
-#endif
+        RTFILE       hFile          = NIL_RTFILE;
+        RTFILEACTION enmActionTaken = RTFILEACTION_INVALID;
+        rc = RTFileOpenEx(pszFilename, fOpen, &hFile, &enmActionTaken);
         if (RT_SUCCESS(rc))
         {
-#ifdef RTSTREAM_STANDALONE
-            /* We keep a list of these for cleanup purposes. */
-            RTCritSectEnter(&g_StreamListCritSect);
-            RTListAppend(&g_StreamList, &pStream->ListEntry);
-            RTCritSectLeave(&g_StreamListCritSect);
+#ifndef RTSTREAM_STANDALONE
+# ifndef _MSC_VER
+            int fd = (int)RTFileToNative(hFile);
+# else
+            int fd = _open_osfhandle(RTFileToNative(hFile),
+                                       (fPlus ? _O_RDWR : chMode == 'r' ? _O_RDONLY : _O_WRONLY)
+                                     | (chMode == 'a' ? _O_APPEND : 0)
+                                     | (fBinary ? _O_BINARY : _O_TEXT)
+                                     | (fNoInherit ? _O_NOINHERIT : 0));
+# endif
+            if (fd >= 0)
+            {
+                pStream->pFile = fdopen(fd, szNormalizedMode);
+                if (pStream->pFile)
 #endif
-            *ppStream = pStream;
-            return VINF_SUCCESS;
+                {
+#ifdef RTSTREAM_STANDALONE
+                    pStream->hFile = hFile;
+
+                    /* We keep a list of these for cleanup purposes. */
+                    RTCritSectEnter(&g_StreamListCritSect);
+                    RTListAppend(&g_StreamList, &pStream->ListEntry);
+                    RTCritSectLeave(&g_StreamListCritSect);
+#endif
+                    *ppStream = pStream;
+                    return VINF_SUCCESS;
+                }
+
+                /*
+                 * This better not happen too often as in 'w' mode we might've
+                 * truncated a file, and in 'w' and 'a' modes there is a chance
+                 * that we'll race other access to the file when deleting it.
+                 */
+#ifndef RTSTREAM_STANDALONE
+                rc = RTErrConvertFromErrno(errno);
+# ifdef _MSC_VER
+                close(fd);
+                hFile = NIL_RTFILE;
+# endif
+            }
+            else
+            {
+# ifdef _MSC_VER
+                rc = RTErrConvertFromErrno(errno);
+# else
+                AssertFailedStmt(rc = VERR_INVALID_HANDLE);
+# endif
+            }
+            RTFileClose(hFile);
+            if (enmActionTaken == RTFILEACTION_CREATED)
+                RTFileDelete(pszFilename);
+#endif
         }
         RTMemFree(pStream);
     }

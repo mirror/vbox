@@ -61,7 +61,19 @@ extern RTDATADECL(PRTSTREAM)    g_pStdOut;
  * @returns iprt status code.
  * @param   pszFilename     Path to the file to open.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
+ *                          Format: <a|r|w>[+][b|t][x][e|N|E]
+ *                              - 'a': Open or create file and writes
+ *                                append tos it.
+ *                              - 'r': Open existing file and read from it.
+ *                              - 'w': Open or truncate existing file and write
+ *                                to it.
+ *                              - '+': Open for both read and write access.
+ *                              - 'b' / 't': binary / text
+ *                              - 'x': exclusively create, no open. Only
+ *                                possible with 'w'.
+ *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
+ *                                how Linux and FreeBSD expresses this, the
+ *                                latter is Visual C++).
  * @param   ppStream        Where to store the opened stream.
  */
 RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream);
@@ -71,7 +83,19 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
  *
  * @returns iprt status code.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
+ *                          Format: <a|r|w>[+][b|t][x][e|N|E]
+ *                              - 'a': Open or create file and writes
+ *                                append tos it.
+ *                              - 'r': Open existing file and read from it.
+ *                              - 'w': Open or truncate existing file and write
+ *                                to it.
+ *                              - '+': Open for both read and write access.
+ *                              - 'b' / 't': binary / text
+ *                              - 'x': exclusively create, no open. Only
+ *                                possible with 'w'.
+ *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
+ *                                how Linux and FreeBSD expresses this, the
+ *                                latter is Visual C++).
  * @param   ppStream        Where to store the opened stream.
  * @param   pszFilenameFmt  Filename path format string.
  * @param   args            Arguments to the format string.
@@ -84,7 +108,19 @@ RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char 
  *
  * @returns iprt status code.
  * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
+ *                          Format: <a|r|w>[+][b|t][x][e|N|E]
+ *                              - 'a': Open or create file and writes
+ *                                append tos it.
+ *                              - 'r': Open existing file and read from it.
+ *                              - 'w': Open or truncate existing file and write
+ *                                to it.
+ *                              - '+': Open for both read and write access.
+ *                              - 'b' / 't': binary / text
+ *                              - 'x': exclusively create, no open. Only
+ *                                possible with 'w'.
+ *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
+ *                                how Linux and FreeBSD expresses this, the
+ *                                latter is Visual C++).
  * @param   ppStream        Where to store the opened stream.
  * @param   pszFilenameFmt  Filename path format string.
  * @param   ...             Arguments to the format string.
