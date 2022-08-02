@@ -4028,8 +4028,17 @@ FNIEMOP_STUB(iemOp_vpsubusw_Vx_Hx_Wx);
 /*  Opcode VEX.F2.0F 0xd9 - invalid */
 
 /*  Opcode VEX.0F 0xda - invalid */
+
+
 /** Opcode VEX.66.0F 0xda - vpminub Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpminub_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpminub_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPMINUB, vpminub, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAF3_INIT_VARS(vpminub);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0xda - invalid */
 /*  Opcode VEX.F2.0F 0xda - invalid */
 
