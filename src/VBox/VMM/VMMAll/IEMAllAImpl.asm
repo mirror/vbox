@@ -3632,8 +3632,10 @@ IEMIMPL_MEDIA_F2 psubusw, 1
 IEMIMPL_MEDIA_F2 pmullw,  1
 IEMIMPL_MEDIA_F2 pmulhw,  1
 IEMIMPL_MEDIA_F2 pmaddwd, 1
-IEMIMPL_MEDIA_F2 pmaxub,  1
 IEMIMPL_MEDIA_F2 pminub,  1
+IEMIMPL_MEDIA_F2 pmaxub,  1
+IEMIMPL_MEDIA_F2 pmaxuw,  0
+IEMIMPL_MEDIA_F2 pmaxud,  0
 
 ;;
 ; Media instruction working on two full sized registers, but no FXSAVE state argument.
@@ -4087,6 +4089,8 @@ IEMIMPL_MEDIA_F3 vpshufb
 IEMIMPL_MEDIA_F3 vpand
 IEMIMPL_MEDIA_F3 vpminub
 IEMIMPL_MEDIA_F3 vpmaxub
+IEMIMPL_MEDIA_F3 vpmaxuw
+IEMIMPL_MEDIA_F3 vpmaxud
 IEMIMPL_MEDIA_F3 vpandn
 IEMIMPL_MEDIA_F3 vpor
 IEMIMPL_MEDIA_F3 vpxor
