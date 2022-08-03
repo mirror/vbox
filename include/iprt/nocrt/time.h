@@ -30,6 +30,7 @@
 #endif
 
 #include <iprt/types.h>
+#include <iprt/nocrt/sys/types.h>
 
 #if defined(RT_OS_WINDOWS) && defined(_USE_32BIT_TIME_T) && ARCH_BITS == 32
 typedef long time_t;
@@ -53,7 +54,23 @@ struct tm
     const char *tm_zone;
 };
 
+RT_C_DECLS_BEGIN
+
+errno_t    RT_NOCRT(localtime_s)(struct tm *, const time_t *); /* The Microsoft version, not the C11 one. */
 struct tm *RT_NOCRT(localtime_r)(const time_t *, struct tm *);
+
+errno_t    RT_NOCRT(_localtime_s)(struct tm *, const time_t *);
+struct tm *RT_NOCRT(_localtime_r)(const time_t *, struct tm *);
+
+# if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
+#  define localtime_s       RT_NOCRT(localtime_s)
+#  define localtime_r       RT_NOCRT(localtime_r)
+
+#  define _localtime_s      RT_NOCRT(localtime_s)
+#  define _localtime_r      RT_NOCRT(localtime_r)
+# endif
+
+RT_C_DECLS_END
 
 
 #endif /* !IPRT_INCLUDED_nocrt_time_h */

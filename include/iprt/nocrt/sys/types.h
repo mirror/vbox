@@ -33,6 +33,7 @@
 
 typedef RTDEV   dev_t;
 typedef RTINODE ino_t;
+typedef int     errno_t;
 
 #endif /* !IPRT_INCLUDED_nocrt_sys_types_h */
 
