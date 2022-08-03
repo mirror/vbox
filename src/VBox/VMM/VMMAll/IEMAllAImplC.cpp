@@ -9913,6 +9913,205 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpminud_u256_fallback,(PX86XSAVEAREA pExtState,
 
 
 /*
+ * PMINUB / VPMINUB / PMINUW / VPMINUW / PMINUD / VPMINUD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.ai16[0] = RT_MIN(uSrc1.ai16[0], uSrc2.ai16[0]);
+    uDst.ai16[1] = RT_MIN(uSrc1.ai16[1], uSrc2.ai16[1]);
+    uDst.ai16[2] = RT_MIN(uSrc1.ai16[2], uSrc2.ai16[2]);
+    uDst.ai16[3] = RT_MIN(uSrc1.ai16[3], uSrc2.ai16[3]);
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai16[ 0] = RT_MIN(uSrc1.ai16[ 0], puSrc->ai16[ 0]);
+    puDst->ai16[ 1] = RT_MIN(uSrc1.ai16[ 1], puSrc->ai16[ 1]);
+    puDst->ai16[ 2] = RT_MIN(uSrc1.ai16[ 2], puSrc->ai16[ 2]);
+    puDst->ai16[ 3] = RT_MIN(uSrc1.ai16[ 3], puSrc->ai16[ 3]);
+    puDst->ai16[ 4] = RT_MIN(uSrc1.ai16[ 4], puSrc->ai16[ 4]);
+    puDst->ai16[ 5] = RT_MIN(uSrc1.ai16[ 5], puSrc->ai16[ 5]);
+    puDst->ai16[ 6] = RT_MIN(uSrc1.ai16[ 6], puSrc->ai16[ 6]);
+    puDst->ai16[ 7] = RT_MIN(uSrc1.ai16[ 7], puSrc->ai16[ 7]);
+    RT_NOREF(pFpuState);
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai8[ 0] = RT_MIN(uSrc1.ai8[ 0], puSrc->ai8[ 0]);
+    puDst->ai8[ 1] = RT_MIN(uSrc1.ai8[ 1], puSrc->ai8[ 1]);
+    puDst->ai8[ 2] = RT_MIN(uSrc1.ai8[ 2], puSrc->ai8[ 2]);
+    puDst->ai8[ 3] = RT_MIN(uSrc1.ai8[ 3], puSrc->ai8[ 3]);
+    puDst->ai8[ 4] = RT_MIN(uSrc1.ai8[ 4], puSrc->ai8[ 4]);
+    puDst->ai8[ 5] = RT_MIN(uSrc1.ai8[ 5], puSrc->ai8[ 5]);
+    puDst->ai8[ 6] = RT_MIN(uSrc1.ai8[ 6], puSrc->ai8[ 6]);
+    puDst->ai8[ 7] = RT_MIN(uSrc1.ai8[ 7], puSrc->ai8[ 7]);
+    puDst->ai8[ 8] = RT_MIN(uSrc1.ai8[ 8], puSrc->ai8[ 8]);
+    puDst->ai8[ 9] = RT_MIN(uSrc1.ai8[ 9], puSrc->ai8[ 9]);
+    puDst->ai8[10] = RT_MIN(uSrc1.ai8[10], puSrc->ai8[10]);
+    puDst->ai8[11] = RT_MIN(uSrc1.ai8[11], puSrc->ai8[11]);
+    puDst->ai8[12] = RT_MIN(uSrc1.ai8[12], puSrc->ai8[12]);
+    puDst->ai8[13] = RT_MIN(uSrc1.ai8[13], puSrc->ai8[13]);
+    puDst->ai8[14] = RT_MIN(uSrc1.ai8[14], puSrc->ai8[14]);
+    puDst->ai8[15] = RT_MIN(uSrc1.ai8[15], puSrc->ai8[15]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai32[ 0] = RT_MIN(uSrc1.ai32[ 0], puSrc->ai32[ 0]);
+    puDst->ai32[ 1] = RT_MIN(uSrc1.ai32[ 1], puSrc->ai32[ 1]);
+    puDst->ai32[ 2] = RT_MIN(uSrc1.ai32[ 2], puSrc->ai32[ 2]);
+    puDst->ai32[ 3] = RT_MIN(uSrc1.ai32[ 3], puSrc->ai32[ 3]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsb_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->ai8[ 0] = RT_MIN(puSrc1->ai8[ 0], puSrc2->ai8[ 0]);
+    puDst->ai8[ 1] = RT_MIN(puSrc1->ai8[ 1], puSrc2->ai8[ 1]);
+    puDst->ai8[ 2] = RT_MIN(puSrc1->ai8[ 2], puSrc2->ai8[ 2]);
+    puDst->ai8[ 3] = RT_MIN(puSrc1->ai8[ 3], puSrc2->ai8[ 3]);
+    puDst->ai8[ 4] = RT_MIN(puSrc1->ai8[ 4], puSrc2->ai8[ 4]);
+    puDst->ai8[ 5] = RT_MIN(puSrc1->ai8[ 5], puSrc2->ai8[ 5]);
+    puDst->ai8[ 6] = RT_MIN(puSrc1->ai8[ 6], puSrc2->ai8[ 6]);
+    puDst->ai8[ 7] = RT_MIN(puSrc1->ai8[ 7], puSrc2->ai8[ 7]);
+    puDst->ai8[ 8] = RT_MIN(puSrc1->ai8[ 8], puSrc2->ai8[ 8]);
+    puDst->ai8[ 9] = RT_MIN(puSrc1->ai8[ 9], puSrc2->ai8[ 9]);
+    puDst->ai8[10] = RT_MIN(puSrc1->ai8[10], puSrc2->ai8[10]);
+    puDst->ai8[11] = RT_MIN(puSrc1->ai8[11], puSrc2->ai8[11]);
+    puDst->ai8[12] = RT_MIN(puSrc1->ai8[12], puSrc2->ai8[12]);
+    puDst->ai8[13] = RT_MIN(puSrc1->ai8[13], puSrc2->ai8[13]);
+    puDst->ai8[14] = RT_MIN(puSrc1->ai8[14], puSrc2->ai8[14]);
+    puDst->ai8[15] = RT_MIN(puSrc1->ai8[15], puSrc2->ai8[15]);
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsb_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->ai8[ 0] = RT_MIN(puSrc1->ai8[ 0], puSrc2->ai8[ 0]);
+    puDst->ai8[ 1] = RT_MIN(puSrc1->ai8[ 1], puSrc2->ai8[ 1]);
+    puDst->ai8[ 2] = RT_MIN(puSrc1->ai8[ 2], puSrc2->ai8[ 2]);
+    puDst->ai8[ 3] = RT_MIN(puSrc1->ai8[ 3], puSrc2->ai8[ 3]);
+    puDst->ai8[ 4] = RT_MIN(puSrc1->ai8[ 4], puSrc2->ai8[ 4]);
+    puDst->ai8[ 5] = RT_MIN(puSrc1->ai8[ 5], puSrc2->ai8[ 5]);
+    puDst->ai8[ 6] = RT_MIN(puSrc1->ai8[ 6], puSrc2->ai8[ 6]);
+    puDst->ai8[ 7] = RT_MIN(puSrc1->ai8[ 7], puSrc2->ai8[ 7]);
+    puDst->ai8[ 8] = RT_MIN(puSrc1->ai8[ 8], puSrc2->ai8[ 8]);
+    puDst->ai8[ 9] = RT_MIN(puSrc1->ai8[ 9], puSrc2->ai8[ 9]);
+    puDst->ai8[10] = RT_MIN(puSrc1->ai8[10], puSrc2->ai8[10]);
+    puDst->ai8[11] = RT_MIN(puSrc1->ai8[11], puSrc2->ai8[11]);
+    puDst->ai8[12] = RT_MIN(puSrc1->ai8[12], puSrc2->ai8[12]);
+    puDst->ai8[13] = RT_MIN(puSrc1->ai8[13], puSrc2->ai8[13]);
+    puDst->ai8[14] = RT_MIN(puSrc1->ai8[14], puSrc2->ai8[14]);
+    puDst->ai8[15] = RT_MIN(puSrc1->ai8[15], puSrc2->ai8[15]);
+    puDst->ai8[16] = RT_MIN(puSrc1->ai8[16], puSrc2->ai8[16]);
+    puDst->ai8[17] = RT_MIN(puSrc1->ai8[17], puSrc2->ai8[17]);
+    puDst->ai8[18] = RT_MIN(puSrc1->ai8[18], puSrc2->ai8[18]);
+    puDst->ai8[19] = RT_MIN(puSrc1->ai8[19], puSrc2->ai8[19]);
+    puDst->ai8[20] = RT_MIN(puSrc1->ai8[20], puSrc2->ai8[20]);
+    puDst->ai8[21] = RT_MIN(puSrc1->ai8[21], puSrc2->ai8[21]);
+    puDst->ai8[22] = RT_MIN(puSrc1->ai8[22], puSrc2->ai8[22]);
+    puDst->ai8[23] = RT_MIN(puSrc1->ai8[23], puSrc2->ai8[23]);
+    puDst->ai8[24] = RT_MIN(puSrc1->ai8[24], puSrc2->ai8[24]);
+    puDst->ai8[25] = RT_MIN(puSrc1->ai8[25], puSrc2->ai8[25]);
+    puDst->ai8[26] = RT_MIN(puSrc1->ai8[26], puSrc2->ai8[26]);
+    puDst->ai8[27] = RT_MIN(puSrc1->ai8[27], puSrc2->ai8[27]);
+    puDst->ai8[28] = RT_MIN(puSrc1->ai8[28], puSrc2->ai8[28]);
+    puDst->ai8[29] = RT_MIN(puSrc1->ai8[29], puSrc2->ai8[29]);
+    puDst->ai8[30] = RT_MIN(puSrc1->ai8[30], puSrc2->ai8[30]);
+    puDst->ai8[31] = RT_MIN(puSrc1->ai8[31], puSrc2->ai8[31]);
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsw_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->ai16[ 0] = RT_MIN(puSrc1->ai16[ 0], puSrc2->ai16[ 0]);
+    puDst->ai16[ 1] = RT_MIN(puSrc1->ai16[ 1], puSrc2->ai16[ 1]);
+    puDst->ai16[ 2] = RT_MIN(puSrc1->ai16[ 2], puSrc2->ai16[ 2]);
+    puDst->ai16[ 3] = RT_MIN(puSrc1->ai16[ 3], puSrc2->ai16[ 3]);
+    puDst->ai16[ 4] = RT_MIN(puSrc1->ai16[ 4], puSrc2->ai16[ 4]);
+    puDst->ai16[ 5] = RT_MIN(puSrc1->ai16[ 5], puSrc2->ai16[ 5]);
+    puDst->ai16[ 6] = RT_MIN(puSrc1->ai16[ 6], puSrc2->ai16[ 6]);
+    puDst->ai16[ 7] = RT_MIN(puSrc1->ai16[ 7], puSrc2->ai16[ 7]);
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsw_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->ai16[ 0] = RT_MIN(puSrc1->ai16[ 0], puSrc2->ai16[ 0]);
+    puDst->ai16[ 1] = RT_MIN(puSrc1->ai16[ 1], puSrc2->ai16[ 1]);
+    puDst->ai16[ 2] = RT_MIN(puSrc1->ai16[ 2], puSrc2->ai16[ 2]);
+    puDst->ai16[ 3] = RT_MIN(puSrc1->ai16[ 3], puSrc2->ai16[ 3]);
+    puDst->ai16[ 4] = RT_MIN(puSrc1->ai16[ 4], puSrc2->ai16[ 4]);
+    puDst->ai16[ 5] = RT_MIN(puSrc1->ai16[ 5], puSrc2->ai16[ 5]);
+    puDst->ai16[ 6] = RT_MIN(puSrc1->ai16[ 6], puSrc2->ai16[ 6]);
+    puDst->ai16[ 7] = RT_MIN(puSrc1->ai16[ 7], puSrc2->ai16[ 7]);
+    puDst->ai16[ 8] = RT_MIN(puSrc1->ai16[ 8], puSrc2->ai16[ 8]);
+    puDst->ai16[ 9] = RT_MIN(puSrc1->ai16[ 9], puSrc2->ai16[ 9]);
+    puDst->ai16[10] = RT_MIN(puSrc1->ai16[10], puSrc2->ai16[10]);
+    puDst->ai16[11] = RT_MIN(puSrc1->ai16[11], puSrc2->ai16[11]);
+    puDst->ai16[12] = RT_MIN(puSrc1->ai16[12], puSrc2->ai16[12]);
+    puDst->ai16[13] = RT_MIN(puSrc1->ai16[13], puSrc2->ai16[13]);
+    puDst->ai16[14] = RT_MIN(puSrc1->ai16[14], puSrc2->ai16[14]);
+    puDst->ai16[15] = RT_MIN(puSrc1->ai16[15], puSrc2->ai16[15]);
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsd_u128_fallback,(PX86XSAVEAREA pExtState, PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->ai32[ 0] = RT_MIN(puSrc1->ai32[ 0], puSrc2->ai32[ 0]);
+    puDst->ai32[ 1] = RT_MIN(puSrc1->ai32[ 1], puSrc2->ai32[ 1]);
+    puDst->ai32[ 2] = RT_MIN(puSrc1->ai32[ 2], puSrc2->ai32[ 2]);
+    puDst->ai32[ 3] = RT_MIN(puSrc1->ai32[ 3], puSrc2->ai32[ 3]);
+    RT_NOREF(pExtState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsd_u256_fallback,(PX86XSAVEAREA pExtState, PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->ai32[ 0] = RT_MIN(puSrc1->ai32[ 0], puSrc2->ai32[ 0]);
+    puDst->ai32[ 1] = RT_MIN(puSrc1->ai32[ 1], puSrc2->ai32[ 1]);
+    puDst->ai32[ 2] = RT_MIN(puSrc1->ai32[ 2], puSrc2->ai32[ 2]);
+    puDst->ai32[ 3] = RT_MIN(puSrc1->ai32[ 3], puSrc2->ai32[ 3]);
+    puDst->ai32[ 4] = RT_MIN(puSrc1->ai32[ 4], puSrc2->ai32[ 4]);
+    puDst->ai32[ 5] = RT_MIN(puSrc1->ai32[ 5], puSrc2->ai32[ 5]);
+    puDst->ai32[ 6] = RT_MIN(puSrc1->ai32[ 6], puSrc2->ai32[ 6]);
+    puDst->ai32[ 7] = RT_MIN(puSrc1->ai32[ 7], puSrc2->ai32[ 7]);
+    RT_NOREF(pExtState);
+}
+
+
+/*
  * PMOVMSKB / VPMOVMSKB
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
