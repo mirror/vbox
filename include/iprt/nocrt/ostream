@@ -40,6 +40,44 @@ namespace std
     template<typename a_CharType, typename a_CharTraits /*= std::char_traits<a_CharType>*/ >
     class basic_ostream : public basic_ios<a_CharType, a_CharTraits>
     {
+    protected:
+        /** Sentry class that performs pre and post output work. */
+        class sentry
+        {
+        private:
+            basic_ostream &m_rParent;
+
+        public:
+            explicit sentry(basic_ostream &a_rParent)
+                : m_rParent(a_rParent)
+            {
+                if (a_rParent.good())
+                {
+                    basic_ostream *pTiedStream = a_rParent.tie();
+                    if (!pTiedStream)
+                    { /* likely? */ }
+                    else
+                    {
+                        pTiedStream->flush();
+                        if (!pTiedStream->good())
+                            a_rParent.setstate(failbit);
+                    }
+                }
+            }
+
+            explicit operator bool() const
+            {
+                return m_rParent.good();
+            }
+
+            ~sentry()
+            {
+                if (   (m_rParent.flags() & std::ios_base::unitbuf)
+                    && m_rParent.good())
+                    m_rParent.rdbuf()->pubsync();
+            }
+        };
+
     public:
         explicit basic_ostream(std::basic_streambuf<a_CharType,a_CharTraits> *a_pBuf)
             : basic_ios(a_pBuf)
@@ -54,8 +92,29 @@ namespace std
         }
 
     public:
-        basic_ostream &put(char_type a_ch);
-        basic_ostream &write(const char_type *a_pchSrc, std::streamsize a_cchToWrite);
+        basic_ostream &put(char_type a_ch)
+        {
+            sentry PrePost(*this);
+            if (PrePost)
+            {
+                if (m_pBuf->sputc(a_ch) == traits_type::eof())
+                    m_fState |= badbit;
+            }
+            return *this;
+        }
+
+        basic_ostream &write(const char_type *a_pchSrc, std::streamsize a_cchToWrite)
+        {
+            sentry PrePost(*this);
+            if (PrePost)
+            {
+                std::streamsize cchWritten = m_pBuf->sputn(a_pchSrc, a_cchToWrite);
+                if (cchWritten != a_cchToWrite)
+                    m_fState |= badbit;
+            }
+            return *this;
+        }
+
         basic_ostream &flush();
         pos_type       tellp() RT_NOEXCEPT;
         basic_ostream &seekp(pos_type a_off) RT_NOEXCEPT;
@@ -90,11 +149,11 @@ namespace std
             return fFlags;
         }
 
-        basic_ostream &formatInteger(uint64_t a_uValue, uint32_t fFlags)
+        basic_ostream &formatInteger(uint64_t a_uValue, uint32_t a_fFlags, unsigned a_uBase = 0)
         {
-            fFlags |= intGetIntegerFlags();
+            a_fFlags |= intGetIntegerFlags();
             char szTmp[72];
-            int  cchTmp = RTStrFormatNumber(szTmp, a_uValue, intGetIntegerBase(), 0, 0, fFlags);
+            int  cchTmp = RTStrFormatNumber(szTmp, a_uValue, !a_uBase ? intGetIntegerBase() : a_uBase, 0, 0, a_fFlags);
 
             /** @todo apply cchWidth and padding.  */
 
@@ -170,7 +229,21 @@ namespace std
         return a_rDst.formatInteger(a_uValue,
                                     RTSTR_F_VALSIGNED | (sizeof(a_uValue) > sizeof(uint32_t) ? RTSTR_F_64BIT : RTSTR_F_32BIT));
     }
+
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> >
+    basic_ostream<a_CharType, a_CharTraits> &operator<<(basic_ostream<a_CharType, a_CharTraits> &a_rDst, void const *a_pvValue)
+    {
+        return a_rDst.formatInteger((uintptr_t)a_pvValue,
+                                    (sizeof(a_pvValue) > sizeof(uint32_t) ? RTSTR_F_64BIT : RTSTR_F_32BIT), 16);
+    }
     /** @} */
+
+    template<>
+    basic_ostream<char> &basic_ostream<char>::intWrite(const char *a_pchSrc, std::streamsize a_cchToWrite)
+    {
+        return write(a_pchSrc, a_cchToWrite);
+    }
+
 
 }
 

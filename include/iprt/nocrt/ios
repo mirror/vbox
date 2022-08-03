@@ -53,79 +53,83 @@
 
 namespace std
 {
-    typedef RTFOFF streamsize;
+    typedef ptrdiff_t streamsize;
 
     /**
      * I/O stream format flags.
      */
-    enum rtNoCrtIosFmtFlags
+    class rtNoCrtIosEnums
     {
-        /* int: */
-        dec         = 0x00000001,
-        oct         = 0x00000002,
-        hex         = 0x00000004,
-        basefield   = 0x00000007,
-        /* float: */
-        scientific  = 0x00000010,
-        fixed       = 0x00000020,
-        floatfield  = 0x00000030,
-        /* int and float output tweaks: */
-        showbase    = 0x00000100,
-        showpoint   = 0x00000200,
-        showpos     = 0x00000400,
-        /* bool: */
-        boolalpha   = 0x00000800,
-        /* adjustment: */
-        left        = 0x00001000,
-        right       = 0x00002000,
-        internal    = 0x00004000,
-        adjustfield = 0x00007000,
-        /* misc: */
-        skipws      = 0x00010000,
-        unitbuf     = 0x00020000,
-        uppercase   = 0x00040000,
-    };
-    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosFmtFlags, int)
+    public:
+        enum fmtflags
+        {
+            /* int: */
+            dec         = 0x00000001,
+            oct         = 0x00000002,
+            hex         = 0x00000004,
+            basefield   = 0x00000007,
+            /* float: */
+            scientific  = 0x00000010,
+            fixed       = 0x00000020,
+            floatfield  = 0x00000030,
+            /* int and float output tweaks: */
+            showbase    = 0x00000100,
+            showpoint   = 0x00000200,
+            showpos     = 0x00000400,
+            /* bool: */
+            boolalpha   = 0x00000800,
+            /* adjustment: */
+            left        = 0x00001000,
+            right       = 0x00002000,
+            internal    = 0x00004000,
+            adjustfield = 0x00007000,
+            /* misc: */
+            skipws      = 0x00010000,
+            unitbuf     = 0x00020000,
+            uppercase   = 0x00040000,
+        };
 
-    enum rtNoCrtIosSeekDir
-    {
-        beg = 1,
-        end,
-        cur,
-    };
-    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosSeekDir, int)
+        enum seekdir
+        {
+            beg = 1,
+            end,
+            cur,
+        };
 
-    enum rtNoCrtIosOpenMode
-    {
-        app = 1,
-        binary,
-        in,
-        out,
-        trunc,
-        ate
-    };
-    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosOpenMode, int)
+        enum openmode
+        {
+            app = 1,
+            binary,
+            in,
+            out,
+            trunc,
+            ate
+        };
 
-    enum rtNoCrtIosState
-    {
-        goodbit = 0,
-        badbit  = 1,
-        failbit = 2,
-        eofbit  = 4
+        enum iostate
+        {
+            goodbit = 0,
+            badbit  = 1,
+            failbit = 2,
+            eofbit  = 4
+        };
     };
-    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosState, int)
+    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosEnums::fmtflags, int)
+    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosEnums::seekdir, int)
+    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosEnums::openmode, int)
+    RTNOCRT_IOS_ENUM_BIT_OPS(rtNoCrtIosEnums::iostate, int)
 
 
     /**
      * I/O stream base class.
      */
-    class ios_base
+    class ios_base : public rtNoCrtIosEnums
     {
     public:
-        typedef rtNoCrtIosFmtFlags fmtflags;
-        typedef rtNoCrtIosSeekDir  seekdir;
-        typedef rtNoCrtIosOpenMode openmode;
-        typedef rtNoCrtIosState    iostate;
+        //typedef rtNoCrtIosFmtFlags fmtflags;
+        //typedef rtNoCrtIosSeekDir  seekdir;
+        //typedef rtNoCrtIosOpenMode openmode;
+        //typedef rtNoCrtIosState    iostate;
 
     protected:
         streamsize  m_cWidth;
@@ -221,11 +225,61 @@ namespace std
         typedef typename a_CharTraits::off_type     off_type;
 
     protected:
-        basic_streambuf()
+        /** @name Put buffering
+         * @{ */
+        char_type   *m_pachPut;     /**< The put buffer pointer. */
+        std::size_t  m_cchPut;      /**< Put buffer size. */
+        std::size_t  m_offPutNext;  /**< The current put buffer position (where to write next). */
+        std::size_t  m_offPutStart; /**< Where the buffered put sequence starts. */
+
+        void setp(char_type *a_pachNewBuf, char_type *a_pachNewBufEnd)
+        {
+            Assert((uintptr_t)a_pachNewBuf <= (uintptr_t)a_pachNewBufEnd);
+            m_pachPut     = a_pachNewBuf;
+            m_cchPut      = static_cast<std::size_t>(a_pachNewBufEnd - a_pachNewBuf);
+            m_offPutNext  = 0;
+            m_offPutStart = 0;
+        }
+
+        char_type *pbbase() const RT_NOEXCEPT
+        {
+            Assert(m_offPutNext >= m_offPutStart); Assert(m_offPutNext <= m_cchPut); Assert(m_offPutStart <= m_cchPut);
+            return &m_pachPut[m_offPutStart];
+        }
+
+        char_type *pptr()  const RT_NOEXCEPT
+        {
+            Assert(m_offPutNext <= m_cchPut);
+            return &m_pachPut[m_offPutNext];
+        }
+
+        char_type *epptr()  const RT_NOEXCEPT
+        {
+            return &m_pachBuf[m_cchPut];
+        }
+
+        void pbump(int a_cchAdvance)  const RT_NOEXCEPT
+        {
+            Assert(m_offPutNext <= m_cchPut);
+            m_offPutNext      += a_cchAdvance;
+            Assert(m_offPutNext <= m_cchPut);
+        }
+        /** @} */
+
+    protected:
+        basic_streambuf() RT_NOEXCEPT
+            : m_pachPut(NULL)
+            , m_cchPut(0)
+            , m_offPutNext(0)
+            , m_offPutStart(0)
         {
         }
 
-        basic_streambuf(const basic_streambuf &a_rSrc)
+        basic_streambuf(const basic_streambuf &a_rSrc) RT_NOEXCEPT
+            : m_pachPut(a_rSrc.m_pachPut)
+            , m_cchPut(a_rSrc.m_cchPut)
+            , m_offPutNext(a_rSrc.m_offPutNext)
+            , m_offPutStart(a_rSrc.m_offPutStart)
         {
         }
 
@@ -245,14 +299,14 @@ namespace std
     public:
         basic_streambuf *pubsetbuf(char_type *a_pchBuf, std::streamsize a_cchBuf)
         {
-            return setbuf(a_off, a_enmDir, a_enmTarget);
+            return setbuf(a_pchBuf, a_cchBuf);
         }
 
     protected:
         virtual pos_type seekoff(off_type a_off, std::ios_base::seekdir a_enmDir,
                                  std::ios_base::openmode a_enmTarget = ios_base::in | ios_base::out)
         {
-            RT_NOREF(a_off, a_enmDir, out);
+            RT_NOREF(a_off, a_enmDir, a_enmTarget);
             return pos_type(off_type(-1));
         }
     public:
@@ -265,7 +319,7 @@ namespace std
     protected:
         virtual pos_type seekpos(pos_type a_pos, std::ios_base::openmode a_enmTarget = ios_base::in | ios_base::out)
         {
-            RT_NOREF(a_off, a_enmDir, out);
+            RT_NOREF(a_pos, a_enmTarget);
             return pos_type(off_type(-1));
         }
     public:
@@ -286,7 +340,60 @@ namespace std
         }
         /** @} */
 
-        /** @todo add the remainin members... */
+        /** @name Output
+         * @{ */
+    protected:
+        virtual int_type overflow(int_type a_iChar)
+        {
+            RT_NOREF(a_iChar);
+            return traits_type::eof();
+        }
+
+        virtual std::streamsize xsputn(char_type const *a_pchSrc, std::streamsize a_cchSrc)
+        {
+            std::streamsize cchWritten = 0;
+            while (a_cchSrc > 0)
+            {
+                std::size_t cchCopied = m_cchPut - m_offPutNext;
+                if (cchCopied > 0)
+                {
+                    cchCopied = RT_MIN(cchCopied, a_cchSrc);
+                    traits_type::copy(&m_pachPut[m_offPutNext], a_pchSrc, cchCopied);
+                    m_cchPut += cchCopied;
+                }
+                else
+                {
+                    if (overflow(traits_type::to_int_type(m_pachPut[m_offPutNext])) != traits_type::eof())
+                        cchCopied = 1;
+                    else
+                        break;
+                }
+                a_pchSrc += cchCopied;
+                a_cchSrc -= cchCopied;
+            }
+            return cchWritten;
+        }
+
+    public:
+        int_type sputc(char_type a_ch)
+        {
+            if (m_offPutNext < m_cchPut)
+            {
+                m_pachPut[m_offPutNext++] = a_ch;
+                return traits_type::to_int_type(a_ch);
+            }
+            return overflow(traits_type::to_int_type(a_ch));
+        }
+
+        std::streamsize sputn(char_type const *a_pchSrc, std::streamsize a_cchSrc)
+        {
+            AssertReturn(a_cchSrc >= 0, 0);
+            return xsputn(a_pchSrc, a_cchSrc);
+        }
+
+        /** @} */
+
+        /** @todo add the remaining members... */
     };
 
 
@@ -305,29 +412,32 @@ namespace std
 
     protected:
         basic_streambuf<a_CharType, a_CharTraits>  *m_pBuf;
+        basic_ostream<a_CharType, a_CharTraits>    *m_pTiedStream;
 
     protected:
-        void init(const std::basic_streambuf<a_CharType, a_CharTraits> *a_pBuf)
+        void init(std::basic_streambuf<a_CharType, a_CharTraits> *a_pBuf)
         {
             m_pBuf         = a_pBuf;
             m_cWidth       = 0;
             m_cPrecision   = 6;
-            m_fFlags       = ios_base::dec | ios_base::wskip;
+            m_fFlags       = ios_base::dec | ios_base::skipws;
             m_fState       = ios_base::goodbit;
         }
 
     public:
         basic_ios()
-            : m_pBuf(NULL)
-            , ios_base()
+            : ios_base()
+            , m_pBuf(NULL)
+            , m_pTiedStream(NULL)
         {
         }
 
-        basic_ios(const std::basic_streambuf<a_CharType, a_CharTraits> *a_pBuf)
-            : m_pBuf(NULL)
-            , ios_base()
+        basic_ios(std::basic_streambuf<a_CharType, a_CharTraits> *a_pBuf)
+            : ios_base()
+            , m_pBuf(NULL)
+            , m_pTiedStream(NULL)
         {
-            init(a_pBuf)
+            init(a_pBuf);
         }
     private:
         basic_ios(const basic_ios &a_rSrc);             /* not copyable */
@@ -382,6 +492,18 @@ namespace std
             std::basic_streambuf<a_CharType, a_CharTraits> *pOldBuf = m_pBuf;
             m_pBuf = a_pNewBuf;
             return pOldBuf;
+        }
+
+        std::basic_ostream<a_CharType, a_CharTraits> *tie() const
+        {
+            return m_pTiedStream;
+        }
+
+        std::basic_ostream<a_CharType, a_CharTraits> tie(std::basic_ostream<a_CharType, a_CharTraits> *a_pNew) const RT_NOEXCEPT
+        {
+            std::basic_ostream<a_CharType, a_CharTraits> * const pOld = m_pTiedStream;
+            m_pTiedStream = a_pNew;
+            return pOld;
         }
         /** @}  */
 

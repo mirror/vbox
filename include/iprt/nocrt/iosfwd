@@ -48,6 +48,9 @@ namespace std
     template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_istream;
     template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_ostream;
     template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_iostream;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_ifstream;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_ofstream;
+    template<typename a_CharType, typename a_CharTraits = std::char_traits<a_CharType> > class basic_fstream;
 
 
     typedef basic_ios<char>             ios;
@@ -55,6 +58,9 @@ namespace std
     typedef basic_istream<char>         istream;
     typedef basic_ostream<char>         ostream;
     typedef basic_iostream<char>        iostream;
+    typedef basic_ifstream<char>        ifstream;
+    typedef basic_ofstream<char>        ofstream;
+    typedef basic_fstream<char>         fstream;
 }
 
 #ifdef _MSC_VER

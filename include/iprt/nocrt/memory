@@ -90,6 +90,8 @@ namespace std
             a_pDst->~value_type();
         }
     };
+
+    /** @todo make_unique and unique   */
 }
 
 #endif /* !IPRT_INCLUDED_nocrt_memory */
