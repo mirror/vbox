@@ -76,14 +76,10 @@ char       *RT_NOCRT(strtok_s)(char *psz, /*rsize_t*/ size_t cchMax, const char 
 char       *RT_NOCRT(strtok_s)(char *psz, const char *pszDelim, char **ppszSave);
 #endif
 size_t      RT_NOCRT(strxfrm)(char *pszDst, const char *pszSrc, size_t cch);
-long        RT_NOCRT(strtol)(const char *pszDst, char **ppszNext, int iBase);
-long long   RT_NOCRT(strtoll)(const char *pszDst, char **ppszNext, int iBase);
-unsigned long RT_NOCRT(strtoul)(const char *pszDst, char **ppszNext, int iBase);
-unsigned long long RT_NOCRT(strtoull)(const char *pszDst, char **ppszNext, int iBase);
 
 size_t      RT_NOCRT(wcslen)(const wchar_t *pwsz);
 wchar_t    *RT_NOCRT(wcscat)(wchar_t *pwszDst, const wchar_t *pwszSrc);
-wchar_t    *RT_NOCRT(wcschr)(const wchar_t *pwszDst, wchar_t wc);
+wchar_t    *RT_NOCRT(wcschr)(const wchar_t *pwsz, wchar_t wc);
 wchar_t    *RT_NOCRT(wcscpy)(wchar_t *pwszDst, const wchar_t *pwszSrc);
 int         RT_NOCRT(wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
 size_t      RT_NOCRT(wcstombs)(char *pszDst, const wchar_t *pszSrc, size_t cbDst);
@@ -127,14 +123,10 @@ char       *RT_NOCRT(_strtok_s)(char *psz, /*rsize_t*/ size_t cchMax, const char
 char       *RT_NOCRT(_strtok_s)(char *psz, const char *pszDelim, char **ppszSave);
 #endif
 size_t      RT_NOCRT(_strxfrm)(char *pszDst, const char *pszSrc, size_t cch);
-long        RT_NOCRT(_strtol)(const char *pszDst, char **ppszNext, int iBase);
-long long   RT_NOCRT(_strtoll)(const char *pszDst, char **ppszNext, int iBase);
-unsigned long RT_NOCRT(_strtoul)(const char *pszDst, char **ppszNext, int iBase);
-unsigned long long RT_NOCRT(_strtoull)(const char *pszDst, char **ppszNext, int iBase);
 
 size_t      RT_NOCRT(_wcslen)(const wchar_t *pwsz);
 wchar_t    *RT_NOCRT(_wcscat)(wchar_t *pwszDst, const wchar_t *pwszSrc);
-wchar_t    *RT_NOCRT(_wcschr)(const wchar_t *pwszDst, wchar_t wc);
+wchar_t    *RT_NOCRT(_wcschr)(const wchar_t *pwsz, wchar_t wc);
 wchar_t    *RT_NOCRT(_wcscpy)(wchar_t *pwszDst, const wchar_t *pwszSrc);
 int         RT_NOCRT(_wcsicmp)(const wchar_t *pwsz1, const wchar_t *pwsz2);
 size_t      RT_NOCRT(_wcstombs)(char *pszDst, const wchar_t *pszSrc, size_t cbDst);
@@ -173,10 +165,6 @@ size_t      RT_NOCRT(_wcstombs)(char *pszDst, const wchar_t *pszSrc, size_t cbDs
 # define strtok_r       RT_NOCRT(strtok_r)
 # define strtok_s       RT_NOCRT(strtok_s)
 # define strxfrm        RT_NOCRT(strxfrm)
-# define strtol         RT_NOCRT(strtol)
-# define strtoll        RT_NOCRT(strtoll)
-# define strtoul        RT_NOCRT(strtoul)
-# define strtoull       RT_NOCRT(strtoull)
 
 # define wcslen         RT_NOCRT(wcslen)
 # define wcscat         RT_NOCRT(wcscat)
@@ -218,10 +206,6 @@ size_t      RT_NOCRT(_wcstombs)(char *pszDst, const wchar_t *pszSrc, size_t cbDs
 # define _strtok_r      RT_NOCRT(strtok_r)
 # define _strtok_s      RT_NOCRT(strtok_s)
 # define _strxfrm       RT_NOCRT(strxfrm)
-# define _strtol        RT_NOCRT(strtol)
-# define _strtoll       RT_NOCRT(strtoll)
-# define _strtoul       RT_NOCRT(strtoul)
-# define _strtoull      RT_NOCRT(strtoull)
 
 # define _wcslen        RT_NOCRT(wcslen)
 # define _wcscat        RT_NOCRT(wcscat)

@@ -29,8 +29,9 @@
 # pragma once
 #endif
 
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <iprt/nocrt/fcntl.h>
+#include <iprt/nocrt/sys/stat.h>
+#include <iprt/nocrt/unistd.h>
 
 
 #endif /* !IPRT_INCLUDED_nocrt_io_h */

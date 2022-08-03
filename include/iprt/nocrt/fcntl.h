@@ -29,6 +29,7 @@
 # pragma once
 #endif
 
+#include <iprt/nocrt/time.h> /* to establish the timespec and timeval types before iprt/file.h includes iprt/time.h */
 #include <iprt/file.h>
 
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY

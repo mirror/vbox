@@ -31,9 +31,11 @@
 
 #include <iprt/types.h>
 
-typedef RTDEV   dev_t;
-typedef RTINODE ino_t;
-typedef int     errno_t;
+typedef RTDEV       dev_t;
+typedef int         errno_t;
+typedef RTINODE     ino_t;
+typedef RTFOFF      off_t;
+typedef RTPROCESS   pid_t;
 
 #endif /* !IPRT_INCLUDED_nocrt_sys_types_h */
 

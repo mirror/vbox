@@ -44,5 +44,8 @@
 #define isupper(a_ch)       RT_C_IS_UPPER(a_ch)
 #define islower(a_ch)       RT_C_IS_LOWER(a_ch)
 
+#define tolower(a_ch)       RT_C_TO_LOWER(a_ch)
+#define toupper(a_ch)       RT_C_TO_UPPER(a_ch)
+
 #endif /* !IPRT_INCLUDED_nocrt_ctype_h */
 

@@ -86,91 +86,6 @@ extern const union __nan_un {
 #define HUGE_VAL    (RT_NOCRT(__infinity).__ud)
 #endif
 
-#if 1 /* __ISO_C_VISIBLE >= 1999*/
-#define FP_ILOGB0   (-__INT_MAX)
-#define FP_ILOGBNAN __INT_MAX
-
-#ifdef __MATH_BUILTIN_CONSTANTS
-#define HUGE_VALF   __builtin_huge_valf()
-#define HUGE_VALL   __builtin_huge_vall()
-#define INFINITY    __builtin_inf()
-#define NAN     __builtin_nan("")
-#else
-#define HUGE_VALF   (float)HUGE_VAL
-#define HUGE_VALL   (long double)HUGE_VAL
-#define INFINITY    HUGE_VALF
-#define NAN     (__nan.__uf)
-#endif /* __MATH_BUILTIN_CONSTANTS */
-
-#ifndef IPRT_NO_CRT
-#define MATH_ERRNO  1
-#endif
-#define MATH_ERREXCEPT  2
-#define math_errhandling    MATH_ERREXCEPT
-
-/* XXX We need a <machine/math.h>. */
-#if defined(__ia64__) || defined(__sparc64__)
-#define FP_FAST_FMA
-#endif
-#ifdef __ia64__
-#define FP_FAST_FMAL
-#endif
-#define FP_FAST_FMAF
-
-/* Symbolic constants to classify floating point numbers. */
-#define FP_INFINITE 0x01
-#define FP_NAN      0x02
-#define FP_NORMAL   0x04
-#define FP_SUBNORMAL    0x08
-#define FP_ZERO     0x10
-#define fpclassify(x) \
-    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__fpclassifyf)(x) \
-    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__fpclassifyd)(x) \
-    : RT_NOCRT(__fpclassifyl)(x))
-
-#define isfinite(x)                 \
-    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isfinitef)(x)    \
-    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isfinite)(x)   \
-    : RT_NOCRT(__isfinitel)(x))
-#define isinf(x)                    \
-    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isinff)(x)   \
-    : (sizeof (x) == sizeof (double)) ? isinf(x)    \
-    : RT_NOCRT(__isinfl)(x))
-#define isnan(x)                    \
-    ((sizeof (x) == sizeof (float)) ? isnanf(x)     \
-    : (sizeof (x) == sizeof (double)) ? isnan(x)    \
-    : RT_NOCRT(__isnanl)(x))
-#define isnormal(x)                 \
-    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isnormalf)(x)    \
-    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isnormal)(x)   \
-    : RT_NOCRT(__isnormall)(x))
-
-#ifdef __MATH_BUILTIN_RELOPS
-#define isgreater(x, y)     __builtin_isgreater((x), (y))
-#define isgreaterequal(x, y)    __builtin_isgreaterequal((x), (y))
-#define isless(x, y)        __builtin_isless((x), (y))
-#define islessequal(x, y)   __builtin_islessequal((x), (y))
-#define islessgreater(x, y) __builtin_islessgreater((x), (y))
-#define isunordered(x, y)   __builtin_isunordered((x), (y))
-#else
-#define isgreater(x, y)     (!isunordered((x), (y)) && (x) > (y))
-#define isgreaterequal(x, y)    (!isunordered((x), (y)) && (x) >= (y))
-#define isless(x, y)        (!isunordered((x), (y)) && (x) < (y))
-#define islessequal(x, y)   (!isunordered((x), (y)) && (x) <= (y))
-#define islessgreater(x, y) (!isunordered((x), (y)) && \
-                    ((x) > (y) || (y) > (x)))
-#define isunordered(x, y)   (isnan(x) || isnan(y))
-#endif /* __MATH_BUILTIN_RELOPS */
-
-#define signbit(x)                  \
-    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__signbitf)(x) \
-    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__signbit)(x)    \
-    : RT_NOCRT(__signbitl)(x))
-
-typedef double  double_t;
-typedef float   float_t;
-#endif /* __ISO_C_VISIBLE >= 1999 */
-
 /*
  * XOPEN/SVID
  */
@@ -268,9 +183,9 @@ double  RT_NOCRT(exp2)(double);
 double  RT_NOCRT(expm1)(double);
 double  RT_NOCRT(fma)(double, double, double);
 double  RT_NOCRT(hypot)(double, double);
-int RT_NOCRT(ilogb)(double) __pure2;
-/*int isinf(double) __pure2;*/
-/*int isnan(double) __pure2;*/
+int     RT_NOCRT(ilogb)(double) __pure2;
+int     RT_NOCRT(isinf)(double) __pure2;
+int     RT_NOCRT(isnan)(double) __pure2;
 double  RT_NOCRT(lgamma)(double);
 long long RT_NOCRT(llrint)(double);
 long long RT_NOCRT(llround)(double);
@@ -556,8 +471,96 @@ long double RT_NOCRT(ynl)(int, long double);
 long double RT_NOCRT(lgammal_r)(long double,int *);
 long double RT_NOCRT(gammal)(long double);
 #endif
+
+
 RT_C_DECLS_END
 
+
+/* bird 2022-08-03: moved this block down so we can prototype isnan & isinf without runnning into the macro forms. */
+#if 1 /* __ISO_C_VISIBLE >= 1999*/
+#define FP_ILOGB0   (-__INT_MAX)
+#define FP_ILOGBNAN __INT_MAX
+
+#ifdef __MATH_BUILTIN_CONSTANTS
+#define HUGE_VALF   __builtin_huge_valf()
+#define HUGE_VALL   __builtin_huge_vall()
+#define INFINITY    __builtin_inf()
+#define NAN     __builtin_nan("")
+#else
+#define HUGE_VALF   (float)HUGE_VAL
+#define HUGE_VALL   (long double)HUGE_VAL
+#define INFINITY    HUGE_VALF
+#define NAN     (__nan.__uf)
+#endif /* __MATH_BUILTIN_CONSTANTS */
+
+#ifndef IPRT_NO_CRT
+#define MATH_ERRNO  1
+#endif
+#define MATH_ERREXCEPT  2
+#define math_errhandling    MATH_ERREXCEPT
+
+/* XXX We need a <machine/math.h>. */
+#if defined(__ia64__) || defined(__sparc64__)
+#define FP_FAST_FMA
+#endif
+#ifdef __ia64__
+#define FP_FAST_FMAL
+#endif
+#define FP_FAST_FMAF
+
+/* Symbolic constants to classify floating point numbers. */
+#define FP_INFINITE 0x01
+#define FP_NAN      0x02
+#define FP_NORMAL   0x04
+#define FP_SUBNORMAL    0x08
+#define FP_ZERO     0x10
+#define fpclassify(x) \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__fpclassifyf)(x) \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__fpclassifyd)(x) \
+    : RT_NOCRT(__fpclassifyl)(x))
+
+#define isfinite(x)                 \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isfinitef)(x)    \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isfinite)(x)   \
+    : RT_NOCRT(__isfinitel)(x))
+#define isinf(x)                    \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isinff)(x)   \
+    : (sizeof (x) == sizeof (double)) ? isinf(x)    \
+    : RT_NOCRT(__isinfl)(x))
+#define isnan(x)                    \
+    ((sizeof (x) == sizeof (float)) ? isnanf(x)     \
+    : (sizeof (x) == sizeof (double)) ? isnan(x)    \
+    : RT_NOCRT(__isnanl)(x))
+#define isnormal(x)                 \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isnormalf)(x)    \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isnormal)(x)   \
+    : RT_NOCRT(__isnormall)(x))
+
+#ifdef __MATH_BUILTIN_RELOPS
+#define isgreater(x, y)     __builtin_isgreater((x), (y))
+#define isgreaterequal(x, y)    __builtin_isgreaterequal((x), (y))
+#define isless(x, y)        __builtin_isless((x), (y))
+#define islessequal(x, y)   __builtin_islessequal((x), (y))
+#define islessgreater(x, y) __builtin_islessgreater((x), (y))
+#define isunordered(x, y)   __builtin_isunordered((x), (y))
+#else
+#define isgreater(x, y)     (!isunordered((x), (y)) && (x) > (y))
+#define isgreaterequal(x, y)    (!isunordered((x), (y)) && (x) >= (y))
+#define isless(x, y)        (!isunordered((x), (y)) && (x) < (y))
+#define islessequal(x, y)   (!isunordered((x), (y)) && (x) <= (y))
+#define islessgreater(x, y) (!isunordered((x), (y)) && \
+                    ((x) > (y) || (y) > (x)))
+#define isunordered(x, y)   (isnan(x) || isnan(y))
+#endif /* __MATH_BUILTIN_RELOPS */
+
+#define signbit(x)                  \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__signbitf)(x) \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__signbit)(x)    \
+    : RT_NOCRT(__signbitl)(x))
+
+typedef double  double_t;
+typedef float   float_t;
+#endif /* __ISO_C_VISIBLE >= 1999 */
 
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
@@ -659,6 +662,8 @@ RT_C_DECLS_END
 # define trunc RT_NOCRT(trunc)
 # define drem RT_NOCRT(drem)
 # define finite RT_NOCRT(finite)
+# define isinf RT_NOCRT(isinf)
+# define isnan RT_NOCRT(isnan)
 # define isnanf RT_NOCRT(isnanf)
 # define gamma_r RT_NOCRT(gamma_r)
 # define lgamma_r RT_NOCRT(lgamma_r)

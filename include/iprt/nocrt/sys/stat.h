@@ -29,10 +29,10 @@
 # pragma once
 #endif
 
+#include <iprt/nocrt/time.h>    /* Establish timespec and timeval before iprt/fs.h includes iprt/time.h. */
 #include <iprt/fs.h>
-#include <sys/types.h>
-#include <time.h>
-#include <limits.h>
+#include <iprt/nocrt/sys/types.h>
+#include <iprt/nocrt/limits.h>
 
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
 
@@ -92,6 +92,7 @@ int     RT_NOCRT(fstat)(int fd, struct RT_NOCRT(stat) *pStat);
 int     RT_NOCRT(lstat)(const  char *pszPath, struct RT_NOCRT(stat) *pStat);
 int     RT_NOCRT(stat)(const  char *pszPath, struct RT_NOCRT(stat) *pStat);
 RTFMODE RT_NOCRT(umask)(RTFMODE fMode);
+int     RT_NOCRT(mkdir)(const char *, RTFMODE fMode);
 
 int     RT_NOCRT(_chmod)(const char *pszPath, RTFMODE fMode);
 int     RT_NOCRT(_fchmod)(int fd, RTFMODE fMode);
@@ -99,6 +100,7 @@ int     RT_NOCRT(_fstat)(int fd, struct RT_NOCRT(stat) *pStat);
 int     RT_NOCRT(_lstat)(const  char *pszPath, struct RT_NOCRT(stat) *pStat);
 int     RT_NOCRT(_stat)(const  char *pszPath, struct RT_NOCRT(stat) *pStat);
 RTFMODE RT_NOCRT(_umask)(RTFMODE fMode);
+int     RT_NOCRT(_mkdir)(const char *, RTFMODE fMode);
 
 # if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 #  define chmod      RT_NOCRT(chmod)
@@ -107,13 +109,15 @@ RTFMODE RT_NOCRT(_umask)(RTFMODE fMode);
 #  define lstat      RT_NOCRT(lstat)
 #  define stat       RT_NOCRT(stat)
 #  define umask      RT_NOCRT(umask)
+#  define mkdir      RT_NOCRT(mkdir)
 
-#  define _chmod     RT_NOCRT(_chmod)
-#  define _fchmod    RT_NOCRT(_fchmod)
-#  define _fstat     RT_NOCRT(_fstat)
-#  define _lstat     RT_NOCRT(_lstat)
-#  define _stat      RT_NOCRT(_stat)
-#  define _umask     RT_NOCRT(_umask)
+#  define _chmod     RT_NOCRT(chmod)
+#  define _fchmod    RT_NOCRT(fchmod)
+#  define _fstat     RT_NOCRT(fstat)
+#  define _lstat     RT_NOCRT(lstat)
+#  define _stat      RT_NOCRT(stat)
+#  define _umask     RT_NOCRT(umask)
+#  define _mkdir     RT_NOCRT(mkdir)
 # endif
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */

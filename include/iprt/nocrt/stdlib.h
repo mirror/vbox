@@ -84,6 +84,19 @@ DECLINLINE(const char *) RT_NOCRT(getenv)(const char *pszVar)
     return RTEnvGet(pszVar);
 }
 
+int         RT_NOCRT(abs)(int);
+long        RT_NOCRT(labs)(long);
+long        RT_NOCRT(labs)(long);
+long long   RT_NOCRT(llabs)(long long);
+int         RT_NOCRT(rand)(void);
+void        RT_NOCRT(srand)(unsigned);
+long        RT_NOCRT(strtol)(const char *psz, char **ppszNext, int iBase);
+long long   RT_NOCRT(strtoll)(const char *psz, char **ppszNext, int iBase);
+unsigned long RT_NOCRT(strtoul)(const char *psz, char **ppszNext, int iBase);
+unsigned long long RT_NOCRT(strtoull)(const char *psz, char **ppszNext, int iBase);
+int         RT_NOCRT(atoi)(const char *psz);
+double      RT_NOCRT(strtod)(const char *psz, char **ppszNext);
+double      RT_NOCRT(atof)(const char *psz);
 void       *RT_NOCRT(bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
                               int (*pfnCompare)(const void *pv1, const void *pv2));
 void        RT_NOCRT(qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
@@ -123,6 +136,19 @@ DECLINLINE(const char *) RT_NOCRT(_getenv)(const char *pszVar)
     return RTEnvGet(pszVar);
 }
 
+int         RT_NOCRT(_abs)(int);
+long        RT_NOCRT(_labs)(long);
+long        RT_NOCRT(_labs)(long);
+long long   RT_NOCRT(_llabs)(long long);
+int         RT_NOCRT(_rand)(void);
+void        RT_NOCRT(_srand)(unsigned);
+long        RT_NOCRT(_strtol)(const char *psz, char **ppszNext, int iBase);
+long long   RT_NOCRT(_strtoll)(const char *psz, char **ppszNext, int iBase);
+unsigned long RT_NOCRT(_strtoul)(const char *psz, char **ppszNext, int iBase);
+unsigned long long RT_NOCRT(_strtoull)(const char *psz, char **ppszNext, int iBase);
+int         RT_NOCRT(_atoi)(const char *psz);
+double      RT_NOCRT(_strtod)(const char *psz, char **ppszNext);
+double      RT_NOCRT(_atof)(const char *psz);
 void       *RT_NOCRT(_bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
                                int (*pfnCompare)(const void *pv1, const void *pv2));
 void        RT_NOCRT(_qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
@@ -142,24 +168,40 @@ DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_abort)(void) { AssertMsgFailed(("_abo
  * No-CRT aliases.
  */
 # if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
-#  define malloc    RT_NOCRT(malloc)
-#  define calloc    RT_NOCRT(calloc)
-#  define realloc   RT_NOCRT(realloc)
-#  define free      RT_NOCRT(free)
-#  define getenv    RT_NOCRT(getenv)
-#  define bsearch   RT_NOCRT(bsearch)
-#  define exit      RT_NOCRT(exit)
-#  define abort     RT_NOCRT(abort)
+#  define malloc        RT_NOCRT(malloc)
+#  define calloc        RT_NOCRT(calloc)
+#  define realloc       RT_NOCRT(realloc)
+#  define free          RT_NOCRT(free)
+#  define getenv        RT_NOCRT(getenv)
+#  define bsearch       RT_NOCRT(bsearch)
+#  define exit          RT_NOCRT(exit)
+#  define abort         RT_NOCRT(abort)
+#  define rand          RT_NOCRT(rand)
+#  define srand         RT_NOCRT(srand)
+#  define strtol        RT_NOCRT(strtol)
+#  define strtoll       RT_NOCRT(strtoll)
+#  define strtoul       RT_NOCRT(strtoul)
+#  define strtoull      RT_NOCRT(strtoull)
+#  define atoi          RT_NOCRT(atoi)
+#  define strtod        RT_NOCRT(strtod)
+#  define atof          RT_NOCRT(atof)
 
-#  define _malloc   RT_NOCRT(malloc)
-#  define _calloc   RT_NOCRT(calloc)
-#  define _realloc  RT_NOCRT(realloc)
-#  define _free     RT_NOCRT(free)
-#  define _getenv   RT_NOCRT(getenv)
-#  define _bsearch  RT_NOCRT(bsearch)
-#  define _exit     RT_NOCRT(exit)
-#  define _abort    RT_NOCRT(abort)
-# endif
+#  define _malloc       RT_NOCRT(malloc)
+#  define _calloc       RT_NOCRT(calloc)
+#  define _realloc      RT_NOCRT(realloc)
+#  define _free         RT_NOCRT(free)
+#  define _getenv       RT_NOCRT(getenv)
+#  define _bsearch      RT_NOCRT(bsearch)
+#  define _exit         RT_NOCRT(exit)
+#  define _abort        RT_NOCRT(abort)
+#  define _strtol       RT_NOCRT(strtol)
+#  define _strtoll      RT_NOCRT(strtoll)
+#  define _strtoul      RT_NOCRT(strtoul)
+#  define _strtoull     RT_NOCRT(strtoull)
+#  define _atoi         RT_NOCRT(atoi)
+#  define _strtod       RT_NOCRT(strtod)
+#  define _atof         RT_NOCRT(atof)
+#  endif
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
 
