@@ -33,11 +33,6 @@ VBOX_PATH_VMSVGA_INC := $(VBOX_PATH_MESA)/src/gallium/drivers/svga/include
 #
 TEMPLATE_VBoxMesa3DGuestR3Dll          = VBox Mesa 3D Guest User Mode DLL
 TEMPLATE_VBoxMesa3DGuestR3Dll_EXTENDS  = NewerVccVBoxGuestR3Dll
-if defined(VBOX_WITH_NOCRT_STATIC) && "$(KBUILD_TARGET)" == "win"
-TEMPLATE_VBoxMesa3DGuestR3Dll_TOOL.x86   = $(VBOX_VCC_TOOL_STEM)X86-NOINC
-TEMPLATE_VBoxMesa3DGuestR3Dll_TOOL.win.x86   = $(VBOX_VCC_TOOL_STEM)X86-NOINC
-TEMPLATE_VBoxMesa3DGuestR3Dll_TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64-NOINC
-endif
 TEMPLATE_VBoxMesa3DGuestR3Dll_INST     = $(INST_ADDITIONS)
 TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
 	VBOX_WITH_MESA3D
@@ -94,10 +89,6 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS)
 	$(VBOX_PATH_MESA)/src/gallium/auxiliary \
 	$(VBOX_PATH_MESA)/src/gallium/include \
 	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
-ifdef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxMesa3DGuestR3Dll_INCS    += \
-	$(VBOX_PATH_3D)/include
-endif
 ifdef VBOX_WITH_NOCRT_STATIC
 TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS    += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
