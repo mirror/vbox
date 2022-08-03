@@ -2133,19 +2133,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2189,19 +2181,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">&amp;Odstrániť</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2213,19 +2197,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2249,15 +2225,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2298,10 +2266,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2474,10 +2438,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2565,6 +2525,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -2599,13 +2595,6 @@
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3147,127 +3136,14 @@
     </message>
 </context>
 <context>
-    <name>UICloneVMAdditionalOptionsEditor</name>
-    <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UICloneVMCloneModeGroupBox</name>
-    <message>
-        <source>Current &amp;machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Everything</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UICloneVMCloneTypeGroupBox</name>
-    <message>
-        <source>&amp;Full clone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Linked clone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 klonovať</translation>
+        <translation type="obsolete">%1 klonovať</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Názov:</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Názov:</translation>
     </message>
 </context>
 <context>
@@ -3365,60 +3241,8 @@
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
 </context>
 <context>
@@ -3463,9 +3287,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -3485,9 +3354,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -3496,60 +3362,12 @@
 <context>
     <name>UICloudProfileDetailsWidget</name>
     <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Properties:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Contains cloud profile settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for the new profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Reset changes in current profile details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Pridať</translation>
-    </message>
-    <message>
-        <source>Add a new profile with following name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Profile (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current profile details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Pridať</translation>
     </message>
 </context>
 <context>
@@ -3610,9 +3428,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Pridať</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished">Zdroj</translation>
@@ -3624,6 +3479,13 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Source</source>
+        <translation type="obsolete">Zdroj</translation>
     </message>
 </context>
 <context>
@@ -5461,29 +5323,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -5527,6 +5366,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
     </message>
 </context>
 <context>
@@ -6436,318 +6282,106 @@
 <context>
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the name for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current interface details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current interface details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Názov:</translation>
-    </message>
-    <message>
-        <source>Holds the name for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Názov:</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">A&amp;daptér</translation>
+        <translation type="obsolete">A&amp;daptér</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP Server</translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;DHCP Server</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4 adresa:</translation>
+        <translation type="obsolete">&amp;IPv4 adresa:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Zobrazí IPv4 adresu hostiteľa pre tento adaptér.</translation>
+        <translation type="obsolete">Zobrazí IPv4 adresu hostiteľa pre tento adaptér.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">Sieť&amp;ová maska IPv4:</translation>
+        <translation type="obsolete">Sieť&amp;ová maska IPv4:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Zobrazí IPv4 sieťovú masku pre tento adaptér.</translation>
+        <translation type="obsolete">Zobrazí IPv4 sieťovú masku pre tento adaptér.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">&amp;IPv6 adresa:</translation>
+        <translation type="obsolete">&amp;IPv6 adresa:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zobrazí IPv6 adresu hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
+        <translation type="obsolete">Zobrazí IPv6 adresu hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">Dĺžka sieťove&amp;j masky IPv6:</translation>
+        <translation type="obsolete">Dĺžka sieťove&amp;j masky IPv6:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zobrazí dĺžku prefixu IPv6 adresy hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
-    </message>
-    <message>
-        <source>Reset changes in current interface details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current interface details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Zobrazí dĺžku prefixu IPv6 adresy hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">&amp;Zapnúť server</translation>
-    </message>
-    <message>
-        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Zapnúť server</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">A&amp;dresa servera:</translation>
+        <translation type="obsolete">A&amp;dresa servera:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zobrazuje adresu DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
+        <translation type="obsolete">Zobrazuje adresu DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">&amp;Maska servera:</translation>
+        <translation type="obsolete">&amp;Maska servera:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zobrazuje sieťovú masku DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
+        <translation type="obsolete">Zobrazuje sieťovú masku DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">&amp;Spodná hranica pre adresy:</translation>
+        <translation type="obsolete">&amp;Spodná hranica pre adresy:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zobrazí spodnú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
+        <translation type="obsolete">Zobrazí spodnú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">&amp;Horná hranica pre adresy:</translation>
+        <translation type="obsolete">&amp;Horná hranica pre adresy:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zobrazí hornú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
-    </message>
-    <message>
-        <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Zobrazí hornú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">P&amp;resmerovanie portov</translation>
-    </message>
-    <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the name for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">P&amp;resmerovanie portov</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current interface details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current interface details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
 </context>
 <context>
@@ -6814,6 +6448,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Rozšírené vlastnosti:</translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Rozšírené vlastnosti:</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">Povoliť &amp;3D akceleráciu</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Ak je zaškrtnuté, virtuálny stroj dostane prístup k 3D grafickým funkciám hostiteľa.</translation>
     </message>
 </context>
 <context>
@@ -7328,9 +7000,16 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">Aktívne</translation>
@@ -7354,6 +7033,29 @@
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">Súbory balíčkov s rozšíreniami (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">Aktívne</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Názov</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">Verzia</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">Vyberte balíček s rozšíreniami</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">Súbory balíčkov s rozšíreniami (%1)</translation>
     </message>
 </context>
 <context>
@@ -8037,13 +7739,6 @@
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGChooserItemGroup</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -8407,58 +8102,7 @@
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Rozšírené vlastnosti:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalProxyFeaturesEditor</name>
-    <message>
-        <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;URL:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Rozšírené vlastnosti:</translation>
     </message>
 </context>
 <context>
@@ -9262,52 +8906,8 @@
 <context>
     <name>UIHelpBrowserTab</name>
     <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Forward</source>
-        <translation type="unfinished">Dopredu</translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Dopredu</translation>
     </message>
 </context>
 <context>
@@ -9476,19 +9076,56 @@
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished">Dopredu</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>&amp;Pomocník</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10555,68 +10192,6 @@
     </message>
 </context>
 <context>
-    <name>UIInputDialogCloudConsoleApplication</name>
-    <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIInputDialogCloudConsoleProfile</name>
-    <message>
-        <source>Add Profile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIItemCloudNetwork</name>
-    <message>
-        <source>Network Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIItemExtensionPack</name>
-    <message>
-        <source>%1, %2: %3, %4</source>
-        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1, %2: %3</source>
-        <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIItemHostNetwork</name>
     <message>
         <source>Enable</source>
@@ -10625,146 +10200,77 @@
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Adaptér</translation>
+        <translation type="obsolete">Adaptér</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Automaticky skonfigurované</translation>
+        <translation type="obsolete">Automaticky skonfigurované</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Ručne skonfigurované</translation>
+        <translation type="obsolete">Ručne skonfigurované</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 adresa</translation>
+        <translation type="obsolete">IPv4 adresa</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">Nenastavená</translation>
+        <translation type="obsolete">Nenastavená</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 sieťová maska</translation>
+        <translation type="obsolete">IPv4 sieťová maska</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">Nenastavená</translation>
+        <translation type="obsolete">Nenastavená</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 adresa</translation>
+        <translation type="obsolete">IPv6 adresa</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">Dĺžka sieťovej masky IPv6</translation>
+        <translation type="obsolete">Dĺžka sieťovej masky IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">Nenastavená</translation>
+        <translation type="obsolete">Nenastavená</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP server</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">DHCP server</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">Adresa</translation>
+        <translation type="obsolete">Adresa</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Sieťová maska</translation>
+        <translation type="obsolete">Sieťová maska</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Spodná hranica</translation>
+        <translation type="obsolete">Spodná hranica</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">Nenastavená</translation>
+        <translation type="obsolete">Nenastavená</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Horná hranica</translation>
+        <translation type="obsolete">Horná hranica</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIItemNATNetwork</name>
-    <message>
-        <source>Enabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Supports DHCP</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>no</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Supports IPv6</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Default IPv6 route</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Názov</translation>
     </message>
 </context>
 <context>
@@ -10844,22 +10350,22 @@
     <name>UIMachineDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
+        <translation type="obsolete">Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Rozšírené vlastnosti:</translation>
+        <translation type="obsolete">Rozšírené vlastnosti:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Povoliť &amp;3D akceleráciu</translation>
+        <translation type="obsolete">Povoliť &amp;3D akceleráciu</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Ak je zaškrtnuté, virtuálny stroj dostane prístup k 3D grafickým funkciám hostiteľa.</translation>
+        <translation type="obsolete">Ak je zaškrtnuté, virtuálny stroj dostane prístup k 3D grafickým funkciám hostiteľa.</translation>
     </message>
 </context>
 <context>
@@ -10938,6 +10444,10 @@
     <message>
         <source>Every 10 s</source>
         <translation type="unfinished">Každých 10 s</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">Nedostupné</translation>
     </message>
 </context>
 <context>
@@ -12379,104 +11889,16 @@
 <context>
     <name>UIMediumDetailsWidget</name>
     <message>
-        <source>&amp;Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;Typ:</translation>
-    </message>
-    <message>
-        <source>&amp;Location:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Typ:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">&amp;Popis:</translation>
-    </message>
-    <message>
-        <source>&amp;Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the type of this medium.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the location of this medium.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the description of this medium.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the size of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Popis:</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current medium details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current medium details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Medium Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Reštartovať</translation>
     </message>
 </context>
 <context>
@@ -12679,9 +12101,82 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">&amp;Typ:</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Popis:</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Registered hard drives</source>
         <translation type="unfinished"></translation>
@@ -12707,6 +12202,18 @@
     </message>
     <message>
         <source>Select the search type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15561,9 +15068,344 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Názov:</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">A&amp;daptér</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">&amp;DHCP Server</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">&amp;IPv4 adresa:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">Zobrazí IPv4 adresu hostiteľa pre tento adaptér.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">Sieť&amp;ová maska IPv4:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">Zobrazí IPv4 sieťovú masku pre tento adaptér.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">&amp;IPv6 adresa:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Zobrazí IPv6 adresu hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">Dĺžka sieťove&amp;j masky IPv6:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Zobrazí dĺžku prefixu IPv6 adresy hostiteľa pre tento adaptér, ak je IPv6 podporovaná.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">&amp;Zapnúť server</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">A&amp;dresa servera:</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Zobrazuje adresu DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">&amp;Maska servera:</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Zobrazuje sieťovú masku DHCP servera, ktorý obsluhuje sieť medzi hostiteľom priradenú k tomuto adaptéru.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">&amp;Spodná hranica pre adresy:</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Zobrazí spodnú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">&amp;Horná hranica pre adresy:</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Zobrazí hornú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">P&amp;resmerovanie portov</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">Adaptér</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Automaticky skonfigurované</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Ručne skonfigurované</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 adresa</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">Nenastavená</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 sieťová maska</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">Nenastavená</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 adresa</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">Dĺžka sieťovej masky IPv6</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">Nenastavená</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">Adresa</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">Sieťová maska</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">Nenastavená</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Registered host networks</source>
         <translation type="unfinished"></translation>
@@ -16800,6 +16642,41 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -17305,9 +17182,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">Názov</translation>
@@ -17316,10 +17190,12 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
     <message>
-        <source>%1: %2</source>
-        <comment>scope: description</comment>
-        <translation type="unfinished"></translation>
+        <source>Name</source>
+        <translation type="obsolete">Názov</translation>
     </message>
 </context>
 <context>
@@ -18133,13 +18009,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -18242,7 +18111,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -18603,6 +18472,11 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19324,7 +19198,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nedostupné</translation>
+        <translation type="obsolete">Nedostupné</translation>
     </message>
 </context>
 <context>
@@ -19388,13 +19262,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>Close</source>
         <translation type="obsolete">Zatvoriť</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMLogViewerDialog</name>
-    <message>
-        <source>%1 - Log Viewer</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -19569,6 +19436,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>NoLogFile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19851,13 +19722,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
-    <name>UIVisoCreatorDialog</name>
-    <message>
-        <source>VISO Creator</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIVisoCreatorWidget</name>
     <message>
         <source>Click to show/hide the tree view.</source>
@@ -19941,6 +19805,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20055,16 +19923,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -20086,7 +19944,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="obsolete">%1 klonovať</translation>
+        <translation type="unfinished">%1 klonovať</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
@@ -20142,6 +20000,122 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Additional options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Názov:</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep &amp;Disk Names</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;snapshot tree branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Everything</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20556,32 +20530,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
-    <message>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished"></translation>
@@ -20753,10 +20701,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21031,18 +20975,25 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
-        <source>%1, Active</source>
-        <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

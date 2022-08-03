@@ -2704,19 +2704,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2760,19 +2752,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">Eltávolítá&amp;s</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2784,20 +2768,12 @@
         <translation type="unfinished">Új mappa létrehozása az aktuális helyen</translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
         <translation type="unfinished">Kiválasztott fájlobjektum átnevezése</translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eset</source>
@@ -2820,15 +2796,7 @@
         <translation type="unfinished">Létező lemezkép hozzáadása</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2869,10 +2837,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3045,10 +3009,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3136,6 +3096,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -3171,13 +3167,6 @@
         <translation>
             <numerusform>A virtuális gép jelszóval védett. Kérlek, add meg lentebb a titkosítási jelszót.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3820,125 +3809,73 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">Minden hálózati kártya MAC-címe</translation>
+        <translation type="obsolete">Minden hálózati kártya MAC-címe</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
+        <translation type="obsolete">Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">Csak NAT hálózati kártya MAC-címe</translation>
+        <translation type="obsolete">Csak NAT hálózati kártya MAC-címe</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
+        <translation type="obsolete">Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">Új MAC-cím generálása minden hálózati kártyához</translation>
+        <translation type="obsolete">Új MAC-cím generálása minden hálózati kártyához</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished">Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
+        <translation type="obsolete">Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Haladó beállítások:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Haladó beállítások:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">&amp;Lemeznevek megtartása</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Lemeznevek megtartása</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">&amp;Aktuális gép állapota</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Aktuális gép állapota</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">Aktuál&amp;is pillanatkép-faág</translation>
+        <translation type="obsolete">Aktuál&amp;is pillanatkép-faág</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">Mind&amp;en</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Mind&amp;en</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">&amp;Teljes klón</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Teljes klón</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">&amp;Linkelt klón</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Linkelt klón</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 klón</translation>
+        <translation type="obsolete">%1 klón</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Név:</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Név:</translation>
     </message>
 </context>
 <context>
@@ -4076,60 +4013,20 @@
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path:</source>
-        <translation type="unfinished">Elérési út:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Elérési út:</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Módosítások visszaállítása (%1)</translation>
+        <translation type="obsolete">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Alkalmaz</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Alkalmaz</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Módosítások alkalmazása (%1)</translation>
+        <translation type="obsolete">Módosítások alkalmazása (%1)</translation>
     </message>
 </context>
 <context>
@@ -4174,9 +4071,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">Ablak bezárása (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">Elérési út:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">Profil hozzáadása</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -4196,9 +4138,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -4208,59 +4147,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>Név:</translation>
+        <translation type="vanished">Név:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>Tulajdonságok:</translation>
+        <translation type="vanished">Tulajdonságok:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>Felhős profil beállításai</translation>
+        <translation type="vanished">Felhős profil beállításai</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>Új profil nevének megadása...</translation>
+        <translation type="vanished">Új profil nevének megadása...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>Profil nevének megadása...</translation>
+        <translation type="vanished">Profil nevének megadása...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Alaphelyzet</translation>
+        <translation type="vanished">Alaphelyzet</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>Aktuális profil módosításainak visszaállítása</translation>
+        <translation type="vanished">Aktuális profil módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Módosítások visszaállítása (%1)</translation>
+        <translation type="vanished">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>Hozzáadás</translation>
+        <translation type="vanished">Hozzáadás</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>Új profil hozzáadása a következő névvel</translation>
+        <translation type="vanished">Új profil hozzáadása a következő névvel</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>Profil hozzáadása (%1)</translation>
+        <translation type="vanished">Profil hozzáadása (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Alkalmaz</translation>
+        <translation type="vanished">Alkalmaz</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>Aktuális profil módosításainak alkalmazása</translation>
+        <translation type="vanished">Aktuális profil módosításainak alkalmazása</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Módosítások alkalmazása (%1)</translation>
+        <translation type="vanished">Módosítások alkalmazása (%1)</translation>
     </message>
 </context>
 <context>
@@ -4321,9 +4260,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">Tulajdonságok:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">Felhős profil beállításai</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">Új profil nevének megadása...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">Profil nevének megadása...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">Aktuális profil módosításainak visszaállítása</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">Új profil hozzáadása a következő névvel</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">Profil hozzáadása (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">Aktuális profil módosításainak alkalmazása</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished"></translation>
@@ -6186,29 +6162,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -6256,6 +6209,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
     </message>
 </context>
 <context>
@@ -7285,317 +7245,201 @@
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Név:</translation>
+        <translation type="obsolete">&amp;Név:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Ezen hálózat neve.</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ezen hálózat neve.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Alkalmaz</translation>
+        <translation type="obsolete">Alkalmaz</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak visszaállítása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak alkalmazása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak alkalmazása</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Módosítások visszaállítása (%1)</translation>
+        <translation type="obsolete">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Módosítások alkalmazása (%1)</translation>
+        <translation type="obsolete">Módosítások alkalmazása (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Név:</translation>
+        <translation type="obsolete">&amp;Név:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Ezen hálózat neve.</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ezen hálózat neve.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Alkalmaz</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Alkalmaz</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Módosítások visszaállítása (%1)</translation>
+        <translation type="obsolete">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Módosítások alkalmazása (%1)</translation>
+        <translation type="obsolete">Módosítások alkalmazása (%1)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">Kárty&amp;a</translation>
+        <translation type="obsolete">Kárty&amp;a</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP szerver</translation>
+        <translation type="obsolete">&amp;DHCP szerver</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">Kártya &amp;automatikus konfigurálása</translation>
+        <translation type="obsolete">Kártya &amp;automatikus konfigurálása</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">Kártya &amp;manuális konfigurálása</translation>
+        <translation type="obsolete">Kártya &amp;manuális konfigurálása</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4 cím:</translation>
+        <translation type="obsolete">&amp;IPv4 cím:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">A gazda IPv4 címe ehhez a kártyához.</translation>
+        <translation type="obsolete">A gazda IPv4 címe ehhez a kártyához.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 hálózati &amp;maszk:</translation>
+        <translation type="obsolete">IPv4 hálózati &amp;maszk:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">A gazda IPv4 hálózati maszkja ehhez a kártyához.</translation>
+        <translation type="obsolete">A gazda IPv4 hálózati maszkja ehhez a kártyához.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">I&amp;Pv6 cím:</translation>
+        <translation type="obsolete">I&amp;Pv6 cím:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">A gazda IPv6 címe ehhez a kártyához, ha az IPv6 támogatott.</translation>
+        <translation type="obsolete">A gazda IPv6 címe ehhez a kártyához, ha az IPv6 támogatott.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 há&amp;lózati maszk hossza:</translation>
+        <translation type="obsolete">IPv6 há&amp;lózati maszk hossza:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">A gazda IPv6 hálózati maszkjának hossza ehhez a kártyához, ha IPv6 támogatott.</translation>
+        <translation type="obsolete">A gazda IPv6 hálózati maszkjának hossza ehhez a kártyához, ha IPv6 támogatott.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak visszaállítása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak alkalmazása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak alkalmazása</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Sz&amp;erver bekapcsolása</translation>
+        <translation type="obsolete">Sz&amp;erver bekapcsolása</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">Ha engedélyezed, a DHCP szerver be lesz kapcsolva ezen a hálózaton a gép indulásakor.</translation>
+        <translation type="obsolete">Ha engedélyezed, a DHCP szerver be lesz kapcsolva ezen a hálózaton a gép indulásakor.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">Sze&amp;rver címe:</translation>
-    </message>
-    <message>
-        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Sze&amp;rver címe:</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">Szerver &amp;maszkja:</translation>
-    </message>
-    <message>
-        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Szerver &amp;maszkja:</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">A&amp;lsó címhatár:</translation>
+        <translation type="obsolete">A&amp;lsó címhatár:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">A DHCP szerver által, ehhez a host-only kártyával kiosztható alsó címhatár.</translation>
+        <translation type="obsolete">A DHCP szerver által, ehhez a host-only kártyával kiosztható alsó címhatár.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">Felső &amp;címhatár:</translation>
+        <translation type="obsolete">Felső &amp;címhatár:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">A DHCP szerver által, ehhez a host-only kártyával kiosztható felső címhatár.</translation>
+        <translation type="obsolete">A DHCP szerver által, ehhez a host-only kártyával kiosztható felső címhatár.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">Aktuális DHCP szerver módosításainak visszaállítása</translation>
+        <translation type="obsolete">Aktuális DHCP szerver módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">Aktuális DHCP szerver módosításainak alkalmazása</translation>
+        <translation type="obsolete">Aktuális DHCP szerver módosításainak alkalmazása</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Port továbbítása</translation>
+        <translation type="obsolete">&amp;Port továbbítása</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Név:</translation>
+        <translation type="obsolete">&amp;Név:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Ezen hálózat neve.</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ezen hálózat neve.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">Ha engedélyezed, ez a hálózat támogatni fogja a DHCP-t.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ha engedélyezed, ez a hálózat támogatni fogja a DHCP-t.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">Ha engedélyezed, ez a hálózat támogatni fogja az IPv6-ot.</translation>
+        <translation type="obsolete">Ha engedélyezed, ez a hálózat támogatni fogja az IPv6-ot.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">Alapé&amp;rtelmezett IPv6 útvonal meghirdetése</translation>
+        <translation type="obsolete">Alapé&amp;rtelmezett IPv6 útvonal meghirdetése</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">Ha engedélyezed, ez a hálózat lesz kinevezve alapértelmezett IPv6 útvonalnak.</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ha engedélyezed, ez a hálózat lesz kinevezve alapértelmezett IPv6 útvonalnak.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Alkalmaz</translation>
+        <translation type="obsolete">Alkalmaz</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak visszaállítása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aktuális interfész módosításainak alkalmazása</translation>
+        <translation type="obsolete">Aktuális interfész módosításainak alkalmazása</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Módosítások visszaállítása (%1)</translation>
+        <translation type="obsolete">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Módosítások alkalmazása (%1)</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Módosítások alkalmazása (%1)</translation>
     </message>
 </context>
 <context>
@@ -7662,6 +7506,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">Ha engedélyezed, a gép ablakai kiemelkednek, mikor föléjük viszed az egeret.</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">&amp;3D gyorsítás engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
     </message>
 </context>
 <context>
@@ -8248,9 +8130,16 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">Aktív</translation>
@@ -8274,6 +8163,29 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">Kiterjesztő csomag (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">Aktív</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Név</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">Verzió</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">Válassz ki egy kiterjesztő csomagot</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">Kiterjesztő csomag (%1)</translation>
     </message>
 </context>
 <context>
@@ -9056,13 +8968,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGChooserItemGroup</name>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
@@ -9768,58 +9673,46 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Bővített képességek:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Bővített képességek:</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">Ha engedélyezed, a gép ablakai kiemelkednek, mikor föléjük viszed az egeret.</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ha engedélyezed, a gép ablakai kiemelkednek, mikor föléjük viszed az egeret.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">Proxy beállítások &amp;automatikus észlelése</translation>
+        <translation type="obsolete">Proxy beállítások &amp;automatikus észlelése</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">A VirtualBox megpróbálja automatikusan érzékelni a gazda proxy beállításait olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+        <translation type="obsolete">A VirtualBox megpróbálja automatikusan érzékelni a gazda proxy beállításait olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">&amp;Közvetlen kapcsolat az internetre</translation>
+        <translation type="obsolete">&amp;Közvetlen kapcsolat az internetre</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">A VirtualBox közvetlenül kapcsolódik az internetre, olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+        <translation type="obsolete">A VirtualBox közvetlenül kapcsolódik az internetre, olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">&amp;Manuális proxy beállítás</translation>
+        <translation type="obsolete">&amp;Manuális proxy beállítás</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">A VirtualBox a proxy beállításokat olyan feladatokhoz használja, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+        <translation type="obsolete">A VirtualBox a proxy beállításokat olyan feladatokhoz használja, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation type="obsolete">&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">A proxy URL címe. A formátum: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{típus}://][{felhasználóiazonosító}[:{jelszó}]@]{szerver}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://felhasználónév:jelszó@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">A proxy URL címe. A formátum: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{típus}://][{felhasználóiazonosító}[:{jelszó}]@]{szerver}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://felhasználónév:jelszó@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -11122,57 +11015,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIHelpBrowserTab</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
@@ -11338,19 +11180,56 @@ p, li { white-space: pre-wrap; }
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>Sú&amp;gó</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12820,50 +12699,22 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path:</source>
-        <translation type="unfinished">Elérési út:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Elérési út:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Profil hozzáadása</translation>
-    </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Profil hozzáadása</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Hálózat neve</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Hálózat neve</translation>
     </message>
 </context>
 <context>
@@ -12871,12 +12722,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -12888,101 +12739,97 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter</source>
-        <translation>Eszköz</translation>
+        <translation type="vanished">Eszköz</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>Automatikusan konfigurált</translation>
+        <translation type="vanished">Automatikusan konfigurált</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>Manuálisan konfigurált</translation>
+        <translation type="vanished">Manuálisan konfigurált</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>IPv4 cím</translation>
+        <translation type="vanished">IPv4 cím</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>Nincs megadva</translation>
+        <translation type="vanished">Nincs megadva</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>IPv4 hálózati maszk</translation>
+        <translation type="vanished">IPv4 hálózati maszk</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>Nincs megadva</translation>
+        <translation type="vanished">Nincs megadva</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>IPv6 cím</translation>
+        <translation type="vanished">IPv6 cím</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>IPv6 előtag hossza</translation>
+        <translation type="vanished">IPv6 előtag hossza</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>Nincs megadva</translation>
+        <translation type="vanished">Nincs megadva</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>DHCP szerver</translation>
+        <translation type="vanished">DHCP szerver</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>Engedélyezve</translation>
+        <translation type="vanished">Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>Letiltva</translation>
+        <translation type="vanished">Letiltva</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Cím</translation>
+        <translation type="vanished">Cím</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>Hálózati maszk</translation>
+        <translation type="vanished">Hálózati maszk</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>Alsó határ</translation>
+        <translation type="vanished">Alsó határ</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>Nincs megadva</translation>
+        <translation type="vanished">Nincs megadva</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>Felső határ</translation>
+        <translation type="vanished">Felső határ</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Név</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Név</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation type="obsolete">Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
 </context>
 <context>
@@ -12990,44 +12837,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation type="obsolete">Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Hálózat neve</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Hálózat neve</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCP támogatás</translation>
+        <translation type="obsolete">DHCP támogatás</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">igen</translation>
+        <translation type="obsolete">igen</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">nem</translation>
+        <translation type="obsolete">nem</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6 támogatás</translation>
+        <translation type="obsolete">IPv6 támogatás</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Alapértelmezett IPv6 útvonal</translation>
+        <translation type="obsolete">Alapértelmezett IPv6 útvonal</translation>
     </message>
 </context>
 <context>
@@ -13176,22 +13015,22 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
+        <translation type="obsolete">A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Bővített képességek:</translation>
+        <translation type="obsolete">Bővített képességek:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">&amp;3D gyorsítás engedélyezése</translation>
+        <translation type="obsolete">&amp;3D gyorsítás engedélyezése</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
+        <translation type="obsolete">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
     </message>
 </context>
 <context>
@@ -13294,6 +13133,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Every 10 s</source>
         <translation>10 másodpercenként</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16377,75 +16220,75 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>&amp;Attribútumok</translation>
+        <translation type="vanished">&amp;Attribútumok</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>&amp;Információ</translation>
+        <translation type="vanished">&amp;Információ</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>&amp;Típus:</translation>
+        <translation type="vanished">&amp;Típus:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>He&amp;ly:</translation>
+        <translation type="vanished">He&amp;ly:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>&amp;Leírás:</translation>
+        <translation type="vanished">&amp;Leírás:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>&amp;Méret:</translation>
+        <translation type="vanished">&amp;Méret:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>Az adathordozó típusa.</translation>
+        <translation type="vanished">Az adathordozó típusa.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>Az adathordozó helye.</translation>
+        <translation type="vanished">Az adathordozó helye.</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>Az adathordozó leírása.</translation>
+        <translation type="vanished">Az adathordozó leírása.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>Az adathordozó mérete.</translation>
+        <translation type="vanished">Az adathordozó mérete.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Alaphelyzet</translation>
+        <translation type="vanished">Alaphelyzet</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Alkalmaz</translation>
+        <translation type="vanished">Alkalmaz</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>Az aktuális adathordozó módosításainak visszaállítása</translation>
+        <translation type="vanished">Az aktuális adathordozó módosításainak visszaállítása</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>Az aktuális adathordozó módosításainak alkalmazása</translation>
+        <translation type="vanished">Az aktuális adathordozó módosításainak alkalmazása</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Módosítások visszaállítása (%1)</translation>
+        <translation type="vanished">Módosítások visszaállítása (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Módosítások alkalmazása (%1)</translation>
+        <translation type="vanished">Módosítások alkalmazása (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>Az adathordozó méretét (&lt;b&gt;%1&lt;/b&gt;) nem sikerült &lt;b&gt;%2&lt;/b&gt; méretűre módosítani, mivel a tároló zsugorítása még nincs megvalósítva.</translation>
+        <translation type="vanished">Az adathordozó méretét (&lt;b&gt;%1&lt;/b&gt;) nem sikerült &lt;b&gt;%2&lt;/b&gt; méretűre módosítani, mivel a tároló zsugorítása még nincs megvalósítva.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>Válaszd ki az adathordozó helyét</translation>
+        <translation type="vanished">Válaszd ki az adathordozó helyét</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -16453,31 +16296,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>Az adathordozó típus direkt és indirekt van csatlakoztatva, pillanatképekben megjelenik.</translation>
+        <translation type="vanished">Az adathordozó típus direkt és indirekt van csatlakoztatva, pillanatképekben megjelenik.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>Az adathordozó típus indirekt van csatlakoztatva, a módosítások elvesznek a virtuális gép következő indulásakor.</translation>
+        <translation type="vanished">Az adathordozó típus indirekt van csatlakoztatva, a módosítások elvesznek a virtuális gép következő indulásakor.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>Az adathordozó típus direkt van csatlakoztatva, pillanatképekben nem jelenik meg.</translation>
+        <translation type="vanished">Az adathordozó típus direkt van csatlakoztatva, pillanatképekben nem jelenik meg.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>Az adathordozó típus direkt van csatlakoztatva, így több gép is használhatja egyidejűleg.</translation>
+        <translation type="vanished">Az adathordozó típus direkt van csatlakoztatva, így több gép is használhatja egyidejűleg.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>Az adathordozó típus direkt van csatlakoztatva, és több gép is használhatja.</translation>
+        <translation type="vanished">Az adathordozó típus direkt van csatlakoztatva, és több gép is használhatja.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>Az adathordozó típus indirekt van csatlakoztatva, így az alap adathordozót több virtuális gép használhatja, melyhez különbözeti adathordozón tárolják a módosításaikat.</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Az adathordozó típus indirekt van csatlakoztatva, így az alap adathordozót több virtuális gép használhatja, melyhez különbözeti adathordozón tárolják a módosításaikat.</translation>
     </message>
 </context>
 <context>
@@ -16736,9 +16575,82 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">&amp;Attribútumok</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">&amp;Információ</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">&amp;Típus:</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">He&amp;ly:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Leírás:</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">&amp;Méret:</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">Az adathordozó típusa.</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">Az adathordozó helye.</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">Válaszd ki az adathordozó helyét</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">Az adathordozó leírása.</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">Az adathordozó mérete.</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">Az adathordozó méretét (&lt;b&gt;%1&lt;/b&gt;) nem sikerült &lt;b&gt;%2&lt;/b&gt; méretűre módosítani, mivel a tároló zsugorítása még nincs megvalósítva.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">Az adathordozó típus direkt és indirekt van csatlakoztatva, pillanatképekben megjelenik.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">Az adathordozó típus indirekt van csatlakoztatva, a módosítások elvesznek a virtuális gép következő indulásakor.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">Az adathordozó típus direkt van csatlakoztatva, pillanatképekben nem jelenik meg.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">Az adathordozó típus direkt van csatlakoztatva, így több gép is használhatja egyidejűleg.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">Az adathordozó típus direkt van csatlakoztatva, és több gép is használhatja.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">Az adathordozó típus indirekt van csatlakoztatva, így az alap adathordozót több virtuális gép használhatja, melyhez különbözeti adathordozón tárolják a módosításaikat.</translation>
+    </message>
     <message>
         <source>Registered hard drives</source>
         <translation type="unfinished"></translation>
@@ -16765,6 +16677,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Select the search type</source>
         <translation>Keresés típus szerint</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -20474,6 +20398,356 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished">&amp;Név:</translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">Ezen hálózat neve.</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">Aktuális interfész módosításainak visszaállítása</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">Aktuális interfész módosításainak alkalmazása</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Név:</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">Kárty&amp;a</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">&amp;DHCP szerver</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">Kártya &amp;automatikus konfigurálása</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">Kártya &amp;manuális konfigurálása</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">&amp;IPv4 cím:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">A gazda IPv4 címe ehhez a kártyához.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">IPv4 hálózati &amp;maszk:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">A gazda IPv4 hálózati maszkja ehhez a kártyához.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">I&amp;Pv6 cím:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">A gazda IPv6 címe ehhez a kártyához, ha az IPv6 támogatott.</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">IPv6 há&amp;lózati maszk hossza:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">A gazda IPv6 hálózati maszkjának hossza ehhez a kártyához, ha IPv6 támogatott.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">Sz&amp;erver bekapcsolása</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">Ha engedélyezed, a DHCP szerver be lesz kapcsolva ezen a hálózaton a gép indulásakor.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">Sze&amp;rver címe:</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">Szerver &amp;maszkja:</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">A&amp;lsó címhatár:</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">A DHCP szerver által, ehhez a host-only kártyával kiosztható alsó címhatár.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">Felső &amp;címhatár:</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">A DHCP szerver által, ehhez a host-only kártyával kiosztható felső címhatár.</translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">Aktuális DHCP szerver módosításainak visszaállítása</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">Aktuális DHCP szerver módosításainak alkalmazása</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Port továbbítása</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">Ha engedélyezed, ez a hálózat támogatni fogja a DHCP-t.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">Ha engedélyezed, ez a hálózat támogatni fogja az IPv6-ot.</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">Alapé&amp;rtelmezett IPv6 útvonal meghirdetése</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">Ha engedélyezed, ez a hálózat lesz kinevezve alapértelmezett IPv6 útvonalnak.</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Engedélyezve</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Automatikusan konfigurált</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 cím</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 hálózati maszk</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 cím</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Engedélyezve</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">Cím</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">Hálózati maszk</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">Hálózat neve</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">DHCP támogatás</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">igen</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">nem</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">IPv6 támogatás</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">Alapértelmezett IPv6 útvonal</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -20532,21 +20806,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">További információhoz dupla kattintás.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -22004,6 +22263,41 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">Proxy beállítások &amp;automatikus észlelése</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">A VirtualBox megpróbálja automatikusan érzékelni a gazda proxy beállításait olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">&amp;Közvetlen kapcsolat az internetre</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">A VirtualBox közvetlenül kapcsolódik az internetre, olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">&amp;Manuális proxy beállítás</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">A VirtualBox a proxy beállításokat olyan feladatokhoz használja, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése.</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished">&amp;URL:</translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">A proxy URL címe. A formátum: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{típus}://][{felhasználóiazonosító}[:{jelszó}]@]{szerver}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://felhasználónév:jelszó@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -22573,9 +22867,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">A gyorsbillentyűk szűrési feltételei.</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">Név</translation>
@@ -22584,10 +22875,21 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Shortcut</source>
         <translation type="unfinished">Gyorsbillentyű</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Név</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">Gyorsbillentyű</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -23417,13 +23719,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -23524,7 +23819,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -23883,6 +24178,11 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">A kiválasztott USB szűrő lefelé mozgatása.</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, Aktív</translation>
     </message>
 </context>
 <context>
@@ -24696,7 +24996,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation>Nem elérhető</translation>
+        <translation type="vanished">Nem elérhető</translation>
     </message>
 </context>
 <context>
@@ -24770,7 +25070,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - Napló nézegető</translation>
+        <translation type="vanished">%1 - Napló nézegető</translation>
     </message>
 </context>
 <context>
@@ -24954,6 +25254,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - Napló nézegető</translation>
     </message>
 </context>
 <context>
@@ -25366,7 +25670,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UIVisoCreatorDialog</name>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO készítő</translation>
+        <translation type="obsolete">VISO készítő</translation>
     </message>
 </context>
 <context>
@@ -25454,6 +25758,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished">VISO készítő</translation>
     </message>
 </context>
 <context>
@@ -25808,16 +26116,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -25839,7 +26137,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 klón</translation>
+        <translation>%1 klón</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -25871,11 +26169,11 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">&amp;Teljes klón</translation>
+        <translation>&amp;Teljes klón</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">&amp;Linkelt klón</translation>
+        <translation>&amp;Linkelt klón</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -25899,15 +26197,15 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">&amp;Aktuális gép állapota</translation>
+        <translation>&amp;Aktuális gép állapota</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">Aktuál&amp;is pillanatkép-faág</translation>
+        <translation>Aktuál&amp;is pillanatkép-faág</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">Mind&amp;en</translation>
+        <translation>Mind&amp;en</translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -25943,27 +26241,27 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">Minden hálózati kártya MAC-címe</translation>
+        <translation>Minden hálózati kártya MAC-címe</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">Csak NAT hálózati kártya MAC-címe</translation>
+        <translation>Csak NAT hálózati kártya MAC-címe</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">Új MAC-cím generálása minden hálózati kártyához</translation>
+        <translation>Új MAC-cím generálása minden hálózati kártyához</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
+        <translation>Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
+        <translation>Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">Haladó beállítások:</translation>
+        <translation>Haladó beállítások:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -25971,7 +26269,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">&amp;Lemeznevek megtartása</translation>
+        <translation>&amp;Lemeznevek megtartása</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -25991,11 +26289,75 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
+        <translation>Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>Haladó beállítások</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Név:</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -26568,9 +26930,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished">Gép alap&amp;mappa:</translation>
@@ -26590,29 +26949,44 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>Import all the hard drives that belong to this appliance in VDI format.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportAppPageExpert</name>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="obsolete">Gép alap&amp;mappa:</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="obsolete">MAC-cím &amp;irányelv:</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="obsolete">Haladó beállítások:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="obsolete">Merevlemez &amp;importálása VDI-ként</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">Gép alap&amp;mappa:</translation>
+        <translation type="obsolete">Gép alap&amp;mappa:</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MAC-cím &amp;irányelv:</translation>
+        <translation type="obsolete">MAC-cím &amp;irányelv:</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Haladó beállítások:</translation>
+        <translation type="obsolete">Haladó beállítások:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">Merevlemez &amp;importálása VDI-ként</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Merevlemez &amp;importálása VDI-ként</translation>
     </message>
 </context>
 <context>
@@ -26984,10 +27358,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options</source>
         <translation type="unfinished">További opciók</translation>
     </message>
@@ -27259,18 +27629,30 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, Aktív</translation>
+        <translation type="obsolete">%1, Aktív</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

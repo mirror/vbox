@@ -2793,19 +2793,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2849,19 +2841,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">除去(&amp;R)</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2873,20 +2857,12 @@
         <translation type="unfinished">現在の場所の下に新しいディレクトリを作成</translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
         <translation type="unfinished">選択したオブジェクトの名前を変更</translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eset</source>
@@ -2909,15 +2885,7 @@
         <translation type="unfinished">既存のメディアを追加</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2958,10 +2926,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3134,10 +3098,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3225,6 +3185,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -3285,13 +3281,6 @@
         <translation>
             <numerusform>&lt;nobr&gt;以下の %n ハードディスクで使用中:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3933,184 +3922,88 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">すべてのネットワークアダプターのMACアドレスを含む</translation>
+        <translation type="obsolete">すべてのネットワークアダプターのMACアドレスを含む</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">クローンにすべてのネットワークアダプターのMACアドレスを含みます。</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">クローンにすべてのネットワークアダプターのMACアドレスを含みます。</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">クローンにNATネットワークアダプターのMACアドレスのみを含みます。</translation>
+        <translation type="obsolete">クローンにNATネットワークアダプターのMACアドレスのみを含みます。</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">すべてのネットワークアダプターでMACアドレスを生成</translation>
+        <translation type="obsolete">すべてのネットワークアダプターでMACアドレスを生成</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished">クローン中にすべてのネットワークアダプターでMACアドレスを生成します。</translation>
+        <translation type="obsolete">クローン中にすべてのネットワークアダプターでMACアドレスを生成します。</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">追加オプション:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">追加オプション:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">ディスク名を保持(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ディスク名を保持(&amp;D)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">現在のマシンの状態(&amp;M)</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">現在のマシンの状態(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">現在のスナップショットのツリーブランチ(&amp;S)</translation>
+        <translation type="obsolete">現在のスナップショットのツリーブランチ(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">すべて(&amp;E)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">すべて(&amp;E)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">すべてをクローン(&amp;F)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">すべてをクローン(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">リンクしたクローン(&amp;L)</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">リンクしたクローン(&amp;L)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 のクローン</translation>
+        <translation type="obsolete">%1 のクローン</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">名前(&amp;N):</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名前(&amp;N):</translation>
     </message>
 </context>
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">名前:</translation>
+        <translation type="obsolete">名前:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">パス:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">パス:</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">リセット</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">適用</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">適用</translation>
     </message>
 </context>
 <context>
@@ -4155,9 +4048,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">ウィンドウを閉じる (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">名前:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">パス:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">プロファイルを追加</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -4177,9 +4115,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -4189,59 +4124,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>名前:</translation>
+        <translation type="vanished">名前:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>プロパティ:</translation>
+        <translation type="vanished">プロパティ:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>クラウドプロファイルの設定の内容</translation>
+        <translation type="vanished">クラウドプロファイルの設定の内容</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>新しいプロファイルの名前を入力...</translation>
+        <translation type="vanished">新しいプロファイルの名前を入力...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>このプロファイr名前を入力...</translation>
+        <translation type="vanished">このプロファイr名前を入力...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>リセット</translation>
+        <translation type="vanished">リセット</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>現在のクラウドプロファイル詳細の変更を適用</translation>
+        <translation type="vanished">現在のクラウドプロファイル詳細の変更を適用</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>変更をリセット (%1)</translation>
+        <translation type="vanished">変更をリセット (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>追加</translation>
+        <translation type="vanished">追加</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>次の名前で新しいプロファイルを追加</translation>
+        <translation type="vanished">次の名前で新しいプロファイルを追加</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>プロファイルを追加 (%1)</translation>
+        <translation type="vanished">プロファイルを追加 (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>適用</translation>
+        <translation type="vanished">適用</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>現在のクラウドプロファイル詳細の変更を適用</translation>
+        <translation type="vanished">現在のクラウドプロファイル詳細の変更を適用</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>変更を適用 (%1)</translation>
+        <translation type="vanished">変更を適用 (%1)</translation>
     </message>
 </context>
 <context>
@@ -4302,9 +4237,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">名前:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">プロパティ:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">クラウドプロファイルの設定の内容</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">新しいプロファイルの名前を入力...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">このプロファイr名前を入力...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">現在のクラウドプロファイル詳細の変更を適用</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">追加</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">次の名前で新しいプロファイルを追加</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">プロファイルを追加 (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">現在のクラウドプロファイル詳細の変更を適用</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished">ソース</translation>
@@ -4316,6 +4288,13 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Source</source>
+        <translation type="obsolete">ソース</translation>
     </message>
 </context>
 <context>
@@ -6192,29 +6171,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -6266,6 +6222,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">デフォルトの仮想マシンフォルダーのパスを指定します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7275,317 +7238,177 @@
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">名前(&amp;N):</translation>
+        <translation type="obsolete">名前(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">このネットワークの名前を指定します。</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">このネットワークの名前を指定します。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
+        <translation type="obsolete">リセット</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">適用</translation>
+        <translation type="obsolete">適用</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更をリセット</translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更をリセット</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更を適用</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更を適用</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">名前(&amp;N):</translation>
+        <translation type="obsolete">名前(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">このネットワークの名前を指定します。</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">このネットワークの名前を指定します。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
+        <translation type="obsolete">リセット</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">適用</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">適用</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">アダプター(&amp;A)</translation>
+        <translation type="obsolete">アダプター(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP サーバー(&amp;D)</translation>
+        <translation type="obsolete">DHCP サーバー(&amp;D)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">アダプターを自動で設定(&amp;A)</translation>
+        <translation type="obsolete">アダプターを自動で設定(&amp;A)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">アダプターを手動で設定(&amp;M)</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">アダプターを手動で設定(&amp;M)</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">このアダプターのホスト IPv4 アドレスを指定します。</translation>
+        <translation type="obsolete">このアダプターのホスト IPv4 アドレスを指定します。</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 ネットマスク(&amp;M):</translation>
+        <translation type="obsolete">IPv4 ネットマスク(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">このアダプターのホスト IPv4 ネットマスクを指定します。</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">このアダプターのホスト IPv4 ネットマスクを指定します。</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを指定します。</translation>
+        <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを指定します。</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 ネットマスク長(&amp;L):</translation>
+        <translation type="obsolete">IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
+        <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更をリセット</translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更をリセット</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更を適用</translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更を適用</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">サーバーを有効化(&amp;E)</translation>
+        <translation type="obsolete">サーバーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">仮想マシンの起動時にこのネットワークのDHCPサーバーが有効になります。</translation>
+        <translation type="obsolete">仮想マシンの起動時にこのネットワークのDHCPサーバーが有効になります。</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">サーバー アドレス(&amp;R):</translation>
+        <translation type="obsolete">サーバー アドレス(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを指定します。</translation>
+        <translation type="obsolete">ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを指定します。</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">サーバー マスク(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">サーバー マスク(&amp;M):</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">アドレス下限(&amp;L):</translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">アドレス下限(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">アドレス上限(&amp;U):</translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">アドレス上限(&amp;U):</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">現在のDHCPサーバー詳細の変更をリセット</translation>
+        <translation type="obsolete">現在のDHCPサーバー詳細の変更をリセット</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">現在のDHCPサーバー詳細の変更を適用</translation>
+        <translation type="obsolete">現在のDHCPサーバー詳細の変更を適用</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">ポートフォワーディング(&amp;P)</translation>
+        <translation type="obsolete">ポートフォワーディング(&amp;P)</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">名前(&amp;N):</translation>
+        <translation type="obsolete">名前(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">このネットワークの名前を指定します。</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">このネットワークの名前を指定します。</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">このネットワークをDHCPサポートにします。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">このネットワークをDHCPサポートにします。</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">このネットワークをIPv6サポートにします。</translation>
+        <translation type="obsolete">このネットワークをIPv6サポートにします。</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">IPv6デフォルトルートのアドバタイズ(&amp;R)</translation>
+        <translation type="obsolete">IPv6デフォルトルートのアドバタイズ(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">このネットワークを既定のIPv6ルートとして広告します。</translation>
+        <translation type="obsolete">このネットワークを既定のIPv6ルートとして広告します。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
+        <translation type="obsolete">リセット</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">適用</translation>
+        <translation type="obsolete">適用</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更をリセット</translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更をリセット</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">現在のインターフェース詳細の変更を適用</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">現在のインターフェース詳細の変更を適用</translation>
     </message>
 </context>
 <context>
@@ -7652,6 +7475,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">拡張機能:</translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">仮想マシンのウィンドウが、マウスポインターが通過する際にアクティブになるようになります。</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">拡張機能:</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">3Dアクセラレーションを有効化(&amp;3)</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
 </context>
 <context>
@@ -8258,9 +8119,16 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">有効</translation>
@@ -8284,6 +8152,29 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">機能拡張パッケージファイル(%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">有効</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">名前</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">バージョン</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">機能拡張パッケージを選択</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">機能拡張パッケージファイル(%1)</translation>
     </message>
 </context>
 <context>
@@ -9075,13 +8966,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Assign value...</source>
         <translation type="vanished">割り当てた値...</translation>
-    </message>
-</context>
-<context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9879,58 +9763,42 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">拡張機能:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">拡張機能:</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">仮想マシンのウィンドウが、マウスポインターが通過する際にアクティブになるようになります。</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">仮想マシンのウィンドウが、マウスポインターが通過する際にアクティブになるようになります。</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">ホストのプロキシー設定を自動検出(&amp;A)</translation>
+        <translation type="obsolete">ホストのプロキシー設定を自動検出(&amp;A)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">VirtualBoxがネットワーク経由でのGuest Additionsのダウンロードやアップデートの確認にホストのプロキシー設定を自動的に検出するようになります。</translation>
+        <translation type="obsolete">VirtualBoxがネットワーク経由でのGuest Additionsのダウンロードやアップデートの確認にホストのプロキシー設定を自動的に検出するようになります。</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">インターネットに直接接続(&amp;D)</translation>
+        <translation type="obsolete">インターネットに直接接続(&amp;D)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認に直接インターネットに接続します。</translation>
+        <translation type="obsolete">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認に直接インターネットに接続します。</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">手動プロキシー設定(&amp;M)</translation>
+        <translation type="obsolete">手動プロキシー設定(&amp;M)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認にプロキシー設定を使用します。</translation>
-    </message>
-    <message>
-        <source>&amp;URL:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認にプロキシー設定を使用します。</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">プロキシーのURLを入力してください。書式は次のとおりです: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">プロキシーのURLを入力してください。書式は次のとおりです: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -11235,52 +11103,8 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIHelpBrowserTab</name>
     <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Forward</source>
-        <translation type="unfinished">Forward</translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Forward</translation>
     </message>
 </context>
 <context>
@@ -11449,19 +11273,56 @@ p, li { white-space: pre-wrap; }
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished">Forward</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>ヘルプ(&amp;H)</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13007,50 +12868,30 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name:</source>
-        <translation type="unfinished">名前:</translation>
+        <translation type="obsolete">名前:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">パス:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">パス:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">プロファイルを追加</translation>
+        <translation type="obsolete">プロファイルを追加</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">名前:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名前:</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">ネットワーク名</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ネットワーク名</translation>
     </message>
 </context>
 <context>
@@ -13058,12 +12899,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -13075,101 +12916,97 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter</source>
-        <translation>アダプター</translation>
+        <translation type="vanished">アダプター</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>自動構成</translation>
+        <translation type="vanished">自動構成</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>手動構成</translation>
+        <translation type="vanished">手動構成</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>IPv4 アドレス</translation>
+        <translation type="vanished">IPv4 アドレス</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>IPv4 ネットマスク</translation>
+        <translation type="vanished">IPv4 ネットマスク</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>IPv6 アドレス</translation>
+        <translation type="vanished">IPv6 アドレス</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>IPv6 ネットマスク</translation>
+        <translation type="vanished">IPv6 ネットマスク</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>DHCP サーバー</translation>
+        <translation type="vanished">DHCP サーバー</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>有効</translation>
+        <translation type="vanished">有効</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>無効</translation>
+        <translation type="vanished">無効</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>アドレス</translation>
+        <translation type="vanished">アドレス</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>ネットマスク</translation>
+        <translation type="vanished">ネットマスク</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>下限</translation>
+        <translation type="vanished">下限</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>上限</translation>
+        <translation type="vanished">上限</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名前</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名前</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">有効</translation>
+        <translation type="obsolete">有効</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">無効</translation>
+        <translation type="obsolete">無効</translation>
     </message>
 </context>
 <context>
@@ -13177,44 +13014,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">有効</translation>
+        <translation type="obsolete">有効</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">無効</translation>
+        <translation type="obsolete">無効</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">ネットワーク名</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ネットワーク名</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCPのサポート</translation>
+        <translation type="obsolete">DHCPのサポート</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">はい</translation>
+        <translation type="obsolete">はい</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">いいえ</translation>
+        <translation type="obsolete">いいえ</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6のサポート</translation>
+        <translation type="obsolete">IPv6のサポート</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">IPv6デフォルトルート</translation>
+        <translation type="obsolete">IPv6デフォルトルート</translation>
     </message>
 </context>
 <context>
@@ -13360,25 +13189,18 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMachineDescriptionEditor</name>
-    <message>
-        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">拡張機能:</translation>
+        <translation type="obsolete">拡張機能:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">3Dアクセラレーションを有効化(&amp;3)</translation>
+        <translation type="obsolete">3Dアクセラレーションを有効化(&amp;3)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
+        <translation type="obsolete">仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
 </context>
 <context>
@@ -13489,6 +13311,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Every 10 s</source>
         <translation>10秒毎</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">アクセスできません</translation>
     </message>
 </context>
 <context>
@@ -16807,75 +16633,75 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>属性(&amp;A)</translation>
+        <translation type="vanished">属性(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>情報(&amp;I)</translation>
+        <translation type="vanished">情報(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>タイプ(&amp;T):</translation>
+        <translation type="vanished">タイプ(&amp;T):</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>場所(&amp;L):</translation>
+        <translation type="vanished">場所(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>説明(&amp;D):</translation>
+        <translation type="vanished">説明(&amp;D):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>サイズ(&amp;S):</translation>
+        <translation type="vanished">サイズ(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>このメディアのタイプを指定します。</translation>
+        <translation type="vanished">このメディアのタイプを指定します。</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>このメディアの場所を指定します。</translation>
+        <translation type="vanished">このメディアの場所を指定します。</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>このメディアの説明を指定します。</translation>
+        <translation type="vanished">このメディアの説明を指定します。</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>このメディアのサイズを指定します。</translation>
+        <translation type="vanished">このメディアのサイズを指定します。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>リセット</translation>
+        <translation type="vanished">リセット</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>適用</translation>
+        <translation type="vanished">適用</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>現在のメディアの説明の変更をリセットします</translation>
+        <translation type="vanished">現在のメディアの説明の変更をリセットします</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>現在のメディアの説明の変更を適用します</translation>
+        <translation type="vanished">現在のメディアの説明の変更を適用します</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>変更をリセット(%1)</translation>
+        <translation type="vanished">変更をリセット(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>変更の適用 (%1)</translation>
+        <translation type="vanished">変更の適用 (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;から&lt;b&gt;%2&lt;/b&gt;へのメディアサイズの縮小は現在サポートしていません。</translation>
+        <translation type="vanished">&lt;b&gt;%1&lt;/b&gt;から&lt;b&gt;%2&lt;/b&gt;へのメディアサイズの縮小は現在サポートしていません。</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>メディアの場所を選択</translation>
+        <translation type="vanished">メディアの場所を選択</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -16883,31 +16709,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>このタイプのメディアは直接あるいは間接的に割り当てられます。スナップショットでは保持されます。</translation>
+        <translation type="vanished">このタイプのメディアは直接あるいは間接的に割り当てられます。スナップショットでは保持されます。</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>このタイプのメディアは間接的に割り当てられます。変更は次に仮想マシンが起動するときには消去しています。</translation>
+        <translation type="vanished">このタイプのメディアは間接的に割り当てられます。変更は次に仮想マシンが起動するときには消去しています。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>このタイプのメディアは直接割り当てられます。スナップショットでは無視されます。</translation>
+        <translation type="vanished">このタイプのメディアは直接割り当てられます。スナップショットでは無視されます。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>このタイプのメディアは直接割り当てられます。いくつかのマシンから同時利用できます。</translation>
+        <translation type="vanished">このタイプのメディアは直接割り当てられます。いくつかのマシンから同時利用できます。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>このタイプのメディアは直接割り当てられます。いくつかのマシンから使用されることもあります。</translation>
+        <translation type="vanished">このタイプのメディアは直接割り当てられます。いくつかのマシンから使用されることもあります。</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>このタイプのメディアは間接的に割り当てられます。一つのベースとなるメディアを元に独自の変更を加えた上で、いくつかのVMから使用されています。</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">このタイプのメディアは間接的に割り当てられます。一つのベースとなるメディアを元に独自の変更を加えた上で、いくつかのVMから使用されています。</translation>
     </message>
 </context>
 <context>
@@ -17239,9 +17061,82 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">属性(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">情報(&amp;I)</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">タイプ(&amp;T):</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">場所(&amp;L):</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">説明(&amp;D):</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">サイズ(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">このメディアのタイプを指定します。</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">このメディアの場所を指定します。</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">メディアの場所を選択</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">このメディアの説明を指定します。</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">このメディアのサイズを指定します。</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt;から&lt;b&gt;%2&lt;/b&gt;へのメディアサイズの縮小は現在サポートしていません。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">このタイプのメディアは直接あるいは間接的に割り当てられます。スナップショットでは保持されます。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">このタイプのメディアは間接的に割り当てられます。変更は次に仮想マシンが起動するときには消去しています。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">このタイプのメディアは直接割り当てられます。スナップショットでは無視されます。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">このタイプのメディアは直接割り当てられます。いくつかのマシンから同時利用できます。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">このタイプのメディアは直接割り当てられます。いくつかのマシンから使用されることもあります。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">このタイプのメディアは間接的に割り当てられます。一つのベースとなるメディアを元に独自の変更を加えた上で、いくつかのVMから使用されています。</translation>
+    </message>
     <message>
         <source>Registered hard drives</source>
         <translation type="unfinished"></translation>
@@ -17268,6 +17163,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Select the search type</source>
         <translation>検索タイプを選択</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -21104,6 +21011,356 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">このネットワークの名前を指定します。</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">現在のインターフェース詳細の変更をリセット</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">現在のインターフェース詳細の変更を適用</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">アダプター(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">DHCP サーバー(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">アダプターを自動で設定(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">アダプターを手動で設定(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">このアダプターのホスト IPv4 アドレスを指定します。</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">IPv4 ネットマスク(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">このアダプターのホスト IPv4 ネットマスクを指定します。</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを指定します。</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">IPv6 ネットマスク長(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">サーバーを有効化(&amp;E)</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">仮想マシンの起動時にこのネットワークのDHCPサーバーが有効になります。</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">サーバー アドレス(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを指定します。</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">サーバー マスク(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">アドレス下限(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">アドレス上限(&amp;U):</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">現在のDHCPサーバー詳細の変更をリセット</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">現在のDHCPサーバー詳細の変更を適用</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">ポートフォワーディング(&amp;P)</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">このネットワークをDHCPサポートにします。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">このネットワークをIPv6サポートにします。</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">IPv6デフォルトルートのアドバタイズ(&amp;R)</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">このネットワークを既定のIPv6ルートとして広告します。</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">アダプター</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">自動構成</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">手動構成</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 アドレス</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 ネットマスク</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 アドレス</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">IPv6 ネットマスク</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">アドレス</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">ネットマスク</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">ネットワーク名</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">DHCPのサポート</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">はい</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">いいえ</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">IPv6のサポート</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">IPv6デフォルトルート</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -21162,21 +21419,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">詳細な情報を知るにはダブルクリックしてください。</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -22482,6 +22724,41 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">ホストのプロキシー設定を自動検出(&amp;A)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">VirtualBoxがネットワーク経由でのGuest Additionsのダウンロードやアップデートの確認にホストのプロキシー設定を自動的に検出するようになります。</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">インターネットに直接接続(&amp;D)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認に直接インターネットに接続します。</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">手動プロキシー設定(&amp;M)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認にプロキシー設定を使用します。</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">プロキシーのURLを入力してください。書式は次のとおりです: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -23060,9 +23337,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">検索語を指定してショートカットリストを絞り込みます。</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">名前</translation>
@@ -23071,10 +23345,21 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Shortcut</source>
         <translation type="unfinished">ショートカット</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">名前</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">ショートカット</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -23973,13 +24258,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -24080,7 +24358,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -24469,6 +24747,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">選択したUSB フィルターを下に移動します。</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, 有効</translation>
     </message>
 </context>
 <context>
@@ -25367,7 +25650,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">アクセスできません</translation>
+        <translation type="obsolete">アクセスできません</translation>
     </message>
 </context>
 <context>
@@ -25453,7 +25736,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - ログビューアー</translation>
+        <translation type="vanished">%1 - ログビューアー</translation>
     </message>
 </context>
 <context>
@@ -25657,6 +25940,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - ログビューアー</translation>
     </message>
 </context>
 <context>
@@ -26072,7 +26359,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIVisoCreatorDialog</name>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISOクリエイター</translation>
+        <translation type="obsolete">VISOクリエイター</translation>
     </message>
 </context>
 <context>
@@ -26160,6 +26447,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished">VISOクリエイター</translation>
     </message>
 </context>
 <context>
@@ -26515,16 +26806,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -26546,7 +26827,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 のクローン</translation>
+        <translation>%1 のクローン</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -26578,11 +26859,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">すべてをクローン(&amp;F)</translation>
+        <translation>すべてをクローン(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">リンクしたクローン(&amp;L)</translation>
+        <translation>リンクしたクローン(&amp;L)</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -26606,15 +26887,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">現在のマシンの状態(&amp;M)</translation>
+        <translation>現在のマシンの状態(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">現在のスナップショットのツリーブランチ(&amp;S)</translation>
+        <translation>現在のスナップショットのツリーブランチ(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">すべて(&amp;E)</translation>
+        <translation>すべて(&amp;E)</translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -26650,27 +26931,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">すべてのネットワークアダプターのMACアドレスを含む</translation>
+        <translation>すべてのネットワークアダプターのMACアドレスを含む</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">NATネットワークアダプターのMACアドレスのみ含む</translation>
+        <translation>NATネットワークアダプターのMACアドレスのみ含む</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">すべてのネットワークアダプターでMACアドレスを生成</translation>
+        <translation>すべてのネットワークアダプターでMACアドレスを生成</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">クローンにNATネットワークアダプターのMACアドレスのみを含みます。</translation>
+        <translation>クローンにNATネットワークアダプターのMACアドレスのみを含みます。</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">クローン中にすべてのネットワークアダプターでMACアドレスを生成します。</translation>
+        <translation>クローン中にすべてのネットワークアダプターでMACアドレスを生成します。</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">追加オプション:</translation>
+        <translation>追加オプション:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -26678,7 +26959,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">ディスク名を保持(&amp;D)</translation>
+        <translation>ディスク名を保持(&amp;D)</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -26698,11 +26979,75 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">クローンにすべてのネットワークアダプターのMACアドレスを含みます。</translation>
+        <translation>クローンにすべてのネットワークアダプターのMACアドレスを含みます。</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>追加オプション</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27311,6 +27656,26 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished">仮想マシンの基本フォルダー(&amp;M):</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="unfinished">MACアドレスのポリシー(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="unfinished">追加オプション:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="unfinished">ハードドライブをVDIとしてインポート(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
@@ -27323,46 +27688,38 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">仮想マシンの基本フォルダー(&amp;M):</translation>
+        <translation type="obsolete">仮想マシンの基本フォルダー(&amp;M):</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MACアドレスのポリシー(&amp;P):</translation>
+        <translation type="obsolete">MACアドレスのポリシー(&amp;P):</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">追加オプション:</translation>
+        <translation type="obsolete">追加オプション:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">ハードドライブをVDIとしてインポート(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ハードドライブをVDIとしてインポート(&amp;I)</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">仮想マシンの基本フォルダー(&amp;M):</translation>
+        <translation type="obsolete">仮想マシンの基本フォルダー(&amp;M):</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MACアドレスのポリシー(&amp;P):</translation>
+        <translation type="obsolete">MACアドレスのポリシー(&amp;P):</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">追加オプション:</translation>
+        <translation type="obsolete">追加オプション:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">ハードドライブをVDIとしてインポート(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ハードドライブをVDIとしてインポート(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -27770,10 +28127,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options</source>
         <translation type="unfinished">追加オプション</translation>
     </message>
@@ -28045,18 +28398,30 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, 有効</translation>
+        <translation type="obsolete">%1, 有効</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

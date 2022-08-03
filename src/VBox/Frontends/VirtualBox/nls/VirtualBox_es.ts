@@ -2768,19 +2768,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2824,19 +2816,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">&amp;Eliminar</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2848,20 +2832,12 @@
         <translation type="unfinished">Crear una nueva carpeta bajo la ubicación actual</translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
         <translation type="unfinished">Renombrar el objeto seleccionado</translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eset</source>
@@ -2884,15 +2860,7 @@
         <translation type="unfinished">Añadir archivo de imagen de disco existente</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2933,10 +2901,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3109,10 +3073,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3200,6 +3160,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -3257,13 +3253,6 @@
             <numerusform>&lt;nobr&gt;Usado por el siguiente disco duro:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Usado por los siguientes %n discos duros:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3936,125 +3925,53 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Opciones adicionales:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Opciones adicionales:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">Mantener nombres de &amp;disco</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Mantener nombres de &amp;disco</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">Estado actual de la &amp;máquina</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Estado actual de la &amp;máquina</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">Rama de árbol de &amp;instantánea actual</translation>
+        <translation type="obsolete">Rama de árbol de &amp;instantánea actual</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">&amp;Todo</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Todo</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">Clonación &amp;completa</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Clonación &amp;completa</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">Clonación &amp;enlazada</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Clonación &amp;enlazada</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 clonar</translation>
+        <translation type="obsolete">%1 clonar</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nombre:</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Nombre:</translation>
     </message>
 </context>
 <context>
@@ -4193,59 +4110,23 @@
     <name>UICloudConsoleDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Nombre:</translation>
+        <translation type="obsolete">Nombre:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">Ruta:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ruta:</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Restaurar cambios (%1)</translation>
+        <translation type="obsolete">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Aplicar</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Aplicar</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Aplicar cambios (%1)</translation>
+        <translation type="obsolete">Aplicar cambios (%1)</translation>
     </message>
 </context>
 <context>
@@ -4290,9 +4171,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">Cerrar ventana (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">Nombre:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">Ruta:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">Añadir perfil</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -4312,9 +4238,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -4324,59 +4247,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>Nombre:</translation>
+        <translation type="vanished">Nombre:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>Propiedades:</translation>
+        <translation type="vanished">Propiedades:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>Contiene las preferencias del perfil cloud</translation>
+        <translation type="vanished">Contiene las preferencias del perfil cloud</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>Ingresar un nombre para el nuevo perfil...</translation>
+        <translation type="vanished">Ingresar un nombre para el nuevo perfil...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>Ingresar un nombre para este perfil...</translation>
+        <translation type="vanished">Ingresar un nombre para este perfil...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Restaurar</translation>
+        <translation type="vanished">Restaurar</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>Restaurar cambios en detalles de perfil actual</translation>
+        <translation type="vanished">Restaurar cambios en detalles de perfil actual</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Restaurar cambios (%1)</translation>
+        <translation type="vanished">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>Añadir</translation>
+        <translation type="vanished">Añadir</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>Añadir nuevo perfil con el siguiente nombre</translation>
+        <translation type="vanished">Añadir nuevo perfil con el siguiente nombre</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>Añadir perfil (%1)</translation>
+        <translation type="vanished">Añadir perfil (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Aplicar</translation>
+        <translation type="vanished">Aplicar</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>Aplicar cambios en detalles de perfil actual</translation>
+        <translation type="vanished">Aplicar cambios en detalles de perfil actual</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Aplicar cambios (%1)</translation>
+        <translation type="vanished">Aplicar cambios (%1)</translation>
     </message>
 </context>
 <context>
@@ -4437,9 +4360,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">Nombre:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">Propiedades:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">Contiene las preferencias del perfil cloud</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">Ingresar un nombre para el nuevo perfil...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">Ingresar un nombre para este perfil...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">Restaurar cambios en detalles de perfil actual</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">Añadir nuevo perfil con el siguiente nombre</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">Añadir perfil (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">Aplicar cambios en detalles de perfil actual</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished">Fuente</translation>
@@ -4451,6 +4411,13 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Source</source>
+        <translation type="obsolete">Fuente</translation>
     </message>
 </context>
 <context>
@@ -6322,29 +6289,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -6395,6 +6339,13 @@
     </message>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7425,317 +7376,165 @@
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Nombre:</translation>
+        <translation type="obsolete">&amp;Nombre:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Contiene el nombre para esta red.</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Contiene el nombre para esta red.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Aplicar</translation>
+        <translation type="obsolete">Aplicar</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Restaurar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Restaurar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aplicar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Aplicar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Restaurar cambios (%1)</translation>
+        <translation type="obsolete">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Aplicar cambios (%1)</translation>
+        <translation type="obsolete">Aplicar cambios (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nombre:</translation>
+        <translation type="obsolete">&amp;Nombre:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Contiene el nombre para esta red.</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Contiene el nombre para esta red.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Aplicar</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Aplicar</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Restaurar cambios (%1)</translation>
+        <translation type="obsolete">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Aplicar cambios (%1)</translation>
+        <translation type="obsolete">Aplicar cambios (%1)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Adaptador</translation>
+        <translation type="obsolete">&amp;Adaptador</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">Servidor &amp;DHCP</translation>
+        <translation type="obsolete">Servidor &amp;DHCP</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">Configurar adaptador &amp;automáticamente</translation>
+        <translation type="obsolete">Configurar adaptador &amp;automáticamente</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">Configurar adaptador &amp;manualmente</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Configurar adaptador &amp;manualmente</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">&amp;Máscara de red IPv4:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Máscara de red IPv4:</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">&amp;Longitud de máscara de red IPv6:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Longitud de máscara de red IPv6:</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Restaurar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Restaurar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aplicar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Aplicar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">&amp;Habilitar servidor</translation>
-    </message>
-    <message>
-        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Habilitar servidor</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">&amp;Dirección del servidor:</translation>
-    </message>
-    <message>
-        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Dirección del servidor:</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">&amp;Máscara del servidor:</translation>
-    </message>
-    <message>
-        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Máscara del servidor:</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">Límite &amp;inferior de direcciones:</translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Límite &amp;inferior de direcciones:</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">Límite &amp;superior de direcciones:</translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Límite &amp;superior de direcciones:</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">Restaurar cambios en los detalles de servidor DHCP actual</translation>
+        <translation type="obsolete">Restaurar cambios en los detalles de servidor DHCP actual</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">Aplicar cambios en los detalles de servidor DHCP actual</translation>
+        <translation type="obsolete">Aplicar cambios en los detalles de servidor DHCP actual</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Reenvío de puertos</translation>
+        <translation type="obsolete">&amp;Reenvío de puertos</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Nombre:</translation>
+        <translation type="obsolete">&amp;Nombre:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Contiene el nombre para esta red.</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Contiene el nombre para esta red.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">Seleccionado, esta red soportará DHCP.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Seleccionado, esta red soportará DHCP.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">Seleccionado, esta red soportará IPv6.</translation>
+        <translation type="obsolete">Seleccionado, esta red soportará IPv6.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">Anunciar &amp;ruta por defecto IPv6</translation>
+        <translation type="obsolete">Anunciar &amp;ruta por defecto IPv6</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">Seleccionado, esta red será promocionada como la ruta IPv6 predeterminada.</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Seleccionado, esta red será promocionada como la ruta IPv6 predeterminada.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Aplicar</translation>
+        <translation type="obsolete">Aplicar</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Restaurar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Restaurar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Aplicar los cambios en los detalles de interfaz actual</translation>
+        <translation type="obsolete">Aplicar los cambios en los detalles de interfaz actual</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Restaurar cambios (%1)</translation>
+        <translation type="obsolete">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Aplicar cambios (%1)</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Aplicar cambios (%1)</translation>
     </message>
 </context>
 <context>
@@ -7802,6 +7601,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">Seleccionado, las ventanas de las máquinas se elevarán cuando el puntero del ratón se mueva sobre ellas.</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">Habilitar aceleración &amp;3D</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Seleccionado, la máquina virtual obtendrá acceso a las capacidades gráficas 3D disponibles en el anfitrión.</translation>
     </message>
 </context>
 <context>
@@ -8386,9 +8223,16 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">Activo</translation>
@@ -8412,6 +8256,29 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">Archivos de paquete de extensión (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">Activo</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Nombre</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">Versión</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">Seleccione un archivo de paquete de extensión</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">Archivos de paquete de extensión (%1)</translation>
     </message>
 </context>
 <context>
@@ -9214,13 +9081,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGChooserItemGroup</name>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
@@ -9976,59 +9836,43 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">Seleccionado, las ventanas de las máquinas se elevarán cuando el puntero del ratón se mueva sobre ellas.</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Seleccionado, las ventanas de las máquinas se elevarán cuando el puntero del ratón se mueva sobre ellas.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">&amp;Autodetectar preferencias del proxy del anfitrión</translation>
+        <translation type="obsolete">&amp;Autodetectar preferencias del proxy del anfitrión</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Seleccionado, VirtualBox intentará detectar las preferencias del proxy del anfitrión para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+        <translation type="obsolete">Seleccionado, VirtualBox intentará detectar las preferencias del proxy del anfitrión para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">Conexión &amp;directa a Internet</translation>
+        <translation type="obsolete">Conexión &amp;directa a Internet</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Seleccionado, VirtualBox usará una conexión directa para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+        <translation type="obsolete">Seleccionado, VirtualBox usará una conexión directa para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">Configuración de proxy &amp;manual</translation>
+        <translation type="obsolete">Configuración de proxy &amp;manual</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Seleccionado, VirtualBox usará las preferencias de proxy proporcionadas para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+        <translation type="obsolete">Seleccionado, VirtualBox usará las preferencias de proxy proporcionadas para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation type="obsolete">&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">Contiene la URL proxy. El formato es &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">Contiene la URL proxy. El formato es &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -11345,52 +11189,8 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIHelpBrowserTab</name>
     <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Forward</source>
-        <translation type="unfinished">Adelante</translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Adelante</translation>
     </message>
 </context>
 <context>
@@ -11559,19 +11359,56 @@ p, li { white-space: pre-wrap; }
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished">Adelante</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>Ay&amp;uda</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13170,50 +13007,30 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name:</source>
-        <translation type="unfinished">Nombre:</translation>
+        <translation type="obsolete">Nombre:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">Ruta:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ruta:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Añadir perfil</translation>
+        <translation type="obsolete">Añadir perfil</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Nombre:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nombre:</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Nombre de red</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nombre de red</translation>
     </message>
 </context>
 <context>
@@ -13221,12 +13038,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -13238,101 +13055,97 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter</source>
-        <translation>Adaptador</translation>
+        <translation type="vanished">Adaptador</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>Configurado automáticamente</translation>
+        <translation type="vanished">Configurado automáticamente</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>Configurado manualmente</translation>
+        <translation type="vanished">Configurado manualmente</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>Dirección IPv4</translation>
+        <translation type="vanished">Dirección IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>No configurado</translation>
+        <translation type="vanished">No configurado</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>Máscara de red IPv4</translation>
+        <translation type="vanished">Máscara de red IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>No configurado</translation>
+        <translation type="vanished">No configurado</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>Dirección IPv6</translation>
+        <translation type="vanished">Dirección IPv6</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>Longitud de máscara de red IPv6</translation>
+        <translation type="vanished">Longitud de máscara de red IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>No configurado</translation>
+        <translation type="vanished">No configurado</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>Servidor DHCP</translation>
+        <translation type="vanished">Servidor DHCP</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>Habilitado</translation>
+        <translation type="vanished">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>Inhabilitado</translation>
+        <translation type="vanished">Inhabilitado</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Dirección</translation>
+        <translation type="vanished">Dirección</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>Máscara de red</translation>
+        <translation type="vanished">Máscara de red</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>Límite inferior</translation>
+        <translation type="vanished">Límite inferior</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>No configurado</translation>
+        <translation type="vanished">No configurado</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>Límite superior</translation>
+        <translation type="vanished">Límite superior</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nombre</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nombre</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
 </context>
 <context>
@@ -13340,44 +13153,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Nombre de red</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nombre de red</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">Soporta DHCP</translation>
+        <translation type="obsolete">Soporta DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">sí</translation>
+        <translation type="obsolete">sí</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">no</translation>
+        <translation type="obsolete">no</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">Soporta IPv6</translation>
+        <translation type="obsolete">Soporta IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Ruta por defecto IPv6</translation>
+        <translation type="obsolete">Ruta por defecto IPv6</translation>
     </message>
 </context>
 <context>
@@ -13523,25 +13328,14 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMachineDescriptionEditor</name>
-    <message>
-        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Habilitar aceleración &amp;3D</translation>
+        <translation type="obsolete">Habilitar aceleración &amp;3D</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Seleccionado, la máquina virtual obtendrá acceso a las capacidades gráficas 3D disponibles en el anfitrión.</translation>
+        <translation type="obsolete">Seleccionado, la máquina virtual obtendrá acceso a las capacidades gráficas 3D disponibles en el anfitrión.</translation>
     </message>
 </context>
 <context>
@@ -13636,6 +13430,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Every 10 s</source>
         <translation>Cada 10 s</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">Inaccesible</translation>
     </message>
 </context>
 <context>
@@ -16753,75 +16551,75 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>&amp;Atributos</translation>
+        <translation type="vanished">&amp;Atributos</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>&amp;Información</translation>
+        <translation type="vanished">&amp;Información</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>&amp;Tipo:</translation>
+        <translation type="vanished">&amp;Tipo:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>&amp;Ubicación:</translation>
+        <translation type="vanished">&amp;Ubicación:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>&amp;Descripción:</translation>
+        <translation type="vanished">&amp;Descripción:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>&amp;Tamaño:</translation>
+        <translation type="vanished">&amp;Tamaño:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>Contiene el tipo de este medio.</translation>
+        <translation type="vanished">Contiene el tipo de este medio.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>Contiene la ubicación de este medio.</translation>
+        <translation type="vanished">Contiene la ubicación de este medio.</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>Contiene la descripción de este medio.</translation>
+        <translation type="vanished">Contiene la descripción de este medio.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>Contiene el tamaño de este medio.</translation>
+        <translation type="vanished">Contiene el tamaño de este medio.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Restaurar</translation>
+        <translation type="vanished">Restaurar</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Aplicar</translation>
+        <translation type="vanished">Aplicar</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>Restaurar cambios en detalles de medio actual</translation>
+        <translation type="vanished">Restaurar cambios en detalles de medio actual</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>Aplicar cambios en detalles de medio actual</translation>
+        <translation type="vanished">Aplicar cambios en detalles de medio actual</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Restaurar cambios (%1)</translation>
+        <translation type="vanished">Restaurar cambios (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Aplicar cambios (%1)</translation>
+        <translation type="vanished">Aplicar cambios (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>No se puede cambiar el tamaño del medio de &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;%2&lt;/b&gt; debido a que la reducción no está actualmente implementada.</translation>
+        <translation type="vanished">No se puede cambiar el tamaño del medio de &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;%2&lt;/b&gt; debido a que la reducción no está actualmente implementada.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>Seleccionar ubicación del medio</translation>
+        <translation type="vanished">Seleccionar ubicación del medio</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -16829,31 +16627,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>Este tipo de medio está conectado directa o indirectamente, preservado al tomar instantáneas.</translation>
+        <translation type="vanished">Este tipo de medio está conectado directa o indirectamente, preservado al tomar instantáneas.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>Este tipo de medio está conectado indirectamente, los cambios son borrados la siguiente vez que la máquina virtual sea iniciada.</translation>
+        <translation type="vanished">Este tipo de medio está conectado indirectamente, los cambios son borrados la siguiente vez que la máquina virtual sea iniciada.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>Este tipo de medio está conectado directamente, ignorado al tomar instantáneas.</translation>
+        <translation type="vanished">Este tipo de medio está conectado directamente, ignorado al tomar instantáneas.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>Este tipo de medio está conectado directamente, está permitido ser usado concurrentemente por varias máquinas.</translation>
+        <translation type="vanished">Este tipo de medio está conectado directamente, está permitido ser usado concurrentemente por varias máquinas.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>Este tipo de medio está conectado directamente, y puede ser usado por varias máquinas.</translation>
+        <translation type="vanished">Este tipo de medio está conectado directamente, y puede ser usado por varias máquinas.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>Este tipo de medio está conectado indirectamente, de modo que un medio base puede ser usado por varias MVs que tienen su propio medio diferenciado para almacenar sus modificaciones.</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Este tipo de medio está conectado indirectamente, de modo que un medio base puede ser usado por varias MVs que tienen su propio medio diferenciado para almacenar sus modificaciones.</translation>
     </message>
 </context>
 <context>
@@ -17157,6 +16951,94 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">&amp;Atributos</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">&amp;Información</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">&amp;Tipo:</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">&amp;Ubicación:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Descripción:</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">&amp;Tamaño:</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">Contiene el tipo de este medio.</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">Contiene la ubicación de este medio.</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">Seleccionar ubicación del medio</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">Contiene la descripción de este medio.</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">Contiene el tamaño de este medio.</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">No se puede cambiar el tamaño del medio de &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;%2&lt;/b&gt; debido a que la reducción no está actualmente implementada.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">Este tipo de medio está conectado directa o indirectamente, preservado al tomar instantáneas.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">Este tipo de medio está conectado indirectamente, los cambios son borrados la siguiente vez que la máquina virtual sea iniciada.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">Este tipo de medio está conectado directamente, ignorado al tomar instantáneas.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">Este tipo de medio está conectado directamente, está permitido ser usado concurrentemente por varias máquinas.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">Este tipo de medio está conectado directamente, y puede ser usado por varias máquinas.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">Este tipo de medio está conectado indirectamente, de modo que un medio base puede ser usado por varias MVs que tienen su propio medio diferenciado para almacenar sus modificaciones.</translation>
+    </message>
+    <message>
+        <source>Registered hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered optical disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered floppy disks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
@@ -17180,18 +17062,6 @@ p, li { white-space: pre-wrap; }
         <source>Refresh Disk Image Files (%1)</source>
         <translation type="vanished">Actualizar archivos de imagen de discos (%1)</translation>
     </message>
-    <message>
-        <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIMediumSearchWidget</name>
@@ -17206,6 +17076,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Select the search type</source>
         <translation>Seleccionar el tipo de búsqueda</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -21175,6 +21057,356 @@ p, li { white-space: pre-wrap; }
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished">&amp;Nombre:</translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">Contiene el nombre para esta red.</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">Restaurar los cambios en los detalles de interfaz actual</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">Aplicar los cambios en los detalles de interfaz actual</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nombre:</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">&amp;Adaptador</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">Servidor &amp;DHCP</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">Configurar adaptador &amp;automáticamente</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">Configurar adaptador &amp;manualmente</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">&amp;Máscara de red IPv4:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">&amp;Longitud de máscara de red IPv6:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">&amp;Habilitar servidor</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">&amp;Dirección del servidor:</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">&amp;Máscara del servidor:</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">Límite &amp;inferior de direcciones:</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">Límite &amp;superior de direcciones:</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">Restaurar cambios en los detalles de servidor DHCP actual</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">Aplicar cambios en los detalles de servidor DHCP actual</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Reenvío de puertos</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">Seleccionado, esta red soportará DHCP.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">Seleccionado, esta red soportará IPv6.</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">Anunciar &amp;ruta por defecto IPv6</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">Seleccionado, esta red será promocionada como la ruta IPv6 predeterminada.</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Habilitado</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Inhabilitado</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">Adaptador</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Configurado automáticamente</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Configurado manualmente</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">Dirección IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">No configurado</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">Máscara de red IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">No configurado</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">Dirección IPv6</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">Longitud de máscara de red IPv6</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">No configurado</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Habilitado</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Inhabilitado</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">Dirección</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">Máscara de red</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">No configurado</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">Nombre de red</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">Soporta DHCP</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">sí</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">no</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">Soporta IPv6</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">Ruta por defecto IPv6</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -21237,21 +21469,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">Doble clic para más información.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -22767,6 +22984,41 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">&amp;Autodetectar preferencias del proxy del anfitrión</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Seleccionado, VirtualBox intentará detectar las preferencias del proxy del anfitrión para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">Conexión &amp;directa a Internet</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Seleccionado, VirtualBox usará una conexión directa para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">Configuración de proxy &amp;manual</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Seleccionado, VirtualBox usará las preferencias de proxy proporcionadas para tareas como descargar las «Guest Additions» de la red o para comprobar actualizaciones.</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished">&amp;URL:</translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">Contiene la URL proxy. El formato es &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -23344,9 +23596,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">Contiene una secuencia para filtrar la lista de accesos rápidos.</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">Nombre</translation>
@@ -23355,10 +23604,21 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Shortcut</source>
         <translation type="unfinished">Acceso</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Nombre</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">Acceso</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -24254,13 +24514,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -24362,7 +24615,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -24761,6 +25014,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">Mueve el filtro USB seleccionado hacia abajo.</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, activo</translation>
     </message>
 </context>
 <context>
@@ -25647,7 +25905,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Inaccesible</translation>
+        <translation type="obsolete">Inaccesible</translation>
     </message>
 </context>
 <context>
@@ -25733,7 +25991,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - Visor de trazas</translation>
+        <translation type="vanished">%1 - Visor de trazas</translation>
     </message>
 </context>
 <context>
@@ -25933,6 +26191,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - Visor de trazas</translation>
     </message>
 </context>
 <context>
@@ -26324,7 +26586,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <name>UIVisoCreatorDialog</name>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">Credor VISO</translation>
+        <translation type="obsolete">Credor VISO</translation>
     </message>
 </context>
 <context>
@@ -26412,6 +26674,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished">Credor VISO</translation>
     </message>
 </context>
 <context>
@@ -26768,16 +27034,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -26799,7 +27055,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 clonar</translation>
+        <translation>%1 clonar</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -26831,11 +27087,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">Clonación &amp;completa</translation>
+        <translation>Clonación &amp;completa</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">Clonación &amp;enlazada</translation>
+        <translation>Clonación &amp;enlazada</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -26859,15 +27115,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">Estado actual de la &amp;máquina</translation>
+        <translation>Estado actual de la &amp;máquina</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">Rama de árbol de &amp;instantánea actual</translation>
+        <translation>Rama de árbol de &amp;instantánea actual</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">&amp;Todo</translation>
+        <translation>&amp;Todo</translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -26903,27 +27159,27 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">Incluir todas las direcciones MAC de adaptador de red</translation>
+        <translation>Incluir todas las direcciones MAC de adaptador de red</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">Incluir solo dirección MAC de adaptador de red NAT</translation>
+        <translation>Incluir solo dirección MAC de adaptador de red NAT</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">Generar nuevas direcciones MAC para todos los adaptadores de red</translation>
+        <translation>Generar nuevas direcciones MAC para todos los adaptadores de red</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
+        <translation>Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">Generar nuevas direcciones MAC para todos los adaptadores de red durante la clonación.</translation>
+        <translation>Generar nuevas direcciones MAC para todos los adaptadores de red durante la clonación.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">Opciones adicionales:</translation>
+        <translation>Opciones adicionales:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -26931,7 +27187,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">Mantener nombres de &amp;disco</translation>
+        <translation>Mantener nombres de &amp;disco</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -26951,11 +27207,75 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Incluir todas las direcciones MAC de adaptador de red durante la clonación.</translation>
+        <translation>Incluir todas las direcciones MAC de adaptador de red durante la clonación.</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>Opciones adicionales</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nombre:</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27560,6 +27880,26 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished">Carpeta base de &amp;máquina:</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="unfinished">Opciones adicionales:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="unfinished">&amp;Importar discos como VDI</translation>
+    </message>
+    <message>
+        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
@@ -27572,46 +27912,30 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">Carpeta base de &amp;máquina:</translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Carpeta base de &amp;máquina:</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Opciones adicionales:</translation>
+        <translation type="obsolete">Opciones adicionales:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">&amp;Importar discos como VDI</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Importar discos como VDI</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">Carpeta base de &amp;máquina:</translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Carpeta base de &amp;máquina:</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Opciones adicionales:</translation>
+        <translation type="obsolete">Opciones adicionales:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">&amp;Importar discos como VDI</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Importar discos como VDI</translation>
     </message>
 </context>
 <context>
@@ -28010,10 +28334,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options</source>
         <translation type="unfinished">Opciones adicionales</translation>
     </message>
@@ -28285,18 +28605,30 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, activo</translation>
+        <translation type="obsolete">%1, activo</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

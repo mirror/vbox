@@ -575,12 +575,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+44"/>
+        <location line="+45"/>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
@@ -590,12 +585,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Reread All the Log Files and Refresh Pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+399"/>
+        <location line="+400"/>
         <source>Go One Level Up</source>
         <translation type="unfinished"></translation>
     </message>
@@ -691,7 +681,17 @@
         <translation type="unfinished">&amp;Osveži</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+3"/>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+38"/>
         <source>&amp;Save...</source>
         <translation type="unfinished">&amp;Shrani …</translation>
     </message>
@@ -914,11 +914,12 @@
         <location line="+35"/>
         <location line="+2"/>
         <location line="+1"/>
+        <location line="+446"/>
         <source>Create New Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="-411"/>
         <source>Copy</source>
         <translation type="unfinished">Kopiraj</translation>
     </message>
@@ -1026,11 +1027,40 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Add Selected Item(s) to VISO</source>
+        <source>Add Item(s) to VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+35"/>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+70"/>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+93"/>
+        <location line="+34"/>
+        <location line="+34"/>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <location line="+34"/>
+        <location line="+34"/>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+131"/>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-467"/>
         <source>&amp;Remove</source>
         <translation type="unfinished">&amp;Odstrani</translation>
     </message>
@@ -1040,12 +1070,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+32"/>
+        <location line="+33"/>
         <source>&amp;New Directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1055,12 +1080,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+32"/>
+        <location line="+33"/>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1070,12 +1090,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>R&amp;eset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1109,28 +1124,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-67"/>
         <location line="+34"/>
-        <location line="+34"/>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+33"/>
         <location line="+34"/>
         <location line="+34"/>
         <source>Create a new disk image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-67"/>
-        <location line="+34"/>
-        <location line="+34"/>
-        <source>Create a New Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+31"/>
+        <location line="+32"/>
         <source>&amp;Refresh...</source>
         <translation type="unfinished">&amp;Osveži …</translation>
     </message>
@@ -1178,11 +1179,6 @@
     <message>
         <location line="+1"/>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1285,7 +1281,7 @@
         <translation>&amp;Nov …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-304"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-303"/>
         <location line="+34"/>
         <location line="+34"/>
         <location filename="../src/globals/UIActionPoolManager.cpp" line="-144"/>
@@ -2355,7 +2351,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Remove All Inaccessible Media</source>
+        <source>Remove Inaccessible Media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3128,14 +3124,6 @@
     </message>
 </context>
 <context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="+287"/>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIApplianceEditorWidget</name>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+310"/>
@@ -3788,173 +3776,83 @@
     </message>
 </context>
 <context>
-    <name>UICloneVMAdditionalOptionsEditor</name>
-    <message>
-        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="+322"/>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
-        <location line="+188"/>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">Trenutno &amp;stanje računalnika</translation>
+        <translation type="obsolete">Trenutno &amp;stanje računalnika</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">Trenutna &amp;veja drevesa posnetkov stanja</translation>
+        <translation type="obsolete">Trenutna &amp;veja drevesa posnetkov stanja</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>&amp;Everything</source>
-        <translation type="unfinished">&amp;Vse</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Vse</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
-        <location line="-78"/>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">&amp;Poln klon</translation>
+        <translation type="obsolete">&amp;Poln klon</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">P&amp;ovezan klon</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">P&amp;ovezan klon</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <location line="-425"/>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+71"/>
         <source>%1 Clone</source>
-        <translation type="unfinished">Klon %1</translation>
+        <translation type="obsolete">Klon %1</translation>
     </message>
     <message>
-        <location line="+33"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished">I&amp;me:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">I&amp;me:</translation>
     </message>
 </context>
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
-        <location filename="../src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp" line="+105"/>
+        <source>Reset Changes (%1)</source>
+        <translation type="obsolete">Ponastavi spremembe (%1)</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation type="obsolete">Uveljavi</translation>
+    </message>
+    <message>
+        <source>Apply Changes (%1)</source>
+        <translation type="obsolete">Uveljavi spremembe (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UICloudConsoleManager</name>
+    <message>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1177"/>
+        <source>Cloud Console Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp" line="+106"/>
         <location line="+3"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="-901"/>
+        <location line="+109"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-2"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="-108"/>
         <source>Path:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+2"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1"/>
+        <location line="+108"/>
         <source>Argument:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3985,6 +3883,7 @@
     </message>
     <message>
         <location line="+6"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+794"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3994,45 +3893,33 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ponastavi spremembe (%1)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+5"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1"/>
         <source>Apply</source>
         <translation type="unfinished">Uveljavi</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Apply changes in current console details</source>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="-906"/>
+        <source>Add Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Uveljavi spremembe (%1)</translation>
-    </message>
-</context>
-<context>
-    <name>UICloudConsoleManager</name>
-    <message>
-        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1177"/>
-        <source>Cloud Console Manager</source>
+        <location line="+109"/>
+        <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Reset</source>
+        <location line="+106"/>
+        <source>Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Apply</source>
-        <translation type="unfinished">Uveljavi</translation>
+        <source>List in Menu</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+691"/>
         <source>Close</source>
         <translation type="unfinished">Zapri</translation>
     </message>
@@ -4052,32 +3939,26 @@
         <translation type="unfinished">Zapri pogovorno okno brez shranjevanja</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp" line="-2"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+4"/>
         <source>Reset Changes (%1)</source>
         <translation type="unfinished">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+3"/>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1"/>
         <source>Apply Changes (%1)</source>
         <translation type="unfinished">Uveljavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1"/>
         <source>Close Window (%1)</source>
         <translation type="unfinished">Zapri okno (%1)</translation>
-    </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
-    <message>
-        <location line="-701"/>
-        <source>Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>List in Menu</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4092,9 +3973,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp" line="+60"/>
         <source>Contains a list of cloud machine settings.</source>
@@ -4104,7 +3982,32 @@
 <context>
     <name>UICloudProfileDetailsWidget</name>
     <message>
-        <location filename="../src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp" line="+67"/>
+        <source>Reset Changes (%1)</source>
+        <translation type="obsolete">Ponastavi spremembe (%1)</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation type="obsolete">Uveljavi</translation>
+    </message>
+    <message>
+        <source>Apply Changes (%1)</source>
+        <translation type="obsolete">Uveljavi spremembe (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManager</name>
+    <message>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+342"/>
+        <source>Add Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+611"/>
+        <source>Cloud Profile Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp" line="+68"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4130,6 +4033,7 @@
     </message>
     <message>
         <location line="+9"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+3"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4139,12 +4043,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ponastavi spremembe (%1)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+8"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4160,44 +4059,27 @@
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+1"/>
         <source>Apply</source>
         <translation type="unfinished">Uveljavi</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Apply changes in current profile details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Uveljavi spremembe (%1)</translation>
-    </message>
-</context>
-<context>
-    <name>UICloudProfileManager</name>
-    <message>
-        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+342"/>
-        <source>Add Profile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+611"/>
-        <source>Cloud Profile Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Reset</source>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="-752"/>
+        <source>Source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Apply</source>
-        <translation type="unfinished">Uveljavi</translation>
+        <source>List VMs</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <source>Registered cloud providers and profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+751"/>
         <source>Close</source>
         <translation type="unfinished">Zapri</translation>
     </message>
@@ -4227,41 +4109,30 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp" line="-14"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+5"/>
         <source>Reset Changes (%1)</source>
         <translation type="unfinished">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+15"/>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+1"/>
         <source>Apply Changes (%1)</source>
         <translation type="unfinished">Uveljavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+1"/>
         <source>Close Window (%1)</source>
         <translation type="unfinished">Zapri okno (%1)</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
-    <message>
-        <location line="-766"/>
-        <source>Source</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>List VMs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6587,34 +6458,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="+220"/>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <location filename="../src/guestctrl/UIFileManagerTable.cpp" line="+1134"/>
@@ -6668,6 +6511,14 @@
         <location line="+2"/>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">Vsebuje pot privzete mape navideznega računalnika. Ta mapa se uporabi ob ustvarjanju novih navideznih računalnikov, če ni izrecno drugače navedeno.</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <location filename="../src/settings/editors/UIDescriptionEditor.cpp" line="+53"/>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">Vsebuje opis navideznega računalnika. Polje opisa je uporabno za pripombe o podrobnostih nastavitev nameščenega gostujočega OS-a.</translation>
     </message>
 </context>
 <context>
@@ -7341,409 +7192,210 @@
 <context>
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
-        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="+243"/>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">I&amp;me:</translation>
+        <translation type="obsolete">I&amp;me:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Vsebuje ime tega omežja.</translation>
+        <translation type="obsolete">Vsebuje ime tega omežja.</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>Apply</source>
-        <translation type="unfinished">Uveljavi</translation>
+        <translation type="obsolete">Uveljavi</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ponastavi spremembe (%1)</translation>
+        <translation type="obsolete">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Uveljavi spremembe (%1)</translation>
+        <translation type="obsolete">Uveljavi spremembe (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
-        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+261"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished">I&amp;me:</translation>
+        <translation type="obsolete">I&amp;me:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Vsebuje ime tega omežja.</translation>
+        <translation type="obsolete">Vsebuje ime tega omežja.</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <location line="+44"/>
-        <location line="+36"/>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-79"/>
-        <location line="+44"/>
-        <location line="+36"/>
         <source>Apply</source>
-        <translation type="unfinished">Uveljavi</translation>
+        <translation type="obsolete">Uveljavi</translation>
     </message>
     <message>
-        <location line="-77"/>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+44"/>
-        <location line="+36"/>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ponastavi spremembe (%1)</translation>
+        <translation type="obsolete">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="-78"/>
-        <location line="+44"/>
-        <location line="+36"/>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Uveljavi spremembe (%1)</translation>
+        <translation type="obsolete">Uveljavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="-72"/>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Vmesnik</translation>
+        <translation type="obsolete">&amp;Vmesnik</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">Strežnik &amp;DHCP</translation>
+        <translation type="obsolete">Strežnik &amp;DHCP</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">&amp;Samodejno prilagodi vmesnik</translation>
+        <translation type="obsolete">&amp;Samodejno prilagodi vmesnik</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">&amp;Ročno prilagodi vmesnik</translation>
+        <translation type="obsolete">&amp;Ročno prilagodi vmesnik</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">Naslov IPv&amp;4:</translation>
+        <translation type="obsolete">Naslov IPv&amp;4:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Vsebuje naslov IPv4 gostitelja za ta vmesnik.</translation>
+        <translation type="obsolete">Vsebuje naslov IPv4 gostitelja za ta vmesnik.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">&amp;Maska omrežja IPv4:</translation>
+        <translation type="obsolete">&amp;Maska omrežja IPv4:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Vsebuje masko omrežja IPv4 gostitelja za ta vmesnik.</translation>
+        <translation type="obsolete">Vsebuje masko omrežja IPv4 gostitelja za ta vmesnik.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">Naslov IPv&amp;6:</translation>
+        <translation type="obsolete">Naslov IPv&amp;6:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Vsebuje naslov IPv6 gostitelja za ta vmesnik, če je podprt.</translation>
+        <translation type="obsolete">Vsebuje naslov IPv6 gostitelja za ta vmesnik, če je podprt.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">&amp;Dolžina predpone IPv6:</translation>
+        <translation type="obsolete">&amp;Dolžina predpone IPv6:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Vsebuje dolžino predpone IPv6 gostitelja za ta vmesnik, če je podprta.</translation>
+        <translation type="obsolete">Vsebuje dolžino predpone IPv6 gostitelja za ta vmesnik, če je podprta.</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">&amp;Omogoči strežnik</translation>
+        <translation type="obsolete">&amp;Omogoči strežnik</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">Ko je označeno, bo ob zagonu računalnika za to omrežje omogočen strežnik DHCP.</translation>
+        <translation type="obsolete">Ko je označeno, bo ob zagonu računalnika za to omrežje omogočen strežnik DHCP.</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">&amp;Naslov strežnika:</translation>
+        <translation type="obsolete">&amp;Naslov strežnika:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Vsebuje naslov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+        <translation type="obsolete">Vsebuje naslov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">&amp;Maska strežnika:</translation>
+        <translation type="obsolete">&amp;Maska strežnika:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Vsebuje masko omrežja strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+        <translation type="obsolete">Vsebuje masko omrežja strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">&amp;Spodnja omejitev naslovov:</translation>
+        <translation type="obsolete">&amp;Spodnja omejitev naslovov:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Vsebuje spodnjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+        <translation type="obsolete">Vsebuje spodnjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">&amp;Zgornja omejitev naslovov:</translation>
+        <translation type="obsolete">&amp;Zgornja omejitev naslovov:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Vsebuje zgornjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+        <translation type="obsolete">Vsebuje zgornjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
+        <translation type="obsolete">Ponastavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
+        <translation type="obsolete">Uveljavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+148"/>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Posredovanje vrat</translation>
+        <translation type="obsolete">&amp;Posredovanje vrat</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">I&amp;me:</translation>
+        <translation type="obsolete">I&amp;me:</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Vsebuje ime tega omežja.</translation>
+        <translation type="obsolete">Vsebuje ime tega omežja.</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">Ko je označeno, bo to omrežje podpiralo DHCP.</translation>
+        <translation type="obsolete">Ko je označeno, bo to omrežje podpiralo DHCP.</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">Ko je označeno, bo to omrežje podpiralo IPv6.</translation>
+        <translation type="obsolete">Ko je označeno, bo to omrežje podpiralo IPv6.</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">&amp;Oglašaj privzeto pot IPv6</translation>
+        <translation type="obsolete">&amp;Oglašaj privzeto pot IPv6</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">Ko je označeno, bo to omrežje oglaševano kot privzeta pot IPv6.</translation>
+        <translation type="obsolete">Ko je označeno, bo to omrežje oglaševano kot privzeta pot IPv6.</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+20"/>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
         <source>Apply</source>
-        <translation type="unfinished">Uveljavi</translation>
+        <translation type="obsolete">Uveljavi</translation>
     </message>
     <message>
-        <location line="-17"/>
-        <location line="+20"/>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="-19"/>
-        <location line="+20"/>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
+        <translation type="obsolete">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <location line="+20"/>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ponastavi spremembe (%1)</translation>
+        <translation type="obsolete">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <location line="+20"/>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Uveljavi spremembe (%1)</translation>
-    </message>
-    <message>
-        <location line="-14"/>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Uveljavi spremembe (%1)</translation>
     </message>
 </context>
 <context>
@@ -7824,6 +7476,52 @@
         <location line="+1"/>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <location filename="../src/settings/editors/UIDisplayFeaturesEditor.cpp" line="+93"/>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Razširjene značilnosti:</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">Ko je označeno, se bodo okna računalnika povišala, ko nad njih premaknete miško.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <location filename="../src/settings/editors/UIDisplayScreenFeaturesEditor.cpp" line="+71"/>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Razširjene značilnosti:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">Omogoči pospeševanje &amp;3D</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Ko je označeno, bo navidezni računalnik dobil dostop do zmogljivosti grafike 3D, ki je na voljo na gostitelju.</translation>
     </message>
 </context>
 <context>
@@ -8006,7 +7704,49 @@
 <context>
     <name>UIExtensionPackManager</name>
     <message>
-        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+598"/>
+        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+157"/>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Active</source>
+        <translation type="unfinished">Dejavno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Name</source>
+        <translation type="unfinished">Ime</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Version</source>
+        <translation type="unfinished">Različica</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Registered extension packs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Select an extension package file</source>
+        <translation type="unfinished">Izberite datoteko paketa razširitev</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished">Datoteke paketa razširitev (%1)</translation>
+    </message>
+    <message>
+        <location line="+373"/>
         <source>Extension Pack Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8044,34 +7784,24 @@
 <context>
     <name>UIExtensionPackManagerWidget</name>
     <message>
-        <location line="-405"/>
         <source>Active</source>
-        <translation type="unfinished">Dejavno</translation>
+        <translation type="obsolete">Dejavno</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Name</source>
-        <translation type="unfinished">Ime</translation>
+        <translation type="obsolete">Ime</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Version</source>
-        <translation type="unfinished">Različica</translation>
+        <translation type="obsolete">Različica</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Registered extension packs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+15"/>
         <source>Select an extension package file</source>
-        <translation type="unfinished">Izberite datoteko paketa razširitev</translation>
+        <translation type="obsolete">Izberite datoteko paketa razširitev</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Extension package files (%1)</source>
-        <translation type="unfinished">Datoteke paketa razširitev (%1)</translation>
+        <translation type="obsolete">Datoteke paketa razširitev (%1)</translation>
     </message>
 </context>
 <context>
@@ -8715,14 +8445,6 @@
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="-101"/>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGChooserItemGroup</name>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
@@ -9279,72 +9001,39 @@
 <context>
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIGlobalDisplayFeaturesEditor.cpp" line="+93"/>
         <source>Extended Features:</source>
-        <translation type="unfinished">Razširjene značilnosti:</translation>
+        <translation type="obsolete">Razširjene značilnosti:</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">Ko je označeno, se bodo okna računalnika povišala, ko nad njih premaknete miško.</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ko je označeno, se bodo okna računalnika povišala, ko nad njih premaknete miško.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIGlobalProxyFeaturesEditor.cpp" line="+107"/>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">&amp;Samodejno zaznaj nastavitve posredniškega strežnika gostitelja</translation>
+        <translation type="obsolete">&amp;Samodejno zaznaj nastavitve posredniškega strežnika gostitelja</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, poizkusil samodejno zaznati nastavitve posredniškega strežnika gostitelja.</translation>
+        <translation type="obsolete">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, poizkusil samodejno zaznati nastavitve posredniškega strežnika gostitelja.</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">&amp;Neposredna povezava z intenetom</translation>
+        <translation type="obsolete">&amp;Neposredna povezava z intenetom</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil neposredno internetno povezavo.</translation>
+        <translation type="obsolete">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil neposredno internetno povezavo.</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">&amp;Ročne nastavitve posredniškega strežnika</translation>
+        <translation type="obsolete">&amp;Ročne nastavitve posredniškega strežnika</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Ko je označeno, bo VirtualBox za opravila, kot je prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil dobavljene nastavitve posredniškega strežnika.</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;URL:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ko je označeno, bo VirtualBox za opravila, kot je prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil dobavljene nastavitve posredniškega strežnika.</translation>
     </message>
 </context>
 <context>
@@ -10318,69 +10007,6 @@
     </message>
 </context>
 <context>
-    <name>UIHelpBrowserTab</name>
-    <message>
-        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+792"/>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIHelpBrowserWidget</name>
     <message>
         <location filename="../src/helpbrowser/UIHelpBrowserDialog.cpp" line="+75"/>
@@ -10388,7 +10014,42 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="+348"/>
+        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="+220"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+792"/>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+4"/>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="-2"/>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="-1"/>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+2"/>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+248"/>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+100"/>
         <source>Copy Selected Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10404,22 +10065,48 @@
     </message>
     <message>
         <location line="+4"/>
-        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1321"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1323"/>
         <source>Copy Link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="-1321"/>
         <source>Find in Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="-1732"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="-411"/>
         <source>Zoom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+853"/>
+        <location line="+406"/>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+442"/>
         <source>Close Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10539,7 +10226,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-1069"/>
+        <location line="+1071"/>
         <source>Add Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10596,14 +10284,6 @@
         <location filename="../src/widgets/UISpecialControls.cpp" line="+130"/>
         <source>&amp;Help</source>
         <translation>&amp;Pomoč</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="-134"/>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11883,77 +11563,23 @@
     </message>
 </context>
 <context>
-    <name>UIInputDialogCloudConsoleApplication</name>
-    <message>
-        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="-216"/>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIInputDialogCloudConsoleProfile</name>
-    <message>
-        <location line="+106"/>
-        <source>Add Profile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIItemCloudNetwork</name>
     <message>
-        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+351"/>
         <source>Network Name</source>
-        <translation type="unfinished">Ime omrežja</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ime omrežja</translation>
     </message>
 </context>
 <context>
     <name>UIItemExtensionPack</name>
     <message>
-        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="-68"/>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -11964,188 +11590,135 @@
         <translation type="obsolete">Omogoči</translation>
     </message>
     <message>
-        <location filename="../src/networkmanager/UINetworkManager.cpp" line="-139"/>
         <source>Adapter</source>
-        <translation type="unfinished">Vmesnik</translation>
+        <translation type="obsolete">Vmesnik</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Samodejno nastavljeno</translation>
+        <translation type="obsolete">Samodejno nastavljeno</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Ročno nastavljeno</translation>
+        <translation type="obsolete">Ročno nastavljeno</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>IPv4 Address</source>
-        <translation type="unfinished">Naslov IPv4</translation>
+        <translation type="obsolete">Naslov IPv4</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+10"/>
-        <location line="+17"/>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">Ni nastavljeno</translation>
+        <translation type="obsolete">Ni nastavljeno</translation>
     </message>
     <message>
-        <location line="-25"/>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">Maska omrežja IPv4</translation>
+        <translation type="obsolete">Maska omrežja IPv4</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+27"/>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">Ni nastavljeno</translation>
+        <translation type="obsolete">Ni nastavljeno</translation>
     </message>
     <message>
-        <location line="-23"/>
         <source>IPv6 Address</source>
-        <translation type="unfinished">Naslov IPv6</translation>
+        <translation type="obsolete">Naslov IPv6</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">Dolžina predpone IPv6</translation>
+        <translation type="obsolete">Dolžina predpone IPv6</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">Ni nastavljeno</translation>
+        <translation type="obsolete">Ni nastavljeno</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>DHCP Server</source>
-        <translation type="unfinished">Strežnik DHCP</translation>
+        <translation type="obsolete">Strežnik DHCP</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">Omogočeno</translation>
+        <translation type="obsolete">Omogočeno</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">Onemogočeno</translation>
+        <translation type="obsolete">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Address</source>
-        <translation type="unfinished">Naslov</translation>
+        <translation type="obsolete">Naslov</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Network Mask</source>
-        <translation type="unfinished">Maska omrežja</translation>
+        <translation type="obsolete">Maska omrežja</translation>
     </message>
     <message>
-        <location line="-55"/>
-        <location line="+59"/>
         <source>Lower Bound</source>
-        <translation type="unfinished">Spodnja omejitev</translation>
+        <translation type="obsolete">Spodnja omejitev</translation>
     </message>
     <message>
-        <location line="-61"/>
         <source>Name</source>
-        <translation type="unfinished">Ime</translation>
+        <translation type="obsolete">Ime</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Omogočeno</translation>
+        <translation type="obsolete">Omogočeno</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Onemogočeno</translation>
+        <translation type="obsolete">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+50"/>
-        <location line="+4"/>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">Ni nastavljeno</translation>
+        <translation type="obsolete">Ni nastavljeno</translation>
     </message>
     <message>
-        <location line="-64"/>
-        <location line="+62"/>
         <source>Upper Bound</source>
-        <translation type="unfinished">Zgornja omejitev</translation>
+        <translation type="obsolete">Zgornja omejitev</translation>
     </message>
 </context>
 <context>
     <name>UIItemNATNetwork</name>
     <message>
-        <location line="+55"/>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Omogočeno</translation>
+        <translation type="obsolete">Omogočeno</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Onemogočeno</translation>
+        <translation type="obsolete">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Network Name</source>
-        <translation type="unfinished">Ime omrežja</translation>
+        <translation type="obsolete">Ime omrežja</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>Supports DHCP</source>
-        <translation type="unfinished">Podpira DHCP</translation>
+        <translation type="obsolete">Podpira DHCP</translation>
     </message>
     <message>
-        <location line="+0"/>
-        <location line="+1"/>
-        <location line="+2"/>
         <source>yes</source>
-        <translation type="unfinished">Da</translation>
+        <translation type="obsolete">Da</translation>
     </message>
     <message>
-        <location line="-3"/>
-        <location line="+1"/>
         <source>no</source>
-        <translation type="unfinished">Ne</translation>
+        <translation type="obsolete">Ne</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Supports IPv6</source>
-        <translation type="unfinished">Podpira IPv6</translation>
+        <translation type="obsolete">Podpira IPv6</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Privzeta pot OPv6</translation>
+        <translation type="obsolete">Privzeta pot OPv6</translation>
     </message>
 </context>
 <context>
@@ -12307,27 +11880,23 @@
 <context>
     <name>UIMachineDescriptionEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMachineDescriptionEditor.cpp" line="+53"/>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Vsebuje opis navideznega računalnika. Polje opisa je uporabno za pripombe o podrobnostih nastavitev nameščenega gostujočega OS-a.</translation>
+        <translation type="obsolete">Vsebuje opis navideznega računalnika. Polje opisa je uporabno za pripombe o podrobnostih nastavitev nameščenega gostujočega OS-a.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMachineDisplayScreenFeaturesEditor.cpp" line="+71"/>
         <source>Extended Features:</source>
-        <translation type="unfinished">Razširjene značilnosti:</translation>
+        <translation type="obsolete">Razširjene značilnosti:</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Omogoči pospeševanje &amp;3D</translation>
+        <translation type="obsolete">Omogoči pospeševanje &amp;3D</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Ko je označeno, bo navidezni računalnik dobil dostop do zmogljivosti grafike 3D, ki je na voljo na gostitelju.</translation>
+        <translation type="obsolete">Ko je označeno, bo navidezni računalnik dobil dostop do zmogljivosti grafike 3D, ki je na voljo na gostitelju.</translation>
     </message>
 </context>
 <context>
@@ -12346,7 +11915,12 @@
         <translation type="unfinished">Ni predogleda</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Inaccessible</source>
+        <translation type="unfinished">Nedostopen</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Update disabled</source>
         <translation type="unfinished">Posodobitev onemogočena</translation>
     </message>
@@ -14250,133 +13824,104 @@
 <context>
     <name>UIMediumDetailsWidget</name>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+106"/>
         <source>&amp;Attributes</source>
-        <translation>&amp;Lastnosti</translation>
+        <translation type="vanished">&amp;Lastnosti</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>&amp;Information</source>
-        <translation>&amp;Podatki</translation>
+        <translation type="vanished">&amp;Podatki</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>&amp;Type:</source>
-        <translation>&amp;Vrsta:</translation>
+        <translation type="vanished">&amp;Vrsta:</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>&amp;Location:</source>
-        <translation>&amp;Mesto:</translation>
+        <translation type="vanished">&amp;Mesto:</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>&amp;Description:</source>
-        <translation>&amp;Opis:</translation>
+        <translation type="vanished">&amp;Opis:</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>&amp;Size:</source>
-        <translation>&amp;Velikost:</translation>
+        <translation type="vanished">&amp;Velikost:</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Holds the type of this medium.</source>
-        <translation>Vsebuje vrsto tega nosilca.</translation>
+        <translation type="vanished">Vsebuje vrsto tega nosilca.</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Holds the location of this medium.</source>
-        <translation>Vsebuje mesto tega nosilca.</translation>
+        <translation type="vanished">Vsebuje mesto tega nosilca.</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Choose Medium Location</source>
-        <translation>Izberite mesto nosilca</translation>
+        <translation type="vanished">Izberite mesto nosilca</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Holds the description of this medium.</source>
-        <translation>Vsebuje opis tega nosilca.</translation>
+        <translation type="vanished">Vsebuje opis tega nosilca.</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Holds the size of this medium.</source>
-        <translation>Vsebuje velikost tega nosilca.</translation>
+        <translation type="vanished">Vsebuje velikost tega nosilca.</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Reset</source>
-        <translation>Ponastavi</translation>
+        <translation type="vanished">Ponastavi</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Apply</source>
-        <translation>Uveljavi</translation>
+        <translation type="vanished">Uveljavi</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Reset changes in current medium details</source>
-        <translation>Ponastavi spremembe podrobnosti trenutnega nosilca</translation>
+        <translation type="vanished">Ponastavi spremembe podrobnosti trenutnega nosilca</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Apply changes in current medium details</source>
-        <translation>Uveljavi spremembe podrobnosti trenutnega nosilca</translation>
+        <translation type="vanished">Uveljavi spremembe podrobnosti trenutnega nosilca</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Reset Changes (%1)</source>
-        <translation>Ponastavi spremembe (%1)</translation>
+        <translation type="vanished">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Apply Changes (%1)</source>
-        <translation>Uveljavi spremembe (%1)</translation>
-    </message>
-    <message>
-        <location line="+636"/>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Uveljavi spremembe (%1)</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
         <translation type="vanished">Mesto ne sme biti prazno.</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>Velikosti nosilca ni mogočle spremeniti iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;, ker krčenje pomnilniških naprav trenutno ni podprto.</translation>
+        <translation type="vanished">Velikosti nosilca ni mogočle spremeniti iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;, ker krčenje pomnilniških naprav trenutno ni podprto.</translation>
     </message>
     <message>
-        <location line="+40"/>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>Ta vrsta nosilca se prikolpi neposredno ali posredno in se ohrani ob zajemanju posnetkov stanja.</translation>
+        <translation type="vanished">Ta vrsta nosilca se prikolpi neposredno ali posredno in se ohrani ob zajemanju posnetkov stanja.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>Ta vrsta nosilca se priklopi posredno in spremembe se ob naslednjem zagonu navidezneega računalnika izbrišejo.</translation>
+        <translation type="vanished">Ta vrsta nosilca se priklopi posredno in spremembe se ob naslednjem zagonu navidezneega računalnika izbrišejo.</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>Ta vrsta nosilca se priklopi neposredno in je ob zajemanju posnetkov stanja prezrta.</translation>
+        <translation type="vanished">Ta vrsta nosilca se priklopi neposredno in je ob zajemanju posnetkov stanja prezrta.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>Ta vrsta nosilca se priklopi neposredno in se lahko sočasno uporablja v več računalnikih.</translation>
+        <translation type="vanished">Ta vrsta nosilca se priklopi neposredno in se lahko sočasno uporablja v več računalnikih.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>Ta vrsta nosilca se priklopi neposredno in se lahko uporablja v več računalnikih.</translation>
+        <translation type="vanished">Ta vrsta nosilca se priklopi neposredno in se lahko uporablja v več računalnikih.</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>Ta vrsta nosilca se priklopi posredno, da se lahko osnovni nosilec uporabi v več navideznih računalnikih, ki ima vsak svoj razlikovalni nosilec za shranjevanje sprememb v njih.</translation>
+        <translation type="vanished">Ta vrsta nosilca se priklopi posredno, da se lahko osnovni nosilec uporabi v več navideznih računalnikih, ki ima vsak svoj razlikovalni nosilec za shranjevanje sprememb v njih.</translation>
     </message>
 </context>
 <context>
@@ -14590,7 +14135,12 @@
         <translation>&amp;Trdi diski</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+9"/>
+        <source>Registered hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <location line="+10"/>
         <location line="+9"/>
         <source>Name</source>
@@ -14607,13 +14157,23 @@
         <translation>Dejanska velikost</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+7"/>
+        <source>Registered optical disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <location line="+9"/>
         <source>Size</source>
         <translation>Velikost</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-2"/>
+        <source>Registered floppy disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Checking accessibility</source>
         <translation>Preverjanje dostopnosti</translation>
     </message>
@@ -14627,17 +14187,114 @@
         <translation>Upravljalnik navideznih nosilcev</translation>
     </message>
     <message>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+106"/>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">&amp;Lastnosti</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Information</source>
+        <translation type="unfinished">&amp;Podatki</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">&amp;Vrsta:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">&amp;Mesto:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Opis:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">&amp;Velikost:</translation>
+    </message>
+    <message>
         <location line="+3"/>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">Vsebuje vrsto tega nosilca.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">Vsebuje mesto tega nosilca.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">Izberite mesto nosilca</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">Vsebuje opis tega nosilca.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">Vsebuje velikost tega nosilca.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+3"/>
         <source>Reset</source>
         <translation>Ponastavi</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Apply</source>
         <translation>Uveljavi</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+644"/>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">Velikosti nosilca ni mogočle spremeniti iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;, ker krčenje pomnilniških naprav trenutno ni podprto.</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Close</source>
         <translation>Zapri</translation>
     </message>
@@ -14647,17 +14304,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-701"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Reset changes in current medium details</source>
         <translation>Ponastavi spremembe podrobnosti trenutnega nosilca</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Apply changes in current medium details</source>
         <translation>Uveljavi spremembe podrobnosti trenutnega nosilca</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Close dialog without saving</source>
         <translation>Zapri pogovorno okno brez shranjevanja</translation>
     </message>
@@ -14667,17 +14326,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+2"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+5"/>
         <source>Reset Changes (%1)</source>
         <translation>Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Apply Changes (%1)</source>
         <translation>Uveljavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+1"/>
         <source>Close Window (%1)</source>
         <translation>Zapri okno (%1)</translation>
     </message>
@@ -14687,7 +14348,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-665"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+27"/>
         <source>Current extension (*.%1)</source>
         <translation>Trenutna pripona (*.%1)</translation>
     </message>
@@ -14718,24 +14379,6 @@
     </message>
 </context>
 <context>
-    <name>UIMediumManagerWidget</name>
-    <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="-1536"/>
-        <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIMediumSearchWidget</name>
     <message>
         <location filename="../src/medium/UIMediumSearchWidget.cpp" line="+180"/>
@@ -14750,6 +14393,21 @@
     <message>
         <location line="+1"/>
         <source>Select the search type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Show the next item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18086,7 +17744,7 @@
 <context>
     <name>UINetworkManager</name>
     <message>
-        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+83"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+414"/>
         <source>Host-only Networks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18101,7 +17759,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-224"/>
+        <location line="+232"/>
         <location line="+6"/>
         <location line="+13"/>
         <location line="+12"/>
@@ -18109,22 +17768,172 @@
         <translation type="unfinished">Ime</translation>
     </message>
     <message>
-        <location line="-30"/>
+        <location line="-262"/>
+        <location line="+232"/>
         <source>Mask</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-231"/>
+        <location line="+60"/>
+        <location line="+172"/>
         <source>Lower Bound</source>
         <translation type="unfinished">Spodnja omejitev</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-231"/>
+        <location line="+63"/>
+        <location line="+169"/>
         <source>Upper Bound</source>
         <translation type="unfinished">Zgornja omejitev</translation>
     </message>
     <message>
+        <location line="-222"/>
+        <location line="+108"/>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Omogočeno</translation>
+    </message>
+    <message>
+        <location line="-107"/>
+        <location line="+108"/>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">Onemogočeno</translation>
+    </message>
+    <message>
+        <location line="-99"/>
+        <source>Adapter</source>
+        <translation type="unfinished">Vmesnik</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Samodejno nastavljeno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Ročno nastavljeno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">Naslov IPv4</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+10"/>
+        <location line="+17"/>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">Ni nastavljeno</translation>
+    </message>
+    <message>
+        <location line="-25"/>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">Maska omrežja IPv4</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+27"/>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">Ni nastavljeno</translation>
+    </message>
+    <message>
+        <location line="-23"/>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">Naslov IPv6</translation>
+    </message>
+    <message>
         <location line="+4"/>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">Dolžina predpone IPv6</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">Ni nastavljeno</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Omogočeno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">Onemogočeno</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Address</source>
+        <translation type="unfinished">Naslov</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Network Mask</source>
+        <translation type="unfinished">Maska omrežja</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+4"/>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">Ni nastavljeno</translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <location line="+32"/>
+        <source>Network Name</source>
+        <translation type="unfinished">Ime omrežja</translation>
+    </message>
+    <message>
+        <location line="-31"/>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">Podpira DHCP</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+2"/>
+        <location line="+3"/>
+        <source>yes</source>
+        <translation type="unfinished">Da</translation>
+    </message>
+    <message>
+        <location line="-4"/>
+        <location line="+2"/>
+        <source>no</source>
+        <translation type="unfinished">Ne</translation>
+    </message>
+    <message>
+        <location line="-1"/>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">Podpira IPv6</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">Privzeta pot OPv6</translation>
+    </message>
+    <message>
+        <location line="+100"/>
         <location line="+13"/>
         <source>IPv4 Prefix</source>
         <translation type="unfinished"></translation>
@@ -18136,38 +17945,137 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-12"/>
+        <location line="-205"/>
+        <location line="+193"/>
         <location line="+13"/>
         <source>DHCP Server</source>
         <translation type="unfinished">Strežnik DHCP</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-90"/>
+        <location line="+100"/>
         <source>Provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-99"/>
+        <location line="+100"/>
         <source>Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2098"/>
+        <location line="-21"/>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2096"/>
         <source>Network Manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="+96"/>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+148"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+154"/>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished">I&amp;me:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+264"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+2"/>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">Vsebuje ime tega omežja.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+3"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+15"/>
+        <location line="+44"/>
+        <location line="+36"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+27"/>
+        <location line="+22"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+3"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="-79"/>
+        <location line="+44"/>
+        <location line="+36"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-21"/>
+        <location line="+22"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Apply</source>
         <translation type="unfinished">Uveljavi</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+3"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="-33"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-19"/>
+        <location line="+22"/>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega vmesnika</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+1"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-20"/>
+        <location line="+22"/>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega vmesnika</translation>
+    </message>
+    <message>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Close</source>
         <translation type="unfinished">Zapri</translation>
     </message>
@@ -18177,17 +18085,174 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="-66"/>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">I&amp;me:</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Reset changes in current network details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Apply changes in current network details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+12"/>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">&amp;Vmesnik</translation>
+    </message>
+    <message>
         <location line="+1"/>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">Strežnik &amp;DHCP</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">&amp;Samodejno prilagodi vmesnik</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">&amp;Ročno prilagodi vmesnik</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">Naslov IPv&amp;4:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">Vsebuje naslov IPv4 gostitelja za ta vmesnik.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">&amp;Maska omrežja IPv4:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">Vsebuje masko omrežja IPv4 gostitelja za ta vmesnik.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">Naslov IPv&amp;6:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Vsebuje naslov IPv6 gostitelja za ta vmesnik, če je podprt.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">&amp;Dolžina predpone IPv6:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Vsebuje dolžino predpone IPv6 gostitelja za ta vmesnik, če je podprta.</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">&amp;Omogoči strežnik</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">Ko je označeno, bo ob zagonu računalnika za to omrežje omogočen strežnik DHCP.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">&amp;Naslov strežnika:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Vsebuje naslov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">&amp;Maska strežnika:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Vsebuje masko omrežja strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">&amp;Spodnja omejitev naslovov:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Vsebuje spodnjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">&amp;Zgornja omejitev naslovov:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Vsebuje zgornjo omejitev naslovov strežnika DHCP, ki je povezan s tem gostiteljskim vmesnikom.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">Ponastavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">Uveljavi spremembe podrobnosti trenutnega strežnika DHCP</translation>
+    </message>
+    <message>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Close dialog without saving</source>
         <translation type="unfinished">Zapri pogovorno okno brez shranjevanja</translation>
     </message>
@@ -18197,23 +18262,105 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="+3"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="-78"/>
+        <location line="+44"/>
+        <location line="+36"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-19"/>
+        <location line="+22"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+5"/>
         <source>Reset Changes (%1)</source>
         <translation type="unfinished">Ponastavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="-78"/>
+        <location line="+44"/>
+        <location line="+36"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-20"/>
+        <location line="+22"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Apply Changes (%1)</source>
         <translation type="unfinished">Uveljavi spremembe (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+1"/>
         <source>Close Window (%1)</source>
         <translation type="unfinished">Zapri okno (%1)</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Show Help (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="-67"/>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Posredovanje vrat</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">Ko je označeno, bo to omrežje podpiralo DHCP.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">Ko je označeno, bo to omrežje podpiralo IPv6.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">&amp;Oglašaj privzeto pot IPv6</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">Ko je označeno, bo to omrežje oglaševano kot privzeta pot IPv6.</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>IPv&amp;6</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18270,24 +18417,6 @@
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">Dvokliknite za več podatkov.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <location line="-2137"/>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -18969,6 +19098,49 @@
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <location filename="../src/settings/editors/UIProxyFeaturesEditor.cpp" line="+107"/>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">&amp;Samodejno zaznaj nastavitve posredniškega strežnika gostitelja</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, poizkusil samodejno zaznati nastavitve posredniškega strežnika gostitelja.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">&amp;Neposredna povezava z intenetom</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Ko je izbrano, bo VirtualBox za opravila, kot sta prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil neposredno internetno povezavo.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">&amp;Ročne nastavitve posredniškega strežnika</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Ko je označeno, bo VirtualBox za opravila, kot je prejemanje programa Guest Additions iz omrežja ali preverjanje za posodobitve, uporabil dobavljene nastavitve posredniškega strežnika.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&amp;URL:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <location filename="../src/settings/editors/UIRecordingSettingsEditor.cpp" line="+285"/>
@@ -19586,7 +19758,17 @@
 <context>
     <name>UIShortcutConfigurationEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIShortcutConfigurationEditor.cpp" line="+856"/>
+        <location filename="../src/settings/editors/UIShortcutConfigurationEditor.cpp" line="+486"/>
+        <source>Name</source>
+        <translation type="unfinished">Ime</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Shortcut</source>
+        <translation type="unfinished">Bližnjica</translation>
+    </message>
+    <message>
+        <location line="+369"/>
         <source>&amp;VirtualBox Manager</source>
         <translation type="unfinished">&amp;Upravljalnik VirtualBox</translation>
     </message>
@@ -19611,20 +19793,17 @@
 <context>
     <name>UIShortcutConfigurationModel</name>
     <message>
-        <location line="-375"/>
         <source>Name</source>
-        <translation type="unfinished">Ime</translation>
+        <translation type="obsolete">Ime</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Shortcut</source>
-        <translation type="unfinished">Bližnjica</translation>
+        <translation type="obsolete">Bližnjica</translation>
     </message>
     <message>
-        <location line="+32"/>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -20705,14 +20884,6 @@
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="-176"/>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <location filename="../src/UITakeSnapshotDialog.cpp" line="+98"/>
@@ -20840,7 +21011,7 @@
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <location filename="../src/widgets/UIToolBox.cpp" line="+348"/>
         <source>Expands the page &quot;%1&quot;</source>
@@ -21257,7 +21428,13 @@
 <context>
     <name>UIUSBFiltersEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBFiltersEditor.cpp" line="+256"/>
+        <location filename="../src/settings/editors/UIUSBFiltersEditor.cpp" line="+114"/>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, dejaven</translation>
+    </message>
+    <message>
+        <location line="+142"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="unfinished">Nov filter %1</translation>
@@ -22220,9 +22397,8 @@
 <context>
     <name>UIVMListView</name>
     <message>
-        <location filename="../src/manager/details/UIMachinePreview.cpp" line="-19"/>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nedostopen</translation>
+        <translation type="obsolete">Nedostopen</translation>
     </message>
 </context>
 <context>
@@ -22305,14 +22481,6 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerDialog</name>
-    <message>
-        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+100"/>
-        <source>%1 - Log Viewer</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIVMLogViewerWidget</name>
     <message>
         <location filename="../src/logviewer/UIVMLogViewerBookmarksPanel.cpp" line="+213"/>
@@ -22340,7 +22508,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+2"/>
+        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+100"/>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22783,14 +22956,6 @@
     </message>
 </context>
 <context>
-    <name>UIVisoCreatorDialog</name>
-    <message>
-        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+768"/>
-        <source>VISO Creator</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIVisoCreatorWidget</name>
     <message>
         <location filename="../src/medium/viso/UIVisoBrowserBase.cpp" line="+96"/>
@@ -22838,7 +23003,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="-647"/>
+        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+121"/>
         <source>Host File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22860,6 +23025,11 @@
     <message>
         <location line="+3"/>
         <source>Opens the help browser and navigates to the related section</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+62"/>
+        <source>VISO Creator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -23195,24 +23365,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp" line="+132"/>
+        <location line="+23"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp" line="+152"/>
+        <source>copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp" line="-20"/>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <location line="+20"/>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
-    <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPathSizePage.cpp" line="+23"/>
-        <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -23233,8 +23393,9 @@
         <translation type="vanished">Kloniraj</translation>
     </message>
     <message>
+        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="+148"/>
         <source>%1 Clone</source>
-        <translation type="vanished">Klon %1</translation>
+        <translation>Klon %1</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -23274,12 +23435,14 @@
         <translation>&lt;p&gt;Če ustvarite &lt;b&gt;povezan klon&lt;/b&gt;, potem bo v izvirnem navideznem računalniku ustvarjen nov posnetek stanja kot del postopka kloniranja.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="+336"/>
         <source>&amp;Full clone</source>
-        <translation type="vanished">&amp;Poln klon</translation>
+        <translation>&amp;Poln klon</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">P&amp;ovezan klon</translation>
+        <translation>P&amp;ovezan klon</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMModePage.cpp" line="+60"/>
@@ -23308,16 +23471,139 @@
         <translation>&lt;p&gt;Če izberete &lt;b&gt;Vse&lt;/b&gt;, bo nov računalnik odražal trenutno stanje izvirnega računalnika in bo imel ujemajoče se posnetke stanja vseh posnetkov stanja v izvirnem računalniku.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="-427"/>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+104"/>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">I&amp;me:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+136"/>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Include all network adapter MAC addresses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Include all network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Include only NAT network adapter MAC addresses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Include only NAT network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Generate new MAC addresses for all network adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Generate new MAC addresses for all network adapters during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Additional Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Keep &amp;Disk Names</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+119"/>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+64"/>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">Trenutno &amp;stanje računalnika</translation>
+        <translation>Trenutno &amp;stanje računalnika</translation>
     </message>
     <message>
+        <location line="+1"/>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">Trenutna &amp;veja drevesa posnetkov stanja</translation>
+        <translation>Trenutna &amp;veja drevesa posnetkov stanja</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>&amp;Everything</source>
-        <translation type="vanished">&amp;Vse</translation>
+        <translation>&amp;Vse</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -23874,7 +24160,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+4"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+8"/>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+4"/>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+4"/>
+        <source>Additional Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+4"/>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+1"/>
+        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="-35"/>
         <source>Holds the path of the file selected for import.</source>
         <translation type="unfinished"></translation>
@@ -23907,7 +24223,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="-237"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="-258"/>
         <source>Include all network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23980,62 +24296,6 @@
         <location line="+1"/>
         <source>Settings</source>
         <translation type="unfinished">Nastavitve</translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
-    <message>
-        <location line="+33"/>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageSettings</name>
-    <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+193"/>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -24294,7 +24554,7 @@
         <translation type="vanished">&lt;p&gt;&lt;nobr&gt;Navidezni računalnik boste ustvarili v naslednji mapi:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="-118"/>
+        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="+68"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMUnattendedPage.cpp" line="+109"/>
         <source>Username and Password</source>
         <translation type="unfinished"></translation>
@@ -24316,11 +24576,16 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+20"/>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+78"/>
         <source>Additional Options</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24340,7 +24605,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+140"/>
+        <location line="+15"/>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+125"/>
         <source>&amp;Enable EFI (special OSes only)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24674,16 +24944,14 @@
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBFiltersEditor.cpp" line="-62"/>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, dejaven</translation>
+        <translation type="obsolete">%1, dejaven</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

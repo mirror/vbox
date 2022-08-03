@@ -1808,19 +1808,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1864,19 +1856,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">삭제(&amp;R)</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1888,20 +1872,12 @@
         <translation type="unfinished">현재 위치에 새로운 디렉터리 만들기</translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
         <translation type="unfinished">선택한 객체 이름 바꾸기</translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eset</source>
@@ -1924,15 +1900,7 @@
         <translation type="unfinished">이미 존재하는 디스크 이미지 파일 추가</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1973,10 +1941,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2149,10 +2113,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2240,6 +2200,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -2270,13 +2266,6 @@
         <translation>
             <numerusform>&lt;nobr&gt;다음 하드 디스크 %n개에 사용됨:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2835,184 +2824,96 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">모든 네트워크 어댑터 MAC 주소 포함</translation>
+        <translation type="obsolete">모든 네트워크 어댑터 MAC 주소 포함</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">복제 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
+        <translation type="obsolete">복제 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">NAT 네트워크 어댑터 MAC 주소만 포함</translation>
+        <translation type="obsolete">NAT 네트워크 어댑터 MAC 주소만 포함</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">복제 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
+        <translation type="obsolete">복제 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
+        <translation type="obsolete">모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished">복제 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
+        <translation type="obsolete">복제 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">추가 옵션:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">추가 옵션:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">디스크 이름 유지하기(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">디스크 이름 유지하기(&amp;D)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">현재 머신 상태(&amp;M)</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">현재 머신 상태(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">현재 스냅샷 트리 브랜치(&amp;S)</translation>
+        <translation type="obsolete">현재 스냅샷 트리 브랜치(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">모두(&amp;E)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">모두(&amp;E)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">완전한 복제(&amp;F)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">완전한 복제(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">연결된 복제(&amp;L)</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">연결된 복제(&amp;L)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 복제</translation>
+        <translation type="obsolete">%1 복제</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이름(&amp;N):</translation>
     </message>
 </context>
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">이름:</translation>
+        <translation type="obsolete">이름:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">경로:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">경로:</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation type="obsolete">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">적용</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
+        <translation type="obsolete">변경 사항 적용(%1)</translation>
     </message>
 </context>
 <context>
@@ -3057,9 +2958,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">창 닫기(%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">이름:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">경로:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">프로필 추가</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -3079,9 +3025,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -3091,59 +3034,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>이름:</translation>
+        <translation type="vanished">이름:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>속성:</translation>
+        <translation type="vanished">속성:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>클라우드 프로필 속성 포함</translation>
+        <translation type="vanished">클라우드 프로필 속성 포함</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>새 프로필 이름 입력...</translation>
+        <translation type="vanished">새 프로필 이름 입력...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>이 프로필 이름 입력...</translation>
+        <translation type="vanished">이 프로필 이름 입력...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>초기화</translation>
+        <translation type="vanished">초기화</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>현재 프로필 설정의 변경된 사항 초기화</translation>
+        <translation type="vanished">현재 프로필 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>변경 사항 초기화(%1)</translation>
+        <translation type="vanished">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>추가</translation>
+        <translation type="vanished">추가</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>다음 이름으로 새 프로필 추가</translation>
+        <translation type="vanished">다음 이름으로 새 프로필 추가</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>프로필 추가(%1)</translation>
+        <translation type="vanished">프로필 추가(%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>적용</translation>
+        <translation type="vanished">적용</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>현재 프로필 설정의 변경된 사항 적용</translation>
+        <translation type="vanished">현재 프로필 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>변경 사항 적용(%1)</translation>
+        <translation type="vanished">변경 사항 적용(%1)</translation>
     </message>
 </context>
 <context>
@@ -3204,9 +3147,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">이름:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">속성:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">클라우드 프로필 속성 포함</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">새 프로필 이름 입력...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">이 프로필 이름 입력...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">현재 프로필 설정의 변경된 사항 초기화</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">추가</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">다음 이름으로 새 프로필 추가</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">프로필 추가(%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">현재 프로필 설정의 변경된 사항 적용</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished">원본</translation>
@@ -3218,6 +3198,13 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Source</source>
+        <translation type="obsolete">원본</translation>
     </message>
 </context>
 <context>
@@ -5069,29 +5056,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -5135,6 +5099,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">기본값으로 선택된 가상 머신 폴더를 표시합니다. 새 가상 머신을 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">가상 머신의 설명을 표시합니다. 설치한 게스트 운영 체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -5600,318 +5571,198 @@
 <context>
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">이 네트워크의 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이 네트워크의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
+        <translation type="obsolete">적용</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 초기화</translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 적용</translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation type="obsolete">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
+        <translation type="obsolete">변경 사항 적용(%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation type="obsolete">이름(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">이 네트워크의 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이 네트워크의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">적용</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation type="obsolete">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
+        <translation type="obsolete">변경 사항 적용(%1)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">어댑터(&amp;A)</translation>
+        <translation type="obsolete">어댑터(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP 서버(&amp;D)</translation>
+        <translation type="obsolete">DHCP 서버(&amp;D)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">자동으로 어댑터 설정(&amp;A)</translation>
+        <translation type="obsolete">자동으로 어댑터 설정(&amp;A)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">수동으로 어댑터 설정(&amp;M)</translation>
+        <translation type="obsolete">수동으로 어댑터 설정(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">IPv4 주소(&amp;I):</translation>
+        <translation type="obsolete">IPv4 주소(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
+        <translation type="obsolete">이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 서브넷 마스크(&amp;M):</translation>
+        <translation type="obsolete">IPv4 서브넷 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
+        <translation type="obsolete">이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 주소(&amp;P):</translation>
+        <translation type="obsolete">IPv6 주소(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
+        <translation type="obsolete">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 접두사 길이(&amp;L):</translation>
+        <translation type="obsolete">IPv6 접두사 길이(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사 길이를 표시합니다.</translation>
+        <translation type="obsolete">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사 길이를 표시합니다.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 초기화</translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 적용</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">선택하면 가상 머신을 시작할 때 이 네트워크에서 DHCP 서버를 활성화합니다.</translation>
+        <translation type="obsolete">선택하면 가상 머신을 시작할 때 이 네트워크에서 DHCP 서버를 활성화합니다.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">서버 주소(&amp;R):</translation>
+        <translation type="obsolete">서버 주소(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
+        <translation type="obsolete">이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">서버 마스크(&amp;M):</translation>
+        <translation type="obsolete">서버 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
+        <translation type="obsolete">이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">최저 주소 한계(&amp;L):</translation>
+        <translation type="obsolete">최저 주소 한계(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
+        <translation type="obsolete">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">최고 주소 한계(&amp;U):</translation>
+        <translation type="obsolete">최고 주소 한계(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
+        <translation type="obsolete">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 초기화</translation>
+        <translation type="obsolete">현재 DHCP 서버 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 적용</translation>
+        <translation type="obsolete">현재 DHCP 서버 설정의 변경된 사항 적용</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">포트 포워딩(&amp;P)</translation>
-    </message>
-    <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">포트 포워딩(&amp;P)</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">이 네트워크의 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이 네트워크의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">선택하면 이 네트워크는 DHCP를 지원합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">선택하면 이 네트워크는 DHCP를 지원합니다.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">선택하면 이 네트워크는 IPv6을 지원합니다.</translation>
+        <translation type="obsolete">선택하면 이 네트워크는 IPv6을 지원합니다.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">기본 IPv6 경로 알리기(&amp;R)</translation>
+        <translation type="obsolete">기본 IPv6 경로 알리기(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">선택하면 이 네트워크를 기본 IPv6 경로로 알립니다.</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">선택하면 이 네트워크를 기본 IPv6 경로로 알립니다.</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
+        <translation type="obsolete">적용</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 초기화</translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 적용</translation>
+        <translation type="obsolete">현재 인터페이스 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation type="obsolete">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">변경 사항 적용(%1)</translation>
     </message>
 </context>
 <context>
@@ -5978,6 +5829,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">선택하면 마우스 포인터가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">3차원 가속 사용하기(&amp;3)</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -6153,9 +6042,16 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">활성화됨</translation>
@@ -6179,6 +6075,29 @@
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">확장 패키지 파일 (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">활성화됨</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">이름</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">버전</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">확장 패키지 파일 선택</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">확장 패키지 파일 (%1)</translation>
     </message>
 </context>
 <context>
@@ -6723,68 +6642,45 @@
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">선택하면 마우스 포인터가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">선택하면 마우스 포인터가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">프록시 설정 자동 감지(&amp;A)</translation>
+        <translation type="obsolete">프록시 설정 자동 감지(&amp;A)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox에서 게스트 확장을 다운로드하거나 업데이트를 확인할 때 호스트 프록시 설정을 자동으로 확인합니다.</translation>
+        <translation type="obsolete">선택하면 VirtualBox에서 게스트 확장을 다운로드하거나 업데이트를 확인할 때 호스트 프록시 설정을 자동으로 확인합니다.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">인터넷에 직접 연결(&amp;D)</translation>
+        <translation type="obsolete">인터넷에 직접 연결(&amp;D)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업 시 인터넷에 직접 연결합니다.</translation>
+        <translation type="obsolete">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업 시 인터넷에 직접 연결합니다.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">수동 프록시 설정(&amp;M)</translation>
+        <translation type="obsolete">수동 프록시 설정(&amp;M)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
+        <translation type="obsolete">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">URL(&amp;U):</translation>
+        <translation type="obsolete">URL(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">프록시 URL을 지정합니다. 형식은 다음과 같습니다:&lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">프록시 URL을 지정합니다. 형식은 다음과 같습니다:&lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -7348,57 +7244,6 @@
     </message>
 </context>
 <context>
-    <name>UIHelpBrowserTab</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
@@ -7564,19 +7409,56 @@
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>도움말(&amp;H)</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8099,50 +7981,30 @@
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name:</source>
-        <translation type="unfinished">이름:</translation>
+        <translation type="obsolete">이름:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">경로:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">경로:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">프로필 추가</translation>
+        <translation type="obsolete">프로필 추가</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">이름:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이름:</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">네트워크 이름</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">네트워크 이름</translation>
     </message>
 </context>
 <context>
@@ -8150,12 +8012,12 @@
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -8167,101 +8029,97 @@
     </message>
     <message>
         <source>Adapter</source>
-        <translation>어댑터</translation>
+        <translation type="vanished">어댑터</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>자동 설정됨</translation>
+        <translation type="vanished">자동 설정됨</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>수동 설정됨</translation>
+        <translation type="vanished">수동 설정됨</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>IPv4 주소</translation>
+        <translation type="vanished">IPv4 주소</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>설정되지 않음</translation>
+        <translation type="vanished">설정되지 않음</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>IPv4 서브넷 마스크</translation>
+        <translation type="vanished">IPv4 서브넷 마스크</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>설정되지 않음</translation>
+        <translation type="vanished">설정되지 않음</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>IPv6 주소</translation>
+        <translation type="vanished">IPv6 주소</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>IPv6 접두사 길이</translation>
+        <translation type="vanished">IPv6 접두사 길이</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>설정되지 않음</translation>
+        <translation type="vanished">설정되지 않음</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>DHCP 서버</translation>
+        <translation type="vanished">DHCP 서버</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>사용함</translation>
+        <translation type="vanished">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>사용 안 함</translation>
+        <translation type="vanished">사용 안 함</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>주소</translation>
+        <translation type="vanished">주소</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>서브넷 마스크</translation>
+        <translation type="vanished">서브넷 마스크</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>최저 주소</translation>
+        <translation type="vanished">최저 주소</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>설정되지 않음</translation>
+        <translation type="vanished">설정되지 않음</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>최고 주소</translation>
+        <translation type="vanished">최고 주소</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">이름</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용 안 함</translation>
+        <translation type="obsolete">사용 안 함</translation>
     </message>
 </context>
 <context>
@@ -8269,44 +8127,36 @@
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용 안 함</translation>
+        <translation type="obsolete">사용 안 함</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">네트워크 이름</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">네트워크 이름</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCP 지원</translation>
+        <translation type="obsolete">DHCP 지원</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">예</translation>
+        <translation type="obsolete">예</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">아니요</translation>
+        <translation type="obsolete">아니요</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6 지원</translation>
+        <translation type="obsolete">IPv6 지원</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">기본 IPv6 경로</translation>
+        <translation type="obsolete">기본 IPv6 경로</translation>
     </message>
 </context>
 <context>
@@ -8455,22 +8305,18 @@
     <name>UIMachineDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">가상 머신의 설명을 표시합니다. 설치한 게스트 운영 체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
+        <translation type="obsolete">가상 머신의 설명을 표시합니다. 설치한 게스트 운영 체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">3차원 가속 사용하기(&amp;3)</translation>
+        <translation type="obsolete">3차원 가속 사용하기(&amp;3)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
+        <translation type="obsolete">호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -8509,6 +8355,10 @@
     <message>
         <source>Every 10 s</source>
         <translation>10초마다</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">접근할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -10101,75 +9951,75 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>속성(&amp;A)</translation>
+        <translation type="vanished">속성(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>정보(&amp;I)</translation>
+        <translation type="vanished">정보(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>종류(&amp;T):</translation>
+        <translation type="vanished">종류(&amp;T):</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>위치(&amp;L):</translation>
+        <translation type="vanished">위치(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>설명(&amp;D):</translation>
+        <translation type="vanished">설명(&amp;D):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>크기(&amp;S):</translation>
+        <translation type="vanished">크기(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>이 미디어의 크기를 표시합니다.</translation>
+        <translation type="vanished">이 미디어의 크기를 표시합니다.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>이 미디어의 위치를 표시합니다.</translation>
+        <translation type="vanished">이 미디어의 위치를 표시합니다.</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>이 미디어의 설명을 표시합니다.</translation>
+        <translation type="vanished">이 미디어의 설명을 표시합니다.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>이 미디어의 크기를 표시합니다.</translation>
+        <translation type="vanished">이 미디어의 크기를 표시합니다.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>초기화</translation>
+        <translation type="vanished">초기화</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>적용</translation>
+        <translation type="vanished">적용</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>현재 미디어 설정의 변경된 사항 초기화</translation>
+        <translation type="vanished">현재 미디어 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>현재 미디어 설정의 변경된 사항 적용</translation>
+        <translation type="vanished">현재 미디어 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>변경 사항 초기화(%1)</translation>
+        <translation type="vanished">변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>변경 사항 적용(%1)</translation>
+        <translation type="vanished">변경 사항 적용(%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>저장소 축소가 현재 구현되어 있지 않아서 미디어 크기를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 축소할 수 없습니다.</translation>
+        <translation type="vanished">저장소 축소가 현재 구현되어 있지 않아서 미디어 크기를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 축소할 수 없습니다.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>미디어 위치 선택</translation>
+        <translation type="vanished">미디어 위치 선택</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -10177,31 +10027,27 @@
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>이 형식의 미디어는 직접 및 간접적으로 연결되며 스냅샷을 찍을 때 보존됩니다.</translation>
+        <translation type="vanished">이 형식의 미디어는 직접 및 간접적으로 연결되며 스냅샷을 찍을 때 보존됩니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>이 형식의 미디어는 간접적으로 연결되며 가상 머신을 다음에 다시 시작할 때 변경 사항이 삭제됩니다.</translation>
+        <translation type="vanished">이 형식의 미디어는 간접적으로 연결되며 가상 머신을 다음에 다시 시작할 때 변경 사항이 삭제됩니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>이 형식의 미디어는 직접적으로 연결되며 스냅샷을 찍을 때 무시합니다.</translation>
+        <translation type="vanished">이 형식의 미디어는 직접적으로 연결되며 스냅샷을 찍을 때 무시합니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 동시에 사용할 수 있습니다.</translation>
+        <translation type="vanished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 동시에 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 사용할 수 있습니다.</translation>
+        <translation type="vanished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>이 형식의 미디어는 간접적으로 연결되며 한 기반 미디어를 여러 VM에서 사용할 때 가상 머신별 차이를 별도의 미디어에 기록합니다.</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">이 형식의 미디어는 간접적으로 연결되며 한 기반 미디어를 여러 VM에서 사용할 때 가상 머신별 차이를 별도의 미디어에 기록합니다.</translation>
     </message>
 </context>
 <context>
@@ -10363,9 +10209,82 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">속성(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">정보(&amp;I)</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">종류(&amp;T):</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">위치(&amp;L):</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">설명(&amp;D):</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">크기(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">이 미디어의 크기를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">이 미디어의 위치를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">미디어 위치 선택</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">이 미디어의 설명을 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">이 미디어의 크기를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">저장소 축소가 현재 구현되어 있지 않아서 미디어 크기를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 축소할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">이 형식의 미디어는 직접 및 간접적으로 연결되며 스냅샷을 찍을 때 보존됩니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">이 형식의 미디어는 간접적으로 연결되며 가상 머신을 다음에 다시 시작할 때 변경 사항이 삭제됩니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 스냅샷을 찍을 때 무시합니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 동시에 사용할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 사용할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">이 형식의 미디어는 간접적으로 연결되며 한 기반 미디어를 여러 VM에서 사용할 때 가상 머신별 차이를 별도의 미디어에 기록합니다.</translation>
+    </message>
     <message>
         <source>Registered hard drives</source>
         <translation type="unfinished"></translation>
@@ -10392,6 +10311,18 @@
     <message>
         <source>Select the search type</source>
         <translation>검색 형식 선택</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13126,6 +13057,356 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">이 네트워크의 이름을 표시합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 초기화</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 적용</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">이름(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">어댑터(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">DHCP 서버(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">자동으로 어댑터 설정(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">수동으로 어댑터 설정(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">IPv4 주소(&amp;I):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">IPv4 서브넷 마스크(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">IPv6 주소(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">IPv6 접두사 길이(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사 길이를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">선택하면 가상 머신을 시작할 때 이 네트워크에서 DHCP 서버를 활성화합니다.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">서버 주소(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">서버 마스크(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">최저 주소 한계(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">최고 주소 한계(&amp;U):</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 초기화</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 적용</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">포트 포워딩(&amp;P)</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">선택하면 이 네트워크는 DHCP를 지원합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">선택하면 이 네트워크는 IPv6을 지원합니다.</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">기본 IPv6 경로 알리기(&amp;R)</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">선택하면 이 네트워크를 기본 IPv6 경로로 알립니다.</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">사용함</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">사용 안 함</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">어댑터</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">자동 설정됨</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">수동 설정됨</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 주소</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">설정되지 않음</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 서브넷 마스크</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">설정되지 않음</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 주소</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">IPv6 접두사 길이</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">설정되지 않음</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">사용함</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">사용 안 함</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">주소</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">서브넷 마스크</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">설정되지 않음</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">네트워크 이름</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">DHCP 지원</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">예</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">아니요</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">IPv6 지원</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">기본 IPv6 경로</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -13180,21 +13461,6 @@
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">두 번 클릭하면 자세한 정보를 볼 수 있습니다.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13724,6 +13990,41 @@
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">프록시 설정 자동 감지(&amp;A)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">선택하면 VirtualBox에서 게스트 확장을 다운로드하거나 업데이트를 확인할 때 호스트 프록시 설정을 자동으로 확인합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">인터넷에 직접 연결(&amp;D)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업 시 인터넷에 직접 연결합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">수동 프록시 설정(&amp;M)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished">URL(&amp;U):</translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">프록시 URL을 지정합니다. 형식은 다음과 같습니다:&lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -14217,9 +14518,6 @@
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">단축키 목록에서 검색할 텍스트를 입력합니다.</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">이름</translation>
@@ -14228,10 +14526,21 @@
         <source>Shortcut</source>
         <translation type="unfinished">단축키</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">이름</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">단축키</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -15004,13 +15313,6 @@
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -15111,7 +15413,7 @@
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -15470,6 +15772,11 @@
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">선택한 USB 필터를 아래로 이동합니다.</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, 활성화됨</translation>
     </message>
 </context>
 <context>
@@ -16098,14 +16405,14 @@
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation>접근할 수 없음</translation>
+        <translation type="vanished">접근할 수 없음</translation>
     </message>
 </context>
 <context>
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - 로그 뷰어</translation>
+        <translation type="vanished">%1 - 로그 뷰어</translation>
     </message>
 </context>
 <context>
@@ -16281,6 +16588,10 @@
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - 로그 뷰어</translation>
     </message>
 </context>
 <context>
@@ -16589,7 +16900,7 @@
     <name>UIVisoCreatorDialog</name>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO 생성기</translation>
+        <translation type="obsolete">VISO 생성기</translation>
     </message>
 </context>
 <context>
@@ -16677,6 +16988,10 @@
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished">VISO 생성기</translation>
     </message>
 </context>
 <context>
@@ -16862,16 +17177,6 @@
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -16893,7 +17198,7 @@
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 복제</translation>
+        <translation>%1 복제</translation>
     </message>
     <message>
         <source>Clone type</source>
@@ -16905,11 +17210,11 @@
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">완전한 복제(&amp;F)</translation>
+        <translation>완전한 복제(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">연결된 복제(&amp;L)</translation>
+        <translation>연결된 복제(&amp;L)</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -16933,15 +17238,15 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">현재 머신 상태(&amp;M)</translation>
+        <translation>현재 머신 상태(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">현재 스냅샷 트리 브랜치(&amp;S)</translation>
+        <translation>현재 스냅샷 트리 브랜치(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">모두(&amp;E)</translation>
+        <translation>모두(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Full Clone</source>
@@ -16973,27 +17278,27 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">모든 네트워크 어댑터 MAC 주소 포함</translation>
+        <translation>모든 네트워크 어댑터 MAC 주소 포함</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">NAT 네트워크 어댑터 MAC 주소만 포함</translation>
+        <translation>NAT 네트워크 어댑터 MAC 주소만 포함</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
+        <translation>모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">복제 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
+        <translation>복제 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">복제 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
+        <translation>복제 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">추가 옵션:</translation>
+        <translation>추가 옵션:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -17001,7 +17306,7 @@
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">디스크 이름 유지하기(&amp;D)</translation>
+        <translation>디스크 이름 유지하기(&amp;D)</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -17021,11 +17326,75 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">복제 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
+        <translation>복제 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>추가 옵션</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">이름(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17468,9 +17837,6 @@
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished">머신 기본 폴더(&amp;M):</translation>
@@ -17490,29 +17856,44 @@
     <message>
         <source>Import all the hard drives that belong to this appliance in VDI format.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportAppPageExpert</name>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="obsolete">머신 기본 폴더(&amp;M):</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="obsolete">MAC 주소 정책(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="obsolete">추가 옵션:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="obsolete">VDI로 하드 드라이브 가져오기(&amp;I)</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">머신 기본 폴더(&amp;M):</translation>
+        <translation type="obsolete">머신 기본 폴더(&amp;M):</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MAC 주소 정책(&amp;P):</translation>
+        <translation type="obsolete">MAC 주소 정책(&amp;P):</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">추가 옵션:</translation>
+        <translation type="obsolete">추가 옵션:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">VDI로 하드 드라이브 가져오기(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">VDI로 하드 드라이브 가져오기(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -17781,10 +18162,6 @@
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18059,18 +18436,30 @@
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, 활성화됨</translation>
+        <translation type="obsolete">%1, 활성화됨</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

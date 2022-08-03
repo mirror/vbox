@@ -1808,19 +1808,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1864,19 +1856,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">移除(&amp;R)</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1888,20 +1872,12 @@
         <translation type="unfinished">在目前位置下建立新目錄</translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
         <translation type="unfinished">重新命名選取的物件</translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eset</source>
@@ -1924,15 +1900,7 @@
         <translation type="unfinished">加入現有磁碟映像檔</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1973,10 +1941,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2149,10 +2113,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2240,6 +2200,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -2270,13 +2266,6 @@
         <translation>
             <numerusform>這個虛擬機器受密碼保護。 請在下方輸入 %n 加密密碼。</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2835,184 +2824,100 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">包含所有網路卡 MAC 位址</translation>
+        <translation type="obsolete">包含所有網路卡 MAC 位址</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">再製期間包含所有網路卡 MAC 位址。</translation>
+        <translation type="obsolete">再製期間包含所有網路卡 MAC 位址。</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">只包含 NAT 網路卡 MAC 位址</translation>
+        <translation type="obsolete">只包含 NAT 網路卡 MAC 位址</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">再製期間只包含 NAT 網路卡 MAC 位址。</translation>
+        <translation type="obsolete">再製期間只包含 NAT 網路卡 MAC 位址。</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">為所有網路卡產生新的 MAC 位址</translation>
+        <translation type="obsolete">為所有網路卡產生新的 MAC 位址</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished">再製期間為所有網路卡產生新的 MAC 位址。</translation>
+        <translation type="obsolete">再製期間為所有網路卡產生新的 MAC 位址。</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">額外選項:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">額外選項:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">保留磁碟名稱(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">保留磁碟名稱(&amp;D)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">目前電腦狀態(&amp;M)</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">目前電腦狀態(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">目前快照樹分支(&amp;S)</translation>
+        <translation type="obsolete">目前快照樹分支(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">所有(&amp;E)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">所有(&amp;E)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">完整再製(&amp;F)</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">完整再製(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">連結再製(&amp;L)</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">連結再製(&amp;L)</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 再製</translation>
+        <translation type="obsolete">%1 再製</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">名稱(&amp;N):</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名稱(&amp;N):</translation>
     </message>
 </context>
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">名稱:</translation>
+        <translation type="obsolete">名稱:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">路徑:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">路徑:</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">重設</translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">重設</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">重設變更 (%1)</translation>
+        <translation type="obsolete">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">套用</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">套用</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">套用變更 (%1)</translation>
+        <translation type="obsolete">套用變更 (%1)</translation>
     </message>
 </context>
 <context>
@@ -3057,9 +2962,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">關閉視窗 (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">名稱:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">路徑:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">加入設定檔</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -3079,9 +3029,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -3091,59 +3038,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>名稱:</translation>
+        <translation type="vanished">名稱:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>內容:</translation>
+        <translation type="vanished">內容:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>包含雲端設定檔設定</translation>
+        <translation type="vanished">包含雲端設定檔設定</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>輸入新設定檔的名稱...</translation>
+        <translation type="vanished">輸入新設定檔的名稱...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>輸入這個設定檔的名稱...</translation>
+        <translation type="vanished">輸入這個設定檔的名稱...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>重設</translation>
+        <translation type="vanished">重設</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>重設目前設定檔詳細資料中的變更</translation>
+        <translation type="vanished">重設目前設定檔詳細資料中的變更</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>重設變更 (%1)</translation>
+        <translation type="vanished">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>加入</translation>
+        <translation type="vanished">加入</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>加入具有以下名稱的新設定檔</translation>
+        <translation type="vanished">加入具有以下名稱的新設定檔</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>加入設定檔 (%1)</translation>
+        <translation type="vanished">加入設定檔 (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>套用</translation>
+        <translation type="vanished">套用</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>套用目前設定檔詳細資料中的變更</translation>
+        <translation type="vanished">套用目前設定檔詳細資料中的變更</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>套用變更 (%1)</translation>
+        <translation type="vanished">套用變更 (%1)</translation>
     </message>
 </context>
 <context>
@@ -3204,9 +3151,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">名稱:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">內容:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">包含雲端設定檔設定</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">輸入新設定檔的名稱...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">輸入這個設定檔的名稱...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">重設目前設定檔詳細資料中的變更</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">加入</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">加入具有以下名稱的新設定檔</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">加入設定檔 (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">套用目前設定檔詳細資料中的變更</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished">來源</translation>
@@ -3218,6 +3202,13 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Source</source>
+        <translation type="obsolete">來源</translation>
     </message>
 </context>
 <context>
@@ -5069,29 +5060,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -5135,6 +5103,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">保存預設虛擬機器資料夾的路徑。 新建虛擬機器時，如果沒有特別指定，則會使用這個資料夾。</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">保存虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
     </message>
 </context>
 <context>
@@ -5600,318 +5575,214 @@
 <context>
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">保存這個網路的名稱。</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">保存這個網路的名稱。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">重設</translation>
+        <translation type="obsolete">重設</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">套用</translation>
+        <translation type="obsolete">套用</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">重設變更在目前介面詳細資料</translation>
+        <translation type="obsolete">重設變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">套用變更在目前介面詳細資料</translation>
+        <translation type="obsolete">套用變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">重設變更 (%1)</translation>
+        <translation type="obsolete">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">套用變更 (%1)</translation>
+        <translation type="obsolete">套用變更 (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">名稱(&amp;N):</translation>
+        <translation type="obsolete">名稱(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">保存這個網路的名稱。</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">保存這個網路的名稱。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">重設</translation>
+        <translation type="obsolete">重設</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">套用</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">套用</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">重設變更 (%1)</translation>
+        <translation type="obsolete">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">套用變更 (%1)</translation>
+        <translation type="obsolete">套用變更 (%1)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">網路卡(&amp;A)</translation>
+        <translation type="obsolete">網路卡(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP 伺服器(&amp;D)</translation>
+        <translation type="obsolete">DHCP 伺服器(&amp;D)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">自動組態介面卡(&amp;A)</translation>
+        <translation type="obsolete">自動組態介面卡(&amp;A)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">手動組態介面卡(&amp;M)</translation>
+        <translation type="obsolete">手動組態介面卡(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">IPv4 位址(&amp;I):</translation>
+        <translation type="obsolete">IPv4 位址(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">保存這個網路卡的 IPv4 位址。</translation>
+        <translation type="obsolete">保存這個網路卡的 IPv4 位址。</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 網路遮罩(&amp;M):</translation>
+        <translation type="obsolete">IPv4 網路遮罩(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">保存這個網路卡的 IPv4 網路遮罩。</translation>
+        <translation type="obsolete">保存這個網路卡的 IPv4 網路遮罩。</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 位址(&amp;P):</translation>
+        <translation type="obsolete">IPv6 位址(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">保存這個網路卡的 IPv6 位址，如果支援 IPv6。</translation>
+        <translation type="obsolete">保存這個網路卡的 IPv6 位址，如果支援 IPv6。</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 首碼長度(&amp;L):</translation>
+        <translation type="obsolete">IPv6 首碼長度(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">保存這個網路卡的 IPv6 首碼長度，如果支援 IPv6。</translation>
+        <translation type="obsolete">保存這個網路卡的 IPv6 首碼長度，如果支援 IPv6。</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">重設變更在目前介面詳細資料</translation>
+        <translation type="obsolete">重設變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">套用變更在目前介面詳細資料</translation>
+        <translation type="obsolete">套用變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">啟用伺服器(&amp;E)</translation>
+        <translation type="obsolete">啟用伺服器(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">勾選時，這個網路卡在機器啟動時將使用 DHCP 伺服器。</translation>
+        <translation type="obsolete">勾選時，這個網路卡在機器啟動時將使用 DHCP 伺服器。</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">伺服器位址(&amp;R):</translation>
+        <translation type="obsolete">伺服器位址(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">保存 DHCP 伺服器的位址，服務與此「僅限主機」網路卡關聯的網路。</translation>
+        <translation type="obsolete">保存 DHCP 伺服器的位址，服務與此「僅限主機」網路卡關聯的網路。</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">伺服器遮罩(&amp;M):</translation>
+        <translation type="obsolete">伺服器遮罩(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">保存 DHCP 伺服器服務的網路遮罩，與這個「僅限主機」網路卡關聯的網路。</translation>
+        <translation type="obsolete">保存 DHCP 伺服器服務的網路遮罩，與這個「僅限主機」網路卡關聯的網路。</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">位址下限(&amp;L):</translation>
+        <translation type="obsolete">位址下限(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">保存 DHCP 伺服器所提供的位址下限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
+        <translation type="obsolete">保存 DHCP 伺服器所提供的位址下限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">位址上限(&amp;U):</translation>
+        <translation type="obsolete">位址上限(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">保存 DHCP 伺服器所提供的位址上限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
+        <translation type="obsolete">保存 DHCP 伺服器所提供的位址上限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">重設變更在目前 DHCP 伺服器詳細資料</translation>
+        <translation type="obsolete">重設變更在目前 DHCP 伺服器詳細資料</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">套用變更在目前 DHCP 伺服器詳細資料</translation>
+        <translation type="obsolete">套用變更在目前 DHCP 伺服器詳細資料</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">連接埠轉送(&amp;P)</translation>
-    </message>
-    <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">連接埠轉送(&amp;P)</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">保存這個網路的名稱。</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">保存這個網路的名稱。</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">勾選時，這個網路將支援 DHCP。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">勾選時，這個網路將支援 DHCP。</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">勾選時，這個網路將支援 IPv6。</translation>
+        <translation type="obsolete">勾選時，這個網路將支援 IPv6。</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">宣告預設 IPv6 路由(&amp;R)</translation>
+        <translation type="obsolete">宣告預設 IPv6 路由(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">勾選時，將宣告這個網路為預設 IPv6 路由。</translation>
+        <translation type="obsolete">勾選時，將宣告這個網路為預設 IPv6 路由。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">重設</translation>
+        <translation type="obsolete">重設</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">套用</translation>
+        <translation type="obsolete">套用</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">重設變更在目前介面詳細資料</translation>
+        <translation type="obsolete">重設變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">套用變更在目前介面詳細資料</translation>
+        <translation type="obsolete">套用變更在目前介面詳細資料</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">重設變更 (%1)</translation>
+        <translation type="obsolete">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">套用變更 (%1)</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">套用變更 (%1)</translation>
     </message>
 </context>
 <context>
@@ -5978,6 +5849,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">延伸功能:</translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">勾選時，滑鼠指標移至機器視窗上方時將帶出視窗。</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">延伸功能:</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">啟用 3D 加速(&amp;3)</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">勾選時，虛擬機器將給予存取在主機可用的 3D 圖形能力。</translation>
     </message>
 </context>
 <context>
@@ -6153,9 +6062,16 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished">啟用</translation>
@@ -6179,6 +6095,29 @@
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">擴充功能包檔 (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">啟用</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">名稱</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">版本</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">選取擴充功能包檔</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">擴充功能包檔 (%1)</translation>
     </message>
 </context>
 <context>
@@ -6723,68 +6662,49 @@
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">延伸功能:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">延伸功能:</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">勾選時，滑鼠指標移至機器視窗上方時將帶出視窗。</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">勾選時，滑鼠指標移至機器視窗上方時將帶出視窗。</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">自動偵測主機 Proxy 設定(&amp;A)</translation>
+        <translation type="obsolete">自動偵測主機 Proxy 設定(&amp;A)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">勾選時，VirtualBox 將嘗試自動偵測 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+        <translation type="obsolete">勾選時，VirtualBox 將嘗試自動偵測 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">直接連線到 Internet(&amp;D)</translation>
+        <translation type="obsolete">直接連線到 Internet(&amp;D)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">勾選時，VirtualBox 將使用直接 Internet 連線，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+        <translation type="obsolete">勾選時，VirtualBox 將使用直接 Internet 連線，以從網絡中下載 Guest Additions 或檢查更新。</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">手動 Proxy 組態(&amp;M)</translation>
+        <translation type="obsolete">手動 Proxy 組態(&amp;M)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">勾選時，VirtualBox 將使用提供的 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+        <translation type="obsolete">勾選時，VirtualBox 將使用提供的 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation type="obsolete">&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">保存 Proxy URL。 格式為: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">保存 Proxy URL。 格式為: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -7348,57 +7268,6 @@
     </message>
 </context>
 <context>
-    <name>UIHelpBrowserTab</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
@@ -7564,19 +7433,56 @@
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>說明(&amp;H)</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8099,50 +8005,30 @@
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name:</source>
-        <translation type="unfinished">名稱:</translation>
+        <translation type="obsolete">名稱:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">路徑:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">路徑:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">加入設定檔</translation>
+        <translation type="obsolete">加入設定檔</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">名稱:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名稱:</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">網路名稱</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">網路名稱</translation>
     </message>
 </context>
 <context>
@@ -8150,12 +8036,12 @@
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -8167,101 +8053,97 @@
     </message>
     <message>
         <source>Adapter</source>
-        <translation>介面卡</translation>
+        <translation type="vanished">介面卡</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>已自動組態</translation>
+        <translation type="vanished">已自動組態</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>已手動組態</translation>
+        <translation type="vanished">已手動組態</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>IPv4 位址</translation>
+        <translation type="vanished">IPv4 位址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>IPv4 網路遮罩</translation>
+        <translation type="vanished">IPv4 網路遮罩</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>IPv6 位址</translation>
+        <translation type="vanished">IPv6 位址</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>IPv6 首碼長度</translation>
+        <translation type="vanished">IPv6 首碼長度</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>DHCP 伺服器</translation>
+        <translation type="vanished">DHCP 伺服器</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>啟用</translation>
+        <translation type="vanished">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>停用</translation>
+        <translation type="vanished">停用</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>位址</translation>
+        <translation type="vanished">位址</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>網路遮罩</translation>
+        <translation type="vanished">網路遮罩</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>下限</translation>
+        <translation type="vanished">下限</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>未設定</translation>
+        <translation type="vanished">未設定</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>上限</translation>
+        <translation type="vanished">上限</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">名稱</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">啟用</translation>
+        <translation type="obsolete">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
 </context>
 <context>
@@ -8269,44 +8151,36 @@
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">啟用</translation>
+        <translation type="obsolete">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">網路名稱</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">網路名稱</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">支援 DHCP</translation>
+        <translation type="obsolete">支援 DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">是</translation>
+        <translation type="obsolete">是</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">否</translation>
+        <translation type="obsolete">否</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">支援 IPv6</translation>
+        <translation type="obsolete">支援 IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">預設 IPv6 路由</translation>
+        <translation type="obsolete">預設 IPv6 路由</translation>
     </message>
 </context>
 <context>
@@ -8455,22 +8329,22 @@
     <name>UIMachineDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">保存虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
+        <translation type="obsolete">保存虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">延伸功能:</translation>
+        <translation type="obsolete">延伸功能:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">啟用 3D 加速(&amp;3)</translation>
+        <translation type="obsolete">啟用 3D 加速(&amp;3)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">勾選時，虛擬機器將給予存取在主機可用的 3D 圖形能力。</translation>
+        <translation type="obsolete">勾選時，虛擬機器將給予存取在主機可用的 3D 圖形能力。</translation>
     </message>
 </context>
 <context>
@@ -8509,6 +8383,10 @@
     <message>
         <source>Every 10 s</source>
         <translation>每隔 10 秒</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished">不可存取</translation>
     </message>
 </context>
 <context>
@@ -10101,75 +9979,75 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>屬性(&amp;A)</translation>
+        <translation type="vanished">屬性(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>資訊(&amp;I)</translation>
+        <translation type="vanished">資訊(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>類型(&amp;T):</translation>
+        <translation type="vanished">類型(&amp;T):</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>位置(&amp;L):</translation>
+        <translation type="vanished">位置(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>描述(&amp;D):</translation>
+        <translation type="vanished">描述(&amp;D):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>大小(&amp;S):</translation>
+        <translation type="vanished">大小(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>保存這個媒體的類型。</translation>
+        <translation type="vanished">保存這個媒體的類型。</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>保存這個媒體的位置。</translation>
+        <translation type="vanished">保存這個媒體的位置。</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>保存這個媒體的描述。</translation>
+        <translation type="vanished">保存這個媒體的描述。</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>保存這個媒體的大小。</translation>
+        <translation type="vanished">保存這個媒體的大小。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>重設</translation>
+        <translation type="vanished">重設</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>套用</translation>
+        <translation type="vanished">套用</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>重設變更在目前媒體詳細資料</translation>
+        <translation type="vanished">重設變更在目前媒體詳細資料</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>套用變更在目前媒體詳細資料</translation>
+        <translation type="vanished">套用變更在目前媒體詳細資料</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>重設變更 (%1)</translation>
+        <translation type="vanished">重設變更 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>套用變更 (%1)</translation>
+        <translation type="vanished">套用變更 (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>無法變更媒體大小從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;，因為存放裝置縮放目前尚未實施。</translation>
+        <translation type="vanished">無法變更媒體大小從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;，因為存放裝置縮放目前尚未實施。</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>選擇媒體位置</translation>
+        <translation type="vanished">選擇媒體位置</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -10177,31 +10055,27 @@
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>這種類型的媒體直接或間接附加，取得快照時保留。</translation>
+        <translation type="vanished">這種類型的媒體直接或間接附加，取得快照時保留。</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>這種類型的媒體間接附加，下次虛擬機器啟動時，將清除變更。</translation>
+        <translation type="vanished">這種類型的媒體間接附加，下次虛擬機器啟動時，將清除變更。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>這種類型的媒體直接附加，在取得快照時忽略。</translation>
+        <translation type="vanished">這種類型的媒體直接附加，在取得快照時忽略。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>這種類型的媒體直接附加，允許由數台機器同時使用。</translation>
+        <translation type="vanished">這種類型的媒體直接附加，允許由數台機器同時使用。</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>這種類型的媒體直接附加，可以由數台機器使用。</translation>
+        <translation type="vanished">這種類型的媒體直接附加，可以由數台機器使用。</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>這種類型的媒體間接附加，使得一個基本媒體可以用於具有其自己的差異媒體來存放其修改的數個 VM。</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">這種類型的媒體間接附加，使得一個基本媒體可以用於具有其自己的差異媒體來存放其修改的數個 VM。</translation>
     </message>
 </context>
 <context>
@@ -10363,9 +10237,82 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">屬性(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">資訊(&amp;I)</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">類型(&amp;T):</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">位置(&amp;L):</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">描述(&amp;D):</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">大小(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">保存這個媒體的類型。</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">保存這個媒體的位置。</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">選擇媒體位置</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">保存這個媒體的描述。</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">保存這個媒體的大小。</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">無法變更媒體大小從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;，因為存放裝置縮放目前尚未實施。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">這種類型的媒體直接或間接附加，取得快照時保留。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">這種類型的媒體間接附加，下次虛擬機器啟動時，將清除變更。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">這種類型的媒體直接附加，在取得快照時忽略。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">這種類型的媒體直接附加，允許由數台機器同時使用。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">這種類型的媒體直接附加，可以由數台機器使用。</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">這種類型的媒體間接附加，使得一個基本媒體可以用於具有其自己的差異媒體來存放其修改的數個 VM。</translation>
+    </message>
     <message>
         <source>Registered hard drives</source>
         <translation type="unfinished"></translation>
@@ -10392,6 +10339,18 @@
     <message>
         <source>Select the search type</source>
         <translation>選取搜尋類型</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13126,6 +13085,356 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">保存這個網路的名稱。</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">重設變更在目前介面詳細資料</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">套用變更在目前介面詳細資料</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">網路卡(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">DHCP 伺服器(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">自動組態介面卡(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">手動組態介面卡(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">IPv4 位址(&amp;I):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">保存這個網路卡的 IPv4 位址。</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">IPv4 網路遮罩(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">保存這個網路卡的 IPv4 網路遮罩。</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">IPv6 位址(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">保存這個網路卡的 IPv6 位址，如果支援 IPv6。</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished">IPv6 首碼長度(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">保存這個網路卡的 IPv6 首碼長度，如果支援 IPv6。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">啟用伺服器(&amp;E)</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">勾選時，這個網路卡在機器啟動時將使用 DHCP 伺服器。</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">伺服器位址(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">保存 DHCP 伺服器的位址，服務與此「僅限主機」網路卡關聯的網路。</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">伺服器遮罩(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">保存 DHCP 伺服器服務的網路遮罩，與這個「僅限主機」網路卡關聯的網路。</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">位址下限(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">保存 DHCP 伺服器所提供的位址下限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">位址上限(&amp;U):</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">保存 DHCP 伺服器所提供的位址上限，服務與這個「僅限主機」網路卡關聯的網路。</translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">重設變更在目前 DHCP 伺服器詳細資料</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">套用變更在目前 DHCP 伺服器詳細資料</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">連接埠轉送(&amp;P)</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">勾選時，這個網路將支援 DHCP。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">勾選時，這個網路將支援 IPv6。</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">宣告預設 IPv6 路由(&amp;R)</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">勾選時，將宣告這個網路為預設 IPv6 路由。</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">啟用</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">介面卡</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">已自動組態</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">已手動組態</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 位址</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 網路遮罩</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 位址</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">IPv6 首碼長度</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">啟用</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">位址</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">網路遮罩</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">未設定</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">網路名稱</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">支援 DHCP</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">是</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">否</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">支援 IPv6</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">預設 IPv6 路由</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -13180,21 +13489,6 @@
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">按兩下取得更多資訊。</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13724,6 +14018,41 @@
     </message>
 </context>
 <context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">自動偵測主機 Proxy 設定(&amp;A)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">勾選時，VirtualBox 將嘗試自動偵測 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">直接連線到 Internet(&amp;D)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">勾選時，VirtualBox 將使用直接 Internet 連線，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">手動 Proxy 組態(&amp;M)</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">勾選時，VirtualBox 將使用提供的 Proxy 設定，以從網絡中下載 Guest Additions 或檢查更新。</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished">&amp;URL:</translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">保存 Proxy URL。 格式為: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
@@ -14217,9 +14546,6 @@
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">保存序列以篩選快速鍵清單。</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">名稱</translation>
@@ -14228,10 +14554,21 @@
         <source>Shortcut</source>
         <translation type="unfinished">快速鍵</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">名稱</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">快速鍵</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -15004,13 +15341,6 @@
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Snapshot %1</source>
@@ -15111,7 +15441,7 @@
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -15470,6 +15800,11 @@
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">下移選取的 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1，活動中</translation>
     </message>
 </context>
 <context>
@@ -16098,14 +16433,14 @@
     <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation>不可存取</translation>
+        <translation type="vanished">不可存取</translation>
     </message>
 </context>
 <context>
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - 日誌檢視器</translation>
+        <translation type="vanished">%1 - 日誌檢視器</translation>
     </message>
 </context>
 <context>
@@ -16281,6 +16616,10 @@
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - 日誌檢視器</translation>
     </message>
 </context>
 <context>
@@ -16589,7 +16928,7 @@
     <name>UIVisoCreatorDialog</name>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO 建立器</translation>
+        <translation type="obsolete">VISO 建立器</translation>
     </message>
 </context>
 <context>
@@ -16677,6 +17016,10 @@
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished">VISO 建立器</translation>
     </message>
 </context>
 <context>
@@ -16862,16 +17205,6 @@
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -16893,7 +17226,7 @@
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 再製</translation>
+        <translation>%1 再製</translation>
     </message>
     <message>
         <source>Clone type</source>
@@ -16905,11 +17238,11 @@
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">完整再製(&amp;F)</translation>
+        <translation>完整再製(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">連結再製(&amp;L)</translation>
+        <translation>連結再製(&amp;L)</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -16933,15 +17266,15 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">目前電腦狀態(&amp;M)</translation>
+        <translation>目前電腦狀態(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">目前快照樹分支(&amp;S)</translation>
+        <translation>目前快照樹分支(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">所有(&amp;E)</translation>
+        <translation>所有(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Full Clone</source>
@@ -16973,27 +17306,27 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">包含所有網路卡 MAC 位址</translation>
+        <translation>包含所有網路卡 MAC 位址</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">只包含 NAT 網路卡 MAC 位址</translation>
+        <translation>只包含 NAT 網路卡 MAC 位址</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">為所有網路卡產生新的 MAC 位址</translation>
+        <translation>為所有網路卡產生新的 MAC 位址</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">再製期間只包含 NAT 網路卡 MAC 位址。</translation>
+        <translation>再製期間只包含 NAT 網路卡 MAC 位址。</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">再製期間為所有網路卡產生新的 MAC 位址。</translation>
+        <translation>再製期間為所有網路卡產生新的 MAC 位址。</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">額外選項:</translation>
+        <translation>額外選項:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -17001,7 +17334,7 @@
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">保留磁碟名稱(&amp;D)</translation>
+        <translation>保留磁碟名稱(&amp;D)</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -17021,11 +17354,75 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">再製期間包含所有網路卡 MAC 位址。</translation>
+        <translation>再製期間包含所有網路卡 MAC 位址。</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>額外選項</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17468,9 +17865,6 @@
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished">機器基礎資料夾(&amp;M):</translation>
@@ -17490,29 +17884,44 @@
     <message>
         <source>Import all the hard drives that belong to this appliance in VDI format.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportAppPageExpert</name>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="obsolete">機器基礎資料夾(&amp;M):</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="obsolete">MAC 位址原則(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="obsolete">額外選項:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="obsolete">匯入硬碟磁碟機作為 VDI(&amp;I)</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">機器基礎資料夾(&amp;M):</translation>
+        <translation type="obsolete">機器基礎資料夾(&amp;M):</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MAC 位址原則(&amp;P):</translation>
+        <translation type="obsolete">MAC 位址原則(&amp;P):</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">額外選項:</translation>
+        <translation type="obsolete">額外選項:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">匯入硬碟磁碟機作為 VDI(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">匯入硬碟磁碟機作為 VDI(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -17781,10 +18190,6 @@
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18059,18 +18464,30 @@
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1，活動中</translation>
+        <translation type="obsolete">%1，活動中</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

@@ -2158,19 +2158,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh the Currently Viewed Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reread All the Log Files and Refresh Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2214,19 +2206,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Selected Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">Αφαίρεση</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2238,19 +2222,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a New Directory Under the Current Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename the Selected Object</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2274,15 +2250,7 @@
         <translation type="unfinished">Προσθήκη υπάρχοντος αρχείου σκληρού δίσκου</translation>
     </message>
     <message>
-        <source>Add Existing Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2323,10 +2291,6 @@
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to the VM Activity Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2499,10 +2463,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove All Inaccessible Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2590,6 +2550,42 @@
         <source>Display the log viewer widget.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -2622,13 +2618,6 @@
             <numerusform>&lt;nobr&gt;Χρησιμοποιείται από τον σκληρό δίσκο:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Χρησιμοποιείται από τους %n σκληρούς δίσκους:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UIAdditionalUnattendedOptions</name>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3219,184 +3208,100 @@
 <context>
     <name>UICloneVMAdditionalOptionsEditor</name>
     <message>
-        <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου</translation>
+        <translation type="obsolete">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου κατά την κλωνοποίηση.</translation>
+        <translation type="obsolete">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT</translation>
+        <translation type="obsolete">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT κατά την κλωνοποίηση.</translation>
+        <translation type="obsolete">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου</translation>
+        <translation type="obsolete">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου κατά την κλωνοποίηση.</translation>
+        <translation type="obsolete">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Πρόσθετες Επιλογές:</translation>
-    </message>
-    <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Πρόσθετες Επιλογές:</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished">Διατήρηση Ονομάτων Δίσκων</translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Διατήρηση Ονομάτων Δίσκων</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneModeGroupBox</name>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished">Τρέχουσα κατάσταση</translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Τρέχουσα κατάσταση</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished">Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
+        <translation type="obsolete">Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished">Όλα</translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όλα</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMCloneTypeGroupBox</name>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">Πλήρης κλώνος</translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Πλήρης κλώνος</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">Συνδεδεμένος κλώνος</translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Συνδεδεμένος κλώνος</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMNamePathEditor</name>
     <message>
-        <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1 Κλώνος</translation>
+        <translation type="obsolete">%1 Κλώνος</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">Όνομα:</translation>
-    </message>
-    <message>
-        <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
 </context>
 <context>
     <name>UICloudConsoleDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Όνομα:</translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">Διαδρομή:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Διαδρομή:</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Επαναφορά</translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Επαναφορά</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="obsolete">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Εφαρμογή</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Εφαρμογή</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Εφαρμογή Αλλαγών (%1)</translation>
+        <translation type="obsolete">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
 </context>
 <context>
@@ -3441,9 +3346,54 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished">Κλείσιμο Παραθύρου (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UICloudConsoleManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">Όνομα:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation type="unfinished">Διαδρομή:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation type="unfinished">Προσθήκη Προφίλ</translation>
+    </message>
     <message>
         <source>Application</source>
         <translation type="unfinished"></translation>
@@ -3463,9 +3413,6 @@
         <source>%1 - %2</source>
         <translation type="unfinished">%1 - %2</translation>
     </message>
-</context>
-<context>
-    <name>UICloudMachineSettingsDialogPage</name>
     <message>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
@@ -3475,59 +3422,59 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation>Όνομα:</translation>
+        <translation type="vanished">Όνομα:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation>Ιδιότητες:</translation>
+        <translation type="vanished">Ιδιότητες:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>Περιέχει τις ρυθμίσεις του προφίλ σύννεφου</translation>
+        <translation type="vanished">Περιέχει τις ρυθμίσεις του προφίλ σύννεφου</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation>Εισαγωγή ονόματος για το νέο προφίλ....</translation>
+        <translation type="vanished">Εισαγωγή ονόματος για το νέο προφίλ....</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation>Εισαγωγή ονόματος για αυτό το προφίλ....</translation>
+        <translation type="vanished">Εισαγωγή ονόματος για αυτό το προφίλ....</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Επαναφορά</translation>
+        <translation type="vanished">Επαναφορά</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation>Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
+        <translation type="vanished">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="vanished">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>Προσθήκη</translation>
+        <translation type="vanished">Προσθήκη</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation>Προσθήκη νέου προφίλ με το ακόλουθο όνομα</translation>
+        <translation type="vanished">Προσθήκη νέου προφίλ με το ακόλουθο όνομα</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation>Προσθήκη Προφίλ (%1)</translation>
+        <translation type="vanished">Προσθήκη Προφίλ (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="vanished">Εφαρμογή</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation>Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
+        <translation type="vanished">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Εφαρμογή Αλλαγών (%1)</translation>
+        <translation type="vanished">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
 </context>
 <context>
@@ -3588,9 +3535,46 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished">Όνομα:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation type="unfinished">Ιδιότητες:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation type="unfinished">Περιέχει τις ρυθμίσεις του προφίλ σύννεφου</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation type="unfinished">Εισαγωγή ονόματος για το νέο προφίλ....</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation type="unfinished">Εισαγωγή ονόματος για αυτό το προφίλ....</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Προσθήκη</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation type="unfinished">Προσθήκη νέου προφίλ με το ακόλουθο όνομα</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation type="unfinished">Προσθήκη Προφίλ (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου προφίλ</translation>
+    </message>
     <message>
         <source>Source</source>
         <translation type="unfinished"></translation>
@@ -5433,29 +5417,6 @@
     </message>
 </context>
 <context>
-    <name>UIContextMenuNavigationAction</name>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
@@ -5499,6 +5460,13 @@
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished">Δείχνει τη διαδρομή για τον προεπιλεγμένο φάκελο των εικονικών μηχανών. Ο φάκελος χρησιμοποιείται, εκτός αν διευκρινιστεί ρητά αλλιώς, όταν δημιουργούνται νέες εικονικές μηχανές.</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionEditor</name>
+    <message>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation type="unfinished">Δείχνει την περιγραφή της εικονικής μηχανής. Το πεδίο της περιγραφής είναι χρήσιμο για να σχολιάζετε τις λεπτομέρειες των ρυθμίσεων του εγκατεστημένου επισκέπτη.</translation>
     </message>
 </context>
 <context>
@@ -5987,317 +5955,213 @@
     <name>UIDetailsWidgetCloudNetwork</name>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">Όνομα:</translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Δείχνει το όνομα αυτού του δικτύου.</translation>
-    </message>
-    <message>
-        <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Δείχνει το όνομα αυτού του δικτύου.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Επαναφορά</translation>
+        <translation type="obsolete">Επαναφορά</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Εφαρμογή</translation>
+        <translation type="obsolete">Εφαρμογή</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="obsolete">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Εφαρμογή Αλλαγών (%1)</translation>
+        <translation type="obsolete">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetHostNetwork</name>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">Όνομα:</translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Δείχνει το όνομα αυτού του δικτύου.</translation>
-    </message>
-    <message>
-        <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Δείχνει το όνομα αυτού του δικτύου.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Επαναφορά</translation>
+        <translation type="obsolete">Επαναφορά</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Εφαρμογή</translation>
-    </message>
-    <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Εφαρμογή</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="obsolete">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Εφαρμογή Αλλαγών (%1)</translation>
+        <translation type="obsolete">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">Κάρτα δικτύου</translation>
+        <translation type="obsolete">Κάρτα δικτύου</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">Διακομιστής DHCP</translation>
+        <translation type="obsolete">Διακομιστής DHCP</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">Αυτόματη ρύθμιση κάρτας δικτύου</translation>
+        <translation type="obsolete">Αυτόματη ρύθμιση κάρτας δικτύου</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">Χειροκίνητη ρύθμιση κάρτας δικτύου</translation>
+        <translation type="obsolete">Χειροκίνητη ρύθμιση κάρτας δικτύου</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">Διεύθυνση IPv4:</translation>
+        <translation type="obsolete">Διεύθυνση IPv4:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Δείχνει τη διεύθυνση IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει τη διεύθυνση IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">Μάσκα Δικτύου IPv4:</translation>
+        <translation type="obsolete">Μάσκα Δικτύου IPv4:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Δείχνει τη μάσκα δικτύου IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει τη μάσκα δικτύου IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">Διεύθυνση IPv6:</translation>
+        <translation type="obsolete">Διεύθυνση IPv6:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Δείχνει τη διεύθυνση IPv6 του οικοδεσπότη για αυτή την κάρτα δικτύου αν το IPv6 υποστηρίζεται.</translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Δείχνει τη διεύθυνση IPv6 του οικοδεσπότη για αυτή την κάρτα δικτύου αν το IPv6 υποστηρίζεται.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Ενεργοποίηση Διακομιστή</translation>
+        <translation type="obsolete">Ενεργοποίηση Διακομιστή</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">Όταν επιλεγεί, θα ενεργοποιηθεί ο διακομιστής DHCP για αυτό το δίκτυο κατά την εκκίνηση της μηχανής.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, θα ενεργοποιηθεί ο διακομιστής DHCP για αυτό το δίκτυο κατά την εκκίνηση της μηχανής.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">Διεύθυνση Διακομιστή:</translation>
+        <translation type="obsolete">Διεύθυνση Διακομιστή:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Δείχνει τη διεύθυνση του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει τη διεύθυνση του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">Μάσκα Διακομιστή:</translation>
+        <translation type="obsolete">Μάσκα Διακομιστή:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Δείχνει τη μάσκα δικτύου του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει τη μάσκα δικτύου του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">Κατώτατο Όριο Διευθύνσεων:</translation>
+        <translation type="obsolete">Κατώτατο Όριο Διευθύνσεων:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Δείχνει το κατώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει το κατώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">Ανώτατο Όριο Διευθύνσεων:</translation>
+        <translation type="obsolete">Ανώτατο Όριο Διευθύνσεων:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Δείχνει το ανώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+        <translation type="obsolete">Δείχνει το ανώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
+        <translation type="obsolete">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
+        <translation type="obsolete">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsWidgetNATNetwork</name>
     <message>
-        <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">Προώθηση θύρας</translation>
+        <translation type="obsolete">Προώθηση θύρας</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">Όνομα:</translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Δείχνει το όνομα αυτού του δικτύου.</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Δείχνει το όνομα αυτού του δικτύου.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει DHCP.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει DHCP.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει IPv6.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει IPv6.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">Κοινοποίηση του προεπιλεγμένου δρομολογητή IPv6</translation>
+        <translation type="obsolete">Κοινοποίηση του προεπιλεγμένου δρομολογητή IPv6</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα κοινοποιείται σαν τον προεπιλεγμένο δρομολογητή IPv6.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, αυτό το δίκτυο θα κοινοποιείται σαν τον προεπιλεγμένο δρομολογητή IPv6.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Επαναφορά</translation>
+        <translation type="obsolete">Επαναφορά</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Εφαρμογή</translation>
+        <translation type="obsolete">Εφαρμογή</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+        <translation type="obsolete">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="obsolete">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Εφαρμογή Αλλαγών (%1)</translation>
-    </message>
-    <message>
-        <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
 </context>
 <context>
@@ -6364,6 +6228,44 @@
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Εκτεταμένα Χαρακτηριστικά:</translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse Pointer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished">Όταν επιλεγεί, τα παράθυρα των μηχανών θα ανυψώνονται όταν το ποντίκι είναι πάνω τους.</translation>
+    </message>
+    <message>
+        <source>&amp;Disable Host Screen Saver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, screen saver of the host OS is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDisplayScreenFeaturesEditor</name>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Εκτεταμένα Χαρακτηριστικά:</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">Ενεργοποίηση 3Δ επιτάχυνσης</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Όταν επιλεγεί, η εικονική μηχανή θα έχει πρόσβαση στις 3Δ γραφικές δυνατότητες που είναι διαθέσιμες στον οικοδεσπότη.</translation>
     </message>
 </context>
 <context>
@@ -6546,9 +6448,16 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished">%1, %2: %3, %4</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished">%1, %2: %3</translation>
+    </message>
     <message>
         <source>Active</source>
         <translation type="unfinished"></translation>
@@ -6572,6 +6481,25 @@
     <message>
         <source>Extension package files (%1)</source>
         <translation type="unfinished">Αρχεία πακέτου επέκτασης (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExtensionPackManagerWidget</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Όνομα</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="obsolete">Έκδοση</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="obsolete">Επιλογή αρχείου πακέτου επέκτασης</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="obsolete">Αρχεία πακέτου επέκτασης (%1)</translation>
     </message>
 </context>
 <context>
@@ -7124,13 +7052,6 @@
     </message>
 </context>
 <context>
-    <name>UIGAInstallationGroupBox</name>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIGChooserItemGroup</name>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
@@ -7677,58 +7598,46 @@
     <name>UIGlobalDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Εκτεταμένα Χαρακτηριστικά:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Εκτεταμένα Χαρακτηριστικά:</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">Όταν επιλεγεί, τα παράθυρα των μηχανών θα ανυψώνονται όταν το ποντίκι είναι πάνω τους.</translation>
-    </message>
-    <message>
-        <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όταν επιλεγεί, τα παράθυρα των μηχανών θα ανυψώνονται όταν το ποντίκι είναι πάνω τους.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">Αυτόματη εντοπίση ρυθμίσεων διαμεσολάβησης του οικοδεσπότη</translation>
+        <translation type="obsolete">Αυτόματη εντοπίση ρυθμίσεων διαμεσολάβησης του οικοδεσπότη</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα προσπαθήσει να εντοπίσει αυτόματα τις ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, το VirtualBox θα προσπαθήσει να εντοπίσει αυτόματα τις ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">Απευθείας σύνδεση Internet</translation>
+        <translation type="obsolete">Απευθείας σύνδεση Internet</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει απευθείας τη σύνδεση Internet για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει απευθείας τη σύνδεση Internet για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">Μη-αυτόματη ρύθμιση διαμεσολάβησης</translation>
+        <translation type="obsolete">Μη-αυτόματη ρύθμιση διαμεσολάβησης</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει τις παρεχόμενες ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει τις παρεχόμενες ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation type="obsolete">&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">Περιέχει το URL διαμεσολάβησης. Η μορφή είναι: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{τύπος}://][{χρήστης}[:{κωδικός}]@]{εξυπηρετητής}[:{θύρα}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">Περιέχει το URL διαμεσολάβησης. Η μορφή είναι: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{τύπος}://][{χρήστης}[:{κωδικός}]@]{εξυπηρετητής}[:{θύρα}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -8678,57 +8587,6 @@
     </message>
 </context>
 <context>
-    <name>UIHelpBrowserTab</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
@@ -8894,19 +8752,56 @@
         <source>Close &amp;Other Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Return to Start Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Forward to Next Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back to Previous Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a New Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
         <translation>Βοήθεια</translation>
-    </message>
-</context>
-<context>
-    <name>UIHelpViewer</name>
-    <message>
-        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10181,50 +10076,30 @@
 <context>
     <name>UIInputDialogCloudConsoleApplication</name>
     <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name:</source>
-        <translation type="unfinished">Όνομα:</translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">Διαδρομή:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Διαδρομή:</translation>
     </message>
 </context>
 <context>
     <name>UIInputDialogCloudConsoleProfile</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Προσθήκη Προφίλ</translation>
+        <translation type="obsolete">Προσθήκη Προφίλ</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Όνομα:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όνομα:</translation>
     </message>
 </context>
 <context>
     <name>UIItemCloudNetwork</name>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Όνομα Δικτύου</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όνομα Δικτύου</translation>
     </message>
 </context>
 <context>
@@ -10232,12 +10107,12 @@
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -10249,146 +10124,114 @@
     </message>
     <message>
         <source>Adapter</source>
-        <translation>Κάρτα δικτύου</translation>
+        <translation type="vanished">Κάρτα δικτύου</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>Αυτόματα ρυθμισμένη</translation>
+        <translation type="vanished">Αυτόματα ρυθμισμένη</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>Χειροκίνητα ρυθμισμένη</translation>
+        <translation type="vanished">Χειροκίνητα ρυθμισμένη</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>Διεύθυνση IPv4</translation>
+        <translation type="vanished">Διεύθυνση IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>Μη ορισμένη</translation>
+        <translation type="vanished">Μη ορισμένη</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>Μάσκα Δικτύου IPv4</translation>
+        <translation type="vanished">Μάσκα Δικτύου IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>Μη ορισμένη</translation>
+        <translation type="vanished">Μη ορισμένη</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>Διεύθυνση IPv6</translation>
+        <translation type="vanished">Διεύθυνση IPv6</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation>Μήκος Μάσκας Δικτύου IPv6</translation>
+        <translation type="vanished">Μήκος Μάσκας Δικτύου IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>Μη ορισμένο</translation>
+        <translation type="vanished">Μη ορισμένο</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>Διακομιστής DHCP</translation>
+        <translation type="vanished">Διακομιστής DHCP</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>Ενεργοποιημένος</translation>
+        <translation type="vanished">Ενεργοποιημένος</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>Απενεργοποιημένος</translation>
+        <translation type="vanished">Απενεργοποιημένος</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Διεύθυνση</translation>
+        <translation type="vanished">Διεύθυνση</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>Μάσκα Δικτύου</translation>
+        <translation type="vanished">Μάσκα Δικτύου</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>Κατώτατο όριο</translation>
+        <translation type="vanished">Κατώτατο όριο</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>Μη ορισμένο</translation>
+        <translation type="vanished">Μη ορισμένο</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>Ανώτατο όριο</translation>
+        <translation type="vanished">Ανώτατο όριο</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Όνομα</translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όνομα</translation>
     </message>
 </context>
 <context>
     <name>UIItemNATNetwork</name>
     <message>
-        <source>Enabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Network Name</source>
-        <translation type="unfinished">Όνομα Δικτύου</translation>
-    </message>
-    <message>
-        <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Όνομα Δικτύου</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">Υποστηρίζει DHCP</translation>
+        <translation type="obsolete">Υποστηρίζει DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">ναι</translation>
+        <translation type="obsolete">ναι</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">όχι</translation>
+        <translation type="obsolete">όχι</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">Υποστηρίζει IPv6</translation>
+        <translation type="obsolete">Υποστηρίζει IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Προεπιλεγμένος δρομολογητής IPv6</translation>
+        <translation type="obsolete">Προεπιλεγμένος δρομολογητής IPv6</translation>
     </message>
 </context>
 <context>
@@ -10537,22 +10380,22 @@
     <name>UIMachineDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Δείχνει την περιγραφή της εικονικής μηχανής. Το πεδίο της περιγραφής είναι χρήσιμο για να σχολιάζετε τις λεπτομέρειες των ρυθμίσεων του εγκατεστημένου επισκέπτη.</translation>
+        <translation type="obsolete">Δείχνει την περιγραφή της εικονικής μηχανής. Το πεδίο της περιγραφής είναι χρήσιμο για να σχολιάζετε τις λεπτομέρειες των ρυθμίσεων του εγκατεστημένου επισκέπτη.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Εκτεταμένα Χαρακτηριστικά:</translation>
+        <translation type="obsolete">Εκτεταμένα Χαρακτηριστικά:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Ενεργοποίηση 3Δ επιτάχυνσης</translation>
+        <translation type="obsolete">Ενεργοποίηση 3Δ επιτάχυνσης</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Όταν επιλεγεί, η εικονική μηχανή θα έχει πρόσβαση στις 3Δ γραφικές δυνατότητες που είναι διαθέσιμες στον οικοδεσπότη.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, η εικονική μηχανή θα έχει πρόσβαση στις 3Δ γραφικές δυνατότητες που είναι διαθέσιμες στον οικοδεσπότη.</translation>
     </message>
 </context>
 <context>
@@ -10591,6 +10434,10 @@
     <message>
         <source>Every 10 s</source>
         <translation>Κάθε 10 s</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12471,75 +12318,75 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation>Ιδιότητες</translation>
+        <translation type="vanished">Ιδιότητες</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation>Πληροφορίες</translation>
+        <translation type="vanished">Πληροφορίες</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation>Τύπος:</translation>
+        <translation type="vanished">Τύπος:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation>Τοποθεσία:</translation>
+        <translation type="vanished">Τοποθεσία:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation>Περιγραφή:</translation>
+        <translation type="vanished">Περιγραφή:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation>Μέγεθος:</translation>
+        <translation type="vanished">Μέγεθος:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation>Δείχνει τον τύπο του μέσου.</translation>
+        <translation type="vanished">Δείχνει τον τύπο του μέσου.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation>Δείχνει την τοποθεσία του μέσου.</translation>
+        <translation type="vanished">Δείχνει την τοποθεσία του μέσου.</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation>Δείχνει την περιγραφή του μέσου.</translation>
+        <translation type="vanished">Δείχνει την περιγραφή του μέσου.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>Δείχνει το μέγεθος του μέσου.</translation>
+        <translation type="vanished">Δείχνει το μέγεθος του μέσου.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Επαναφορά</translation>
+        <translation type="vanished">Επαναφορά</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="vanished">Εφαρμογή</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation>Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου μέσου</translation>
+        <translation type="vanished">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου μέσου</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation>Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου μέσου</translation>
+        <translation type="vanished">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου μέσου</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation>Επαναφορά Αλλαγών (%1)</translation>
+        <translation type="vanished">Επαναφορά Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation>Εφαρμογή Αλλαγών (%1)</translation>
+        <translation type="vanished">Εφαρμογή Αλλαγών (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation>Δεν μπορεί να αλλάξει το μέγεθος του μέσου από &lt;b&gt;%1&lt;/b&gt; σε &lt;b&gt;%2&lt;/b&gt; μιας και η συρρίκνωση αποθήκευσης δεν είναι διαθέσιμη.</translation>
+        <translation type="vanished">Δεν μπορεί να αλλάξει το μέγεθος του μέσου από &lt;b&gt;%1&lt;/b&gt; σε &lt;b&gt;%2&lt;/b&gt; μιας και η συρρίκνωση αποθήκευσης δεν είναι διαθέσιμη.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation>Επιλογή Τοποθεσίας Μέσου</translation>
+        <translation type="vanished">Επιλογή Τοποθεσίας Μέσου</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
@@ -12547,31 +12394,27 @@
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα ή έμμεσα, διατηρείται όταν παίρνονται στιγμιότυπα.</translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται άμεσα ή έμμεσα, διατηρείται όταν παίρνονται στιγμιότυπα.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται έμμεσα, οι αλλαγές διαγράφονται κατά την επόμενη εκκίνηση της εικονικής μηχανής.</translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, οι αλλαγές διαγράφονται κατά την επόμενη εκκίνηση της εικονικής μηχανής.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, αγνοείται όταν παίρνονται στιγμιότυπα.</translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται άμεσα, αγνοείται όταν παίρνονται στιγμιότυπα.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, επιτρέποντας την ταυτόχρονη χρήση από μερικές μηχανές.</translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται άμεσα, επιτρέποντας την ταυτόχρονη χρήση από μερικές μηχανές.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, και μπορεί να χρησιμοποιηθεί από μερικές μηχανές.</translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται άμεσα, και μπορεί να χρησιμοποιηθεί από μερικές μηχανές.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation>Αυτό το είδος του μέσου προσαρτάται έμμεσα, έτσι ώστε το βασικό μέσο να μπορεί να χρησιμοποιηθεί για μερικές μηχανές οι οποίες χρησιμοποιούν το διαφορικό μέσο για να αποθηκεύουν τις τροποποιήσεις τους.</translation>
-    </message>
-    <message>
-        <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, έτσι ώστε το βασικό μέσο να μπορεί να χρησιμοποιηθεί για μερικές μηχανές οι οποίες χρησιμοποιούν το διαφορικό μέσο για να αποθηκεύουν τις τροποποιήσεις τους.</translation>
     </message>
 </context>
 <context>
@@ -12875,6 +12718,94 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Attributes</source>
+        <translation type="unfinished">Ιδιότητες</translation>
+    </message>
+    <message>
+        <source>&amp;Information</source>
+        <translation type="unfinished">Πληροφορίες</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">Τύπος:</translation>
+    </message>
+    <message>
+        <source>&amp;Location:</source>
+        <translation type="unfinished">Τοποθεσία:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">Περιγραφή:</translation>
+    </message>
+    <message>
+        <source>&amp;Size:</source>
+        <translation type="unfinished">Μέγεθος:</translation>
+    </message>
+    <message>
+        <source>Holds the type of this medium.</source>
+        <translation type="unfinished">Δείχνει τον τύπο του μέσου.</translation>
+    </message>
+    <message>
+        <source>Holds the location of this medium.</source>
+        <translation type="unfinished">Δείχνει την τοποθεσία του μέσου.</translation>
+    </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished">Επιλογή Τοποθεσίας Μέσου</translation>
+    </message>
+    <message>
+        <source>Holds the description of this medium.</source>
+        <translation type="unfinished">Δείχνει την περιγραφή του μέσου.</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished">Δείχνει το μέγεθος του μέσου.</translation>
+    </message>
+    <message>
+        <source>Location cannot be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
+        <translation type="unfinished">Δεν μπορεί να αλλάξει το μέγεθος του μέσου από &lt;b&gt;%1&lt;/b&gt; σε &lt;b&gt;%2&lt;/b&gt; μιας και η συρρίκνωση αποθήκευσης δεν είναι διαθέσιμη.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα ή έμμεσα, διατηρείται όταν παίρνονται στιγμιότυπα.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, οι αλλαγές διαγράφονται κατά την επόμενη εκκίνηση της εικονικής μηχανής.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, αγνοείται όταν παίρνονται στιγμιότυπα.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, επιτρέποντας την ταυτόχρονη χρήση από μερικές μηχανές.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, και μπορεί να χρησιμοποιηθεί από μερικές μηχανές.</translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, έτσι ώστε το βασικό μέσο να μπορεί να χρησιμοποιηθεί για μερικές μηχανές οι οποίες χρησιμοποιούν το διαφορικό μέσο για να αποθηκεύουν τις τροποποιήσεις τους.</translation>
+    </message>
+    <message>
+        <source>Registered hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered optical disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered floppy disks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
@@ -12898,18 +12829,6 @@
         <source>Refresh Disk Image Files (%1)</source>
         <translation type="vanished">Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
-    <message>
-        <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIMediumSearchWidget</name>
@@ -12923,6 +12842,18 @@
     </message>
     <message>
         <source>Select the search type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15777,6 +15708,356 @@
         <source>Show Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Subnet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished">Όνομα:</translation>
+    </message>
+    <message>
+        <source>Holds the name for this network.</source>
+        <translation type="unfinished">Δείχνει το όνομα αυτού του δικτύου.</translation>
+    </message>
+    <message>
+        <source>&amp;Provider:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud provider for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;rofile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the cloud profile for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Id:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the id for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset changes in current interface details</source>
+        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+    </message>
+    <message>
+        <source>Apply changes in current interface details</source>
+        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες της επιλεγμένης κάρτας</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">Όνομα:</translation>
+    </message>
+    <message>
+        <source>&amp;Mask:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the mask for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Lower Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upper Bound:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">Κάρτα δικτύου</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">Διακομιστής DHCP</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Automatically</source>
+        <translation type="unfinished">Αυτόματη ρύθμιση κάρτας δικτύου</translation>
+    </message>
+    <message>
+        <source>Configure Adapter &amp;Manually</source>
+        <translation type="unfinished">Χειροκίνητη ρύθμιση κάρτας δικτύου</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">Διεύθυνση IPv4:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">Δείχνει τη διεύθυνση IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">Μάσκα Δικτύου IPv4:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">Δείχνει τη μάσκα δικτύου IPv4 του οικοδεσπότη για αυτή την κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">Διεύθυνση IPv6:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Δείχνει τη διεύθυνση IPv6 του οικοδεσπότη για αυτή την κάρτα δικτύου αν το IPv6 υποστηρίζεται.</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">Ενεργοποίηση Διακομιστή</translation>
+    </message>
+    <message>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
+        <translation type="unfinished">Όταν επιλεγεί, θα ενεργοποιηθεί ο διακομιστής DHCP για αυτό το δίκτυο κατά την εκκίνηση της μηχανής.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">Διεύθυνση Διακομιστή:</translation>
+    </message>
+    <message>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Δείχνει τη διεύθυνση του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">Μάσκα Διακομιστή:</translation>
+    </message>
+    <message>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Δείχνει τη μάσκα δικτύου του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">Κατώτατο Όριο Διευθύνσεων:</translation>
+    </message>
+    <message>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Δείχνει το κατώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">Ανώτατο Όριο Διευθύνσεων:</translation>
+    </message>
+    <message>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Δείχνει το ανώτατο όριο διεύθυνσης του διακομιστή DHCP που εξυπηρετεί το δίκτυο σχετιζόμενο με την μόνο-με-οικοδεσπότη κάρτα δικτύου.</translation>
+    </message>
+    <message>
+        <source>Reset changes in current DHCP server details</source>
+        <translation type="unfinished">Επαναφορά αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
+    </message>
+    <message>
+        <source>Apply changes in current DHCP server details</source>
+        <translation type="unfinished">Εφαρμογή αλλαγών στις λεπτομέρειες του επιλεγμένου διακομιστή DHCP</translation>
+    </message>
+    <message>
+        <source>&amp;General Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">Προώθηση θύρας</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv4 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6 Prefix:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the IPv6 prefix for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support DHCP.</source>
+        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει DHCP.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this network will support IPv6.</source>
+        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα υποστηρίζει IPv6.</translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished">Κοινοποίηση του προεπιλεγμένου δρομολογητή IPv6</translation>
+    </message>
+    <message>
+        <source>When checked, this network will be advertised as the default IPv6 route.</source>
+        <translation type="unfinished">Όταν επιλεγεί, αυτό το δίκτυο θα κοινοποιείται σαν τον προεπιλεγμένο δρομολογητή IPv6.</translation>
+    </message>
+    <message>
+        <source>IPv&amp;4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv&amp;6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">Κάρτα δικτύου</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Αυτόματα ρυθμισμένη</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Χειροκίνητα ρυθμισμένη</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">Διεύθυνση IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">Μάσκα Δικτύου IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">Διεύθυνση IPv6</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">Διεύθυνση</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">Μάσκα Δικτύου</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">Όνομα Δικτύου</translation>
+    </message>
+    <message>
+        <source>Network IPv4 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network IPv6 Prefix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">Υποστηρίζει DHCP</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">ναι</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">όχι</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">Υποστηρίζει IPv6</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">Προεπιλεγμένος δρομολογητής IPv6</translation>
+    </message>
+    <message>
+        <source>Registered host networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered NAT networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINetworkManagerDialog</name>
@@ -15831,21 +16112,6 @@
     <message>
         <source>Double-click for more information.</source>
         <translation type="vanished">Διπλό-κλικ για περισότερες πληροφορίες.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerWidget</name>
-    <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16372,6 +16638,41 @@
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
         <translation>%1 απομένουν</translation>
+    </message>
+</context>
+<context>
+    <name>UIProxyFeaturesEditor</name>
+    <message>
+        <source>&amp;Auto-detect Host Proxy Settings</source>
+        <translation type="unfinished">Αυτόματη εντοπίση ρυθμίσεων διαμεσολάβησης του οικοδεσπότη</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα προσπαθήσει να εντοπίσει αυτόματα τις ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+    </message>
+    <message>
+        <source>&amp;Direct Connection to the Internet</source>
+        <translation type="unfinished">Απευθείας σύνδεση Internet</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει απευθείας τη σύνδεση Internet για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+    </message>
+    <message>
+        <source>&amp;Manual Proxy Configuration</source>
+        <translation type="unfinished">Μη-αυτόματη ρύθμιση διαμεσολάβησης</translation>
+    </message>
+    <message>
+        <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished">Όταν επιλεγεί, το VirtualBox θα χρησιμοποιήσει τις παρεχόμενες ρυθμίσεις διαμεσολάβησης του οικοδεσπότη για ενέργειες όπως το κατέβασμα των Προσθηκών Επισκέπτη ή τον έλεγχο ενημερώσεων.</translation>
+    </message>
+    <message>
+        <source>&amp;URL:</source>
+        <translation type="unfinished">&amp;URL:</translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished">Περιέχει το URL διαμεσολάβησης. Η μορφή είναι: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{τύπος}://][{χρήστης}[:{κωδικός}]@]{εξυπηρετητής}[:{θύρα}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -16904,9 +17205,6 @@
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished">Δείχνει την ακολουθία φιλτραρίσματος των συντομεύσεων.</translation>
     </message>
-</context>
-<context>
-    <name>UIShortcutConfigurationModel</name>
     <message>
         <source>Name</source>
         <translation type="unfinished">Όνομα</translation>
@@ -16915,10 +17213,21 @@
         <source>Shortcut</source>
         <translation type="unfinished">Συντόμευση</translation>
     </message>
+</context>
+<context>
+    <name>UIShortcutConfigurationModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Όνομα</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="obsolete">Συντόμευση</translation>
+    </message>
     <message>
         <source>%1: %2</source>
         <comment>scope: description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -17808,13 +18117,6 @@
     </message>
 </context>
 <context>
-    <name>UISubnetSelectionDialog</name>
-    <message>
-        <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
@@ -17916,7 +18218,7 @@
     </message>
 </context>
 <context>
-    <name>UIToolBoxPage</name>
+    <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
@@ -18315,6 +18617,11 @@
     <message>
         <source>Moves selected USB filter down.</source>
         <translation type="unfinished">Μετακινεί το επιλεγμένο φίλτρου USB προς τα κάτω.</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished">%1, Ενεργό</translation>
     </message>
 </context>
 <context>
@@ -19045,13 +19352,6 @@
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
@@ -19134,7 +19434,7 @@
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation>%1 - Επισκόπηση καταγραφικών</translation>
+        <translation type="vanished">%1 - Επισκόπηση καταγραφικών</translation>
     </message>
 </context>
 <context>
@@ -19334,6 +19634,10 @@
     <message>
         <source>NoLogFile</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished">%1 - Επισκόπηση καταγραφικών</translation>
     </message>
 </context>
 <context>
@@ -19575,13 +19879,6 @@
     </message>
 </context>
 <context>
-    <name>UIVisoCreatorDialog</name>
-    <message>
-        <source>VISO Creator</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIVisoCreatorWidget</name>
     <message>
         <source>Click to show/hide the tree view.</source>
@@ -19665,6 +19962,10 @@
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19944,16 +20245,6 @@
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardCloneVDExpertPage</name>
-    <message>
-        <source>copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardCloneVDPathSizePage</name>
     <message>
         <source>copy</source>
         <translation type="unfinished"></translation>
@@ -19975,7 +20266,7 @@
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="vanished">%1 Κλώνος</translation>
+        <translation>%1 Κλώνος</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -20003,11 +20294,11 @@
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="vanished">Πλήρης κλώνος</translation>
+        <translation>Πλήρης κλώνος</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="vanished">Συνδεδεμένος κλώνος</translation>
+        <translation>Συνδεδεμένος κλώνος</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -20031,15 +20322,15 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="vanished">Τρέχουσα κατάσταση</translation>
+        <translation>Τρέχουσα κατάσταση</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="vanished">Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
+        <translation>Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="vanished">Όλα</translation>
+        <translation>Όλα</translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -20075,27 +20366,27 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου</translation>
+        <translation>Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT</translation>
+        <translation>Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου</translation>
+        <translation>Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT κατά την κλωνοποίηση.</translation>
+        <translation>Συμπεριλαμβάνονται οι διευθύνσεις MAC των καρτών δικτύου NAT κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="vanished">Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου κατά την κλωνοποίηση.</translation>
+        <translation>Δημιουργία νέων διευθύνσεων MAC για όλες τις κάρτες δικτύου κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="vanished">Πρόσθετες Επιλογές:</translation>
+        <translation>Πρόσθετες Επιλογές:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
@@ -20103,7 +20394,7 @@
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="vanished">Διατήρηση Ονομάτων Δίσκων</translation>
+        <translation>Διατήρηση Ονομάτων Δίσκων</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
@@ -20123,11 +20414,75 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="vanished">Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου κατά την κλωνοποίηση.</translation>
+        <translation>Συμπεριλαμβάνονται οι διευθύνσεις MAC όλων των καρτών δικτύου κατά την κλωνοποίηση.</translation>
     </message>
     <message>
         <source>Additional options</source>
         <translation>Πρόσθετες Επιλογές</translation>
+    </message>
+    <message>
+        <source>Clone name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">Όνομα:</translation>
+    </message>
+    <message>
+        <source>&amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds a name for the new virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MAC Address P&amp;olicy:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping the disk names during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enables keeping hardware UUIDs during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -20672,9 +21027,6 @@
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageExpert</name>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished"></translation>
@@ -20694,29 +21046,36 @@
     <message>
         <source>Import all the hard drives that belong to this appliance in VDI format.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportAppPageExpert</name>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation type="obsolete">Πολιτική Διευθύνσεων MAC:</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation type="obsolete">Πρόσθετες Επιλογές:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation type="obsolete">Εισαγωγή σκληρών δίσκων ως VDI</translation>
     </message>
 </context>
 <context>
     <name>UIWizardImportAppPageSettings</name>
     <message>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">Πολιτική Διευθύνσεων MAC:</translation>
+        <translation type="obsolete">Πολιτική Διευθύνσεων MAC:</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Πρόσθετες Επιλογές:</translation>
+        <translation type="obsolete">Πρόσθετες Επιλογές:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">Εισαγωγή σκληρών δίσκων ως VDI</translation>
-    </message>
-    <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Εισαγωγή σκληρών δίσκων ως VDI</translation>
     </message>
 </context>
 <context>
@@ -20965,10 +21324,6 @@
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables installation of the guest additions  after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21243,18 +21598,25 @@
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>USBFilterTreeWidgetItem</name>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, Ενεργό</translation>
-    </message>
-    <message>
-        <source>%1</source>
-        <comment>col.1 text</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">%1, Ενεργό</translation>
     </message>
 </context>
 <context>
