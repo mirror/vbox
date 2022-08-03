@@ -125,6 +125,18 @@ if defined(VBOX_WITH_MAIN) \
    include $(PATH_SUB_CURRENT)/libopus-1.3.1/Makefile.kmk
   endif
 
+  # libogg, needed for building libvorbis.
+  if   defined(VBOX_WITH_LIBOGG) \
+    && ("$(SDK_VBOX_OGG_INCS)" == "$(SDK_VBOX_OGG_DEFAULT_INCS)")
+   include $(PATH_SUB_CURRENT)/libogg-1.3.5/Makefile.kmk
+  endif
+
+  # libvorbis for supporting audio with video recording.
+  if   defined(VBOX_WITH_LIBVORBIS) \
+    && ("$(SDK_VBOX_VORBIS_INCS)" == "$(SDK_VBOX_VORBIS_DEFAULT_INCS)")
+   include $(PATH_SUB_CURRENT)/libvorbis-1.3.7/Makefile.kmk
+  endif
+
   # libpng for screenshots in main.
   if  !defined(VBOX_ONLY_DOCS) \
    && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.6.36"
