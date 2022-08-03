@@ -135,6 +135,10 @@ TEMPLATE_VBoxMesa3DGuestR3Lib_INCS          = \
 	$(VBOX_MESA_SUBDIR)/src/gallium/include \
 	$(VBOX_MESA_SUBDIR)/src/gallium/auxiliary \
 	$(VBOX_MESA_SUBDIR)/src/gallium/state_trackers/wgl
+ifdef VBOX_WITH_NOCRT_STATIC
+TEMPLATE_VBoxMesa3DGuestR3Lib_INCS         += \
+	$(TEMPLATE_VBoxMesa3DGuestR3Dll_INCS)
+endif
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS          = \
 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
