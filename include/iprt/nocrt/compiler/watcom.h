@@ -29,16 +29,70 @@
 # pragma once
 #endif
 
+#include <iprt/cdefs.h>
+
 /* stddef.h for size_t and such */
-#include <../h/stddef.h>
+#if 0
+# include <../h/stddef.h>
+
+# ifndef  _SSIZE_T_DEFINED_
+#  define _SSIZE_T_DEFINED_
+typedef signed int      ssize_t;
+# endif
+
+#else
+
+# define _SIZE_T_DEFINED_
+# define __size_t
+typedef unsigned        size_t;
+typedef size_t       _w_size_t;
+
+# define _SSIZE_T_DEFINED_
+# define __ssize_t
+typedef signed int      ssize_t;
+
+# define _RSIZE_T_DEFINED
+typedef size_t          rsize_t;
+
+# define _PTRDIFF_T_DEFINED_
+# ifdef __HUGE__
+typedef long            ptrdiff_t;
+# else
+typedef int             ptrdiff_t;
+# endif
+
+# ifndef  _WCHAR_T_DEFINED /* predefined in C++ mode? */
+#  define _WCHAR_T_DEFINED
+typedef unsigned short  wchar_t;
+# endif
+
+# ifndef NULL
+#  ifndef __cplusplus
+#   define NULL         ((void *)0)
+#  elif  defined(__SMALL__) || defined(__MEDIUM__) || !defined(_M_I86)
+#   define NULL         (0)
+#  else
+#   define NULL          (0L)
+#  endif
+# endif
+
+# define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+
+# if defined(_M_I86) && (defined(__SMALL__) || defined(__MEDIUM__))
+typedef int             intptr_t;
+typedef unsigned int    uintptr_t;
+# elif defined(_M_I86) || (!defined(__COMPACT__) && !defined(__LARGE__))
+typedef long            intptr_t;
+typedef unsigned long   uintptr_t;
+# else /* 32-bit compile using far data pointers (16:32) */
+typedef long long       intptr_t;
+typedef unsigned long long uintptr_t;
+# endif
+
+#endif
 
 /* stdarg.h */
 #include <../h/stdarg.h>
-
-#ifndef _SSIZE_T_DEFINED_
-#define _SSIZE_T_DEFINED_
-typedef signed ssize_t;
-#endif
 
 #endif /* !IPRT_INCLUDED_nocrt_compiler_watcom_h */
 

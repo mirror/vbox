@@ -3821,5 +3821,6 @@ public:
 #endif /* __cplusplus */
 /** @} */
 
+#define IPRT_COMPLETED_types_h /* hack for watcom and nocrt headers depending on this one. */
 #endif /* !IPRT_INCLUDED_types_h */
 

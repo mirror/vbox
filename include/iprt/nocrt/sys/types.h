@@ -29,6 +29,10 @@
 # pragma once
 #endif
 
+#if defined(IPRT_INCLUDED_types_h) && !defined(IPRT_COMPLETED_types_h)
+# error "Can't include nocrt/sys/types.h from iprt/types.h"
+#endif
+
 #include <iprt/types.h>
 
 /* #if !defined(MSC-define) && !defined(GNU/LINUX-define) */
