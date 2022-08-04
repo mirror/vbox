@@ -3648,6 +3648,9 @@ IEMIMPL_MEDIA_F2 pmaxsd,  0
 IEMIMPL_MEDIA_F2 pabsb,   1
 IEMIMPL_MEDIA_F2 pabsw,   1
 IEMIMPL_MEDIA_F2 pabsd,   1
+IEMIMPL_MEDIA_F2 psignb,  1
+IEMIMPL_MEDIA_F2 psignw,  1
+IEMIMPL_MEDIA_F2 psignd,  1
 
 ;;
 ; Media instruction working on two full sized registers, but no FXSAVE state argument.
@@ -4183,6 +4186,9 @@ IEMIMPL_MEDIA_OPT_F3 vpmulhw
 IEMIMPL_MEDIA_OPT_F3 vpmulhuw
 IEMIMPL_MEDIA_OPT_F3 vpavgb
 IEMIMPL_MEDIA_OPT_F3 vpavgw
+IEMIMPL_MEDIA_OPT_F3 vpsignb
+IEMIMPL_MEDIA_OPT_F3 vpsignw
+IEMIMPL_MEDIA_OPT_F3 vpsignd
 
 
 ;;

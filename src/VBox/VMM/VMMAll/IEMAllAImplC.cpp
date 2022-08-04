@@ -12205,6 +12205,210 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsd_u256_fallback,(PRTUINT256U puDst, PCRTUI
 
 
 /*
+ * PSIGNB / VPSIGNB / PSIGNW / VPSIGNW / PSIGND / VPSIGND
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai8); i++)
+    {
+        if (uSrc2.ai8[i] < 0)
+            uDst.ai8[i] = -uSrc1.ai8[i];
+        else if (uSrc2.ai8[i] == 0)
+            uDst.ai8[i] = 0;
+        else /* uSrc2.ai8[i] > 0 */
+            uDst.ai8[i] = uSrc1.ai8[i];
+    }
+
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai8); i++)
+    {
+        if (puSrc->ai8[i] < 0)
+            puDst->ai8[i] = -uSrc1.ai8[i];
+        else if (puSrc->ai8[i] == 0)
+            puDst->ai8[i] = 0;
+        else /* puSrc->ai8[i] > 0 */
+            puDst->ai8[i] = uSrc1.ai8[i];
+    }
+
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai16); i++)
+    {
+        if (uSrc2.ai16[i] < 0)
+            uDst.ai16[i] = -uSrc1.ai16[i];
+        else if (uSrc2.ai16[i] == 0)
+            uDst.ai16[i] = 0;
+        else /* uSrc2.ai16[i] > 0 */
+            uDst.ai16[i] = uSrc1.ai16[i];
+    }
+
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai16); i++)
+    {
+        if (puSrc->ai16[i] < 0)
+            puDst->ai16[i] = -uSrc1.ai16[i];
+        else if (puSrc->ai16[i] == 0)
+            puDst->ai16[i] = 0;
+        else /* puSrc->ai16[i] > 0 */
+            puDst->ai16[i] = uSrc1.ai16[i];
+    }
+
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai32); i++)
+    {
+        if (uSrc2.ai32[i] < 0)
+            uDst.ai32[i] = -uSrc1.ai32[i];
+        else if (uSrc2.ai32[i] == 0)
+            uDst.ai32[i] = 0;
+        else /* uSrc2.ai32[i] > 0 */
+            uDst.ai32[i] = uSrc1.ai32[i];
+    }
+
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai32); i++)
+    {
+        if (puSrc->ai32[i] < 0)
+            puDst->ai32[i] = -uSrc1.ai32[i];
+        else if (puSrc->ai32[i] == 0)
+            puDst->ai32[i] = 0;
+        else /* puSrc->ai32[i] > 0 */
+            puDst->ai32[i] = uSrc1.ai32[i];
+    }
+
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai8); i++)
+    {
+        if (puSrc2->ai8[i] < 0)
+            puDst->ai8[i] = -puSrc1->ai8[i];
+        else if (puSrc2->ai8[i] == 0)
+            puDst->ai8[i] = 0;
+        else /* puSrc2->ai8[i] > 0 */
+            puDst->ai8[i] = puSrc1->ai8[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai8); i++)
+    {
+        if (puSrc2->ai8[i] < 0)
+            puDst->ai8[i] = -puSrc1->ai8[i];
+        else if (puSrc2->ai8[i] == 0)
+            puDst->ai8[i] = 0;
+        else /* puSrc2->ai8[i] > 0 */
+            puDst->ai8[i] = puSrc1->ai8[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai16); i++)
+    {
+        if (puSrc2->ai16[i] < 0)
+            puDst->ai16[i] = -puSrc1->ai16[i];
+        else if (puSrc2->ai16[i] == 0)
+            puDst->ai16[i] = 0;
+        else /* puSrc2->ai16[i] > 0 */
+            puDst->ai16[i] = puSrc1->ai16[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai16); i++)
+    {
+        if (puSrc2->ai16[i] < 0)
+            puDst->ai16[i] = -puSrc1->ai16[i];
+        else if (puSrc2->ai16[i] == 0)
+            puDst->ai16[i] = 0;
+        else /* puSrc2->ai16[i] > 0 */
+            puDst->ai16[i] = puSrc1->ai16[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai32); i++)
+    {
+        if (puSrc2->ai32[i] < 0)
+            puDst->ai32[i] = -puSrc1->ai32[i];
+        else if (puSrc2->ai32[i] == 0)
+            puDst->ai32[i] = 0;
+        else /* puSrc2->ai32[i] > 0 */
+            puDst->ai32[i] = puSrc1->ai32[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(puDst->ai32); i++)
+    {
+        if (puSrc2->ai32[i] < 0)
+            puDst->ai32[i] = -puSrc1->ai32[i];
+        else if (puSrc2->ai32[i] == 0)
+            puDst->ai32[i] = 0;
+        else /* puSrc2->ai32[i] > 0 */
+            puDst->ai32[i] = puSrc1->ai32[i];
+    }
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 
