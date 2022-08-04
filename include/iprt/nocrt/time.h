@@ -34,7 +34,8 @@
 #include <iprt/types.h>
 #include <iprt/nocrt/sys/types.h>
 
-#if !defined(_TIME_T_DEFINED)
+/* #if !defined(MSC-define) && !defined(GNU/LINUX-define) */
+#if !defined(_TIME_T_DEFINED) && !defined(__time_t_defined)
 # if defined(RT_OS_WINDOWS) && defined(_USE_32BIT_TIME_T) && ARCH_BITS == 32
 typedef long time_t;
 # else
@@ -45,19 +46,24 @@ typedef int64_t __time64_t;
 # endif
 #endif /* !_TIME_T_DEFINED */
 
-#if !defined(_INC_TIME)
+#if !defined(_INC_TIME) /* MSC/UCRT guard */
+
+# if !defined(_STRUCT_TIMESPEC)
 struct timespec
 {
     time_t tv_sec;
     long   tv_nsec;
 };
+# endif
 
+#if !defined(__struct_tm_defined)
 struct tm
 {
     int tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year;
     int tm_wday, tm_yday, tm_isdst, tm_gmtoff;
     const char *tm_zone;
 };
+# endif
 
 #endif /* !_INC_TIME */
 

@@ -31,19 +31,20 @@
 
 #include <iprt/types.h>
 
-#if !defined(_DEV_T_DEFINED)
+/* #if !defined(MSC-define) && !defined(GNU/LINUX-define) */
+#if !defined(_DEV_T_DEFINED) && !defined(__dev_t_defined)
 typedef RTDEV       dev_t;
 #endif
-#if !defined(_UCRT_RESTORE_CLANG_WARNINGS)
+#if !defined(_UCRT_RESTORE_CLANG_WARNINGS) /* MSC specific type */
 typedef int         errno_t;
 #endif
-#if !defined(_INO_T_DEFINED)
+#if !defined(_INO_T_DEFINED) && !defined(__ino_t_defined)
 typedef RTINODE     ino_t;
 #endif
-#if !defined(_OFF_T_DEFINED)
+#if !defined(_OFF_T_DEFINED) && !defined(__off_t_defined)
 typedef RTFOFF      off_t;
 #endif
-#if !defined(_PID_T_DEFINED)
+#if !defined(_PID_T_DEFINED) && !defined(__pid_t_defined)
 typedef RTPROCESS   pid_t;
 #endif
 

@@ -525,11 +525,11 @@ RT_C_DECLS_END
     : RT_NOCRT(__isfinitel)(x))
 #define isinf(x)                    \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isinff)(x)   \
-    : (sizeof (x) == sizeof (double)) ? isinf(x)    \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(isinf)(x)    \
     : RT_NOCRT(__isinfl)(x))
 #define isnan(x)                    \
-    ((sizeof (x) == sizeof (float)) ? isnanf(x)     \
-    : (sizeof (x) == sizeof (double)) ? isnan(x)    \
+    ((sizeof (x) == sizeof (float)) ? RT_NOCRT(isnanf)(x)     \
+    : (sizeof (x) == sizeof (double)) ? RT_NOCRT(isnan)(x)    \
     : RT_NOCRT(__isnanl)(x))
 #define isnormal(x)                 \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isnormalf)(x)    \
@@ -662,8 +662,8 @@ typedef float   float_t;
 # define trunc RT_NOCRT(trunc)
 # define drem RT_NOCRT(drem)
 # define finite RT_NOCRT(finite)
-# define isinf RT_NOCRT(isinf)
-# define isnan RT_NOCRT(isnan)
+/*# define isinf RT_NOCRT(isinf) - already a macro */
+/*# define isnan RT_NOCRT(isnan) - already a macro */
 # define isnanf RT_NOCRT(isnanf)
 # define gamma_r RT_NOCRT(gamma_r)
 # define lgamma_r RT_NOCRT(lgamma_r)
