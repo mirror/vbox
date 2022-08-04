@@ -266,7 +266,7 @@ static int WriteAliasObjectOMF(FILE *pOutput, const char *pszAlias, const char *
 {
     const uint32_t cchAlias = (uint32_t)strlen(pszAlias);
     const uint32_t cchReal  = (uint32_t)strlen(pszReal);
-    const uint32_t cchName  = cchAlias > 250 ? 250 : cchAlias;
+    //const uint32_t cchName  = cchAlias > 250 ? 250 : cchAlias;
     uint32_t       cch;
 
     if (cchReal >= 250)
