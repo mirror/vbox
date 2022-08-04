@@ -612,7 +612,14 @@ FNIEMOP_DEF(iemOp_pmaxud_Vx_Wx)
 
 
 /** Opcode 0x66 0x0f 0x38 0x40. */
-FNIEMOP_STUB(iemOp_pmulld_Vx_Wx);
+FNIEMOP_DEF(iemOp_pmulld_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PMULLD, pmulld, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse41_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_pmulld_u128, iemAImpl_pmulld_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x41. */
 FNIEMOP_STUB(iemOp_phminposuw_Vdq_Wdq);
 /*  Opcode 0x66 0x0f 0x38 0x42 - invalid. */
