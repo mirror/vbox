@@ -33,7 +33,7 @@ BEGINCODE
 ; Round to truncated integer value.
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rf      32-bit: [ebp + 8]   64-bit: xmm0
-BEGINPROC RT_NOCRT(truncf)
+RT_NOCRT_BEGINPROC truncf
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

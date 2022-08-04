@@ -32,7 +32,7 @@ BEGINCODE
 ; Compute the absolute value of lrd (|lrd|).
 ; @returns st(0)
 ; @param    lrd     [xSP + xCB*2]
-BEGINPROC RT_NOCRT(fabsl)
+RT_NOCRT_BEGINPROC fabsl
     push    xBP
     mov     xBP, xSP
 

@@ -32,7 +32,7 @@ BEGINCODE
 ; compute the cosine of ldr, measured in radians.
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
-BEGINPROC RT_NOCRT(cosl)
+RT_NOCRT_BEGINPROC cosl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

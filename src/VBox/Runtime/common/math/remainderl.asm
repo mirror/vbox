@@ -33,7 +33,7 @@ BEGINCODE
 ; @returns st(0)
 ; @param    lrd1    [rbp + 10h]
 ; @param    lrd2    [rbp + 20h]
-BEGINPROC RT_NOCRT(remainderl)
+RT_NOCRT_BEGINPROC remainderl
     push    xBP
     mov     xBP, xSP
 

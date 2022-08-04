@@ -32,7 +32,7 @@ BEGINCODE
 ; compute the natural logarithm of lrd
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
-BEGINPROC RT_NOCRT(logl)
+RT_NOCRT_BEGINPROC logl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

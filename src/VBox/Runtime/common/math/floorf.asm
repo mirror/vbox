@@ -32,7 +32,7 @@ BEGINCODE
 ; Compute the largest integral value not greater than rf.
 ; @returns st(0)
 ; @param    rf      32-bit: [ebp + 8]   64-bit: xmm0
-BEGINPROC RT_NOCRT(floorf)
+RT_NOCRT_BEGINPROC floorf
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

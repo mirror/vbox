@@ -32,7 +32,7 @@ BEGINCODE
 ; Compute the largest integral value not greater than lrd.
 ; @returns st(0)
 ; @param    lrd     [rbp + 8]
-BEGINPROC RT_NOCRT(floorl)
+RT_NOCRT_BEGINPROC floorl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

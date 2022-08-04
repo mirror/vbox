@@ -33,7 +33,7 @@ BEGINCODE
 ; @returns st(0)
 ; @param    rf1    [ebp + 08h]  xmm0
 ; @param    rf2    [ebp + 0ch]  xmm1
-BEGINPROC RT_NOCRT(remainderf)
+RT_NOCRT_BEGINPROC remainderf
     push    xBP
     mov     xBP, xSP
     sub     xSP, 20h

@@ -32,7 +32,7 @@ BEGINCODE
 ; Compute the absolute value of rf (|rf|).
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rf      32-bit: [ebp + 8]   64-bit: xmm0
-BEGINPROC RT_NOCRT(fabsf)
+RT_NOCRT_BEGINPROC fabsf
     push    xBP
     mov     xBP, xSP
 

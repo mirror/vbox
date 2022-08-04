@@ -33,7 +33,7 @@ BEGINCODE
 ; Compute the smallest integral value not less than lrd.
 ; @returns st(0)
 ; @param    lrd     [rbp + 8]
-BEGINPROC RT_NOCRT(ceill)
+RT_NOCRT_BEGINPROC ceill
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

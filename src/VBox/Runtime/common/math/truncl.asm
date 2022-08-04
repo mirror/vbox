@@ -33,7 +33,7 @@ BEGINCODE
 ; Round to truncated integer value.
 ; @returns st(0)
 ; @param    rd      [rbp + 8]
-BEGINPROC RT_NOCRT(truncl)
+RT_NOCRT_BEGINPROC truncl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

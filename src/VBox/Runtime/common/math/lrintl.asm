@@ -32,7 +32,7 @@ BEGINCODE
 ; Round rd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: eax  64-bit: rax
 ; @param    lrd     [rbp + xCB*2]
-BEGINPROC RT_NOCRT(lrintl)
+RT_NOCRT_BEGINPROC lrintl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

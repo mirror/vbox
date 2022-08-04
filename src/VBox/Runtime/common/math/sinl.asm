@@ -32,7 +32,7 @@ BEGINCODE
 ; Compute the sine of lrd
 ; @returns st(0)
 ; @param    lrd     [xSP + xCB*2]
-BEGINPROC RT_NOCRT(sinl)
+RT_NOCRT_BEGINPROC sinl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h

@@ -32,7 +32,7 @@ BEGINCODE
 ; Round rd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: eax  64-bit: rax
 ; @param    rd     32-bit: [esp + 4h]  64-bit: xmm0
-BEGINPROC RT_NOCRT(lrint)
+RT_NOCRT_BEGINPROC lrint
 %ifdef RT_ARCH_AMD64
     cvtsd2si rax, xmm0
 %else
@@ -49,4 +49,3 @@ BEGINPROC RT_NOCRT(lrint)
 %endif
     ret
 ENDPROC   RT_NOCRT(lrint)
-

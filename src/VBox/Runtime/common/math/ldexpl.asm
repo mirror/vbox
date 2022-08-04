@@ -33,7 +33,7 @@ BEGINCODE
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
 ; @param    exp     [ebp + 14h]  gcc:edi  msc:ecx
-BEGINPROC RT_NOCRT(ldexpl)
+RT_NOCRT_BEGINPROC ldexpl
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h
