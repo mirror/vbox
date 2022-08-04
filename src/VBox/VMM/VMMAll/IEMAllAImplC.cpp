@@ -8846,6 +8846,73 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhw_u256_fallback,(PRTUINT256U puDst, PCRTU
 
 
 /*
+ * PMULHUW / VPMULHUW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhuw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uDst.au16[0] = RT_HIWORD(uSrc1.au16[0] * uSrc2.au16[0]);
+    uDst.au16[1] = RT_HIWORD(uSrc1.au16[1] * uSrc2.au16[1]);
+    uDst.au16[2] = RT_HIWORD(uSrc1.au16[2] * uSrc2.au16[2]);
+    uDst.au16[3] = RT_HIWORD(uSrc1.au16[3] * uSrc2.au16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhuw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+    puDst->au16[0] = RT_HIWORD(uSrc1.au16[0] * puSrc->au16[0]);
+    puDst->au16[1] = RT_HIWORD(uSrc1.au16[1] * puSrc->au16[1]);
+    puDst->au16[2] = RT_HIWORD(uSrc1.au16[2] * puSrc->au16[2]);
+    puDst->au16[3] = RT_HIWORD(uSrc1.au16[3] * puSrc->au16[3]);
+    puDst->au16[4] = RT_HIWORD(uSrc1.au16[4] * puSrc->au16[4]);
+    puDst->au16[5] = RT_HIWORD(uSrc1.au16[5] * puSrc->au16[5]);
+    puDst->au16[6] = RT_HIWORD(uSrc1.au16[6] * puSrc->au16[6]);
+    puDst->au16[7] = RT_HIWORD(uSrc1.au16[7] * puSrc->au16[7]);
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhuw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->au16[0] = RT_HIWORD(puSrc1->au16[0] * puSrc2->au16[0]);
+    puDst->au16[1] = RT_HIWORD(puSrc1->au16[1] * puSrc2->au16[1]);
+    puDst->au16[2] = RT_HIWORD(puSrc1->au16[2] * puSrc2->au16[2]);
+    puDst->au16[3] = RT_HIWORD(puSrc1->au16[3] * puSrc2->au16[3]);
+    puDst->au16[4] = RT_HIWORD(puSrc1->au16[4] * puSrc2->au16[4]);
+    puDst->au16[5] = RT_HIWORD(puSrc1->au16[5] * puSrc2->au16[5]);
+    puDst->au16[6] = RT_HIWORD(puSrc1->au16[6] * puSrc2->au16[6]);
+    puDst->au16[7] = RT_HIWORD(puSrc1->au16[7] * puSrc2->au16[7]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhuw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au16[ 0] = RT_HIWORD(puSrc1->au16[ 0] * puSrc2->au16[ 0]);
+    puDst->au16[ 1] = RT_HIWORD(puSrc1->au16[ 1] * puSrc2->au16[ 1]);
+    puDst->au16[ 2] = RT_HIWORD(puSrc1->au16[ 2] * puSrc2->au16[ 2]);
+    puDst->au16[ 3] = RT_HIWORD(puSrc1->au16[ 3] * puSrc2->au16[ 3]);
+    puDst->au16[ 4] = RT_HIWORD(puSrc1->au16[ 4] * puSrc2->au16[ 4]);
+    puDst->au16[ 5] = RT_HIWORD(puSrc1->au16[ 5] * puSrc2->au16[ 5]);
+    puDst->au16[ 6] = RT_HIWORD(puSrc1->au16[ 6] * puSrc2->au16[ 6]);
+    puDst->au16[ 7] = RT_HIWORD(puSrc1->au16[ 7] * puSrc2->au16[ 7]);
+    puDst->au16[ 8] = RT_HIWORD(puSrc1->au16[ 8] * puSrc2->au16[ 8]);
+    puDst->au16[ 9] = RT_HIWORD(puSrc1->au16[ 9] * puSrc2->au16[ 9]);
+    puDst->au16[10] = RT_HIWORD(puSrc1->au16[10] * puSrc2->au16[10]);
+    puDst->au16[11] = RT_HIWORD(puSrc1->au16[11] * puSrc2->au16[11]);
+    puDst->au16[12] = RT_HIWORD(puSrc1->au16[12] * puSrc2->au16[12]);
+    puDst->au16[13] = RT_HIWORD(puSrc1->au16[13] * puSrc2->au16[13]);
+    puDst->au16[14] = RT_HIWORD(puSrc1->au16[14] * puSrc2->au16[14]);
+    puDst->au16[15] = RT_HIWORD(puSrc1->au16[15] * puSrc2->au16[15]);
+}
+
+
+/*
  * PSRLW / VPSRLW
  */
 #ifdef IEM_WITHOUT_ASSEMBLY

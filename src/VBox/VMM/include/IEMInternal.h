@@ -1783,6 +1783,7 @@ FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_pslld_u64, iemAImpl_psrld_u64, iemAImpl_psrad_
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_psllq_u64, iemAImpl_psrlq_u64;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packsswb_u64, iemAImpl_packuswb_u64;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_packssdw_u64;
+FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_pmulhuw_u64;
 
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pshufb_u128, iemAImpl_pshufb_u128_fallback;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pand_u128, iemAImpl_pandn_u128, iemAImpl_por_u128, iemAImpl_pxor_u128;
@@ -1819,6 +1820,7 @@ FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packssdw_u128, iemAImpl_packusdw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psllw_u128, iemAImpl_psrlw_u128, iemAImpl_psraw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pslld_u128, iemAImpl_psrld_u128, iemAImpl_psrad_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psllq_u128, iemAImpl_psrlq_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pmulhuw_u128;
 
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpshufb_u128,    iemAImpl_vpshufb_u128_fallback;
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpand_u128,      iemAImpl_vpand_u128_fallback;
@@ -1860,6 +1862,7 @@ FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpackusdw_u128,  iemAImpl_vpackusdw_u128_fallb
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpmullw_u128,    iemAImpl_vpmullw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpmulld_u128,    iemAImpl_vpmulld_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpmulhw_u128,    iemAImpl_vpmulhw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpmulhuw_u128,   iemAImpl_vpmulhuw_u128_fallback;
 
 FNIEMAIMPLMEDIAF3U256    iemAImpl_vpshufb_u256,    iemAImpl_vpshufb_u256_fallback;
 FNIEMAIMPLMEDIAF3U256    iemAImpl_vpand_u256,      iemAImpl_vpand_u256_fallback;
@@ -1901,6 +1904,7 @@ FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpackusdw_u256,  iemAImpl_vpackusdw_u256_fallb
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmullw_u256,    iemAImpl_vpmullw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmulld_u256,    iemAImpl_vpmulld_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmulhw_u256,    iemAImpl_vpmulhw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmulhuw_u256,   iemAImpl_vpmulhuw_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
