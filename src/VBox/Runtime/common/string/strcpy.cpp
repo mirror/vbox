@@ -40,7 +40,7 @@
  * @param   pszSrc      Zero terminated string.
  */
 #ifdef IPRT_NO_CRT
-# undef strlen
+# undef strcpy
 char *RT_NOCRT(strcpy)(char *pszDst, const char *pszSrc)
 #else
 char *strcpy(char *pszDst, const char *pszSrc)
