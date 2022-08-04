@@ -459,6 +459,12 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 %endif
 
 
+;;
+; Define a label as given, with a '$' prepended to permit using instruction
+; names like fdiv as labels.
+%macro SAFE_LABEL 1
+$%1:
+%endmacro
 
 ;;
 ; Global marker which is DECLASM() compatible.
@@ -466,7 +472,7 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 %ifndef ASM_FORMAT_BIN
 global NAME(%1)
 %endif
-NAME(%1):
+SAFE_LABEL NAME(%1)
 %endmacro
 
 ;;
@@ -1113,9 +1119,14 @@ BEGINPROC_EXPORTED %1
  %ifdef RT_WITH_NOCRT_ALIASES
 BEGINPROC_EXPORTED RT_NOCRT(%1)
   %ifdef ASM_FORMAT_ELF
-global NAME(%1)
+   %ifdef RT_WITH_NOCRT_UNDERSCORE_ALIASES
+global NAME(_ %+ %1):function
+weak NAME(_ %+ %1)
+SAFE_LABEL NAME(_ %+ %1)
+   %endif
+global NAME(%1):function
 weak NAME(%1)
-NAME(%1):
+SAFE_LABEL NAME(%1)
   %else
 GLOBALNAME %1
   %endif
