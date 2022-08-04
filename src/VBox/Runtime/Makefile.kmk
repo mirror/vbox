@@ -2726,9 +2726,9 @@ endif # remove later
 # RuntimeR3NoCRTGCC - CRT replacement lib for VBoxREM.
 # This is used together with VBoxRT.
 #
-## @todo the *_alias.c stuff is busted, remove and use RT_WITH_NOCRT_ALIASES instead.
 RuntimeR3NoCRTGCC_TEMPLATE = VBoxNoCrtGccLib
 RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
+RuntimeR3NoCRTGCC_DEFS    = RT_WITH_NOCRT_ALIASES
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3NoCRTGCC_DEFS  += RT_NO_GIP
 endif
@@ -2764,16 +2764,7 @@ RuntimeR3NoCRTGCC_SOURCES += \
 	common/math/tanl.asm \
 	common/math/trunc.asm \
 	common/math/truncf.asm \
-	common/math/truncl.asm \
-	\
-	common/string/memchr_alias.c \
-	common/string/memcmp_alias.c \
-	common/string/memcpy_alias.c \
-	common/string/memmove_alias.c \
-	common/string/memset_alias.c \
-	common/string/strchr_alias.c \
-	common/string/strcmp_alias.c \
-	common/string/strlen_alias.c
+	common/math/truncl.asm
 endif
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
@@ -4375,6 +4366,8 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^strcpy/d' \
 			-e '/^strncpy/d' \
 			-e '/^strlen/d' \
+			-e '/^setjmp/d' \
+			-e '/^longjmp/d' \
 			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 			\
