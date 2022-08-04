@@ -11997,6 +11997,214 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u256_fallback,(PRTUINT256U puDst, PCR
 
 
 /*
+ * [V]PABSB / [V]PABSW / [V]PABSD
+ */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc    = { *puSrc };
+    RTUINT64U       uDstOut = { 0 };
+
+    uDstOut.au8[0] = RT_ABS(uSrc.ai8[0]);
+    uDstOut.au8[1] = RT_ABS(uSrc.ai8[1]);
+    uDstOut.au8[2] = RT_ABS(uSrc.ai8[2]);
+    uDstOut.au8[3] = RT_ABS(uSrc.ai8[3]);
+    uDstOut.au8[4] = RT_ABS(uSrc.ai8[4]);
+    uDstOut.au8[5] = RT_ABS(uSrc.ai8[5]);
+    uDstOut.au8[6] = RT_ABS(uSrc.ai8[6]);
+    uDstOut.au8[7] = RT_ABS(uSrc.ai8[7]);
+    *puDst = uDstOut.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au8[ 0] = RT_ABS(puSrc->ai8[ 0]);
+    puDst->au8[ 1] = RT_ABS(puSrc->ai8[ 1]);
+    puDst->au8[ 2] = RT_ABS(puSrc->ai8[ 2]);
+    puDst->au8[ 3] = RT_ABS(puSrc->ai8[ 3]);
+    puDst->au8[ 4] = RT_ABS(puSrc->ai8[ 4]);
+    puDst->au8[ 5] = RT_ABS(puSrc->ai8[ 5]);
+    puDst->au8[ 6] = RT_ABS(puSrc->ai8[ 6]);
+    puDst->au8[ 7] = RT_ABS(puSrc->ai8[ 7]);
+    puDst->au8[ 8] = RT_ABS(puSrc->ai8[ 8]);
+    puDst->au8[ 9] = RT_ABS(puSrc->ai8[ 9]);
+    puDst->au8[10] = RT_ABS(puSrc->ai8[10]);
+    puDst->au8[11] = RT_ABS(puSrc->ai8[11]);
+    puDst->au8[12] = RT_ABS(puSrc->ai8[12]);
+    puDst->au8[13] = RT_ABS(puSrc->ai8[13]);
+    puDst->au8[14] = RT_ABS(puSrc->ai8[14]);
+    puDst->au8[15] = RT_ABS(puSrc->ai8[15]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc    = { *puSrc };
+    RTUINT64U       uDstOut = { 0 };
+
+    uDstOut.au16[0] = RT_ABS(uSrc.ai16[0]);
+    uDstOut.au16[1] = RT_ABS(uSrc.ai16[1]);
+    uDstOut.au16[2] = RT_ABS(uSrc.ai16[2]);
+    uDstOut.au16[3] = RT_ABS(uSrc.ai16[3]);
+    *puDst = uDstOut.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au16[ 0] = RT_ABS(puSrc->ai16[ 0]);
+    puDst->au16[ 1] = RT_ABS(puSrc->ai16[ 1]);
+    puDst->au16[ 2] = RT_ABS(puSrc->ai16[ 2]);
+    puDst->au16[ 3] = RT_ABS(puSrc->ai16[ 3]);
+    puDst->au16[ 4] = RT_ABS(puSrc->ai16[ 4]);
+    puDst->au16[ 5] = RT_ABS(puSrc->ai16[ 5]);
+    puDst->au16[ 6] = RT_ABS(puSrc->ai16[ 6]);
+    puDst->au16[ 7] = RT_ABS(puSrc->ai16[ 7]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U const uSrc    = { *puSrc };
+    RTUINT64U       uDstOut = { 0 };
+
+    uDstOut.au32[0] = RT_ABS(uSrc.ai32[0]);
+    uDstOut.au32[1] = RT_ABS(uSrc.ai32[1]);
+    *puDst = uDstOut.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au32[ 0] = RT_ABS(puSrc->ai32[ 0]);
+    puDst->au32[ 1] = RT_ABS(puSrc->ai32[ 1]);
+    puDst->au32[ 2] = RT_ABS(puSrc->ai32[ 2]);
+    puDst->au32[ 3] = RT_ABS(puSrc->ai32[ 3]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au8[ 0] = RT_ABS(puSrc->ai8[ 0]);
+    puDst->au8[ 1] = RT_ABS(puSrc->ai8[ 1]);
+    puDst->au8[ 2] = RT_ABS(puSrc->ai8[ 2]);
+    puDst->au8[ 3] = RT_ABS(puSrc->ai8[ 3]);
+    puDst->au8[ 4] = RT_ABS(puSrc->ai8[ 4]);
+    puDst->au8[ 5] = RT_ABS(puSrc->ai8[ 5]);
+    puDst->au8[ 6] = RT_ABS(puSrc->ai8[ 6]);
+    puDst->au8[ 7] = RT_ABS(puSrc->ai8[ 7]);
+    puDst->au8[ 8] = RT_ABS(puSrc->ai8[ 8]);
+    puDst->au8[ 9] = RT_ABS(puSrc->ai8[ 9]);
+    puDst->au8[10] = RT_ABS(puSrc->ai8[10]);
+    puDst->au8[11] = RT_ABS(puSrc->ai8[11]);
+    puDst->au8[12] = RT_ABS(puSrc->ai8[12]);
+    puDst->au8[13] = RT_ABS(puSrc->ai8[13]);
+    puDst->au8[14] = RT_ABS(puSrc->ai8[14]);
+    puDst->au8[15] = RT_ABS(puSrc->ai8[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc))
+{
+    puDst->au8[ 0] = RT_ABS(puSrc->ai8[ 0]);
+    puDst->au8[ 1] = RT_ABS(puSrc->ai8[ 1]);
+    puDst->au8[ 2] = RT_ABS(puSrc->ai8[ 2]);
+    puDst->au8[ 3] = RT_ABS(puSrc->ai8[ 3]);
+    puDst->au8[ 4] = RT_ABS(puSrc->ai8[ 4]);
+    puDst->au8[ 5] = RT_ABS(puSrc->ai8[ 5]);
+    puDst->au8[ 6] = RT_ABS(puSrc->ai8[ 6]);
+    puDst->au8[ 7] = RT_ABS(puSrc->ai8[ 7]);
+    puDst->au8[ 8] = RT_ABS(puSrc->ai8[ 8]);
+    puDst->au8[ 9] = RT_ABS(puSrc->ai8[ 9]);
+    puDst->au8[10] = RT_ABS(puSrc->ai8[10]);
+    puDst->au8[11] = RT_ABS(puSrc->ai8[11]);
+    puDst->au8[12] = RT_ABS(puSrc->ai8[12]);
+    puDst->au8[13] = RT_ABS(puSrc->ai8[13]);
+    puDst->au8[14] = RT_ABS(puSrc->ai8[14]);
+    puDst->au8[15] = RT_ABS(puSrc->ai8[15]);
+    puDst->au8[16] = RT_ABS(puSrc->ai8[16]);
+    puDst->au8[17] = RT_ABS(puSrc->ai8[17]);
+    puDst->au8[18] = RT_ABS(puSrc->ai8[18]);
+    puDst->au8[19] = RT_ABS(puSrc->ai8[19]);
+    puDst->au8[20] = RT_ABS(puSrc->ai8[20]);
+    puDst->au8[21] = RT_ABS(puSrc->ai8[21]);
+    puDst->au8[22] = RT_ABS(puSrc->ai8[22]);
+    puDst->au8[23] = RT_ABS(puSrc->ai8[23]);
+    puDst->au8[24] = RT_ABS(puSrc->ai8[24]);
+    puDst->au8[25] = RT_ABS(puSrc->ai8[25]);
+    puDst->au8[26] = RT_ABS(puSrc->ai8[26]);
+    puDst->au8[27] = RT_ABS(puSrc->ai8[27]);
+    puDst->au8[28] = RT_ABS(puSrc->ai8[28]);
+    puDst->au8[29] = RT_ABS(puSrc->ai8[29]);
+    puDst->au8[30] = RT_ABS(puSrc->ai8[30]);
+    puDst->au8[31] = RT_ABS(puSrc->ai8[31]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au16[ 0] = RT_ABS(puSrc->ai16[ 0]);
+    puDst->au16[ 1] = RT_ABS(puSrc->ai16[ 1]);
+    puDst->au16[ 2] = RT_ABS(puSrc->ai16[ 2]);
+    puDst->au16[ 3] = RT_ABS(puSrc->ai16[ 3]);
+    puDst->au16[ 4] = RT_ABS(puSrc->ai16[ 4]);
+    puDst->au16[ 5] = RT_ABS(puSrc->ai16[ 5]);
+    puDst->au16[ 6] = RT_ABS(puSrc->ai16[ 6]);
+    puDst->au16[ 7] = RT_ABS(puSrc->ai16[ 7]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc))
+{
+    puDst->au16[ 0] = RT_ABS(puSrc->ai16[ 0]);
+    puDst->au16[ 1] = RT_ABS(puSrc->ai16[ 1]);
+    puDst->au16[ 2] = RT_ABS(puSrc->ai16[ 2]);
+    puDst->au16[ 3] = RT_ABS(puSrc->ai16[ 3]);
+    puDst->au16[ 4] = RT_ABS(puSrc->ai16[ 4]);
+    puDst->au16[ 5] = RT_ABS(puSrc->ai16[ 5]);
+    puDst->au16[ 6] = RT_ABS(puSrc->ai16[ 6]);
+    puDst->au16[ 7] = RT_ABS(puSrc->ai16[ 7]);
+    puDst->au16[ 8] = RT_ABS(puSrc->ai16[ 8]);
+    puDst->au16[ 9] = RT_ABS(puSrc->ai16[ 9]);
+    puDst->au16[10] = RT_ABS(puSrc->ai16[10]);
+    puDst->au16[11] = RT_ABS(puSrc->ai16[11]);
+    puDst->au16[12] = RT_ABS(puSrc->ai16[12]);
+    puDst->au16[13] = RT_ABS(puSrc->ai16[13]);
+    puDst->au16[14] = RT_ABS(puSrc->ai16[14]);
+    puDst->au16[15] = RT_ABS(puSrc->ai16[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    puDst->au32[ 0] = RT_ABS(puSrc->ai32[ 0]);
+    puDst->au32[ 1] = RT_ABS(puSrc->ai32[ 1]);
+    puDst->au32[ 2] = RT_ABS(puSrc->ai32[ 2]);
+    puDst->au32[ 3] = RT_ABS(puSrc->ai32[ 3]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc))
+{
+    puDst->au32[ 0] = RT_ABS(puSrc->ai32[ 0]);
+    puDst->au32[ 1] = RT_ABS(puSrc->ai32[ 1]);
+    puDst->au32[ 2] = RT_ABS(puSrc->ai32[ 2]);
+    puDst->au32[ 3] = RT_ABS(puSrc->ai32[ 3]);
+    puDst->au32[ 4] = RT_ABS(puSrc->ai32[ 4]);
+    puDst->au32[ 5] = RT_ABS(puSrc->ai32[ 5]);
+    puDst->au32[ 6] = RT_ABS(puSrc->ai32[ 6]);
+    puDst->au32[ 7] = RT_ABS(puSrc->ai32[ 7]);
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 

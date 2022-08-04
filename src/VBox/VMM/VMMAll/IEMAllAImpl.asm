@@ -3645,6 +3645,9 @@ IEMIMPL_MEDIA_F2 pmaxud,  0
 IEMIMPL_MEDIA_F2 pmaxsb,  0
 IEMIMPL_MEDIA_F2 pmaxsw,  1
 IEMIMPL_MEDIA_F2 pmaxsd,  0
+IEMIMPL_MEDIA_F2 pabsb,   1
+IEMIMPL_MEDIA_F2 pabsw,   1
+IEMIMPL_MEDIA_F2 pabsd,   1
 
 ;;
 ; Media instruction working on two full sized registers, but no FXSAVE state argument.
@@ -4180,6 +4183,46 @@ IEMIMPL_MEDIA_OPT_F3 vpmulhw
 IEMIMPL_MEDIA_OPT_F3 vpmulhuw
 IEMIMPL_MEDIA_OPT_F3 vpavgb
 IEMIMPL_MEDIA_OPT_F3 vpavgw
+
+
+;;
+; Media instruction working on one full sized source registers and one destination (AVX),
+; but no XSAVE state pointer argument.
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the source media register size operand (input).
+;
+%macro IEMIMPL_MEDIA_OPT_F2_AVX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  xmm0, [A1]
+        %1       xmm0, xmm0
+        vmovdqu  [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        %1       ymm0, ymm0
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsb
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsw
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsd
 
 
 ;

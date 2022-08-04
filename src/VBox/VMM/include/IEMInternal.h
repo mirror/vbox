@@ -1762,6 +1762,8 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U128,(PRTUINT128U puDst, PC
 typedef FNIEMAIMPLMEDIAOPTF3U128  *PFNIEMAIMPLMEDIAOPTF3U128;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2));
 typedef FNIEMAIMPLMEDIAOPTF3U256  *PFNIEMAIMPLMEDIAOPTF3U256;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF2U256,(PRTUINT256U puDst, PCRTUINT256U puSrc));
+typedef FNIEMAIMPLMEDIAOPTF2U256  *PFNIEMAIMPLMEDIAOPTF2U256;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pshufb_u64, iemAImpl_pshufb_u64_fallback;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pand_u64, iemAImpl_pandn_u64, iemAImpl_por_u64, iemAImpl_pxor_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pcmpeqb_u64,  iemAImpl_pcmpeqw_u64,  iemAImpl_pcmpeqd_u64;
@@ -1778,6 +1780,9 @@ FNIEMAIMPLMEDIAF2U64     iemAImpl_pmaddwd_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pmullw_u64, iemAImpl_pmulhw_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pminub_u64, iemAImpl_pmaxub_u64;
 FNIEMAIMPLMEDIAF2U64     iemAImpl_pminsw_u64, iemAImpl_pmaxsw_u64;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_pabsb_u64, iemAImpl_pabsb_u64_fallback;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_pabsw_u64, iemAImpl_pabsw_u64_fallback;
+FNIEMAIMPLMEDIAF2U64     iemAImpl_pabsd_u64, iemAImpl_pabsd_u64_fallback;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_psllw_u64, iemAImpl_psrlw_u64, iemAImpl_psraw_u64;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_pslld_u64, iemAImpl_psrld_u64, iemAImpl_psrad_u64;
 FNIEMAIMPLMEDIAOPTF2U64  iemAImpl_psllq_u64, iemAImpl_psrlq_u64;
@@ -1816,6 +1821,9 @@ FNIEMAIMPLMEDIAF2U128    iemAImpl_pmaxuw_u128, iemAImpl_pmaxuw_u128_fallback;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pmaxsb_u128, iemAImpl_pmaxsb_u128_fallback;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pmaxsw_u128;
 FNIEMAIMPLMEDIAF2U128    iemAImpl_pmaxsd_u128, iemAImpl_pmaxsd_u128_fallback;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_pabsb_u128, iemAImpl_pabsb_u128_fallback;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_pabsw_u128, iemAImpl_pabsw_u128_fallback;
+FNIEMAIMPLMEDIAF2U128    iemAImpl_pabsd_u128, iemAImpl_pabsd_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packsswb_u128, iemAImpl_packuswb_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_packssdw_u128, iemAImpl_packusdw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psllw_u128, iemAImpl_psrlw_u128, iemAImpl_psraw_u128;
@@ -1868,6 +1876,10 @@ FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpmulhuw_u128,   iemAImpl_vpmulhuw_u128_fallba
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpavgb_u128,     iemAImpl_vpavgb_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpavgw_u128,     iemAImpl_vpavgw_u128_fallback;
 
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsb_u128,     iemAImpl_vpabsb_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsw_u128,     iemAImpl_vpabsd_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsd_u128,     iemAImpl_vpabsw_u128_fallback;
+
 FNIEMAIMPLMEDIAF3U256    iemAImpl_vpshufb_u256,    iemAImpl_vpshufb_u256_fallback;
 FNIEMAIMPLMEDIAF3U256    iemAImpl_vpand_u256,      iemAImpl_vpand_u256_fallback;
 FNIEMAIMPLMEDIAF3U256    iemAImpl_vpandn_u256,     iemAImpl_vpandn_u256_fallback;
@@ -1911,6 +1923,10 @@ FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmulhw_u256,    iemAImpl_vpmulhw_u256_fallbac
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpmulhuw_u256,   iemAImpl_vpmulhuw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpavgb_u256,     iemAImpl_vpavgb_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpavgw_u256,     iemAImpl_vpavgw_u256_fallback;
+
+FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsb_u256,     iemAImpl_vpabsb_u256_fallback;
+FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsw_u256,     iemAImpl_vpabsw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsd_u256,     iemAImpl_vpabsd_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
@@ -2163,7 +2179,41 @@ typedef IEMOPMEDIAOPTF3 const *PCIEMOPMEDIAOPTF3;
     IEMOPMEDIAOPTF3_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
                                  RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 
+/**
+ * Function table for media instruction taking one full sized media source
+ * registers and one full sized destination register, but no additional state
+ * (AVX).
+ */
+typedef struct IEMOPMEDIAOPTF2
+{
+    PFNIEMAIMPLMEDIAOPTF2U128 pfnU128;
+    PFNIEMAIMPLMEDIAOPTF2U256 pfnU256;
+} IEMOPMEDIAOPTF2;
+/** Pointer to a media operation function table for 2 full sized ops (AVX). */
+typedef IEMOPMEDIAOPTF2 const *PCIEMOPMEDIAOPTF2;
 
+/** @def IEMOPMEDIAOPTF2_INIT_VARS_EX
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPMEDIAOPTF2_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF2 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPMEDIAOPTF2 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPMEDIAOPTF2_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF2 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPMEDIAOPTF2_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
+/** @def IEMOPMEDIAOPTF2_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPMEDIAOPTF2_INIT_VARS_EX */
+#define IEMOPMEDIAOPTF2_INIT_VARS(a_InstrNm) \
+    IEMOPMEDIAOPTF2_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
+                                 RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 /** @} */
 
 

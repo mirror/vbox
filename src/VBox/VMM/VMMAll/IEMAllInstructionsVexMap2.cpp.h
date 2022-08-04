@@ -214,14 +214,40 @@ FNIEMOP_STUB(iemOp_vbroadcastf128_Vqq_Mdq);
 /*  Opcode VEX.0F38 0x1b - invalid */
 /*  Opcode VEX.66.0F38 0x1b - invalid */
 /*  Opcode VEX.0F38 0x1c - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x1c. */
-FNIEMOP_STUB(iemOp_vpabsb_Vx_Wx);
+FNIEMOP_DEF(iemOp_vpabsb_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(VEX_RM, VPABSB, vpabsb, Vx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF2_INIT_VARS(vpabsb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x1d - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x1d. */
-FNIEMOP_STUB(iemOp_vpabsw_Vx_Wx);
+FNIEMOP_DEF(iemOp_vpabsw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(VEX_RM, VPABSW, vpabsw, Vx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF2_INIT_VARS(vpabsw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
 /*  Opcode VEX.0F38 0x1e - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x1e. */
-FNIEMOP_STUB(iemOp_vpabsd_Vx_Wx);
+FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(VEX_RM, VPABSD, vpabsd, Vx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF2_INIT_VARS(vpabsd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x1f - invalid */
 /*  Opcode VEX.66.0F38 0x1f - invalid */
 

@@ -279,6 +279,106 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_LowSrc, PCIEMOPMEDIAOPTF3, pImpl)
 }
 
 
+/**
+ * Common worker for AVX2 instructions on the forms:
+ *     - vpxxx    xmm0, xmm1/mem128
+ *     - vpxxx    ymm0, ymm1/mem256
+ *
+ * Takes function table for function w/o implicit state parameter.
+ *
+ * Exceptions type 4. AVX cpuid check for 128-bit operation, AVX2 for 256-bit.
+ */
+FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, PCIEMOPMEDIAOPTF2, pImpl)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
+            IEM_MC_BEGIN(2, 2);
+            IEM_MC_LOCAL(RTUINT256U,            uDst);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc);
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst, uDst, 0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 1);
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_FETCH_YREG_U256(uSrc,    IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnU256, puDst, puSrc);
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(PRTUINT128U,          puDst,  0);
+            IEM_MC_ARG(PCRTUINT128U,         puSrc,  1);
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_REF_XREG_U128(puDst,        IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_XREG_U128_CONST(puSrc,  IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnU128, puDst, puSrc);
+            IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEM_MC_BEGIN(2, 3);
+            IEM_MC_LOCAL(RTUINT256U,            uDst);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc);
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst, uDst, 0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 1);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U256_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnU256, puDst, puSrc);
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(   IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(2, 2);
+            IEM_MC_LOCAL(RTUINT128U,                uSrc);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+            IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U128_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnU128, puDst, puSrc);
+            IEM_MC_CLEAR_YREG_128_UP(           IEM_GET_MODRM_REG(pVCpu, bRm));
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
+
 
 /*  Opcode VEX.0F 0x00 - invalid */
 /*  Opcode VEX.0F 0x01 - invalid */
