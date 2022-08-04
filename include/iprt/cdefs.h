@@ -2011,7 +2011,7 @@
 /** @def RT_NOCRT_STR
  * Same as RT_NOCRT only it'll return a double quoted string of the result.
  */
-#ifndef RT_WITHOUT_NOCRT_WRAPPERS
+#if !defined(RT_WITHOUT_NOCRT_WRAPPERS) || defined(RT_FORCE_NOCRT_WRAPPERS)
 # define RT_NOCRT(name) nocrt_ ## name
 # define RT_NOCRT_STR(name) "nocrt_" # name
 #else
