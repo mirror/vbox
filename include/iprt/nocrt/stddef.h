@@ -31,6 +31,8 @@
 
 #include <iprt/types.h>
 
-#define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+#ifndef offsetof
+# define offsetof(a_Type, a_Member) RT_OFFSETOF(a_Type, a_Member)
+#endif
 
 #endif /* !IPRT_INCLUDED_nocrt_stddef_h */

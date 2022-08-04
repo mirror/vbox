@@ -34,15 +34,18 @@
 #include <iprt/types.h>
 #include <iprt/nocrt/sys/types.h>
 
-#if defined(RT_OS_WINDOWS) && defined(_USE_32BIT_TIME_T) && ARCH_BITS == 32
+#if !defined(_TIME_T_DEFINED)
+# if defined(RT_OS_WINDOWS) && defined(_USE_32BIT_TIME_T) && ARCH_BITS == 32
 typedef long time_t;
-#else
+# else
 typedef int64_t time_t;
-#endif
-#ifdef _MSC_VER
+# endif
+# ifdef _MSC_VER
 typedef int64_t __time64_t;
-#endif
+# endif
+#endif /* !_TIME_T_DEFINED */
 
+#if !defined(_INC_TIME)
 struct timespec
 {
     time_t tv_sec;
@@ -55,6 +58,8 @@ struct tm
     int tm_wday, tm_yday, tm_isdst, tm_gmtoff;
     const char *tm_zone;
 };
+
+#endif /* !_INC_TIME */
 
 RT_C_DECLS_BEGIN
 

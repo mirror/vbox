@@ -72,13 +72,17 @@
 #define LLONG_MAX       INT64_C(0x7fffffffffffffff)
 #define LLONG_MIN       (INT64_C(-0x7fffffffffffffff) - 1)
 
+#undef   SIZE_MAX
+#undef   SIZE_T_MAX
+#undef   SSIZE_MAX
+#undef   INTPTR_MAX
+#undef   UINTPTR_MAX
 #if ARCH_BITS == 32
 # define SIZE_T_MAX     0xffffffffU
 # define SSIZE_MAX      0x7fffffff
 # define INTPTR_MAX     0x7fffffff
 # define UINTPTR_MAX    0xffffffffU
 #elif ARCH_BITS == 64
-# define SIZE_T_MAX     UINT64_C(0xffffffffffffffff)
 # define SIZE_T_MAX     UINT64_C(0xffffffffffffffff)
 # define SSIZE_MAX      INT64_C(0x7fffffffffffffff)
 # define INTPTR_MAX     INT64_C(0x7fffffffffffffff)

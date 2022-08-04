@@ -31,11 +31,21 @@
 
 #include <iprt/types.h>
 
+#if !defined(_DEV_T_DEFINED)
 typedef RTDEV       dev_t;
+#endif
+#if !defined(_UCRT_RESTORE_CLANG_WARNINGS)
 typedef int         errno_t;
+#endif
+#if !defined(_INO_T_DEFINED)
 typedef RTINODE     ino_t;
+#endif
+#if !defined(_OFF_T_DEFINED)
 typedef RTFOFF      off_t;
+#endif
+#if !defined(_PID_T_DEFINED)
 typedef RTPROCESS   pid_t;
+#endif
 
 #endif /* !IPRT_INCLUDED_nocrt_sys_types_h */
 

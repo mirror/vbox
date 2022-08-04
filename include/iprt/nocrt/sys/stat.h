@@ -120,9 +120,9 @@ int     RT_NOCRT(_mkdir)(const char *, RTFMODE fMode);
 #  define _mkdir     RT_NOCRT(mkdir)
 # endif
 
-#endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
-
 RT_C_DECLS_END
+
+#endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
 
 #endif /* !IPRT_INCLUDED_nocrt_sys_stat_h */
 

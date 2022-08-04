@@ -32,7 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
-#include <limits.h>
+#include <iprt/nocrt/limits.h>
 
 RT_C_DECLS_BEGIN
 

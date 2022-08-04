@@ -31,7 +31,9 @@
 
 /* Just map it onto stdlib.h and alloca.h for now. */
 #include <stdlib.h>
-#include <iprt/alloca.h>
+#ifdef IN_RING3
+# include <iprt/alloca.h>
+#endif
 
 #endif /* !IPRT_INCLUDED_nocrt_malloc_h */
 

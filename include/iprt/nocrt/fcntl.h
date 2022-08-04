@@ -70,10 +70,11 @@ int  RT_NOCRT(_open)(const char *pszFilename, uint64_t fFlags, ... /*RTFMODE fMo
 #  define _open     RT_NOCRT(_open)
 # endif
 
+RT_C_DECLS_END
+
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
 
 
-RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_nocrt_fcntl_h */
 
