@@ -383,8 +383,12 @@ my_generate_all_projects()
     my_generate_project "curl"          "${lib}"                                --begin-incs "include" "${lib}/include"                         --end-includes "${lib}"
     lib=$(my_get_newest_ver src/libs/softfloat)
     my_generate_project "softfloat"     "${lib}"                                --begin-incs "include" "${lib}/source/include"                  --end-includes "${lib}"
-    lib=$(my_get_newest_ver src/libs/libvorbis)
-    my_generate_project "libvorbis"     "${lib}"                                --begin-incs "include" "${lib}/include/vorbis"                  --end-includes "${lib}"
+    if test -z "$MY_OPT_MINIMAL"; then
+        lib=$(my_get_newest_ver src/libs/libvorbis)
+        my_generate_project "libvorbis"     "${lib}"                            --begin-incs "include" "${lib}/include/vorbis"                  --end-includes "${lib}"
+        lib=$(my_get_newest_ver src/libs/libogg)
+        my_generate_project "libogg"        "${lib}"                            --begin-incs "include" "${lib}/include/ogg"                     --end-includes "${lib}"
+    fi
 
     # webtools
     my_generate_project "webtools"      "webtools"                              --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
