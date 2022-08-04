@@ -12211,7 +12211,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u64_fallback,(PCX86FXSTATE pFpuState, ui
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
-    RTUINT64U uDst;
+    RTUINT64U uDst = { 0 }; /* Shut up MSVC. */
 
     for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai8); i++)
     {
@@ -12250,7 +12250,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u64_fallback,(PCX86FXSTATE pFpuState, ui
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
-    RTUINT64U uDst;
+    RTUINT64U uDst = { 0 }; /* Shut up MSVC. */
 
     for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai16); i++)
     {
@@ -12289,7 +12289,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u64_fallback,(PCX86FXSTATE pFpuState, ui
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
-    RTUINT64U uDst;
+    RTUINT64U uDst = { 0 }; /* Shut up MSVC. */
 
     for (uint32_t i = 0; i < RT_ELEMENTS(uDst.ai32); i++)
     {
