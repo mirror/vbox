@@ -10128,9 +10128,21 @@ FNIEMOP_DEF(iemOp_pandn_Vx_Wx)
 /*  Opcode 0xf2 0x0f 0xdf - invalid */
 
 /** Opcode      0x0f 0xe0 - pavgb Pq, Qq */
-FNIEMOP_STUB(iemOp_pavgb_Pq_Qq);
+FNIEMOP_DEF(iemOp_pavgb_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PAVGB, pavgb, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSseOpt_FullFull_To_Full, iemAImpl_pavgb_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xe0 - pavgb Vx, Wx */
-FNIEMOP_STUB(iemOp_pavgb_Vx_Wx);
+FNIEMOP_DEF(iemOp_pavgb_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PAVGB, pavgb, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pavgb_u128);
+}
+
+
 /*  Opcode 0xf3 0x0f 0xe0 - invalid */
 /*  Opcode 0xf2 0x0f 0xe0 - invalid */
 
@@ -10148,6 +10160,7 @@ FNIEMOP_DEF(iemOp_psraw_Vx_Wx)
     IEMOP_MNEMONIC2(RM, PSRAW, psraw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psraw_u128);
 }
+
 
 /*  Opcode 0xf3 0x0f 0xe1 - invalid */
 /*  Opcode 0xf2 0x0f 0xe1 - invalid */
@@ -10167,13 +10180,26 @@ FNIEMOP_DEF(iemOp_psrad_Vx_Wx)
     return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psrad_u128);
 }
 
+
 /*  Opcode 0xf3 0x0f 0xe2 - invalid */
 /*  Opcode 0xf2 0x0f 0xe2 - invalid */
 
 /** Opcode      0x0f 0xe3 - pavgw Pq, Qq */
-FNIEMOP_STUB(iemOp_pavgw_Pq_Qq);
+FNIEMOP_DEF(iemOp_pavgw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PAVGW, pavgw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSseOpt_FullFull_To_Full, iemAImpl_pavgw_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xe3 - pavgw Vx, Wx */
-FNIEMOP_STUB(iemOp_pavgw_Vx_Wx);
+FNIEMOP_DEF(iemOp_pavgw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PAVGW, pavgw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pavgw_u128);
+}
+
+
 /*  Opcode 0xf3 0x0f 0xe3 - invalid */
 /*  Opcode 0xf2 0x0f 0xe3 - invalid */
 

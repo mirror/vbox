@@ -10478,6 +10478,226 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpminsd_u256_fallback,(PX86XSAVEAREA pExtState,
 
 
 /*
+ * PAVGB / VPAVGB / PAVGW / VPAVGW
+ */
+#define PAVGB_EXEC(a_Src1, a_Src2) ((uint8_t)(((uint16_t)(a_Src1) + (a_Src2) + 1) >> 1))
+#define PAVGW_EXEC(a_Src1, a_Src2) ((uint16_t)(((uint32_t)(a_Src1) + (a_Src2) + 1) >> 1))
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgb_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.au8[0] = PAVGB_EXEC(uSrc1.au8[0], uSrc2.au8[0]);
+    uDst.au8[1] = PAVGB_EXEC(uSrc1.au8[1], uSrc2.au8[1]);
+    uDst.au8[2] = PAVGB_EXEC(uSrc1.au8[2], uSrc2.au8[2]);
+    uDst.au8[3] = PAVGB_EXEC(uSrc1.au8[3], uSrc2.au8[3]);
+    uDst.au8[4] = PAVGB_EXEC(uSrc1.au8[4], uSrc2.au8[4]);
+    uDst.au8[5] = PAVGB_EXEC(uSrc1.au8[5], uSrc2.au8[5]);
+    uDst.au8[6] = PAVGB_EXEC(uSrc1.au8[6], uSrc2.au8[6]);
+    uDst.au8[7] = PAVGB_EXEC(uSrc1.au8[7], uSrc2.au8[7]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au8[ 0] = PAVGB_EXEC(uSrc1.au8[ 0], puSrc->au8[ 0]);
+    puDst->au8[ 1] = PAVGB_EXEC(uSrc1.au8[ 1], puSrc->au8[ 1]);
+    puDst->au8[ 2] = PAVGB_EXEC(uSrc1.au8[ 2], puSrc->au8[ 2]);
+    puDst->au8[ 3] = PAVGB_EXEC(uSrc1.au8[ 3], puSrc->au8[ 3]);
+    puDst->au8[ 4] = PAVGB_EXEC(uSrc1.au8[ 4], puSrc->au8[ 4]);
+    puDst->au8[ 5] = PAVGB_EXEC(uSrc1.au8[ 5], puSrc->au8[ 5]);
+    puDst->au8[ 6] = PAVGB_EXEC(uSrc1.au8[ 6], puSrc->au8[ 6]);
+    puDst->au8[ 7] = PAVGB_EXEC(uSrc1.au8[ 7], puSrc->au8[ 7]);
+    puDst->au8[ 8] = PAVGB_EXEC(uSrc1.au8[ 8], puSrc->au8[ 8]);
+    puDst->au8[ 9] = PAVGB_EXEC(uSrc1.au8[ 9], puSrc->au8[ 9]);
+    puDst->au8[10] = PAVGB_EXEC(uSrc1.au8[10], puSrc->au8[10]);
+    puDst->au8[11] = PAVGB_EXEC(uSrc1.au8[11], puSrc->au8[11]);
+    puDst->au8[12] = PAVGB_EXEC(uSrc1.au8[12], puSrc->au8[12]);
+    puDst->au8[13] = PAVGB_EXEC(uSrc1.au8[13], puSrc->au8[13]);
+    puDst->au8[14] = PAVGB_EXEC(uSrc1.au8[14], puSrc->au8[14]);
+    puDst->au8[15] = PAVGB_EXEC(uSrc1.au8[15], puSrc->au8[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.au16[0] = PAVGW_EXEC(uSrc1.au16[0], uSrc2.au16[0]);
+    uDst.au16[1] = PAVGW_EXEC(uSrc1.au16[1], uSrc2.au16[1]);
+    uDst.au16[2] = PAVGW_EXEC(uSrc1.au16[2], uSrc2.au16[2]);
+    uDst.au16[3] = PAVGW_EXEC(uSrc1.au16[3], uSrc2.au16[3]);
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au16[0] = PAVGW_EXEC(uSrc1.au16[0], puSrc->au16[0]);
+    puDst->au16[1] = PAVGW_EXEC(uSrc1.au16[1], puSrc->au16[1]);
+    puDst->au16[2] = PAVGW_EXEC(uSrc1.au16[2], puSrc->au16[2]);
+    puDst->au16[3] = PAVGW_EXEC(uSrc1.au16[3], puSrc->au16[3]);
+    puDst->au16[4] = PAVGW_EXEC(uSrc1.au16[4], puSrc->au16[4]);
+    puDst->au16[5] = PAVGW_EXEC(uSrc1.au16[5], puSrc->au16[5]);
+    puDst->au16[6] = PAVGW_EXEC(uSrc1.au16[6], puSrc->au16[6]);
+    puDst->au16[7] = PAVGW_EXEC(uSrc1.au16[7], puSrc->au16[7]);
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au8[ 0] = PAVGB_EXEC(uSrc1.au8[ 0], puSrc->au8[ 0]);
+    puDst->au8[ 1] = PAVGB_EXEC(uSrc1.au8[ 1], puSrc->au8[ 1]);
+    puDst->au8[ 2] = PAVGB_EXEC(uSrc1.au8[ 2], puSrc->au8[ 2]);
+    puDst->au8[ 3] = PAVGB_EXEC(uSrc1.au8[ 3], puSrc->au8[ 3]);
+    puDst->au8[ 4] = PAVGB_EXEC(uSrc1.au8[ 4], puSrc->au8[ 4]);
+    puDst->au8[ 5] = PAVGB_EXEC(uSrc1.au8[ 5], puSrc->au8[ 5]);
+    puDst->au8[ 6] = PAVGB_EXEC(uSrc1.au8[ 6], puSrc->au8[ 6]);
+    puDst->au8[ 7] = PAVGB_EXEC(uSrc1.au8[ 7], puSrc->au8[ 7]);
+    puDst->au8[ 8] = PAVGB_EXEC(uSrc1.au8[ 8], puSrc->au8[ 8]);
+    puDst->au8[ 9] = PAVGB_EXEC(uSrc1.au8[ 9], puSrc->au8[ 9]);
+    puDst->au8[10] = PAVGB_EXEC(uSrc1.au8[10], puSrc->au8[10]);
+    puDst->au8[11] = PAVGB_EXEC(uSrc1.au8[11], puSrc->au8[11]);
+    puDst->au8[12] = PAVGB_EXEC(uSrc1.au8[12], puSrc->au8[12]);
+    puDst->au8[13] = PAVGB_EXEC(uSrc1.au8[13], puSrc->au8[13]);
+    puDst->au8[14] = PAVGB_EXEC(uSrc1.au8[14], puSrc->au8[14]);
+    puDst->au8[15] = PAVGB_EXEC(uSrc1.au8[15], puSrc->au8[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pavgw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au8[ 0] = PAVGW_EXEC(uSrc1.au8[ 0], puSrc->au8[ 0]);
+    puDst->au8[ 1] = PAVGW_EXEC(uSrc1.au8[ 1], puSrc->au8[ 1]);
+    puDst->au8[ 2] = PAVGW_EXEC(uSrc1.au8[ 2], puSrc->au8[ 2]);
+    puDst->au8[ 3] = PAVGW_EXEC(uSrc1.au8[ 3], puSrc->au8[ 3]);
+    puDst->au8[ 4] = PAVGW_EXEC(uSrc1.au8[ 4], puSrc->au8[ 4]);
+    puDst->au8[ 5] = PAVGW_EXEC(uSrc1.au8[ 5], puSrc->au8[ 5]);
+    puDst->au8[ 6] = PAVGW_EXEC(uSrc1.au8[ 6], puSrc->au8[ 6]);
+    puDst->au8[ 7] = PAVGW_EXEC(uSrc1.au8[ 7], puSrc->au8[ 7]);
+    puDst->au8[ 8] = PAVGW_EXEC(uSrc1.au8[ 8], puSrc->au8[ 8]);
+    puDst->au8[ 9] = PAVGW_EXEC(uSrc1.au8[ 9], puSrc->au8[ 9]);
+    puDst->au8[10] = PAVGW_EXEC(uSrc1.au8[10], puSrc->au8[10]);
+    puDst->au8[11] = PAVGW_EXEC(uSrc1.au8[11], puSrc->au8[11]);
+    puDst->au8[12] = PAVGW_EXEC(uSrc1.au8[12], puSrc->au8[12]);
+    puDst->au8[13] = PAVGW_EXEC(uSrc1.au8[13], puSrc->au8[13]);
+    puDst->au8[14] = PAVGW_EXEC(uSrc1.au8[14], puSrc->au8[14]);
+    puDst->au8[15] = PAVGW_EXEC(uSrc1.au8[15], puSrc->au8[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpavgb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->au8[ 0] = PAVGB_EXEC(puSrc1->au8[ 0], puSrc2->au8[ 0]);
+    puDst->au8[ 1] = PAVGB_EXEC(puSrc1->au8[ 1], puSrc2->au8[ 1]);
+    puDst->au8[ 2] = PAVGB_EXEC(puSrc1->au8[ 2], puSrc2->au8[ 2]);
+    puDst->au8[ 3] = PAVGB_EXEC(puSrc1->au8[ 3], puSrc2->au8[ 3]);
+    puDst->au8[ 4] = PAVGB_EXEC(puSrc1->au8[ 4], puSrc2->au8[ 4]);
+    puDst->au8[ 5] = PAVGB_EXEC(puSrc1->au8[ 5], puSrc2->au8[ 5]);
+    puDst->au8[ 6] = PAVGB_EXEC(puSrc1->au8[ 6], puSrc2->au8[ 6]);
+    puDst->au8[ 7] = PAVGB_EXEC(puSrc1->au8[ 7], puSrc2->au8[ 7]);
+    puDst->au8[ 8] = PAVGB_EXEC(puSrc1->au8[ 8], puSrc2->au8[ 8]);
+    puDst->au8[ 9] = PAVGB_EXEC(puSrc1->au8[ 9], puSrc2->au8[ 9]);
+    puDst->au8[10] = PAVGB_EXEC(puSrc1->au8[10], puSrc2->au8[10]);
+    puDst->au8[11] = PAVGB_EXEC(puSrc1->au8[11], puSrc2->au8[11]);
+    puDst->au8[12] = PAVGB_EXEC(puSrc1->au8[12], puSrc2->au8[12]);
+    puDst->au8[13] = PAVGB_EXEC(puSrc1->au8[13], puSrc2->au8[13]);
+    puDst->au8[14] = PAVGB_EXEC(puSrc1->au8[14], puSrc2->au8[14]);
+    puDst->au8[15] = PAVGB_EXEC(puSrc1->au8[15], puSrc2->au8[15]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpavgb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au8[ 0] = PAVGB_EXEC(puSrc1->au8[ 0], puSrc2->au8[ 0]);
+    puDst->au8[ 1] = PAVGB_EXEC(puSrc1->au8[ 1], puSrc2->au8[ 1]);
+    puDst->au8[ 2] = PAVGB_EXEC(puSrc1->au8[ 2], puSrc2->au8[ 2]);
+    puDst->au8[ 3] = PAVGB_EXEC(puSrc1->au8[ 3], puSrc2->au8[ 3]);
+    puDst->au8[ 4] = PAVGB_EXEC(puSrc1->au8[ 4], puSrc2->au8[ 4]);
+    puDst->au8[ 5] = PAVGB_EXEC(puSrc1->au8[ 5], puSrc2->au8[ 5]);
+    puDst->au8[ 6] = PAVGB_EXEC(puSrc1->au8[ 6], puSrc2->au8[ 6]);
+    puDst->au8[ 7] = PAVGB_EXEC(puSrc1->au8[ 7], puSrc2->au8[ 7]);
+    puDst->au8[ 8] = PAVGB_EXEC(puSrc1->au8[ 8], puSrc2->au8[ 8]);
+    puDst->au8[ 9] = PAVGB_EXEC(puSrc1->au8[ 9], puSrc2->au8[ 9]);
+    puDst->au8[10] = PAVGB_EXEC(puSrc1->au8[10], puSrc2->au8[10]);
+    puDst->au8[11] = PAVGB_EXEC(puSrc1->au8[11], puSrc2->au8[11]);
+    puDst->au8[12] = PAVGB_EXEC(puSrc1->au8[12], puSrc2->au8[12]);
+    puDst->au8[13] = PAVGB_EXEC(puSrc1->au8[13], puSrc2->au8[13]);
+    puDst->au8[14] = PAVGB_EXEC(puSrc1->au8[14], puSrc2->au8[14]);
+    puDst->au8[15] = PAVGB_EXEC(puSrc1->au8[15], puSrc2->au8[15]);
+    puDst->au8[16] = PAVGB_EXEC(puSrc1->au8[16], puSrc2->au8[16]);
+    puDst->au8[17] = PAVGB_EXEC(puSrc1->au8[17], puSrc2->au8[17]);
+    puDst->au8[18] = PAVGB_EXEC(puSrc1->au8[18], puSrc2->au8[18]);
+    puDst->au8[19] = PAVGB_EXEC(puSrc1->au8[19], puSrc2->au8[19]);
+    puDst->au8[20] = PAVGB_EXEC(puSrc1->au8[20], puSrc2->au8[20]);
+    puDst->au8[21] = PAVGB_EXEC(puSrc1->au8[21], puSrc2->au8[21]);
+    puDst->au8[22] = PAVGB_EXEC(puSrc1->au8[22], puSrc2->au8[22]);
+    puDst->au8[23] = PAVGB_EXEC(puSrc1->au8[23], puSrc2->au8[23]);
+    puDst->au8[24] = PAVGB_EXEC(puSrc1->au8[24], puSrc2->au8[24]);
+    puDst->au8[25] = PAVGB_EXEC(puSrc1->au8[25], puSrc2->au8[25]);
+    puDst->au8[26] = PAVGB_EXEC(puSrc1->au8[26], puSrc2->au8[26]);
+    puDst->au8[27] = PAVGB_EXEC(puSrc1->au8[27], puSrc2->au8[27]);
+    puDst->au8[28] = PAVGB_EXEC(puSrc1->au8[28], puSrc2->au8[28]);
+    puDst->au8[29] = PAVGB_EXEC(puSrc1->au8[29], puSrc2->au8[29]);
+    puDst->au8[30] = PAVGB_EXEC(puSrc1->au8[30], puSrc2->au8[30]);
+    puDst->au8[31] = PAVGB_EXEC(puSrc1->au8[31], puSrc2->au8[31]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpavgw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->au16[ 0] = PAVGW_EXEC(puSrc1->au16[ 0], puSrc2->au16[ 0]);
+    puDst->au16[ 1] = PAVGW_EXEC(puSrc1->au16[ 1], puSrc2->au16[ 1]);
+    puDst->au16[ 2] = PAVGW_EXEC(puSrc1->au16[ 2], puSrc2->au16[ 2]);
+    puDst->au16[ 3] = PAVGW_EXEC(puSrc1->au16[ 3], puSrc2->au16[ 3]);
+    puDst->au16[ 4] = PAVGW_EXEC(puSrc1->au16[ 4], puSrc2->au16[ 4]);
+    puDst->au16[ 5] = PAVGW_EXEC(puSrc1->au16[ 5], puSrc2->au16[ 5]);
+    puDst->au16[ 6] = PAVGW_EXEC(puSrc1->au16[ 6], puSrc2->au16[ 6]);
+    puDst->au16[ 7] = PAVGW_EXEC(puSrc1->au16[ 7], puSrc2->au16[ 7]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpavgw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au16[ 0] = PAVGW_EXEC(puSrc1->au16[ 0], puSrc2->au16[ 0]);
+    puDst->au16[ 1] = PAVGW_EXEC(puSrc1->au16[ 1], puSrc2->au16[ 1]);
+    puDst->au16[ 2] = PAVGW_EXEC(puSrc1->au16[ 2], puSrc2->au16[ 2]);
+    puDst->au16[ 3] = PAVGW_EXEC(puSrc1->au16[ 3], puSrc2->au16[ 3]);
+    puDst->au16[ 4] = PAVGW_EXEC(puSrc1->au16[ 4], puSrc2->au16[ 4]);
+    puDst->au16[ 5] = PAVGW_EXEC(puSrc1->au16[ 5], puSrc2->au16[ 5]);
+    puDst->au16[ 6] = PAVGW_EXEC(puSrc1->au16[ 6], puSrc2->au16[ 6]);
+    puDst->au16[ 7] = PAVGW_EXEC(puSrc1->au16[ 7], puSrc2->au16[ 7]);
+    puDst->au16[ 8] = PAVGW_EXEC(puSrc1->au16[ 8], puSrc2->au16[ 8]);
+    puDst->au16[ 9] = PAVGW_EXEC(puSrc1->au16[ 9], puSrc2->au16[ 9]);
+    puDst->au16[10] = PAVGW_EXEC(puSrc1->au16[10], puSrc2->au16[10]);
+    puDst->au16[11] = PAVGW_EXEC(puSrc1->au16[11], puSrc2->au16[11]);
+    puDst->au16[12] = PAVGW_EXEC(puSrc1->au16[12], puSrc2->au16[12]);
+    puDst->au16[13] = PAVGW_EXEC(puSrc1->au16[13], puSrc2->au16[13]);
+    puDst->au16[14] = PAVGW_EXEC(puSrc1->au16[14], puSrc2->au16[14]);
+    puDst->au16[15] = PAVGW_EXEC(puSrc1->au16[15], puSrc2->au16[15]);
+}
+
+#undef PAVGB_EXEC
+#undef PAVGW_EXEC
+
+
+/*
  * PMOVMSKB / VPMOVMSKB
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
