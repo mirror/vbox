@@ -752,7 +752,7 @@ public:
         DetailsElementOptionTypeNetwork_Invalid         = 0,
         DetailsElementOptionTypeNetwork_NotAttached     = RT_BIT(0),
         DetailsElementOptionTypeNetwork_NAT             = RT_BIT(1),
-        DetailsElementOptionTypeNetwork_BridgetAdapter  = RT_BIT(2),
+        DetailsElementOptionTypeNetwork_BridgedAdapter  = RT_BIT(2),
         DetailsElementOptionTypeNetwork_InternalNetwork = RT_BIT(3),
         DetailsElementOptionTypeNetwork_HostOnlyAdapter = RT_BIT(4),
         DetailsElementOptionTypeNetwork_GenericDriver   = RT_BIT(5),

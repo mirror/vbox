@@ -519,7 +519,7 @@ UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UINetworkAttachmentEditor::
     switch (comEnum)
     {
         case KNetworkAttachmentType_NAT:             return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
-        case KNetworkAttachmentType_Bridged:         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
+        case KNetworkAttachmentType_Bridged:         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter;
         case KNetworkAttachmentType_Internal:        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
         case KNetworkAttachmentType_HostOnly:        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
         case KNetworkAttachmentType_Generic:         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;

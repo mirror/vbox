@@ -1278,7 +1278,7 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeN
     {
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("UICommon", "Not Attached", "network adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("UICommon", "NAT"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("UICommon", "Bridget Adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter:  strResult = QApplication::translate("UICommon", "Bridged Adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("UICommon", "Internal Network"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("UICommon", "Host Only Adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("UICommon", "Generic Driver"); break;
@@ -1306,7 +1306,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
     {
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = "NotAttached"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = "NAT"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = "BridgetAdapter"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter:  strResult = "BridgedAdapter"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = "InternalNetwork"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = "HostOnlyAdapter"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = "GenericDriver"; break;
@@ -1334,8 +1334,8 @@ fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(const Q
         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached;
     if (strDetailsElementOptionTypeNetwork.compare("NAT", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
-    if (strDetailsElementOptionTypeNetwork.compare("BridgetAdapter", Qt::CaseInsensitive) == 0)
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
+    if (strDetailsElementOptionTypeNetwork.compare("BridgedAdapter", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter;
     if (strDetailsElementOptionTypeNetwork.compare("InternalNetwork", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
     if (strDetailsElementOptionTypeNetwork.compare("HostOnlyAdapter", Qt::CaseInsensitive) == 0)
