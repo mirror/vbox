@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -39,12 +40,12 @@
  * @param   pvSrc       Pointer to the source block.
  * @param   cb          The size of the block.
  */
-#ifdef _MSC_VER
-# if _MSC_VER >= 1400
-_CRT_INSECURE_DEPRECATE_MEMORY(memcpy_s) void *  __cdecl memcpy(__out_bcount_full_opt(_Size) void * pvDst, __in_bcount_opt(_Size) const void * pvSrc, __in size_t cb)
-# else
-void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
-# endif
+#ifdef IPRT_NO_CRT
+# undef memcpy
+void *RT_NOCRT(memcpy)(void *pvDst, const void *pvSrc, size_t cb)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
+_CRT_INSECURE_DEPRECATE_MEMORY(memcpy_s) void * __cdecl
+memcpy(__out_bcount_full_opt(_Size) void *pvDst, __in_bcount_opt(_Size) const void *pvSrc, __in size_t cb)
 #else
 void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
 #endif
@@ -77,4 +78,5 @@ void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
 
     return pvDst;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(memcpy);
 

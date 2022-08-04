@@ -28,8 +28,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
-#include <iprt/types.h>
 
 
 /**
@@ -43,12 +43,12 @@
  * @param   pvSrc       Pointer to the source block.
  * @param   cb          The size of the block.
  */
-#ifdef _MSC_VER
-# if _MSC_VER >= 1400
-__checkReturn int __cdecl memcmp(__in_bcount_opt(_Size) const void * pvDst, __in_bcount_opt(_Size) const void * pvSrc, __in size_t cb)
-# else
-int __cdecl memcmp(const void *pvDst, const void *pvSrc, size_t cb)
-# endif
+#ifdef IPRT_NO_CRT
+# undef memcmp
+int RT_NOCRT(memcmp)(const void *pvDst, const void *pvSrc, size_t cb)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
+__checkReturn int __cdecl
+memcmp(__in_bcount_opt(_Size) const void *pvDst, __in_bcount_opt(_Size) const void *pvSrc, __in size_t cb)
 #else
 int memcmp(const void *pvDst, const void *pvSrc, size_t cb)
 #endif
@@ -83,4 +83,5 @@ int memcmp(const void *pvDst, const void *pvSrc, size_t cb)
 
     return 0;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(memcmp);
 

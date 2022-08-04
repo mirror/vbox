@@ -1707,12 +1707,65 @@ RuntimeBaseR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 
 
 #
+# kBuild unit for generating nocrt aliases.
+#
+# This scans assembly, C and C++ source files for the target looking for macros
+# that defines functions and variables needing aliasing.
+#
+UNIT_VBoxNoCrtAliases = CRT symbol alias for the rtnocr_xxx implementations
+define def_unit_VBoxNoCrtAliases_double_expansion
+$$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
+		$$(abspathex \
+			$$($(target)_SOURCES)\
+			$$($(target)_SOURCES.$(bld_trg))\
+			$$($(target)_SOURCES.$(bld_trg).$(bld_type))\
+			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch))\
+			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch).$(bld_type))\
+			$$($(target)_SOURCES.$(bld_trg_arch))\
+			$$($(target)_SOURCES.$(bld_trg_cpu))\
+			$$($(target)_SOURCES.$(bld_type)) \
+			, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
+               $$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed \
+		| $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,$(target),$$@,)
+	$$(QUIET)$$(APPEND) -tn "$$@" "$(target)_2_VBOX_NOCRT_ALIASES := \\"
+	$$(xargs $$(QUIET)$$(SED) -rn -f "$$(VBOX_PATH_RUNTIME_SRC)/nocrt-aliases.sed" --append "$$@" , $$(filter %.c %.cpp %.asm, $$^) )
+	$$(QUIET)$$(APPEND) -n "$$@" "" ""
+
+$$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
+	$$(call MSG_GENERATE,$(target),$$@,)
+	$$(QUIET)$$(MKDIR) -p -- "$$($(target)_0_OUTDIR)/genalias/"
+	$$(QUIET)$$(VBOX_GENALIAS) -f $$(if-expr "$(bld_trg)" == "win",coff,$$(if-expr "$(bld_trg)" == "darwin",macho,omf)) \
+		-D "$$($(target)_0_OUTDIR)/genalias/" $$($(target)_2_VBOX_NOCRT_ALIASES)
+	$$(QUIET)$$(APPEND) -tn "$$($(target)_0_OUTDIR)/genalias/genalias.ts" "$$($(target)_2_VBOX_NOCRT_ALIASES))"
+
+$(target)_2_OBJS += $$($(target)_2_VBOX_NOCRT_ALIAS_FILES)
+OTHER_CLEAN += $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE) $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts
+endef
+
+define def_unit_VBoxNoCrtAliases_target_pre
+ if1of ($(bld_trg), win os2 darwin) # Only non-ELF targets as ELF does not support aliasing.
+  $(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE := $(PATH_OUT)/nocrt-aliases-$(target).kmk
+  include $($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE)
+  $(target)_2_VBOX_NOCRT_ALIAS_FILES := \
+  	$(foreach alias,$($(target)_2_VBOX_NOCRT_ALIASES), $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
+  $(eval $(def_unit_VBoxNoCrtAliases_double_expansion))
+ endif
+endef
+
+
+#
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE = VBoxR3Static
 RuntimeR3_EXTENDS  = RuntimeBaseR3
 ifdef VBOX_WITH_NOCRT_STATIC
  if1of ($(KBUILD_TARGET), win)
+  RuntimeR3_USES  = $(RuntimeBaseR3_USES) VBoxNoCrtAliases
+  RuntimeR3_DEFS += $(filter-out RT_WITHOUT_NOCRT_WRAPPERS,$(RuntimeBaseR3_DEFS)) \
+  	RT_FORCE_NOCRT_WRAPPERS \
+	RT_WITH_NOCRT_ALIASES RT_WITH_NOCRT_UNDERSCORE_ALIASES RT_WITH_GENALIAS_NOCRT_ALIASES
+
   RuntimeR3_SOURCES = $(filter-out \
   	r3/alloc.cpp \
   	r3/alloc-ef.cpp \

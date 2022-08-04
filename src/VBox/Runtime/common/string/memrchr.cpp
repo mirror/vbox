@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -39,7 +40,8 @@
  * @param   ch      The char to search for.
  * @param   cb      The size of the block.
  */
-void *memrchr(const void *pv, int ch, size_t cb)
+#undef memrchr
+void *RT_NOCRT(memrchr)(const void *pv, int ch, size_t cb)
 {
     if (cb)
     {
@@ -56,4 +58,5 @@ void *memrchr(const void *pv, int ch, size_t cb)
 
     return NULL;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(memrchr);
 

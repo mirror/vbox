@@ -82,7 +82,7 @@ DECLHIDDEN(size_t) rtStrFormatBadPointer(size_t cch, PFNRTSTROUTPUT pfnOutput, v
  * @param     psz     Pointer to string.
  * @param     cchMax  Max length.
  */
-static unsigned _strnlen(const char *psz, unsigned cchMax)
+static unsigned rtStrFormatStrNLen(const char *psz, unsigned cchMax)
 {
     const char *pszC = psz;
 
@@ -99,7 +99,7 @@ static unsigned _strnlen(const char *psz, unsigned cchMax)
  * @param     pwsz    Pointer to string.
  * @param     cchMax  Max length.
  */
-static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
+static unsigned rtStrFormatStrNLenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
 {
 #ifdef IN_RING3
     unsigned cwc = 0;
@@ -130,7 +130,7 @@ static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
  * @param     pusz    Pointer to string.
  * @param     cchMax  Max length.
  */
-static unsigned _strnlenUni(PCRTUNICP pusz, unsigned cchMax)
+static unsigned rtStrFormatStrNLenUni(PCRTUNICP pusz, unsigned cchMax)
 {
     PCRTUNICP   puszC = pusz;
 
@@ -546,7 +546,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             PCRTUTF16 pwszStr = va_arg(args, PCRTUTF16);
                             if (RT_VALID_PTR(pwszStr))
                             {
-                                int cwcStr = _strnlenUtf16(pwszStr, (unsigned)cchPrecision);
+                                int cwcStr = rtStrFormatStrNLenUtf16(pwszStr, (unsigned)cchPrecision);
                                 if (!(fFlags & RTSTR_F_LEFT))
                                     while (--cchWidth >= cwcStr)
                                         cch += pfnOutput(pvArgOutput, " ", 1);
@@ -578,7 +578,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             PCRTUNICP puszStr = va_arg(args, PCRTUNICP);
                             if (RT_VALID_PTR(puszStr))
                             {
-                                int cchStr = _strnlenUni(puszStr, (unsigned)cchPrecision);
+                                int cchStr = rtStrFormatStrNLenUni(puszStr, (unsigned)cchPrecision);
                                 if (!(fFlags & RTSTR_F_LEFT))
                                     while (--cchWidth >= cchStr)
                                         cch += pfnOutput(pvArgOutput, " ", 1);
@@ -607,7 +607,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             const char *pszStr = va_arg(args, const char *);
                             if (RT_VALID_PTR(pszStr))
                             {
-                                int cchStr = _strnlen(pszStr, (unsigned)cchPrecision);
+                                int cchStr = rtStrFormatStrNLen(pszStr, (unsigned)cchPrecision);
                                 if (!(fFlags & RTSTR_F_LEFT))
                                     while (--cchWidth >= cchStr)
                                         cch += pfnOutput(pvArgOutput, " ", 1);

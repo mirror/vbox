@@ -1112,13 +1112,17 @@ BEGINPROC_EXPORTED %1
 ;; @def RT_NOCRT_BEGINPROC
 ; Starts a NOCRT procedure, taking care of name wrapping and aliasing.
 ;
-; Aliasing (weak ones, if supported) will be created when RT_WITH_NOCRT_ALIASES
-; is defined and RT_WITHOUT_NOCRT_WRAPPERS isn't.
+; Weak aliases for regular crt (%1) names to the nocrt_ prefixed ones will be
+; added when RT_WITH_NOCRT_ALIASES is defined and the output is ELF.  If
+; RT_WITH_GENALIAS_NOCRT_ALIASES is undefined, strong aliases will be added for
+; for non-ELF targets, otherwise it's assumed the genalias build tool will do
+; the weak aliasing for us.
 ;
 %macro RT_NOCRT_BEGINPROC 1
  %ifdef RT_WITH_NOCRT_ALIASES
 BEGINPROC_EXPORTED RT_NOCRT(%1)
   %ifdef ASM_FORMAT_ELF
+   ; ELF
    %ifdef RT_WITH_NOCRT_UNDERSCORE_ALIASES
 global NAME(_ %+ %1):function
 weak NAME(_ %+ %1)
@@ -1127,19 +1131,18 @@ SAFE_LABEL NAME(_ %+ %1)
 global NAME(%1):function
 weak NAME(%1)
 SAFE_LABEL NAME(%1)
-  %else
+
+  %elifndef RT_WITH_GENALIAS_NOCRT_ALIASES
+   ; non-ELF when not using genalias.
+   %ifdef RT_WITH_NOCRT_UNDERSCORE_ALIASES
+GLOBALNAME _%1
+   %endif
 GLOBALNAME %1
   %endif
  %else  ; !RT_WITH_NOCRT_ALIASES
 BEGINPROC_EXPORTED RT_NOCRT(%1)
  %endif ; !RT_WITH_NOCRT_ALIASES
 %endmacro ; RT_NOCRT_BEGINPROC
-
-%ifdef RT_WITH_NOCRT_ALIASES
- %ifdef RT_WITHOUT_NOCRT_WRAPPERS
-  %error "RT_WITH_NOCRT_ALIASES and RT_WITHOUT_NOCRT_WRAPPERS doesn't mix."
- %endif
-%endif
 
 
 

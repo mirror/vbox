@@ -24,18 +24,25 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
+#ifdef IPRT_NO_CRT
+# undef strchr
+char *RT_NOCRT(strchr)(const char *pszStr, int ch)
 #ifdef _MSC_VER
-_CRTIMP char * __cdecl strchr
+_CRTIMP char * __cdecl strchr(const char *pszStr, int ch)
 #elif defined(__WATCOMC__) && !defined(IPRT_NO_CRT)
-_WCRTLINK char *std::strchr
+_WCRTLINK char *std::strchr(const char *pszStr, int ch)
 #else
-char *strchr
-#endif
-    (const char *pszStr, int ch)
-#if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+char *strchr(const char *pszStr, int ch)
+# if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     __THROW
+# endif
 #endif
 {
     char chCur;
@@ -46,4 +53,5 @@ char *strchr
             return (char *)pszStr;
     return NULL;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strchr);
 

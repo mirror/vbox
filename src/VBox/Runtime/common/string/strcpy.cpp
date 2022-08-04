@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -38,11 +39,18 @@
  * @param   pszDst      Will contain a copy of pszSrc.
  * @param   pszSrc      Zero terminated string.
  */
-char* strcpy(char *pszDst, const char *pszSrc)
+#ifdef IPRT_NO_CRT
+# undef strlen
+char *RT_NOCRT(strcpy)(char *pszDst, const char *pszSrc)
+#else
+char *strcpy(char *pszDst, const char *pszSrc)
+#endif
 {
-    char *psz = pszDst;
-    while ((*psz++ = *pszSrc++))
-        ;
+    char * const pszRet = pszDst;
+    while ((*pszDst = *pszSrc++) != '\0')
+        pszDst++;
 
-    return pszDst;
+    return pszRet;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strcpy);
+

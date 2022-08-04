@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -37,7 +38,8 @@
  * @returns
  */
 #ifdef IPRT_NO_CRT
-char *strpbrk(const char *pszStr, const char *pszBreakChars)
+# undef strpbrk
+char *RT_NOCRT(strpbrk)(const char *pszStr, const char *pszBreakChars)
 #elif defined(_MSC_VER)
 # if _MSC_VER >= 1400
 _CRTIMP __checkReturn _CONST_RETURN char *  __cdecl strpbrk(__in_z const char *pszStr, __in_z const char *pszBreakChars)
@@ -65,4 +67,5 @@ char *strpbrk(const char *pszStr, const char *pszBreakChars)
     }
     return NULL;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strpbrk);
 

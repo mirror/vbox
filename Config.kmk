@@ -2336,6 +2336,9 @@ endif
 # bin2c (convert binary files into C arrays)
 VBOX_BIN2C      ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
+# genalias (generate aliases for nocrt_ functions)
+VBOX_GENALIAS   ?= $(PATH_OBJ)/genalias/genalias$(HOSTSUFF_EXE)
+
 # RTManifest (extension pack manifest utility)
 VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 
@@ -6272,7 +6275,6 @@ ifeq ($(KBUILD_TARGET),win)
   endif
  endif
  ifdef VBOX_WITH_NOCRT_STATIC
-  TEMPLATE_VBOXR3STATIC_DEFS           += RT_WITHOUT_NOCRT_WRAPPERS
   TEMPLATE_VBOXR3STATIC_CFLAGS          = $(filter-out -MD$(VBOX_VCC_CRT_TYPE) -EHsc, $(TEMPLATE_VBOXR3EXE_CFLAGS))   -Zl -EHc-s- -Gy
   TEMPLATE_VBOXR3STATIC_CXXFLAGS        = $(filter-out -MD$(VBOX_VCC_CRT_TYPE) -EHsc, $(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Zl -EHc-s- -Gy
   TEMPLATE_VBOXR3STATIC_PCHFLAGS        = $(filter-out -MD$(VBOX_VCC_CRT_TYPE) -EHsc, $(TEMPLATE_VBOXR3EXE_PCHFLAGS)) -Zl -EHc-s- -Gy
@@ -6488,8 +6490,10 @@ TEMPLATE_VBoxR3StaticNoCrt_SDKS          = $(subst WINSDK10-UCRT-STATIC,WINSDK10
 TEMPLATE_VBoxR3StaticNoCrt_DEFS          = $(TEMPLATE_VBoxR3Static_DEFS) \
 	RT_NO_CRT \
 	IN_RT_STATIC
+ifndef VBOX_WITH_NOCRT_STATIC
 TEMPLATE_VBoxR3StaticNoCrt_DEFS.win      = $(TEMPLATE_VBoxR3Static_DEFS.win) \
 	RT_WITHOUT_NOCRT_WRAPPERS
+endif
 TEMPLATE_VBoxR3StaticNoCrt_LIBS          = \
 	$(PATH_STAGE_LIB)/RuntimeR3NoCrt$(VBOX_SUFF_LIB)
 ifeq ($(KBUILD_TARGET),win)
@@ -8566,8 +8570,10 @@ TEMPLATE_VBoxGuestR3NoCrtExe_SDKS            = $(subst WINSDK10-UCRT-STATIC,WINS
 TEMPLATE_VBoxGuestR3NoCrtExe_DEFS            = $(TEMPLATE_VBoxGuestR3Exe_DEFS) \
 	RT_NO_CRT \
 	IN_RT_STATIC
+ifndef VBOX_WITH_NOCRT_STATIC
 TEMPLATE_VBoxGuestR3NoCrtExe_DEFS.win        = $(TEMPLATE_VBoxGuestR3Exe_DEFS.win) \
 	RT_WITHOUT_NOCRT_WRAPPERS
+endif
 TEMPLATE_VBoxGuestR3NoCrtExe_LIBS            = \
 	$(PATH_STAGE_LIB)/RuntimeR3NoCrt$(VBOX_SUFF_LIB)
 ifeq ($(KBUILD_TARGET),win)

@@ -28,11 +28,18 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
+#ifdef IPRT_NO_CRT
+# undef mempcpy
+void * RT_NOCRT(mempcpy)(void *pvDst, const void *pvSrc, size_t cb)
+#else
 RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb)
+#endif
 {
     return (char *)memcpy(pvDst, pvSrc, cb) + cb;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(mempcpy);
 

@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -39,14 +40,15 @@
  * @param   ch      The filler char.
  * @param   cb      The size of the block.
  */
+#undef memset
 #ifdef _MSC_VER
 # if _MSC_VER >= 1400
-void *  __cdecl memset(__out_bcount_full_opt(_Size) void *pvDst, __in int ch, __in size_t cb)
+void *  __cdecl RT_NOCRT(memset)(__out_bcount_full_opt(_Size) void *pvDst, __in int ch, __in size_t cb)
 # else
-void *memset(void *pvDst, int ch, size_t cb)
+void *RT_NOCRT(memset)(void *pvDst, int ch, size_t cb)
 # endif
 #else
-void *memset(void *pvDst, int ch, size_t cb)
+void *RT_NOCRT(memset)(void *pvDst, int ch, size_t cb)
 #endif
 {
     union
@@ -71,4 +73,4 @@ void *memset(void *pvDst, int ch, size_t cb)
 
     return pvDst;
 }
-
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(memset);

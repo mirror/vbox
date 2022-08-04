@@ -24,18 +24,25 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
-#ifdef _MSC_VER
-_CRTIMP int __cdecl strncmp
+#ifdef IPRT_NO_CRT
+# undef strncmp
+int RT_NOCRT(strncmp)(const char *pszStr1, const char *pszStr2, size_t cb)
+#elif defined( _MSC_VER)
+_CRTIMP int __cdecl strncmp(const char *pszStr1, const char *pszStr2, size_t cb)
 #elif defined(__WATCOMC__) && !defined(IPRT_NO_CRT)
-_WCRTLINK int std::strncmp
+_WCRTLINK int std::strncmp(const char *pszStr1, const char *pszStr2, size_t cb)
 #else
-int strncmp
-#endif
-    (const char *pszStr1, const char *pszStr2, size_t cb)
-#if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+int strncmp(const char *pszStr1, const char *pszStr2, size_t cb)
+# if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     __THROW
+# endif
 #endif
 {
     while (cb-- > 0)
@@ -49,3 +56,5 @@ int strncmp
     }
     return 0;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strncmp);
+
