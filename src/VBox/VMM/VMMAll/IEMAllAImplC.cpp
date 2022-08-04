@@ -8811,6 +8811,39 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u128,(PCX86FXSTATE pFpuState, PRTUINT128
 
 #endif
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->ai16[0] = RT_HIWORD(puSrc1->ai16[0] * puSrc2->ai16[0]);
+    puDst->ai16[1] = RT_HIWORD(puSrc1->ai16[1] * puSrc2->ai16[1]);
+    puDst->ai16[2] = RT_HIWORD(puSrc1->ai16[2] * puSrc2->ai16[2]);
+    puDst->ai16[3] = RT_HIWORD(puSrc1->ai16[3] * puSrc2->ai16[3]);
+    puDst->ai16[4] = RT_HIWORD(puSrc1->ai16[4] * puSrc2->ai16[4]);
+    puDst->ai16[5] = RT_HIWORD(puSrc1->ai16[5] * puSrc2->ai16[5]);
+    puDst->ai16[6] = RT_HIWORD(puSrc1->ai16[6] * puSrc2->ai16[6]);
+    puDst->ai16[7] = RT_HIWORD(puSrc1->ai16[7] * puSrc2->ai16[7]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->ai16[ 0] = RT_HIWORD(puSrc1->ai16[ 0] * puSrc2->ai16[ 0]);
+    puDst->ai16[ 1] = RT_HIWORD(puSrc1->ai16[ 1] * puSrc2->ai16[ 1]);
+    puDst->ai16[ 2] = RT_HIWORD(puSrc1->ai16[ 2] * puSrc2->ai16[ 2]);
+    puDst->ai16[ 3] = RT_HIWORD(puSrc1->ai16[ 3] * puSrc2->ai16[ 3]);
+    puDst->ai16[ 4] = RT_HIWORD(puSrc1->ai16[ 4] * puSrc2->ai16[ 4]);
+    puDst->ai16[ 5] = RT_HIWORD(puSrc1->ai16[ 5] * puSrc2->ai16[ 5]);
+    puDst->ai16[ 6] = RT_HIWORD(puSrc1->ai16[ 6] * puSrc2->ai16[ 6]);
+    puDst->ai16[ 7] = RT_HIWORD(puSrc1->ai16[ 7] * puSrc2->ai16[ 7]);
+    puDst->ai16[ 8] = RT_HIWORD(puSrc1->ai16[ 8] * puSrc2->ai16[ 8]);
+    puDst->ai16[ 9] = RT_HIWORD(puSrc1->ai16[ 9] * puSrc2->ai16[ 9]);
+    puDst->ai16[10] = RT_HIWORD(puSrc1->ai16[10] * puSrc2->ai16[10]);
+    puDst->ai16[11] = RT_HIWORD(puSrc1->ai16[11] * puSrc2->ai16[11]);
+    puDst->ai16[12] = RT_HIWORD(puSrc1->ai16[12] * puSrc2->ai16[12]);
+    puDst->ai16[13] = RT_HIWORD(puSrc1->ai16[13] * puSrc2->ai16[13]);
+    puDst->ai16[14] = RT_HIWORD(puSrc1->ai16[14] * puSrc2->ai16[14]);
+    puDst->ai16[15] = RT_HIWORD(puSrc1->ai16[15] * puSrc2->ai16[15]);
+}
+
 
 /*
  * PSRLW / VPSRLW
