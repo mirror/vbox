@@ -33,18 +33,19 @@
 #include <iprt/nocrt/stdlib.h>
 #include <iprt/nocrt/limits.h>
 #include <iprt/nocrt/errno.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 
 
 #undef strtoul
-long RT_NOCRT(strtoul)(const char *psz, char **ppszNext, int iBase)
+unsigned long RT_NOCRT(strtoul)(const char *psz, char **ppszNext, int iBase)
 {
-#if ULONG_BIT == 64
+#if LONG_BIT == 64
     uint64_t uValue = 0;
-    int rc = RTStrToUInt64Ex(psz, ppszNext, (unsigned)iBase, &uiValue);
-#elif ULONG_BIT == 32
-    int32_t uValue = 0;
-    int rc = RTStrToUInt32Ex(psz, ppszNext, (unsigned)iBase, &uiValue);
+    int rc = RTStrToUInt64Ex(psz, ppszNext, (unsigned)iBase, &uValue);
+#elif LONG_BIT == 32
+    uint32_t uValue = 0;
+    int rc = RTStrToUInt32Ex(psz, ppszNext, (unsigned)iBase, &uValue);
 #else
 # error "Unsupported LONG_BIT value"
 #endif
