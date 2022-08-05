@@ -30,19 +30,8 @@
 #endif
 
 #include <iprt/types.h>
-
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
-
-# define EINVAL 22
-# define ERANGE 34
-# define ENOMEM 12
-# define EACCES 13
-# define EAGAIN 35
-# define EFAULT 14
-# define EINTR 4
-# define ENOSYS 78
-# define ESRCH 3
-# define EEXIST 17
+# include <iprt/errno.h>
 
 RT_C_DECLS_BEGIN
 
@@ -52,7 +41,6 @@ RTDECL(int *) rtNoCrtGetErrnoPtr(void);
 RT_C_DECLS_END
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
-
 
 #endif /* !IPRT_INCLUDED_nocrt_errno_h */
 

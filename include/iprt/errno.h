@@ -121,7 +121,7 @@
 # elif defined(RT_OS_WINDOWS)
 #  define EDEADLK               (36)
 # else
-#  define EDEADLK               (45)
+#  define EDEADLK               (45)    /* solaris */
 # endif
 #endif
 #ifndef EDEADLOCK
@@ -205,6 +205,8 @@
 #  define ENOMSG                (83)
 # elif defined(RT_OS_LINUX)
 #  define ENOMSG                (42)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOMSG                (122)
 # else
 #  define ENOMSG                (35)
 # endif
@@ -221,7 +223,7 @@
 # elif defined(RT_OS_LINUX)
 #  define EIDRM                 (43)
 # elif defined(RT_OS_WINDOWS)
-#  define EIDRM                 (600)
+#  define EIDRM                 (111)
 # else
 #  define EIDRM                 (36)
 # endif
@@ -231,8 +233,10 @@
 #  define EINPROGRESS           (36)
 # elif defined(RT_OS_LINUX)
 #  define EINPROGRESS           (115)
+# elif defined(RT_OS_WINDOWS)
+#  define EINPROGRESS           (112)
 # else
-#  define EINPROGRESS           (150)
+#  define EINPROGRESS           (150)   /* solaris */
 # endif
 #endif
 #ifndef ENAMETOOLONG
@@ -240,8 +244,10 @@
 #  define ENAMETOOLONG          (63)
 # elif defined(RT_OS_LINUX)
 #  define ENAMETOOLONG          (36)
+# elif defined(RT_OS_WINDOWS)
+#  define ENAMETOOLONG          (38)
 # else
-#  define ENAMETOOLONG          (78)
+#  define ENAMETOOLONG          (78)    /* solaris */
 # endif
 #endif
 
@@ -258,6 +264,8 @@
 #  define ENOLCK                (77)
 # elif defined(RT_OS_LINUX)
 #  define ENOLCK                (37)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOLCK                (39)
 # else
 #  define ENOLCK                (46)
 # endif
@@ -272,7 +280,100 @@
 # endif
 #endif
 
-/** @todo errno constants {37..44}. */
+/* 38 - Also ENAMETOOLONG on Windows. */
+#ifndef ENOSYS
+# if defined(RT_ERRNO_OS_BSD)
+#  define ENOSYS                (78)
+# elif defined(RT_OS_LINUX)
+#  define ENOSYS                (38)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOSYS                (40)
+# else
+#  define ENOSYS                (89)    /* solaris */
+# endif
+#endif
+#ifndef ENOTSOCK
+# if defined(RT_ERRNO_OS_BSD)
+#  define ENOTSOCK              (38)
+# elif defined(RT_OS_LINUX)
+#  define ENOTSOCK              (88)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOTSOCK              (128)
+# else
+#  define ENOTSOCK              (95)    /* solaris */
+# endif
+#endif
+#ifndef EL2NSYNC
+# if defined(RT_OS_LINUX)
+#  define EL2NSYNC              (45)
+# elif defined(RT_ERRNO_OS_SYSV_HARDCORE)
+#  define EL2NSYNC              (38)    /* solaris */
+# endif
+#endif
+
+/* 39 - Also ENOLCK on Windows. */
+#ifndef ENOTEMPTY
+# if defined(RT_ERRNO_OS_BSD)
+#  define ENOTEMPTY             (66)
+# elif defined(RT_OS_LINUX)
+#  define ENOTEMPTY             (39)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOTEMPTY             (41)
+# else
+#  define ENOTEMPTY             (93)    /* solaris */
+# endif
+#endif
+#ifndef EDESTADDRREQ
+# if defined(RT_ERRNO_OS_BSD)
+#  define EDESTADDRREQ          (39)
+# elif defined(RT_OS_LINUX)
+#  define EDESTADDRREQ          (89)
+# elif defined(RT_OS_WINDOWS)
+#  define EDESTADDRREQ          (109)
+# else
+#  define EDESTADDRREQ          (96)    /* solaris */
+# endif
+#endif
+#ifndef EL3HLT
+# if defined(RT_OS_LINUX)
+#  define EL3HLT                (46)
+# elif defined(RT_ERRNO_OS_SYSV_HARDCORE)
+#  define EL3HLT                (39)    /* solaris */
+# endif
+#endif
+
+/* 40 - Also ENOSYS on Windows. */
+#ifndef ELOOP
+# if defined(RT_ERRNO_OS_BSD)
+#  define ELOOP                 (62)
+# elif defined(RT_OS_LINUX)
+#  define ELOOP                 (40)
+# elif defined(RT_OS_WINDOWS)
+#  define ELOOP                 (114)
+# else
+#  define ELOOP                 (90)    /* solaris */
+# endif
+#endif
+#ifndef EMSGSIZE
+# if defined(RT_ERRNO_OS_BSD)
+#  define EMSGSIZE              (40)
+# elif defined(RT_OS_LINUX)
+#  define EMSGSIZE              (90)
+# elif defined(RT_OS_WINDOWS)
+#  define EMSGSIZE              (115)
+# else
+#  define EMSGSIZE              (97)    /* solaris */
+# endif
+#endif
+#ifndef EL3RST
+# if defined(RT_OS_LINUX)
+#  define EL3RST                (47)
+# elif defined(RT_ERRNO_OS_SYSV_HARDCORE)
+#  define EL3RST                (40)    /* solaris */
+# endif
+#endif
+
+/** @todo errno constants {41..44}. */
 
 /* 45 - also EDEADLK on Solaris, EL2NSYNC on Linux. */
 #ifndef ENOTSUP
