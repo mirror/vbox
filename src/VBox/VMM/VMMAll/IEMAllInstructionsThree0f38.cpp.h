@@ -337,9 +337,23 @@ FNIEMOP_DEF(iemOp_phaddsw_Vx_Wx)
 
 
 /** Opcode      0x0f 0x38 0x04. */
-FNIEMOP_STUB(iemOp_pmaddubsw_Pq_Qq);
+FNIEMOP_DEF(iemOp_pmaddubsw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PMADDUBSW, pmaddubsw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_pmaddubsw_u64, &iemAImpl_pmaddubsw_u64_fallback),
+                          IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x04. */
-FNIEMOP_STUB(iemOp_pmaddubsw_Vx_Wx);
+FNIEMOP_DEF(iemOp_pmaddubsw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PMADDUBSW, pmaddubsw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_pmaddubsw_u128, iemAImpl_pmaddubsw_u128_fallback));
+
+}
 
 
 /** Opcode      0x0f 0x38 0x05. */

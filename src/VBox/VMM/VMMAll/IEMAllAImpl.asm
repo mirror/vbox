@@ -3657,6 +3657,7 @@ IEMIMPL_MEDIA_F2 phsubw,  1
 IEMIMPL_MEDIA_F2 phsubd,  1
 IEMIMPL_MEDIA_F2 phaddsw, 1
 IEMIMPL_MEDIA_F2 phsubsw, 1
+IEMIMPL_MEDIA_F2 pmaddubsw, 1
 
 
 ;;
@@ -4202,6 +4203,7 @@ IEMIMPL_MEDIA_OPT_F3 vphsubw
 IEMIMPL_MEDIA_OPT_F3 vphsubd
 IEMIMPL_MEDIA_OPT_F3 vphaddsw
 IEMIMPL_MEDIA_OPT_F3 vphsubsw
+IEMIMPL_MEDIA_OPT_F3 vpmaddubsw
 
 
 ;;
