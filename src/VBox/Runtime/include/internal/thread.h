@@ -42,6 +42,9 @@
 #ifdef RT_WITH_ICONV_CACHE
 # include "internal/string.h"
 #endif
+#if defined(IPRT_NO_CRT) && defined(IN_RING3)
+# include "internal/nocrt.h"
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -105,7 +108,7 @@ typedef struct RTTHREADINT
 #ifdef RT_WITH_ICONV_CACHE
     /** Handle cache for iconv.
      * @remarks ASSUMES sizeof(void *) >= sizeof(iconv_t). */
-    void *ahIconvs[RTSTRICONV_END];
+    void                   *ahIconvs[RTSTRICONV_END];
 #endif
 #ifdef IPRT_WITH_GENERIC_TLS
     /** The TLS entries for this thread. */
@@ -113,6 +116,10 @@ typedef struct RTTHREADINT
 #endif
     /** Thread name. */
     char                    szName[RTTHREAD_NAME_LEN];
+#if defined(IPRT_NO_CRT) && defined(IN_RING3)
+    /** No-CRT per thread data. */
+    RTNOCRTTHREADDATA       NoCrt;
+#endif
 } RTTHREADINT;
 /** Pointer to the internal representation of a thread. */
 typedef RTTHREADINT *PRTTHREADINT;

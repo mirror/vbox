@@ -394,6 +394,10 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
 #ifdef RT_WITH_ICONV_CACHE
         rtStrIconvCacheInit(pThread);
 #endif
+#if defined(IPRT_NO_CRT) && defined(IN_RING3)
+        pThread->NoCrt.enmAllocType = RTNOCRTTHREADDATA::kAllocType_Embedded;
+        RTListInit(&pThread->NoCrt.ListEntry);
+#endif
         rc = RTSemEventMultiCreate(&pThread->EventUser);
         if (RT_SUCCESS(rc))
         {
@@ -464,6 +468,13 @@ DECLHIDDEN(void) rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThrea
                 {
                     ASMAtomicIncU32(&g_cThreadInTree);
                     ASMAtomicIncU32(&g_acRTThreadTypeStats[pThread->enmType]);
+
+#if defined(IPRT_NO_CRT) && defined(IN_RING3)
+                    RTTLS const iTlsPerThread = g_iTlsRtNoCrtPerThread;
+                    if (   iTlsPerThread != NIL_RTTLS
+                        && RTTlsGet(iTlsPerThread) == NULL)
+                        RTTlsSet(iTlsPerThread, &pThread->NoCrt);
+#endif
                 }
 
                 AssertReleaseMsg(fRc, ("Lock problem? %p (%RTnthrd) %s\n", pThread, NativeThread, pThread->szName));
@@ -686,6 +697,14 @@ DECLHIDDEN(void) rtThreadTerminate(PRTTHREADINT pThread, int rc)
      * key clashes in the AVL tree and release our reference to ourself.
      */
     rtThreadRemove(pThread);
+
+#if defined(IPRT_NO_CRT) && defined(IN_RING3)
+    RTTLS const iTlsPerThread = g_iTlsRtNoCrtPerThread;
+    if (   iTlsPerThread != NIL_RTTLS
+        && RTTlsGet(iTlsPerThread) == &pThread->NoCrt)
+        RTTlsSet(iTlsPerThread, &g_RtNoCrtPerThreadDummy);
+#endif
+
     rtThreadRelease(pThread);
 }
 

@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
- * IPRT / No-CRT - Dummy errno.h.
+ * IPRT - No-CRT - Per-thread errno variable.
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle Corporation
+ * Copyright (C) 2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,36 +24,22 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_errno_h
-#define IPRT_INCLUDED_nocrt_errno_h
-#ifndef RT_WITHOUT_PRAGMA_ONCE
-# pragma once
-#endif
 
-#include <iprt/types.h>
-
-#ifdef IPRT_NO_CRT_FOR_3RD_PARTY
-
-# define EINVAL 22
-# define ERANGE 34
-# define ENOMEM 12
-# define EACCES 13
-# define EAGAIN 35
-# define EFAULT 14
-# define EINTR 4
-# define ENOSYS 78
-# define ESRCH 3
-# define EEXIST 17
-
-RT_C_DECLS_BEGIN
-
-RTDECL(int *) rtNoCrtGetErrnoPtr(void);
-# define errno (*rtNoCrtGetErrnoPtr())
-
-RT_C_DECLS_END
-
-#endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define IPRT_NO_CRT_FOR_3RD_PARTY
+#include "internal/nocrt.h"
+#include <iprt/nocrt/errno.h>
 
 
-#endif /* !IPRT_INCLUDED_nocrt_errno_h */
+RTDECL(int *) rtNoCrtGetErrnoPtr(void)
+{
+    PRTNOCRTTHREADDATA pNoCrtData = rtNoCrtThreadDataGet();
+    if (pNoCrtData)
+        return &pNoCrtData->iErrno;
+
+    static int s_iFallbackErrno;
+    return &s_iFallbackErrno;
+}
 

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT Strings, strtok().
+ * IPRT - No-Crt - Per Thread Data, TLS index.
  */
 
 /*
- * Copyright (C) 2022 Oracle Corporation
+ * Copyright (C) 2006-2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,21 +26,23 @@
 
 
 /*********************************************************************************************************************************
-*   Header Files                                                                                                                 *
+*   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/nocrt.h"
-#include <iprt/string.h>
 
 
-#undef strtok
-char *RT_NOCRT(strtok)(char *psz, const char *pszDelimiters)
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** The TLS index for the no-CRT per thread data.  */
+RTTLS volatile      g_iTlsRtNoCrtPerThread = NIL_RTTLS;
+
+/** The TLS entry of an IPRT thread points to this during the cleanup (paranoia). */
+RTNOCRTTHREADDATA   g_RtNoCrtPerThreadDummy =
 {
-    PRTNOCRTTHREADDATA pNoCrtData = rtNoCrtThreadDataGet();
-    if (pNoCrtData)
-        return RT_NOCRT(strtok_r)(psz, pszDelimiters, &pNoCrtData->pszStrToken);
-
-    static char *s_pszFallback = NULL;
-    return RT_NOCRT(strtok_r)(psz, pszDelimiters, &s_pszFallback);
-}
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strtok);
+    { NULL, NULL },
+    RTNOCRTTHREADDATA::kAllocType_CleanupDummy,
+    0,
+    NULL
+};
 

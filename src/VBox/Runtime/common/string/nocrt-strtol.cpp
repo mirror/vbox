@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT Strings, strtok().
+ * IPRT - No-CRT - strtol.
  */
 
 /*
@@ -28,19 +28,33 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define IPRT_NO_CRT_FOR_3RD_PARTY
 #include "internal/nocrt.h"
+#include <iprt/nocrt/stdlib.h>
+#include <iprt/nocrt/limits.h>
+#include <iprt/nocrt/errno.h>
 #include <iprt/string.h>
 
 
-#undef strtok
-char *RT_NOCRT(strtok)(char *psz, const char *pszDelimiters)
+long RT_NOCRT(strtol)(const char *psz, char **ppszNext, int iBase)
 {
-    PRTNOCRTTHREADDATA pNoCrtData = rtNoCrtThreadDataGet();
-    if (pNoCrtData)
-        return RT_NOCRT(strtok_r)(psz, pszDelimiters, &pNoCrtData->pszStrToken);
-
-    static char *s_pszFallback = NULL;
-    return RT_NOCRT(strtok_r)(psz, pszDelimiters, &s_pszFallback);
+#if LONG_BIT == 64
+    int64_t iValue = 0;
+    int rc = RTStrToInt64Ex(psz, ppszNext, (unsigned)iBase, &iValue);
+#elif LONG_BIT == 32
+    int32_t iValue = 0;
+    int rc = RTStrToInt32Ex(psz, ppszNext, (unsigned)iBase, &iValue);
+#else
+# error "Unsupported LONG_BIT value"
+#endif
+    if (rc == VINF_SUCCESS || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES)
+        return iValue;
+    if (rc == VWRN_NUMBER_TOO_BIG)
+    {
+        errno = ERANGE;
+        return iValue < 0 ? LONG_MIN : LONG_MAX;
+    }
+    errno = EINVAL;
+    return 0;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strtok);
 

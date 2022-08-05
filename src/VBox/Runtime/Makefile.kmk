@@ -1801,7 +1801,11 @@ ifdef VBOX_WITH_NOCRT_STATIC
        \
   	common/string/nocrt-strdup.cpp \
   	common/string/nocrt-stricmp.cpp \
-  	common/string/strtok_r.cpp
+  	common/string/nocrt-strtol.cpp \
+  	common/string/strtok_r.cpp \
+  	r3/nocrt-per-thread-1.cpp \
+  	r3/nocrt-per-thread-2.cpp \
+  	r3/nocrt-errno.cpp
   RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
   	common/misc/setjmp.asm \
   	common/string/memcpy.asm \
