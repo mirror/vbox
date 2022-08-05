@@ -1804,6 +1804,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/nocrt-strtol.cpp \
   	common/string/nocrt-strtoll.cpp \
   	common/string/nocrt-strtoul.cpp \
+  	common/string/nocrt-strtoull.cpp \
   	common/string/strtok_r.cpp \
   	r3/nocrt-per-thread-1.cpp \
   	r3/nocrt-per-thread-2.cpp \
