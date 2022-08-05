@@ -43,8 +43,8 @@ RT_C_DECLS_BEGIN
 typedef void FNRTNOCRTATEXITCALLBACK(void) /*RT_NOEXCEPT*/;
 typedef FNRTNOCRTATEXITCALLBACK *PFNRTNOCRTATEXITCALLBACK;
 #if defined(_MSC_VER) && defined(RT_WITHOUT_NOCRT_WRAPPERS) /* Clashes with compiler internal prototype or smth. */
-int          rtnocrt_atexit(PFNRTNOCRTATEXITCALLBACK) RT_NOEXCEPT;
-# define     atexit rtnocrt_atexit
+int          nocrt_atexit(PFNRTNOCRTATEXITCALLBACK) RT_NOEXCEPT;
+# define     atexit nocrt_atexit
 #else
 int          RT_NOCRT(atexit)(PFNRTNOCRTATEXITCALLBACK) RT_NOEXCEPT;
 #endif

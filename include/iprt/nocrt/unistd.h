@@ -31,8 +31,9 @@
 
 #include <iprt/nocrt/sys/types.h>
 
-
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
+
+RT_C_DECLS_BEGIN
 
 int             RT_NOCRT(access)(const char *, int) RT_NOEXCEPT;
 int             RT_NOCRT(dup)(int) RT_NOEXCEPT;
@@ -79,6 +80,8 @@ int             RT_NOCRT(_unlink)(const char *) RT_NOEXCEPT;
 #  define _getppid      RT_NOCRT(getppid)
 #  define _unlink       RT_NOCRT(unlink)
 # endif
+
+RT_C_DECLS_END
 
 #endif /* IPRT_NO_CRT_FOR_3RD_PARTY */
 
