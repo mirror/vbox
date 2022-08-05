@@ -324,14 +324,49 @@ FNIEMOP_STUB(iemOp_phaddsw_Vx_Wx);
 FNIEMOP_STUB(iemOp_pmaddubsw_Pq_Qq);
 /** Opcode 0x66 0x0f 0x38 0x04. */
 FNIEMOP_STUB(iemOp_pmaddubsw_Vx_Wx);
+
+
 /** Opcode      0x0f 0x38 0x05. */
-FNIEMOP_STUB(iemOp_phsubw_Pq_Qq);
+FNIEMOP_DEF(iemOp_phsubw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PHSUBW, phsubw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phsubw_u64,&iemAImpl_phsubw_u64_fallback),
+                          IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x05. */
-FNIEMOP_STUB(iemOp_phsubw_Vx_Wx);
+FNIEMOP_DEF(iemOp_phsubw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PHSUBW, phsubw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phsubw_u128, iemAImpl_phsubw_u128_fallback));
+
+}
+
+
 /** Opcode      0x0f 0x38 0x06. */
-FNIEMOP_STUB(iemOp_phsubd_Pq_Qq);
+FNIEMOP_DEF(iemOp_phsubd_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PHSUBD, phsubd, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phsubd_u64,&iemAImpl_phsubd_u64_fallback),
+                          IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+}
+
+
+
 /** Opcode 0x66 0x0f 0x38 0x06. */
-FNIEMOP_STUB(iemOp_phsubdq_Vx_Wx);
+FNIEMOP_DEF(iemOp_phsubd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PHSUBD, phsubd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phsubd_u128, iemAImpl_phsubd_u128_fallback));
+
+}
+
+
 /** Opcode      0x0f 0x38 0x07. */
 FNIEMOP_STUB(iemOp_phsubsw_Pq_Qq);
 /** Opcode 0x66 0x0f 0x38 0x07. */
@@ -1368,7 +1403,7 @@ IEM_STATIC const PFNIEMOP g_apfnThreeByte0f38[] =
     /* 0x03 */  iemOp_phaddsw_Pq_Qq,        iemOp_phaddsw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x04 */  iemOp_pmaddubsw_Pq_Qq,      iemOp_pmaddubsw_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x05 */  iemOp_phsubw_Pq_Qq,         iemOp_phsubw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x06 */  iemOp_phsubd_Pq_Qq,         iemOp_phsubdq_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x06 */  iemOp_phsubd_Pq_Qq,         iemOp_phsubd_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x07 */  iemOp_phsubsw_Pq_Qq,        iemOp_phsubsw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x08 */  iemOp_psignb_Pq_Qq,         iemOp_psignb_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x09 */  iemOp_psignw_Pq_Qq,         iemOp_psignw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,

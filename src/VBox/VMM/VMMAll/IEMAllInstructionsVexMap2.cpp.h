@@ -66,11 +66,29 @@ FNIEMOP_STUB(iemOp_vphaddsw_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x04. */
 FNIEMOP_STUB(iemOp_vpmaddubsw_Vx_Hx_Wx);
 /* Opcode VEX.0F38 0x05 - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x05. */
-FNIEMOP_STUB(iemOp_vphsubw_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vphsubw_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPHSUBW, vphsubw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vphsubw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x06 - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x06. */
-FNIEMOP_STUB(iemOp_vphsubdq_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vphsubd_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPHSUBD, vphsubd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vphsubd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x07 - invalid. */
 /** Opcode VEX.66.0F38 0x07. */
 FNIEMOP_STUB(iemOp_vphsubsw_Vx_Hx_Wx);
@@ -1543,7 +1561,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap2[] =
     /* 0x03 */  iemOp_InvalidNeedRM,        iemOp_vphaddsw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x04 */  iemOp_InvalidNeedRM,        iemOp_vpmaddubsw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x05 */  iemOp_InvalidNeedRM,        iemOp_vphsubw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x06 */  iemOp_InvalidNeedRM,        iemOp_vphsubdq_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x06 */  iemOp_InvalidNeedRM,        iemOp_vphsubd_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x07 */  iemOp_InvalidNeedRM,        iemOp_vphsubsw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x08 */  iemOp_InvalidNeedRM,        iemOp_vpsignb_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x09 */  iemOp_InvalidNeedRM,        iemOp_vpsignw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
