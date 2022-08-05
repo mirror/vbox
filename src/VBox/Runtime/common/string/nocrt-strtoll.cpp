@@ -55,4 +55,5 @@ long long RT_NOCRT(strtoll)(const char *psz, char **ppszNext, int iBase)
     errno = EINVAL;
     return 0;
 }
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strtoll);
 
