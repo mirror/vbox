@@ -12471,7 +12471,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u128_fallback,(PCX86FXSTATE pFpuState, P
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U uDst = { 0 }; /* Shut up MSVC. */ /* puDst can be the same as one of the source operands. */
+    RTUINT128U uDst; /* puDst can be the same as one of the source operands. */
 
     uDst.ai16[0] = puSrc1->ai16[0] + puSrc1->ai16[1];
     uDst.ai16[1] = puSrc1->ai16[2] + puSrc1->ai16[3];
@@ -12490,7 +12490,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddw_u128_fallback,(PRTUINT128U puDst, PCRTU
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U uDst = { 0 }; /* Shut up MSVC. */ /* puDst can be the same as one of the source operands. */
+    RTUINT256U uDst; /* puDst can be the same as one of the source operands. */
 
     uDst.ai16[ 0] = puSrc1->ai16[ 0] + puSrc1->ai16[ 1];
     uDst.ai16[ 1] = puSrc1->ai16[ 2] + puSrc1->ai16[ 3];
@@ -12519,7 +12519,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddw_u256_fallback,(PRTUINT256U puDst, PCRTU
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    RTUINT128U uDst = { 0 }; /* Shut up MSVC. */ /* puDst can be the same as one of the source operands. */
+    RTUINT128U uDst; /* puDst can be the same as one of the source operands. */
 
     uDst.ai32[0] = puSrc1->ai32[0] + puSrc1->ai32[1];
     uDst.ai32[1] = puSrc1->ai32[2] + puSrc1->ai32[3];
@@ -12534,7 +12534,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddd_u128_fallback,(PRTUINT128U puDst, PCRTU
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    RTUINT256U uDst = { 0 }; /* Shut up MSVC. */ /* puDst can be the same as one of the source operands. */
+    RTUINT256U uDst; /* puDst can be the same as one of the source operands. */
 
     uDst.ai32[0] = puSrc1->ai32[ 0] + puSrc1->ai32[ 1];
     uDst.ai32[1] = puSrc1->ai32[ 2] + puSrc1->ai32[ 3];
