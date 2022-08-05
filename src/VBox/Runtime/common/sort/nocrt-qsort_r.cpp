@@ -44,4 +44,3 @@ void RT_NOCRT(qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(qsort_r);
 
-
