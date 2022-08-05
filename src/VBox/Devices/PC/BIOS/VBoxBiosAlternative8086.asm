@@ -1240,7 +1240,7 @@ section CONST progbits vstart=0xe0 align=1 ; size=0xcda class=DATA group=DGROUP
 section CONST2 progbits vstart=0xdba align=1 ; size=0x400 class=DATA group=DGROUP
   ; disGetNextSymbol 0xf0dba LB 0x400 -> off=0x0 cb=0000000000000018 uValue=00000000000f0dba 'bios_cvs_version_string'
 bios_cvs_version_string:                     ; 0xf0dba LB 0x18
-    db  'VirtualBox 7.0.0_ALPHA1', 000h
+    db  'VirtualBox 7.0.0_ALPHA2', 000h
   ; disGetNextSymbol 0xf0dd2 LB 0x3e8 -> off=0x0 cb=0000000000000008 uValue=00000000000f0dd2 '_bios_prefix_string'
 _bios_prefix_string:                         ; 0xf0dd2 LB 0x8
     db  'BIOS: ', 000h, 000h
@@ -17791,30 +17791,30 @@ biosorg_check_before_or_at_0E02Eh:           ; 0xfe000 LB 0x30
     db  'XM'
   ; disGetNextSymbol 0xfe030 LB 0x1fd0 -> off=0x0 cb=0000000000000004 uValue=00000000000f0030 'eoi_both_pics'
 eoi_both_pics:                               ; 0xfe030 LB 0x4
-    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe030 orgs.asm:236
-    out strict byte 0a0h, AL                  ; e6 a0                       ; 0xfe032 orgs.asm:237
+    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe030 orgs.asm:237
+    out strict byte 0a0h, AL                  ; e6 a0                       ; 0xfe032 orgs.asm:238
   ; disGetNextSymbol 0xfe034 LB 0x1fcc -> off=0x0 cb=0000000000000005 uValue=00000000000f0034 'eoi_master_pic'
 eoi_master_pic:                              ; 0xfe034 LB 0x5
-    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe034 orgs.asm:239
-    out strict byte 020h, AL                  ; e6 20                       ; 0xfe036 orgs.asm:240
-    retn                                      ; c3                          ; 0xfe038 orgs.asm:241
+    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe034 orgs.asm:240
+    out strict byte 020h, AL                  ; e6 20                       ; 0xfe036 orgs.asm:241
+    retn                                      ; c3                          ; 0xfe038 orgs.asm:242
   ; disGetNextSymbol 0xfe039 LB 0x1fc7 -> off=0x0 cb=000000000000000b uValue=0000000000000039 'set_int_vects'
 set_int_vects:                               ; 0xfe039 LB 0xb
-    mov word [bx], ax                         ; 89 07                       ; 0xfe039 orgs.asm:248
-    mov word [bx+002h], dx                    ; 89 57 02                    ; 0xfe03b orgs.asm:249
-    add bx, strict byte 00004h                ; 83 c3 04                    ; 0xfe03e orgs.asm:250
-    loop 0e039h                               ; e2 f6                       ; 0xfe041 orgs.asm:251
-    retn                                      ; c3                          ; 0xfe043 orgs.asm:252
+    mov word [bx], ax                         ; 89 07                       ; 0xfe039 orgs.asm:249
+    mov word [bx+002h], dx                    ; 89 57 02                    ; 0xfe03b orgs.asm:250
+    add bx, strict byte 00004h                ; 83 c3 04                    ; 0xfe03e orgs.asm:251
+    loop 0e039h                               ; e2 f6                       ; 0xfe041 orgs.asm:252
+    retn                                      ; c3                          ; 0xfe043 orgs.asm:253
   ; disGetNextSymbol 0xfe044 LB 0x1fbc -> off=0x0 cb=0000000000000006 uValue=00000000000f0044 'eoi_jmp_post'
 eoi_jmp_post:                                ; 0xfe044 LB 0x6
-    in AL, strict byte 060h                   ; e4 60                       ; 0xfe044 orgs.asm:260
-    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe046 orgs.asm:261
-    out strict byte 020h, AL                  ; e6 20                       ; 0xfe048 orgs.asm:262
+    in AL, strict byte 060h                   ; e4 60                       ; 0xfe044 orgs.asm:261
+    mov AL, strict byte 020h                  ; b0 20                       ; 0xfe046 orgs.asm:262
+    out strict byte 020h, AL                  ; e6 20                       ; 0xfe048 orgs.asm:263
   ; disGetNextSymbol 0xfe04a LB 0x1fb6 -> off=0x0 cb=0000000000000009 uValue=00000000000f004a 'no_eoi_jmp_post'
 no_eoi_jmp_post:                             ; 0xfe04a LB 0x9
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xfe04a orgs.asm:265
-    mov ds, ax                                ; 8e d8                       ; 0xfe04d orgs.asm:266
-    jmp far [word 00067h]                     ; ff 2e 67 00                 ; 0xfe04f orgs.asm:267
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xfe04a orgs.asm:266
+    mov ds, ax                                ; 8e d8                       ; 0xfe04d orgs.asm:267
+    jmp far [word 00067h]                     ; ff 2e 67 00                 ; 0xfe04f orgs.asm:268
   ; disGetNextSymbol 0xfe053 LB 0x1fad -> off=0x0 cb=0000000000000002 uValue=00000000000f0053 'seg_40_value'
 seg_40_value:                                ; 0xfe053 LB 0x2
     inc ax                                    ; 40                          ; 0xfe053
@@ -17827,419 +17827,398 @@ biosorg_check_before_or_at_0E059h:           ; 0xfe055 LB 0x6
     dec bp                                    ; 4d                          ; 0xfe05a
   ; disGetNextSymbol 0xfe05b LB 0x1fa5 -> off=0x0 cb=0000000000000068 uValue=00000000000f005b 'post'
 post:                                        ; 0xfe05b LB 0x68
-    cli                                       ; fa                          ; 0xfe05b orgs.asm:276
-    jmp short 0e064h                          ; eb 06                       ; 0xfe05c orgs.asm:287
-    mov AL, strict byte 001h                  ; b0 01                       ; 0xfe05e orgs.asm:293
-    out strict byte 092h, AL                  ; e6 92                       ; 0xfe060 orgs.asm:294
-    jmp short 0e062h                          ; eb fe                       ; 0xfe062 orgs.asm:295
-    mov AL, strict byte 00fh                  ; b0 0f                       ; 0xfe064 orgs.asm:300
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfe066 orgs.asm:301
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfe068 orgs.asm:302
-    xchg ah, al                               ; 86 c4                       ; 0xfe06a orgs.asm:305
-    in AL, strict byte 064h                   ; e4 64                       ; 0xfe06c orgs.asm:309
-    test AL, strict byte 004h                 ; a8 04                       ; 0xfe06e orgs.asm:310
-    je short 0e085h                           ; 74 13                       ; 0xfe070 orgs.asm:311
+    cli                                       ; fa                          ; 0xfe05b orgs.asm:277
+    jmp short 0e064h                          ; eb 06                       ; 0xfe05c orgs.asm:288
+    mov AL, strict byte 001h                  ; b0 01                       ; 0xfe05e orgs.asm:294
+    out strict byte 092h, AL                  ; e6 92                       ; 0xfe060 orgs.asm:295
+    jmp short 0e062h                          ; eb fe                       ; 0xfe062 orgs.asm:296
+    mov AL, strict byte 00fh                  ; b0 0f                       ; 0xfe064 orgs.asm:301
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfe066 orgs.asm:302
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfe068 orgs.asm:303
+    xchg ah, al                               ; 86 c4                       ; 0xfe06a orgs.asm:306
+    in AL, strict byte 064h                   ; e4 64                       ; 0xfe06c orgs.asm:310
+    test AL, strict byte 004h                 ; a8 04                       ; 0xfe06e orgs.asm:311
+    je short 0e085h                           ; 74 13                       ; 0xfe070 orgs.asm:312
     db  08ah, 0c4h
-    ; mov al, ah                                ; 8a c4                     ; 0xfe072 orgs.asm:314
+    ; mov al, ah                                ; 8a c4                     ; 0xfe072 orgs.asm:315
     db  00ah, 0c0h
-    ; or al, al                                 ; 0a c0                     ; 0xfe074 orgs.asm:315
-    jne short 0e085h                          ; 75 0d                       ; 0xfe076 orgs.asm:316
-    mov ds, [cs:0e053h]                       ; 2e 8e 1e 53 e0              ; 0xfe078 orgs.asm:322
-    cmp word [word 00072h], 01234h            ; 81 3e 72 00 34 12           ; 0xfe07d orgs.asm:323
-    jne short 0e05eh                          ; 75 d9                       ; 0xfe083 orgs.asm:324
-    mov AL, strict byte 00fh                  ; b0 0f                       ; 0xfe085 orgs.asm:328
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfe087 orgs.asm:329
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe089 orgs.asm:330
-    out strict byte 071h, AL                  ; e6 71                       ; 0xfe08b orgs.asm:331
+    ; or al, al                                 ; 0a c0                     ; 0xfe074 orgs.asm:316
+    jne short 0e085h                          ; 75 0d                       ; 0xfe076 orgs.asm:317
+    mov ds, [cs:0e053h]                       ; 2e 8e 1e 53 e0              ; 0xfe078 orgs.asm:323
+    cmp word [word 00072h], 01234h            ; 81 3e 72 00 34 12           ; 0xfe07d orgs.asm:324
+    jne short 0e05eh                          ; 75 d9                       ; 0xfe083 orgs.asm:325
+    mov AL, strict byte 00fh                  ; b0 0f                       ; 0xfe085 orgs.asm:329
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfe087 orgs.asm:330
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe089 orgs.asm:331
+    out strict byte 071h, AL                  ; e6 71                       ; 0xfe08b orgs.asm:332
     db  08ah, 0c4h
-    ; mov al, ah                                ; 8a c4                     ; 0xfe08d orgs.asm:335
-    cmp AL, strict byte 009h                  ; 3c 09                       ; 0xfe08f orgs.asm:336
-    je short 0e0a5h                           ; 74 12                       ; 0xfe091 orgs.asm:337
-    cmp AL, strict byte 00ah                  ; 3c 0a                       ; 0xfe093 orgs.asm:338
-    je short 0e0a5h                           ; 74 0e                       ; 0xfe095 orgs.asm:339
+    ; mov al, ah                                ; 8a c4                     ; 0xfe08d orgs.asm:336
+    cmp AL, strict byte 009h                  ; 3c 09                       ; 0xfe08f orgs.asm:337
+    je short 0e0a5h                           ; 74 12                       ; 0xfe091 orgs.asm:338
+    cmp AL, strict byte 00ah                  ; 3c 0a                       ; 0xfe093 orgs.asm:339
+    je short 0e0a5h                           ; 74 0e                       ; 0xfe095 orgs.asm:340
     db  032h, 0c0h
-    ; xor al, al                                ; 32 c0                     ; 0xfe097 orgs.asm:341
-    out strict byte 00dh, AL                  ; e6 0d                       ; 0xfe099 orgs.asm:344
-    out strict byte 0dah, AL                  ; e6 da                       ; 0xfe09b orgs.asm:345
-    mov AL, strict byte 0c0h                  ; b0 c0                       ; 0xfe09d orgs.asm:348
-    out strict byte 0d6h, AL                  ; e6 d6                       ; 0xfe09f orgs.asm:349
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe0a1 orgs.asm:350
-    out strict byte 0d4h, AL                  ; e6 d4                       ; 0xfe0a3 orgs.asm:351
+    ; xor al, al                                ; 32 c0                     ; 0xfe097 orgs.asm:342
+    out strict byte 00dh, AL                  ; e6 0d                       ; 0xfe099 orgs.asm:345
+    out strict byte 0dah, AL                  ; e6 da                       ; 0xfe09b orgs.asm:346
+    mov AL, strict byte 0c0h                  ; b0 c0                       ; 0xfe09d orgs.asm:349
+    out strict byte 0d6h, AL                  ; e6 d6                       ; 0xfe09f orgs.asm:350
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe0a1 orgs.asm:351
+    out strict byte 0d4h, AL                  ; e6 d4                       ; 0xfe0a3 orgs.asm:352
     db  08ah, 0c4h
-    ; mov al, ah                                ; 8a c4                     ; 0xfe0a5 orgs.asm:355
-    cmp AL, strict byte 000h                  ; 3c 00                       ; 0xfe0a7 orgs.asm:356
-    je short 0e0c3h                           ; 74 18                       ; 0xfe0a9 orgs.asm:357
-    cmp AL, strict byte 00dh                  ; 3c 0d                       ; 0xfe0ab orgs.asm:359
-    jnc short 0e0c3h                          ; 73 14                       ; 0xfe0ad orgs.asm:360
-    cmp AL, strict byte 009h                  ; 3c 09                       ; 0xfe0af orgs.asm:361
-    jne short 0e0b6h                          ; 75 03                       ; 0xfe0b1 orgs.asm:362
-    jmp near 0e350h                           ; e9 9a 02                    ; 0xfe0b3 orgs.asm:363
-    mov sp, 00400h                            ; bc 00 04                    ; 0xfe0b6 orgs.asm:366
-    cmp AL, strict byte 005h                  ; 3c 05                       ; 0xfe0b9 orgs.asm:368
-    je short 0e044h                           ; 74 87                       ; 0xfe0bb orgs.asm:369
-    cmp AL, strict byte 00ah                  ; 3c 0a                       ; 0xfe0bd orgs.asm:371
-    je short 0e04ah                           ; 74 89                       ; 0xfe0bf orgs.asm:372
-    jmp short 0e0c3h                          ; eb 00                       ; 0xfe0c1 orgs.asm:376
+    ; mov al, ah                                ; 8a c4                     ; 0xfe0a5 orgs.asm:356
+    cmp AL, strict byte 000h                  ; 3c 00                       ; 0xfe0a7 orgs.asm:357
+    je short 0e0c3h                           ; 74 18                       ; 0xfe0a9 orgs.asm:358
+    cmp AL, strict byte 00dh                  ; 3c 0d                       ; 0xfe0ab orgs.asm:360
+    jnc short 0e0c3h                          ; 73 14                       ; 0xfe0ad orgs.asm:361
+    cmp AL, strict byte 009h                  ; 3c 09                       ; 0xfe0af orgs.asm:362
+    jne short 0e0b6h                          ; 75 03                       ; 0xfe0b1 orgs.asm:363
+    jmp near 0e350h                           ; e9 9a 02                    ; 0xfe0b3 orgs.asm:364
+    mov sp, 00400h                            ; bc 00 04                    ; 0xfe0b6 orgs.asm:367
+    cmp AL, strict byte 005h                  ; 3c 05                       ; 0xfe0b9 orgs.asm:369
+    je short 0e044h                           ; 74 87                       ; 0xfe0bb orgs.asm:370
+    cmp AL, strict byte 00ah                  ; 3c 0a                       ; 0xfe0bd orgs.asm:372
+    je short 0e04ah                           ; 74 89                       ; 0xfe0bf orgs.asm:373
+    jmp short 0e0c3h                          ; eb 00                       ; 0xfe0c1 orgs.asm:377
   ; disGetNextSymbol 0xfe0c3 LB 0x1f3d -> off=0x0 cb=00000000000001f2 uValue=00000000000f00c3 'normal_post'
 normal_post:                                 ; 0xfe0c3 LB 0x1f2
-    mov ax, 07800h                            ; b8 00 78                    ; 0xfe0c3 orgs.asm:385
+    mov ax, 07800h                            ; b8 00 78                    ; 0xfe0c3 orgs.asm:386
     db  08bh, 0e0h
-    ; mov sp, ax                                ; 8b e0                     ; 0xfe0c6 orgs.asm:386
+    ; mov sp, ax                                ; 8b e0                     ; 0xfe0c6 orgs.asm:387
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe0c8 orgs.asm:387
-    mov ds, ax                                ; 8e d8                       ; 0xfe0ca orgs.asm:388
-    mov ss, ax                                ; 8e d0                       ; 0xfe0cc orgs.asm:389
-    mov es, ax                                ; 8e c0                       ; 0xfe0ce orgs.asm:393
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe0c8 orgs.asm:388
+    mov ds, ax                                ; 8e d8                       ; 0xfe0ca orgs.asm:389
+    mov ss, ax                                ; 8e d0                       ; 0xfe0cc orgs.asm:390
+    mov es, ax                                ; 8e c0                       ; 0xfe0ce orgs.asm:394
     db  033h, 0ffh
-    ; xor di, di                                ; 33 ff                     ; 0xfe0d0 orgs.asm:394
-    cld                                       ; fc                          ; 0xfe0d2 orgs.asm:395
-    mov cx, 00239h                            ; b9 39 02                    ; 0xfe0d3 orgs.asm:396
-    rep stosw                                 ; f3 ab                       ; 0xfe0d6 orgs.asm:397
-    inc di                                    ; 47                          ; 0xfe0d8 orgs.asm:398
-    inc di                                    ; 47                          ; 0xfe0d9 orgs.asm:399
-    mov cx, 005c6h                            ; b9 c6 05                    ; 0xfe0da orgs.asm:400
-    rep stosw                                 ; f3 ab                       ; 0xfe0dd orgs.asm:401
+    ; xor di, di                                ; 33 ff                     ; 0xfe0d0 orgs.asm:395
+    cld                                       ; fc                          ; 0xfe0d2 orgs.asm:396
+    mov cx, 00239h                            ; b9 39 02                    ; 0xfe0d3 orgs.asm:397
+    rep stosw                                 ; f3 ab                       ; 0xfe0d6 orgs.asm:398
+    inc di                                    ; 47                          ; 0xfe0d8 orgs.asm:399
+    inc di                                    ; 47                          ; 0xfe0d9 orgs.asm:400
+    mov cx, 005c6h                            ; b9 c6 05                    ; 0xfe0da orgs.asm:401
+    rep stosw                                 ; f3 ab                       ; 0xfe0dd orgs.asm:402
     db  033h, 0dbh
-    ; xor bx, bx                                ; 33 db                     ; 0xfe0df orgs.asm:405
-    add bx, 01000h                            ; 81 c3 00 10                 ; 0xfe0e1 orgs.asm:407
-    cmp bx, 09000h                            ; 81 fb 00 90                 ; 0xfe0e5 orgs.asm:408
-    jnc short 0e0f6h                          ; 73 0b                       ; 0xfe0e9 orgs.asm:409
-    mov es, bx                                ; 8e c3                       ; 0xfe0eb orgs.asm:410
+    ; xor bx, bx                                ; 33 db                     ; 0xfe0df orgs.asm:406
+    add bx, 01000h                            ; 81 c3 00 10                 ; 0xfe0e1 orgs.asm:408
+    cmp bx, 09000h                            ; 81 fb 00 90                 ; 0xfe0e5 orgs.asm:409
+    jnc short 0e0f6h                          ; 73 0b                       ; 0xfe0e9 orgs.asm:410
+    mov es, bx                                ; 8e c3                       ; 0xfe0eb orgs.asm:411
     db  033h, 0ffh
-    ; xor di, di                                ; 33 ff                     ; 0xfe0ed orgs.asm:411
-    mov cx, 08000h                            ; b9 00 80                    ; 0xfe0ef orgs.asm:412
-    rep stosw                                 ; f3 ab                       ; 0xfe0f2 orgs.asm:413
-    jmp short 0e0e1h                          ; eb eb                       ; 0xfe0f4 orgs.asm:414
-    mov es, bx                                ; 8e c3                       ; 0xfe0f6 orgs.asm:416
+    ; xor di, di                                ; 33 ff                     ; 0xfe0ed orgs.asm:412
+    mov cx, 08000h                            ; b9 00 80                    ; 0xfe0ef orgs.asm:413
+    rep stosw                                 ; f3 ab                       ; 0xfe0f2 orgs.asm:414
+    jmp short 0e0e1h                          ; eb eb                       ; 0xfe0f4 orgs.asm:415
+    mov es, bx                                ; 8e c3                       ; 0xfe0f6 orgs.asm:417
     db  033h, 0ffh
-    ; xor di, di                                ; 33 ff                     ; 0xfe0f8 orgs.asm:417
-    mov cx, 07ff8h                            ; b9 f8 7f                    ; 0xfe0fa orgs.asm:418
-    rep stosw                                 ; f3 ab                       ; 0xfe0fd orgs.asm:419
+    ; xor di, di                                ; 33 ff                     ; 0xfe0f8 orgs.asm:418
+    mov cx, 07ff8h                            ; b9 f8 7f                    ; 0xfe0fa orgs.asm:419
+    rep stosw                                 ; f3 ab                       ; 0xfe0fd orgs.asm:420
     db  033h, 0dbh
-    ; xor bx, bx                                ; 33 db                     ; 0xfe0ff orgs.asm:420
-    push CS                                   ; 0e                          ; 0xfe101 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe102 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe103 orgs.asm:104
-    call 0175dh                               ; e8 56 36                    ; 0xfe104 orgs.asm:424
+    ; xor bx, bx                                ; 33 db                     ; 0xfe0ff orgs.asm:421
+    push CS                                   ; 0e                          ; 0xfe101 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe102 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe103 orgs.asm:105
+    call 0175dh                               ; e8 56 36                    ; 0xfe104 orgs.asm:425
     db  033h, 0dbh
-    ; xor bx, bx                                ; 33 db                     ; 0xfe107 orgs.asm:431
-    mov ds, bx                                ; 8e db                       ; 0xfe109 orgs.asm:432
-    mov cx, strict word 00060h                ; b9 60 00                    ; 0xfe10b orgs.asm:433
-    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe10e orgs.asm:434
-    mov dx, 0f000h                            ; ba 00 f0                    ; 0xfe111 orgs.asm:435
-    call 0e039h                               ; e8 22 ff                    ; 0xfe114 orgs.asm:436
-    mov bx, 001a0h                            ; bb a0 01                    ; 0xfe117 orgs.asm:441
-    mov cx, strict word 00010h                ; b9 10 00                    ; 0xfe11a orgs.asm:442
-    call 0e039h                               ; e8 19 ff                    ; 0xfe11d orgs.asm:443
-    mov AL, strict byte 016h                  ; b0 16                       ; 0xfe120 orgs.asm:446
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfe122 orgs.asm:447
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfe124 orgs.asm:448
+    ; xor bx, bx                                ; 33 db                     ; 0xfe107 orgs.asm:432
+    mov ds, bx                                ; 8e db                       ; 0xfe109 orgs.asm:433
+    mov cx, strict word 00060h                ; b9 60 00                    ; 0xfe10b orgs.asm:434
+    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe10e orgs.asm:435
+    mov dx, 0f000h                            ; ba 00 f0                    ; 0xfe111 orgs.asm:436
+    call 0e039h                               ; e8 22 ff                    ; 0xfe114 orgs.asm:437
+    mov bx, 001a0h                            ; bb a0 01                    ; 0xfe117 orgs.asm:442
+    mov cx, strict word 00010h                ; b9 10 00                    ; 0xfe11a orgs.asm:443
+    call 0e039h                               ; e8 19 ff                    ; 0xfe11d orgs.asm:444
+    mov AL, strict byte 016h                  ; b0 16                       ; 0xfe120 orgs.asm:447
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfe122 orgs.asm:448
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfe124 orgs.asm:449
     db  08ah, 0e0h
-    ; mov ah, al                                ; 8a e0                     ; 0xfe126 orgs.asm:449
-    mov AL, strict byte 015h                  ; b0 15                       ; 0xfe128 orgs.asm:450
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfe12a orgs.asm:451
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfe12c orgs.asm:452
-    sub ax, strict byte 00001h                ; 83 e8 01                    ; 0xfe12e orgs.asm:453
-    mov word [00413h], ax                     ; a3 13 04                    ; 0xfe131 orgs.asm:454
-    mov ax, 0e9dah                            ; b8 da e9                    ; 0xfe134 orgs.asm:93
-    mov word [00018h], ax                     ; a3 18 00                    ; 0xfe137 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe13a orgs.asm:95
-    mov word [0001ah], ax                     ; a3 1a 00                    ; 0xfe13d orgs.asm:96
-    mov ax, 0f84dh                            ; b8 4d f8                    ; 0xfe140 orgs.asm:93
-    mov word [00044h], ax                     ; a3 44 00                    ; 0xfe143 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe146 orgs.asm:95
-    mov word [00046h], ax                     ; a3 46 00                    ; 0xfe149 orgs.asm:96
-    mov ax, 0f841h                            ; b8 41 f8                    ; 0xfe14c orgs.asm:93
-    mov word [00048h], ax                     ; a3 48 00                    ; 0xfe14f orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe152 orgs.asm:95
-    mov word [0004ah], ax                     ; a3 4a 00                    ; 0xfe155 orgs.asm:96
-    mov ax, 0f859h                            ; b8 59 f8                    ; 0xfe158 orgs.asm:93
-    mov word [00054h], ax                     ; a3 54 00                    ; 0xfe15b orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe15e orgs.asm:95
-    mov word [00056h], ax                     ; a3 56 00                    ; 0xfe161 orgs.asm:96
-    mov ax, 0efd4h                            ; b8 d4 ef                    ; 0xfe164 orgs.asm:93
-    mov word [0005ch], ax                     ; a3 5c 00                    ; 0xfe167 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe16a orgs.asm:95
-    mov word [0005eh], ax                     ; a3 5e 00                    ; 0xfe16d orgs.asm:96
-    mov ax, 0f0a4h                            ; b8 a4 f0                    ; 0xfe170 orgs.asm:93
-    mov word [00060h], ax                     ; a3 60 00                    ; 0xfe173 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe176 orgs.asm:95
-    mov word [00062h], ax                     ; a3 62 00                    ; 0xfe179 orgs.asm:96
-    mov ax, 0e6f2h                            ; b8 f2 e6                    ; 0xfe17c orgs.asm:93
-    mov word [00064h], ax                     ; a3 64 00                    ; 0xfe17f orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe182 orgs.asm:95
-    mov word [00066h], ax                     ; a3 66 00                    ; 0xfe185 orgs.asm:96
-    mov ax, 0effbh                            ; b8 fb ef                    ; 0xfe188 orgs.asm:93
-    mov word [00070h], ax                     ; a3 70 00                    ; 0xfe18b orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe18e orgs.asm:95
-    mov word [00072h], ax                     ; a3 72 00                    ; 0xfe191 orgs.asm:96
-    call 0e794h                               ; e8 fd 05                    ; 0xfe194 orgs.asm:470
-    mov ax, 0fe6eh                            ; b8 6e fe                    ; 0xfe197 orgs.asm:93
-    mov word [00068h], ax                     ; a3 68 00                    ; 0xfe19a orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe19d orgs.asm:95
-    mov word [0006ah], ax                     ; a3 6a 00                    ; 0xfe1a0 orgs.asm:96
-    mov ax, 0fea5h                            ; b8 a5 fe                    ; 0xfe1a3 orgs.asm:93
-    mov word [00020h], ax                     ; a3 20 00                    ; 0xfe1a6 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1a9 orgs.asm:95
-    mov word [00022h], ax                     ; a3 22 00                    ; 0xfe1ac orgs.asm:96
-    mov AL, strict byte 034h                  ; b0 34                       ; 0xfe1af orgs.asm:481
-    out strict byte 043h, AL                  ; e6 43                       ; 0xfe1b1 orgs.asm:482
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe1b3 orgs.asm:483
-    out strict byte 040h, AL                  ; e6 40                       ; 0xfe1b5 orgs.asm:484
-    out strict byte 040h, AL                  ; e6 40                       ; 0xfe1b7 orgs.asm:485
-    mov ax, 0f065h                            ; b8 65 f0                    ; 0xfe1b9 orgs.asm:93
-    mov word [00040h], ax                     ; a3 40 00                    ; 0xfe1bc orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1bf orgs.asm:95
-    mov word [00042h], ax                     ; a3 42 00                    ; 0xfe1c2 orgs.asm:96
-    mov ax, 0e987h                            ; b8 87 e9                    ; 0xfe1c5 orgs.asm:93
-    mov word [00024h], ax                     ; a3 24 00                    ; 0xfe1c8 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1cb orgs.asm:95
-    mov word [00026h], ax                     ; a3 26 00                    ; 0xfe1ce orgs.asm:96
-    mov ax, 0e82eh                            ; b8 2e e8                    ; 0xfe1d1 orgs.asm:93
-    mov word [00058h], ax                     ; a3 58 00                    ; 0xfe1d4 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1d7 orgs.asm:95
-    mov word [0005ah], ax                     ; a3 5a 00                    ; 0xfe1da orgs.asm:96
+    ; mov ah, al                                ; 8a e0                     ; 0xfe126 orgs.asm:450
+    mov AL, strict byte 015h                  ; b0 15                       ; 0xfe128 orgs.asm:451
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfe12a orgs.asm:452
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfe12c orgs.asm:453
+    sub ax, strict byte 00001h                ; 83 e8 01                    ; 0xfe12e orgs.asm:454
+    mov word [00413h], ax                     ; a3 13 04                    ; 0xfe131 orgs.asm:455
+    mov ax, 0e9dah                            ; b8 da e9                    ; 0xfe134 orgs.asm:94
+    mov word [00018h], ax                     ; a3 18 00                    ; 0xfe137 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe13a orgs.asm:96
+    mov word [0001ah], ax                     ; a3 1a 00                    ; 0xfe13d orgs.asm:97
+    mov ax, 0f84dh                            ; b8 4d f8                    ; 0xfe140 orgs.asm:94
+    mov word [00044h], ax                     ; a3 44 00                    ; 0xfe143 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe146 orgs.asm:96
+    mov word [00046h], ax                     ; a3 46 00                    ; 0xfe149 orgs.asm:97
+    mov ax, 0f841h                            ; b8 41 f8                    ; 0xfe14c orgs.asm:94
+    mov word [00048h], ax                     ; a3 48 00                    ; 0xfe14f orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe152 orgs.asm:96
+    mov word [0004ah], ax                     ; a3 4a 00                    ; 0xfe155 orgs.asm:97
+    mov ax, 0f859h                            ; b8 59 f8                    ; 0xfe158 orgs.asm:94
+    mov word [00054h], ax                     ; a3 54 00                    ; 0xfe15b orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe15e orgs.asm:96
+    mov word [00056h], ax                     ; a3 56 00                    ; 0xfe161 orgs.asm:97
+    mov ax, 0efd4h                            ; b8 d4 ef                    ; 0xfe164 orgs.asm:94
+    mov word [0005ch], ax                     ; a3 5c 00                    ; 0xfe167 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe16a orgs.asm:96
+    mov word [0005eh], ax                     ; a3 5e 00                    ; 0xfe16d orgs.asm:97
+    mov ax, 0f0a4h                            ; b8 a4 f0                    ; 0xfe170 orgs.asm:94
+    mov word [00060h], ax                     ; a3 60 00                    ; 0xfe173 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe176 orgs.asm:96
+    mov word [00062h], ax                     ; a3 62 00                    ; 0xfe179 orgs.asm:97
+    mov ax, 0e6f2h                            ; b8 f2 e6                    ; 0xfe17c orgs.asm:94
+    mov word [00064h], ax                     ; a3 64 00                    ; 0xfe17f orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe182 orgs.asm:96
+    mov word [00066h], ax                     ; a3 66 00                    ; 0xfe185 orgs.asm:97
+    mov ax, 0effbh                            ; b8 fb ef                    ; 0xfe188 orgs.asm:94
+    mov word [00070h], ax                     ; a3 70 00                    ; 0xfe18b orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe18e orgs.asm:96
+    mov word [00072h], ax                     ; a3 72 00                    ; 0xfe191 orgs.asm:97
+    call 0e794h                               ; e8 fd 05                    ; 0xfe194 orgs.asm:471
+    mov ax, 0fe6eh                            ; b8 6e fe                    ; 0xfe197 orgs.asm:94
+    mov word [00068h], ax                     ; a3 68 00                    ; 0xfe19a orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe19d orgs.asm:96
+    mov word [0006ah], ax                     ; a3 6a 00                    ; 0xfe1a0 orgs.asm:97
+    mov ax, 0fea5h                            ; b8 a5 fe                    ; 0xfe1a3 orgs.asm:94
+    mov word [00020h], ax                     ; a3 20 00                    ; 0xfe1a6 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1a9 orgs.asm:96
+    mov word [00022h], ax                     ; a3 22 00                    ; 0xfe1ac orgs.asm:97
+    mov AL, strict byte 034h                  ; b0 34                       ; 0xfe1af orgs.asm:482
+    out strict byte 043h, AL                  ; e6 43                       ; 0xfe1b1 orgs.asm:483
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfe1b3 orgs.asm:484
+    out strict byte 040h, AL                  ; e6 40                       ; 0xfe1b5 orgs.asm:485
+    out strict byte 040h, AL                  ; e6 40                       ; 0xfe1b7 orgs.asm:486
+    mov ax, 0f065h                            ; b8 65 f0                    ; 0xfe1b9 orgs.asm:94
+    mov word [00040h], ax                     ; a3 40 00                    ; 0xfe1bc orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1bf orgs.asm:96
+    mov word [00042h], ax                     ; a3 42 00                    ; 0xfe1c2 orgs.asm:97
+    mov ax, 0e987h                            ; b8 87 e9                    ; 0xfe1c5 orgs.asm:94
+    mov word [00024h], ax                     ; a3 24 00                    ; 0xfe1c8 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1cb orgs.asm:96
+    mov word [00026h], ax                     ; a3 26 00                    ; 0xfe1ce orgs.asm:97
+    mov ax, 0e82eh                            ; b8 2e e8                    ; 0xfe1d1 orgs.asm:94
+    mov word [00058h], ax                     ; a3 58 00                    ; 0xfe1d4 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe1d7 orgs.asm:96
+    mov word [0005ah], ax                     ; a3 5a 00                    ; 0xfe1da orgs.asm:97
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe1dd orgs.asm:494
-    mov ds, ax                                ; 8e d8                       ; 0xfe1df orgs.asm:495
-    mov AL, strict byte 010h                  ; b0 10                       ; 0xfe1e1 orgs.asm:496
-    mov byte [00496h], AL                     ; a2 96 04                    ; 0xfe1e3 orgs.asm:497
-    mov bx, strict word 0001eh                ; bb 1e 00                    ; 0xfe1e6 orgs.asm:499
-    mov word [0041ah], bx                     ; 89 1e 1a 04                 ; 0xfe1e9 orgs.asm:500
-    mov word [0041ch], bx                     ; 89 1e 1c 04                 ; 0xfe1ed orgs.asm:501
-    mov word [00480h], bx                     ; 89 1e 80 04                 ; 0xfe1f1 orgs.asm:502
-    mov bx, strict word 0003eh                ; bb 3e 00                    ; 0xfe1f5 orgs.asm:503
-    mov word [00482h], bx                     ; 89 1e 82 04                 ; 0xfe1f8 orgs.asm:504
-    mov AL, strict byte 014h                  ; b0 14                       ; 0xfe1fc orgs.asm:507
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfe1fe orgs.asm:508
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfe200 orgs.asm:509
-    mov byte [00410h], AL                     ; a2 10 04                    ; 0xfe202 orgs.asm:510
-    push DS                                   ; 1e                          ; 0xfe205 orgs.asm:512
-    push CS                                   ; 0e                          ; 0xfe206 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe207 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe208 orgs.asm:104
-    mov ax, 0c000h                            ; b8 00 c0                    ; 0xfe209 orgs.asm:517
-    mov dx, 0c800h                            ; ba 00 c8                    ; 0xfe20c orgs.asm:518
-    call 01600h                               ; e8 ee 33                    ; 0xfe20f orgs.asm:519
-    call 04e26h                               ; e8 11 6c                    ; 0xfe212 orgs.asm:522
-    pop DS                                    ; 1f                          ; 0xfe215 orgs.asm:523
-    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe216 orgs.asm:93
-    mov word [0003ch], ax                     ; a3 3c 00                    ; 0xfe219 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe21c orgs.asm:95
-    mov word [0003eh], ax                     ; a3 3e 00                    ; 0xfe21f orgs.asm:96
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe1dd orgs.asm:495
+    mov ds, ax                                ; 8e d8                       ; 0xfe1df orgs.asm:496
+    mov AL, strict byte 010h                  ; b0 10                       ; 0xfe1e1 orgs.asm:497
+    mov byte [00496h], AL                     ; a2 96 04                    ; 0xfe1e3 orgs.asm:498
+    mov bx, strict word 0001eh                ; bb 1e 00                    ; 0xfe1e6 orgs.asm:500
+    mov word [0041ah], bx                     ; 89 1e 1a 04                 ; 0xfe1e9 orgs.asm:501
+    mov word [0041ch], bx                     ; 89 1e 1c 04                 ; 0xfe1ed orgs.asm:502
+    mov word [00480h], bx                     ; 89 1e 80 04                 ; 0xfe1f1 orgs.asm:503
+    mov bx, strict word 0003eh                ; bb 3e 00                    ; 0xfe1f5 orgs.asm:504
+    mov word [00482h], bx                     ; 89 1e 82 04                 ; 0xfe1f8 orgs.asm:505
+    mov AL, strict byte 014h                  ; b0 14                       ; 0xfe1fc orgs.asm:508
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfe1fe orgs.asm:509
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfe200 orgs.asm:510
+    mov byte [00410h], AL                     ; a2 10 04                    ; 0xfe202 orgs.asm:511
+    push DS                                   ; 1e                          ; 0xfe205 orgs.asm:513
+    push CS                                   ; 0e                          ; 0xfe206 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe207 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe208 orgs.asm:105
+    mov ax, 0c000h                            ; b8 00 c0                    ; 0xfe209 orgs.asm:518
+    mov dx, 0c800h                            ; ba 00 c8                    ; 0xfe20c orgs.asm:519
+    call 01600h                               ; e8 ee 33                    ; 0xfe20f orgs.asm:520
+    call 04e26h                               ; e8 11 6c                    ; 0xfe212 orgs.asm:523
+    pop DS                                    ; 1f                          ; 0xfe215 orgs.asm:524
+    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe216 orgs.asm:94
+    mov word [0003ch], ax                     ; a3 3c 00                    ; 0xfe219 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe21c orgs.asm:96
+    mov word [0003eh], ax                     ; a3 3e 00                    ; 0xfe21f orgs.asm:97
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe222 orgs.asm:527
-    mov ds, ax                                ; 8e d8                       ; 0xfe224 orgs.asm:528
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe222 orgs.asm:528
+    mov ds, ax                                ; 8e d8                       ; 0xfe224 orgs.asm:529
     db  033h, 0dbh
-    ; xor bx, bx                                ; 33 db                     ; 0xfe226 orgs.asm:529
-    mov CL, strict byte 014h                  ; b1 14                       ; 0xfe228 orgs.asm:530
-    mov dx, 00378h                            ; ba 78 03                    ; 0xfe22a orgs.asm:531
-    call 0ed0ah                               ; e8 da 0a                    ; 0xfe22d orgs.asm:532
-    mov dx, 00278h                            ; ba 78 02                    ; 0xfe230 orgs.asm:533
-    call 0ed0ah                               ; e8 d4 0a                    ; 0xfe233 orgs.asm:534
+    ; xor bx, bx                                ; 33 db                     ; 0xfe226 orgs.asm:530
+    mov CL, strict byte 014h                  ; b1 14                       ; 0xfe228 orgs.asm:531
+    mov dx, 00378h                            ; ba 78 03                    ; 0xfe22a orgs.asm:532
+    call 0ed0ah                               ; e8 da 0a                    ; 0xfe22d orgs.asm:533
+    mov dx, 00278h                            ; ba 78 02                    ; 0xfe230 orgs.asm:534
+    call 0ed0ah                               ; e8 d4 0a                    ; 0xfe233 orgs.asm:535
     push cx                                   ; 51                          ; 0xfe236 orgs.asm:203
     mov CL, strict byte 00eh                  ; b1 0e                       ; 0xfe237 orgs.asm:204
     sal bx, CL                                ; d3 e3                       ; 0xfe239 orgs.asm:205
     pop cx                                    ; 59                          ; 0xfe23b orgs.asm:206
-    mov ax, word [00410h]                     ; a1 10 04                    ; 0xfe23c orgs.asm:536
-    and ax, 03fffh                            ; 25 ff 3f                    ; 0xfe23f orgs.asm:537
+    mov ax, word [00410h]                     ; a1 10 04                    ; 0xfe23c orgs.asm:537
+    and ax, 03fffh                            ; 25 ff 3f                    ; 0xfe23f orgs.asm:538
     db  00bh, 0c3h
-    ; or ax, bx                                 ; 0b c3                     ; 0xfe242 orgs.asm:538
-    mov word [00410h], ax                     ; a3 10 04                    ; 0xfe244 orgs.asm:539
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe247 orgs.asm:93
-    mov word [0002ch], ax                     ; a3 2c 00                    ; 0xfe24a orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe24d orgs.asm:95
-    mov word [0002eh], ax                     ; a3 2e 00                    ; 0xfe250 orgs.asm:96
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe253 orgs.asm:93
-    mov word [00030h], ax                     ; a3 30 00                    ; 0xfe256 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe259 orgs.asm:95
-    mov word [00032h], ax                     ; a3 32 00                    ; 0xfe25c orgs.asm:96
-    mov ax, 0e739h                            ; b8 39 e7                    ; 0xfe25f orgs.asm:93
-    mov word [00050h], ax                     ; a3 50 00                    ; 0xfe262 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe265 orgs.asm:95
-    mov word [00052h], ax                     ; a3 52 00                    ; 0xfe268 orgs.asm:96
+    ; or ax, bx                                 ; 0b c3                     ; 0xfe242 orgs.asm:539
+    mov word [00410h], ax                     ; a3 10 04                    ; 0xfe244 orgs.asm:540
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe247 orgs.asm:94
+    mov word [0002ch], ax                     ; a3 2c 00                    ; 0xfe24a orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe24d orgs.asm:96
+    mov word [0002eh], ax                     ; a3 2e 00                    ; 0xfe250 orgs.asm:97
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe253 orgs.asm:94
+    mov word [00030h], ax                     ; a3 30 00                    ; 0xfe256 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe259 orgs.asm:96
+    mov word [00032h], ax                     ; a3 32 00                    ; 0xfe25c orgs.asm:97
+    mov ax, 0e739h                            ; b8 39 e7                    ; 0xfe25f orgs.asm:94
+    mov word [00050h], ax                     ; a3 50 00                    ; 0xfe262 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe265 orgs.asm:96
+    mov word [00052h], ax                     ; a3 52 00                    ; 0xfe268 orgs.asm:97
     db  033h, 0dbh
-    ; xor bx, bx                                ; 33 db                     ; 0xfe26b orgs.asm:545
-    mov CL, strict byte 00ah                  ; b1 0a                       ; 0xfe26d orgs.asm:546
-    mov dx, 003f8h                            ; ba f8 03                    ; 0xfe26f orgs.asm:547
-    call 0ed28h                               ; e8 b3 0a                    ; 0xfe272 orgs.asm:548
-    mov dx, 002f8h                            ; ba f8 02                    ; 0xfe275 orgs.asm:549
-    call 0ed28h                               ; e8 ad 0a                    ; 0xfe278 orgs.asm:550
-    mov dx, 003e8h                            ; ba e8 03                    ; 0xfe27b orgs.asm:551
-    call 0ed28h                               ; e8 a7 0a                    ; 0xfe27e orgs.asm:552
-    mov dx, 002e8h                            ; ba e8 02                    ; 0xfe281 orgs.asm:553
-    call 0ed28h                               ; e8 a1 0a                    ; 0xfe284 orgs.asm:554
+    ; xor bx, bx                                ; 33 db                     ; 0xfe26b orgs.asm:546
+    mov CL, strict byte 00ah                  ; b1 0a                       ; 0xfe26d orgs.asm:547
+    mov dx, 003f8h                            ; ba f8 03                    ; 0xfe26f orgs.asm:548
+    call 0ed28h                               ; e8 b3 0a                    ; 0xfe272 orgs.asm:549
+    mov dx, 002f8h                            ; ba f8 02                    ; 0xfe275 orgs.asm:550
+    call 0ed28h                               ; e8 ad 0a                    ; 0xfe278 orgs.asm:551
+    mov dx, 003e8h                            ; ba e8 03                    ; 0xfe27b orgs.asm:552
+    call 0ed28h                               ; e8 a7 0a                    ; 0xfe27e orgs.asm:553
+    mov dx, 002e8h                            ; ba e8 02                    ; 0xfe281 orgs.asm:554
+    call 0ed28h                               ; e8 a1 0a                    ; 0xfe284 orgs.asm:555
     push cx                                   ; 51                          ; 0xfe287 orgs.asm:203
     mov CL, strict byte 009h                  ; b1 09                       ; 0xfe288 orgs.asm:204
     sal bx, CL                                ; d3 e3                       ; 0xfe28a orgs.asm:205
     pop cx                                    ; 59                          ; 0xfe28c orgs.asm:206
-    mov ax, word [00410h]                     ; a1 10 04                    ; 0xfe28d orgs.asm:556
-    and ax, 0f1ffh                            ; 25 ff f1                    ; 0xfe290 orgs.asm:557
+    mov ax, word [00410h]                     ; a1 10 04                    ; 0xfe28d orgs.asm:557
+    and ax, 0f1ffh                            ; 25 ff f1                    ; 0xfe290 orgs.asm:558
     db  00bh, 0c3h
-    ; or ax, bx                                 ; 0b c3                     ; 0xfe293 orgs.asm:558
-    mov word [00410h], ax                     ; a3 10 04                    ; 0xfe295 orgs.asm:559
-    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe298 orgs.asm:93
-    mov word [00128h], ax                     ; a3 28 01                    ; 0xfe29b orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe29e orgs.asm:95
-    mov word [0012ah], ax                     ; a3 2a 01                    ; 0xfe2a1 orgs.asm:96
-    mov ax, 0f8f1h                            ; b8 f1 f8                    ; 0xfe2a4 orgs.asm:93
-    mov word [001c0h], ax                     ; a3 c0 01                    ; 0xfe2a7 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2aa orgs.asm:95
-    mov word [001c2h], ax                     ; a3 c2 01                    ; 0xfe2ad orgs.asm:96
-    call 0ede3h                               ; e8 30 0b                    ; 0xfe2b0 orgs.asm:565
-    jmp short 0e303h                          ; eb 4e                       ; 0xfe2b3 orgs.asm:567
+    ; or ax, bx                                 ; 0b c3                     ; 0xfe293 orgs.asm:559
+    mov word [00410h], ax                     ; a3 10 04                    ; 0xfe295 orgs.asm:560
+    mov ax, 0ff53h                            ; b8 53 ff                    ; 0xfe298 orgs.asm:94
+    mov word [00128h], ax                     ; a3 28 01                    ; 0xfe29b orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe29e orgs.asm:96
+    mov word [0012ah], ax                     ; a3 2a 01                    ; 0xfe2a1 orgs.asm:97
+    mov ax, 0f8f1h                            ; b8 f1 f8                    ; 0xfe2a4 orgs.asm:94
+    mov word [001c0h], ax                     ; a3 c0 01                    ; 0xfe2a7 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2aa orgs.asm:96
+    mov word [001c2h], ax                     ; a3 c2 01                    ; 0xfe2ad orgs.asm:97
+    call 0ede3h                               ; e8 30 0b                    ; 0xfe2b0 orgs.asm:566
+    jmp short 0e303h                          ; eb 4e                       ; 0xfe2b3 orgs.asm:568
   ; disGetNextSymbol 0xfe2b5 LB 0x1d4b -> off=0x0 cb=000000000000000e uValue=00000000000f02b5 'biosorg_check_before_or_at_0E2C1h'
 biosorg_check_before_or_at_0E2C1h:           ; 0xfe2b5 LB 0xe
     times 0xc db 0
     db  'XM'
   ; disGetNextSymbol 0xfe2c3 LB 0x1d3d -> off=0x0 cb=0000000000000007 uValue=00000000000f02c3 'nmi'
 nmi:                                         ; 0xfe2c3 LB 0x7
-    push CS                                   ; 0e                          ; 0xfe2c3 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe2c4 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe2c5 orgs.asm:104
-    call 01718h                               ; e8 4f 34                    ; 0xfe2c6 orgs.asm:576
-    iret                                      ; cf                          ; 0xfe2c9 orgs.asm:577
+    push CS                                   ; 0e                          ; 0xfe2c3 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe2c4 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe2c5 orgs.asm:105
+    call 01718h                               ; e8 4f 34                    ; 0xfe2c6 orgs.asm:577
+    iret                                      ; cf                          ; 0xfe2c9 orgs.asm:578
   ; disGetNextSymbol 0xfe2ca LB 0x1d36 -> off=0x0 cb=0000000000000008 uValue=00000000000f02ca 'int75_handler'
 int75_handler:                               ; 0xfe2ca LB 0x8
-    out strict byte 0f0h, AL                  ; e6 f0                       ; 0xfe2ca orgs.asm:580
-    call 0e030h                               ; e8 61 fd                    ; 0xfe2cc orgs.asm:581
-    int 002h                                  ; cd 02                       ; 0xfe2cf orgs.asm:582
-    iret                                      ; cf                          ; 0xfe2d1 orgs.asm:583
+    out strict byte 0f0h, AL                  ; e6 f0                       ; 0xfe2ca orgs.asm:581
+    call 0e030h                               ; e8 61 fd                    ; 0xfe2cc orgs.asm:582
+    int 002h                                  ; cd 02                       ; 0xfe2cf orgs.asm:583
+    iret                                      ; cf                          ; 0xfe2d1 orgs.asm:584
   ; disGetNextSymbol 0xfe2d2 LB 0x1d2e -> off=0x0 cb=00000000000000a7 uValue=00000000000f02d2 'hard_drive_post'
 hard_drive_post:                             ; 0xfe2d2 LB 0xa7
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe2d2 orgs.asm:588
-    mov ds, ax                                ; 8e d8                       ; 0xfe2d4 orgs.asm:589
-    mov byte [00474h], AL                     ; a2 74 04                    ; 0xfe2d6 orgs.asm:591
-    mov byte [00477h], AL                     ; a2 77 04                    ; 0xfe2d9 orgs.asm:592
-    mov byte [0048ch], AL                     ; a2 8c 04                    ; 0xfe2dc orgs.asm:593
-    mov byte [0048dh], AL                     ; a2 8d 04                    ; 0xfe2df orgs.asm:594
-    mov byte [0048eh], AL                     ; a2 8e 04                    ; 0xfe2e2 orgs.asm:595
-    mov AL, strict byte 0c0h                  ; b0 c0                       ; 0xfe2e5 orgs.asm:596
-    mov byte [00476h], AL                     ; a2 76 04                    ; 0xfe2e7 orgs.asm:597
-    mov ax, 0e3feh                            ; b8 fe e3                    ; 0xfe2ea orgs.asm:93
-    mov word [0004ch], ax                     ; a3 4c 00                    ; 0xfe2ed orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2f0 orgs.asm:95
-    mov word [0004eh], ax                     ; a3 4e 00                    ; 0xfe2f3 orgs.asm:96
-    mov ax, 0f8dfh                            ; b8 df f8                    ; 0xfe2f6 orgs.asm:93
-    mov word [001d8h], ax                     ; a3 d8 01                    ; 0xfe2f9 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2fc orgs.asm:95
-    mov word [001dah], ax                     ; a3 da 01                    ; 0xfe2ff orgs.asm:96
-    retn                                      ; c3                          ; 0xfe302 orgs.asm:602
-    mov ax, 0f8a5h                            ; b8 a5 f8                    ; 0xfe303 orgs.asm:93
-    mov word [001d0h], ax                     ; a3 d0 01                    ; 0xfe306 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe309 orgs.asm:95
-    mov word [001d2h], ax                     ; a3 d2 01                    ; 0xfe30c orgs.asm:96
-    mov ax, 0e2cah                            ; b8 ca e2                    ; 0xfe30f orgs.asm:93
-    mov word [001d4h], ax                     ; a3 d4 01                    ; 0xfe312 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe315 orgs.asm:95
-    mov word [001d6h], ax                     ; a3 d6 01                    ; 0xfe318 orgs.asm:96
-    call 0e76fh                               ; e8 51 04                    ; 0xfe31b orgs.asm:614
-    push CS                                   ; 0e                          ; 0xfe31e orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe31f orgs.asm:103
-    cld                                       ; fc                          ; 0xfe320 orgs.asm:104
-    call 01ca6h                               ; e8 82 39                    ; 0xfe321 orgs.asm:628
-    call 021cah                               ; e8 a3 3e                    ; 0xfe324 orgs.asm:629
-    sti                                       ; fb                          ; 0xfe327 orgs.asm:636
-    call 09150h                               ; e8 25 ae                    ; 0xfe328 orgs.asm:637
-    cli                                       ; fa                          ; 0xfe32b orgs.asm:638
-    call 08051h                               ; e8 22 9d                    ; 0xfe32c orgs.asm:643
-    call 0ed4ch                               ; e8 1a 0a                    ; 0xfe32f orgs.asm:647
-    call 0e2d2h                               ; e8 9d ff                    ; 0xfe332 orgs.asm:650
-    push CS                                   ; 0e                          ; 0xfe335 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe336 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe337 orgs.asm:104
-    mov ax, 0c800h                            ; b8 00 c8                    ; 0xfe338 orgs.asm:654
-    mov dx, 0f000h                            ; ba 00 f0                    ; 0xfe33b orgs.asm:655
-    call 01600h                               ; e8 bf 32                    ; 0xfe33e orgs.asm:656
-    call 01781h                               ; e8 3d 34                    ; 0xfe341 orgs.asm:670
-    call 03bf4h                               ; e8 ad 58                    ; 0xfe344 orgs.asm:673
-    sti                                       ; fb                          ; 0xfe347 orgs.asm:676
-    int 019h                                  ; cd 19                       ; 0xfe348 orgs.asm:677
-    sti                                       ; fb                          ; 0xfe34a orgs.asm:679
-    hlt                                       ; f4                          ; 0xfe34b orgs.asm:681
-    jmp short 0e34bh                          ; eb fd                       ; 0xfe34c orgs.asm:682
-    cli                                       ; fa                          ; 0xfe34e orgs.asm:683
-    hlt                                       ; f4                          ; 0xfe34f orgs.asm:684
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xfe350 orgs.asm:693
-    mov ds, ax                                ; 8e d8                       ; 0xfe353 orgs.asm:694
-    mov ss, [word 00069h]                     ; 8e 16 69 00                 ; 0xfe355 orgs.asm:696
-    mov sp, word [word 00067h]                ; 8b 26 67 00                 ; 0xfe359 orgs.asm:697
-    in AL, strict byte 092h                   ; e4 92                       ; 0xfe35d orgs.asm:699
-    and AL, strict byte 0fdh                  ; 24 fd                       ; 0xfe35f orgs.asm:700
-    out strict byte 092h, AL                  ; e6 92                       ; 0xfe361 orgs.asm:701
-    lidt [cs:0eff5h]                          ; 2e 0f 01 1e f5 ef           ; 0xfe363 orgs.asm:703
-    pop DS                                    ; 1f                          ; 0xfe369 orgs.asm:705
-    pop ES                                    ; 07                          ; 0xfe36a orgs.asm:706
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe2d2 orgs.asm:589
+    mov ds, ax                                ; 8e d8                       ; 0xfe2d4 orgs.asm:590
+    mov byte [00474h], AL                     ; a2 74 04                    ; 0xfe2d6 orgs.asm:592
+    mov byte [00477h], AL                     ; a2 77 04                    ; 0xfe2d9 orgs.asm:593
+    mov byte [0048ch], AL                     ; a2 8c 04                    ; 0xfe2dc orgs.asm:594
+    mov byte [0048dh], AL                     ; a2 8d 04                    ; 0xfe2df orgs.asm:595
+    mov byte [0048eh], AL                     ; a2 8e 04                    ; 0xfe2e2 orgs.asm:596
+    mov AL, strict byte 0c0h                  ; b0 c0                       ; 0xfe2e5 orgs.asm:597
+    mov byte [00476h], AL                     ; a2 76 04                    ; 0xfe2e7 orgs.asm:598
+    mov ax, 0e3feh                            ; b8 fe e3                    ; 0xfe2ea orgs.asm:94
+    mov word [0004ch], ax                     ; a3 4c 00                    ; 0xfe2ed orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2f0 orgs.asm:96
+    mov word [0004eh], ax                     ; a3 4e 00                    ; 0xfe2f3 orgs.asm:97
+    mov ax, 0f8dfh                            ; b8 df f8                    ; 0xfe2f6 orgs.asm:94
+    mov word [001d8h], ax                     ; a3 d8 01                    ; 0xfe2f9 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe2fc orgs.asm:96
+    mov word [001dah], ax                     ; a3 da 01                    ; 0xfe2ff orgs.asm:97
+    retn                                      ; c3                          ; 0xfe302 orgs.asm:603
+    mov ax, 0f8a5h                            ; b8 a5 f8                    ; 0xfe303 orgs.asm:94
+    mov word [001d0h], ax                     ; a3 d0 01                    ; 0xfe306 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe309 orgs.asm:96
+    mov word [001d2h], ax                     ; a3 d2 01                    ; 0xfe30c orgs.asm:97
+    mov ax, 0e2cah                            ; b8 ca e2                    ; 0xfe30f orgs.asm:94
+    mov word [001d4h], ax                     ; a3 d4 01                    ; 0xfe312 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe315 orgs.asm:96
+    mov word [001d6h], ax                     ; a3 d6 01                    ; 0xfe318 orgs.asm:97
+    call 0e76fh                               ; e8 51 04                    ; 0xfe31b orgs.asm:615
+    push CS                                   ; 0e                          ; 0xfe31e orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe31f orgs.asm:104
+    cld                                       ; fc                          ; 0xfe320 orgs.asm:105
+    call 01ca6h                               ; e8 82 39                    ; 0xfe321 orgs.asm:629
+    call 021cah                               ; e8 a3 3e                    ; 0xfe324 orgs.asm:630
+    sti                                       ; fb                          ; 0xfe327 orgs.asm:637
+    call 09150h                               ; e8 25 ae                    ; 0xfe328 orgs.asm:638
+    cli                                       ; fa                          ; 0xfe32b orgs.asm:639
+    call 08051h                               ; e8 22 9d                    ; 0xfe32c orgs.asm:644
+    call 0ed4ch                               ; e8 1a 0a                    ; 0xfe32f orgs.asm:648
+    call 0e2d2h                               ; e8 9d ff                    ; 0xfe332 orgs.asm:651
+    push CS                                   ; 0e                          ; 0xfe335 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe336 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe337 orgs.asm:105
+    mov ax, 0c800h                            ; b8 00 c8                    ; 0xfe338 orgs.asm:655
+    mov dx, 0f000h                            ; ba 00 f0                    ; 0xfe33b orgs.asm:656
+    call 01600h                               ; e8 bf 32                    ; 0xfe33e orgs.asm:657
+    call 01781h                               ; e8 3d 34                    ; 0xfe341 orgs.asm:671
+    call 03bf4h                               ; e8 ad 58                    ; 0xfe344 orgs.asm:674
+    sti                                       ; fb                          ; 0xfe347 orgs.asm:677
+    int 019h                                  ; cd 19                       ; 0xfe348 orgs.asm:678
+    sti                                       ; fb                          ; 0xfe34a orgs.asm:680
+    hlt                                       ; f4                          ; 0xfe34b orgs.asm:682
+    jmp short 0e34bh                          ; eb fd                       ; 0xfe34c orgs.asm:683
+    cli                                       ; fa                          ; 0xfe34e orgs.asm:684
+    hlt                                       ; f4                          ; 0xfe34f orgs.asm:685
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xfe350 orgs.asm:694
+    mov ds, ax                                ; 8e d8                       ; 0xfe353 orgs.asm:695
+    mov ss, [word 00069h]                     ; 8e 16 69 00                 ; 0xfe355 orgs.asm:697
+    mov sp, word [word 00067h]                ; 8b 26 67 00                 ; 0xfe359 orgs.asm:698
+    in AL, strict byte 092h                   ; e4 92                       ; 0xfe35d orgs.asm:700
+    and AL, strict byte 0fdh                  ; 24 fd                       ; 0xfe35f orgs.asm:701
+    out strict byte 092h, AL                  ; e6 92                       ; 0xfe361 orgs.asm:702
+    lidt [cs:0eff5h]                          ; 2e 0f 01 1e f5 ef           ; 0xfe363 orgs.asm:704
+    pop DS                                    ; 1f                          ; 0xfe369 orgs.asm:706
+    pop ES                                    ; 07                          ; 0xfe36a orgs.asm:707
     db  08bh, 0ech
-    ; mov bp, sp                                ; 8b ec                     ; 0xfe36b orgs.asm:708
-    in AL, strict byte 080h                   ; e4 80                       ; 0xfe36d orgs.asm:710
-    mov byte [bp+00fh], al                    ; 88 46 0f                    ; 0xfe36f orgs.asm:711
+    ; mov bp, sp                                ; 8b ec                     ; 0xfe36b orgs.asm:709
+    in AL, strict byte 080h                   ; e4 80                       ; 0xfe36d orgs.asm:711
+    mov byte [bp+00fh], al                    ; 88 46 0f                    ; 0xfe36f orgs.asm:712
     db  03ah, 0e0h
-    ; cmp ah, al                                ; 3a e0                     ; 0xfe372 orgs.asm:713
-    popaw                                     ; 61                          ; 0xfe374 orgs.asm:715
-    sti                                       ; fb                          ; 0xfe375 orgs.asm:716
-    retf 00002h                               ; ca 02 00                    ; 0xfe376 orgs.asm:717
+    ; cmp ah, al                                ; 3a e0                     ; 0xfe372 orgs.asm:714
+    popaw                                     ; 61                          ; 0xfe374 orgs.asm:716
+    sti                                       ; fb                          ; 0xfe375 orgs.asm:717
+    retf 00002h                               ; ca 02 00                    ; 0xfe376 orgs.asm:718
   ; disGetNextSymbol 0xfe379 LB 0x1c87 -> off=0x0 cb=0000000000000085 uValue=00000000000f0379 'biosorg_check_before_or_at_0E3FCh'
 biosorg_check_before_or_at_0E3FCh:           ; 0xfe379 LB 0x85
     times 0x83 db 0
     db  'XM'
   ; disGetNextSymbol 0xfe3fe LB 0x1c02 -> off=0x0 cb=0000000000000003 uValue=00000000000f03fe 'int13_handler'
 int13_handler:                               ; 0xfe3fe LB 0x3
-    jmp near 0ec5bh                           ; e9 5a 08                    ; 0xfe3fe orgs.asm:727
-  ; disGetNextSymbol 0xfe401 LB 0x1bff -> off=0x0 cb=00000000000002f1 uValue=00000000000f0401 'rom_fdpt'
-rom_fdpt:                                    ; 0xfe401 LB 0x2f1
+    jmp near 0ec5bh                           ; e9 5a 08                    ; 0xfe3fe orgs.asm:728
+  ; disGetNextSymbol 0xfe401 LB 0x1bff -> off=0x0 cb=0000000000000170 uValue=00000000000f0401 'rom_fdpt'
+rom_fdpt:                                    ; 0xfe401 LB 0x170
+    db  032h, 001h, 004h, 000h, 000h, 080h, 000h, 000h, 000h, 000h, 000h, 000h, 031h, 001h, 011h, 000h
+    db  067h, 002h, 004h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 067h, 002h, 011h, 000h
+    db  067h, 002h, 006h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 067h, 002h, 011h, 000h
+    db  0ach, 003h, 008h, 000h, 000h, 000h, 002h, 000h, 000h, 000h, 000h, 000h, 0ach, 003h, 011h, 000h
+    db  0ach, 003h, 006h, 000h, 000h, 000h, 002h, 000h, 000h, 000h, 000h, 000h, 0ach, 003h, 011h, 000h
+    db  067h, 002h, 004h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 067h, 002h, 011h, 000h
+    db  0ceh, 001h, 008h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 0ffh, 001h, 011h, 000h
+    db  0ddh, 002h, 005h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 0ddh, 002h, 011h, 000h
+    db  084h, 003h, 00fh, 000h, 000h, 0ffh, 0ffh, 000h, 008h, 000h, 000h, 000h, 085h, 003h, 011h, 000h
+    db  034h, 003h, 003h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 034h, 003h, 011h, 000h
+    db  057h, 003h, 005h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 057h, 003h, 011h, 000h
+    db  057h, 003h, 007h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 057h, 003h, 011h, 000h
+    db  032h, 001h, 008h, 000h, 000h, 080h, 000h, 000h, 000h, 000h, 000h, 000h, 03fh, 001h, 011h, 000h
+    db  0ddh, 002h, 007h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 0ddh, 002h, 011h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 058h
-    db  04dh
+    db  064h, 002h, 004h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 079h, 002h, 011h, 000h
+    db  0d1h, 003h, 005h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 0d1h, 003h, 011h, 000h
+    db  0d1h, 003h, 007h, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 000h, 000h, 0d1h, 003h, 011h, 000h
+    db  000h, 004h, 007h, 000h, 000h, 000h, 002h, 000h, 000h, 000h, 000h, 000h, 0ffh, 003h, 011h, 000h
+    db  0ddh, 002h, 005h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 0dch, 002h, 011h, 000h
+    db  0ddh, 002h, 007h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 0dch, 002h, 011h, 000h
+    db  0ddh, 002h, 005h, 000h, 000h, 02ch, 001h, 000h, 000h, 000h, 000h, 000h, 0ddh, 002h, 011h, 000h
+    db  032h, 001h, 004h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 050h, 001h, 011h, 000h
+  ; disGetNextSymbol 0xfe571 LB 0x1a8f -> off=0x0 cb=0000000000000181 uValue=00000000000f0571 'biosorg_check_before_or_at_0E6F0h'
+biosorg_check_before_or_at_0E6F0h:           ; 0xfe571 LB 0x181
+    times 0x17f db 0
+    db  'XM'
   ; disGetNextSymbol 0xfe6f2 LB 0x190e -> off=0x0 cb=0000000000000003 uValue=00000000000f06f2 'int19_handler'
 int19_handler:                               ; 0xfe6f2 LB 0x3
-    jmp near 0f0aeh                           ; e9 b9 09                    ; 0xfe6f2 orgs.asm:743
+    jmp near 0f0aeh                           ; e9 b9 09                    ; 0xfe6f2 orgs.asm:785
   ; disGetNextSymbol 0xfe6f5 LB 0x190b -> off=0x0 cb=000000000000000a uValue=00000000000f06f5 'biosorg_check_at_0E6F5h'
 biosorg_check_at_0E6F5h:                     ; 0xfe6f5 LB 0xa
     or word [bx+si], ax                       ; 09 00                       ; 0xfe6f5
@@ -18257,8 +18236,8 @@ biosorg_check_at_0E729h:                     ; 0xfe729 LB 0x10
     db  'XM'
   ; disGetNextSymbol 0xfe739 LB 0x18c7 -> off=0x0 cb=0000000000000036 uValue=00000000000f0739 'biosorg_check_at_0E739h'
 biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x36
-    push DS                                   ; 1e                          ; 0xfe739 orgs.asm:816
-    push ES                                   ; 06                          ; 0xfe73a orgs.asm:817
+    push DS                                   ; 1e                          ; 0xfe739 orgs.asm:858
+    push ES                                   ; 06                          ; 0xfe73a orgs.asm:859
     push ax                                   ; 50                          ; 0xfe73b orgs.asm:99
     push cx                                   ; 51                          ; 0xfe73c orgs.asm:100
     push dx                                   ; 52                          ; 0xfe73d orgs.asm:101
@@ -18267,10 +18246,10 @@ biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x36
     push bp                                   ; 55                          ; 0xfe740 orgs.asm:104
     push si                                   ; 56                          ; 0xfe741 orgs.asm:105
     push di                                   ; 57                          ; 0xfe742 orgs.asm:106
-    push CS                                   ; 0e                          ; 0xfe743 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe744 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe745 orgs.asm:104
-    call 06393h                               ; e8 4a 7c                    ; 0xfe746 orgs.asm:820
+    push CS                                   ; 0e                          ; 0xfe743 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe744 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe745 orgs.asm:105
+    call 06393h                               ; e8 4a 7c                    ; 0xfe746 orgs.asm:862
     pop di                                    ; 5f                          ; 0xfe749 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe74a orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe74b orgs.asm:118
@@ -18279,11 +18258,11 @@ biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x36
     pop dx                                    ; 5a                          ; 0xfe74e orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe74f orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe750 orgs.asm:123
-    pop ES                                    ; 07                          ; 0xfe751 orgs.asm:822
-    pop DS                                    ; 1f                          ; 0xfe752 orgs.asm:823
-    iret                                      ; cf                          ; 0xfe753 orgs.asm:824
-    push DS                                   ; 1e                          ; 0xfe754 orgs.asm:832
-    push ES                                   ; 06                          ; 0xfe755 orgs.asm:833
+    pop ES                                    ; 07                          ; 0xfe751 orgs.asm:864
+    pop DS                                    ; 1f                          ; 0xfe752 orgs.asm:865
+    iret                                      ; cf                          ; 0xfe753 orgs.asm:866
+    push DS                                   ; 1e                          ; 0xfe754 orgs.asm:874
+    push ES                                   ; 06                          ; 0xfe755 orgs.asm:875
     push ax                                   ; 50                          ; 0xfe756 orgs.asm:99
     push cx                                   ; 51                          ; 0xfe757 orgs.asm:100
     push dx                                   ; 52                          ; 0xfe758 orgs.asm:101
@@ -18292,10 +18271,10 @@ biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x36
     push bp                                   ; 55                          ; 0xfe75b orgs.asm:104
     push si                                   ; 56                          ; 0xfe75c orgs.asm:105
     push di                                   ; 57                          ; 0xfe75d orgs.asm:106
-    push CS                                   ; 0e                          ; 0xfe75e orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe75f orgs.asm:103
-    cld                                       ; fc                          ; 0xfe760 orgs.asm:104
-    call 016b7h                               ; e8 53 2f                    ; 0xfe761 orgs.asm:836
+    push CS                                   ; 0e                          ; 0xfe75e orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe75f orgs.asm:104
+    cld                                       ; fc                          ; 0xfe760 orgs.asm:105
+    call 016b7h                               ; e8 53 2f                    ; 0xfe761 orgs.asm:878
     pop di                                    ; 5f                          ; 0xfe764 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe765 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe766 orgs.asm:118
@@ -18304,75 +18283,75 @@ biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x36
     pop dx                                    ; 5a                          ; 0xfe769 orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe76a orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe76b orgs.asm:123
-    pop ES                                    ; 07                          ; 0xfe76c orgs.asm:838
-    pop DS                                    ; 1f                          ; 0xfe76d orgs.asm:839
-    iret                                      ; cf                          ; 0xfe76e orgs.asm:840
+    pop ES                                    ; 07                          ; 0xfe76c orgs.asm:880
+    pop DS                                    ; 1f                          ; 0xfe76d orgs.asm:881
+    iret                                      ; cf                          ; 0xfe76e orgs.asm:882
   ; disGetNextSymbol 0xfe76f LB 0x1891 -> off=0x0 cb=0000000000000025 uValue=00000000000f076f 'init_pic'
 init_pic:                                    ; 0xfe76f LB 0x25
-    mov AL, strict byte 011h                  ; b0 11                       ; 0xfe76f orgs.asm:845
-    out strict byte 020h, AL                  ; e6 20                       ; 0xfe771 orgs.asm:846
-    out strict byte 0a0h, AL                  ; e6 a0                       ; 0xfe773 orgs.asm:847
-    mov AL, strict byte 008h                  ; b0 08                       ; 0xfe775 orgs.asm:848
-    out strict byte 021h, AL                  ; e6 21                       ; 0xfe777 orgs.asm:849
-    mov AL, strict byte 070h                  ; b0 70                       ; 0xfe779 orgs.asm:850
-    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe77b orgs.asm:851
-    mov AL, strict byte 004h                  ; b0 04                       ; 0xfe77d orgs.asm:852
-    out strict byte 021h, AL                  ; e6 21                       ; 0xfe77f orgs.asm:853
-    mov AL, strict byte 002h                  ; b0 02                       ; 0xfe781 orgs.asm:854
-    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe783 orgs.asm:855
-    mov AL, strict byte 001h                  ; b0 01                       ; 0xfe785 orgs.asm:856
-    out strict byte 021h, AL                  ; e6 21                       ; 0xfe787 orgs.asm:857
-    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe789 orgs.asm:858
-    mov AL, strict byte 0b8h                  ; b0 b8                       ; 0xfe78b orgs.asm:859
-    out strict byte 021h, AL                  ; e6 21                       ; 0xfe78d orgs.asm:860
-    mov AL, strict byte 08fh                  ; b0 8f                       ; 0xfe78f orgs.asm:861
-    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe791 orgs.asm:862
-    retn                                      ; c3                          ; 0xfe793 orgs.asm:863
+    mov AL, strict byte 011h                  ; b0 11                       ; 0xfe76f orgs.asm:887
+    out strict byte 020h, AL                  ; e6 20                       ; 0xfe771 orgs.asm:888
+    out strict byte 0a0h, AL                  ; e6 a0                       ; 0xfe773 orgs.asm:889
+    mov AL, strict byte 008h                  ; b0 08                       ; 0xfe775 orgs.asm:890
+    out strict byte 021h, AL                  ; e6 21                       ; 0xfe777 orgs.asm:891
+    mov AL, strict byte 070h                  ; b0 70                       ; 0xfe779 orgs.asm:892
+    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe77b orgs.asm:893
+    mov AL, strict byte 004h                  ; b0 04                       ; 0xfe77d orgs.asm:894
+    out strict byte 021h, AL                  ; e6 21                       ; 0xfe77f orgs.asm:895
+    mov AL, strict byte 002h                  ; b0 02                       ; 0xfe781 orgs.asm:896
+    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe783 orgs.asm:897
+    mov AL, strict byte 001h                  ; b0 01                       ; 0xfe785 orgs.asm:898
+    out strict byte 021h, AL                  ; e6 21                       ; 0xfe787 orgs.asm:899
+    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe789 orgs.asm:900
+    mov AL, strict byte 0b8h                  ; b0 b8                       ; 0xfe78b orgs.asm:901
+    out strict byte 021h, AL                  ; e6 21                       ; 0xfe78d orgs.asm:902
+    mov AL, strict byte 08fh                  ; b0 8f                       ; 0xfe78f orgs.asm:903
+    out strict byte 0a1h, AL                  ; e6 a1                       ; 0xfe791 orgs.asm:904
+    retn                                      ; c3                          ; 0xfe793 orgs.asm:905
   ; disGetNextSymbol 0xfe794 LB 0x186c -> off=0x0 cb=0000000000000057 uValue=00000000000f0794 'ebda_post'
 ebda_post:                                   ; 0xfe794 LB 0x57
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe794 orgs.asm:93
-    mov word [00034h], ax                     ; a3 34 00                    ; 0xfe797 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe79a orgs.asm:95
-    mov word [00036h], ax                     ; a3 36 00                    ; 0xfe79d orgs.asm:96
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7a0 orgs.asm:93
-    mov word [0003ch], ax                     ; a3 3c 00                    ; 0xfe7a3 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7a6 orgs.asm:95
-    mov word [0003eh], ax                     ; a3 3e 00                    ; 0xfe7a9 orgs.asm:96
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7ac orgs.asm:93
-    mov word [001c8h], ax                     ; a3 c8 01                    ; 0xfe7af orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7b2 orgs.asm:95
-    mov word [001cah], ax                     ; a3 ca 01                    ; 0xfe7b5 orgs.asm:96
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7b8 orgs.asm:93
-    mov word [001cch], ax                     ; a3 cc 01                    ; 0xfe7bb orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7be orgs.asm:95
-    mov word [001ceh], ax                     ; a3 ce 01                    ; 0xfe7c1 orgs.asm:96
-    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7c4 orgs.asm:93
-    mov word [001dch], ax                     ; a3 dc 01                    ; 0xfe7c7 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7ca orgs.asm:95
-    mov word [001deh], ax                     ; a3 de 01                    ; 0xfe7cd orgs.asm:96
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe794 orgs.asm:94
+    mov word [00034h], ax                     ; a3 34 00                    ; 0xfe797 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe79a orgs.asm:96
+    mov word [00036h], ax                     ; a3 36 00                    ; 0xfe79d orgs.asm:97
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7a0 orgs.asm:94
+    mov word [0003ch], ax                     ; a3 3c 00                    ; 0xfe7a3 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7a6 orgs.asm:96
+    mov word [0003eh], ax                     ; a3 3e 00                    ; 0xfe7a9 orgs.asm:97
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7ac orgs.asm:94
+    mov word [001c8h], ax                     ; a3 c8 01                    ; 0xfe7af orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7b2 orgs.asm:96
+    mov word [001cah], ax                     ; a3 ca 01                    ; 0xfe7b5 orgs.asm:97
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7b8 orgs.asm:94
+    mov word [001cch], ax                     ; a3 cc 01                    ; 0xfe7bb orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7be orgs.asm:96
+    mov word [001ceh], ax                     ; a3 ce 01                    ; 0xfe7c1 orgs.asm:97
+    mov ax, 0e754h                            ; b8 54 e7                    ; 0xfe7c4 orgs.asm:94
+    mov word [001dch], ax                     ; a3 dc 01                    ; 0xfe7c7 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfe7ca orgs.asm:96
+    mov word [001deh], ax                     ; a3 de 01                    ; 0xfe7cd orgs.asm:97
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe7d0 orgs.asm:876
-    mov ds, ax                                ; 8e d8                       ; 0xfe7d2 orgs.asm:877
-    mov ax, word [00413h]                     ; a1 13 04                    ; 0xfe7d4 orgs.asm:878
-    mov cx, strict word 00040h                ; b9 40 00                    ; 0xfe7d7 orgs.asm:879
-    mul cx                                    ; f7 e1                       ; 0xfe7da orgs.asm:880
-    mov word [0040eh], ax                     ; a3 0e 04                    ; 0xfe7dc orgs.asm:882
-    mov ds, ax                                ; 8e d8                       ; 0xfe7df orgs.asm:884
-    mov byte [word 00000h], 001h              ; c6 06 00 00 01              ; 0xfe7e1 orgs.asm:885
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe7d0 orgs.asm:918
+    mov ds, ax                                ; 8e d8                       ; 0xfe7d2 orgs.asm:919
+    mov ax, word [00413h]                     ; a1 13 04                    ; 0xfe7d4 orgs.asm:920
+    mov cx, strict word 00040h                ; b9 40 00                    ; 0xfe7d7 orgs.asm:921
+    mul cx                                    ; f7 e1                       ; 0xfe7da orgs.asm:922
+    mov word [0040eh], ax                     ; a3 0e 04                    ; 0xfe7dc orgs.asm:924
+    mov ds, ax                                ; 8e d8                       ; 0xfe7df orgs.asm:926
+    mov byte [word 00000h], 001h              ; c6 06 00 00 01              ; 0xfe7e1 orgs.asm:927
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe7e6 orgs.asm:887
-    mov ds, ax                                ; 8e d8                       ; 0xfe7e8 orgs.asm:888
-    retn                                      ; c3                          ; 0xfe7ea orgs.asm:889
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe7e6 orgs.asm:929
+    mov ds, ax                                ; 8e d8                       ; 0xfe7e8 orgs.asm:930
+    retn                                      ; c3                          ; 0xfe7ea orgs.asm:931
   ; disGetNextSymbol 0xfe7eb LB 0x1815 -> off=0x0 cb=0000000000000043 uValue=00000000000f07eb 'biosorg_check_before_or_at_0E82Ch'
 biosorg_check_before_or_at_0E82Ch:           ; 0xfe7eb LB 0x43
     times 0x41 db 0
     db  'XM'
   ; disGetNextSymbol 0xfe82e LB 0x17d2 -> off=0x0 cb=0000000000000052 uValue=00000000000f082e 'biosorg_check_at_0E82Eh'
 biosorg_check_at_0E82Eh:                     ; 0xfe82e LB 0x52
-    sti                                       ; fb                          ; 0xfe82e orgs.asm:900
-    pushfw                                    ; 9c                          ; 0xfe82f orgs.asm:903
-    push ES                                   ; 06                          ; 0xfe830 orgs.asm:904
-    push DS                                   ; 1e                          ; 0xfe831 orgs.asm:905
+    sti                                       ; fb                          ; 0xfe82e orgs.asm:942
+    pushfw                                    ; 9c                          ; 0xfe82f orgs.asm:945
+    push ES                                   ; 06                          ; 0xfe830 orgs.asm:946
+    push DS                                   ; 1e                          ; 0xfe831 orgs.asm:947
     push ax                                   ; 50                          ; 0xfe832 orgs.asm:99
     push cx                                   ; 51                          ; 0xfe833 orgs.asm:100
     push dx                                   ; 52                          ; 0xfe834 orgs.asm:101
@@ -18381,14 +18360,14 @@ biosorg_check_at_0E82Eh:                     ; 0xfe82e LB 0x52
     push bp                                   ; 55                          ; 0xfe837 orgs.asm:104
     push si                                   ; 56                          ; 0xfe838 orgs.asm:105
     push di                                   ; 57                          ; 0xfe839 orgs.asm:106
-    cmp ah, 000h                              ; 80 fc 00                    ; 0xfe83a orgs.asm:908
-    je short 0e858h                           ; 74 19                       ; 0xfe83d orgs.asm:909
-    cmp ah, 010h                              ; 80 fc 10                    ; 0xfe83f orgs.asm:911
-    je short 0e858h                           ; 74 14                       ; 0xfe842 orgs.asm:912
-    push CS                                   ; 0e                          ; 0xfe844 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe845 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe846 orgs.asm:104
-    call 05598h                               ; e8 4e 6d                    ; 0xfe847 orgs.asm:915
+    cmp ah, 000h                              ; 80 fc 00                    ; 0xfe83a orgs.asm:950
+    je short 0e858h                           ; 74 19                       ; 0xfe83d orgs.asm:951
+    cmp ah, 010h                              ; 80 fc 10                    ; 0xfe83f orgs.asm:953
+    je short 0e858h                           ; 74 14                       ; 0xfe842 orgs.asm:954
+    push CS                                   ; 0e                          ; 0xfe844 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe845 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe846 orgs.asm:105
+    call 05598h                               ; e8 4e 6d                    ; 0xfe847 orgs.asm:957
     pop di                                    ; 5f                          ; 0xfe84a orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe84b orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe84c orgs.asm:118
@@ -18397,23 +18376,23 @@ biosorg_check_at_0E82Eh:                     ; 0xfe82e LB 0x52
     pop dx                                    ; 5a                          ; 0xfe84f orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe850 orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe851 orgs.asm:123
-    pop DS                                    ; 1f                          ; 0xfe852 orgs.asm:917
-    pop ES                                    ; 07                          ; 0xfe853 orgs.asm:918
-    add sp, strict byte 00002h                ; 83 c4 02                    ; 0xfe854 orgs.asm:919
-    iret                                      ; cf                          ; 0xfe857 orgs.asm:920
-    mov bx, strict word 00040h                ; bb 40 00                    ; 0xfe858 orgs.asm:923
-    mov ds, bx                                ; 8e db                       ; 0xfe85b orgs.asm:924
-    cli                                       ; fa                          ; 0xfe85d orgs.asm:926
-    mov bx, word [word 0001ah]                ; 8b 1e 1a 00                 ; 0xfe85e orgs.asm:927
-    cmp bx, word [word 0001ch]                ; 3b 1e 1c 00                 ; 0xfe862 orgs.asm:928
-    jne short 0e86ch                          ; 75 04                       ; 0xfe866 orgs.asm:929
-    sti                                       ; fb                          ; 0xfe868 orgs.asm:930
-    nop                                       ; 90                          ; 0xfe869 orgs.asm:931
-    jmp short 0e85dh                          ; eb f1                       ; 0xfe86a orgs.asm:939
-    push CS                                   ; 0e                          ; 0xfe86c orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe86d orgs.asm:103
-    cld                                       ; fc                          ; 0xfe86e orgs.asm:104
-    call 05598h                               ; e8 26 6d                    ; 0xfe86f orgs.asm:943
+    pop DS                                    ; 1f                          ; 0xfe852 orgs.asm:959
+    pop ES                                    ; 07                          ; 0xfe853 orgs.asm:960
+    add sp, strict byte 00002h                ; 83 c4 02                    ; 0xfe854 orgs.asm:961
+    iret                                      ; cf                          ; 0xfe857 orgs.asm:962
+    mov bx, strict word 00040h                ; bb 40 00                    ; 0xfe858 orgs.asm:965
+    mov ds, bx                                ; 8e db                       ; 0xfe85b orgs.asm:966
+    cli                                       ; fa                          ; 0xfe85d orgs.asm:968
+    mov bx, word [word 0001ah]                ; 8b 1e 1a 00                 ; 0xfe85e orgs.asm:969
+    cmp bx, word [word 0001ch]                ; 3b 1e 1c 00                 ; 0xfe862 orgs.asm:970
+    jne short 0e86ch                          ; 75 04                       ; 0xfe866 orgs.asm:971
+    sti                                       ; fb                          ; 0xfe868 orgs.asm:972
+    nop                                       ; 90                          ; 0xfe869 orgs.asm:973
+    jmp short 0e85dh                          ; eb f1                       ; 0xfe86a orgs.asm:981
+    push CS                                   ; 0e                          ; 0xfe86c orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe86d orgs.asm:104
+    cld                                       ; fc                          ; 0xfe86e orgs.asm:105
+    call 05598h                               ; e8 26 6d                    ; 0xfe86f orgs.asm:985
     pop di                                    ; 5f                          ; 0xfe872 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe873 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe874 orgs.asm:118
@@ -18422,22 +18401,22 @@ biosorg_check_at_0E82Eh:                     ; 0xfe82e LB 0x52
     pop dx                                    ; 5a                          ; 0xfe877 orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe878 orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe879 orgs.asm:123
-    pop DS                                    ; 1f                          ; 0xfe87a orgs.asm:945
-    pop ES                                    ; 07                          ; 0xfe87b orgs.asm:946
-    add sp, strict byte 00002h                ; 83 c4 02                    ; 0xfe87c orgs.asm:947
-    iret                                      ; cf                          ; 0xfe87f orgs.asm:955
+    pop DS                                    ; 1f                          ; 0xfe87a orgs.asm:987
+    pop ES                                    ; 07                          ; 0xfe87b orgs.asm:988
+    add sp, strict byte 00002h                ; 83 c4 02                    ; 0xfe87c orgs.asm:989
+    iret                                      ; cf                          ; 0xfe87f orgs.asm:997
   ; disGetNextSymbol 0xfe880 LB 0x1780 -> off=0x0 cb=0000000000000107 uValue=00000000000f0880 'biosorg_check_before_or_at_0E985h'
 biosorg_check_before_or_at_0E985h:           ; 0xfe880 LB 0x107
     times 0x105 db 0
     db  'XM'
   ; disGetNextSymbol 0xfe987 LB 0x1679 -> off=0x0 cb=000000000000006e uValue=00000000000f0987 'biosorg_check_at_0E987h'
 biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x6e
-    cli                                       ; fa                          ; 0xfe987 orgs.asm:972
-    push ax                                   ; 50                          ; 0xfe988 orgs.asm:973
-    mov AL, strict byte 0adh                  ; b0 ad                       ; 0xfe989 orgs.asm:974
-    out strict byte 064h, AL                  ; e6 64                       ; 0xfe98b orgs.asm:975
-    in AL, strict byte 060h                   ; e4 60                       ; 0xfe98d orgs.asm:977
-    push DS                                   ; 1e                          ; 0xfe98f orgs.asm:978
+    cli                                       ; fa                          ; 0xfe987 orgs.asm:1014
+    push ax                                   ; 50                          ; 0xfe988 orgs.asm:1015
+    mov AL, strict byte 0adh                  ; b0 ad                       ; 0xfe989 orgs.asm:1016
+    out strict byte 064h, AL                  ; e6 64                       ; 0xfe98b orgs.asm:1017
+    in AL, strict byte 060h                   ; e4 60                       ; 0xfe98d orgs.asm:1019
+    push DS                                   ; 1e                          ; 0xfe98f orgs.asm:1020
     push ax                                   ; 50                          ; 0xfe990 orgs.asm:99
     push cx                                   ; 51                          ; 0xfe991 orgs.asm:100
     push dx                                   ; 52                          ; 0xfe992 orgs.asm:101
@@ -18446,32 +18425,32 @@ biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x6e
     push bp                                   ; 55                          ; 0xfe995 orgs.asm:104
     push si                                   ; 56                          ; 0xfe996 orgs.asm:105
     push di                                   ; 57                          ; 0xfe997 orgs.asm:106
-    cld                                       ; fc                          ; 0xfe998 orgs.asm:980
-    mov AH, strict byte 04fh                  ; b4 4f                       ; 0xfe999 orgs.asm:982
-    stc                                       ; f9                          ; 0xfe99b orgs.asm:983
-    int 015h                                  ; cd 15                       ; 0xfe99c orgs.asm:984
-    jnc short 0e9c7h                          ; 73 27                       ; 0xfe99e orgs.asm:985
-    sti                                       ; fb                          ; 0xfe9a0 orgs.asm:987
-    cmp AL, strict byte 0e0h                  ; 3c e0                       ; 0xfe9a1 orgs.asm:990
-    jne short 0e9b0h                          ; 75 0b                       ; 0xfe9a3 orgs.asm:991
+    cld                                       ; fc                          ; 0xfe998 orgs.asm:1022
+    mov AH, strict byte 04fh                  ; b4 4f                       ; 0xfe999 orgs.asm:1024
+    stc                                       ; f9                          ; 0xfe99b orgs.asm:1025
+    int 015h                                  ; cd 15                       ; 0xfe99c orgs.asm:1026
+    jnc short 0e9c7h                          ; 73 27                       ; 0xfe99e orgs.asm:1027
+    sti                                       ; fb                          ; 0xfe9a0 orgs.asm:1029
+    cmp AL, strict byte 0e0h                  ; 3c e0                       ; 0xfe9a1 orgs.asm:1032
+    jne short 0e9b0h                          ; 75 0b                       ; 0xfe9a3 orgs.asm:1033
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe9a5 orgs.asm:992
-    mov ds, ax                                ; 8e d8                       ; 0xfe9a7 orgs.asm:993
-    or byte [00496h], 002h                    ; 80 0e 96 04 02              ; 0xfe9a9 orgs.asm:994
-    jmp short 0e9c7h                          ; eb 17                       ; 0xfe9ae orgs.asm:995
-    cmp AL, strict byte 0e1h                  ; 3c e1                       ; 0xfe9b0 orgs.asm:998
-    jne short 0e9bfh                          ; 75 0b                       ; 0xfe9b2 orgs.asm:999
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe9a5 orgs.asm:1034
+    mov ds, ax                                ; 8e d8                       ; 0xfe9a7 orgs.asm:1035
+    or byte [00496h], 002h                    ; 80 0e 96 04 02              ; 0xfe9a9 orgs.asm:1036
+    jmp short 0e9c7h                          ; eb 17                       ; 0xfe9ae orgs.asm:1037
+    cmp AL, strict byte 0e1h                  ; 3c e1                       ; 0xfe9b0 orgs.asm:1040
+    jne short 0e9bfh                          ; 75 0b                       ; 0xfe9b2 orgs.asm:1041
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfe9b4 orgs.asm:1000
-    mov ds, ax                                ; 8e d8                       ; 0xfe9b6 orgs.asm:1001
-    or byte [00496h], 001h                    ; 80 0e 96 04 01              ; 0xfe9b8 orgs.asm:1002
-    jmp short 0e9c7h                          ; eb 08                       ; 0xfe9bd orgs.asm:1003
-    push ES                                   ; 06                          ; 0xfe9bf orgs.asm:1006
-    push CS                                   ; 0e                          ; 0xfe9c0 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe9c1 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe9c2 orgs.asm:104
-    call 0510ah                               ; e8 44 67                    ; 0xfe9c3 orgs.asm:1008
-    pop ES                                    ; 07                          ; 0xfe9c6 orgs.asm:1009
+    ; xor ax, ax                                ; 33 c0                     ; 0xfe9b4 orgs.asm:1042
+    mov ds, ax                                ; 8e d8                       ; 0xfe9b6 orgs.asm:1043
+    or byte [00496h], 001h                    ; 80 0e 96 04 01              ; 0xfe9b8 orgs.asm:1044
+    jmp short 0e9c7h                          ; eb 08                       ; 0xfe9bd orgs.asm:1045
+    push ES                                   ; 06                          ; 0xfe9bf orgs.asm:1048
+    push CS                                   ; 0e                          ; 0xfe9c0 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe9c1 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe9c2 orgs.asm:105
+    call 0510ah                               ; e8 44 67                    ; 0xfe9c3 orgs.asm:1050
+    pop ES                                    ; 07                          ; 0xfe9c6 orgs.asm:1051
     pop di                                    ; 5f                          ; 0xfe9c7 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe9c8 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe9c9 orgs.asm:118
@@ -18480,13 +18459,13 @@ biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x6e
     pop dx                                    ; 5a                          ; 0xfe9cc orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe9cd orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe9ce orgs.asm:123
-    pop DS                                    ; 1f                          ; 0xfe9cf orgs.asm:1013
-    cli                                       ; fa                          ; 0xfe9d0 orgs.asm:1014
-    call 0e034h                               ; e8 60 f6                    ; 0xfe9d1 orgs.asm:1015
-    mov AL, strict byte 0aeh                  ; b0 ae                       ; 0xfe9d4 orgs.asm:1017
-    out strict byte 064h, AL                  ; e6 64                       ; 0xfe9d6 orgs.asm:1018
-    pop ax                                    ; 58                          ; 0xfe9d8 orgs.asm:1019
-    iret                                      ; cf                          ; 0xfe9d9 orgs.asm:1020
+    pop DS                                    ; 1f                          ; 0xfe9cf orgs.asm:1055
+    cli                                       ; fa                          ; 0xfe9d0 orgs.asm:1056
+    call 0e034h                               ; e8 60 f6                    ; 0xfe9d1 orgs.asm:1057
+    mov AL, strict byte 0aeh                  ; b0 ae                       ; 0xfe9d4 orgs.asm:1059
+    out strict byte 064h, AL                  ; e6 64                       ; 0xfe9d6 orgs.asm:1060
+    pop ax                                    ; 58                          ; 0xfe9d8 orgs.asm:1061
+    iret                                      ; cf                          ; 0xfe9d9 orgs.asm:1062
     push ax                                   ; 50                          ; 0xfe9da orgs.asm:99
     push cx                                   ; 51                          ; 0xfe9db orgs.asm:100
     push dx                                   ; 52                          ; 0xfe9dc orgs.asm:101
@@ -18495,14 +18474,14 @@ biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x6e
     push bp                                   ; 55                          ; 0xfe9df orgs.asm:104
     push si                                   ; 56                          ; 0xfe9e0 orgs.asm:105
     push di                                   ; 57                          ; 0xfe9e1 orgs.asm:106
-    push ES                                   ; 06                          ; 0xfe9e2 orgs.asm:1029
-    push DS                                   ; 1e                          ; 0xfe9e3 orgs.asm:1030
-    push CS                                   ; 0e                          ; 0xfe9e4 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfe9e5 orgs.asm:103
-    cld                                       ; fc                          ; 0xfe9e6 orgs.asm:104
-    call 068b3h                               ; e8 c9 7e                    ; 0xfe9e7 orgs.asm:1032
-    pop DS                                    ; 1f                          ; 0xfe9ea orgs.asm:1033
-    pop ES                                    ; 07                          ; 0xfe9eb orgs.asm:1034
+    push ES                                   ; 06                          ; 0xfe9e2 orgs.asm:1071
+    push DS                                   ; 1e                          ; 0xfe9e3 orgs.asm:1072
+    push CS                                   ; 0e                          ; 0xfe9e4 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfe9e5 orgs.asm:104
+    cld                                       ; fc                          ; 0xfe9e6 orgs.asm:105
+    call 068b3h                               ; e8 c9 7e                    ; 0xfe9e7 orgs.asm:1074
+    pop DS                                    ; 1f                          ; 0xfe9ea orgs.asm:1075
+    pop ES                                    ; 07                          ; 0xfe9eb orgs.asm:1076
     pop di                                    ; 5f                          ; 0xfe9ec orgs.asm:116
     pop si                                    ; 5e                          ; 0xfe9ed orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfe9ee orgs.asm:118
@@ -18511,20 +18490,20 @@ biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x6e
     pop dx                                    ; 5a                          ; 0xfe9f1 orgs.asm:121
     pop cx                                    ; 59                          ; 0xfe9f2 orgs.asm:122
     pop ax                                    ; 58                          ; 0xfe9f3 orgs.asm:123
-    iret                                      ; cf                          ; 0xfe9f4 orgs.asm:1036
+    iret                                      ; cf                          ; 0xfe9f4 orgs.asm:1078
   ; disGetNextSymbol 0xfe9f5 LB 0x160b -> off=0x0 cb=0000000000000264 uValue=00000000000f09f5 'biosorg_check_before_or_at_0EC57h'
 biosorg_check_before_or_at_0EC57h:           ; 0xfe9f5 LB 0x264
     times 0x262 db 0
     db  'XM'
   ; disGetNextSymbol 0xfec59 LB 0x13a7 -> off=0x0 cb=0000000000000002 uValue=00000000000f0c59 'biosorg_check_at_0EC59h'
 biosorg_check_at_0EC59h:                     ; 0xfec59 LB 0x2
-    jmp short 0ecc4h                          ; eb 69                       ; 0xfec59 orgs.asm:1043
+    jmp short 0ecc4h                          ; eb 69                       ; 0xfec59 orgs.asm:1085
   ; disGetNextSymbol 0xfec5b LB 0x13a5 -> off=0x0 cb=000000000000001f uValue=00000000000f0c5b 'int13_relocated'
 int13_relocated:                             ; 0xfec5b LB 0x1f
-    cmp ah, 04ah                              ; 80 fc 4a                    ; 0xfec5b orgs.asm:1052
-    jc short 0ec7ch                           ; 72 1c                       ; 0xfec5e orgs.asm:1053
-    cmp ah, 04dh                              ; 80 fc 4d                    ; 0xfec60 orgs.asm:1055
-    jnbe short 0ec7ch                         ; 77 17                       ; 0xfec63 orgs.asm:1056
+    cmp ah, 04ah                              ; 80 fc 4a                    ; 0xfec5b orgs.asm:1094
+    jc short 0ec7ch                           ; 72 1c                       ; 0xfec5e orgs.asm:1095
+    cmp ah, 04dh                              ; 80 fc 4d                    ; 0xfec60 orgs.asm:1097
+    jnbe short 0ec7ch                         ; 77 17                       ; 0xfec63 orgs.asm:1098
     push ax                                   ; 50                          ; 0xfec65 orgs.asm:99
     push cx                                   ; 51                          ; 0xfec66 orgs.asm:100
     push dx                                   ; 52                          ; 0xfec67 orgs.asm:101
@@ -18533,36 +18512,36 @@ int13_relocated:                             ; 0xfec5b LB 0x1f
     push bp                                   ; 55                          ; 0xfec6a orgs.asm:104
     push si                                   ; 56                          ; 0xfec6b orgs.asm:105
     push di                                   ; 57                          ; 0xfec6c orgs.asm:106
-    push ES                                   ; 06                          ; 0xfec6d orgs.asm:1059
-    push DS                                   ; 1e                          ; 0xfec6e orgs.asm:1060
-    push CS                                   ; 0e                          ; 0xfec6f orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfec70 orgs.asm:103
-    cld                                       ; fc                          ; 0xfec71 orgs.asm:104
+    push ES                                   ; 06                          ; 0xfec6d orgs.asm:1101
+    push DS                                   ; 1e                          ; 0xfec6e orgs.asm:1102
+    push CS                                   ; 0e                          ; 0xfec6f orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfec70 orgs.asm:104
+    cld                                       ; fc                          ; 0xfec71 orgs.asm:105
     push word [cs:0ec7ah]                     ; 2e ff 36 7a ec              ; 0xfec72 orgs.asm:86
     jmp near 03c37h                           ; e9 bd 4f                    ; 0xfec77 orgs.asm:87
   ; disGetNextSymbol 0xfec7a LB 0x1386 -> off=0x0 cb=000000000000004a uValue=00000000000f0c7a 'jmp_call_ret_int13_out'
 jmp_call_ret_int13_out:                      ; 0xfec7a LB 0x4a
     db  0ffh
     in AL, DX                                 ; ec                          ; 0xfec7b
-    push ES                                   ; 06                          ; 0xfec7c orgs.asm:1068
-    push ax                                   ; 50                          ; 0xfec7d orgs.asm:1069
-    push bx                                   ; 53                          ; 0xfec7e orgs.asm:1070
-    push cx                                   ; 51                          ; 0xfec7f orgs.asm:1071
-    push dx                                   ; 52                          ; 0xfec80 orgs.asm:1072
-    call 03c0bh                               ; e8 87 4f                    ; 0xfec81 orgs.asm:1075
-    cmp AL, strict byte 000h                  ; 3c 00                       ; 0xfec84 orgs.asm:1076
-    je short 0ecbfh                           ; 74 37                       ; 0xfec86 orgs.asm:1077
-    call 03c21h                               ; e8 96 4f                    ; 0xfec88 orgs.asm:1080
-    pop dx                                    ; 5a                          ; 0xfec8b orgs.asm:1081
-    push dx                                   ; 52                          ; 0xfec8c orgs.asm:1082
+    push ES                                   ; 06                          ; 0xfec7c orgs.asm:1110
+    push ax                                   ; 50                          ; 0xfec7d orgs.asm:1111
+    push bx                                   ; 53                          ; 0xfec7e orgs.asm:1112
+    push cx                                   ; 51                          ; 0xfec7f orgs.asm:1113
+    push dx                                   ; 52                          ; 0xfec80 orgs.asm:1114
+    call 03c0bh                               ; e8 87 4f                    ; 0xfec81 orgs.asm:1117
+    cmp AL, strict byte 000h                  ; 3c 00                       ; 0xfec84 orgs.asm:1118
+    je short 0ecbfh                           ; 74 37                       ; 0xfec86 orgs.asm:1119
+    call 03c21h                               ; e8 96 4f                    ; 0xfec88 orgs.asm:1122
+    pop dx                                    ; 5a                          ; 0xfec8b orgs.asm:1123
+    push dx                                   ; 52                          ; 0xfec8c orgs.asm:1124
     db  03ah, 0c2h
-    ; cmp al, dl                                ; 3a c2                     ; 0xfec8d orgs.asm:1083
-    jne short 0ecabh                          ; 75 1a                       ; 0xfec8f orgs.asm:1084
-    pop dx                                    ; 5a                          ; 0xfec91 orgs.asm:1086
-    pop cx                                    ; 59                          ; 0xfec92 orgs.asm:1087
-    pop bx                                    ; 5b                          ; 0xfec93 orgs.asm:1088
-    pop ax                                    ; 58                          ; 0xfec94 orgs.asm:1089
-    pop ES                                    ; 07                          ; 0xfec95 orgs.asm:1090
+    ; cmp al, dl                                ; 3a c2                     ; 0xfec8d orgs.asm:1125
+    jne short 0ecabh                          ; 75 1a                       ; 0xfec8f orgs.asm:1126
+    pop dx                                    ; 5a                          ; 0xfec91 orgs.asm:1128
+    pop cx                                    ; 59                          ; 0xfec92 orgs.asm:1129
+    pop bx                                    ; 5b                          ; 0xfec93 orgs.asm:1130
+    pop ax                                    ; 58                          ; 0xfec94 orgs.asm:1131
+    pop ES                                    ; 07                          ; 0xfec95 orgs.asm:1132
     push ax                                   ; 50                          ; 0xfec96 orgs.asm:99
     push cx                                   ; 51                          ; 0xfec97 orgs.asm:100
     push dx                                   ; 52                          ; 0xfec98 orgs.asm:101
@@ -18571,76 +18550,76 @@ jmp_call_ret_int13_out:                      ; 0xfec7a LB 0x4a
     push bp                                   ; 55                          ; 0xfec9b orgs.asm:104
     push si                                   ; 56                          ; 0xfec9c orgs.asm:105
     push di                                   ; 57                          ; 0xfec9d orgs.asm:106
-    push ES                                   ; 06                          ; 0xfec9e orgs.asm:1093
-    push DS                                   ; 1e                          ; 0xfec9f orgs.asm:1094
-    push CS                                   ; 0e                          ; 0xfeca0 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfeca1 orgs.asm:103
-    cld                                       ; fc                          ; 0xfeca2 orgs.asm:104
+    push ES                                   ; 06                          ; 0xfec9e orgs.asm:1135
+    push DS                                   ; 1e                          ; 0xfec9f orgs.asm:1136
+    push CS                                   ; 0e                          ; 0xfeca0 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfeca1 orgs.asm:104
+    cld                                       ; fc                          ; 0xfeca2 orgs.asm:105
     push word [cs:0ec7ah]                     ; 2e ff 36 7a ec              ; 0xfeca3 orgs.asm:86
     jmp near 042fbh                           ; e9 50 56                    ; 0xfeca8 orgs.asm:87
-    and dl, 0e0h                              ; 80 e2 e0                    ; 0xfecab orgs.asm:1100
+    and dl, 0e0h                              ; 80 e2 e0                    ; 0xfecab orgs.asm:1142
     db  03ah, 0c2h
-    ; cmp al, dl                                ; 3a c2                     ; 0xfecae orgs.asm:1101
-    jne short 0ecbfh                          ; 75 0d                       ; 0xfecb0 orgs.asm:1102
-    pop dx                                    ; 5a                          ; 0xfecb2 orgs.asm:1104
-    pop cx                                    ; 59                          ; 0xfecb3 orgs.asm:1105
-    pop bx                                    ; 5b                          ; 0xfecb4 orgs.asm:1106
-    pop ax                                    ; 58                          ; 0xfecb5 orgs.asm:1107
-    pop ES                                    ; 07                          ; 0xfecb6 orgs.asm:1108
-    push ax                                   ; 50                          ; 0xfecb7 orgs.asm:1110
-    push cx                                   ; 51                          ; 0xfecb8 orgs.asm:1111
-    push dx                                   ; 52                          ; 0xfecb9 orgs.asm:1112
-    push bx                                   ; 53                          ; 0xfecba orgs.asm:1113
+    ; cmp al, dl                                ; 3a c2                     ; 0xfecae orgs.asm:1143
+    jne short 0ecbfh                          ; 75 0d                       ; 0xfecb0 orgs.asm:1144
+    pop dx                                    ; 5a                          ; 0xfecb2 orgs.asm:1146
+    pop cx                                    ; 59                          ; 0xfecb3 orgs.asm:1147
+    pop bx                                    ; 5b                          ; 0xfecb4 orgs.asm:1148
+    pop ax                                    ; 58                          ; 0xfecb5 orgs.asm:1149
+    pop ES                                    ; 07                          ; 0xfecb6 orgs.asm:1150
+    push ax                                   ; 50                          ; 0xfecb7 orgs.asm:1152
+    push cx                                   ; 51                          ; 0xfecb8 orgs.asm:1153
+    push dx                                   ; 52                          ; 0xfecb9 orgs.asm:1154
+    push bx                                   ; 53                          ; 0xfecba orgs.asm:1155
     db  0feh, 0cah
-    ; dec dl                                    ; fe ca                     ; 0xfecbb orgs.asm:1115
-    jmp short 0ecc8h                          ; eb 09                       ; 0xfecbd orgs.asm:1116
-    pop dx                                    ; 5a                          ; 0xfecbf orgs.asm:1119
-    pop cx                                    ; 59                          ; 0xfecc0 orgs.asm:1120
-    pop bx                                    ; 5b                          ; 0xfecc1 orgs.asm:1121
-    pop ax                                    ; 58                          ; 0xfecc2 orgs.asm:1122
-    pop ES                                    ; 07                          ; 0xfecc3 orgs.asm:1123
+    ; dec dl                                    ; fe ca                     ; 0xfecbb orgs.asm:1157
+    jmp short 0ecc8h                          ; eb 09                       ; 0xfecbd orgs.asm:1158
+    pop dx                                    ; 5a                          ; 0xfecbf orgs.asm:1161
+    pop cx                                    ; 59                          ; 0xfecc0 orgs.asm:1162
+    pop bx                                    ; 5b                          ; 0xfecc1 orgs.asm:1163
+    pop ax                                    ; 58                          ; 0xfecc2 orgs.asm:1164
+    pop ES                                    ; 07                          ; 0xfecc3 orgs.asm:1165
   ; disGetNextSymbol 0xfecc4 LB 0x133c -> off=0x0 cb=0000000000000004 uValue=00000000000f0cc4 'int13_noeltorito'
 int13_noeltorito:                            ; 0xfecc4 LB 0x4
-    push ax                                   ; 50                          ; 0xfecc4 orgs.asm:1126
-    push cx                                   ; 51                          ; 0xfecc5 orgs.asm:1127
-    push dx                                   ; 52                          ; 0xfecc6 orgs.asm:1128
-    push bx                                   ; 53                          ; 0xfecc7 orgs.asm:1129
+    push ax                                   ; 50                          ; 0xfecc4 orgs.asm:1168
+    push cx                                   ; 51                          ; 0xfecc5 orgs.asm:1169
+    push dx                                   ; 52                          ; 0xfecc6 orgs.asm:1170
+    push bx                                   ; 53                          ; 0xfecc7 orgs.asm:1171
   ; disGetNextSymbol 0xfecc8 LB 0x1338 -> off=0x0 cb=0000000000000016 uValue=00000000000f0cc8 'int13_legacy'
 int13_legacy:                                ; 0xfecc8 LB 0x16
-    push dx                                   ; 52                          ; 0xfecc8 orgs.asm:1131
-    push bp                                   ; 55                          ; 0xfecc9 orgs.asm:1132
-    push si                                   ; 56                          ; 0xfecca orgs.asm:1133
-    push di                                   ; 57                          ; 0xfeccb orgs.asm:1134
-    push ES                                   ; 06                          ; 0xfeccc orgs.asm:1135
-    push DS                                   ; 1e                          ; 0xfeccd orgs.asm:1136
-    push CS                                   ; 0e                          ; 0xfecce orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfeccf orgs.asm:103
-    cld                                       ; fc                          ; 0xfecd0 orgs.asm:104
-    test dl, 080h                             ; f6 c2 80                    ; 0xfecd1 orgs.asm:1141
-    jne short 0ecdeh                          ; 75 08                       ; 0xfecd4 orgs.asm:1142
+    push dx                                   ; 52                          ; 0xfecc8 orgs.asm:1173
+    push bp                                   ; 55                          ; 0xfecc9 orgs.asm:1174
+    push si                                   ; 56                          ; 0xfecca orgs.asm:1175
+    push di                                   ; 57                          ; 0xfeccb orgs.asm:1176
+    push ES                                   ; 06                          ; 0xfeccc orgs.asm:1177
+    push DS                                   ; 1e                          ; 0xfeccd orgs.asm:1178
+    push CS                                   ; 0e                          ; 0xfecce orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfeccf orgs.asm:104
+    cld                                       ; fc                          ; 0xfecd0 orgs.asm:105
+    test dl, 080h                             ; f6 c2 80                    ; 0xfecd1 orgs.asm:1183
+    jne short 0ecdeh                          ; 75 08                       ; 0xfecd4 orgs.asm:1184
     push word [cs:0ec7ah]                     ; 2e ff 36 7a ec              ; 0xfecd6 orgs.asm:86
     jmp near 03183h                           ; e9 a5 44                    ; 0xfecdb orgs.asm:87
   ; disGetNextSymbol 0xfecde LB 0x1322 -> off=0x0 cb=0000000000000014 uValue=00000000000f0cde 'int13_notfloppy'
 int13_notfloppy:                             ; 0xfecde LB 0x14
-    cmp dl, 0e0h                              ; 80 fa e0                    ; 0xfecde orgs.asm:1147
-    jc short 0ecf2h                           ; 72 0f                       ; 0xfece1 orgs.asm:1148
-    shr ebx, 010h                             ; 66 c1 eb 10                 ; 0xfece3 orgs.asm:1154
-    push bx                                   ; 53                          ; 0xfece7 orgs.asm:1155
-    call 04753h                               ; e8 68 5a                    ; 0xfece8 orgs.asm:1156
-    pop bx                                    ; 5b                          ; 0xfeceb orgs.asm:1157
-    sal ebx, 010h                             ; 66 c1 e3 10                 ; 0xfecec orgs.asm:1158
-    jmp short 0ecffh                          ; eb 0d                       ; 0xfecf0 orgs.asm:1160
+    cmp dl, 0e0h                              ; 80 fa e0                    ; 0xfecde orgs.asm:1189
+    jc short 0ecf2h                           ; 72 0f                       ; 0xfece1 orgs.asm:1190
+    shr ebx, 010h                             ; 66 c1 eb 10                 ; 0xfece3 orgs.asm:1196
+    push bx                                   ; 53                          ; 0xfece7 orgs.asm:1197
+    call 04753h                               ; e8 68 5a                    ; 0xfece8 orgs.asm:1198
+    pop bx                                    ; 5b                          ; 0xfeceb orgs.asm:1199
+    sal ebx, 010h                             ; 66 c1 e3 10                 ; 0xfecec orgs.asm:1200
+    jmp short 0ecffh                          ; eb 0d                       ; 0xfecf0 orgs.asm:1202
   ; disGetNextSymbol 0xfecf2 LB 0x130e -> off=0x0 cb=000000000000000d uValue=00000000000f0cf2 'int13_disk'
 int13_disk:                                  ; 0xfecf2 LB 0xd
-    cmp ah, 040h                              ; 80 fc 40                    ; 0xfecf2 orgs.asm:1164
-    jnbe short 0ecfch                         ; 77 05                       ; 0xfecf5 orgs.asm:1165
-    call 05c95h                               ; e8 9b 6f                    ; 0xfecf7 orgs.asm:1166
-    jmp short 0ecffh                          ; eb 03                       ; 0xfecfa orgs.asm:1167
-    call 060ebh                               ; e8 ec 73                    ; 0xfecfc orgs.asm:1170
+    cmp ah, 040h                              ; 80 fc 40                    ; 0xfecf2 orgs.asm:1206
+    jnbe short 0ecfch                         ; 77 05                       ; 0xfecf5 orgs.asm:1207
+    call 05c95h                               ; e8 9b 6f                    ; 0xfecf7 orgs.asm:1208
+    jmp short 0ecffh                          ; eb 03                       ; 0xfecfa orgs.asm:1209
+    call 060ebh                               ; e8 ec 73                    ; 0xfecfc orgs.asm:1212
   ; disGetNextSymbol 0xfecff LB 0x1301 -> off=0x0 cb=000000000000000b uValue=00000000000f0cff 'int13_out'
 int13_out:                                   ; 0xfecff LB 0xb
-    pop DS                                    ; 1f                          ; 0xfecff orgs.asm:1173
-    pop ES                                    ; 07                          ; 0xfed00 orgs.asm:1174
+    pop DS                                    ; 1f                          ; 0xfecff orgs.asm:1215
+    pop ES                                    ; 07                          ; 0xfed00 orgs.asm:1216
     pop di                                    ; 5f                          ; 0xfed01 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfed02 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfed03 orgs.asm:118
@@ -18649,207 +18628,207 @@ int13_out:                                   ; 0xfecff LB 0xb
     pop dx                                    ; 5a                          ; 0xfed06 orgs.asm:121
     pop cx                                    ; 59                          ; 0xfed07 orgs.asm:122
     pop ax                                    ; 58                          ; 0xfed08 orgs.asm:123
-    iret                                      ; cf                          ; 0xfed09 orgs.asm:1176
+    iret                                      ; cf                          ; 0xfed09 orgs.asm:1218
   ; disGetNextSymbol 0xfed0a LB 0x12f6 -> off=0x0 cb=000000000000001e uValue=00000000000f0d0a 'detect_parport'
 detect_parport:                              ; 0xfed0a LB 0x1e
-    push dx                                   ; 52                          ; 0xfed0a orgs.asm:1183
-    inc dx                                    ; 42                          ; 0xfed0b orgs.asm:1184
-    inc dx                                    ; 42                          ; 0xfed0c orgs.asm:1185
-    in AL, DX                                 ; ec                          ; 0xfed0d orgs.asm:1186
-    and AL, strict byte 0dfh                  ; 24 df                       ; 0xfed0e orgs.asm:1187
-    out DX, AL                                ; ee                          ; 0xfed10 orgs.asm:1188
-    pop dx                                    ; 5a                          ; 0xfed11 orgs.asm:1189
-    mov AL, strict byte 0aah                  ; b0 aa                       ; 0xfed12 orgs.asm:1190
-    out DX, AL                                ; ee                          ; 0xfed14 orgs.asm:1191
-    in AL, DX                                 ; ec                          ; 0xfed15 orgs.asm:1192
-    cmp AL, strict byte 0aah                  ; 3c aa                       ; 0xfed16 orgs.asm:1193
-    jne short 0ed27h                          ; 75 0d                       ; 0xfed18 orgs.asm:1194
-    push bx                                   ; 53                          ; 0xfed1a orgs.asm:1196
-    sal bx, 1                                 ; d1 e3                       ; 0xfed1b orgs.asm:1197
-    mov word [bx+00408h], dx                  ; 89 97 08 04                 ; 0xfed1d orgs.asm:1198
-    pop bx                                    ; 5b                          ; 0xfed21 orgs.asm:1199
-    mov byte [bx+00478h], cl                  ; 88 8f 78 04                 ; 0xfed22 orgs.asm:1200
-    inc bx                                    ; 43                          ; 0xfed26 orgs.asm:1201
-    retn                                      ; c3                          ; 0xfed27 orgs.asm:1203
+    push dx                                   ; 52                          ; 0xfed0a orgs.asm:1225
+    inc dx                                    ; 42                          ; 0xfed0b orgs.asm:1226
+    inc dx                                    ; 42                          ; 0xfed0c orgs.asm:1227
+    in AL, DX                                 ; ec                          ; 0xfed0d orgs.asm:1228
+    and AL, strict byte 0dfh                  ; 24 df                       ; 0xfed0e orgs.asm:1229
+    out DX, AL                                ; ee                          ; 0xfed10 orgs.asm:1230
+    pop dx                                    ; 5a                          ; 0xfed11 orgs.asm:1231
+    mov AL, strict byte 0aah                  ; b0 aa                       ; 0xfed12 orgs.asm:1232
+    out DX, AL                                ; ee                          ; 0xfed14 orgs.asm:1233
+    in AL, DX                                 ; ec                          ; 0xfed15 orgs.asm:1234
+    cmp AL, strict byte 0aah                  ; 3c aa                       ; 0xfed16 orgs.asm:1235
+    jne short 0ed27h                          ; 75 0d                       ; 0xfed18 orgs.asm:1236
+    push bx                                   ; 53                          ; 0xfed1a orgs.asm:1238
+    sal bx, 1                                 ; d1 e3                       ; 0xfed1b orgs.asm:1239
+    mov word [bx+00408h], dx                  ; 89 97 08 04                 ; 0xfed1d orgs.asm:1240
+    pop bx                                    ; 5b                          ; 0xfed21 orgs.asm:1241
+    mov byte [bx+00478h], cl                  ; 88 8f 78 04                 ; 0xfed22 orgs.asm:1242
+    inc bx                                    ; 43                          ; 0xfed26 orgs.asm:1243
+    retn                                      ; c3                          ; 0xfed27 orgs.asm:1245
   ; disGetNextSymbol 0xfed28 LB 0x12d8 -> off=0x0 cb=0000000000000024 uValue=00000000000f0d28 'detect_serial'
 detect_serial:                               ; 0xfed28 LB 0x24
-    push dx                                   ; 52                          ; 0xfed28 orgs.asm:1210
-    inc dx                                    ; 42                          ; 0xfed29 orgs.asm:1211
-    mov AL, strict byte 002h                  ; b0 02                       ; 0xfed2a orgs.asm:1212
-    out DX, AL                                ; ee                          ; 0xfed2c orgs.asm:1213
-    in AL, DX                                 ; ec                          ; 0xfed2d orgs.asm:1214
-    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xfed2e orgs.asm:1215
-    jne short 0ed4ah                          ; 75 18                       ; 0xfed30 orgs.asm:1216
-    inc dx                                    ; 42                          ; 0xfed32 orgs.asm:1218
-    in AL, DX                                 ; ec                          ; 0xfed33 orgs.asm:1219
-    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xfed34 orgs.asm:1220
-    jne short 0ed4ah                          ; 75 12                       ; 0xfed36 orgs.asm:1221
-    dec dx                                    ; 4a                          ; 0xfed38 orgs.asm:1223
+    push dx                                   ; 52                          ; 0xfed28 orgs.asm:1252
+    inc dx                                    ; 42                          ; 0xfed29 orgs.asm:1253
+    mov AL, strict byte 002h                  ; b0 02                       ; 0xfed2a orgs.asm:1254
+    out DX, AL                                ; ee                          ; 0xfed2c orgs.asm:1255
+    in AL, DX                                 ; ec                          ; 0xfed2d orgs.asm:1256
+    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xfed2e orgs.asm:1257
+    jne short 0ed4ah                          ; 75 18                       ; 0xfed30 orgs.asm:1258
+    inc dx                                    ; 42                          ; 0xfed32 orgs.asm:1260
+    in AL, DX                                 ; ec                          ; 0xfed33 orgs.asm:1261
+    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xfed34 orgs.asm:1262
+    jne short 0ed4ah                          ; 75 12                       ; 0xfed36 orgs.asm:1263
+    dec dx                                    ; 4a                          ; 0xfed38 orgs.asm:1265
     db  032h, 0c0h
-    ; xor al, al                                ; 32 c0                     ; 0xfed39 orgs.asm:1224
-    pop dx                                    ; 5a                          ; 0xfed3b orgs.asm:1225
-    push bx                                   ; 53                          ; 0xfed3c orgs.asm:1226
-    sal bx, 1                                 ; d1 e3                       ; 0xfed3d orgs.asm:1227
-    mov word [bx+00400h], dx                  ; 89 97 00 04                 ; 0xfed3f orgs.asm:1228
-    pop bx                                    ; 5b                          ; 0xfed43 orgs.asm:1229
-    mov byte [bx+0047ch], cl                  ; 88 8f 7c 04                 ; 0xfed44 orgs.asm:1230
-    inc bx                                    ; 43                          ; 0xfed48 orgs.asm:1231
-    retn                                      ; c3                          ; 0xfed49 orgs.asm:1232
-    pop dx                                    ; 5a                          ; 0xfed4a orgs.asm:1235
-    retn                                      ; c3                          ; 0xfed4b orgs.asm:1236
+    ; xor al, al                                ; 32 c0                     ; 0xfed39 orgs.asm:1266
+    pop dx                                    ; 5a                          ; 0xfed3b orgs.asm:1267
+    push bx                                   ; 53                          ; 0xfed3c orgs.asm:1268
+    sal bx, 1                                 ; d1 e3                       ; 0xfed3d orgs.asm:1269
+    mov word [bx+00400h], dx                  ; 89 97 00 04                 ; 0xfed3f orgs.asm:1270
+    pop bx                                    ; 5b                          ; 0xfed43 orgs.asm:1271
+    mov byte [bx+0047ch], cl                  ; 88 8f 7c 04                 ; 0xfed44 orgs.asm:1272
+    inc bx                                    ; 43                          ; 0xfed48 orgs.asm:1273
+    retn                                      ; c3                          ; 0xfed49 orgs.asm:1274
+    pop dx                                    ; 5a                          ; 0xfed4a orgs.asm:1277
+    retn                                      ; c3                          ; 0xfed4b orgs.asm:1278
   ; disGetNextSymbol 0xfed4c LB 0x12b4 -> off=0x0 cb=000000000000008c uValue=00000000000f0d4c 'floppy_post'
 floppy_post:                                 ; 0xfed4c LB 0x8c
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfed4c orgs.asm:1246
-    mov ds, ax                                ; 8e d8                       ; 0xfed4e orgs.asm:1247
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfed50 orgs.asm:1251
-    mov byte [0043eh], AL                     ; a2 3e 04                    ; 0xfed52 orgs.asm:1252
-    mov byte [0043fh], AL                     ; a2 3f 04                    ; 0xfed55 orgs.asm:1253
-    mov byte [00440h], AL                     ; a2 40 04                    ; 0xfed58 orgs.asm:1254
-    mov byte [00441h], AL                     ; a2 41 04                    ; 0xfed5b orgs.asm:1255
-    mov byte [00442h], AL                     ; a2 42 04                    ; 0xfed5e orgs.asm:1256
-    mov byte [00443h], AL                     ; a2 43 04                    ; 0xfed61 orgs.asm:1257
-    mov byte [00444h], AL                     ; a2 44 04                    ; 0xfed64 orgs.asm:1258
-    mov byte [00445h], AL                     ; a2 45 04                    ; 0xfed67 orgs.asm:1259
-    mov byte [00446h], AL                     ; a2 46 04                    ; 0xfed6a orgs.asm:1260
-    mov byte [00447h], AL                     ; a2 47 04                    ; 0xfed6d orgs.asm:1261
-    mov byte [00448h], AL                     ; a2 48 04                    ; 0xfed70 orgs.asm:1262
-    mov byte [0048bh], AL                     ; a2 8b 04                    ; 0xfed73 orgs.asm:1264
-    mov AL, strict byte 010h                  ; b0 10                       ; 0xfed76 orgs.asm:1266
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfed78 orgs.asm:1267
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfed7a orgs.asm:1268
+    ; xor ax, ax                                ; 33 c0                     ; 0xfed4c orgs.asm:1288
+    mov ds, ax                                ; 8e d8                       ; 0xfed4e orgs.asm:1289
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfed50 orgs.asm:1293
+    mov byte [0043eh], AL                     ; a2 3e 04                    ; 0xfed52 orgs.asm:1294
+    mov byte [0043fh], AL                     ; a2 3f 04                    ; 0xfed55 orgs.asm:1295
+    mov byte [00440h], AL                     ; a2 40 04                    ; 0xfed58 orgs.asm:1296
+    mov byte [00441h], AL                     ; a2 41 04                    ; 0xfed5b orgs.asm:1297
+    mov byte [00442h], AL                     ; a2 42 04                    ; 0xfed5e orgs.asm:1298
+    mov byte [00443h], AL                     ; a2 43 04                    ; 0xfed61 orgs.asm:1299
+    mov byte [00444h], AL                     ; a2 44 04                    ; 0xfed64 orgs.asm:1300
+    mov byte [00445h], AL                     ; a2 45 04                    ; 0xfed67 orgs.asm:1301
+    mov byte [00446h], AL                     ; a2 46 04                    ; 0xfed6a orgs.asm:1302
+    mov byte [00447h], AL                     ; a2 47 04                    ; 0xfed6d orgs.asm:1303
+    mov byte [00448h], AL                     ; a2 48 04                    ; 0xfed70 orgs.asm:1304
+    mov byte [0048bh], AL                     ; a2 8b 04                    ; 0xfed73 orgs.asm:1306
+    mov AL, strict byte 010h                  ; b0 10                       ; 0xfed76 orgs.asm:1308
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfed78 orgs.asm:1309
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfed7a orgs.asm:1310
     db  08ah, 0e0h
-    ; mov ah, al                                ; 8a e0                     ; 0xfed7c orgs.asm:1269
+    ; mov ah, al                                ; 8a e0                     ; 0xfed7c orgs.asm:1311
     shr al, 1                                 ; d0 e8                       ; 0xfed7e orgs.asm:181
     shr al, 1                                 ; d0 e8                       ; 0xfed80 orgs.asm:184
     shr al, 1                                 ; d0 e8                       ; 0xfed82 orgs.asm:187
     shr al, 1                                 ; d0 e8                       ; 0xfed84 orgs.asm:190
-    je short 0ed8ch                           ; 74 04                       ; 0xfed86 orgs.asm:1274
-    mov BL, strict byte 007h                  ; b3 07                       ; 0xfed88 orgs.asm:1275
-    jmp short 0ed8eh                          ; eb 02                       ; 0xfed8a orgs.asm:1276
-    mov BL, strict byte 000h                  ; b3 00                       ; 0xfed8c orgs.asm:1279
+    je short 0ed8ch                           ; 74 04                       ; 0xfed86 orgs.asm:1316
+    mov BL, strict byte 007h                  ; b3 07                       ; 0xfed88 orgs.asm:1317
+    jmp short 0ed8eh                          ; eb 02                       ; 0xfed8a orgs.asm:1318
+    mov BL, strict byte 000h                  ; b3 00                       ; 0xfed8c orgs.asm:1321
     db  08ah, 0c4h
-    ; mov al, ah                                ; 8a c4                     ; 0xfed8e orgs.asm:1282
-    and AL, strict byte 00fh                  ; 24 0f                       ; 0xfed90 orgs.asm:1283
-    je short 0ed97h                           ; 74 03                       ; 0xfed92 orgs.asm:1284
-    or bl, 070h                               ; 80 cb 70                    ; 0xfed94 orgs.asm:1285
-    mov byte [0048fh], bl                     ; 88 1e 8f 04                 ; 0xfed97 orgs.asm:1287
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfed9b orgs.asm:1290
-    mov byte [00490h], AL                     ; a2 90 04                    ; 0xfed9d orgs.asm:1291
-    mov byte [00491h], AL                     ; a2 91 04                    ; 0xfeda0 orgs.asm:1292
-    mov byte [00492h], AL                     ; a2 92 04                    ; 0xfeda3 orgs.asm:1293
-    mov byte [00493h], AL                     ; a2 93 04                    ; 0xfeda6 orgs.asm:1294
-    mov byte [00494h], AL                     ; a2 94 04                    ; 0xfeda9 orgs.asm:1295
-    mov byte [00495h], AL                     ; a2 95 04                    ; 0xfedac orgs.asm:1296
-    mov AL, strict byte 002h                  ; b0 02                       ; 0xfedaf orgs.asm:1298
-    out strict byte 00ah, AL                  ; e6 0a                       ; 0xfedb1 orgs.asm:1299
-    mov ax, 0efc7h                            ; b8 c7 ef                    ; 0xfedb3 orgs.asm:93
-    mov word [00078h], ax                     ; a3 78 00                    ; 0xfedb6 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedb9 orgs.asm:95
-    mov word [0007ah], ax                     ; a3 7a 00                    ; 0xfedbc orgs.asm:96
-    mov ax, 0ec59h                            ; b8 59 ec                    ; 0xfedbf orgs.asm:93
-    mov word [00100h], ax                     ; a3 00 01                    ; 0xfedc2 orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedc5 orgs.asm:95
-    mov word [00102h], ax                     ; a3 02 01                    ; 0xfedc8 orgs.asm:96
-    mov ax, 0ef57h                            ; b8 57 ef                    ; 0xfedcb orgs.asm:93
-    mov word [00038h], ax                     ; a3 38 00                    ; 0xfedce orgs.asm:94
-    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedd1 orgs.asm:95
-    mov word [0003ah], ax                     ; a3 3a 00                    ; 0xfedd4 orgs.asm:96
-    retn                                      ; c3                          ; 0xfedd7 orgs.asm:1305
+    ; mov al, ah                                ; 8a c4                     ; 0xfed8e orgs.asm:1324
+    and AL, strict byte 00fh                  ; 24 0f                       ; 0xfed90 orgs.asm:1325
+    je short 0ed97h                           ; 74 03                       ; 0xfed92 orgs.asm:1326
+    or bl, 070h                               ; 80 cb 70                    ; 0xfed94 orgs.asm:1327
+    mov byte [0048fh], bl                     ; 88 1e 8f 04                 ; 0xfed97 orgs.asm:1329
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfed9b orgs.asm:1332
+    mov byte [00490h], AL                     ; a2 90 04                    ; 0xfed9d orgs.asm:1333
+    mov byte [00491h], AL                     ; a2 91 04                    ; 0xfeda0 orgs.asm:1334
+    mov byte [00492h], AL                     ; a2 92 04                    ; 0xfeda3 orgs.asm:1335
+    mov byte [00493h], AL                     ; a2 93 04                    ; 0xfeda6 orgs.asm:1336
+    mov byte [00494h], AL                     ; a2 94 04                    ; 0xfeda9 orgs.asm:1337
+    mov byte [00495h], AL                     ; a2 95 04                    ; 0xfedac orgs.asm:1338
+    mov AL, strict byte 002h                  ; b0 02                       ; 0xfedaf orgs.asm:1340
+    out strict byte 00ah, AL                  ; e6 0a                       ; 0xfedb1 orgs.asm:1341
+    mov ax, 0efc7h                            ; b8 c7 ef                    ; 0xfedb3 orgs.asm:94
+    mov word [00078h], ax                     ; a3 78 00                    ; 0xfedb6 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedb9 orgs.asm:96
+    mov word [0007ah], ax                     ; a3 7a 00                    ; 0xfedbc orgs.asm:97
+    mov ax, 0ec59h                            ; b8 59 ec                    ; 0xfedbf orgs.asm:94
+    mov word [00100h], ax                     ; a3 00 01                    ; 0xfedc2 orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedc5 orgs.asm:96
+    mov word [00102h], ax                     ; a3 02 01                    ; 0xfedc8 orgs.asm:97
+    mov ax, 0ef57h                            ; b8 57 ef                    ; 0xfedcb orgs.asm:94
+    mov word [00038h], ax                     ; a3 38 00                    ; 0xfedce orgs.asm:95
+    mov ax, 0f000h                            ; b8 00 f0                    ; 0xfedd1 orgs.asm:96
+    mov word [0003ah], ax                     ; a3 3a 00                    ; 0xfedd4 orgs.asm:97
+    retn                                      ; c3                          ; 0xfedd7 orgs.asm:1347
   ; disGetNextSymbol 0xfedd8 LB 0x1228 -> off=0x0 cb=000000000000000b uValue=0000000000000dd8 'bcd_to_bin'
 bcd_to_bin:                                  ; 0xfedd8 LB 0xb
-    push cx                                   ; 51                          ; 0xfedd8 orgs.asm:1318
-    mov CL, strict byte 004h                  ; b1 04                       ; 0xfedd9 orgs.asm:1319
-    sal ax, CL                                ; d3 e0                       ; 0xfeddb orgs.asm:1320
-    shr al, CL                                ; d2 e8                       ; 0xfeddd orgs.asm:1321
-    pop cx                                    ; 59                          ; 0xfeddf orgs.asm:1322
-    aad 00ah                                  ; d5 0a                       ; 0xfede0 orgs.asm:1324
-    retn                                      ; c3                          ; 0xfede2 orgs.asm:1325
+    push cx                                   ; 51                          ; 0xfedd8 orgs.asm:1360
+    mov CL, strict byte 004h                  ; b1 04                       ; 0xfedd9 orgs.asm:1361
+    sal ax, CL                                ; d3 e0                       ; 0xfeddb orgs.asm:1362
+    shr al, CL                                ; d2 e8                       ; 0xfeddd orgs.asm:1363
+    pop cx                                    ; 59                          ; 0xfeddf orgs.asm:1364
+    aad 00ah                                  ; d5 0a                       ; 0xfede0 orgs.asm:1366
+    retn                                      ; c3                          ; 0xfede2 orgs.asm:1367
   ; disGetNextSymbol 0xfede3 LB 0x121d -> off=0x0 cb=000000000000005a uValue=00000000000f0de3 'rtc_post'
 rtc_post:                                    ; 0xfede3 LB 0x5a
-    mov AL, strict byte 000h                  ; b0 00                       ; 0xfede3 orgs.asm:1333
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfede5 orgs.asm:1334
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfede7 orgs.asm:1335
-    call 0edd8h                               ; e8 ec ff                    ; 0xfede9 orgs.asm:1336
-    test al, al                               ; 84 c0                       ; 0xfedec orgs.asm:1337
+    mov AL, strict byte 000h                  ; b0 00                       ; 0xfede3 orgs.asm:1375
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfede5 orgs.asm:1376
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfede7 orgs.asm:1377
+    call 0edd8h                               ; e8 ec ff                    ; 0xfede9 orgs.asm:1378
+    test al, al                               ; 84 c0                       ; 0xfedec orgs.asm:1379
     db  032h, 0e4h
-    ; xor ah, ah                                ; 32 e4                     ; 0xfedee orgs.asm:1338
-    mov dx, 01234h                            ; ba 34 12                    ; 0xfedf0 orgs.asm:1339
-    mul dx                                    ; f7 e2                       ; 0xfedf3 orgs.asm:1340
+    ; xor ah, ah                                ; 32 e4                     ; 0xfedee orgs.asm:1380
+    mov dx, 01234h                            ; ba 34 12                    ; 0xfedf0 orgs.asm:1381
+    mul dx                                    ; f7 e2                       ; 0xfedf3 orgs.asm:1382
     db  08bh, 0c8h
-    ; mov cx, ax                                ; 8b c8                     ; 0xfedf5 orgs.asm:1341
-    mov AL, strict byte 002h                  ; b0 02                       ; 0xfedf7 orgs.asm:1344
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfedf9 orgs.asm:1345
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfedfb orgs.asm:1346
-    call 0edd8h                               ; e8 d8 ff                    ; 0xfedfd orgs.asm:1347
-    test al, al                               ; 84 c0                       ; 0xfee00 orgs.asm:1348
-    je short 0ee0fh                           ; 74 0b                       ; 0xfee02 orgs.asm:1349
-    add cx, 04463h                            ; 81 c1 63 44                 ; 0xfee04 orgs.asm:1351
-    adc dx, strict byte 00004h                ; 83 d2 04                    ; 0xfee08 orgs.asm:1352
+    ; mov cx, ax                                ; 8b c8                     ; 0xfedf5 orgs.asm:1383
+    mov AL, strict byte 002h                  ; b0 02                       ; 0xfedf7 orgs.asm:1386
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfedf9 orgs.asm:1387
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfedfb orgs.asm:1388
+    call 0edd8h                               ; e8 d8 ff                    ; 0xfedfd orgs.asm:1389
+    test al, al                               ; 84 c0                       ; 0xfee00 orgs.asm:1390
+    je short 0ee0fh                           ; 74 0b                       ; 0xfee02 orgs.asm:1391
+    add cx, 04463h                            ; 81 c1 63 44                 ; 0xfee04 orgs.asm:1393
+    adc dx, strict byte 00004h                ; 83 d2 04                    ; 0xfee08 orgs.asm:1394
     db  0feh, 0c8h
-    ; dec al                                    ; fe c8                     ; 0xfee0b orgs.asm:1353
-    jne short 0ee04h                          ; 75 f5                       ; 0xfee0d orgs.asm:1354
-    mov AL, strict byte 004h                  ; b0 04                       ; 0xfee0f orgs.asm:1358
-    out strict byte 070h, AL                  ; e6 70                       ; 0xfee11 orgs.asm:1359
-    in AL, strict byte 071h                   ; e4 71                       ; 0xfee13 orgs.asm:1360
-    call 0edd8h                               ; e8 c0 ff                    ; 0xfee15 orgs.asm:1361
-    test al, al                               ; 84 c0                       ; 0xfee18 orgs.asm:1362
-    je short 0ee28h                           ; 74 0c                       ; 0xfee1a orgs.asm:1363
-    add cx, 0076ch                            ; 81 c1 6c 07                 ; 0xfee1c orgs.asm:1365
-    adc dx, 00100h                            ; 81 d2 00 01                 ; 0xfee20 orgs.asm:1366
+    ; dec al                                    ; fe c8                     ; 0xfee0b orgs.asm:1395
+    jne short 0ee04h                          ; 75 f5                       ; 0xfee0d orgs.asm:1396
+    mov AL, strict byte 004h                  ; b0 04                       ; 0xfee0f orgs.asm:1400
+    out strict byte 070h, AL                  ; e6 70                       ; 0xfee11 orgs.asm:1401
+    in AL, strict byte 071h                   ; e4 71                       ; 0xfee13 orgs.asm:1402
+    call 0edd8h                               ; e8 c0 ff                    ; 0xfee15 orgs.asm:1403
+    test al, al                               ; 84 c0                       ; 0xfee18 orgs.asm:1404
+    je short 0ee28h                           ; 74 0c                       ; 0xfee1a orgs.asm:1405
+    add cx, 0076ch                            ; 81 c1 6c 07                 ; 0xfee1c orgs.asm:1407
+    adc dx, 00100h                            ; 81 d2 00 01                 ; 0xfee20 orgs.asm:1408
     db  0feh, 0c8h
-    ; dec al                                    ; fe c8                     ; 0xfee24 orgs.asm:1367
-    jne short 0ee1ch                          ; 75 f4                       ; 0xfee26 orgs.asm:1368
+    ; dec al                                    ; fe c8                     ; 0xfee24 orgs.asm:1409
+    jne short 0ee1ch                          ; 75 f4                       ; 0xfee26 orgs.asm:1410
     db  08ah, 0cdh
-    ; mov cl, ch                                ; 8a cd                     ; 0xfee28 orgs.asm:1371
+    ; mov cl, ch                                ; 8a cd                     ; 0xfee28 orgs.asm:1413
     db  08ah, 0eah
-    ; mov ch, dl                                ; 8a ea                     ; 0xfee2a orgs.asm:1372
+    ; mov ch, dl                                ; 8a ea                     ; 0xfee2a orgs.asm:1414
     db  08ah, 0d6h
-    ; mov dl, dh                                ; 8a d6                     ; 0xfee2c orgs.asm:1373
+    ; mov dl, dh                                ; 8a d6                     ; 0xfee2c orgs.asm:1415
     db  032h, 0f6h
-    ; xor dh, dh                                ; 32 f6                     ; 0xfee2e orgs.asm:1374
-    mov word [0046ch], cx                     ; 89 0e 6c 04                 ; 0xfee30 orgs.asm:1375
-    mov word [0046eh], dx                     ; 89 16 6e 04                 ; 0xfee34 orgs.asm:1376
-    mov byte [00470h], dh                     ; 88 36 70 04                 ; 0xfee38 orgs.asm:1377
-    retn                                      ; c3                          ; 0xfee3c orgs.asm:1425
+    ; xor dh, dh                                ; 32 f6                     ; 0xfee2e orgs.asm:1416
+    mov word [0046ch], cx                     ; 89 0e 6c 04                 ; 0xfee30 orgs.asm:1417
+    mov word [0046eh], dx                     ; 89 16 6e 04                 ; 0xfee34 orgs.asm:1418
+    mov byte [00470h], dh                     ; 88 36 70 04                 ; 0xfee38 orgs.asm:1419
+    retn                                      ; c3                          ; 0xfee3c orgs.asm:1467
   ; disGetNextSymbol 0xfee3d LB 0x11c3 -> off=0x0 cb=000000000000011a uValue=00000000000f0e3d 'biosorg_check_before_or_at_0EF55h'
 biosorg_check_before_or_at_0EF55h:           ; 0xfee3d LB 0x11a
     times 0x118 db 0
     db  'XM'
   ; disGetNextSymbol 0xfef57 LB 0x10a9 -> off=0x0 cb=000000000000003b uValue=00000000000f0f57 'int0e_handler'
 int0e_handler:                               ; 0xfef57 LB 0x3b
-    push ax                                   ; 50                          ; 0xfef57 orgs.asm:1436
-    push dx                                   ; 52                          ; 0xfef58 orgs.asm:1437
-    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef59 orgs.asm:1438
-    in AL, DX                                 ; ec                          ; 0xfef5c orgs.asm:1439
-    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef5d orgs.asm:1440
-    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef5f orgs.asm:1441
-    je short 0ef81h                           ; 74 1e                       ; 0xfef61 orgs.asm:1442
-    mov dx, 003f5h                            ; ba f5 03                    ; 0xfef63 orgs.asm:1443
-    mov AL, strict byte 008h                  ; b0 08                       ; 0xfef66 orgs.asm:1444
-    out DX, AL                                ; ee                          ; 0xfef68 orgs.asm:1445
-    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef69 orgs.asm:1447
-    in AL, DX                                 ; ec                          ; 0xfef6c orgs.asm:1448
-    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef6d orgs.asm:1449
-    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef6f orgs.asm:1450
-    jne short 0ef69h                          ; 75 f6                       ; 0xfef71 orgs.asm:1451
-    mov dx, 003f5h                            ; ba f5 03                    ; 0xfef73 orgs.asm:1454
-    in AL, DX                                 ; ec                          ; 0xfef76 orgs.asm:1455
-    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef77 orgs.asm:1456
-    in AL, DX                                 ; ec                          ; 0xfef7a orgs.asm:1457
-    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef7b orgs.asm:1458
-    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef7d orgs.asm:1459
-    je short 0ef73h                           ; 74 f2                       ; 0xfef7f orgs.asm:1460
-    push DS                                   ; 1e                          ; 0xfef81 orgs.asm:1463
+    push ax                                   ; 50                          ; 0xfef57 orgs.asm:1478
+    push dx                                   ; 52                          ; 0xfef58 orgs.asm:1479
+    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef59 orgs.asm:1480
+    in AL, DX                                 ; ec                          ; 0xfef5c orgs.asm:1481
+    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef5d orgs.asm:1482
+    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef5f orgs.asm:1483
+    je short 0ef81h                           ; 74 1e                       ; 0xfef61 orgs.asm:1484
+    mov dx, 003f5h                            ; ba f5 03                    ; 0xfef63 orgs.asm:1485
+    mov AL, strict byte 008h                  ; b0 08                       ; 0xfef66 orgs.asm:1486
+    out DX, AL                                ; ee                          ; 0xfef68 orgs.asm:1487
+    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef69 orgs.asm:1489
+    in AL, DX                                 ; ec                          ; 0xfef6c orgs.asm:1490
+    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef6d orgs.asm:1491
+    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef6f orgs.asm:1492
+    jne short 0ef69h                          ; 75 f6                       ; 0xfef71 orgs.asm:1493
+    mov dx, 003f5h                            ; ba f5 03                    ; 0xfef73 orgs.asm:1496
+    in AL, DX                                 ; ec                          ; 0xfef76 orgs.asm:1497
+    mov dx, 003f4h                            ; ba f4 03                    ; 0xfef77 orgs.asm:1498
+    in AL, DX                                 ; ec                          ; 0xfef7a orgs.asm:1499
+    and AL, strict byte 0c0h                  ; 24 c0                       ; 0xfef7b orgs.asm:1500
+    cmp AL, strict byte 0c0h                  ; 3c c0                       ; 0xfef7d orgs.asm:1501
+    je short 0ef73h                           ; 74 f2                       ; 0xfef7f orgs.asm:1502
+    push DS                                   ; 1e                          ; 0xfef81 orgs.asm:1505
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xfef82 orgs.asm:1464
-    mov ds, ax                                ; 8e d8                       ; 0xfef84 orgs.asm:1465
-    call 0e034h                               ; e8 ab f0                    ; 0xfef86 orgs.asm:1466
-    or byte [0043eh], 080h                    ; 80 0e 3e 04 80              ; 0xfef89 orgs.asm:1468
-    pop DS                                    ; 1f                          ; 0xfef8e orgs.asm:1469
-    pop dx                                    ; 5a                          ; 0xfef8f orgs.asm:1470
-    pop ax                                    ; 58                          ; 0xfef90 orgs.asm:1471
-    iret                                      ; cf                          ; 0xfef91 orgs.asm:1472
+    ; xor ax, ax                                ; 33 c0                     ; 0xfef82 orgs.asm:1506
+    mov ds, ax                                ; 8e d8                       ; 0xfef84 orgs.asm:1507
+    call 0e034h                               ; e8 ab f0                    ; 0xfef86 orgs.asm:1508
+    or byte [0043eh], 080h                    ; 80 0e 3e 04 80              ; 0xfef89 orgs.asm:1510
+    pop DS                                    ; 1f                          ; 0xfef8e orgs.asm:1511
+    pop dx                                    ; 5a                          ; 0xfef8f orgs.asm:1512
+    pop ax                                    ; 58                          ; 0xfef90 orgs.asm:1513
+    iret                                      ; cf                          ; 0xfef91 orgs.asm:1514
   ; disGetNextSymbol 0xfef92 LB 0x106e -> off=0x0 cb=0000000000000035 uValue=00000000000f0f92 'biosorg_check_before_or_at_0EFC5h'
 biosorg_check_before_or_at_0EFC5h:           ; 0xfef92 LB 0x35
     times 0x33 db 0
@@ -18866,11 +18845,11 @@ _diskette_param_table:                       ; 0xfefc7 LB 0xb
     invd                                      ; 0f 08                       ; 0xfefd0
   ; disGetNextSymbol 0xfefd2 LB 0x102e -> off=0x0 cb=0000000000000002 uValue=00000000000f0fd2 'biosorg_check_at_0EFD2h'
 biosorg_check_at_0EFD2h:                     ; 0xfefd2 LB 0x2
-    jmp short 0efd4h                          ; eb 00                       ; 0xfefd2 orgs.asm:1499
+    jmp short 0efd4h                          ; eb 00                       ; 0xfefd2 orgs.asm:1541
   ; disGetNextSymbol 0xfefd4 LB 0x102c -> off=0x0 cb=000000000000001b uValue=00000000000f0fd4 'int17_handler'
 int17_handler:                               ; 0xfefd4 LB 0x1b
-    push DS                                   ; 1e                          ; 0xfefd4 orgs.asm:1502
-    push ES                                   ; 06                          ; 0xfefd5 orgs.asm:1503
+    push DS                                   ; 1e                          ; 0xfefd4 orgs.asm:1544
+    push ES                                   ; 06                          ; 0xfefd5 orgs.asm:1545
     push ax                                   ; 50                          ; 0xfefd6 orgs.asm:99
     push cx                                   ; 51                          ; 0xfefd7 orgs.asm:100
     push dx                                   ; 52                          ; 0xfefd8 orgs.asm:101
@@ -18879,10 +18858,10 @@ int17_handler:                               ; 0xfefd4 LB 0x1b
     push bp                                   ; 55                          ; 0xfefdb orgs.asm:104
     push si                                   ; 56                          ; 0xfefdc orgs.asm:105
     push di                                   ; 57                          ; 0xfefdd orgs.asm:106
-    push CS                                   ; 0e                          ; 0xfefde orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xfefdf orgs.asm:103
-    cld                                       ; fc                          ; 0xfefe0 orgs.asm:104
-    call 07205h                               ; e8 21 82                    ; 0xfefe1 orgs.asm:1506
+    push CS                                   ; 0e                          ; 0xfefde orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xfefdf orgs.asm:104
+    cld                                       ; fc                          ; 0xfefe0 orgs.asm:105
+    call 07205h                               ; e8 21 82                    ; 0xfefe1 orgs.asm:1548
     pop di                                    ; 5f                          ; 0xfefe4 orgs.asm:116
     pop si                                    ; 5e                          ; 0xfefe5 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xfefe6 orgs.asm:118
@@ -18891,9 +18870,9 @@ int17_handler:                               ; 0xfefd4 LB 0x1b
     pop dx                                    ; 5a                          ; 0xfefe9 orgs.asm:121
     pop cx                                    ; 59                          ; 0xfefea orgs.asm:122
     pop ax                                    ; 58                          ; 0xfefeb orgs.asm:123
-    pop ES                                    ; 07                          ; 0xfefec orgs.asm:1508
-    pop DS                                    ; 1f                          ; 0xfefed orgs.asm:1509
-    iret                                      ; cf                          ; 0xfefee orgs.asm:1510
+    pop ES                                    ; 07                          ; 0xfefec orgs.asm:1550
+    pop DS                                    ; 1f                          ; 0xfefed orgs.asm:1551
+    iret                                      ; cf                          ; 0xfefee orgs.asm:1552
   ; disGetNextSymbol 0xfefef LB 0x1011 -> off=0x0 cb=0000000000000006 uValue=00000000000f0fef '_pmode_IDT'
 _pmode_IDT:                                  ; 0xfefef LB 0x6
     db  000h, 000h, 000h, 000h, 00fh, 000h
@@ -18902,87 +18881,87 @@ _rmode_IDT:                                  ; 0xfeff5 LB 0x6
     db  0ffh, 003h, 000h, 000h, 000h, 000h
   ; disGetNextSymbol 0xfeffb LB 0x1005 -> off=0x0 cb=0000000000000001 uValue=00000000000f0ffb 'int1c_handler'
 int1c_handler:                               ; 0xfeffb LB 0x1
-    iret                                      ; cf                          ; 0xfeffb orgs.asm:1545
+    iret                                      ; cf                          ; 0xfeffb orgs.asm:1587
   ; disGetNextSymbol 0xfeffc LB 0x1004 -> off=0x0 cb=0000000000000049 uValue=00000000000f0ffc 'biosorg_check_before_or_at_0F043h'
 biosorg_check_before_or_at_0F043h:           ; 0xfeffc LB 0x49
     times 0x47 db 0
     db  'XM'
   ; disGetNextSymbol 0xff045 LB 0xfbb -> off=0x0 cb=0000000000000001 uValue=00000000000f1045 'biosorg_check_at_0F045h'
 biosorg_check_at_0F045h:                     ; 0xff045 LB 0x1
-    iret                                      ; cf                          ; 0xff045 orgs.asm:1554
+    iret                                      ; cf                          ; 0xff045 orgs.asm:1596
   ; disGetNextSymbol 0xff046 LB 0xfba -> off=0x0 cb=000000000000001f uValue=00000000000f1046 'biosorg_check_before_or_at_0F063h'
 biosorg_check_before_or_at_0F063h:           ; 0xff046 LB 0x1f
     times 0x1d db 0
     db  'XM'
   ; disGetNextSymbol 0xff065 LB 0xf9b -> off=0x0 cb=0000000000000001 uValue=00000000000f1065 'int10_handler'
 int10_handler:                               ; 0xff065 LB 0x1
-    iret                                      ; cf                          ; 0xff065 orgs.asm:1563
+    iret                                      ; cf                          ; 0xff065 orgs.asm:1605
   ; disGetNextSymbol 0xff066 LB 0xf9a -> off=0x0 cb=000000000000003e uValue=00000000000f1066 'biosorg_check_before_or_at_0F0A2h'
 biosorg_check_before_or_at_0F0A2h:           ; 0xff066 LB 0x3e
     times 0x3c db 0
     db  'XM'
   ; disGetNextSymbol 0xff0a4 LB 0xf5c -> off=0x0 cb=000000000000000a uValue=00000000000f10a4 'biosorg_check_at_0F0A4h'
 biosorg_check_at_0F0A4h:                     ; 0xff0a4 LB 0xa
-    push CS                                   ; 0e                          ; 0xff0a4 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xff0a5 orgs.asm:103
-    cld                                       ; fc                          ; 0xff0a6 orgs.asm:104
-    call 0172dh                               ; e8 83 26                    ; 0xff0a7 orgs.asm:1578
-    sti                                       ; fb                          ; 0xff0aa orgs.asm:1580
-    hlt                                       ; f4                          ; 0xff0ab orgs.asm:1582
-    jmp short 0f0abh                          ; eb fd                       ; 0xff0ac orgs.asm:1583
+    push CS                                   ; 0e                          ; 0xff0a4 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xff0a5 orgs.asm:104
+    cld                                       ; fc                          ; 0xff0a6 orgs.asm:105
+    call 0172dh                               ; e8 83 26                    ; 0xff0a7 orgs.asm:1620
+    sti                                       ; fb                          ; 0xff0aa orgs.asm:1622
+    hlt                                       ; f4                          ; 0xff0ab orgs.asm:1624
+    jmp short 0f0abh                          ; eb fd                       ; 0xff0ac orgs.asm:1625
   ; disGetNextSymbol 0xff0ae LB 0xf52 -> off=0x0 cb=000000000000007e uValue=00000000000f10ae 'int19_relocated'
 int19_relocated:                             ; 0xff0ae LB 0x7e
-    push CS                                   ; 0e                          ; 0xff0ae orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xff0af orgs.asm:103
-    cld                                       ; fc                          ; 0xff0b0 orgs.asm:104
-    push bp                                   ; 55                          ; 0xff0b1 orgs.asm:1593
+    push CS                                   ; 0e                          ; 0xff0ae orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xff0af orgs.asm:104
+    cld                                       ; fc                          ; 0xff0b0 orgs.asm:105
+    push bp                                   ; 55                          ; 0xff0b1 orgs.asm:1635
     db  08bh, 0ech
-    ; mov bp, sp                                ; 8b ec                     ; 0xff0b2 orgs.asm:1594
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xff0b4 orgs.asm:1597
-    push ax                                   ; 50                          ; 0xff0b7 orgs.asm:1598
-    call 04baah                               ; e8 ef 5a                    ; 0xff0b8 orgs.asm:1599
-    inc sp                                    ; 44                          ; 0xff0bb orgs.asm:1600
-    inc sp                                    ; 44                          ; 0xff0bc orgs.asm:1601
-    test ax, ax                               ; 85 c0                       ; 0xff0bd orgs.asm:1602
-    jne short 0f0e8h                          ; 75 27                       ; 0xff0bf orgs.asm:1603
-    mov ax, strict word 00002h                ; b8 02 00                    ; 0xff0c1 orgs.asm:1606
-    push ax                                   ; 50                          ; 0xff0c4 orgs.asm:1607
-    call 04baah                               ; e8 e2 5a                    ; 0xff0c5 orgs.asm:1608
-    inc sp                                    ; 44                          ; 0xff0c8 orgs.asm:1609
-    inc sp                                    ; 44                          ; 0xff0c9 orgs.asm:1610
-    test ax, ax                               ; 85 c0                       ; 0xff0ca orgs.asm:1611
-    jne short 0f0e8h                          ; 75 1a                       ; 0xff0cc orgs.asm:1612
-    mov ax, strict word 00003h                ; b8 03 00                    ; 0xff0ce orgs.asm:1615
-    push ax                                   ; 50                          ; 0xff0d1 orgs.asm:1616
-    call 04baah                               ; e8 d5 5a                    ; 0xff0d2 orgs.asm:1617
-    inc sp                                    ; 44                          ; 0xff0d5 orgs.asm:1618
-    inc sp                                    ; 44                          ; 0xff0d6 orgs.asm:1619
-    test ax, ax                               ; 85 c0                       ; 0xff0d7 orgs.asm:1620
-    jne short 0f0e8h                          ; 75 0d                       ; 0xff0d9 orgs.asm:1621
-    mov ax, strict word 00004h                ; b8 04 00                    ; 0xff0db orgs.asm:1624
-    push ax                                   ; 50                          ; 0xff0de orgs.asm:1625
-    call 04baah                               ; e8 c8 5a                    ; 0xff0df orgs.asm:1626
-    inc sp                                    ; 44                          ; 0xff0e2 orgs.asm:1627
-    inc sp                                    ; 44                          ; 0xff0e3 orgs.asm:1628
-    test ax, ax                               ; 85 c0                       ; 0xff0e4 orgs.asm:1629
-    je short 0f0a4h                           ; 74 bc                       ; 0xff0e6 orgs.asm:1630
-    mov word [byte bp+000h], ax               ; 89 46 00                    ; 0xff0e8 orgs.asm:1636
+    ; mov bp, sp                                ; 8b ec                     ; 0xff0b2 orgs.asm:1636
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xff0b4 orgs.asm:1639
+    push ax                                   ; 50                          ; 0xff0b7 orgs.asm:1640
+    call 04baah                               ; e8 ef 5a                    ; 0xff0b8 orgs.asm:1641
+    inc sp                                    ; 44                          ; 0xff0bb orgs.asm:1642
+    inc sp                                    ; 44                          ; 0xff0bc orgs.asm:1643
+    test ax, ax                               ; 85 c0                       ; 0xff0bd orgs.asm:1644
+    jne short 0f0e8h                          ; 75 27                       ; 0xff0bf orgs.asm:1645
+    mov ax, strict word 00002h                ; b8 02 00                    ; 0xff0c1 orgs.asm:1648
+    push ax                                   ; 50                          ; 0xff0c4 orgs.asm:1649
+    call 04baah                               ; e8 e2 5a                    ; 0xff0c5 orgs.asm:1650
+    inc sp                                    ; 44                          ; 0xff0c8 orgs.asm:1651
+    inc sp                                    ; 44                          ; 0xff0c9 orgs.asm:1652
+    test ax, ax                               ; 85 c0                       ; 0xff0ca orgs.asm:1653
+    jne short 0f0e8h                          ; 75 1a                       ; 0xff0cc orgs.asm:1654
+    mov ax, strict word 00003h                ; b8 03 00                    ; 0xff0ce orgs.asm:1657
+    push ax                                   ; 50                          ; 0xff0d1 orgs.asm:1658
+    call 04baah                               ; e8 d5 5a                    ; 0xff0d2 orgs.asm:1659
+    inc sp                                    ; 44                          ; 0xff0d5 orgs.asm:1660
+    inc sp                                    ; 44                          ; 0xff0d6 orgs.asm:1661
+    test ax, ax                               ; 85 c0                       ; 0xff0d7 orgs.asm:1662
+    jne short 0f0e8h                          ; 75 0d                       ; 0xff0d9 orgs.asm:1663
+    mov ax, strict word 00004h                ; b8 04 00                    ; 0xff0db orgs.asm:1666
+    push ax                                   ; 50                          ; 0xff0de orgs.asm:1667
+    call 04baah                               ; e8 c8 5a                    ; 0xff0df orgs.asm:1668
+    inc sp                                    ; 44                          ; 0xff0e2 orgs.asm:1669
+    inc sp                                    ; 44                          ; 0xff0e3 orgs.asm:1670
+    test ax, ax                               ; 85 c0                       ; 0xff0e4 orgs.asm:1671
+    je short 0f0a4h                           ; 74 bc                       ; 0xff0e6 orgs.asm:1672
+    mov word [byte bp+000h], ax               ; 89 46 00                    ; 0xff0e8 orgs.asm:1678
     sal ax, 1                                 ; d1 e0                       ; 0xff0eb orgs.asm:212
     sal ax, 1                                 ; d1 e0                       ; 0xff0ed orgs.asm:215
     sal ax, 1                                 ; d1 e0                       ; 0xff0ef orgs.asm:218
     sal ax, 1                                 ; d1 e0                       ; 0xff0f1 orgs.asm:221
-    mov word [bp+002h], ax                    ; 89 46 02                    ; 0xff0f3 orgs.asm:1638
-    mov ax, word [byte bp+000h]               ; 8b 46 00                    ; 0xff0f6 orgs.asm:1639
-    and ax, 0f000h                            ; 25 00 f0                    ; 0xff0f9 orgs.asm:1648
-    mov word [bp+004h], ax                    ; 89 46 04                    ; 0xff0fc orgs.asm:1649
+    mov word [bp+002h], ax                    ; 89 46 02                    ; 0xff0f3 orgs.asm:1680
+    mov ax, word [byte bp+000h]               ; 8b 46 00                    ; 0xff0f6 orgs.asm:1681
+    and ax, 0f000h                            ; 25 00 f0                    ; 0xff0f9 orgs.asm:1690
+    mov word [bp+004h], ax                    ; 89 46 04                    ; 0xff0fc orgs.asm:1691
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xff0ff orgs.asm:1650
-    mov ds, ax                                ; 8e d8                       ; 0xff101 orgs.asm:1651
-    mov es, ax                                ; 8e c0                       ; 0xff103 orgs.asm:1652
-    mov word [byte bp+000h], ax               ; 89 46 00                    ; 0xff105 orgs.asm:1653
-    mov ax, 0aa55h                            ; b8 55 aa                    ; 0xff108 orgs.asm:1654
-    pop bp                                    ; 5d                          ; 0xff10b orgs.asm:1656
-    iret                                      ; cf                          ; 0xff10c orgs.asm:1657
+    ; xor ax, ax                                ; 33 c0                     ; 0xff0ff orgs.asm:1692
+    mov ds, ax                                ; 8e d8                       ; 0xff101 orgs.asm:1693
+    mov es, ax                                ; 8e c0                       ; 0xff103 orgs.asm:1694
+    mov word [byte bp+000h], ax               ; 89 46 00                    ; 0xff105 orgs.asm:1695
+    mov ax, 0aa55h                            ; b8 55 aa                    ; 0xff108 orgs.asm:1696
+    pop bp                                    ; 5d                          ; 0xff10b orgs.asm:1698
+    iret                                      ; cf                          ; 0xff10c orgs.asm:1699
     or cx, word [bp+si]                       ; 0b 0a                       ; 0xff10d
     or word [bp+di], cx                       ; 09 0b                       ; 0xff10f
     push eax                                  ; 66 50                       ; 0xff111 orgs.asm:88
@@ -19099,30 +19078,30 @@ biosorg_check_before_or_at_0F83Fh:           ; 0xff372 LB 0x4cf
     db  'XM'
   ; disGetNextSymbol 0xff841 LB 0x7bf -> off=0x0 cb=000000000000000c uValue=00000000000f1841 'int12_handler'
 int12_handler:                               ; 0xff841 LB 0xc
-    sti                                       ; fb                          ; 0xff841 orgs.asm:1671
-    push DS                                   ; 1e                          ; 0xff842 orgs.asm:1672
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff843 orgs.asm:1673
-    mov ds, ax                                ; 8e d8                       ; 0xff846 orgs.asm:1674
-    mov ax, word [00013h]                     ; a1 13 00                    ; 0xff848 orgs.asm:1675
-    pop DS                                    ; 1f                          ; 0xff84b orgs.asm:1676
-    iret                                      ; cf                          ; 0xff84c orgs.asm:1677
+    sti                                       ; fb                          ; 0xff841 orgs.asm:1729
+    push DS                                   ; 1e                          ; 0xff842 orgs.asm:1730
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff843 orgs.asm:1731
+    mov ds, ax                                ; 8e d8                       ; 0xff846 orgs.asm:1732
+    mov ax, word [00013h]                     ; a1 13 00                    ; 0xff848 orgs.asm:1733
+    pop DS                                    ; 1f                          ; 0xff84b orgs.asm:1734
+    iret                                      ; cf                          ; 0xff84c orgs.asm:1735
   ; disGetNextSymbol 0xff84d LB 0x7b3 -> off=0x0 cb=000000000000000c uValue=00000000000f184d 'int11_handler'
 int11_handler:                               ; 0xff84d LB 0xc
-    sti                                       ; fb                          ; 0xff84d orgs.asm:1686
-    push DS                                   ; 1e                          ; 0xff84e orgs.asm:1687
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff84f orgs.asm:1688
-    mov ds, ax                                ; 8e d8                       ; 0xff852 orgs.asm:1689
-    mov ax, word [00010h]                     ; a1 10 00                    ; 0xff854 orgs.asm:1690
-    pop DS                                    ; 1f                          ; 0xff857 orgs.asm:1691
-    iret                                      ; cf                          ; 0xff858 orgs.asm:1692
+    sti                                       ; fb                          ; 0xff84d orgs.asm:1744
+    push DS                                   ; 1e                          ; 0xff84e orgs.asm:1745
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff84f orgs.asm:1746
+    mov ds, ax                                ; 8e d8                       ; 0xff852 orgs.asm:1747
+    mov ax, word [00010h]                     ; a1 10 00                    ; 0xff854 orgs.asm:1748
+    pop DS                                    ; 1f                          ; 0xff857 orgs.asm:1749
+    iret                                      ; cf                          ; 0xff858 orgs.asm:1750
   ; disGetNextSymbol 0xff859 LB 0x7a7 -> off=0x0 cb=000000000000002d uValue=00000000000f1859 'int15_handler'
 int15_handler:                               ; 0xff859 LB 0x2d
-    pushfw                                    ; 9c                          ; 0xff859 orgs.asm:1721
-    push DS                                   ; 1e                          ; 0xff85a orgs.asm:1722
-    push ES                                   ; 06                          ; 0xff85b orgs.asm:1723
-    push CS                                   ; 0e                          ; 0xff85c orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xff85d orgs.asm:103
-    cld                                       ; fc                          ; 0xff85e orgs.asm:104
+    pushfw                                    ; 9c                          ; 0xff859 orgs.asm:1779
+    push DS                                   ; 1e                          ; 0xff85a orgs.asm:1780
+    push ES                                   ; 06                          ; 0xff85b orgs.asm:1781
+    push CS                                   ; 0e                          ; 0xff85c orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xff85d orgs.asm:104
+    cld                                       ; fc                          ; 0xff85e orgs.asm:105
     push ax                                   ; 50                          ; 0xff85f orgs.asm:99
     push cx                                   ; 51                          ; 0xff860 orgs.asm:100
     push dx                                   ; 52                          ; 0xff861 orgs.asm:101
@@ -19131,11 +19110,11 @@ int15_handler:                               ; 0xff859 LB 0x2d
     push bp                                   ; 55                          ; 0xff864 orgs.asm:104
     push si                                   ; 56                          ; 0xff865 orgs.asm:105
     push di                                   ; 57                          ; 0xff866 orgs.asm:106
-    cmp ah, 053h                              ; 80 fc 53                    ; 0xff867 orgs.asm:1734
-    je short 0f881h                           ; 74 15                       ; 0xff86a orgs.asm:1735
-    cmp ah, 0c2h                              ; 80 fc c2                    ; 0xff86c orgs.asm:1736
-    je short 0f886h                           ; 74 15                       ; 0xff86f orgs.asm:1737
-    call 06551h                               ; e8 dd 6c                    ; 0xff871 orgs.asm:1739
+    cmp ah, 053h                              ; 80 fc 53                    ; 0xff867 orgs.asm:1792
+    je short 0f881h                           ; 74 15                       ; 0xff86a orgs.asm:1793
+    cmp ah, 0c2h                              ; 80 fc c2                    ; 0xff86c orgs.asm:1794
+    je short 0f886h                           ; 74 15                       ; 0xff86f orgs.asm:1795
+    call 06551h                               ; e8 dd 6c                    ; 0xff871 orgs.asm:1797
     pop di                                    ; 5f                          ; 0xff874 orgs.asm:116
     pop si                                    ; 5e                          ; 0xff875 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xff876 orgs.asm:118
@@ -19144,35 +19123,35 @@ int15_handler:                               ; 0xff859 LB 0x2d
     pop dx                                    ; 5a                          ; 0xff879 orgs.asm:121
     pop cx                                    ; 59                          ; 0xff87a orgs.asm:122
     pop ax                                    ; 58                          ; 0xff87b orgs.asm:123
-    pop ES                                    ; 07                          ; 0xff87c orgs.asm:1745
-    pop DS                                    ; 1f                          ; 0xff87d orgs.asm:1746
-    popfw                                     ; 9d                          ; 0xff87e orgs.asm:1747
-    jmp short 0f88bh                          ; eb 0a                       ; 0xff87f orgs.asm:1748
-    call 0a4d4h                               ; e8 50 ac                    ; 0xff881 orgs.asm:1751
-    jmp short 0f874h                          ; eb ee                       ; 0xff884 orgs.asm:1752
+    pop ES                                    ; 07                          ; 0xff87c orgs.asm:1803
+    pop DS                                    ; 1f                          ; 0xff87d orgs.asm:1804
+    popfw                                     ; 9d                          ; 0xff87e orgs.asm:1805
+    jmp short 0f88bh                          ; eb 0a                       ; 0xff87f orgs.asm:1806
+    call 0a4d4h                               ; e8 50 ac                    ; 0xff881 orgs.asm:1809
+    jmp short 0f874h                          ; eb ee                       ; 0xff884 orgs.asm:1810
   ; disGetNextSymbol 0xff886 LB 0x77a -> off=0x0 cb=0000000000000005 uValue=00000000000f1886 'int15_handler_mouse'
 int15_handler_mouse:                         ; 0xff886 LB 0x5
-    call 06e85h                               ; e8 fc 75                    ; 0xff886 orgs.asm:1755
-    jmp short 0f874h                          ; eb e9                       ; 0xff889 orgs.asm:1756
+    call 06e85h                               ; e8 fc 75                    ; 0xff886 orgs.asm:1813
+    jmp short 0f874h                          ; eb e9                       ; 0xff889 orgs.asm:1814
   ; disGetNextSymbol 0xff88b LB 0x775 -> off=0x0 cb=000000000000001a uValue=00000000000f188b 'iret_modify_cf'
 iret_modify_cf:                              ; 0xff88b LB 0x1a
-    jc short 0f89bh                           ; 72 0e                       ; 0xff88b orgs.asm:1773
-    push bp                                   ; 55                          ; 0xff88d orgs.asm:1774
+    jc short 0f89bh                           ; 72 0e                       ; 0xff88b orgs.asm:1831
+    push bp                                   ; 55                          ; 0xff88d orgs.asm:1832
     db  08bh, 0ech
-    ; mov bp, sp                                ; 8b ec                     ; 0xff88e orgs.asm:1775
-    and byte [bp+006h], 0feh                  ; 80 66 06 fe                 ; 0xff890 orgs.asm:1776
-    or word [bp+006h], 00200h                 ; 81 4e 06 00 02              ; 0xff894 orgs.asm:1777
-    pop bp                                    ; 5d                          ; 0xff899 orgs.asm:1778
-    iret                                      ; cf                          ; 0xff89a orgs.asm:1779
-    push bp                                   ; 55                          ; 0xff89b orgs.asm:1781
+    ; mov bp, sp                                ; 8b ec                     ; 0xff88e orgs.asm:1833
+    and byte [bp+006h], 0feh                  ; 80 66 06 fe                 ; 0xff890 orgs.asm:1834
+    or word [bp+006h], 00200h                 ; 81 4e 06 00 02              ; 0xff894 orgs.asm:1835
+    pop bp                                    ; 5d                          ; 0xff899 orgs.asm:1836
+    iret                                      ; cf                          ; 0xff89a orgs.asm:1837
+    push bp                                   ; 55                          ; 0xff89b orgs.asm:1839
     db  08bh, 0ech
-    ; mov bp, sp                                ; 8b ec                     ; 0xff89c orgs.asm:1782
-    or word [bp+006h], 00201h                 ; 81 4e 06 01 02              ; 0xff89e orgs.asm:1783
-    pop bp                                    ; 5d                          ; 0xff8a3 orgs.asm:1784
-    iret                                      ; cf                          ; 0xff8a4 orgs.asm:1785
+    ; mov bp, sp                                ; 8b ec                     ; 0xff89c orgs.asm:1840
+    or word [bp+006h], 00201h                 ; 81 4e 06 01 02              ; 0xff89e orgs.asm:1841
+    pop bp                                    ; 5d                          ; 0xff8a3 orgs.asm:1842
+    iret                                      ; cf                          ; 0xff8a4 orgs.asm:1843
   ; disGetNextSymbol 0xff8a5 LB 0x75b -> off=0x0 cb=000000000000003a uValue=00000000000f18a5 'int74_handler'
 int74_handler:                               ; 0xff8a5 LB 0x3a
-    sti                                       ; fb                          ; 0xff8a5 orgs.asm:1792
+    sti                                       ; fb                          ; 0xff8a5 orgs.asm:1850
     push ax                                   ; 50                          ; 0xff8a6 orgs.asm:99
     push cx                                   ; 51                          ; 0xff8a7 orgs.asm:100
     push dx                                   ; 52                          ; 0xff8a8 orgs.asm:101
@@ -19181,33 +19160,33 @@ int74_handler:                               ; 0xff8a5 LB 0x3a
     push bp                                   ; 55                          ; 0xff8ab orgs.asm:104
     push si                                   ; 56                          ; 0xff8ac orgs.asm:105
     push di                                   ; 57                          ; 0xff8ad orgs.asm:106
-    push ES                                   ; 06                          ; 0xff8ae orgs.asm:1794
-    push DS                                   ; 1e                          ; 0xff8af orgs.asm:1795
+    push ES                                   ; 06                          ; 0xff8ae orgs.asm:1852
+    push DS                                   ; 1e                          ; 0xff8af orgs.asm:1853
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xff8b0 orgs.asm:1796
-    push ax                                   ; 50                          ; 0xff8b2 orgs.asm:1797
-    push ax                                   ; 50                          ; 0xff8b3 orgs.asm:1798
-    push ax                                   ; 50                          ; 0xff8b4 orgs.asm:1799
-    push ax                                   ; 50                          ; 0xff8b5 orgs.asm:1800
-    push ax                                   ; 50                          ; 0xff8b6 orgs.asm:1801
-    push CS                                   ; 0e                          ; 0xff8b7 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xff8b8 orgs.asm:103
-    cld                                       ; fc                          ; 0xff8b9 orgs.asm:104
-    call 06dd7h                               ; e8 1a 75                    ; 0xff8ba orgs.asm:1803
-    pop cx                                    ; 59                          ; 0xff8bd orgs.asm:1804
-    jcxz 0f8cdh                               ; e3 0d                       ; 0xff8be orgs.asm:1805
+    ; xor ax, ax                                ; 33 c0                     ; 0xff8b0 orgs.asm:1854
+    push ax                                   ; 50                          ; 0xff8b2 orgs.asm:1855
+    push ax                                   ; 50                          ; 0xff8b3 orgs.asm:1856
+    push ax                                   ; 50                          ; 0xff8b4 orgs.asm:1857
+    push ax                                   ; 50                          ; 0xff8b5 orgs.asm:1858
+    push ax                                   ; 50                          ; 0xff8b6 orgs.asm:1859
+    push CS                                   ; 0e                          ; 0xff8b7 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xff8b8 orgs.asm:104
+    cld                                       ; fc                          ; 0xff8b9 orgs.asm:105
+    call 06dd7h                               ; e8 1a 75                    ; 0xff8ba orgs.asm:1861
+    pop cx                                    ; 59                          ; 0xff8bd orgs.asm:1862
+    jcxz 0f8cdh                               ; e3 0d                       ; 0xff8be orgs.asm:1863
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xff8c0 orgs.asm:1811
-    push ax                                   ; 50                          ; 0xff8c2 orgs.asm:1812
-    pop DS                                    ; 1f                          ; 0xff8c3 orgs.asm:1814
-    push word [0040eh]                        ; ff 36 0e 04                 ; 0xff8c4 orgs.asm:1815
-    pop DS                                    ; 1f                          ; 0xff8c8 orgs.asm:1816
-    call far [word 00022h]                    ; ff 1e 22 00                 ; 0xff8c9 orgs.asm:1817
-    cli                                       ; fa                          ; 0xff8cd orgs.asm:1819
-    call 0e030h                               ; e8 5f e7                    ; 0xff8ce orgs.asm:1820
-    add sp, strict byte 00008h                ; 83 c4 08                    ; 0xff8d1 orgs.asm:1821
-    pop DS                                    ; 1f                          ; 0xff8d4 orgs.asm:1822
-    pop ES                                    ; 07                          ; 0xff8d5 orgs.asm:1823
+    ; xor ax, ax                                ; 33 c0                     ; 0xff8c0 orgs.asm:1869
+    push ax                                   ; 50                          ; 0xff8c2 orgs.asm:1870
+    pop DS                                    ; 1f                          ; 0xff8c3 orgs.asm:1872
+    push word [0040eh]                        ; ff 36 0e 04                 ; 0xff8c4 orgs.asm:1873
+    pop DS                                    ; 1f                          ; 0xff8c8 orgs.asm:1874
+    call far [word 00022h]                    ; ff 1e 22 00                 ; 0xff8c9 orgs.asm:1875
+    cli                                       ; fa                          ; 0xff8cd orgs.asm:1877
+    call 0e030h                               ; e8 5f e7                    ; 0xff8ce orgs.asm:1878
+    add sp, strict byte 00008h                ; 83 c4 08                    ; 0xff8d1 orgs.asm:1879
+    pop DS                                    ; 1f                          ; 0xff8d4 orgs.asm:1880
+    pop ES                                    ; 07                          ; 0xff8d5 orgs.asm:1881
     pop di                                    ; 5f                          ; 0xff8d6 orgs.asm:116
     pop si                                    ; 5e                          ; 0xff8d7 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xff8d8 orgs.asm:118
@@ -19216,22 +19195,22 @@ int74_handler:                               ; 0xff8a5 LB 0x3a
     pop dx                                    ; 5a                          ; 0xff8db orgs.asm:121
     pop cx                                    ; 59                          ; 0xff8dc orgs.asm:122
     pop ax                                    ; 58                          ; 0xff8dd orgs.asm:123
-    iret                                      ; cf                          ; 0xff8de orgs.asm:1825
+    iret                                      ; cf                          ; 0xff8de orgs.asm:1883
   ; disGetNextSymbol 0xff8df LB 0x721 -> off=0x0 cb=0000000000000012 uValue=00000000000f18df 'int76_handler'
 int76_handler:                               ; 0xff8df LB 0x12
-    push ax                                   ; 50                          ; 0xff8df orgs.asm:1832
-    push DS                                   ; 1e                          ; 0xff8e0 orgs.asm:1833
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff8e1 orgs.asm:1834
-    mov ds, ax                                ; 8e d8                       ; 0xff8e4 orgs.asm:1835
-    mov byte [0008eh], 0ffh                   ; c6 06 8e 00 ff              ; 0xff8e6 orgs.asm:1836
-    call 0e030h                               ; e8 42 e7                    ; 0xff8eb orgs.asm:1837
-    pop DS                                    ; 1f                          ; 0xff8ee orgs.asm:1838
-    pop ax                                    ; 58                          ; 0xff8ef orgs.asm:1839
-    iret                                      ; cf                          ; 0xff8f0 orgs.asm:1840
+    push ax                                   ; 50                          ; 0xff8df orgs.asm:1890
+    push DS                                   ; 1e                          ; 0xff8e0 orgs.asm:1891
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xff8e1 orgs.asm:1892
+    mov ds, ax                                ; 8e d8                       ; 0xff8e4 orgs.asm:1893
+    mov byte [0008eh], 0ffh                   ; c6 06 8e 00 ff              ; 0xff8e6 orgs.asm:1894
+    call 0e030h                               ; e8 42 e7                    ; 0xff8eb orgs.asm:1895
+    pop DS                                    ; 1f                          ; 0xff8ee orgs.asm:1896
+    pop ax                                    ; 58                          ; 0xff8ef orgs.asm:1897
+    iret                                      ; cf                          ; 0xff8f0 orgs.asm:1898
   ; disGetNextSymbol 0xff8f1 LB 0x70f -> off=0x0 cb=000000000000002d uValue=00000000000f18f1 'int70_handler'
 int70_handler:                               ; 0xff8f1 LB 0x2d
-    push ES                                   ; 06                          ; 0xff8f1 orgs.asm:1849
-    push DS                                   ; 1e                          ; 0xff8f2 orgs.asm:1850
+    push ES                                   ; 06                          ; 0xff8f1 orgs.asm:1907
+    push DS                                   ; 1e                          ; 0xff8f2 orgs.asm:1908
     push ax                                   ; 50                          ; 0xff8f3 orgs.asm:99
     push cx                                   ; 51                          ; 0xff8f4 orgs.asm:100
     push dx                                   ; 52                          ; 0xff8f5 orgs.asm:101
@@ -19240,10 +19219,10 @@ int70_handler:                               ; 0xff8f1 LB 0x2d
     push bp                                   ; 55                          ; 0xff8f8 orgs.asm:104
     push si                                   ; 56                          ; 0xff8f9 orgs.asm:105
     push di                                   ; 57                          ; 0xff8fa orgs.asm:106
-    push CS                                   ; 0e                          ; 0xff8fb orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xff8fc orgs.asm:103
-    cld                                       ; fc                          ; 0xff8fd orgs.asm:104
-    call 06a8bh                               ; e8 8a 71                    ; 0xff8fe orgs.asm:1853
+    push CS                                   ; 0e                          ; 0xff8fb orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xff8fc orgs.asm:104
+    cld                                       ; fc                          ; 0xff8fd orgs.asm:105
+    call 06a8bh                               ; e8 8a 71                    ; 0xff8fe orgs.asm:1911
     pop di                                    ; 5f                          ; 0xff901 orgs.asm:116
     pop si                                    ; 5e                          ; 0xff902 orgs.asm:117
     pop bp                                    ; 5d                          ; 0xff903 orgs.asm:118
@@ -19252,18 +19231,18 @@ int70_handler:                               ; 0xff8f1 LB 0x2d
     pop dx                                    ; 5a                          ; 0xff906 orgs.asm:121
     pop cx                                    ; 59                          ; 0xff907 orgs.asm:122
     pop ax                                    ; 58                          ; 0xff908 orgs.asm:123
-    pop DS                                    ; 1f                          ; 0xff909 orgs.asm:1855
-    pop ES                                    ; 07                          ; 0xff90a orgs.asm:1856
-    iret                                      ; cf                          ; 0xff90b orgs.asm:1857
-    jnbe short 0f913h                         ; 77 05                       ; 0xff90c orgs.asm:1867
-    cmp ax, 000b0h                            ; 3d b0 00                    ; 0xff90e orgs.asm:1868
-    jc short 0f91bh                           ; 72 08                       ; 0xff911 orgs.asm:1869
+    pop DS                                    ; 1f                          ; 0xff909 orgs.asm:1913
+    pop ES                                    ; 07                          ; 0xff90a orgs.asm:1914
+    iret                                      ; cf                          ; 0xff90b orgs.asm:1915
+    jnbe short 0f913h                         ; 77 05                       ; 0xff90c orgs.asm:1925
+    cmp ax, 000b0h                            ; 3d b0 00                    ; 0xff90e orgs.asm:1926
+    jc short 0f91bh                           ; 72 08                       ; 0xff911 orgs.asm:1927
     db  033h, 0d2h
-    ; xor dx, dx                                ; 33 d2                     ; 0xff913 orgs.asm:1872
+    ; xor dx, dx                                ; 33 d2                     ; 0xff913 orgs.asm:1930
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xff915 orgs.asm:1873
-    inc byte [word 00070h]                    ; fe 06 70 00                 ; 0xff917 orgs.asm:1875
-    jmp near 0fec1h                           ; e9 a3 05                    ; 0xff91b orgs.asm:1877
+    ; xor ax, ax                                ; 33 c0                     ; 0xff915 orgs.asm:1931
+    inc byte [word 00070h]                    ; fe 06 70 00                 ; 0xff917 orgs.asm:1933
+    jmp near 0fec1h                           ; e9 a3 05                    ; 0xff91b orgs.asm:1935
   ; disGetNextSymbol 0xff91e LB 0x6e2 -> off=0x0 cb=0000000000000150 uValue=00000000000f191e 'biosorg_check_before_or_at_0FA6Ch'
 biosorg_check_before_or_at_0FA6Ch:           ; 0xff91e LB 0x150
     times 0x14e db 0
@@ -19336,8 +19315,8 @@ font8x8:                                     ; 0xffa6e LB 0x400
     db  076h, 0dch, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 010h, 038h, 06ch, 0c6h, 0c6h, 0feh, 000h
   ; disGetNextSymbol 0xffe6e LB 0x192 -> off=0x0 cb=000000000000001b uValue=00000000000f1e6e 'biosorg_check_at_0FE6Eh'
 biosorg_check_at_0FE6Eh:                     ; 0xffe6e LB 0x1b
-    push ES                                   ; 06                          ; 0xffe6e orgs.asm:1911
-    push DS                                   ; 1e                          ; 0xffe6f orgs.asm:1912
+    push ES                                   ; 06                          ; 0xffe6e orgs.asm:1969
+    push DS                                   ; 1e                          ; 0xffe6f orgs.asm:1970
     push ax                                   ; 50                          ; 0xffe70 orgs.asm:99
     push cx                                   ; 51                          ; 0xffe71 orgs.asm:100
     push dx                                   ; 52                          ; 0xffe72 orgs.asm:101
@@ -19346,10 +19325,10 @@ biosorg_check_at_0FE6Eh:                     ; 0xffe6e LB 0x1b
     push bp                                   ; 55                          ; 0xffe75 orgs.asm:104
     push si                                   ; 56                          ; 0xffe76 orgs.asm:105
     push di                                   ; 57                          ; 0xffe77 orgs.asm:106
-    push CS                                   ; 0e                          ; 0xffe78 orgs.asm:102
-    pop DS                                    ; 1f                          ; 0xffe79 orgs.asm:103
-    cld                                       ; fc                          ; 0xffe7a orgs.asm:104
-    call 06b33h                               ; e8 b5 6c                    ; 0xffe7b orgs.asm:1916
+    push CS                                   ; 0e                          ; 0xffe78 orgs.asm:103
+    pop DS                                    ; 1f                          ; 0xffe79 orgs.asm:104
+    cld                                       ; fc                          ; 0xffe7a orgs.asm:105
+    call 06b33h                               ; e8 b5 6c                    ; 0xffe7b orgs.asm:1974
     pop di                                    ; 5f                          ; 0xffe7e orgs.asm:116
     pop si                                    ; 5e                          ; 0xffe7f orgs.asm:117
     pop bp                                    ; 5d                          ; 0xffe80 orgs.asm:118
@@ -19358,50 +19337,50 @@ biosorg_check_at_0FE6Eh:                     ; 0xffe6e LB 0x1b
     pop dx                                    ; 5a                          ; 0xffe83 orgs.asm:121
     pop cx                                    ; 59                          ; 0xffe84 orgs.asm:122
     pop ax                                    ; 58                          ; 0xffe85 orgs.asm:123
-    pop DS                                    ; 1f                          ; 0xffe86 orgs.asm:1918
-    pop ES                                    ; 07                          ; 0xffe87 orgs.asm:1919
-    iret                                      ; cf                          ; 0xffe88 orgs.asm:1920
+    pop DS                                    ; 1f                          ; 0xffe86 orgs.asm:1976
+    pop ES                                    ; 07                          ; 0xffe87 orgs.asm:1977
+    iret                                      ; cf                          ; 0xffe88 orgs.asm:1978
   ; disGetNextSymbol 0xffe89 LB 0x177 -> off=0x0 cb=000000000000001c uValue=00000000000f1e89 'biosorg_check_before_or_at_0FEA3h'
 biosorg_check_before_or_at_0FEA3h:           ; 0xffe89 LB 0x1c
     times 0x1a db 0
     db  'XM'
   ; disGetNextSymbol 0xffea5 LB 0x15b -> off=0x0 cb=0000000000000042 uValue=00000000000f1ea5 'int08_handler'
 int08_handler:                               ; 0xffea5 LB 0x42
-    sti                                       ; fb                          ; 0xffea5 orgs.asm:1933
-    push ax                                   ; 50                          ; 0xffea6 orgs.asm:1934
-    push DS                                   ; 1e                          ; 0xffea7 orgs.asm:1936
-    push dx                                   ; 52                          ; 0xffea8 orgs.asm:1937
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xffea9 orgs.asm:1938
-    mov ds, ax                                ; 8e d8                       ; 0xffeac orgs.asm:1939
-    mov ax, word [0006ch]                     ; a1 6c 00                    ; 0xffeae orgs.asm:1945
-    mov dx, word [word 0006eh]                ; 8b 16 6e 00                 ; 0xffeb1 orgs.asm:1946
-    inc ax                                    ; 40                          ; 0xffeb5 orgs.asm:1947
-    jne short 0feb9h                          ; 75 01                       ; 0xffeb6 orgs.asm:1948
-    inc dx                                    ; 42                          ; 0xffeb8 orgs.asm:1949
-    cmp dx, strict byte 00018h                ; 83 fa 18                    ; 0xffeb9 orgs.asm:1958
-    jc short 0fec1h                           ; 72 03                       ; 0xffebc orgs.asm:1959
-    jmp near 0f90ch                           ; e9 4b fa                    ; 0xffebe orgs.asm:1960
-    mov word [0006ch], ax                     ; a3 6c 00                    ; 0xffec1 orgs.asm:1972
-    mov word [word 0006eh], dx                ; 89 16 6e 00                 ; 0xffec4 orgs.asm:1973
-    mov AL, byte [00040h]                     ; a0 40 00                    ; 0xffec8 orgs.asm:1977
+    sti                                       ; fb                          ; 0xffea5 orgs.asm:1991
+    push ax                                   ; 50                          ; 0xffea6 orgs.asm:1992
+    push DS                                   ; 1e                          ; 0xffea7 orgs.asm:1994
+    push dx                                   ; 52                          ; 0xffea8 orgs.asm:1995
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xffea9 orgs.asm:1996
+    mov ds, ax                                ; 8e d8                       ; 0xffeac orgs.asm:1997
+    mov ax, word [0006ch]                     ; a1 6c 00                    ; 0xffeae orgs.asm:2003
+    mov dx, word [word 0006eh]                ; 8b 16 6e 00                 ; 0xffeb1 orgs.asm:2004
+    inc ax                                    ; 40                          ; 0xffeb5 orgs.asm:2005
+    jne short 0feb9h                          ; 75 01                       ; 0xffeb6 orgs.asm:2006
+    inc dx                                    ; 42                          ; 0xffeb8 orgs.asm:2007
+    cmp dx, strict byte 00018h                ; 83 fa 18                    ; 0xffeb9 orgs.asm:2016
+    jc short 0fec1h                           ; 72 03                       ; 0xffebc orgs.asm:2017
+    jmp near 0f90ch                           ; e9 4b fa                    ; 0xffebe orgs.asm:2018
+    mov word [0006ch], ax                     ; a3 6c 00                    ; 0xffec1 orgs.asm:2030
+    mov word [word 0006eh], dx                ; 89 16 6e 00                 ; 0xffec4 orgs.asm:2031
+    mov AL, byte [00040h]                     ; a0 40 00                    ; 0xffec8 orgs.asm:2035
     db  00ah, 0c0h
-    ; or al, al                                 ; 0a c0                     ; 0xffecb orgs.asm:1978
-    je short 0feddh                           ; 74 0e                       ; 0xffecd orgs.asm:1979
+    ; or al, al                                 ; 0a c0                     ; 0xffecb orgs.asm:2036
+    je short 0feddh                           ; 74 0e                       ; 0xffecd orgs.asm:2037
     db  0feh, 0c8h
-    ; dec al                                    ; fe c8                     ; 0xffecf orgs.asm:1980
-    mov byte [00040h], AL                     ; a2 40 00                    ; 0xffed1 orgs.asm:1981
-    jne short 0feddh                          ; 75 07                       ; 0xffed4 orgs.asm:1982
-    mov dx, 003f2h                            ; ba f2 03                    ; 0xffed6 orgs.asm:1984
-    in AL, DX                                 ; ec                          ; 0xffed9 orgs.asm:1985
-    and AL, strict byte 0cfh                  ; 24 cf                       ; 0xffeda orgs.asm:1986
-    out DX, AL                                ; ee                          ; 0xffedc orgs.asm:1987
-    int 01ch                                  ; cd 1c                       ; 0xffedd orgs.asm:1990
-    cli                                       ; fa                          ; 0xffedf orgs.asm:1992
-    call 0e034h                               ; e8 51 e1                    ; 0xffee0 orgs.asm:1993
-    pop dx                                    ; 5a                          ; 0xffee3 orgs.asm:1994
-    pop DS                                    ; 1f                          ; 0xffee4 orgs.asm:1995
-    pop ax                                    ; 58                          ; 0xffee5 orgs.asm:2000
-    iret                                      ; cf                          ; 0xffee6 orgs.asm:2002
+    ; dec al                                    ; fe c8                     ; 0xffecf orgs.asm:2038
+    mov byte [00040h], AL                     ; a2 40 00                    ; 0xffed1 orgs.asm:2039
+    jne short 0feddh                          ; 75 07                       ; 0xffed4 orgs.asm:2040
+    mov dx, 003f2h                            ; ba f2 03                    ; 0xffed6 orgs.asm:2042
+    in AL, DX                                 ; ec                          ; 0xffed9 orgs.asm:2043
+    and AL, strict byte 0cfh                  ; 24 cf                       ; 0xffeda orgs.asm:2044
+    out DX, AL                                ; ee                          ; 0xffedc orgs.asm:2045
+    int 01ch                                  ; cd 1c                       ; 0xffedd orgs.asm:2048
+    cli                                       ; fa                          ; 0xffedf orgs.asm:2050
+    call 0e034h                               ; e8 51 e1                    ; 0xffee0 orgs.asm:2051
+    pop dx                                    ; 5a                          ; 0xffee3 orgs.asm:2052
+    pop DS                                    ; 1f                          ; 0xffee4 orgs.asm:2053
+    pop ax                                    ; 58                          ; 0xffee5 orgs.asm:2058
+    iret                                      ; cf                          ; 0xffee6 orgs.asm:2060
   ; disGetNextSymbol 0xffee7 LB 0x119 -> off=0x0 cb=000000000000000c uValue=00000000000f1ee7 'biosorg_check_before_or_at_0FEF1h'
 biosorg_check_before_or_at_0FEF1h:           ; 0xffee7 LB 0xc
     times 0xa db 0
@@ -19433,10 +19412,10 @@ biosorg_check_before_or_at_0FF51h:           ; 0xfff19 LB 0x3a
     db  'XM'
   ; disGetNextSymbol 0xfff53 LB 0xad -> off=0x0 cb=0000000000000001 uValue=00000000000f1f53 'dummy_iret'
 dummy_iret:                                  ; 0xfff53 LB 0x1
-    iret                                      ; cf                          ; 0xfff53 orgs.asm:2027
+    iret                                      ; cf                          ; 0xfff53 orgs.asm:2085
   ; disGetNextSymbol 0xfff54 LB 0xac -> off=0x0 cb=000000000000002c uValue=00000000000f1f54 'biosorg_check_at_0FF54h'
 biosorg_check_at_0FF54h:                     ; 0xfff54 LB 0x2c
-    iret                                      ; cf                          ; 0xfff54 orgs.asm:2036
+    iret                                      ; cf                          ; 0xfff54 orgs.asm:2094
     mov ax, ax                                ; 89 c0                       ; 0xfff55
     mov ax, ax                                ; 89 c0                       ; 0xfff57
     mov ax, ax                                ; 89 c0                       ; 0xfff59
@@ -19470,6 +19449,6 @@ biosorg_check_before_or_at_0FFEEh:           ; 0xfff80 LB 0x70
     db  'XM'
   ; disGetNextSymbol 0xffff0 LB 0x10 -> off=0x0 cb=0000000000000010 uValue=00000000000f1ff0 'cpu_reset'
 cpu_reset:                                   ; 0xffff0 LB 0x10
-    jmp far 0f000h:0e05bh                     ; ea 5b e0 00 f0              ; 0xffff0 orgs.asm:2046
+    jmp far 0f000h:0e05bh                     ; ea 5b e0 00 f0              ; 0xffff0 orgs.asm:2104
   ; disGetNextSymbol 0xffff5 LB 0xb -> off=0xb cb=0000000000000000 uValue=0000000000100000 '_dummy_addr_0x100000'
-    db  030h, 036h, 02fh, 032h, 033h, 02fh, 039h, 039h, 000h, 0fbh, 0e0h
+    db  030h, 036h, 02fh, 032h, 033h, 02fh, 039h, 039h, 000h, 0fbh, 0abh

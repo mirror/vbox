@@ -49,6 +49,44 @@ Rules for adding a changelog entry to make them look more uniform:
 
   <sect1>
 
+    <title>Version 7.0.0_ALPHA2 (2022-08-05)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Audio: Added "default" host driver type to make it possible to move VMs (appliances) between different platforms
+          without the need of changing the audio driver explicitly. When the "default" driver is selected, the best audio backend
+          option for a platform will be used. This is the default for newly created VMs.</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: Implemented initial support for automatic updating
+          of Guest Additions for Linux guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: Implemented ability to wait for and/or reboot the
+          guest when updating Guest Additions via VBoxManage</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Added Guest Control "waitrunlevel" sub-command to
+          make it possible to wait for a guest to reach a certain run level</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: Added experimental support of running autostarted VMs
+          in session 0, to allow running VMS even when a usser is not being logged
+          in (disabled by default, please consult the manual)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+  <sect1>
+
     <title>Version 7.0.0_ALPHA1 (2022-05-18)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
