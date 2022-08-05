@@ -367,10 +367,11 @@ static DWORD __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
 
     int rc = rtThreadMain(pThread, dwThreadId, &pThread->szName[0]);
 
+    TlsSetValue(g_dwSelfTLS, NULL); /* rtThreadMain already released the structure. */
+
     if (fUninitCom && g_pfnCoUninitialize)
         g_pfnCoUninitialize();
 
-    TlsSetValue(g_dwSelfTLS, NULL);
     rtThreadNativeUninitComAndOle();
 #ifndef IPRT_NO_CRT
     _endthreadex(rc);
