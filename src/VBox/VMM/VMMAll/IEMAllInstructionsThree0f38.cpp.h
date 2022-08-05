@@ -277,13 +277,45 @@ FNIEMOP_DEF(iemOp_pshufb_Vx_Wx)
 
 
 /*  Opcode      0x0f 0x38 0x01. */
-FNIEMOP_STUB(iemOp_phaddw_Pq_Qq);
+FNIEMOP_DEF(iemOp_phaddw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PHADDW, phaddw, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phaddw_u64,&iemAImpl_phaddw_u64_fallback),
+                          IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x01. */
-FNIEMOP_STUB(iemOp_phaddw_Vx_Wx);
+FNIEMOP_DEF(iemOp_phaddw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PHADDW, phaddw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phaddw_u128, iemAImpl_phaddw_u128_fallback));
+
+}
+
+
 /** Opcode      0x0f 0x38 0x02. */
-FNIEMOP_STUB(iemOp_phaddd_Pq_Qq);
+FNIEMOP_DEF(iemOp_phaddd_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PHADDD, phaddd, Pq, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_2(iemOpCommonMmx_FullFull_To_Full_Ex,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phaddd_u64,&iemAImpl_phaddd_u64_fallback),
+                          IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x02. */
-FNIEMOP_STUB(iemOp_phaddd_Vx_Wx);
+FNIEMOP_DEF(iemOp_phaddd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PHADDD, phaddd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSsse3_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_phaddd_u128, iemAImpl_phaddd_u128_fallback));
+
+}
+
+
 /** Opcode      0x0f 0x38 0x03. */
 FNIEMOP_STUB(iemOp_phaddsw_Pq_Qq);
 /** Opcode 0x66 0x0f 0x38 0x03. */
