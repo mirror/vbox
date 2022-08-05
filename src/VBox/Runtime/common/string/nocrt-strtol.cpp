@@ -36,6 +36,7 @@
 #include <iprt/string.h>
 
 
+#undef strtol
 long RT_NOCRT(strtol)(const char *psz, char **ppszNext, int iBase)
 {
 #if LONG_BIT == 64
