@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - CRT Strings, strlen().
+ * IPRT - CRT Strings, strcat().
  */
 
 /*
@@ -33,24 +33,21 @@
 
 
 /**
- * Find the length of a zeroterminated byte string.
+ * Append one string to another.
  *
- * @returns String length in bytes.
- * @param   pszString   Zero terminated string.
+ * @returns Pointer to destination string
+ * @param   pszDst      String to append @a pszSrc to.
+ * @param   pszSrc      Zero terminated string.
  */
-#ifdef IPRT_NO_CRT
-# undef strlen
-size_t RT_NOCRT(strlen)(const char *pszString)
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
-__checkReturn size_t  __cdecl strlen(__in_z  const char *pszString)
-#else
-size_t strlen(const char *pszString)
-#endif
+#undef strcat
+char *RT_NOCRT(strcat)(char *pszDst, const char *pszSrc)
 {
-    const char *psz = pszString;
-    while (*psz)
-        psz++;
-    return psz - pszString;
+    char * const pszRet = pszDst;
+    pszDst = RTStrEnd(pszDst, RTSTR_MAX);
+    while ((*pszDst = *pszSrc++) != '\0')
+        pszDst++;
+
+    return pszRet;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strlen);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strcat);
 

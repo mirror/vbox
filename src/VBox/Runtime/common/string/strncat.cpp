@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - CRT Strings, strlen().
+ * IPRT - No-CRT Strings, strncat().
  */
 
 /*
@@ -33,24 +33,27 @@
 
 
 /**
- * Find the length of a zeroterminated byte string.
+ * Append a substring to an existing string.
  *
- * @returns String length in bytes.
- * @param   pszString   Zero terminated string.
+ * @returns Pointer to destination string
+ * @param   pszDst      String to append @a cchMaxSrc chars from @a pszSrc to,
+ *                      plus a zero terminator.
+ * @param   pszSrc      Zero terminated string.
+ * @param   cchMaxSrc   Maximum number of chars to copy from @a pszSrc.
  */
-#ifdef IPRT_NO_CRT
-# undef strlen
-size_t RT_NOCRT(strlen)(const char *pszString)
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
-__checkReturn size_t  __cdecl strlen(__in_z  const char *pszString)
-#else
-size_t strlen(const char *pszString)
-#endif
+#undef strncat
+char *RT_NOCRT(strncat)(char *pszDst, const char *pszSrc, size_t cchMaxSrc)
 {
-    const char *psz = pszString;
-    while (*psz)
-        psz++;
-    return psz - pszString;
+    char * const pszRet = pszDst;
+
+    pszDst = RTStrEnd(pszDst, RTSTR_MAX);
+
+    char ch;
+    while (cchMaxSrc-- > 0 && (ch = *pszSrc++) != '\0')
+        *pszDst++ = ch;
+    *pszDst = '\0';
+
+    return pszRet;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strlen);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strncat);
 

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - CRT Strings, strlen().
+ * IPRT - No-CRT Strings, strtok_r().
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle Corporation
+ * Copyright (C) 2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,25 +32,49 @@
 #include <iprt/string.h>
 
 
-/**
- * Find the length of a zeroterminated byte string.
- *
- * @returns String length in bytes.
- * @param   pszString   Zero terminated string.
- */
-#ifdef IPRT_NO_CRT
-# undef strlen
-size_t RT_NOCRT(strlen)(const char *pszString)
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
-__checkReturn size_t  __cdecl strlen(__in_z  const char *pszString)
-#else
-size_t strlen(const char *pszString)
-#endif
+#undef strtok_r
+char *RT_NOCRT(strtok_r)(char *psz, const char *pszDelimiters, char **ppszState)
 {
-    const char *psz = pszString;
-    while (*psz)
+    /*
+     * Load state.
+     */
+    if (!psz)
+    {
+        psz = *ppszState;
+        if (!psz)
+            return NULL;
+    }
+
+    /*
+     * Skip leading delimiters.
+     */
+    size_t const cchDelimiters = strlen(pszDelimiters);
+    for (;;)
+    {
+        char ch = *psz;
+        if (!ch)
+            return *ppszState = NULL;
+        if (memchr(pszDelimiters, ch, cchDelimiters) == NULL)
+            break;
         psz++;
-    return psz - pszString;
+    }
+
+    /*
+     * Find the end of the token.
+     */
+    char * const pszRet = psz;
+    for (;;)
+    {
+        char ch = *++psz;
+        if (memchr(pszDelimiters, ch, cchDelimiters + 1 /* '\0' */) == NULL)
+        { /* semi-likely */ }
+        else
+        {
+            *psz = '\0';
+            *ppszState = ch ? psz + 1 : NULL;
+            return pszRet;
+        }
+    }
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strlen);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strtok_r);
 

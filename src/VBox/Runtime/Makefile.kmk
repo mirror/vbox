@@ -1713,6 +1713,13 @@ RuntimeBaseR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 # that defines functions and variables needing aliasing.
 #
 UNIT_VBoxNoCrtAliases = CRT symbol alias for the rtnocr_xxx implementations
+
+# Only adding the VBOX_NOCRT_ALIASES property to library targets for now:
+PROPS_ACCUMULATE_L           += VBOX_NOCRT_ALIASES
+PROPS_ACCUMULATE_L_LNK       += VBOX_NOCRT_ALIASES
+PROPS_LIBRARIES_ACCUMULATE_L += VBOX_NOCRT_ALIASES
+PROPS_ALL                    += VBOX_NOCRT_ALIASES
+
 define def_unit_VBoxNoCrtAliases_double_expansion
 $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
 		$$(abspathex \
@@ -1736,7 +1743,15 @@ $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FI
 	$$(call MSG_GENERATE,$(target),$$@,)
 	$$(QUIET)$$(MKDIR) -p -- "$$($(target)_0_OUTDIR)/genalias/"
 	$$(QUIET)$$(VBOX_GENALIAS) -f $$(if-expr "$(bld_trg)" == "win",coff,$$(if-expr "$(bld_trg)" == "darwin",macho,omf)) \
-		-D "$$($(target)_0_OUTDIR)/genalias/" $$($(target)_2_VBOX_NOCRT_ALIASES)
+		-D "$$($(target)_0_OUTDIR)/genalias/" $$($(target)_2_VBOX_NOCRT_ALIASES) \
+		$$($(target)_VBOX_NOCRT_ALIASES) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
+		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_type))
 	$$(QUIET)$$(APPEND) -tn "$$($(target)_0_OUTDIR)/genalias/genalias.ts" "$$($(target)_2_VBOX_NOCRT_ALIASES))"
 
 $(target)_2_OBJS += $$($(target)_2_VBOX_NOCRT_ALIAS_FILES)
@@ -1747,8 +1762,16 @@ define def_unit_VBoxNoCrtAliases_target_pre
  if1of ($(bld_trg), win os2 darwin) # Only non-ELF targets as ELF does not support aliasing.
   $(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE := $(PATH_OUT)/nocrt-aliases-$(target).kmk
   include $($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE)
-  $(target)_2_VBOX_NOCRT_ALIAS_FILES := \
-  	$(foreach alias,$($(target)_2_VBOX_NOCRT_ALIASES), $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
+  $(target)_2_VBOX_NOCRT_ALIAS_FILES := $(foreach alias,$($(target)_2_VBOX_NOCRT_ALIASES) \
+	$($(target)_VBOX_NOCRT_ALIASES) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
+	$($(target)_VBOX_NOCRT_ALIASES.$(bld_type)) \
+	, $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
   $(eval $(def_unit_VBoxNoCrtAliases_double_expansion))
  endif
 endef
@@ -1774,7 +1797,11 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/misc/json.cpp \
   	generic/RTLogWriteStdErr-generic.cpp \
   	generic/RTLogWriteStdOut-generic.cpp \
-  	,$(RuntimeBaseR3_SOURCES))
+  	,$(RuntimeBaseR3_SOURCES)) \
+       \
+  	common/string/nocrt-strdup.cpp \
+  	common/string/nocrt-stricmp.cpp \
+  	common/string/strtok_r.cpp
   RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
   	common/misc/setjmp.asm \
   	common/string/memcpy.asm \
@@ -1783,10 +1810,14 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/memmove.asm \
   	common/string/memset.asm \
   	common/string/strlen.asm \
+  	common/string/strnlen.cpp \
   	common/string/strchr.asm \
   	common/string/strcmp.asm \
   	common/string/strncmp.asm \
   	common/string/strcpy.asm \
+  	common/string/strncpy.asm \
+   	common/string/strcat.cpp \
+   	common/string/strncat.cpp \
    	common/string/strrchr.cpp \
    	common/string/strstr.cpp \
    	common/string/strcspn.cpp \
@@ -1799,10 +1830,14 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/memmove.asm \
   	common/string/memset.asm \
   	common/string/strlen.asm \
+  	common/string/strnlen.cpp \
   	common/string/strchr.asm \
   	common/string/strcmp.asm \
   	common/string/strncmp.asm \
   	common/string/strcpy.asm \
+  	common/string/strncpy.asm \
+   	common/string/strcat.cpp \
+   	common/string/strncat.cpp \
    	common/string/strrchr.cpp \
    	common/string/strstr.cpp \
    	common/string/strcspn.cpp \
@@ -1837,6 +1872,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/win/nocrt-WinMainCRTStartup-win.asm \
   	common/compiler/vcc/guard-vcc.asm \
   	common/compiler/vcc/stack-vcc.asm
+  RuntimeR3_VBOX_NOCRT_ALIASES.win = strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r
  endif
 endif
 

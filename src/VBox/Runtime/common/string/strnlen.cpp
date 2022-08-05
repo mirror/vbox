@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - CRT Strings, strlen().
+ * IPRT - CRT Strings, strnlen().
  */
 
 /*
@@ -33,24 +33,20 @@
 
 
 /**
- * Find the length of a zeroterminated byte string.
+ * Find the length of a zeroterminated byte string, but only up to a given
+ * limit.
  *
- * @returns String length in bytes.
+ * @returns String length in bytes, or cchMax if too long.
  * @param   pszString   Zero terminated string.
+ * @param   cchMax      Max number of chars to search for the end.
  */
-#ifdef IPRT_NO_CRT
-# undef strlen
-size_t RT_NOCRT(strlen)(const char *pszString)
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2005)
-__checkReturn size_t  __cdecl strlen(__in_z  const char *pszString)
-#else
-size_t strlen(const char *pszString)
-#endif
+#undef strnlen
+size_t RT_NOCRT(strnlen)(const char *pszString, size_t cchMax)
 {
-    const char *psz = pszString;
-    while (*psz)
-        psz++;
-    return psz - pszString;
+    const char * const pszStart = pszString;
+    while (cchMax-- > 0 && *pszString)
+        pszString++;
+    return pszString - pszStart;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strlen);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strnlen);
 
