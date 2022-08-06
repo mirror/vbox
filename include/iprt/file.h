@@ -233,13 +233,20 @@ RTDECL(int) RTFileQuerySizeByPath(const char *pszPath, uint64_t *pcbFile);
  */
 #define RTFILE_O_CREATE_MODE_SHIFT      20
 
-                                      /* UINT32_C(0x40000000)
-                                     and UINT32_C(0x80000000) are unused atm. */
+/** Temporary file that should be automatically deleted when closed.
+ * If not supported by the OS, the open call will fail with VERR_NOT_SUPPORTED
+ * to prevent leaving undeleted files behind.
+ * @note On unix the file wont be visible and cannot be accessed by it's path.
+ *       On Windows it will be visible but only accessible of deletion is
+ *       shared.  Not implemented on OS/2. */
+#define RTFILE_O_TEMP_AUTO_DELETE       UINT32_C(0x40000000)
+
+                                      /* UINT32_C(0x80000000) is unused atm. */
 
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK             UINT32_C(0x3ffffff7)
+#define RTFILE_O_VALID_MASK             UINT32_C(0x7ffffff7)
 
 /** @} */
 
