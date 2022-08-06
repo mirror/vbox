@@ -1799,6 +1799,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	generic/RTLogWriteStdOut-generic.cpp \
   	,$(RuntimeBaseR3_SOURCES)) \
        \
+  	common/file/nocrt-open.cpp \
+  	common/file/nocrt-close.cpp \
   	common/file/nocrt-fstat.cpp \
   	common/file/nocrt-isatty.cpp \
   	common/file/nocrt-read.cpp \
