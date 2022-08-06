@@ -60,4 +60,3 @@ errno_t RT_NOCRT(tmpfile_s)(FILE **ppFile)
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(tmpfile_s);
 
-
