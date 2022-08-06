@@ -27,8 +27,8 @@
 
 %include "iprt/asmdefs.mac"
 
-extern  rtnocrt_atexit
+extern  nocrt_atexit
 BEGINPROC atexit
-        jmp     rtnocrt_atexit
+        jmp     nocrt_atexit
 ENDPROC   atexit
 

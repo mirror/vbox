@@ -275,6 +275,8 @@
 #  define EALREADY              (37)
 # elif defined(RT_OS_LINUX)
 #  define EALREADY              (114)
+# elif defined(RT_OS_WINDOWS)
+#  define EALREADY              (103)
 # else
 #  define EALREADY              (149)
 # endif
@@ -381,6 +383,8 @@
 #  define ENOTSUP               (45)
 # elif defined(RT_OS_LINUX)
 #  define ENOTSUP               (95)
+# elif defined(RT_OS_WINDOWS)
+#  define ENOTSUP               (129)
 # else
 #  define ENOTSUP               (48)
 # endif
@@ -390,6 +394,8 @@
 #  define EOPNOTSUPP            ENOTSUP
 # elif defined(RT_OS_LINUX)
 #  define EOPNOTSUPP            ENOTSUP
+# elif defined(RT_OS_WINDOWS)
+#  define EOPNOTSUPP            (130)
 # else
 #  define EOPNOTSUPP            (122)
 # endif
@@ -405,6 +411,8 @@
 #  define EOVERFLOW             (84)
 # elif defined(RT_OS_LINUX)
 #  define EOVERFLOW             (75)
+# elif defined(RT_OS_WINDOWS)
+#  define EOVERFLOW             (132)
 # else
 #  define EOVERFLOW             (79)
 # endif
