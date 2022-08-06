@@ -156,8 +156,17 @@ FNIEMOP_DEF(iemOp_vpsignd_Vx_Hx_Wx)
 
 
 /*  Opcode VEX.0F38 0x0b - invalid. */
+
+
 /** Opcode VEX.66.0F38 0x0b. */
-FNIEMOP_STUB(iemOp_vpmulhrsw_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpmulhrsw_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPMULHRSW, vpmulhrsw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpmulhrsw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x0c - invalid. */
 /**  Opcode VEX.66.0F38 0x0c. */
 FNIEMOP_STUB(iemOp_vpermilps_Vx_Hx_Wx);

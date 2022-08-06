@@ -12945,6 +12945,89 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaddubsw_u256_fallback,(PRTUINT256U puDst, PC
 
 
 /*
+ * PMULHRSW / VPMULHRSW
+ */
+#define DO_PMULHRSW(a_Src1, a_Src2) \
+    (uint16_t)(((((int32_t)(a_Src1) * (a_Src2)) >> 14 ) + 1) >> 1)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.au16[0] = DO_PMULHRSW(uSrc1.ai16[0], uSrc2.ai16[0]);
+    uDst.au16[1] = DO_PMULHRSW(uSrc1.ai16[1], uSrc2.ai16[1]);
+    uDst.au16[2] = DO_PMULHRSW(uSrc1.ai16[2], uSrc2.ai16[2]);
+    uDst.au16[3] = DO_PMULHRSW(uSrc1.ai16[3], uSrc2.ai16[3]);
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai16[0] = DO_PMULHRSW(uSrc1.ai16[0], puSrc->ai16[0]);
+    puDst->ai16[1] = DO_PMULHRSW(uSrc1.ai16[1], puSrc->ai16[1]);
+    puDst->ai16[2] = DO_PMULHRSW(uSrc1.ai16[2], puSrc->ai16[2]);
+    puDst->ai16[3] = DO_PMULHRSW(uSrc1.ai16[3], puSrc->ai16[3]);
+    puDst->ai16[4] = DO_PMULHRSW(uSrc1.ai16[4], puSrc->ai16[4]);
+    puDst->ai16[5] = DO_PMULHRSW(uSrc1.ai16[5], puSrc->ai16[5]);
+    puDst->ai16[6] = DO_PMULHRSW(uSrc1.ai16[6], puSrc->ai16[6]);
+    puDst->ai16[7] = DO_PMULHRSW(uSrc1.ai16[7], puSrc->ai16[7]);
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhrsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uDst; /* puDst can be the same as one of the source operands. */
+
+    uDst.ai16[0] = DO_PMULHRSW(puSrc1->ai16[0], puSrc2->ai16[0]);
+    uDst.ai16[1] = DO_PMULHRSW(puSrc1->ai16[1], puSrc2->ai16[1]);
+    uDst.ai16[2] = DO_PMULHRSW(puSrc1->ai16[2], puSrc2->ai16[2]);
+    uDst.ai16[3] = DO_PMULHRSW(puSrc1->ai16[3], puSrc2->ai16[3]);
+    uDst.ai16[4] = DO_PMULHRSW(puSrc1->ai16[4], puSrc2->ai16[4]);
+    uDst.ai16[5] = DO_PMULHRSW(puSrc1->ai16[5], puSrc2->ai16[5]);
+    uDst.ai16[6] = DO_PMULHRSW(puSrc1->ai16[6], puSrc2->ai16[6]);
+    uDst.ai16[7] = DO_PMULHRSW(puSrc1->ai16[7], puSrc2->ai16[7]);
+
+    puDst->au64[0] = uDst.au64[0];
+    puDst->au64[1] = uDst.au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhrsw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uDst; /* puDst can be the same as one of the source operands. */
+
+    uDst.ai16[ 0] = DO_PMULHRSW(puSrc1->ai16[ 0], puSrc2->ai16[ 0]);
+    uDst.ai16[ 1] = DO_PMULHRSW(puSrc1->ai16[ 1], puSrc2->ai16[ 1]);
+    uDst.ai16[ 2] = DO_PMULHRSW(puSrc1->ai16[ 2], puSrc2->ai16[ 2]);
+    uDst.ai16[ 3] = DO_PMULHRSW(puSrc1->ai16[ 3], puSrc2->ai16[ 3]);
+    uDst.ai16[ 4] = DO_PMULHRSW(puSrc1->ai16[ 4], puSrc2->ai16[ 4]);
+    uDst.ai16[ 5] = DO_PMULHRSW(puSrc1->ai16[ 5], puSrc2->ai16[ 5]);
+    uDst.ai16[ 6] = DO_PMULHRSW(puSrc1->ai16[ 6], puSrc2->ai16[ 6]);
+    uDst.ai16[ 7] = DO_PMULHRSW(puSrc1->ai16[ 7], puSrc2->ai16[ 7]);
+    uDst.ai16[ 8] = DO_PMULHRSW(puSrc1->ai16[ 8], puSrc2->ai16[ 8]);
+    uDst.ai16[ 9] = DO_PMULHRSW(puSrc1->ai16[ 9], puSrc2->ai16[ 9]);
+    uDst.ai16[10] = DO_PMULHRSW(puSrc1->ai16[10], puSrc2->ai16[10]);
+    uDst.ai16[11] = DO_PMULHRSW(puSrc1->ai16[11], puSrc2->ai16[11]);
+    uDst.ai16[12] = DO_PMULHRSW(puSrc1->ai16[12], puSrc2->ai16[12]);
+    uDst.ai16[13] = DO_PMULHRSW(puSrc1->ai16[13], puSrc2->ai16[13]);
+    uDst.ai16[14] = DO_PMULHRSW(puSrc1->ai16[14], puSrc2->ai16[14]);
+    uDst.ai16[15] = DO_PMULHRSW(puSrc1->ai16[15], puSrc2->ai16[15]);
+
+    puDst->au64[0] = uDst.au64[0];
+    puDst->au64[1] = uDst.au64[1];
+    puDst->au64[2] = uDst.au64[2];
+    puDst->au64[3] = uDst.au64[3];
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 
