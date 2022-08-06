@@ -48,7 +48,7 @@ typedef int64_t __time64_t;
 
 #if !defined(_INC_TIME) /* MSC/UCRT guard */
 
-# if !defined(_STRUCT_TIMESPEC) && !defined(__struct_timespec_defined) && !defined(_TIMESPEC_DEFINED) && !defined(___timespec_defined) /* << linux variations, new to old. */
+# if !defined(_STRUCT_TIMESPEC) && !defined(__struct_timespec_defined) && !defined(_TIMESPEC_DEFINED) && !defined(__timespec_defined) /* << linux variations, new to old. */
 struct timespec
 {
     time_t tv_sec;
