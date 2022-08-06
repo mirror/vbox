@@ -33,6 +33,12 @@
 
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
 
+/* Flags for access: */
+#define F_OK    0
+#define X_OK    1
+#define W_OK    2
+#define R_OK    4
+
 RT_C_DECLS_BEGIN
 
 int             RT_NOCRT(access)(const char *, int) RT_NOEXCEPT;
