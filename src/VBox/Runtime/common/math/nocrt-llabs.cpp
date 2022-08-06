@@ -34,7 +34,7 @@
 
 
 #undef llabs
-long RT_NOCRT(llabs)(long long iValue) RT_NOEXCEPT
+long long RT_NOCRT(llabs)(long long iValue) RT_NOEXCEPT
 {
     return iValue >= 0 ? iValue : -iValue;
 }
