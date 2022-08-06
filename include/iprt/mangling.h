@@ -2288,6 +2288,7 @@
 # define RTStrmOpen                                     RT_MANGLER(RTStrmOpen)
 # define RTStrmOpenF                                    RT_MANGLER(RTStrmOpenF)
 # define RTStrmOpenFV                                   RT_MANGLER(RTStrmOpenFV)
+# define RTStrmOpenFileHandle                           RT_MANGLER(RTStrmOpenFileHandle)
 # define RTStrmPrintf                                   RT_MANGLER(RTStrmPrintf)
 # define RTStrmPrintfV                                  RT_MANGLER(RTStrmPrintfV)
 # define RTStrmWrappedPrintf                            RT_MANGLER(RTStrmWrappedPrintf)
