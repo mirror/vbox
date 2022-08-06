@@ -116,7 +116,7 @@ static DECLCALLBACK(int32_t) rtNoCrtPerThreadInit(void *pvUser)
 
 
 /**
- * @callback_method_impl{FNRTONCE}
+ * @callback_method_impl{FNRTONCECLEANUP}
  */
 static DECLCALLBACK(void) rtNoCrtPerThreadCleanup(void *pvUser, bool fLazyCleanUpOk)
 {
