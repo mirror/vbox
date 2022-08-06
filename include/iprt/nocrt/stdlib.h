@@ -86,7 +86,6 @@ DECLINLINE(const char *) RT_NOCRT(getenv)(const char *pszVar)
 
 int         RT_NOCRT(abs)(int);
 long        RT_NOCRT(labs)(long);
-long        RT_NOCRT(labs)(long);
 long long   RT_NOCRT(llabs)(long long);
 int         RT_NOCRT(rand)(void);
 void        RT_NOCRT(srand)(unsigned);
@@ -137,7 +136,6 @@ DECLINLINE(const char *) RT_NOCRT(_getenv)(const char *pszVar)
 }
 
 int         RT_NOCRT(_abs)(int);
-long        RT_NOCRT(_labs)(long);
 long        RT_NOCRT(_labs)(long);
 long long   RT_NOCRT(_llabs)(long long);
 int         RT_NOCRT(_rand)(void);

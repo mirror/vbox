@@ -1805,6 +1805,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/file/nocrt-fstat.cpp \
   	common/file/nocrt-isatty.cpp \
   	common/file/nocrt-read.cpp \
+  	common/math/nocrt-abs.cpp \
+  	common/math/nocrt-labs.cpp \
+  	common/math/nocrt-llabs.cpp \
   	common/path/nocrt-unlink.cpp \
   	common/rand/nocrt-rand.cpp \
   	common/sort/nocrt-qsort.cpp \
