@@ -407,30 +407,19 @@ DECLINLINE(void) rtStrmUnlock(PRTSTREAM pStream)
  * Opens a file stream.
  *
  * @returns iprt status code.
- * @param   pszFilename     Path to the file to open.
- * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b|t][x][e|N|E]
- *                              - 'a': Open or create file and writes
- *                                append tos it.
- *                              - 'r': Open existing file and read from it.
- *                              - 'w': Open or truncate existing file and write
- *                                to it.
- *                              - '+': Open for both read and write access.
- *                              - 'b' / 't': binary / text
- *                              - 'x': exclusively create, no open. Only
- *                                possible with 'w'.
- *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
- *                                how Linux and FreeBSD expresses this, the
- *                                latter is Visual C++).
+ * @param   pszFilename     Path to the file to open, hFile must be NIL_RTFILE.
+ *                          NULL if a hFile is to be used instead.
+ * @param   hFile           File handle to use when called from
+ *                          RTStrmOpenFileHandle.  pszFilename must be NULL.
+ * @param   pszMode         See RTStrmOpen.
  * @param   ppStream        Where to store the opened stream.
  */
-RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream)
+static int rtStrmOpenComon(const char *pszFilename, RTFILE hFile, const char *pszMode, PRTSTREAM *ppStream)
 {
     /*
      * Validate input and look for things we care for in the pszMode string.
      */
     AssertReturn(pszMode && *pszMode, VERR_INVALID_FLAGS);
-    AssertReturn(pszFilename, VERR_INVALID_PARAMETER);
 
     /*
      * Process the mode string.
@@ -550,9 +539,11 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
 #ifndef HAVE_FWRITE_UNLOCKED
         pStream->pCritSect          = NULL;
 #endif
-        RTFILE       hFile          = NIL_RTFILE;
         RTFILEACTION enmActionTaken = RTFILEACTION_INVALID;
-        rc = RTFileOpenEx(pszFilename, fOpen, &hFile, &enmActionTaken);
+        if (pszFilename)
+            rc = RTFileOpenEx(pszFilename, fOpen, &hFile, &enmActionTaken);
+        else
+            rc = VINF_SUCCESS;
         if (RT_SUCCESS(rc))
         {
 #ifndef RTSTREAM_STANDALONE
@@ -593,6 +584,7 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
 # ifdef _MSC_VER
                 close(fd);
                 hFile = NIL_RTFILE;
+                /** @todo we're in trouble here when called from RTStrmOpenFileHandle!   */
 # endif
             }
             else
@@ -603,14 +595,46 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
                 AssertFailedStmt(rc = VERR_INVALID_HANDLE);
 # endif
             }
-            RTFileClose(hFile);
-            if (enmActionTaken == RTFILEACTION_CREATED)
-                RTFileDelete(pszFilename);
+            if (pszFilename)
+            {
+                RTFileClose(hFile);
+                if (enmActionTaken == RTFILEACTION_CREATED)
+                    RTFileDelete(pszFilename);
+            }
 #endif
         }
         RTMemFree(pStream);
     }
     return rc;
+}
+
+
+/**
+ * Opens a file stream.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename     Path to the file to open.
+ * @param   pszMode         The open mode. See fopen() standard.
+ *                          Format: <a|r|w>[+][b|t][x][e|N|E]
+ *                              - 'a': Open or create file and writes
+ *                                append tos it.
+ *                              - 'r': Open existing file and read from it.
+ *                              - 'w': Open or truncate existing file and write
+ *                                to it.
+ *                              - '+': Open for both read and write access.
+ *                              - 'b' / 't': binary / text
+ *                              - 'x': exclusively create, no open. Only
+ *                                possible with 'w'.
+ *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
+ *                                how Linux and FreeBSD expresses this, the
+ *                                latter is Visual C++).
+ * @param   ppStream        Where to store the opened stream.
+ */
+RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream)
+{
+    *ppStream = NULL;
+    AssertReturn(pszFilename, VERR_INVALID_PARAMETER);
+    return rtStrmOpenComon(pszFilename, NIL_RTFILE, pszMode, ppStream);
 }
 
 
@@ -657,6 +681,28 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
     int rc = RTStrmOpenFV(pszMode, ppStream, pszFilenameFmt, args);
     va_end(args);
     return rc;
+}
+
+
+/**
+ * Opens a file stream for a RTFILE handle, taking ownership of the handle.
+ *
+ * @returns iprt status code.
+ * @param   hFile           The file handle to use.  On success, handle
+ *                          ownership is transfered to the stream and it will be
+ *                          closed when the stream closes.
+ * @param   pszMode         The open mode, accept the same as RTStrOpen and
+ *                          friends however it is only used to figure out what
+ *                          we can do with the handle.
+ * @param   fFlags          Reserved, must be zero.
+ * @param   ppStream        Where to store the opened stream.
+ */
+RTR3DECL(int) RTStrmOpenFileHandle(RTFILE hFile, const char *pszMode, uint32_t fFlags, PRTSTREAM *ppStream)
+{
+    *ppStream = NULL;
+    AssertReturn(RTFileIsValid(hFile), VERR_INVALID_HANDLE);
+    AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);
+    return rtStrmOpenComon(NULL, hFile, pszMode, ppStream);
 }
 
 

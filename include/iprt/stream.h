@@ -128,6 +128,21 @@ RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char 
 RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
+ * Opens a file stream for a RTFILE handle, taking ownership of the handle.
+ *
+ * @returns iprt status code.
+ * @param   hFile           The file handle to use.  On success, handle
+ *                          ownership is transfered to the stream and it will be
+ *                          closed when the stream closes.
+ * @param   pszMode         The open mode, accept the same as RTStrOpen and
+ *                          friends however it is only used to figure out what
+ *                          we can do with the handle.
+ * @param   fFlags          Reserved, must be zero.
+ * @param   ppStream        Where to store the opened stream.
+ */
+RTR3DECL(int) RTStrmOpenFileHandle(RTFILE hFile, const char *pszMode, uint32_t fFlags, PRTSTREAM *ppStream);
+
+/**
  * Closes the specified stream.
  *
  * @returns iprt status code.
