@@ -80,7 +80,7 @@ typedef struct RTFILEINT
 
 RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
 {
-    AssertReturn(!(fFlags & RTFILE_O_TEMP_AUTO_DELETE), VERR_NOT_SUPPORTED);
+    AssertReturn(!(fOpen & RTFILE_O_TEMP_AUTO_DELETE), VERR_NOT_SUPPORTED);
 
     RTFILEINT *pThis = (RTFILEINT *)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
