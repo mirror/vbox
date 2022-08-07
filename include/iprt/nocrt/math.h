@@ -63,14 +63,14 @@
  * ANSI/POSIX
  */
 extern const union __infinity_un {
-    unsigned char   __uc[8];
-    double      __ud;
+    RTFLOAT64U      __uu;
+    double          __ud;
 } RT_NOCRT(__infinity);
 
-extern const union __nan_un {
-    unsigned char   __uc[sizeof(float)];
-    float       __uf;
-} RT_NOCRT(__nan);
+extern const union __nanf_un {
+    RTFLOAT32U      __uu;
+    float           __uf;
+} RT_NOCRT(__nanf);
 
 #if __GNUC_PREREQ__(3, 3) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
 #define __MATH_BUILTIN_CONSTANTS
@@ -80,10 +80,11 @@ extern const union __nan_un {
 #define __MATH_BUILTIN_RELOPS
 #endif
 
-#ifdef __MATH_BUILTIN_CONSTANTS
-#define HUGE_VAL    __builtin_huge_val()
+#if defined(__MATH_BUILTIN_CONSTANTS) \
+ || (RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)) /** @todo when was this added exactly? 2015, 2017 & 2019 has it for C++. */
+# define HUGE_VAL   __builtin_huge_val()
 #else
-#define HUGE_VAL    (RT_NOCRT(__infinity).__ud)
+# define HUGE_VAL   (RT_NOCRT(__infinity).__ud)
 #endif
 
 /*
@@ -482,15 +483,22 @@ RT_C_DECLS_END
 #define FP_ILOGBNAN __INT_MAX
 
 #ifdef __MATH_BUILTIN_CONSTANTS
-#define HUGE_VALF   __builtin_huge_valf()
-#define HUGE_VALL   __builtin_huge_vall()
-#define INFINITY    __builtin_inf()
-#define NAN     __builtin_nan("")
+# define HUGE_VALF   __builtin_huge_valf()
+# define HUGE_VALL   __builtin_huge_vall()
+# define INFINITY    __builtin_inf()
+# define NAN         __builtin_nan("")
+#elif RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)
+/** @todo When were these introduced exactly? 2015, 2017 & 2019 has them.
+ * However, they only work in C++ even if the c1.dll includes the strings. Oh, well. */
+# define HUGE_VALF   __builtin_huge_valf()
+# define HUGE_VALL   __builtin_huge_val()
+# define INFINITY    __builtin_huge_val()
+# define NAN         __builtin_nan("0")     /* same as we use in climits */
 #else
-#define HUGE_VALF   (float)HUGE_VAL
-#define HUGE_VALL   (long double)HUGE_VAL
-#define INFINITY    HUGE_VALF
-#define NAN     (__nan.__uf)
+# define HUGE_VALF   (float)HUGE_VAL
+# define HUGE_VALL   (long double)HUGE_VAL
+# define INFINITY    HUGE_VALF
+# define NAN         (__nanf.__uf)
 #endif /* __MATH_BUILTIN_CONSTANTS */
 
 #ifndef IPRT_NO_CRT
@@ -565,8 +573,6 @@ typedef float   float_t;
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 /* sed -e "/#/d" -e "/RT_NOCRT/!d" -e "s/^.*RT_NOCRT(\([a-z0-9_]*\)).*$/# define \1 RT_NOCRT(\1)/" */
-# define __infinity RT_NOCRT(__infinity)
-# define __nan RT_NOCRT(__nan)
 # define __fpclassifyf RT_NOCRT(__fpclassifyf)
 # define __fpclassifyd RT_NOCRT(__fpclassifyd)
 # define __fpclassifyl RT_NOCRT(__fpclassifyl)
