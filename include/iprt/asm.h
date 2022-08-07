@@ -6830,8 +6830,8 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, size_t iBitSta
     if (iBitStart < iBitEnd)
     {
         uint32_t volatile RT_FAR *pu32    = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
-        size_t                    iStart = iBitStart & ~31;
-        size_t                    iEnd   = iBitEnd   & ~31;
+        size_t                    iStart = iBitStart & ~(size_t)31;
+        size_t                    iEnd   = iBitEnd   & ~(size_t)31;
         if (iStart == iEnd)
             *pu32 &= RT_H2LE_U32(((UINT32_C(1) << (iBitStart & 31)) - 1) | ~((UINT32_C(1) << (iBitEnd & 31)) - 1));
         else
@@ -6871,8 +6871,8 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, size_t iBitStart
     if (iBitStart < iBitEnd)
     {
         uint32_t volatile RT_FAR *pu32   = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
-        size_t                    iStart = iBitStart & ~31;
-        size_t                    iEnd   = iBitEnd   & ~31;
+        size_t                    iStart = iBitStart & ~(size_t)31;
+        size_t                    iEnd   = iBitEnd   & ~(size_t)31;
         if (iStart == iEnd)
             *pu32 |= RT_H2LE_U32(((UINT32_C(1) << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31));
         else
