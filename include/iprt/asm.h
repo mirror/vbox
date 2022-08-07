@@ -6825,13 +6825,13 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
  * @param   iBitStart   The First bit to clear.
  * @param   iBitEnd     The first bit not to clear.
  */
-DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd) RT_NOTHROW_DEF
+DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, size_t iBitStart, size_t iBitEnd) RT_NOTHROW_DEF
 {
     if (iBitStart < iBitEnd)
     {
-        volatile uint32_t RT_FAR *pu32 = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
-        int32_t iStart = iBitStart & ~31;
-        int32_t iEnd   = iBitEnd & ~31;
+        uint32_t volatile RT_FAR *pu32    = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
+        size_t                    iStart = iBitStart & ~31;
+        size_t                    iEnd   = iBitEnd   & ~31;
         if (iStart == iEnd)
             *pu32 &= RT_H2LE_U32(((UINT32_C(1) << (iBitStart & 31)) - 1) | ~((UINT32_C(1) << (iBitEnd & 31)) - 1));
         else
@@ -6846,7 +6846,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
 
             /* whole dwords. */
             if (iBitStart != iEnd)
-                ASMMemZero32(pu32, ((uint32_t)iEnd - (uint32_t)iBitStart) >> 3);
+                ASMMemZero32(pu32, (iEnd - iBitStart) >> 3);
 
             /* bits in last dword. */
             if (iBitEnd & 31)
@@ -6866,13 +6866,13 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
  * @param   iBitStart   The First bit to set.
  * @param   iBitEnd     The first bit not to set.
  */
-DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd) RT_NOTHROW_DEF
+DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, size_t iBitStart, size_t iBitEnd) RT_NOTHROW_DEF
 {
     if (iBitStart < iBitEnd)
     {
-        volatile uint32_t RT_FAR *pu32 = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
-        int32_t iStart = iBitStart & ~31;
-        int32_t iEnd   = iBitEnd & ~31;
+        uint32_t volatile RT_FAR *pu32   = (volatile uint32_t RT_FAR *)pvBitmap + (iBitStart >> 5);
+        size_t                    iStart = iBitStart & ~31;
+        size_t                    iEnd   = iBitEnd   & ~31;
         if (iStart == iEnd)
             *pu32 |= RT_H2LE_U32(((UINT32_C(1) << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31));
         else
@@ -6887,7 +6887,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
 
             /* whole dword. */
             if (iBitStart != iEnd)
-                ASMMemFill32(pu32, ((uint32_t)iEnd - (uint32_t)iBitStart) >> 3, ~UINT32_C(0));
+                ASMMemFill32(pu32, (iEnd - iBitStart) >> 3, ~UINT32_C(0));
 
             /* bits in last dword. */
             if (iBitEnd & 31)
