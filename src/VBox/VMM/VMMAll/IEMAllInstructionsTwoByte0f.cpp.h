@@ -10587,9 +10587,21 @@ FNIEMOP_DEF(iemOp_pmaddwd_Vx_Wx)
 /*  Opcode 0xf2 0x0f 0xf5 - invalid */
 
 /** Opcode      0x0f 0xf6 - psadbw Pq, Qq */
-FNIEMOP_STUB(iemOp_psadbw_Pq_Qq);
+FNIEMOP_DEF(iemOp_psadbw_Pq_Qq)
+{
+    IEMOP_MNEMONIC2(RM, PSADBW, psadbw, Pq, Qq, DISOPTYPE_HARMLESS | DISOPTYPE_MMX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSseOpt_FullFull_To_Full, iemAImpl_psadbw_u64);
+}
+
+
 /** Opcode 0x66 0x0f 0xf6 - psadbw Vx, Wx */
-FNIEMOP_STUB(iemOp_psadbw_Vx_Wx);
+FNIEMOP_DEF(iemOp_psadbw_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, PSADBW, psaddw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psadbw_u128);
+}
+
+
 /*  Opcode 0xf2 0x0f 0xf6 - invalid */
 
 /** Opcode      0x0f 0xf7 - maskmovq Pq, Nq */

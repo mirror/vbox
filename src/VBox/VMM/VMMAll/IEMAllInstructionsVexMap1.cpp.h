@@ -4484,8 +4484,17 @@ FNIEMOP_STUB(iemOp_vpmaddwd_Vx_Hx_Wx);
 /*  Opcode VEX.F2.0F 0xf5 - invalid */
 
 /*  Opcode VEX.0F 0xf6 - invalid */
+
+
 /** Opcode VEX.66.0F 0xf6 - vpsadbw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsadbw_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpsadbw_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSADBW, vpsadbw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsadbw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F2.0F 0xf6 - invalid */
 
 /*  Opcode VEX.0F 0xf7 - invalid */

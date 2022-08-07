@@ -13028,6 +13028,142 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulhrsw_u256_fallback,(PRTUINT256U puDst, PCR
 
 
 /*
+ * PSADBW / VPSADBW
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psadbw_u64,(uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+    uint16_t uSum = RT_ABS((int16_t)uSrc1.au8[0] - uSrc2.au8[0]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[1] - uSrc2.au8[1]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[2] - uSrc2.au8[2]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[3] - uSrc2.au8[3]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[4] - uSrc2.au8[4]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[5] - uSrc2.au8[5]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[6] - uSrc2.au8[6]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[7] - uSrc2.au8[7]);
+
+    uDst.au64[0] = 0;
+    uDst.au16[0] = uSum;
+    *puDst = uDst.u;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_psadbw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+
+    uint16_t uSum = RT_ABS((int16_t)uSrc1.ai8[0] - puSrc->ai8[0]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[1] - puSrc->au8[1]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[2] - puSrc->au8[2]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[3] - puSrc->au8[3]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[4] - puSrc->au8[4]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[5] - puSrc->au8[5]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[6] - puSrc->au8[6]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[7] - puSrc->au8[7]);
+    puDst->au16[0] = uSum;
+
+    uSum  = RT_ABS((int16_t)uSrc1.au8[ 8] - puSrc->au8[ 8]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[ 9] - puSrc->au8[ 9]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[10] - puSrc->au8[10]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[11] - puSrc->au8[11]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[12] - puSrc->au8[12]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[13] - puSrc->au8[13]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[14] - puSrc->au8[14]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[15] - puSrc->au8[15]);
+    puDst->au16[4] = uSum;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsadbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1;
+    RTUINT128U uSrc2 = *puSrc2;
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+
+    uint16_t uSum = RT_ABS((int16_t)uSrc1.ai8[0] - uSrc2.ai8[0]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[1] - uSrc2.au8[1]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[2] - uSrc2.au8[2]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[3] - uSrc2.au8[3]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[4] - uSrc2.au8[4]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[5] - uSrc2.au8[5]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[6] - uSrc2.au8[6]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[7] - uSrc2.au8[7]);
+    puDst->au16[0] = uSum;
+
+    uSum  = RT_ABS((int16_t)uSrc1.au8[ 8] - uSrc2.au8[ 8]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[ 9] - uSrc2.au8[ 9]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[10] - uSrc2.au8[10]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[11] - uSrc2.au8[11]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[12] - uSrc2.au8[12]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[13] - uSrc2.au8[13]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[14] - uSrc2.au8[14]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[15] - uSrc2.au8[15]);
+    puDst->au16[4] = uSum;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsadbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1;
+    RTUINT256U uSrc2 = *puSrc2;
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    puDst->au64[2] = 0;
+    puDst->au64[3] = 0;
+
+    uint16_t uSum = RT_ABS((int16_t)uSrc1.au8[0] - uSrc2.au8[0]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[1] - uSrc2.au8[1]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[2] - uSrc2.au8[2]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[3] - uSrc2.au8[3]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[4] - uSrc2.au8[4]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[5] - uSrc2.au8[5]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[6] - uSrc2.au8[6]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[7] - uSrc2.au8[7]);
+    puDst->au16[0] = uSum;
+
+    uSum  = RT_ABS((int16_t)uSrc1.au8[ 8] - uSrc2.au8[ 8]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[ 9] - uSrc2.au8[ 9]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[10] - uSrc2.au8[10]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[11] - uSrc2.au8[11]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[12] - uSrc2.au8[12]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[13] - uSrc2.au8[13]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[14] - uSrc2.au8[14]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[15] - uSrc2.au8[15]);
+    puDst->au16[4] = uSum;
+
+    uSum  = RT_ABS((int16_t)uSrc1.au8[16] - uSrc2.au8[16]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[17] - uSrc2.au8[17]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[18] - uSrc2.au8[18]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[19] - uSrc2.au8[19]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[20] - uSrc2.au8[20]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[21] - uSrc2.au8[21]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[22] - uSrc2.au8[22]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[23] - uSrc2.au8[23]);
+    puDst->au16[8] = uSum;
+
+    uSum  = RT_ABS((int16_t)uSrc1.au8[24] - uSrc2.au8[24]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[25] - uSrc2.au8[25]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[26] - uSrc2.au8[26]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[27] - uSrc2.au8[27]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[28] - uSrc2.au8[28]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[29] - uSrc2.au8[29]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[30] - uSrc2.au8[30]);
+    uSum += RT_ABS((int16_t)uSrc1.au8[31] - uSrc2.au8[31]);
+    puDst->au16[12] = uSum;
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 
