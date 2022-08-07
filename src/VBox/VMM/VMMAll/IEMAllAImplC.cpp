@@ -13164,6 +13164,38 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsadbw_u256_fallback,(PRTUINT256U puDst, PCRTU
 
 
 /*
+ * PMULDQ / VPMULDQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmuldq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->au64[0] = (int64_t)uSrc1.ai32[0] * puSrc->ai32[0];
+    puDst->au64[1] = (int64_t)uSrc1.ai32[2] * puSrc->ai32[2];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmuldq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1;
+    RTUINT128U uSrc2 = *puSrc2;
+
+    puDst->au64[0] = (int64_t)uSrc1.ai32[0] * uSrc2.ai32[0];
+    puDst->au64[1] = (int64_t)uSrc1.ai32[2] * uSrc2.ai32[2];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmuldq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1;
+    RTUINT256U uSrc2 = *puSrc2;
+
+    puDst->au64[0] = (int64_t)uSrc1.ai32[0] * uSrc2.ai32[0];
+    puDst->au64[1] = (int64_t)uSrc1.ai32[2] * uSrc2.ai32[2];
+    puDst->au64[2] = (int64_t)uSrc1.ai32[4] * uSrc2.ai32[4];
+    puDst->au64[3] = (int64_t)uSrc1.ai32[6] * uSrc2.ai32[6];
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 
