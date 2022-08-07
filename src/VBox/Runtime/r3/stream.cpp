@@ -159,9 +159,14 @@ typedef struct RTSTREAM
     size_t              offBufEnd;
     /** The stream buffer direction.   */
     RTSTREAMBUFDIR      enmBufDir;
-    /** The buffering style (unbuffered, line, full). */
+    /** The buffering style (unbuffered, line, full).
+     * @todo replace by RTSTRMBUFMODE.  */
     RTSTREAMBUFSTYLE    enmBufStyle;
 # ifdef RTSTREAM_WITH_TEXT_MODE
+    /** Bitmap running parallel to each char pchBuf, indicating where a '\\r'
+     * character have been removed during buffer filling.  This is used to implement
+     * RTStrmTell in non-binary mode. */
+    uint32_t           *pbmBuf;
     /** Indicates that we've got a CR ('\\r') beyond the end of official buffer
      * and need to check if there is a LF following it.  This member is ignored
      * in binary mode. */
@@ -222,6 +227,7 @@ static RTSTREAM    g_StdIn =
     /* .enmBufDir = */          RTSTREAMBUFDIR_NONE,
     /* .enmBufStyle = */        RTSTREAMBUFSTYLE_UNBUFFERED,
 # ifdef RTSTREAM_WITH_TEXT_MODE
+    /* .pbmBuf = */             NULL,
     /* .fPendingCr = */         false,
 # endif
 #endif
@@ -253,6 +259,7 @@ static RTSTREAM    g_StdErr =
     /* .enmBufDir = */          RTSTREAMBUFDIR_NONE,
     /* .enmBufStyle = */        RTSTREAMBUFSTYLE_UNBUFFERED,
 # ifdef RTSTREAM_WITH_TEXT_MODE
+    /* .pbmBuf = */             NULL,
     /* .fPendingCr = */         false,
 # endif
 #endif
@@ -284,6 +291,7 @@ static RTSTREAM    g_StdOut =
     /* .enmBufDir = */          RTSTREAMBUFDIR_NONE,
     /* .enmBufStyle = */        RTSTREAMBUFSTYLE_LINE,
 # ifdef RTSTREAM_WITH_TEXT_MODE
+    /* .pbmBuf = */             NULL,
     /* .fPendingCr = */         false,
 # endif
 #endif
@@ -529,6 +537,7 @@ static int rtStrmOpenComon(const char *pszFilename, RTFILE hFile, const char *ps
         pStream->enmBufDir          = RTSTREAMBUFDIR_NONE;
         pStream->enmBufStyle        = RTSTREAMBUFSTYLE_FULL;
 # ifdef RTSTREAM_WITH_TEXT_MODE
+        pStream->pbmBuf             = NULL;
         pStream->fPendingCr         = false,
 # endif
 #endif
@@ -770,6 +779,10 @@ RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
     pStream->cbBufAlloc     = 0;
     pStream->offBufFirst    = 0;
     pStream->offBufEnd      = 0;
+# ifdef RTSTREAM_WITH_TEXT_MODE
+    RTMemFree(pStream->pbmBuf);
+    pStream->pbmBuf         = NULL;
+# endif
 #else
     pStream->pFile          = NULL;
 #endif
@@ -837,6 +850,30 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
     return VINF_SUCCESS;
 }
 
+
+RTR3DECL(int) RTStrmSetBufferingMode(PRTSTREAM pStream, RTSTRMBUFMODE enmMode)
+{
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(enmMode > RTSTRMBUFMODE_INVALID && enmMode < RTSTRMBUFMODE_END, VERR_INVALID_PARAMETER);
+
+#ifndef RTSTREAM_STANDALONE
+    int iCrtMode = enmMode == RTSTRMBUFMODE_FULL ? _IOFBF : enmMode == RTSTRMBUFMODE_LINE ? _IOLBF : _IONBF;
+    int rc = setvbuf(pStream->pFile, NULL, iCrtMode, 0);
+    if (rc >= 0)
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(errno);
+
+#else
+    rtStrmLock(pStream);
+    pStream->enmBufStyle = enmMode == RTSTRMBUFMODE_FULL ? RTSTREAMBUFSTYLE_FULL
+                         : enmMode == RTSTRMBUFMODE_LINE ? RTSTREAMBUFSTYLE_LINE : RTSTREAMBUFSTYLE_UNBUFFERED;
+    rtStrmUnlock(pStream);
+    return VINF_SUCCESS;
+#endif
+}
+
+
 #ifdef RTSTREAM_STANDALONE
 
 /**
@@ -891,6 +928,7 @@ DECL_NO_INLINE(static, RTFILE) rtStrmGetFileNil(PRTSTREAM pStream)
     return NIL_RTFILE;
 }
 
+
 /**
  * For lazily resolving handles for the standard streams.
  */
@@ -900,6 +938,25 @@ DECLINLINE(RTFILE) rtStrmGetFile(PRTSTREAM pStream)
     if (hFile != NIL_RTFILE)
         return hFile;
     return rtStrmGetFileNil(pStream);
+}
+
+
+RTR3DECL(int) RTStrmQueryFileHandle(PRTSTREAM pStream, PRTFILE phFile)
+{
+    AssertPtrReturn(phFile, VERR_INVALID_POINTER);
+    *phFile = NIL_RTFILE;
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_MAGIC);
+
+    rtStrmLock(pStream);
+    RTFILE hFile = rtStrmGetFile(pStream);
+    rtStrmUnlock(pStream);
+    if (hFile != NIL_RTFILE)
+    {
+        *phFile = hFile;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_AVAILABLE;
 }
 
 #endif /* RTSTREAM_STANDALONE */
@@ -1193,8 +1250,19 @@ static int rtStrmBufAlloc(PRTSTREAM pStream)
         pStream->pchBuf = (char *)RTMemAllocZ(cbBuf);
         if (RT_LIKELY(pStream->pchBuf))
         {
-            pStream->cbBufAlloc = cbBuf;
-            return VINF_SUCCESS;
+# ifdef RTSTREAM_WITH_TEXT_MODE
+            Assert(RT_ALIGN_Z(cbBuf, 64 / 8) == cbBuf);
+            pStream->pbmBuf = (uint32_t *)RTMemAllocZ(cbBuf / 8);
+            if (RT_LIKELY(pStream->pbmBuf))
+# endif
+            {
+                pStream->cbBufAlloc = cbBuf;
+                return VINF_SUCCESS;
+            }
+# ifdef RTSTREAM_WITH_TEXT_MODE
+            RTMemFree(pStream->pchBuf);
+            pStream->pchBuf = NULL;
+# endif
         }
         cbBuf /= 2;
     } while (cbBuf >= 256);
@@ -1312,10 +1380,13 @@ static int rtStrmBufFill(PRTSTREAM pStream)
     Assert(pStream->enmBufDir   == RTSTREAMBUFDIR_READ);
     AssertPtr(pStream->pchBuf);
     Assert(pStream->cbBufAlloc  >= 256);
+    Assert(RT_ALIGN_Z(pStream->cbBufAlloc, 64) == pStream->cbBufAlloc);
     Assert(pStream->offBufFirst <= pStream->cbBufAlloc);
     Assert(pStream->offBufEnd   <= pStream->cbBufAlloc);
     Assert(pStream->offBufFirst <= pStream->offBufEnd);
-
+# ifdef RTSTREAM_WITH_TEXT_MODE
+    AssertPtr(pStream->pbmBuf);
+# endif
     /*
      * If there is data in the buffer, move it up to the start.
      */
@@ -1326,7 +1397,17 @@ static int rtStrmBufFill(PRTSTREAM pStream)
     {
         cbInBuffer = pStream->offBufEnd - pStream->offBufFirst;
         if (cbInBuffer)
+        {
             memmove(pStream->pchBuf, &pStream->pchBuf[pStream->offBufFirst], cbInBuffer);
+# ifdef RTSTREAM_WITH_TEXT_MODE
+            if (!pStream->fBinary) /** @todo this isn't very efficient, must be a better way of shifting a bitmap. */
+                for (size_t off = 0; off < pStream->offBufFirst; off++)
+                    if (ASMBitTest(pStream->pbmBuf, (int32_t)off))
+                        ASMBitSet(pStream->pbmBuf, (int32_t)off);
+                    else
+                        ASMBitClear(pStream->pbmBuf, (int32_t)off);
+# endif
+        }
         pStream->offBufFirst = 0;
         pStream->offBufEnd   = cbInBuffer;
     }
@@ -1357,7 +1438,9 @@ static int rtStrmBufFill(PRTSTREAM pStream)
 
         if (cbInBuffer != 0)
         {
+# ifdef RTSTREAM_WITH_TEXT_MODE
             if (pStream->fBinary)
+# endif
                 return VINF_SUCCESS;
         }
         else
@@ -1367,9 +1450,11 @@ static int rtStrmBufFill(PRTSTREAM pStream)
             return VERR_EOF;
         }
 
+# ifdef RTSTREAM_WITH_TEXT_MODE
         /*
          * Do CRLF -> LF conversion in the buffer.
          */
+        ASMBitClearRange(pStream->pbmBuf, offCrLfConvStart, RT_ALIGN_Z(cbInBuffer, 64));
         char  *pchCur = &pStream->pchBuf[offCrLfConvStart];
         size_t cbLeft = cbInBuffer - offCrLfConvStart;
         while (cbLeft > 0)
@@ -1389,6 +1474,7 @@ static int rtStrmBufFill(PRTSTREAM pStream)
 
                         do
                         {
+                            ASMBitSet(pStream->pbmBuf, (int32_t)(pchCur - pStream->pchBuf));
                             *pchCur++  = '\n'; /* dst */
                             cbLeft    -= 2;
                             pchCr     += 2;    /* src */
@@ -1415,6 +1501,7 @@ static int rtStrmBufFill(PRTSTREAM pStream)
         }
 
         return VINF_SUCCESS;
+# endif
     }
 
     /*
@@ -1485,6 +1572,10 @@ static RTFILE rtStrmFlushAndCleanup(PRTSTREAM pStream)
         pStream->pchBuf      = NULL;
         pStream->offBufFirst = 0;
         pStream->offBufEnd   = 0;
+# ifdef RTSTREAM_WITH_TEXT_MODE
+        RTMemFree(pStream->pbmBuf);
+        pStream->pbmBuf = NULL;
+# endif
     }
 
     PRTCRITSECT pCritSect = pStream->pCritSect;
@@ -1584,6 +1675,112 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
     ASMAtomicWriteS32(&pStream->i32Error, rc);
 #endif
     return rc;
+}
+
+
+/**
+ * Changes the file position.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pStream         The stream.
+ * @param   off             The seek offset.
+ * @param   uMethod         Seek method, i.e. one of the RTFILE_SEEK_* defines.
+ *
+ * @remarks Not all streams are seekable and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(int) RTStrmSeek(PRTSTREAM pStream, RTFOFF off, uint32_t uMethod)
+{
+    AssertReturn(uMethod <= RTFILE_SEEK_END, VERR_INVALID_PARAMETER);
+#ifdef RTSTREAM_STANDALONE
+    rtStrmLock(pStream);
+    int rc = rtStrmBufFlushWriteMaybe(pStream, true /*fInvalidate*/);
+    if (RT_SUCCESS(rc))
+        rc = RTFileSeek(rtStrmGetFile(pStream), off, uMethod, NULL);
+    if (RT_FAILURE(rc))
+        ASMAtomicWriteS32(&pStream->i32Error, rc);
+    rtStrmUnlock(pStream);
+#else
+    int const iCrtMethod = uMethod == RTFILE_SEEK_BEGIN ? SEEK_SET : uMethod == RTFILE_SEEK_CURRENT ? SEEK_CUR : SEEK_END;
+    errno = 0;
+    int rc;
+# ifdef _MSC_VER
+    if (!_fseeki64(pStream->pFile, off, iCrtMethod))
+# else
+    if (!fseeko(pStream->pFile, off, iCrtMethod))
+# endif
+        rc = VINF_SUCCESS;
+    else
+        rc = RTErrConvertFromErrno(errno);
+    ASMAtomicWriteS32(&pStream->i32Error, rc);
+#endif
+    return rc;
+}
+
+
+/**
+ * Tells the stream position.
+ *
+ * @returns Stream position or IPRT error status. Non-negative numbers are
+ *          stream positions, while negative numbers are IPRT error stauses.
+ *
+ * @param   pStream         The stream.
+ *
+ * @remarks Not all streams have a position and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(RTFOFF) RTStrmTell(PRTSTREAM pStream)
+{
+#ifdef RTSTREAM_STANDALONE
+    uint64_t off = 0;
+    rtStrmLock(pStream);
+    int rc = pStream->i32Error;
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileSeek(rtStrmGetFile(pStream), 0, RTFILE_SEEK_CURRENT, &off);
+        if (RT_SUCCESS(rc))
+        {
+            switch (pStream->enmBufDir)
+            {
+                case RTSTREAMBUFDIR_READ:
+                    /* Subtract unconsumed chars and removed '\r' characters. */
+                    off -= pStream->offBufEnd - pStream->offBufFirst;
+                    if (!pStream->fBinary)
+                        for (size_t offBuf = pStream->offBufFirst; offBuf < pStream->offBufEnd; offBuf++)
+                            off -= ASMBitTest(pStream->pbmBuf, (int32_t)offBuf);
+                    break;
+                case RTSTREAMBUFDIR_WRITE:
+                    /* Add unwrittend chars in the buffer. */
+                    off += pStream->offBufEnd - pStream->offBufFirst;
+                    break;
+                default:
+                    AssertFailed();
+                case RTSTREAMBUFDIR_NONE:
+                    break;
+            }
+        }
+    }
+    if (RT_FAILURE(rc))
+    {
+        ASMAtomicWriteS32(&pStream->i32Error, rc);
+        off = rc;
+    }
+    rtStrmUnlock(pStream);
+#else
+# ifdef _MSC_VER
+    RTFOFF off = _ftelli64(pStream->pFile);
+# else
+    RTFOFF off = ftello(pStream->pFile);
+# endif
+    if (off < 0)
+    {
+        int rc = RTErrConvertFromErrno(errno);
+        ASMAtomicWriteS32(&pStream->i32Error, rc);
+        off = rc;
+    }
+#endif
+    return off;
 }
 
 

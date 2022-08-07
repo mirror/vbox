@@ -143,6 +143,19 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
 RTR3DECL(int) RTStrmOpenFileHandle(RTFILE hFile, const char *pszMode, uint32_t fFlags, PRTSTREAM *ppStream);
 
 /**
+ * Queries the file handle backing the stream.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_NOT_AVAILABLE if the stream has no valid handle associated with
+ *          it.
+ *
+ * @param   pStream         The stream.
+ * @param   phFile          Where to return the file handle.  This should not be
+ *                          closed!
+ */
+RTR3DECL(int) RTStrmQueryFileHandle(PRTSTREAM pStream, PRTFILE phFile);
+
+/**
  * Closes the specified stream.
  *
  * @returns iprt status code.
@@ -187,8 +200,29 @@ RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream);
  */
 RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet);
 
+/** Stream buffering modes. */
+typedef enum RTSTRMBUFMODE
+{
+    RTSTRMBUFMODE_INVALID = 0,
+    RTSTRMBUFMODE_FULL,         /**< Full buffering. */
+    RTSTRMBUFMODE_LINE,         /**< Line buffering. On Windows this could be the same as RTSTRMBUFMODE_FULL. */
+    RTSTRMBUFMODE_UNBUFFERED,   /**< No buffering. */
+    RTSTRMBUFMODE_END,
+    RTSTRMBUFMODE_32BIT_HACK = 0x7fffffff
+} RTSTRMBUFMODE;
+
+/**
+ * Changes the stream buffering mode.
+ *
+ * @returns iprt status code.
+ * @param   pStream         The stream.
+ * @param   enmBufMode      The new buffering mode.
+ */
+RTR3DECL(int) RTStrmSetBufferingMode(PRTSTREAM pStream, RTSTRMBUFMODE enmBufMode);
+
 /**
  * Returns the current echo mode.
+ *
  * This works only for standard input streams.
  *
  * @returns iprt status code.
@@ -200,6 +234,7 @@ RTR3DECL(int) RTStrmInputGetEchoChars(PRTSTREAM pStream, bool *pfEchoChars);
 
 /**
  * Changes the behavior for echoing inpit characters on the command line.
+ *
  * This works only for standard input streams.
  *
  * @returns iprt status code.
@@ -241,6 +276,33 @@ RTR3DECL(int) RTStrmQueryTerminalWidth(PRTSTREAM pStream, uint32_t *pcchWidth);
  *          undefined for those.
  */
 RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream);
+
+/**
+ * Changes the file position.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pStream         The stream.
+ * @param   off             The seek offset.
+ * @param   uMethod         Seek method, i.e. one of the RTFILE_SEEK_* defines.
+ *
+ * @remarks Not all streams are seekable and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(int) RTStrmSeek(PRTSTREAM pStream, RTFOFF off, uint32_t uMethod);
+
+/**
+ * Tells the stream position.
+ *
+ * @returns Stream position or IPRT error status. Non-negative numbers are
+ *          stream positions, while negative numbers are IPRT error stauses.
+ *
+ * @param   pStream         The stream.
+ *
+ * @remarks Not all streams have a position and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(RTFOFF) RTStrmTell(PRTSTREAM pStream);
 
 /**
  * Reads from a file stream.
