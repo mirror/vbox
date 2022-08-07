@@ -1832,8 +1832,24 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/nocrt-fdopen.cpp \
   	r3/nocrt-tmpfile.cpp \
   	r3/nocrt-tmpfile_s.cpp \
+  	r3/nocrt-fileno.cpp \
   	r3/nocrt-fclose.cpp \
   	r3/nocrt-fflush.cpp \
+  	r3/nocrt-setvbuf.cpp \
+  	r3/nocrt-fseek.cpp \
+  	r3/nocrt-fseeko.cpp \
+  	r3/nocrt-ftell.cpp \
+  	r3/nocrt-ftello.cpp \
+  	r3/nocrt-fwrite.cpp \
+  	r3/nocrt-fputc.cpp \
+  	r3/nocrt-putc.cpp \
+  	r3/nocrt-fputs.cpp \
+  	r3/nocrt-puts.cpp \
+  	r3/nocrt-fread.cpp \
+  	r3/nocrt-fgetc.cpp \
+  	r3/nocrt-getc.cpp \
+  	r3/nocrt-clearerr.cpp \
+  	r3/nocrt-ferror.cpp \
 
   RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
   	common/math/cos.asm  \

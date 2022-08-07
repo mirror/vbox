@@ -30,14 +30,29 @@
 #endif
 
 #include <iprt/nocrt/sys/types.h>
+#ifdef IPRT_NO_CRT_FOR_3RD_PARTY
+# include <iprt/nocrt/time.h>       /* file.h includes fs.h which includes time.h */
+# include <iprt/file.h>             /* for RTFILE_SEEK_XXX */
+# include <iprt/assertcompile.h>
+#endif
+
 
 #ifdef IPRT_NO_CRT_FOR_3RD_PARTY
 
 /* Flags for access: */
-#define F_OK    0
-#define X_OK    1
-#define W_OK    2
-#define R_OK    4
+# define F_OK       0
+# define X_OK       1
+# define W_OK       2
+# define R_OK       4
+
+/* These are also in stdio.h: */
+# undef  SEEK_SET
+# define SEEK_SET   RTFILE_SEEK_BEGIN
+# undef  SEEK_CUR
+# define SEEK_CUR   RTFILE_SEEK_CURRENT
+# undef  SEEK_END
+# define SEEK_END   RTFILE_SEEK_END
+AssertCompile(SEEK_SET == 0); AssertCompile(SEEK_CUR == 1); AssertCompile(SEEK_END == 2); /* Also in WDK header mmiscapi.h. */
 
 RT_C_DECLS_BEGIN
 

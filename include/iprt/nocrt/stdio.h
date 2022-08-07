@@ -30,7 +30,12 @@
 #endif
 
 #include <iprt/stream.h>
-#include <iprt/nocrt/sys/types.h> /* errno_t, off_t */
+#include <iprt/nocrt/sys/types.h>   /* errno_t, off_t */
+#ifdef IPRT_NO_CRT_FOR_3RD_PARTY
+# include <iprt/nocrt/time.h>       /* file.h includes fs.h which includes time.h */
+# include <iprt/file.h>             /* for RTFILE_SEEK_XXX */
+# include <iprt/assertcompile.h>
+#endif
 
 typedef RTFOFF fpos_t;
 
@@ -40,6 +45,17 @@ typedef RTFOFF fpos_t;
  * Only for external libraries and such, but even then it would be best to
  * check each printf and fprintf call as IPRT isn't 100% compatible...
  */
+
+/* These are also in unistd.h: */
+# undef  SEEK_SET
+# define SEEK_SET   RTFILE_SEEK_BEGIN
+# undef  SEEK_CUR
+# define SEEK_CUR   RTFILE_SEEK_CURRENT
+# undef  SEEK_END
+# define SEEK_END   RTFILE_SEEK_END
+AssertCompile(SEEK_SET == 0); AssertCompile(SEEK_CUR == 1); AssertCompile(SEEK_END == 2); /* Also in WDK header mmiscapi.h. */
+
+
 RT_C_DECLS_BEGIN
 
 typedef struct RTSTREAM FILE;
@@ -72,6 +88,7 @@ size_t  RT_NOCRT(fwrite)(void const *pvBuf, size_t cbItem, size_t cItems, FILE *
 int     RT_NOCRT(fputs)(const char *psz, FILE *pFile);
 int     RT_NOCRT(puts)(const char *psz);
 int     RT_NOCRT(fputc)(int, FILE *pFile);
+int     RT_NOCRT(putc)(int, FILE *pFile);
 size_t  RT_NOCRT(fread)(void *pvBuf, size_t cbItem, size_t cItems, FILE *pFile);
 int     RT_NOCRT(fgetc)(FILE *pFile);
 int     RT_NOCRT(getc)(FILE *pFile);
