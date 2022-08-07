@@ -1808,6 +1808,24 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/nocrt-abs.cpp \
   	common/math/nocrt-labs.cpp \
   	common/math/nocrt-llabs.cpp \
+  	common/math/__fpclassifyd.cpp \
+  	common/math/__fpclassifyf.cpp \
+  	common/math/__fpclassifyl.cpp \
+  	common/math/__isfinite.cpp \
+  	common/math/__isfinitef.cpp \
+  	common/math/__isfinitel.cpp \
+  	common/math/isinf.cpp \
+  	common/math/__isinff.cpp \
+  	common/math/__isinfl.cpp \
+  	common/math/isnan.cpp \
+  	common/math/isnanf.cpp \
+  	common/math/__isnanl.cpp \
+  	common/math/__isnormal.cpp \
+  	common/math/__isnormalf.cpp \
+  	common/math/__isnormall.cpp \
+  	common/math/__signbit.cpp \
+  	common/math/__signbitf.cpp \
+  	common/math/__signbitl.cpp \
   	common/path/nocrt-access.cpp \
   	common/path/nocrt-unlink.cpp \
   	common/rand/nocrt-rand.cpp \
