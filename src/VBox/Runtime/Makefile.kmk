@@ -1809,6 +1809,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/nocrt-labs.cpp \
   	common/math/nocrt-llabs.cpp \
   	common/math/consts.c \
+  	common/math/copysign.cpp \
+  	common/math/copysignf.cpp \
+  	common/math/copysignl.cpp \
   	common/math/__fpclassifyd.cpp \
   	common/math/__fpclassifyf.cpp \
   	common/math/__fpclassifyl.cpp \
