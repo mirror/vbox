@@ -10597,7 +10597,7 @@ FNIEMOP_DEF(iemOp_psadbw_Pq_Qq)
 /** Opcode 0x66 0x0f 0xf6 - psadbw Vx, Wx */
 FNIEMOP_DEF(iemOp_psadbw_Vx_Wx)
 {
-    IEMOP_MNEMONIC2(RM, PSADBW, psaddw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_MNEMONIC2(RM, PSADBW, psadw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_psadbw_u128);
 }
 
