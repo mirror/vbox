@@ -39,7 +39,7 @@ long RT_NOCRT(lroundf)(float r32)
 {
     if (isfinite(r32))
     {
-        r32 = roundf(r32);
+        r32 = RT_NOCRT(roundf)(r32);
         if (r32 >= (float)LONG_MIN && r32 <= (float)LONG_MAX)
             return (long)r32;
         // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);

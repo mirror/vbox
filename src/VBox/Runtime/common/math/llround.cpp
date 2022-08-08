@@ -39,7 +39,7 @@ long long RT_NOCRT(llround)(double rd)
 {
     if (isfinite(rd))
     {
-        rd = round(rd);
+        rd = RT_NOCRT(round)(rd);
         if (rd >= (double)LLONG_MIN && rd <= (double)LLONG_MAX)
             return (long)rd;
         // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
