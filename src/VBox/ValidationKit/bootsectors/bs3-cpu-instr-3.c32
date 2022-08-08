@@ -9055,7 +9055,7 @@ BS3_DECL(void) Main_pe32()
     static const BS3TESTMODEBYONEENTRY g_aTests[] =
     {
 #ifndef DEBUG_bird
-//# define ALL_TESTS
+# define ALL_TESTS
 #endif
 #if defined(ALL_TESTS)
         { "[v]andps/[v]andpd/[v]pand",                      bs3CpuInstr3_v_andps_andpd_pand, 0 },
@@ -9144,11 +9144,11 @@ BS3_DECL(void) Main_pe32()
         { "[v]phsubsw",                                     bs3CpuInstr3_v_phsubsw, 0 },
         { "[v]pmaddubsw",                                   bs3CpuInstr3_v_pmaddubsw, 0 },
 #endif
-#if 1 //defined(ALL_TESTS)
-        //{ "[v]pmulhrsw",                                    bs3CpuInstr3_v_pmulhrsw, 0 },
-        //{ "[v]psadbw",                                      bs3CpuInstr3_v_psadbw,   0 },
-        //{ "[v]pmuldq",                                      bs3CpuInstr3_v_pmuldq,   0 },
-        //{ "[v]pmuludq",                                     bs3CpuInstr3_v_pmuludq,  0 },
+#if defined(ALL_TESTS)
+        { "[v]pmulhrsw",                                    bs3CpuInstr3_v_pmulhrsw, 0 },
+        { "[v]psadbw",                                      bs3CpuInstr3_v_psadbw,   0 },
+        { "[v]pmuldq",                                      bs3CpuInstr3_v_pmuldq,   0 },
+        { "[v]pmuludq",                                     bs3CpuInstr3_v_pmuludq,  0 },
         { "[v]punpcklps/[v]punpcklpd",                      bs3CpuInstr3_v_punpcklps_punpcklpd, 0 },
         { "[v]punpckhps/[v]punpckhpd",                      bs3CpuInstr3_v_punpckhps_punpckhpd, 0 },
 #endif
