@@ -42,10 +42,10 @@ long RT_NOCRT(lroundl)(long double lrd)
         lrd = RT_NOCRT(roundl)(lrd);
         if (lrd >= (long double)LONG_MIN && lrd <= (long double)LONG_MAX)
             return (long)lrd;
-        // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
+        /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
         return lrd > 0 ? LONG_MAX : LONG_MIN;
     }
-    // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
+    /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
     return LONG_MAX;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(lroundl);

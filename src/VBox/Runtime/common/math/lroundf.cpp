@@ -42,12 +42,11 @@ long RT_NOCRT(lroundf)(float r32)
         r32 = RT_NOCRT(roundf)(r32);
         if (r32 >= (float)LONG_MIN && r32 <= (float)LONG_MAX)
             return (long)r32;
-        // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
+        /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
         return r32 > 0 ? LONG_MAX : LONG_MIN;
     }
-    // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
+    /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
     return LONG_MAX;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(lroundf);
-
 
