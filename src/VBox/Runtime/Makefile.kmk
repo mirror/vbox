@@ -1812,6 +1812,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/copysign.cpp \
   	common/math/copysignf.cpp \
   	common/math/copysignl.cpp \
+  	common/math/fmin.cpp \
+  	common/math/fminf.cpp \
+  	common/math/fminl.cpp \
   	common/math/__fpclassifyd.cpp \
   	common/math/__fpclassifyf.cpp \
   	common/math/__fpclassifyl.cpp \
@@ -1827,9 +1830,6 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/__isnormal.cpp \
   	common/math/__isnormalf.cpp \
   	common/math/__isnormall.cpp \
-  	common/math/__signbit.cpp \
-  	common/math/__signbitf.cpp \
-  	common/math/__signbitl.cpp \
   	common/math/llround.cpp \
   	common/math/llroundf.cpp \
   	common/math/llroundl.cpp \
@@ -1839,6 +1839,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/round.cpp \
   	common/math/roundf.cpp \
   	common/math/roundl.cpp \
+  	common/math/__signbit.cpp \
+  	common/math/__signbitf.cpp \
+  	common/math/__signbitl.cpp \
   	common/path/nocrt-access.cpp \
   	common/path/nocrt-unlink.cpp \
   	common/rand/nocrt-rand.cpp \
