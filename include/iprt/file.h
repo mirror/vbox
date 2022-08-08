@@ -352,6 +352,16 @@ RTDECL(int)  RTFileOpenEx(const char *pszFilename, uint64_t fOpen, PRTFILE phFil
 RTDECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint64_t fAccess);
 
 /**
+ * Duplicates a file handle.
+ *
+ * @returns IPRT status code.
+ * @param   hFileSrc        The handle to duplicate.
+ * @param   fFlags          RTFILE_O_INHERIT or zero.
+ * @param   phFileNew       Where to return the new file handle
+ */
+RTDECL(int)  RTFileDup(RTFILE hFileSrc, uint64_t fFlags, PRTFILE phFileNew);
+
+/**
  * Close a file opened by RTFileOpen().
  *
  * @returns iprt status code.

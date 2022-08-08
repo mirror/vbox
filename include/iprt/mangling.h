@@ -972,6 +972,7 @@
 # define RTFileCreateTemp                               RT_MANGLER(RTFileCreateTemp)
 # define RTFileCreateTempSecure                         RT_MANGLER(RTFileCreateTempSecure)
 # define RTFileDelete                                   RT_MANGLER(RTFileDelete)
+# define RTFileDup                                      RT_MANGLER(RTFileDup)
 # define RTFileExists                                   RT_MANGLER(RTFileExists)
 # define RTFileFlush                                    RT_MANGLER(RTFileFlush)
 # define RTFileFromNative                               RT_MANGLER(RTFileFromNative)
