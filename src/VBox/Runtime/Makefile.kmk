@@ -1830,6 +1830,12 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/__signbit.cpp \
   	common/math/__signbitf.cpp \
   	common/math/__signbitl.cpp \
+  	common/math/lround.cpp \
+  	common/math/lroundf.cpp \
+  	common/math/lroundl.cpp \
+  	common/math/round.cpp \
+  	common/math/roundf.cpp \
+  	common/math/roundl.cpp \
   	common/path/nocrt-access.cpp \
   	common/path/nocrt-unlink.cpp \
   	common/rand/nocrt-rand.cpp \
@@ -1893,6 +1899,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/lrintf.asm \
   	common/math/remainder.asm \
   	common/math/remainderf.asm \
+  	common/math/rint.asm \
+  	common/math/rintf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
   	common/math/sqrt.asm \
@@ -1939,6 +1947,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/lrintf.asm \
   	common/math/remainder.asm \
   	common/math/remainderf.asm \
+  	common/math/rint.asm \
+  	common/math/rintf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
   	common/math/sqrt.asm \
