@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - lroundf().
+ * IPRT - No-CRT - llroundf().
  */
 
 /*
@@ -34,20 +34,20 @@
 #include <iprt/nocrt/limits.h>
 
 
-#undef lroundf
-long RT_NOCRT(lroundf)(float r32)
+#undef llroundf
+long long RT_NOCRT(llroundf)(float r32)
 {
     if (isfinite(r32))
     {
         r32 = roundf(r32);
-        if (r32 >= (float)LONG_MIN && r32 <= (float)LONG_MAX)
+        if (r32 >= (float)LLONG_MIN && r32 <= (float)LLONG_MAX)
             return (long)r32;
         // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
-        return r32 > 0 ? LONG_MAX : LONG_MIN;
+        return r32 > 0 ? LLONG_MAX : LLONG_MIN;
     }
     // @todo RT_NOCRT(feraiseexcept)(FE_INVALID);
-    return LONG_MAX;
+    return LLONG_MAX;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(lroundf);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(llroundf);
 
 
