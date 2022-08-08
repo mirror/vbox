@@ -1402,15 +1402,45 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
 /*  Opcode VEX.F2.0F 0x13 - invalid */
 
 /** Opcode VEX.0F 0x14 - vunpcklps Vx, Hx, Wx*/
-FNIEMOP_STUB(iemOp_vunpcklps_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vunpcklps_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VUNPCKLPS, vunpcklps, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(           vunpcklps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_LowSrc, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F 0x14 - vunpcklpd Vx,Hx,Wx   */
-FNIEMOP_STUB(iemOp_vunpcklpd_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vunpcklpd_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VUNPCKLPD, vunpcklpd, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(           vunpcklpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_LowSrc, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0x14 - invalid */
 /*  Opcode VEX.F2.0F 0x14 - invalid */
+
+
 /** Opcode VEX.0F 0x15 - vunpckhps Vx, Hx, Wx   */
-FNIEMOP_STUB(iemOp_vunpckhps_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vunpckhps_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VUNPCKHPS, vunpckhps, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(           vunpckhps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_LowSrc, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F 0x15 - vunpckhpd Vx,Hx,Wx   */
-FNIEMOP_STUB(iemOp_vunpckhpd_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vunpckhpd_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VUNPCKHPD, vunpckhpd, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(           vunpckhpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_LowSrc, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0x15 - invalid */
 /*  Opcode VEX.F2.0F 0x15 - invalid */
 

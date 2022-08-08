@@ -13245,6 +13245,172 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmuludq_u256_fallback,(PRTUINT256U puDst, PCRT
 
 
 /*
+ * UNPCKLPS / VUNPCKLPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_unpcklps_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+    RTUINT128U uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[0];
+    puDst->au32[1] = uSrc2.au32[0];
+    puDst->au32[2] = uSrc1.au32[1];
+    puDst->au32[3] = uSrc2.au32[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpcklps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT128U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[0];
+    puDst->au32[1] = uSrc2.au32[0];
+    puDst->au32[2] = uSrc1.au32[1];
+    puDst->au32[3] = uSrc2.au32[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpcklps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT256U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[0];
+    puDst->au32[1] = uSrc2.au32[0];
+    puDst->au32[2] = uSrc1.au32[1];
+    puDst->au32[3] = uSrc2.au32[1];
+
+    puDst->au32[4] = uSrc1.au32[4];
+    puDst->au32[5] = uSrc2.au32[4];
+    puDst->au32[6] = uSrc1.au32[5];
+    puDst->au32[7] = uSrc2.au32[5];
+}
+
+
+/*
+ * UNPCKLPD / VUNPCKLPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_unpcklpd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+    RTUINT128U uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[0];
+    puDst->au64[1] = uSrc2.au64[0];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpcklpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT128U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[0];
+    puDst->au64[1] = uSrc2.au64[0];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpcklpd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT256U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[0];
+    puDst->au64[1] = uSrc2.au64[0];
+    puDst->au64[2] = uSrc1.au64[2];
+    puDst->au64[3] = uSrc2.au64[2];
+}
+
+
+/*
+ * UNPCKHPS / VUNPCKHPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_unpckhps_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+    RTUINT128U uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[2];
+    puDst->au32[1] = uSrc2.au32[2];
+    puDst->au32[2] = uSrc1.au32[3];
+    puDst->au32[3] = uSrc2.au32[3];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpckhps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT128U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[2];
+    puDst->au32[1] = uSrc2.au32[2];
+    puDst->au32[2] = uSrc1.au32[3];
+    puDst->au32[3] = uSrc2.au32[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpckhps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT256U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[2];
+    puDst->au32[1] = uSrc2.au32[2];
+    puDst->au32[2] = uSrc1.au32[3];
+    puDst->au32[3] = uSrc2.au32[3];
+
+    puDst->au32[4] = uSrc1.au32[6];
+    puDst->au32[5] = uSrc2.au32[6];
+    puDst->au32[6] = uSrc1.au32[7];
+    puDst->au32[7] = uSrc2.au32[7];
+}
+
+
+/*
+ * UNPCKHPD / VUNPCKHPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_unpckhpd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+    RTUINT128U uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[1];
+    puDst->au64[1] = uSrc2.au64[1];
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpckhpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT128U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[1];
+    puDst->au64[1] = uSrc2.au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vunpckhpd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U uSrc1 = *puSrc1; /* Could overlap with puDst */
+    RTUINT256U uSrc2 = *puSrc2; /* Could overlap with puDst */
+    ASMCompilerBarrier();
+    puDst->au64[0] = uSrc1.au64[1];
+    puDst->au64[1] = uSrc2.au64[1];
+    puDst->au64[2] = uSrc1.au64[3];
+    puDst->au64[3] = uSrc2.au64[3];
+}
+
+
+/*
  * CRC32 (SEE 4.2).
  */
 

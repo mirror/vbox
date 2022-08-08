@@ -434,6 +434,368 @@ FNIEMOP_DEF_1(iemOpCommonSse2Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pf
 }
 
 
+/**
+ * Common worker for MMX instructions on the forms:
+ *      pxxxx mm1, mm2/mem32
+ *
+ * The 2nd operand is the first half of a register, which in the memory case
+ * means a 32-bit memory access.
+ */
+FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, FNIEMAIMPLMEDIAOPTF2U64, pfnU64)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint64_t *,              puDst, 0);
+        IEM_MC_ARG(uint64_t const *,        puSrc, 1);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(uint64_t *,                  puDst,       0);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U32_ZX_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(puDst, IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE instructions on the forms:
+ *      pxxxx xmm1, xmm2/mem128
+ *
+ * The 2nd operand is the first half of a register, which in the memory case
+ * 128-bit aligned 64-bit or 128-bit memory accessed for SSE.
+ *
+ * Exceptions type 4.
+ */
+FNIEMOP_DEF_1(iemOpCommonSse_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,             puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        /** @todo Most CPUs probably only read the low qword. We read everything to
+         *        make sure we apply segmentation and alignment checks correctly.
+         *        When we have time, it would be interesting to explore what real
+         *        CPUs actually does and whether it will do a TLB load for the high
+         *        part or skip any associated \#PF. Ditto for segmentation \#GPs. */
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE2 instructions on the forms:
+ *      pxxxx xmm1, xmm2/mem128
+ *
+ * The 2nd operand is the first half of a register, which in the memory case
+ * 128-bit aligned 64-bit or 128-bit memory accessed for SSE.
+ *
+ * Exceptions type 4.
+ */
+FNIEMOP_DEF_1(iemOpCommonSse2_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,             puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        /** @todo Most CPUs probably only read the low qword. We read everything to
+         *        make sure we apply segmentation and alignment checks correctly.
+         *        When we have time, it would be interesting to explore what real
+         *        CPUs actually does and whether it will do a TLB load for the high
+         *        part or skip any associated \#PF. Ditto for segmentation \#GPs. */
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for MMX instructions on the form:
+ *      pxxxx mm1, mm2/mem64
+ *
+ * The 2nd operand is the second half of a register, which in the memory case
+ * means a 64-bit memory access for MMX.
+ */
+FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
+        /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint64_t *,              puDst, 0);
+        IEM_MC_ARG(uint64_t const *,        puSrc, 1);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(uint64_t *,                  puDst,       0);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); /* intel docs this to be full 64-bit read */
+
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_MREG_U64(puDst,              IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
+        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
+        IEM_MC_FPU_TO_MMX_MODE();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE instructions on the form:
+ *      pxxxx xmm1, xmm2/mem128
+ *
+ * The 2nd operand is the second half of a register, which for SSE a 128-bit
+ * aligned access where it may read the full 128 bits or only the upper 64 bits.
+ *
+ * Exceptions type 4.
+ */
+FNIEMOP_DEF_1(iemOpCommonSse_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        /** @todo Most CPUs probably only read the high qword. We read everything to
+         *        make sure we apply segmentation and alignment checks correctly.
+         *        When we have time, it would be interesting to explore what real
+         *        CPUs actually does and whether it will do a TLB load for the lower
+         *        part or skip any associated \#PF. */
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE2 instructions on the form:
+ *      pxxxx xmm1, xmm2/mem128
+ *
+ * The 2nd operand is the second half of a register, which for SSE a 128-bit
+ * aligned access where it may read the full 128 bits or only the upper 64 bits.
+ *
+ * Exceptions type 4.
+ */
+FNIEMOP_DEF_1(iemOpCommonSse2_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        /** @todo Most CPUs probably only read the high qword. We read everything to
+         *        make sure we apply segmentation and alignment checks correctly.
+         *        When we have time, it would be interesting to explore what real
+         *        CPUs actually does and whether it will do a TLB load for the lower
+         *        part or skip any associated \#PF. */
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x00 /0. */
 FNIEMOPRM_DEF(iemOp_Grp6_sldt)
 {
@@ -2111,9 +2473,20 @@ FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
  */
 
 /** Opcode      0x0f 0x14 - unpcklps Vx, Wx*/
-FNIEMOP_STUB(iemOp_unpcklps_Vx_Wx);
+FNIEMOP_DEF(iemOp_unpcklps_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, UNPCKLPS, unpcklps, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse_LowLow_To_Full, iemAImpl_unpcklps_u128);
+}
+
+
 /** Opcode 0x66 0x0f 0x14 - unpcklpd Vx, Wx   */
-FNIEMOP_STUB(iemOp_unpcklpd_Vx_Wx);
+FNIEMOP_DEF(iemOp_unpcklpd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, UNPCKLPD, unpcklpd, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_LowLow_To_Full, iemAImpl_unpcklpd_u128);
+}
+
 
 /**
  * @opdone
@@ -2137,9 +2510,21 @@ FNIEMOP_STUB(iemOp_unpcklpd_Vx_Wx);
  */
 
 /** Opcode      0x0f 0x15 - unpckhps Vx, Wx   */
-FNIEMOP_STUB(iemOp_unpckhps_Vx_Wx);
+FNIEMOP_DEF(iemOp_unpckhps_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, UNPCKHPS, unpckhps, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse_HighHigh_To_Full, iemAImpl_unpckhps_u128);
+}
+
+
 /** Opcode 0x66 0x0f 0x15 - unpckhpd Vx, Wx   */
-FNIEMOP_STUB(iemOp_unpckhpd_Vx_Wx);
+FNIEMOP_DEF(iemOp_unpckhpd_Vx_Wx)
+{
+    IEMOP_MNEMONIC2(RM, UNPCKHPD, unpckhpd, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2_HighHigh_To_Full, iemAImpl_unpckhpd_u128);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x15 - invalid */
 /*  Opcode 0xf2 0x0f 0x15 - invalid */
 
@@ -3478,124 +3863,6 @@ FNIEMOP_STUB(iemOp_maxss_Vss_Wss);
 /** Opcode 0xf2 0x0f 0x5f - maxsd Vsd, Wsd */
 FNIEMOP_STUB(iemOp_maxsd_Vsd_Wsd);
 
-/**
- * Common worker for MMX instructions on the forms:
- *      pxxxx mm1, mm2/mem32
- *
- * The 2nd operand is the first half of a register, which in the memory case
- * means a 32-bit memory access.
- */
-FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, FNIEMAIMPLMEDIAOPTF2U64, pfnU64)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(uint64_t *,              puDst, 0);
-        IEM_MC_ARG(uint64_t const *,        puSrc, 1);
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_REF_MREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
-        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
-        IEM_MC_FPU_TO_MMX_MODE();
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(uint64_t *,                  puDst,       0);
-        IEM_MC_LOCAL(uint64_t,                  uSrc);
-        IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_FETCH_MEM_U32_ZX_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-
-        IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_REF_MREG_U64(puDst, IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
-        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
-        IEM_MC_FPU_TO_MMX_MODE();
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Common worker for SSE2 instructions on the forms:
- *      pxxxx xmm1, xmm2/mem128
- *
- * The 2nd operand is the first half of a register, which in the memory case
- * 128-bit aligned 64-bit or 128-bit memory accessed for SSE.
- *
- * Exceptions type 4.
- */
-FNIEMOP_DEF_1(iemOpCommonSse2_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
-        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(PRTUINT128U,             puDst,       0);
-        IEM_MC_LOCAL(RTUINT128U,            uSrc);
-        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-        /** @todo Most CPUs probably only read the low qword. We read everything to
-         *        make sure we apply segmentation and alignment checks correctly.
-         *        When we have time, it would be interesting to explore what real
-         *        CPUs actually does and whether it will do a TLB load for the high
-         *        part or skip any associated \#PF. Ditto for segmentation \#GPs. */
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-
-        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
-
 
 /** Opcode      0x0f 0x60 - punpcklbw Pq, Qd */
 FNIEMOP_DEF(iemOp_punpcklbw_Pq_Qd)
@@ -3749,127 +4016,6 @@ FNIEMOP_DEF(iemOp_packuswb_Vx_Wx)
 
 
 /*  Opcode 0xf3 0x0f 0x67 - invalid */
-
-
-/**
- * Common worker for MMX instructions on the form:
- *      pxxxx mm1, mm2/mem64
- *
- * The 2nd operand is the second half of a register, which in the memory case
- * means a 64-bit memory access for MMX.
- */
-FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
-        /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(uint64_t *,              puDst, 0);
-        IEM_MC_ARG(uint64_t const *,        puSrc, 1);
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_REF_MREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
-        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
-        IEM_MC_FPU_TO_MMX_MODE();
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(uint64_t *,                  puDst,       0);
-        IEM_MC_LOCAL(uint64_t,                  uSrc);
-        IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); /* intel docs this to be full 64-bit read */
-
-        IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_REF_MREG_U64(puDst,              IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU64, puDst, puSrc);
-        IEM_MC_MODIFIED_MREG_BY_REF(puDst);
-        IEM_MC_FPU_TO_MMX_MODE();
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Common worker for SSE2 instructions on the form:
- *      pxxxx xmm1, xmm2/mem128
- *
- * The 2nd operand is the second half of a register, which for SSE a 128-bit
- * aligned access where it may read the full 128 bits or only the upper 64 bits.
- *
- * Exceptions type 4.
- */
-FNIEMOP_DEF_1(iemOpCommonSse2_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(PRTUINT128U,             puDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
-        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /*
-         * Register, memory.
-         */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
-        IEM_MC_LOCAL(RTUINT128U,                uSrc);
-        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
-        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-        /** @todo Most CPUs probably only read the high qword. We read everything to
-         *        make sure we apply segmentation and alignment checks correctly.
-         *        When we have time, it would be interesting to explore what real
-         *        CPUs actually does and whether it will do a TLB load for the lower
-         *        part or skip any associated \#PF. */
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-
-        IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
 
 
 /** Opcode      0x0f 0x68 - punpckhbw Pq, Qq

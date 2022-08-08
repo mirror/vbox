@@ -3718,7 +3718,10 @@ IEMIMPL_MEDIA_OPT_F2 pavgb,    1
 IEMIMPL_MEDIA_OPT_F2 pavgw,    1
 IEMIMPL_MEDIA_OPT_F2 psadbw,   1
 IEMIMPL_MEDIA_OPT_F2 pmuldq,   0
-
+IEMIMPL_MEDIA_OPT_F2 unpcklps, 0
+IEMIMPL_MEDIA_OPT_F2 unpcklpd, 0
+IEMIMPL_MEDIA_OPT_F2 unpckhps, 0
+IEMIMPL_MEDIA_OPT_F2 unpckhpd, 0
 
 ;;
 ; Media instruction working on one full sized and one half sized register (lower half).
@@ -4212,7 +4215,10 @@ IEMIMPL_MEDIA_OPT_F3 vpmulhrsw
 IEMIMPL_MEDIA_OPT_F3 vpsadbw
 IEMIMPL_MEDIA_OPT_F3 vpmuldq
 IEMIMPL_MEDIA_OPT_F3 vpmuludq
-
+IEMIMPL_MEDIA_OPT_F3 vunpcklps
+IEMIMPL_MEDIA_OPT_F3 vunpcklpd
+IEMIMPL_MEDIA_OPT_F3 vunpckhps
+IEMIMPL_MEDIA_OPT_F3 vunpckhpd
 
 ;;
 ; Media instruction working on one full sized source registers and one destination (AVX),

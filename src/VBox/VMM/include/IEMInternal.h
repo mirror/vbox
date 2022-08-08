@@ -1858,6 +1858,8 @@ FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pmulhuw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pavgb_u128, iemAImpl_pavgw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_psadbw_u128;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_pmuldq_u128, iemAImpl_pmuldq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_unpcklps_u128, iemAImpl_unpcklpd_u128;
+FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_unpckhps_u128, iemAImpl_unpckhpd_u128;
 
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpshufb_u128,    iemAImpl_vpshufb_u128_fallback;
 FNIEMAIMPLMEDIAF3U128    iemAImpl_vpand_u128,      iemAImpl_vpand_u128_fallback;
@@ -1991,11 +1993,20 @@ FNIEMAIMPLMEDIAOPTF2U128  iemAImpl_punpcklbw_u128, iemAImpl_punpcklwd_u128, iemA
 FNIEMAIMPLMEDIAOPTF3U128  iemAImpl_vpunpcklbw_u128,  iemAImpl_vpunpcklbw_u128_fallback,
                           iemAImpl_vpunpcklwd_u128,  iemAImpl_vpunpcklwd_u128_fallback,
                           iemAImpl_vpunpckldq_u128,  iemAImpl_vpunpckldq_u128_fallback,
-                          iemAImpl_vpunpcklqdq_u128, iemAImpl_vpunpcklqdq_u128_fallback;
+                          iemAImpl_vpunpcklqdq_u128, iemAImpl_vpunpcklqdq_u128_fallback,
+                          iemAImpl_vunpcklps_u128, iemAImpl_vunpcklps_u128_fallback,
+                          iemAImpl_vunpcklpd_u128, iemAImpl_vunpcklpd_u128_fallback,
+                          iemAImpl_vunpckhps_u128, iemAImpl_vunpckhps_u128_fallback,
+                          iemAImpl_vunpckhpd_u128, iemAImpl_vunpckhpd_u128_fallback;
+
 FNIEMAIMPLMEDIAOPTF3U256  iemAImpl_vpunpcklbw_u256,  iemAImpl_vpunpcklbw_u256_fallback,
                           iemAImpl_vpunpcklwd_u256,  iemAImpl_vpunpcklwd_u256_fallback,
                           iemAImpl_vpunpckldq_u256,  iemAImpl_vpunpckldq_u256_fallback,
-                          iemAImpl_vpunpcklqdq_u256, iemAImpl_vpunpcklqdq_u256_fallback;
+                          iemAImpl_vpunpcklqdq_u256, iemAImpl_vpunpcklqdq_u256_fallback,
+                          iemAImpl_vunpcklps_u256, iemAImpl_vunpcklps_u256_fallback,
+                          iemAImpl_vunpcklpd_u256, iemAImpl_vunpcklpd_u256_fallback,
+                          iemAImpl_vunpckhps_u256, iemAImpl_vunpckhps_u256_fallback,
+                          iemAImpl_vunpckhpd_u256, iemAImpl_vunpckhpd_u256_fallback;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: hihalf1 + hihalf2 -> full1.
