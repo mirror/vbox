@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - fminl().
+ * IPRT - No-CRT - fmaxl().
  */
 
 /*
@@ -33,8 +33,8 @@
 #include <iprt/nocrt/math.h>
 
 
-#undef fminl
-long double RT_NOCRT(fminl)(long double  lrdLeft, long double lrdRight)
+#undef fmaxl
+long double RT_NOCRT(fmaxl)(long double  lrdLeft, long double lrdRight)
 {
     if (!isnan(lrdLeft))
     {
@@ -43,12 +43,12 @@ long double RT_NOCRT(fminl)(long double  lrdLeft, long double lrdRight)
             /* We don't trust the hw with comparing signed zeros, thus
                the 0.0 test and signbit fun here. */
             if (lrdLeft != lrdRight || lrdLeft != 0.0)
-                return lrdLeft <= lrdRight ? lrdLeft : lrdRight;
-            return signbit(lrdLeft) >= signbit(lrdRight) ? lrdLeft : lrdRight;
+                return lrdLeft >= lrdRight ? lrdLeft : lrdRight;
+            return signbit(lrdLeft) <= signbit(lrdRight) ? lrdLeft : lrdRight;
         }
         return lrdLeft;
     }
     return lrdRight;
 }
-RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(fminl);
+RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(fmaxl);
 

@@ -1812,6 +1812,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/copysign.cpp \
   	common/math/copysignf.cpp \
   	common/math/copysignl.cpp \
+  	common/math/fmax.cpp \
+  	common/math/fmaxf.cpp \
+  	common/math/fmaxl.cpp \
   	common/math/fmin.cpp \
   	common/math/fminf.cpp \
   	common/math/fminl.cpp \
