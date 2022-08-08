@@ -1996,6 +1996,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/stacksup-vcc.cpp \
   	common/compiler/vcc/fltused-vcc.cpp \
   	common/compiler/vcc/purecall-vcc.cpp \
+  	common/file/nocrt-dup.cpp \
   	r3/win/nocrt-startup-exe-win.cpp \
   	r3/win/nocrt-startup-dll-win.cpp \
   	r3/win/nocrt-startup-common-win.cpp \
