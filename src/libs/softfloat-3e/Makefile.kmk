@@ -363,5 +363,22 @@ ifn1of ($(KBUILD_TARGET),win)
 VBox-SoftFloatR0_CFLAGS     := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
 endif
 
+
+ifdef VBOX_WITH_NOCRT_STATIC
+#
+# Static No-CRT version of the above for use with VBoxGL.dll in the GAs.
+#
+LIBRARIES.win += VBox-SoftFloatGuestR3Shared
+VBox-SoftFloatGuestR3Shared_TEMPLATE    := NewerVccVBoxGuestR3Dll
+VBox-SoftFloatGuestR3Shared_EXTENDS     := VBox-SoftFloat
+
+# -wd4389: f64_to_i64_r_minMag.c(93): warning C4389: '!=': signed/unsigned mismatch
+VBox-SoftFloatGuestR3Shared_CFLAGS.win  := $(VBox-SoftFloat_CFLAGS.win) -wd4245 -wd4389
+ ifn1of ($(KBUILD_TARGET),win)
+VBox-SoftFloatGuestR3Shared_CFLAGS      := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
+ endif
+endif # VBOX_WITH_NOCRT_STATIC
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

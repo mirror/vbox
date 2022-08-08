@@ -94,9 +94,12 @@ endif
 
 
 # SoftFloat is used by the VMM for FPU emulation.
-if !defined(VBOX_ONLY_BUILD) \
- && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
-  include $(PATH_SUB_CURRENT)/softfloat-3e/Makefile.kmk
+if  (!defined(VBOX_ONLY_BUILD) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != "") \
+ || (   defined(VBOX_WITH_NOCRT_STATIC) \
+     && "$(KBUILD_TARGET)" == "win" \
+     && (   defined(VBOX_ONLY_ADDITIONS) \
+         || (!defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_ADDITIONS))))
+ include $(PATH_SUB_CURRENT)/softfloat-3e/Makefile.kmk
 endif
 
 
