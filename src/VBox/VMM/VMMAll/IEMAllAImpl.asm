@@ -3659,6 +3659,7 @@ IEMIMPL_MEDIA_F2 phaddsw, 1
 IEMIMPL_MEDIA_F2 phsubsw, 1
 IEMIMPL_MEDIA_F2 pmaddubsw, 1
 IEMIMPL_MEDIA_F2 pmulhrsw,  1
+IEMIMPL_MEDIA_F2 pmuludq,   1
 
 
 ;;
@@ -4210,6 +4211,7 @@ IEMIMPL_MEDIA_OPT_F3 vpmaddubsw
 IEMIMPL_MEDIA_OPT_F3 vpmulhrsw
 IEMIMPL_MEDIA_OPT_F3 vpsadbw
 IEMIMPL_MEDIA_OPT_F3 vpmuldq
+IEMIMPL_MEDIA_OPT_F3 vpmuludq
 
 
 ;;
