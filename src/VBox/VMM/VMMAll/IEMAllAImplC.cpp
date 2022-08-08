@@ -13469,3 +13469,315 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vptest_u256_fallback,(PCRTUINT256U puSrc1, PCRT
     *pfEFlags = fEfl;
 }
 
+
+/*
+ * PMOVSXBW / VPMOVSXBW
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->ai16[0] = uSrc1.ai8[0];
+    puDst->ai16[1] = uSrc1.ai8[1];
+    puDst->ai16[2] = uSrc1.ai8[2];
+    puDst->ai16[3] = uSrc1.ai8[3];
+    puDst->ai16[4] = uSrc1.ai8[4];
+    puDst->ai16[5] = uSrc1.ai8[5];
+    puDst->ai16[6] = uSrc1.ai8[6];
+    puDst->ai16[7] = uSrc1.ai8[7];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai16[ 0] = uSrc1.ai8[ 0];
+    puDst->ai16[ 1] = uSrc1.ai8[ 1];
+    puDst->ai16[ 2] = uSrc1.ai8[ 2];
+    puDst->ai16[ 3] = uSrc1.ai8[ 3];
+    puDst->ai16[ 4] = uSrc1.ai8[ 4];
+    puDst->ai16[ 5] = uSrc1.ai8[ 5];
+    puDst->ai16[ 6] = uSrc1.ai8[ 6];
+    puDst->ai16[ 7] = uSrc1.ai8[ 7];
+    puDst->ai16[ 8] = uSrc1.ai8[ 8];
+    puDst->ai16[ 9] = uSrc1.ai8[ 9];
+    puDst->ai16[10] = uSrc1.ai8[10];
+    puDst->ai16[11] = uSrc1.ai8[11];
+    puDst->ai16[12] = uSrc1.ai8[12];
+    puDst->ai16[13] = uSrc1.ai8[13];
+    puDst->ai16[14] = uSrc1.ai8[14];
+    puDst->ai16[15] = uSrc1.ai8[15];
+}
+
+
+/*
+ * PMOVSXBD / VPMOVSXBD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc))
+{
+    RTUINT32U uSrc1 = { uSrc };
+    puDst->ai32[0] = uSrc1.ai8[0];
+    puDst->ai32[1] = uSrc1.ai8[1];
+    puDst->ai32[2] = uSrc1.ai8[2];
+    puDst->ai32[3] = uSrc1.ai8[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai32[0] = uSrc1.ai8[0];
+    puDst->ai32[1] = uSrc1.ai8[1];
+    puDst->ai32[2] = uSrc1.ai8[2];
+    puDst->ai32[3] = uSrc1.ai8[3];
+    puDst->ai32[4] = uSrc1.ai8[4];
+    puDst->ai32[5] = uSrc1.ai8[5];
+    puDst->ai32[6] = uSrc1.ai8[6];
+    puDst->ai32[7] = uSrc1.ai8[7];
+}
+
+
+/*
+ * PMOVSXBQ / VPMOVSXBQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u128_fallback,(PRTUINT128U puDst, uint16_t uSrc))
+{
+    RTUINT16U uSrc1 = { uSrc };
+    puDst->ai64[0] = uSrc1.ai8[0];
+    puDst->ai64[1] = uSrc1.ai8[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai64[0] = uSrc1.ai8[0];
+    puDst->ai64[1] = uSrc1.ai8[1];
+    puDst->ai64[2] = uSrc1.ai8[2];
+    puDst->ai64[3] = uSrc1.ai8[3];
+}
+
+
+/*
+ * PMOVSXWD / VPMOVSXWD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->ai32[0] = uSrc1.ai16[0];
+    puDst->ai32[1] = uSrc1.ai16[1];
+    puDst->ai32[2] = uSrc1.ai16[2];
+    puDst->ai32[3] = uSrc1.ai16[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai32[0] = uSrc1.ai16[0];
+    puDst->ai32[1] = uSrc1.ai16[1];
+    puDst->ai32[2] = uSrc1.ai16[2];
+    puDst->ai32[3] = uSrc1.ai16[3];
+    puDst->ai32[4] = uSrc1.ai16[4];
+    puDst->ai32[5] = uSrc1.ai16[5];
+    puDst->ai32[6] = uSrc1.ai16[6];
+    puDst->ai32[7] = uSrc1.ai16[7];
+}
+
+
+/*
+ * PMOVSXWQ / VPMOVSXWQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc))
+{
+    RTUINT32U uSrc1 = { uSrc };
+    puDst->ai64[0] = uSrc1.ai16[0];
+    puDst->ai64[1] = uSrc1.ai16[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai64[0] = uSrc1.ai16[0];
+    puDst->ai64[1] = uSrc1.ai16[1];
+    puDst->ai64[2] = uSrc1.ai16[2];
+    puDst->ai64[3] = uSrc1.ai16[3];
+}
+
+
+/*
+ * PMOVSXDQ / VPMOVSXDQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->ai64[0] = uSrc1.ai32[0];
+    puDst->ai64[1] = uSrc1.ai32[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->ai64[0] = uSrc1.ai32[0];
+    puDst->ai64[1] = uSrc1.ai32[1];
+    puDst->ai64[2] = uSrc1.ai32[2];
+    puDst->ai64[3] = uSrc1.ai32[3];
+}
+
+
+/*
+ * PMOVZXBW / VPMOVZXBW
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->au16[0] = uSrc1.au8[0];
+    puDst->au16[1] = uSrc1.au8[1];
+    puDst->au16[2] = uSrc1.au8[2];
+    puDst->au16[3] = uSrc1.au8[3];
+    puDst->au16[4] = uSrc1.au8[4];
+    puDst->au16[5] = uSrc1.au8[5];
+    puDst->au16[6] = uSrc1.au8[6];
+    puDst->au16[7] = uSrc1.au8[7];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au16[ 0] = uSrc1.au8[ 0];
+    puDst->au16[ 1] = uSrc1.au8[ 1];
+    puDst->au16[ 2] = uSrc1.au8[ 2];
+    puDst->au16[ 3] = uSrc1.au8[ 3];
+    puDst->au16[ 4] = uSrc1.au8[ 4];
+    puDst->au16[ 5] = uSrc1.au8[ 5];
+    puDst->au16[ 6] = uSrc1.au8[ 6];
+    puDst->au16[ 7] = uSrc1.au8[ 7];
+    puDst->au16[ 8] = uSrc1.au8[ 8];
+    puDst->au16[ 9] = uSrc1.au8[ 9];
+    puDst->au16[10] = uSrc1.au8[10];
+    puDst->au16[11] = uSrc1.au8[11];
+    puDst->au16[12] = uSrc1.au8[12];
+    puDst->au16[13] = uSrc1.au8[13];
+    puDst->au16[14] = uSrc1.au8[14];
+    puDst->au16[15] = uSrc1.au8[15];
+}
+
+
+/*
+ * PMOVZXBD / VPMOVZXBD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc))
+{
+    RTUINT32U uSrc1 = { uSrc };
+    puDst->au32[0] = uSrc1.au8[0];
+    puDst->au32[1] = uSrc1.au8[1];
+    puDst->au32[2] = uSrc1.au8[2];
+    puDst->au32[3] = uSrc1.au8[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au32[0] = uSrc1.au8[0];
+    puDst->au32[1] = uSrc1.au8[1];
+    puDst->au32[2] = uSrc1.au8[2];
+    puDst->au32[3] = uSrc1.au8[3];
+    puDst->au32[4] = uSrc1.au8[4];
+    puDst->au32[5] = uSrc1.au8[5];
+    puDst->au32[6] = uSrc1.au8[6];
+    puDst->au32[7] = uSrc1.au8[7];
+}
+
+
+/*
+ * PMOVZXBQ / VPMOVZXBQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u128_fallback,(PRTUINT128U puDst, uint16_t uSrc))
+{
+    RTUINT16U uSrc1 = { uSrc };
+    puDst->au64[0] = uSrc1.au8[0];
+    puDst->au64[1] = uSrc1.au8[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au64[0] = uSrc1.au8[0];
+    puDst->au64[1] = uSrc1.au8[1];
+    puDst->au64[2] = uSrc1.au8[2];
+    puDst->au64[3] = uSrc1.au8[3];
+}
+
+
+/*
+ * PMOVZXWD / VPMOVZXWD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->au32[0] = uSrc1.au16[0];
+    puDst->au32[1] = uSrc1.au16[1];
+    puDst->au32[2] = uSrc1.au16[2];
+    puDst->au32[3] = uSrc1.au16[3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au32[0] = uSrc1.au16[0];
+    puDst->au32[1] = uSrc1.au16[1];
+    puDst->au32[2] = uSrc1.au16[2];
+    puDst->au32[3] = uSrc1.au16[3];
+    puDst->au32[4] = uSrc1.au16[4];
+    puDst->au32[5] = uSrc1.au16[5];
+    puDst->au32[6] = uSrc1.au16[6];
+    puDst->au32[7] = uSrc1.au16[7];
+}
+
+
+/*
+ * PMOVZXWQ / VPMOVZXWQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc))
+{
+    RTUINT32U uSrc1 = { uSrc };
+    puDst->au64[0] = uSrc1.au16[0];
+    puDst->au64[1] = uSrc1.au16[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au64[0] = uSrc1.au16[0];
+    puDst->au64[1] = uSrc1.au16[1];
+    puDst->au64[2] = uSrc1.au16[2];
+    puDst->au64[3] = uSrc1.au16[3];
+}
+
+
+/*
+ * PMOVZXDQ / VPMOVZXDQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc))
+{
+    RTUINT64U uSrc1 = { uSrc };
+    puDst->au64[0] = uSrc1.au32[0];
+    puDst->au64[1] = uSrc1.au32[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puSrc; /* puDst could overlap */
+    puDst->au64[0] = uSrc1.au32[0];
+    puDst->au64[1] = uSrc1.au32[1];
+    puDst->au64[2] = uSrc1.au32[2];
+    puDst->au64[3] = uSrc1.au32[3];
+}
+

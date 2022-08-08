@@ -4342,3 +4342,64 @@ BEGINPROC_FASTCALL  iemAImpl_vptest_u256, 12
         EPILOGUE_3_ARGS
 ENDPROC             iemAImpl_vptest_u256
 
+
+;;
+; Template for the [v]pmov{s,z}x* instructions
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      The source operand value (input).
+;
+%macro IEMIMPL_V_PMOV_SZ_X 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movd     xmm0, A1
+        %1       xmm0, xmm0
+        vmovdqu  [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movd     xmm0, A1
+        v %+ %1  xmm0, xmm0
+        vmovdqu  [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movd     xmm0, A1
+        v %+ %1  ymm0, xmm0
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_V_PMOV_SZ_X pmovsxbw
+IEMIMPL_V_PMOV_SZ_X pmovsxbd
+IEMIMPL_V_PMOV_SZ_X pmovsxbq
+IEMIMPL_V_PMOV_SZ_X pmovsxwd
+IEMIMPL_V_PMOV_SZ_X pmovsxwq
+IEMIMPL_V_PMOV_SZ_X pmovsxdq
+
+IEMIMPL_V_PMOV_SZ_X pmovzxbw
+IEMIMPL_V_PMOV_SZ_X pmovzxbd
+IEMIMPL_V_PMOV_SZ_X pmovzxbq
+IEMIMPL_V_PMOV_SZ_X pmovzxwd
+IEMIMPL_V_PMOV_SZ_X pmovzxwq
+IEMIMPL_V_PMOV_SZ_X pmovzxdq
+

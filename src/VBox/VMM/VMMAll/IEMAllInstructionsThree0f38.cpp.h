@@ -654,18 +654,108 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
 /*  Opcode 0x66 0x0f 0x38 0x1f - invalid */
 
 
+/** Body for the pmov{s,z}x* instructions. */
+#define IEMOP_BODY_PMOV_S_Z(a_Instr, a_SrcWidth) \
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
+    { \
+        /* \
+         * Register, register. \
+         */ \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_BEGIN(2, 0); \
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0); \
+        IEM_MC_ARG(uint64_t,    uSrc, 1); \
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();  \
+        IEM_MC_PREPARE_SSE_USAGE();  \
+        IEM_MC_FETCH_XREG_U64(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                             iemAImpl_ ## a_Instr ## _u128, \
+                                                             iemAImpl_v ## a_Instr ## _u128_fallback), \
+                                 puDst, uSrc); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END(); \
+    } \
+    else \
+    { \
+        /* \
+         * Register, memory. \
+         */ \
+        IEM_MC_BEGIN(2, 2); \
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc); \
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0); \
+        IEM_MC_ARG(uint ## a_SrcWidth ## _t,    uSrc, 1); \
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT(); \
+        IEM_MC_PREPARE_SSE_USAGE(); \
+        IEM_MC_FETCH_MEM_U## a_SrcWidth (uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                             iemAImpl_ ## a_Instr ## _u128, \
+                                                             iemAImpl_v ## a_Instr ## _u128_fallback), \
+                                 puDst, uSrc); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END(); \
+    } \
+    return VINF_SUCCESS
+
+
 /** Opcode 0x66 0x0f 0x38 0x20. */
-FNIEMOP_STUB(iemOp_pmovsxbw_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovsxbw_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXBW, pmovsxbw, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbw, 64);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x21. */
-FNIEMOP_STUB(iemOp_pmovsxbd_Vx_UxMd);
+FNIEMOP_DEF(iemOp_pmovsxbd_Vx_UxMd)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXBD, pmovsxbd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbd, 32);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x22. */
-FNIEMOP_STUB(iemOp_pmovsxbq_Vx_UxMw);
+FNIEMOP_DEF(iemOp_pmovsxbq_Vx_UxMw)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXBQ, pmovsxbq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbq, 16);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x23. */
-FNIEMOP_STUB(iemOp_pmovsxwd_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovsxwd_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXWD, pmovsxwd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxwd, 64);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x24. */
-FNIEMOP_STUB(iemOp_pmovsxwq_Vx_UxMd);
+FNIEMOP_DEF(iemOp_pmovsxwq_Vx_UxMd)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXWQ, pmovsxwq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxwq, 32);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x25. */
-FNIEMOP_STUB(iemOp_pmovsxdq_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovsxdq_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVSXDQ, pmovsxdq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovsxdq, 64);
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0x26 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x27 - invalid */
 
@@ -750,17 +840,59 @@ FNIEMOP_DEF(iemOp_packusdw_Vx_Wx)
 /*  Opcode 0x66 0x0f 0x38 0x2f - invalid (vex only). */
 
 /** Opcode 0x66 0x0f 0x38 0x30. */
-FNIEMOP_STUB(iemOp_pmovzxbw_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovzxbw_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXBW, pmovzxbw, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbw, 64);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x31. */
-FNIEMOP_STUB(iemOp_pmovzxbd_Vx_UxMd);
+FNIEMOP_DEF(iemOp_pmovzxbd_Vx_UxMd)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXBD, pmovzxbd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbd, 32);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x32. */
-FNIEMOP_STUB(iemOp_pmovzxbq_Vx_UxMw);
+FNIEMOP_DEF(iemOp_pmovzxbq_Vx_UxMw)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXBQ, pmovzxbq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbq, 16);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x33. */
-FNIEMOP_STUB(iemOp_pmovzxwd_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovzxwd_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXWD, pmovzxwd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxwd, 64);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x34. */
-FNIEMOP_STUB(iemOp_pmovzxwq_Vx_UxMd);
+FNIEMOP_DEF(iemOp_pmovzxwq_Vx_UxMd)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXWQ, pmovzxwq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxwq, 32);
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0x35. */
-FNIEMOP_STUB(iemOp_pmovzxdq_Vx_UxMq);
+FNIEMOP_DEF(iemOp_pmovzxdq_Vx_UxMq)
+{
+     /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
+    IEMOP_MNEMONIC2(RM, PMOVZXDQ, pmovzxdq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    IEMOP_BODY_PMOV_S_Z(pmovzxdq, 64);
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0x36 - invalid (vex only). */
 
 

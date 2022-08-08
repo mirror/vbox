@@ -2077,6 +2077,78 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovshdup_256_rm,(PX86XSAVEAREA pXState, uint8_
 IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rr,(PX86XSAVEAREA pXState, uint8_t iYRegDst, uint8_t iYRegSrc));
 IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t iYRegDst, PCRTUINT256U pSrc));
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxbw_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxbd_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxbq_u128,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u128,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u128_fallback,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxbq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxwd_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxwq_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxwq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovsxdq_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovsxdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxbw_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxbd_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxbq_u128,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u128,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u128_fallback,(PRTUINT128U puDst, uint16_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxbq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxwd_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxwq_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u128,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u128_fallback,(PRTUINT128U puDst, uint32_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxwq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovzxdq_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u128,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u128_fallback,(PRTUINT128U puDst, uint64_t uSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u256,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u256_fallback,(PRTUINT256U puDst, PCRTUINT128U puSrc));
+
 /** @} */
 
 /** @name Media Odds and Ends
