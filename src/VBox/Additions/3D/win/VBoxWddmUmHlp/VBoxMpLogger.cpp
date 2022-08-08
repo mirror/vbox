@@ -1,6 +1,12 @@
 /* $Id$ */
 /** @file
  * VBox WDDM Display logger implementation
+ *
+ * We're unable to use standard r3 vbgl-based backdoor logging API because
+ * win8 Metro apps can not do CreateFile/Read/Write by default.  This is why
+ * we use miniport escape functionality to issue backdoor log string to the
+ * miniport and submit it to host via standard r0 backdoor logging api
+ * accordingly
  */
 
 /*
@@ -15,12 +21,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* We're unable to use standard r3 vbgl-based backdoor logging API because win8 Metro apps
- * can not do CreateFile/Read/Write by default.
- * This is why we use miniport escape functionality to issue backdoor log string to the miniport
- * and submit it to host via standard r0 backdoor logging api accordingly
- */
-
 #define IPRT_NO_CRT_FOR_3RD_PARTY /* To get malloc and free wrappers in IPRT_NO_CRT mode. Doesn't link with IPRT in non-no-CRT mode. */
 #include "UmHlpInternal.h"
 
@@ -32,8 +32,10 @@
 #else
 # include <stdio.h>
 #endif
+#include <VBox/VBoxGuestLib.h>
 
-DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
+
+static void VBoxDispMpLoggerLogN(const char *pchString, size_t cchString)
 {
     D3DKMTFUNCTIONS const *d3dkmt = D3DKMTFunctions();
     if (d3dkmt->pfnD3DKMTEscape == NULL)
@@ -44,15 +46,16 @@ DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
     Assert(Status == STATUS_SUCCESS);
     if (Status == 0)
     {
-        uint32_t cbString = (uint32_t)strlen(pszString) + 1;
-        uint32_t cbCmd = RT_UOFFSETOF_DYN(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
+        uint32_t cchString2 = (uint32_t)RT_MIN(cchString, _64K - 1U);
+        uint32_t cbCmd = RT_UOFFSETOF_DYN(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cchString2 + 1]);
         PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)malloc(cbCmd);
         Assert(pCmd);
         if (pCmd)
         {
             pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
             pCmd->EscapeHdr.u32CmdSpecific = 0;
-            memcpy(pCmd->aStringBuf, pszString, cbString);
+            memcpy(pCmd->aStringBuf, pchString, cchString2);
+            pCmd->aStringBuf[cchString2] = '\0';
 
             D3DKMT_ESCAPE EscapeData;
             memset(&EscapeData, 0, sizeof(EscapeData));
@@ -75,6 +78,13 @@ DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
     }
 }
 
+
+DECLCALLBACK(void) VBoxDispMpLoggerLog(const char *pszString)
+{
+    VBoxDispMpLoggerLogN(pszString, strlen(pszString));
+}
+
+
 DECLCALLBACK(void) VBoxDispMpLoggerLogF(const char *pszFormat, ...)
 {
     /** @todo would make a whole lot more sense to just allocate
@@ -93,6 +103,16 @@ DECLCALLBACK(void) VBoxDispMpLoggerLogF(const char *pszFormat, ...)
 
     VBoxDispMpLoggerLog(szBuffer);
 }
+
+
+/* Interface used for backdoor logging.  In no-CRT mode we will drag in IPRT
+   logging and it will be used on assertion in the no-CRT and IPRT code. */
+VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cch)
+{
+    VBoxDispMpLoggerLogN(pch, cch);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Prefix the output string with exe name and pid/tid.
@@ -134,3 +154,4 @@ DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString)
 
     VBoxDispMpLoggerLog(szBuffer);
 }
+
