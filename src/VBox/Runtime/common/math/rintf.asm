@@ -60,6 +60,5 @@ RT_NOCRT_BEGINPROC rintf
 
         leave
         ret
-ENDPROC   RT_NOCRT(rint)
-
+ENDPROC   RT_NOCRT(rintf)
 
