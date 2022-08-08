@@ -1208,8 +1208,16 @@ typedef struct CPUMFEATURES
     uint32_t        fSvmVGif : 1;
     /** SVM: Supports GMET (Guest Mode Execute Trap Extension). */
     uint32_t        fSvmGmet : 1;
+    /** SVM: Supports SSSCheck (SVM Supervisor Shadow Stack). */
+    uint32_t        fSvmSSSCheck : 1;
+    /** SVM: Supports SPEC_CTRL virtualization. */
+    uint32_t        fSvmSpecCtrl : 1;
+    /** SVM: Supports HOST_MCE_OVERRIDE. */
+    uint32_t        fSvmHostMceOverride : 1;
+    /** SVM: Supports TlbiCtl (INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept). */
+    uint32_t        fSvmTlbiCtl : 1;
     /** SVM: Padding / reserved for future features (64 bits total w/ max ASID). */
-    uint32_t        fSvmPadding0 : 18;
+    uint32_t        fSvmPadding0 : 14;
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
     /** @} */

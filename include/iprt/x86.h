@@ -862,7 +862,14 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_SVM_FEATURE_EDX_VGIF                      RT_BIT(16)
 /** Bit 17 - GMET - Supports Guest Mode Execute Trap Extensions. */
 #define X86_CPUID_SVM_FEATURE_EDX_GMET                      RT_BIT(17)
-
+/** Bit 19 - SSSCheck - SVM supervisor shadow stack restrictions. */
+#define X86_CPUID_SVM_FEATURE_EDX_SSSCHECK                  RT_BIT(19)
+/** Bit 20 - SpecCtrl - Supports SPEC_CTRL Virtualization. */
+#define X86_CPUID_SVM_FEATURE_EDX_SPEC_CTRL                 RT_BIT(20)
+/** Bit 23 - HOST_MCE_OVERRIDE - Supports host \#MC exception override. */
+#define X86_CPUID_SVM_FEATURE_EDX_HOST_MCE_OVERRIDE         RT_BIT(23)
+/** Bit 24 - TlbiCtl - Supports INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept. */
+#define X86_CPUID_SVM_FEATURE_EDX_TLBICTL                   RT_BIT(24)
 /** @} */
 
 
