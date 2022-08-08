@@ -1895,6 +1895,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/remainderf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
+  	common/math/sqrt.asm \
+  	common/math/sqrtf.asm \
   	common/math/tan.asm \
   	common/math/tanf.asm \
   	common/math/trunc.asm \
@@ -1939,6 +1941,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/remainderf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
+  	common/math/sqrt.asm \
+  	common/math/sqrtf.asm \
   	common/math/tan.asm \
   	common/math/tanf.asm \
   	common/math/trunc.asm \
