@@ -2555,7 +2555,17 @@ RuntimeGuestR3-x86_BLD_TRG_ARCH         := x86
 RuntimeGuestR3Shared_TEMPLATE           := VBoxGuestR3Dll
 RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
+ifdef VBOX_WITH_NOCRT_STATIC
+ if1of ($(KBUILD_TARGET), win)
+  RuntimeGuestR3Shared_SDKS              = $(RuntimeGuestR3_SDKS) VBOX_SOFTFLOATGUESTR3SHARED
+  RuntimeGuestR3Shared_SOURCES           = $(RuntimeGuestR3_SOURCES) \
+  	common/math/fma.cpp \
+  	common/math/fma-asm.asm \
+  	common/math/fmaf.cpp \
+  	common/math/fmaf-asm.asm \
 
+ endif
+endif
 
 #
 # RuntimeGuestR3Shared-x86 - Same as RuntimeGuestR3Shared, except that it's targeting x86.
