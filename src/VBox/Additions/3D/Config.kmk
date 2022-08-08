@@ -95,7 +95,9 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS)
 	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
 ifdef VBOX_WITH_NOCRT_STATIC
 TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS    += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+       $(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS) # only the library, not the sdk as mesa includes a softfloat.h.
+TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win) /VERBOSE:LIB
 endif
 
 #
