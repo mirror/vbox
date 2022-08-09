@@ -87,6 +87,27 @@ struct TstU32
         } \
     } while (0)
 
+#define FULL_TEST(Test, Type, Fmt, Fun, iTest) \
+    do \
+    { \
+        Type Result; \
+        int rc = Fun(Test.psz, Test.uBase, &Result); \
+        if (Result != Test.Result) \
+            RTTestIFailed("'%s' -> " Fmt " expected " Fmt ". (%s/%u)\n", Test.psz, Result, Test.Result, #Fun, iTest); \
+        else if (rc != Test.rc) \
+            RTTestIFailed("'%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
+    } while (0)
+
+
+#define RUN_FULL_TESTS(aTests, Type, Fmt, Fun) \
+    do \
+    { \
+        for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++) \
+        { \
+            FULL_TEST(aTests[iTest], Type, Fmt, Fun, iTest); \
+        } \
+    } while (0)
+
 int main()
 {
     RTTEST     hTest;
@@ -103,11 +124,34 @@ int main()
         { "0x1",                    0,  VINF_SUCCESS,           1 },
         { "0x0fffffffffffffff",     0,  VINF_SUCCESS,           0x0fffffffffffffffULL },
         { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffffff", 10 << 8,  VINF_SUCCESS,  0x0fffffff },
         { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
         { "0x111111111",            0,  VINF_SUCCESS,           0x111111111ULL },
         { "4D9702C5CBD9B778",      16,  VINF_SUCCESS,           UINT64_C(0x4D9702C5CBD9B778) },
     };
     RUN_TESTS(aTstU64, uint64_t, "%#llx", RTStrToUInt64Ex);
+
+    static const struct TstU64 aTstFullU64[] =
+    {
+        { "42",                         0,  VINF_SUCCESS,           42 },
+        { "42 ",                        0,  VERR_TRAILING_SPACES,   42 },
+        { "42! ",                       0,  VERR_TRAILING_CHARS,    42 },
+        { "42 !",                       0,  VERR_TRAILING_CHARS,    42 },
+        { "42 !",                    2<<8,  VINF_SUCCESS,           42 },
+        { "42 !",                    3<<8,  VERR_TRAILING_SPACES,   42 },
+        { "42 !",                    4<<8,  VERR_TRAILING_CHARS,    42 },
+        { "-1",                         0,  VWRN_NEGATIVE_UNSIGNED, UINT64_MAX },
+        { "-1 ",                        0,  VERR_TRAILING_SPACES,   UINT64_MAX },
+        { "-1 ",                     2<<8,  VWRN_NEGATIVE_UNSIGNED, UINT64_MAX },
+        { "-1 ",                     3<<8,  VERR_TRAILING_SPACES,   UINT64_MAX },
+        { "0x0fffffffffffffff",         0,  VINF_SUCCESS,           0x0fffffffffffffffULL },
+        { "0x0ffffffffffffffffffff",    0,  VWRN_NUMBER_TOO_BIG,    0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffff ",   0,  VERR_TRAILING_SPACES,   0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffff! ",  0,  VERR_TRAILING_CHARS,    0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffff !",  0,  VERR_TRAILING_CHARS,    0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffff",   10 << 8,  VINF_SUCCESS,      0x0fffffff },
+    };
+    RUN_FULL_TESTS(aTstFullU64, uint64_t, "%#llx", RTStrToUInt64Full);
 
     static const struct TstI64 aTstI64[] =
     {
@@ -152,10 +196,31 @@ int main()
         { "0x07777777777777777777777",0,  VWRN_NUMBER_TOO_BIG,  0x7777777777777777ULL },
         { "0x07f7f7f7f7f7f7f7f7f7f7f",0,  VWRN_NUMBER_TOO_BIG,  0x7f7f7f7f7f7f7f7fULL },
         { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  (int64_t)0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffffff", 10 << 8, VINF_SUCCESS,   INT64_C(0x0fffffff) },
+        { "0x0ffffffffffffffffffffff", 18 << 8, VINF_SUCCESS,   INT64_C(0x0fffffffffffffff) },
+        { "0x0ffffffffffffffffffffff", 19 << 8, VWRN_NUMBER_TOO_BIG, -1 },
         { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
         { "0x111111111",            0,  VINF_SUCCESS,           0x111111111ULL },
     };
     RUN_TESTS(aTstI64, int64_t, "%#lld", RTStrToInt64Ex);
+
+    static const struct TstI64 aTstI64Full[] =
+    {
+        { "1",                          0,  VINF_SUCCESS,           1 },
+        { "1 ",                         0,  VERR_TRAILING_SPACES,   1 },
+        { "1! ",                        0,  VERR_TRAILING_CHARS,    1 },
+        { "1 !",                        0,  VERR_TRAILING_CHARS,    1 },
+        { "1 !",                     1<<8,  VINF_SUCCESS,           1 },
+        { "1 !",                     2<<8,  VERR_TRAILING_SPACES,   1 },
+        { "1 !",                     3<<8,  VERR_TRAILING_CHARS,    1 },
+        { "0xffffffffffffffff",         0,  VWRN_NUMBER_TOO_BIG,    -1 },
+        { "0xffffffffffffffff ",        0,  VERR_TRAILING_SPACES,   -1 },
+        { "0xffffffffffffffff!",        0,  VERR_TRAILING_CHARS,    -1 },
+        { "0xffffffffffffffff !",   18<<8,  VWRN_NUMBER_TOO_BIG,    -1 },
+        { "0xffffffffffffffff !",   19<<8,  VERR_TRAILING_SPACES,   -1 },
+        { "0xffffffffffffffff !",   20<<8,  VERR_TRAILING_CHARS,    -1 },
+    };
+    RUN_FULL_TESTS(aTstI64Full, int64_t, "%#lld", RTStrToInt64Full);
 
 
     static const struct TstI32 aTstI32[] =
@@ -201,6 +266,8 @@ int main()
         { "0x0fffffffffffffff",     0,  VWRN_NUMBER_TOO_BIG,    (int32_t)0xffffffff },
         { "0x01111111111111111111111",0,  VWRN_NUMBER_TOO_BIG,  0x11111111 },
         { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  (int32_t)0xffffffff },
+        { "0x0ffffffffffffffffffffff", 10 << 8, VINF_SUCCESS,   0x0fffffff },
+        { "0x0ffffffffffffffffffffff", 11 << 8, VWRN_NUMBER_TOO_BIG, -1 },
         { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
         { "0x1111111",              0,  VINF_SUCCESS,           0x01111111 },
     };
@@ -208,19 +275,39 @@ int main()
 
     static const struct TstU32 aTstU32[] =
     {
-        { "0",                      0,  VINF_SUCCESS,           0 },
-        { "1",                      0,  VINF_SUCCESS,           1 },
-        /// @todo { "-1",                     0,  VWRN_NEGATIVE_UNSIGNED, ~0 }, - no longer true. bad idea?
-        { "-1",                     0,  VWRN_NUMBER_TOO_BIG,    ~0U },
-        { "0x",                     0,  VWRN_TRAILING_CHARS,    0 },
-        { "0x1",                    0,  VINF_SUCCESS,           1 },
-        { "0x0fffffffffffffff",     0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
-        { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  0xffffffffU },
-        { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
-        { "0x1111111",              0,  VINF_SUCCESS,           0x1111111 },
+        { "0",                          0,  VINF_SUCCESS,           0 },
+        { "1",                          0,  VINF_SUCCESS,           1 },
+        /// @todo { "-1",                         0,  VWRN_NEGATIVE_UNSIGNED, ~0 }, - no longer true. bad idea?
+        { "-1",                         0,  VWRN_NUMBER_TOO_BIG,    ~0U },
+        { "0x",                         0,  VWRN_TRAILING_CHARS,    0 },
+        { "0x1",                        0,  VINF_SUCCESS,           1 },
+        { "0x1 ",                       0,  VWRN_TRAILING_SPACES,   1 },
+        { "0x0fffffffffffffff",         0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
+        { "0x0ffffffffffffffffffffff",  0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
+        { "asdfasdfasdf",               0,  VERR_NO_DIGITS,         0 },
+        { "0x1111111",                  0,  VINF_SUCCESS,           0x1111111 },
     };
     RUN_TESTS(aTstU32, uint32_t, "%#x", RTStrToUInt32Ex);
 
+
+    static const struct TstU32 aTstFullU32[] =
+    {
+        { "0",                          0,  VINF_SUCCESS,           0 },
+        { "0x0fffffffffffffff",         0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
+        { "0x0fffffffffffffffffffff",   0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
+        { "asdfasdfasdf",               0,  VERR_NO_DIGITS,         0 },
+        { "42 ",                        0,  VERR_TRAILING_SPACES,   42 },
+        { "42 ",                     2<<8,  VINF_SUCCESS,           42 },
+        { "42! ",                       0,  VERR_TRAILING_CHARS,    42 },
+        { "42! ",                    2<<8,  VINF_SUCCESS,           42 },
+        { "42 !",                       0,  VERR_TRAILING_CHARS,    42 },
+        { "42 !",                    2<<8,  VINF_SUCCESS,           42 },
+        { "42 !",                    3<<8,  VERR_TRAILING_SPACES,   42 },
+        { "42 !",                    4<<8,  VERR_TRAILING_CHARS,    42 },
+        { "0x0fffffffffffffffffffff ",  0,  VERR_TRAILING_SPACES,   0xffffffffU },
+        { "0x0fffffffffffffffffffff !", 0,  VERR_TRAILING_CHARS,    0xffffffffU },
+    };
+    RUN_FULL_TESTS(aTstFullU32, uint32_t, "%#x", RTStrToUInt32Full);
 
     /*
      * Test the some hex stuff too.
