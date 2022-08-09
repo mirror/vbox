@@ -96,6 +96,7 @@ int     RT_NOCRT(ferror)(FILE *pFile);
 void    RT_NOCRT(clearerr)(FILE *pFile);
 int     RT_NOCRT(remove)(const char *pszFilename);
 int     RT_NOCRT(sscanf)(const char *pszString, const char *pszFormat, ...);
+int     RT_NOCRT(vsscanf)(const char *pszString, const char *pszFormat, va_list);
 
 # ifndef RT_NOCRT_EOF /* also in string */
 #  define RT_NOCRT_EOF  (-1)
@@ -134,6 +135,7 @@ int     RT_NOCRT(_ferror)(FILE *pFile);
 void    RT_NOCRT(_clearerr)(FILE *pFile);
 int     RT_NOCRT(_remove)(const char *pszFilename);
 int     RT_NOCRT(_sscanf)(const char *pszString, const char *pszFormat, ...);
+int     RT_NOCRT(_vsscanf)(const char *pszString, const char *pszFormat, va_list);
 
 # define _IONBF         (1) /**< No buffering. */
 # define _IOLBF         (2) /**< Line buffered. */
@@ -168,6 +170,7 @@ int     RT_NOCRT(_sscanf)(const char *pszString, const char *pszFormat, ...);
 #  define clearerr       RT_NOCRT(clearerr)
 #  define remove         RT_NOCRT(remove)
 #  define sscanf         RT_NOCRT(sscanf)
+#  define vsscanf        RT_NOCRT(vsscanf)
 
 
 /* Underscored variants: */
@@ -198,6 +201,7 @@ int     RT_NOCRT(_sscanf)(const char *pszString, const char *pszFormat, ...);
 #  define _clearerr      RT_NOCRT(clearerr)
 #  define _remove        RT_NOCRT(remove)
 #  define _sscanf        RT_NOCRT(_sscanf)
+#  define _vsscanf       RT_NOCRT(_vsscanf)
 # endif
 
 RT_C_DECLS_END
