@@ -5309,6 +5309,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     <const name="HardDiskControllerSATA" value="15" />
     <const name="HardDiskControllerSCSI" value="16" />
     <const name="HardDiskControllerSAS" value="17" />
+    <const name="HardDiskControllerVirtioSCSI" value="60" />
 */
 
 #ifdef VBOX_WITH_USB

@@ -194,6 +194,10 @@ void importOVF(const char *pcszPrefix,
                     pcszType = "scsi";
                 break;
 
+                case VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:
+                    pcszType = "virtio-scsi";
+                break;
+
                 case VirtualSystemDescriptionType_HardDiskImage:
                     pcszType = "hd";
                 break;
