@@ -62,7 +62,11 @@
  */
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
 
-# define DBL_MAX            (1.7976931348623157E+308)
+# ifdef _MSC_VER
+#  define DBL_MAX           (1.7976931348623158E+308)
+# else
+#  define DBL_MAX           (1.7976931348623157E+308)
+# endif
 # define DBL_MIN            (2.2250738585072014E-308)
 # define DBL_TRUE_MIN       (4.9406564584124654E-324)
 # define DBL_MAX_EXP        (1024)
