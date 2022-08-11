@@ -516,6 +516,7 @@ EOF
 #define RTCALL
 #define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)
 #define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
+#define RT_NOCRT(a_Name)                a_Name
 #define DECLINLINE(type)                inline type
 #define DECL_INLINE_THROW(type)         inline type
 #define DECL_FORCE_INLINE(type)         inline type
