@@ -120,12 +120,14 @@ static uint64_t const g_fNanMasks[3] =
 #endif
 };
 
+#if 0 /* unused */
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 static const long double g_lrdPowerMin10 = 1e4931L;
 static const long double g_lrdPowerMax10 = 1e4932L;
 #else
 static const long double g_lrdPowerMin10 = 1e307L;
 static const long double g_lrdPowerMax10 = 1e308L;
+#endif
 #endif
 
 #ifdef USE_SOFTFLOAT
