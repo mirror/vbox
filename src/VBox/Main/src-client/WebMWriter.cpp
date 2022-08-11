@@ -21,7 +21,7 @@
  * - https://www.webmproject.org/docs/container/#muxer-guidelines
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
+#define LOG_GROUP LOG_GROUP_RECORDING
 #include "LoggingNew.h"
 
 #include <iprt/buildconfig.h>

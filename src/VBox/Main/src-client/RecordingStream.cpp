@@ -18,7 +18,7 @@
 #ifdef LOG_GROUP
 # undef LOG_GROUP
 #endif
-#define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
+#define LOG_GROUP LOG_GROUP_RECORDING
 #include "LoggingNew.h"
 
 #include <iprt/path.h>
