@@ -3092,6 +3092,10 @@ typedef union X86XMMREG
     uint64_t    au64[2];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[1];
+    /** Single precision floating point view. */
+    RTFLOAT32U  ar32[4];
+    /** Double precision floating point view. */
+    RTFLOAT64U  ar64[2];
 #ifndef VBOX_FOR_DTRACE_LIB
     /** Confusing nested 128-bit union view (this is what xmm should've been). */
     RTUINT128U  uXmm;
@@ -3120,6 +3124,10 @@ typedef union X86YMMREG
     uint64_t    au64[4];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[2];
+    /** Single precision floating point view. */
+    RTFLOAT32U  ar32[8];
+    /** Double precision floating point view. */
+    RTFLOAT64U  ar64[4];
     /** XMM sub register view. */
     X86XMMREG   aXmm[2];
 } X86YMMREG;
@@ -3146,6 +3154,10 @@ typedef union X86ZMMREG
     uint64_t    au64[8];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[4];
+    /** Single precision floating point view. */
+    RTFLOAT32U  ar32[16];
+    /** Double precision floating point view. */
+    RTFLOAT64U  ar64[8];
     /** XMM sub register view. */
     X86XMMREG   aXmm[4];
     /** YMM sub register view. */
