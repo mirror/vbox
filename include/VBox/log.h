@@ -720,6 +720,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_PGM_POOL,
     /** PGM shared paging group. */
     LOG_GROUP_PGM_SHARED,
+    /** Audio + video recording. */
+    LOG_GROUP_RECORDING,
     /** REM group. */
     LOG_GROUP_REM,
     /** REM disassembly handler group. */
@@ -1164,6 +1166,7 @@ typedef enum VBOXLOGGROUP
     "PGM_PHYS_ACCESS", \
     "PGM_POOL", \
     "PGM_SHARED", \
+    "RECORDING", \
     "REM", \
     "REM_DISAS", \
     "REM_HANDLER", \
