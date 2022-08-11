@@ -140,9 +140,6 @@ endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 VBOX_MAIN_DEFS += VBOX_WITH_PDM_ASYNC_COMPLETION
 endif
-ifdef VBOX_WITH_RECORDING
-VBOX_MAIN_DEFS += VBOX_WITH_RECORDING
-endif
 ifdef VBOX_WITH_SDS
 VBOX_MAIN_DEFS += VBOX_WITH_SDS
 endif
@@ -1003,10 +1000,15 @@ endif
 
 VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 
-if defined(VBOX_WITH_RECORDING) && defined(VBOX_WITH_LIBVPX)
-VBoxC_SDKS += VBOX_VPX
-VBoxC_DEFS += VBOX_WITH_LIBVPX
-VBoxC_SOURCES += \
+ifdef VBOX_WITH_RECORDING
+ VBoxC_DEFS  += VBOX_WITH_RECORDING
+ # Needed in VBoxSVC for ISystemProperties.
+ src-server/SystemPropertiesImpl.cpp_DEFS += VBOX_WITH_RECORDING
+ ifdef VBOX_WITH_LIBVPX
+  VBoxC_SDKS += VBOX_VPX
+  VBoxC_DEFS += VBOX_WITH_LIBVPX
+ endif
+ VBoxC_SOURCES += \
 	src-client/EBMLWriter.cpp \
 	src-client/WebMWriter.cpp \
 	src-client/Recording.cpp \
@@ -1014,12 +1016,19 @@ VBoxC_SOURCES += \
 	src-client/RecordingStream.cpp \
 	src-client/RecordingUtils.cpp
 
- if defined(VBOX_WITH_AUDIO_RECORDING) && defined(VBOX_WITH_LIBOPUS)
-VBoxC_SDKS += VBOX_OPUS
-VBoxC_DEFS += VBOX_WITH_AUDIO_RECORDING VBOX_WITH_LIBOPUS
-VBoxC_SOURCES += src-client/DrvAudioRec.cpp
- endif
-endif # VBOX_WITH_RECORDING && VBOX_WITH_LIBVPX
+ ifdef VBOX_WITH_AUDIO_RECORDING
+  VBoxC_DEFS += VBOX_WITH_AUDIO_RECORDING
+  # Needed in VBoxSVC for ISystemProperties.
+  src-server/SystemPropertiesImpl.cpp_DEFS += VBOX_WITH_AUDIO_RECORDING
+  ifdef VBOX_WITH_LIBOPUS
+   VBoxC_SDKS += VBOX_OPUS
+   VBoxC_DEFS += VBOX_WITH_LIBOPUS
+   # Needed in VBoxSVC for ISystemProperties.
+   src-server/SystemPropertiesImpl.cpp_DEFS += VBOX_WITH_LIBOPUS
+  endif
+  VBoxC_SOURCES += src-client/DrvAudioRec.cpp
+ endif # VBOX_WITH_AUDIO_RECORDING
+endif # VBOX_WITH_RECORDING
 
 ifdef VBOX_WITH_OPENSSL_FIPS
 VBoxC_SDKS += VBOX_OPENSSL2
@@ -1233,7 +1242,8 @@ if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @tod
 endif
  VBoxClient-x86_SDKS = $(filter-out VBOX_OPUS VBOX_VPX,$(VBoxC_SDKS))
  VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT \
-	$(filter-out VBOX_WITH_RECORDING VBOX_WITH_LIBVPX VBOX_WITH_AUDIO_RECORDING VBOX_WITH_LIBOPUS,$(VBoxC_DEFS))
+	$(filter-out VBOX_WITH_RECORDING VBOX_WITH_AUDIO_RECORDING \
+                 VBOX_WITH_LIBVPX VBOX_WITH_LIBOPUS,$(VBoxC_DEFS))
  VBoxClient-x86_INCS.win = \
  	$(VBoxClient-x86_0_OUTDIR) \
  	$(VBoxCOM-x86_0_OUTDIR) \
