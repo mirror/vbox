@@ -3049,6 +3049,8 @@
  *  This e.g. can happen when submitting more video frames than
  *  the current FPS setting allows. */
 #define VERR_RECORDING_THROTTLED                    (-6907)
+/** Encoding data failed. */
+#define VERR_RECORDING_ENCODING_FAILED              (-6908)
 /** @} */
 
 /** @name Shared Clipboard Status Codes
