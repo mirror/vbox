@@ -1230,42 +1230,36 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                 if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
                 {
                     comRecordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Save recording frame width: */
                 if (fSuccess && newDisplayData.m_iRecordingVideoFrameWidth != oldDisplayData.m_iRecordingVideoFrameWidth)
                 {
                     comRecordingScreenSettings.SetVideoWidth(newDisplayData.m_iRecordingVideoFrameWidth);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Save recording frame height: */
                 if (fSuccess && newDisplayData.m_iRecordingVideoFrameHeight != oldDisplayData.m_iRecordingVideoFrameHeight)
                 {
                     comRecordingScreenSettings.SetVideoHeight(newDisplayData.m_iRecordingVideoFrameHeight);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Save recording frame rate: */
                 if (fSuccess && newDisplayData.m_iRecordingVideoFrameRate != oldDisplayData.m_iRecordingVideoFrameRate)
                 {
                     comRecordingScreenSettings.SetVideoFPS(newDisplayData.m_iRecordingVideoFrameRate);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Save recording frame bit rate: */
                 if (fSuccess && newDisplayData.m_iRecordingVideoBitRate != oldDisplayData.m_iRecordingVideoBitRate)
                 {
                     comRecordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Save recording options: */
                 if (fSuccess && newDisplayData.m_strRecordingVideoOptions != oldDisplayData.m_strRecordingVideoOptions)
                 {
                     comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
                 /* Finally, save the screen's recording state: */
@@ -1273,8 +1267,14 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                 if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
                 {
                     comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
-                    Assert(comRecordingScreenSettings.isOk());
                     fSuccess = comRecordingScreenSettings.isOk();
+                }
+
+                if (!fSuccess)
+                {
+                    if (!comRecordingScreenSettings.isOk())
+                        notifyOperationProgressError(UIErrorString::formatErrorInfo(comRecordingScreenSettings));
+                    break; /* No point trying to handle the other screens (if any). */
                 }
             }
 
@@ -1283,7 +1283,6 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             if (fSuccess && newDisplayData.m_fRecordingEnabled != oldDisplayData.m_fRecordingEnabled)
             {
                 recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
-                Assert(recordingSettings.isOk());
                 fSuccess = recordingSettings.isOk();
             }
         }
@@ -1300,42 +1299,36 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
             {
                 comRecordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Save recording frame width: */
             if (fSuccess && newDisplayData.m_iRecordingVideoFrameWidth != oldDisplayData.m_iRecordingVideoFrameWidth)
             {
                 comRecordingScreenSettings.SetVideoWidth(newDisplayData.m_iRecordingVideoFrameWidth);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Save recording frame height: */
             if (fSuccess && newDisplayData.m_iRecordingVideoFrameHeight != oldDisplayData.m_iRecordingVideoFrameHeight)
             {
                 comRecordingScreenSettings.SetVideoHeight(newDisplayData.m_iRecordingVideoFrameHeight);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Save recording frame rate: */
             if (fSuccess && newDisplayData.m_iRecordingVideoFrameRate != oldDisplayData.m_iRecordingVideoFrameRate)
             {
                 comRecordingScreenSettings.SetVideoFPS(newDisplayData.m_iRecordingVideoFrameRate);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Save recording frame bit rate: */
             if (fSuccess && newDisplayData.m_iRecordingVideoBitRate != oldDisplayData.m_iRecordingVideoBitRate)
             {
                 comRecordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Save capture options: */
             if (fSuccess && newDisplayData.m_strRecordingVideoOptions != oldDisplayData.m_strRecordingVideoOptions)
             {
                 comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
             }
             /* Finally, save the screen's recording state: */
@@ -1343,8 +1336,13 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
             {
                 comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
-                Assert(comRecordingScreenSettings.isOk());
                 fSuccess = comRecordingScreenSettings.isOk();
+            }
+
+            if (!fSuccess)
+            {
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comRecordingScreenSettings));
+                break; /* No point trying to handle the other screens (if any). */
             }
         }
 
@@ -1353,14 +1351,18 @@ bool UIMachineSettingsDisplay::saveRecordingData()
         if (fSuccess && newDisplayData.m_fRecordingEnabled != oldDisplayData.m_fRecordingEnabled)
         {
             recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
-            Assert(recordingSettings.isOk());
             fSuccess = recordingSettings.isOk();
         }
     }
 
     /* Show error message if necessary: */
     if (!fSuccess)
-        notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
+    {
+        if (!recordingSettings.isOk())
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(recordingSettings));
+        else if (!m_machine.isOk()) /* Machine could indicate an error when saving the settings. */
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
+    }
 
     /* Return result: */
     return fSuccess;

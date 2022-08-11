@@ -615,9 +615,10 @@ public:
                                              const QString &strMachineName, bool fConnect);
 
         /** Notifies about inability to toggle recording.
-          * @param  comMachine  Brings the machine recording being toggled for.
-          * @param  fEnable     Brings whether recording is enabled or not. */
-        static void cannotToggleRecording(const CMachine &comMachine, bool fEnable);
+          * @param  comRecording    Brings the recording settings being toggled for.
+          * @param  strMachineName  Brings the machine name.
+          * @param  fEnable         Brings whether recording is enabled or not. */
+        static void cannotToggleRecording(const CRecordingSettings &comRecording, const QString &strMachineName, bool fEnable);
 
         /** Notifies about inability to toggle VRDE server.
           * @param  comServer       Brings the server being toggled.

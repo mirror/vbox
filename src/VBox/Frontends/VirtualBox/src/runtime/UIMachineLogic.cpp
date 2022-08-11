@@ -2085,7 +2085,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusRecording();
         /* Notify about the error: */
-        return UINotificationMessage::cannotToggleRecording(machine(), fEnabled);
+        return UINotificationMessage::cannotToggleRecording(comRecordingSettings, machine().GetName(), fEnabled);
     }
 
     /* Save machine-settings: */
