@@ -2840,6 +2840,162 @@ void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featur
 }
 
 /**
+ * Returns a recording settings audio codec from a given string.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if audio codec is invalid or not supported.
+ * @param   strCodec            String that contains the codec name.
+ * @param   enmCodec            Where to return the audio codec on success.
+ *
+ * @note    An empty string will return "none" (no codec).
+ */
+/* static */
+int RecordingScreenSettings::audioCodecFromString(const com::Utf8Str &strCodec, RecordingAudioCodec_T &enmCodec)
+{
+    if (   RTStrIStr(strCodec.c_str(), "none")
+        || strCodec.isEmpty())
+    {
+        enmCodec = RecordingAudioCodec_None;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "wav"))
+    {
+        enmCodec = RecordingAudioCodec_WavPCM;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "mp3"))
+    {
+        enmCodec = RecordingAudioCodec_MP3;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "opus"))
+    {
+        enmCodec = RecordingAudioCodec_Opus;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "vorbis"))
+    {
+        enmCodec = RecordingAudioCodec_OggVorbis;
+        return VINF_SUCCESS;
+    }
+
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+/**
+ * Converts an audio codec to a serializable string.
+ *
+ * @param   enmCodec            Codec to convert to a string.
+ * @param   strCodec            Where to return the audio codec converted as a string.
+ */
+/* static */
+void RecordingScreenSettings::audioCodecToString(const RecordingAudioCodec_T &enmCodec, com::Utf8Str &strCodec)
+{
+    switch (enmCodec)
+    {
+        case RecordingAudioCodec_None:      strCodec = "none";   return;
+        case RecordingAudioCodec_WavPCM:    strCodec = "wav";    return;
+        case RecordingAudioCodec_MP3:       strCodec = "mp3";    return;
+        case RecordingAudioCodec_Opus:      strCodec = "opus";   return;
+        case RecordingAudioCodec_OggVorbis: strCodec = "vorbis"; return;
+        default:                            AssertFailedReturnVoid();
+    }
+}
+
+/**
+ * Returns a recording settings video codec from a given string.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if video codec is invalid or not supported.
+ * @param   strCodec            String that contains the codec name.
+ * @param   enmCodec            Where to return the video codec on success.
+ *
+ * @note    An empty string will return "none" (no codec).
+ */
+/* static */
+int RecordingScreenSettings::videoCodecFromString(const com::Utf8Str &strCodec, RecordingVideoCodec_T &enmCodec)
+{
+    if (   RTStrIStr(strCodec.c_str(), "none")
+        || strCodec.isEmpty())
+    {
+        enmCodec = RecordingVideoCodec_None;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "MJPEG"))
+    {
+        enmCodec = RecordingVideoCodec_MJPEG;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "H262"))
+    {
+        enmCodec = RecordingVideoCodec_H262;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "H264"))
+    {
+        enmCodec = RecordingVideoCodec_H264;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "H265"))
+    {
+        enmCodec = RecordingVideoCodec_H265;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "H266"))
+    {
+        enmCodec = RecordingVideoCodec_H266;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "VP8"))
+    {
+        enmCodec = RecordingVideoCodec_VP8;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "VP9"))
+    {
+        enmCodec = RecordingVideoCodec_VP9;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "AV1"))
+    {
+        enmCodec = RecordingVideoCodec_AV1;
+        return VINF_SUCCESS;
+    }
+    else if (RTStrIStr(strCodec.c_str(), "other"))
+    {
+        enmCodec = RecordingVideoCodec_Other;
+        return VINF_SUCCESS;
+    }
+
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+/**
+ * Converts a video codec to a serializable string.
+ *
+ * @param   enmCodec            Codec to convert to a string.
+ * @param   strCodec            Where to return the video codec converted as a string.
+ */
+/* static */
+void RecordingScreenSettings::videoCodecToString(const RecordingVideoCodec_T &enmCodec, com::Utf8Str &strCodec)
+{
+    switch (enmCodec)
+    {
+        case RecordingVideoCodec_None:  strCodec = "none";  return;
+        case RecordingVideoCodec_MJPEG: strCodec = "MJPEG"; return;
+        case RecordingVideoCodec_H262:  strCodec = "H262";  return;
+        case RecordingVideoCodec_H264:  strCodec = "H264";  return;
+        case RecordingVideoCodec_H265:  strCodec = "H265";  return;
+        case RecordingVideoCodec_H266:  strCodec = "H266";  return;
+        case RecordingVideoCodec_VP8:   strCodec = "VP8";   return;
+        case RecordingVideoCodec_VP9:   strCodec = "VP9";   return;
+        case RecordingVideoCodec_AV1:   strCodec = "AV1";   return;
+        case RecordingVideoCodec_Other: strCodec = "other"; return;
+        default:                        AssertFailedReturnVoid();
+    }
+}
+
+/**
  * Applies the default settings.
  */
 void RecordingScreenSettings::applyDefaults(void)

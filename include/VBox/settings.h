@@ -648,6 +648,14 @@ struct RecordingScreenSettings
 
     static void featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures);
 
+    static int audioCodecFromString(const com::Utf8Str &strCodec, RecordingAudioCodec_T &enmCodec);
+
+    static void audioCodecToString(const RecordingAudioCodec_T &enmCodec, com::Utf8Str &strCodec);
+
+    static int videoCodecFromString(const com::Utf8Str &strCodec, RecordingVideoCodec_T &enmCodec);
+
+    static void videoCodecToString(const RecordingVideoCodec_T &enmCodec, com::Utf8Str &strCodec);
+
     bool operator==(const RecordingScreenSettings &d) const;
 
     /** Screen ID.
