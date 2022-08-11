@@ -3324,6 +3324,11 @@ RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32
 RTDECL(int) RTStrConvertHexBytesEx(char const *pszHex, void *pv, size_t cb, uint32_t fFlags,
                                    const char **ppszNext, size_t *pcbReturned);
 
+
+RTDECL(int) RTStrToLongDoubleEx(const char *pszValue, char **ppszNext, size_t cchMax, long double *plrd);
+RTDECL(int) RTStrToDoubleEx(const char *pszValue, char **ppszNext, size_t cchMax, double *prd);
+RTDECL(int) RTStrToFloatEx(const char *pszValue, char **ppszNext, size_t cchMax, float *pr);
+
 /** @} */
 
 

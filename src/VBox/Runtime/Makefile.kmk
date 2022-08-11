@@ -662,6 +662,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/string/strcache.cpp \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
+  	common/string/strtofloat.cpp \
 	common/string/strtonum.cpp \
 	common/string/strversion.cpp \
 	common/string/uni.cpp \
@@ -1721,7 +1722,7 @@ PROPS_LIBRARIES_ACCUMULATE_L += VBOX_NOCRT_ALIASES
 PROPS_ALL                    += VBOX_NOCRT_ALIASES
 
 define def_unit_VBoxNoCrtAliases_double_expansion
-$$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
+$$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
 		$$(abspathex \
 			$$($(target)_SOURCES)\
 			$$($(target)_SOURCES.$(bld_trg))\
@@ -1738,6 +1739,7 @@ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
 	$$(QUIET)$$(APPEND) -tn "$$@" "$(target)_2_VBOX_NOCRT_ALIASES := \\"
 	$$(xargs $$(QUIET)$$(SED) -rn -f "$$(VBOX_PATH_RUNTIME_SRC)/nocrt-aliases.sed" --append "$$@" , $$(filter %.c %.cpp %.asm, $$^) )
 	$$(QUIET)$$(APPEND) -n "$$@" "" ""
+	$$(QUIET)$$(CP) --changed -f -- "$$@" "$$(patsubst %.ts,%s,$$@)"
 
 $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
 	$$(call MSG_GENERATE,$(target),$$@,)
@@ -2584,7 +2586,7 @@ RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 ifdef VBOX_WITH_NOCRT_STATIC
  if1of ($(KBUILD_TARGET), win)
-  RuntimeGuestR3Shared_SDKS              = $(RuntimeGuestR3_SDKS) VBOX_SOFTFLOATGUESTR3SHARED
+  RuntimeGuestR3Shared_SDKS              = $(filter-out VBOX_SOFTFLOAT,$(RuntimeGuestR3_SDKS)) VBOX_SOFTFLOATGUESTR3SHARED
   RuntimeGuestR3Shared_SOURCES           = $(RuntimeGuestR3_SOURCES) \
   	common/math/fma.cpp \
   	common/math/fma-asm.asm \
@@ -2610,6 +2612,7 @@ ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
 VBoxRT_SDKS                   += VBOX_OPENSSL
+VBoxRT_SDKS                   += VBOX_SOFTFLOAT
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET), win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)

@@ -33,6 +33,12 @@
 #include <iprt/stream.h>
 #include <iprt/err.h>
 
+#include <float.h>
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 struct TstI64
 {
     const char *psz;
@@ -66,6 +72,26 @@ struct TstU32
 };
 
 
+struct TstRD
+{
+    const char *psz;
+    unsigned    cchMax;
+    int         rc;
+    double      rd;
+};
+
+struct TstR64
+{
+    const char *psz;
+    unsigned    cchMax;
+    int         rc;
+    RTFLOAT64U  r64;
+};
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define TEST(Test, Type, Fmt, Fun, iTest) \
     do \
     { \
@@ -81,6 +107,7 @@ struct TstU32
 #define RUN_TESTS(aTests, Type, Fmt, Fun) \
     do \
     { \
+        RTTestISub(#Fun); \
         for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++) \
         { \
             TEST(aTests[iTest], Type, Fmt, Fun, iTest); \
@@ -102,11 +129,14 @@ struct TstU32
 #define RUN_FULL_TESTS(aTests, Type, Fmt, Fun) \
     do \
     { \
+        RTTestISub(#Fun); \
         for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++) \
         { \
             FULL_TEST(aTests[iTest], Type, Fmt, Fun, iTest); \
         } \
     } while (0)
+
+
 
 int main()
 {
@@ -312,6 +342,7 @@ int main()
     /*
      * Test the some hex stuff too.
      */
+    RTTestSub(hTest, "RTStrConvertHexBytesEx");
     static const struct
     {
         const char *pszHex;
@@ -357,6 +388,149 @@ int main()
                          s_aConvertHexTests[i].rc, pszExpectNext, s_aConvertHexTests[i].cbOut, s_aConvertHexTests[i].bLast);
     }
 
+
+    /*
+     * Floating point string conversion.
+     */
+#ifdef RT_OS_WINDOWS /** @todo debug elsewhere */
+    char szActual[128], szExpect[128];
+
+    RTTestSub(hTest, "RTStrToDoubleEx");
+    static const struct TstRD s_aTstDouble[] =
+    {
+        { "1",                              0, VINF_SUCCESS,              1.0 },
+        { "2.0",                            0, VINF_SUCCESS,              2.0 },
+        { "2.0000",                         0, VINF_SUCCESS,              2.0 },
+        { "-2.0000",                        0, VINF_SUCCESS,              -2.0 },
+        { "-2.0000",                        1, VERR_NO_DIGITS,            -0.0 },
+        { "-2.0000",                        2, VINF_SUCCESS,              -2.0 },
+        { "0.5",                            0, VINF_SUCCESS,              0.5 },
+        { "1.5",                            0, VINF_SUCCESS,              1.5 },
+        { "42.",                            0, VINF_SUCCESS,              42.0 },
+        { "243.598605987",                  0, VINF_SUCCESS,              243.598605987 },
+        { "3.14159265358979323846",         0, VINF_SUCCESS,              3.14159265358979323846 },
+        { "3.1415926535897932384626433832", 0, VINF_SUCCESS,              3.14159265358979323846 },
+        { "2.9979245800e+008",              0, VINF_SUCCESS,              299792458.0 },        /* speed of light (c)  */
+        { "1.602176487e-19",                0, VINF_SUCCESS,              1.602176487e-19 },    /* electron volt (eV) */
+        { "6.62606896e-34",                 0, VINF_SUCCESS,              6.62606896e-34 },     /* Planck's constant (h) */
+        { "6.02214199e+23",                 0, VINF_SUCCESS,              6.02214199e23 },      /* Avogadro's number (Na) */
+        { "1.66053e-0",                     0, VINF_SUCCESS,              1.66053e-0 },
+        { "1.66053e-1",                     0, VINF_SUCCESS,              1.66053e-1 },
+        { "1.66053e-2",                     0, VINF_SUCCESS,              1.66053e-2 },
+        { "1.66053e-3",                     0, VINF_SUCCESS,              1.66053e-3 },
+        { "1.66053e-4",                     0, VINF_SUCCESS,              1.66053e-4 },
+        { "1.66053e-5",                     0, VINF_SUCCESS,              1.66053e-5 },
+        { "1.66053e-6",                     0, VINF_SUCCESS,              1.66053e-6 },
+        { "1.660538780e-27",                0, VINF_SUCCESS,              1.660538780e-27 },
+        { "1.660538781e-27",                0, VINF_SUCCESS,              1.660538781e-27 },
+        { "1.660538782e-27",                0, VINF_SUCCESS,              1.660538782e-27 },    /* Unified atomic mass (amu) [rounding issue with simple scale10 code] */
+        { "1.660538783e-27",                0, VINF_SUCCESS,              1.660538783e-27 },
+        { "1.660538784e-27",                0, VINF_SUCCESS,              1.660538784e-27 },
+        { "1.660538785e-27",                0, VINF_SUCCESS,              1.660538785e-27 },
+        { "1e1",                            0, VINF_SUCCESS,              1.0e1 },
+        { "99e98",                          0, VINF_SUCCESS,              99.0e98 },
+        { "1.2398039e206",                  0, VINF_SUCCESS,              1.2398039e206 },
+        { "-1.2398039e-205",                0, VINF_SUCCESS,              -1.2398039e-205 },
+        { "-1.2398039e-305",                0, VINF_SUCCESS,              -1.2398039e-305 },
+        { "-1.2398039e-306",                0, VINF_SUCCESS,              -1.2398039e-306 }, /* RTStrFormatR64 get weird about these numbers... */
+        { "-1.2398039e-307",                0, VINF_SUCCESS,              -1.2398039e-307 },
+        { "-1.2398039e-308",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-308 }, /* subnormal */
+        { "-1.2398039e-309",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-309 }, /* subnormal */
+        { "-1.2398039e-310",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-310 }, /* subnormal */
+        { "-1.2398039e-315",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-315 }, /* subnormal */
+        { "-1.2398039e-323",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-323 }, /* subnormal */
+#if 0 /* problematic in softfloat mode */
+        { "-1.2398039e-324",                0, VWRN_FLOAT_UNDERFLOW,      -1.2398039e-324 }, /* subnormal */
+#endif
+        { "-1.2398039e-325",                0, VERR_FLOAT_UNDERFLOW,      -0.0 },
+        { "1.7976931348623158e+308",        0, VINF_SUCCESS,              +DBL_MAX },
+        { "-1.7976931348623158e+308",       0, VINF_SUCCESS,              -DBL_MAX },
+        { "2.2250738585072014e-308",        0, VINF_SUCCESS,              +DBL_MIN },
+        { "-2.2250738585072014e-308",       0, VINF_SUCCESS,              -DBL_MIN },
+        { "-2.2250738585072010e-308",       0, VWRN_FLOAT_UNDERFLOW,      -2.2250738585072010E-308 }, /* subnormal close to -DBL_MIN */
+#if __cplusplus >= 201700
+        { "0x1",                            0, VINF_SUCCESS,              0x1.0p0 },
+        { "0x2",                            0, VINF_SUCCESS,              0x2.0p0 },
+        { "0x3",                            0, VINF_SUCCESS,              0x3.0p0 },
+        { "0x3p1",                          0, VINF_SUCCESS,              0x3.0p1 },
+        { "0x9.2p42",                       0, VINF_SUCCESS,              0x9.2p42 },
+        { "-0x48f0405.24986e5f794bp42",     0, VINF_SUCCESS,              -0x48f0405.24986e5f794bp42 },
+#endif
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aTstDouble); i++)
+    {
+        //RTTestPrintf(hTest,RTTESTLVL_ALWAYS, "----- #%u: %s\n", i, s_aTstDouble[i].psz);
+        RTFLOAT64U uRes = RTFLOAT64U_INIT_ZERO(1);
+        char *pszNext = (char *)42;
+        int rc = RTStrToDoubleEx(s_aTstDouble[i].psz, &pszNext, s_aTstDouble[i].cchMax, &uRes.rd);
+
+        RTFLOAT64U uExpect;
+        uExpect.rd = s_aTstDouble[i].rd;
+        if (rc != s_aTstDouble[i].rc || !RTFLOAT64U_ARE_IDENTICAL(&uRes, &uExpect))
+        {
+            RTStrFormatR64(szActual, sizeof(szActual), &uRes, 0, 0, RTSTR_F_SPECIAL);
+            RTStrFormatR64(szExpect, sizeof(szExpect), &uExpect, 0, 0, RTSTR_F_SPECIAL);
+            RTTestFailed(hTest, "RTStrToDoubleEx/%#u: '%s' L %u -> %Rrc & %s, expected %Rrc & %s\n",
+                         i, s_aTstDouble[i].psz, s_aTstDouble[i].cchMax, rc, szActual, s_aTstDouble[i].rc, szExpect);
+        }
+    }
+
+    static const struct TstR64 s_aTstR64[] =
+    {
+        { "Inf",                            0, VINF_SUCCESS,            RTFLOAT64U_INIT_INF(0) },
+        { "+Inf",                           0, VINF_SUCCESS,            RTFLOAT64U_INIT_INF(0) },
+        { "-Inf",                           0, VINF_SUCCESS,            RTFLOAT64U_INIT_INF(1) },
+        { "-Inf0",                          0, VWRN_TRAILING_CHARS,     RTFLOAT64U_INIT_INF(1) },
+        { "-Inf ",                          0, VWRN_TRAILING_SPACES,    RTFLOAT64U_INIT_INF(1) },
+        { "-Inf 0",                         0, VWRN_TRAILING_CHARS,     RTFLOAT64U_INIT_INF(1) },
+        { "-Inf 0",                         1, VERR_NO_DIGITS,          RTFLOAT64U_INIT_ZERO(1) },
+        { "-Inf 0",                         2, VERR_NO_DIGITS,          RTFLOAT64U_INIT_ZERO(1) },
+        { "-Inf 0",                         3, VERR_NO_DIGITS,          RTFLOAT64U_INIT_ZERO(1) },
+        { "-Inf 0",                         4, VINF_SUCCESS,            RTFLOAT64U_INIT_INF(1) },
+        { "Nan",                            0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(0) },
+        { "+Nan",                           0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(0) },
+        { "+Nan(1)",                        0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(0) },
+        { "-NaN",                           0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(1) },
+        { "-nAn(1)",                        0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(1) },
+        { "-nAn(q)",                        0, VINF_SUCCESS,            RTFLOAT64U_INIT_QNAN(1) },
+        { "-nAn(s)",                        0, VINF_SUCCESS,            RTFLOAT64U_INIT_SNAN(1) },
+        { "-nAn(_sig)",                     0, VINF_SUCCESS,            RTFLOAT64U_INIT_SNAN(1) },
+        { "-nAn(22420102_sig)12",           0, VWRN_TRAILING_CHARS,     RTFLOAT64U_INIT_SNAN_EX(1, 0x22420102) },
+        { "-nAn(22420102_sig)  ",           0, VWRN_TRAILING_SPACES,    RTFLOAT64U_INIT_SNAN_EX(1, 0x22420102) },
+        { "-nAn(22420102_sig) 2",           0, VWRN_TRAILING_CHARS,     RTFLOAT64U_INIT_SNAN_EX(1, 0x22420102) },
+        { "-1.2398039e-500",                0, VERR_FLOAT_UNDERFLOW,    RTFLOAT64U_INIT_ZERO(1) },
+        { "-1.2398039e-5000",               0, VERR_FLOAT_UNDERFLOW,    RTFLOAT64U_INIT_ZERO(1) },
+        { "-1.2398039e-50000",              0, VERR_FLOAT_UNDERFLOW,    RTFLOAT64U_INIT_ZERO(1) },
+        { "-1.2398039e-500000",             0, VERR_FLOAT_UNDERFLOW,    RTFLOAT64U_INIT_ZERO(1) },
+        { "-1.2398039e-500000000",          0, VERR_FLOAT_UNDERFLOW,    RTFLOAT64U_INIT_ZERO(1) },
+        { "+1.7976931348623159e+308",       0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(0) },
+        { "-1.7976931348623159e+308",       0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+309",                0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+350",                0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+400",                0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+450",                0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+500",                0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+5000",               0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+50000",              0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+500000",             0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+        { "-1.2398039e+5000000000",         0, VERR_FLOAT_OVERFLOW,     RTFLOAT64U_INIT_INF(1) },
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aTstR64); i++)
+    {
+        //RTTestPrintf(hTest,RTTESTLVL_ALWAYS, "----- #%u: %s\n", i, s_aTstDouble[i].psz);
+        RTFLOAT64U uRes = RTFLOAT64U_INIT_ZERO(1);
+        char *pszNext = (char *)42;
+        int rc = RTStrToDoubleEx(s_aTstR64[i].psz, &pszNext, s_aTstR64[i].cchMax, &uRes.rd);
+
+        if (rc != s_aTstR64[i].rc || !RTFLOAT64U_ARE_IDENTICAL(&uRes, &s_aTstR64[i].r64))
+        {
+            RTStrFormatR64(szActual, sizeof(szActual), &uRes, 0, 0, RTSTR_F_SPECIAL);
+            RTStrFormatR64(szExpect, sizeof(szExpect), &s_aTstR64[i].r64, 0, 0, RTSTR_F_SPECIAL);
+            RTTestFailed(hTest, "RTStrToDoubleEx/%#u: '%s' L %u -> %Rrc & %s, expected %Rrc & %s\n",
+                         i, s_aTstR64[i].psz, s_aTstR64[i].cchMax, rc, szActual, s_aTstR64[i].rc, szExpect);
+        }
+    }
+#endif /* RT_OS_WINDOWS - debug elsewhere first */
 
     /*
      * Summary.

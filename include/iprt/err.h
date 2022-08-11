@@ -389,6 +389,14 @@
 /** Unable to translate one or more of the arguments to the codeset the child
  * process is expected to use. */
 #define VERR_PROC_NO_ARG_TRANSLATION        (-22425)
+/** Floating pointer underflow. */
+#define VERR_FLOAT_UNDERFLOW                (-22426)
+/** Floating pointer underflow. */
+#define VWRN_FLOAT_UNDERFLOW                (22426)
+/** Floating pointer overflow. */
+#define VERR_FLOAT_OVERFLOW                 (-22427)
+/** Floating pointer overflow. */
+#define VWRN_FLOAT_OVERFLOW                 (22427)
 /** @} */
 
 
