@@ -1597,6 +1597,7 @@ HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<Recording
 {
     static const RecordingAudioCodec_T aRecordingAudioCodecs[] =
     {
+        RecordingAudioCodec_None,
 #ifdef DEBUG
         RecordingAudioCodec_WavPCM,
 #endif
@@ -1616,7 +1617,10 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
 {
     static const RecordingVideoCodec_T aRecordingVideoCodecs[] =
     {
+        RecordingVideoCodec_None,
+#ifdef VBOX_WITH_LIBVPX
         RecordingVideoCodec_VP8,
+#endif
 #ifdef DEBUG
         RecordingVideoCodec_VP9,
         RecordingVideoCodec_AV1,
