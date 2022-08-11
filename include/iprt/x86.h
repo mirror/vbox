@@ -3114,6 +3114,8 @@ typedef X86XMMREG const *PCX86XMMREG;
  */
 typedef union X86YMMREG
 {
+    /** YMM register view. */
+    RTUINT256U  ymm;
     /** 8-bit view. */
     uint8_t     au8[32];
     /** 16-bit view. */
