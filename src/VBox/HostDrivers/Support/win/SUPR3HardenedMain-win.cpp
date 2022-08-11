@@ -5305,7 +5305,7 @@ static void supR3HardenedWinOpenStubDevice(void)
                     supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
                                           "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
                                           "\n"
-                                          "Driver is probably stuck stopping/starting. Try 'sc.exe query vboxdrv' to get more "
+                                          "Driver is probably stuck stopping/starting. Try 'sc.exe query vboxsup' to get more "
                                           "information about its state. Rebooting may actually help.%s"
                                           , s_wszName, rcNt, pszDefine, iTry,
                                           supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
@@ -5314,7 +5314,7 @@ static void supR3HardenedWinOpenStubDevice(void)
                     supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
                                           "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
                                           "\n"
-                                          "Driver is does not appear to be loaded. Try 'sc.exe start vboxdrv', reinstall "
+                                          "Driver is does not appear to be loaded. Try 'sc.exe start vboxsup', reinstall "
                                           "VirtualBox or reboot.%s"
                                           , s_wszName, rcNt, pszDefine, iTry,
                                           supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
