@@ -197,6 +197,11 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
             vrc = VERR_NO_MEMORY;
             break;
         }
+        catch (int vrc_thrown) /* Catch rc thrown by constructor. */
+        {
+            vrc = vrc_thrown;
+            break;
+        }
 
         ++itScreen;
     }

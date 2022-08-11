@@ -5873,7 +5873,8 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
 /**
  * Enables or disables recording of a VM.
  *
- * @returns IPRT status code. Will return VERR_NO_CHANGE if the recording state has not been changed.
+ * @returns VBox status code.
+ * @retval  VERR_NO_CHANGE if the recording state has not been changed.
  * @param   fEnable             Whether to enable or disable the recording.
  * @param   pAutoLock           Pointer to auto write lock to use for attaching/detaching required driver(s) at runtime.
  */
@@ -5908,6 +5909,9 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                             vrc = mRecording.mAudioRec->applyConfiguration(mRecording.mCtx.GetConfig());
                             if (RT_SUCCESS(vrc))
                                 vrc = mRecording.mAudioRec->doAttachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
+
+                            if (RT_FAILURE(vrc))
+                                setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Attaching to audio recording driver failed (%Rrc) -- please consult log file for details"), vrc);
                         }
 # endif
                         if (   RT_SUCCESS(vrc)
@@ -5915,21 +5919,32 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                         {
                             vrc = pDisplay->i_recordingInvalidate();
                             if (RT_SUCCESS(vrc))
+                            {
                                 vrc = i_recordingStart(pAutoLock);
+                                if (RT_FAILURE(vrc))
+                                    setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording start failed (%Rrc) -- please consult log file for details"), vrc);
+                            }
                         }
                     }
+                    else
+                        setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording initialization failed (%Rrc) -- please consult log file for details"), vrc);
 
                     if (RT_FAILURE(vrc))
                         LogRel(("Recording: Failed to enable with %Rrc\n", vrc));
                 }
                 else
                 {
-                    i_recordingStop(pAutoLock);
+                    vrc = i_recordingStop(pAutoLock);
+                    if (RT_SUCCESS(vrc))
+                    {
 # ifdef VBOX_WITH_AUDIO_RECORDING
-                    if (mRecording.mAudioRec)
-                        mRecording.mAudioRec->doDetachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
+                        if (mRecording.mAudioRec)
+                            mRecording.mAudioRec->doDetachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
 # endif
-                    i_recordingDestroy();
+                        i_recordingDestroy();
+                    }
+                    else
+                       setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording stop failed (%Rrc) -- please consult log file for details"), vrc);
                 }
             }
             else
@@ -5939,7 +5954,10 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                 LogRel(("Recording: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
         }
         else /* Should not happen. */
+        {
             vrc = VERR_NO_CHANGE;
+            setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording already %s"), fIsEnabled ? tr("enabled") : tr("disabled"));
+        }
     }
 
     return vrc;
@@ -5970,7 +5988,8 @@ HRESULT Console::i_onRecordingChange(BOOL fEnabled)
             alock.release();
             ::FireRecordingChangedEvent(mEventSource);
         }
-
+        else /* Error set via ErrorInfo within i_recordingEnable() already. */
+            rc = VBOX_E_IPRT_ERROR;
         ptrVM.release();
     }
 #else
