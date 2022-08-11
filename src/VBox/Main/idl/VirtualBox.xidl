@@ -5868,15 +5868,16 @@
   </enum>
 
   <enum
-    name="RecordingVideoScalingMethod"
-    uuid="5576D890-48EE-449A-A81B-B776233598B7"
+    name="RecordingVideoScalingMode"
+    uuid="0dd1127d-4f62-4b82-beee-91086a9f1d24"
     >
     <desc>
       Recording video scaling method enumeration.
     </desc>
 
     <const name="None"                  value="0">
-      <desc>No scaling performed.</desc>
+      <desc>No scaling performed.
+        The image wil be cropped when the source is bigger than the target size.</desc>
     </const>
     <const name="NearestNeighbor"       value="1">
       <desc>Performs scaling via nearest-neighbor interpolation.
@@ -5893,24 +5894,28 @@
   </enum>
 
   <enum
-    name="RecordingVideoRateControlMode"
-    uuid="D4EFB692-9F98-4112-88D3-A16FBE2BF6A8"
+    name="RecordingRateControlMode"
+    uuid="d07a33ac-b4ea-4917-942d-c03be14fbe2f"
     >
     <desc>
       Recording video rate control mode enumeration.
+      <note>Not all codecs may support all rate control modes.</note>
     </desc>
 
-    <const name="CBR" value="0">
-      <desc>Constant bit rate (CBR).</desc>
+    <const name="ABR" value="0">
+      <desc>Average bit rate (ABR). Constrained to a certain size.</desc>
     </const>
-    <const name="VBR" value="1">
-      <desc>Variable bit rate (VBR). Not yet implemented.</desc>
+    <const name="CBR" value="1">
+      <desc>Constant bit rate (CBR). Constrained to a certain size.</desc>
+    </const>
+    <const name="VBR" value="2">
+      <desc>Variable bit rate (VBR). Constrained to a certain quality.</desc>
     </const>
   </enum>
 
   <interface
     name="IRecordingScreenSettings" extends="$unknown"
-    uuid="92eb5328-c0b3-4ad2-ae25-75b12c52871f"
+    uuid="2377f7d2-1971-40ff-8e39-e61089bb3a22"
     wsmap="managed"
     rest="managed"
     >
@@ -6029,6 +6034,13 @@
       </desc>
     </attribute>
 
+    <attribute name="audioRateControlMode" type="RecordingRateControlMode">
+      <desc>
+        Determines the audio rate control mode. This setting cannot be changed
+        while recording is enabled.
+      </desc>
+    </attribute>
+
     <attribute name="audioDeadline" type="RecordingCodecDeadline" default="Default">
       <desc>
         Determines the audio deadline to use.
@@ -6099,9 +6111,9 @@
       </desc>
     </attribute>
 
-    <attribute name="videoRateControlMode" type="RecordingVideoRateControlMode">
+    <attribute name="videoRateControlMode" type="RecordingRateControlMode">
       <desc>
-        Determines the rate control mode. This setting cannot be changed
+        Determines the video rate control mode. This setting cannot be changed
         while recording is enabled.
       </desc>
     </attribute>
@@ -6115,9 +6127,9 @@
       </desc>
     </attribute>
 
-    <attribute name="videoScalingMethod" type="RecordingVideoScalingMethod">
+    <attribute name="videoScalingMode" type="RecordingVideoScalingMode">
       <desc>
-        Determines the video scaling method to use.
+        Determines the video scaling mode to use.
         This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
@@ -12391,7 +12403,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="3624830f-4ac4-404f-bc58-cf20ed8836b0"
+    uuid="068decf8-335d-4ec5-8265-ccfd910c4f9d"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12828,16 +12840,23 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedRecordingVSMethods" type="RecordingVideoScalingMethod" safearray="yes" readonly="yes">
+    <attribute name="supportedRecordingVSModes" type="RecordingVideoScalingMode" safearray="yes" readonly="yes">
       <desc>
-        Returns an array of officially supported values for enum <link to="RecordingVideoScalingMethod"/>,
+        Returns an array of officially supported values for enum <link to="RecordingVideoScalingMode"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
 
-    <attribute name="supportedRecordingVRCModes" type="RecordingVideoRateControlMode" safearray="yes" readonly="yes">
+    <attribute name="supportedRecordingARCModes" type="RecordingRateControlMode" safearray="yes" readonly="yes">
       <desc>
-        Returns an array of officially supported values for enum <link to="RecordingVideoRateControlMode"/>,
+        Returns an array of officially supported audio codec values for enum <link to="RecordingVideoRateControlMode"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingVRCModes" type="RecordingRateControlMode" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported video codec values for enum <link to="RecordingVideoRateControlMode"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>

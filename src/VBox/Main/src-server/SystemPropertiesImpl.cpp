@@ -1600,7 +1600,12 @@ HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<Recording
 #ifdef DEBUG
         RecordingAudioCodec_WavPCM,
 #endif
+#ifdef VBOX_WITH_LIBOPUS
         RecordingAudioCodec_Opus,
+#endif
+#ifdef VBOX_WITH_LIBVORBIS
+        RecordingAudioCodec_OggVorbis,
+#endif
     };
     aSupportedRecordingAudioCodecs.assign(aRecordingAudioCodecs,
                                           aRecordingAudioCodecs + RT_ELEMENTS(aRecordingAudioCodecs));
@@ -1622,30 +1627,46 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
     return S_OK;
 }
 
-HRESULT SystemProperties::getSupportedRecordingVSMethods(std::vector<RecordingVideoScalingMethod_T> &aSupportedRecordingVideoScalingMethods)
+HRESULT SystemProperties::getSupportedRecordingVSModes(std::vector<RecordingVideoScalingMode_T> &aSupportedRecordingVideoScalingModes)
 {
-    static const RecordingVideoScalingMethod_T aRecordingVideoScalingMethods[] =
+    static const RecordingVideoScalingMode_T aRecordingVideoScalingModes[] =
     {
-        RecordingVideoScalingMethod_None,
+        RecordingVideoScalingMode_None,
 #ifdef DEBUG
-        RecordingVideoScalingMethod_NearestNeighbor,
-        RecordingVideoScalingMethod_Bilinear,
-        RecordingVideoScalingMethod_Bicubic,
+        RecordingVideoScalingMode_NearestNeighbor,
+        RecordingVideoScalingMode_Bilinear,
+        RecordingVideoScalingMode_Bicubic,
 #endif
     };
-    aSupportedRecordingVideoScalingMethods.assign(aRecordingVideoScalingMethods,
-                                                  aRecordingVideoScalingMethods + RT_ELEMENTS(aRecordingVideoScalingMethods));
+    aSupportedRecordingVideoScalingModes.assign(aRecordingVideoScalingModes,
+                                                aRecordingVideoScalingModes + RT_ELEMENTS(aRecordingVideoScalingModes));
     return S_OK;
 }
 
-HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingVideoRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
+HRESULT SystemProperties::getSupportedRecordingARCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingAudioRateControlModes)
 {
-    static const RecordingVideoRateControlMode_T aRecordingVideoRateControlModes[] =
+    static const RecordingRateControlMode_T aRecordingAudioRateControlModes[] =
     {
-        RecordingVideoRateControlMode_CBR,
 #ifdef DEBUG
-        RecordingVideoRateControlMode_VBR,
+        RecordingRateControlMode_ABR,
+        RecordingRateControlMode_CBR,
 #endif
+        RecordingRateControlMode_VBR
+    };
+    aSupportedRecordingAudioRateControlModes.assign(aRecordingAudioRateControlModes,
+                                                    aRecordingAudioRateControlModes + RT_ELEMENTS(aRecordingAudioRateControlModes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
+{
+    static const RecordingRateControlMode_T aRecordingVideoRateControlModes[] =
+    {
+#ifdef DEBUG
+        RecordingRateControlMode_ABR,
+        RecordingRateControlMode_CBR,
+#endif
+        RecordingRateControlMode_VBR
     };
     aSupportedRecordingVideoRateControlModes.assign(aRecordingVideoRateControlModes,
                                                     aRecordingVideoRateControlModes + RT_ELEMENTS(aRecordingVideoRateControlModes));

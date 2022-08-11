@@ -559,7 +559,7 @@ HRESULT RecordingScreenSettings::getAudioCodec(RecordingAudioCodec_T *aCodec)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aCodec = m->bd->Audio.enmAudioCodec;
+    *aCodec = m->bd->Audio.enmCodec;
 
     return S_OK;
 }
@@ -577,10 +577,10 @@ HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->Audio.enmAudioCodec != aCodec)
+    if (m->bd->Audio.enmCodec != aCodec)
     {
         m->bd.backup();
-        m->bd->Audio.enmAudioCodec = aCodec;
+        m->bd->Audio.enmCodec = aCodec;
 
         alock.release();
 
@@ -623,6 +623,34 @@ HRESULT RecordingScreenSettings::setAudioDeadline(RecordingCodecDeadline_T aDead
     }
 
     return S_OK;
+}
+
+HRESULT RecordingScreenSettings::getAudioRateControlMode(RecordingRateControlMode_T *aMode)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aMode = RecordingRateControlMode_VBR; /** @todo Implement CBR. */
+
+    return S_OK;
+}
+
+HRESULT RecordingScreenSettings::setAudioRateControlMode(RecordingRateControlMode_T aMode)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    if (!m->pParent->i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio rate control mode while recording is enabled"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /** @todo Implement this. */
+    RT_NOREF(aMode);
+
+    return E_NOTIMPL;
 }
 
 HRESULT RecordingScreenSettings::getAudioHz(ULONG *aHz)
@@ -908,19 +936,19 @@ HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordingVideoRateControlMode_T *aMode)
+HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordingRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = RecordingVideoRateControlMode_CBR; /** @todo Implement VBR. */
+    *aMode = RecordingRateControlMode_VBR; /** @todo Implement CBR. */
 
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordingVideoRateControlMode_T aMode)
+HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordingRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -971,25 +999,25 @@ HRESULT RecordingScreenSettings::setVideoFPS(ULONG aVideoFPS)
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::getVideoScalingMethod(RecordingVideoScalingMethod_T *aMode)
+HRESULT RecordingScreenSettings::getVideoScalingMode(RecordingVideoScalingMode_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = RecordingVideoScalingMethod_None; /** @todo Implement this. */
+    *aMode = RecordingVideoScalingMode_None; /** @todo Implement this. */
 
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::setVideoScalingMethod(RecordingVideoScalingMethod_T aMode)
+HRESULT RecordingScreenSettings::setVideoScalingMode(RecordingVideoScalingMode_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video rate scaling method while recording is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video scaling mode while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

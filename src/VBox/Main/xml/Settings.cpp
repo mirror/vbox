@@ -3018,12 +3018,15 @@ void RecordingScreenSettings::applyDefaults(void)
     File.strName         = "";
     Video.enmCodec       = RecordingVideoCodec_VP8;
     Video.enmDeadline    = RecordingCodecDeadline_Default;
+    Video.enmRateCtlMode = RecordingRateControlMode_VBR;
+    Video.enmScalingMode = RecordingVideoScalingMode_None;
     Video.ulWidth        = 1024;
     Video.ulHeight       = 768;
     Video.ulRate         = 512;
     Video.ulFPS          = 25;
-    Audio.enmAudioCodec  = RecordingAudioCodec_Opus;
+    Audio.enmCodec       = RecordingAudioCodec_Opus;
     Audio.enmDeadline    = RecordingCodecDeadline_Default;
+    Audio.enmRateCtlMode = RecordingRateControlMode_VBR;
     Audio.cBits          = 16;
     Audio.cChannels      = 2;
     Audio.uHz            = 22050;
@@ -3051,12 +3054,15 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
            && File.strName                                    == ""
            && Video.enmCodec                                  == RecordingVideoCodec_VP8
            && Video.enmDeadline                               == RecordingCodecDeadline_Default
+           && Video.enmRateCtlMode                            == RecordingRateControlMode_VBR
+           && Video.enmScalingMode                            == RecordingVideoScalingMode_None
            && Video.ulWidth                                   == 1024
            && Video.ulHeight                                  == 768
            && Video.ulRate                                    == 512
            && Video.ulFPS                                     == 25
-           && Audio.enmAudioCodec                             == RecordingAudioCodec_Opus
+           && Audio.enmCodec                                  == RecordingAudioCodec_Opus
            && Audio.enmDeadline                               == RecordingCodecDeadline_Default
+           && Audio.enmRateCtlMode                            == RecordingRateControlMode_VBR
            && Audio.cBits                                     == 16
            && Audio.cChannels                                 == 2
            && Audio.uHz                                       == 22050
@@ -3099,7 +3105,7 @@ bool RecordingScreenSettings::operator==(const RecordingScreenSettings &d) const
            && Video.ulHeight      == d.Video.ulHeight
            && Video.ulRate        == d.Video.ulRate
            && Video.ulFPS         == d.Video.ulFPS
-           && Audio.enmAudioCodec == d.Audio.enmAudioCodec
+           && Audio.enmCodec      == d.Audio.enmCodec
            && Audio.enmDeadline   == d.Audio.enmDeadline
            && Audio.cBits         == d.Audio.cBits
            && Audio.cChannels     == d.Audio.cChannels
@@ -6251,9 +6257,9 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             RecordingScreenSettings &screenSettings = recording.mapScreens[idxScreen];
 
             (*itScreen)->getAttributeValue("enabled",   screenSettings.fEnabled);
-            Utf8Str strFeatures;
-            (*itScreen)->getAttributeValue("featuresEnabled", strFeatures);
-            RecordingScreenSettings::featuresFromString(strFeatures, screenSettings.featureMap);
+            Utf8Str strTemp;
+            (*itScreen)->getAttributeValue("featuresEnabled", strTemp);
+            RecordingScreenSettings::featuresFromString(strTemp, screenSettings.featureMap);
             (*itScreen)->getAttributeValue("maxTimeS",  screenSettings.ulMaxTimeS);
             (*itScreen)->getAttributeValue("options",   screenSettings.strOptions);
             (*itScreen)->getAttributeValue("dest",      (uint32_t &)screenSettings.enmDest);
@@ -6263,13 +6269,17 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
                 throw ConfigFileError(this, (*itScreen),
                                       N_("Not supported Recording/@dest attribute '%#x'"), screenSettings.enmDest);
             (*itScreen)->getAttributeValue("maxSizeMB", screenSettings.File.ulMaxSizeMB);
-
+            if ((*itScreen)->getAttributeValue("videoCodec", strTemp)) /* Stick with default if not set. */
+                RecordingScreenSettings::videoCodecFromString(strTemp, screenSettings.Video.enmCodec);
+            (*itScreen)->getAttributeValue("videoScalingMode", (uint32_t &)screenSettings.Video.enmScalingMode);
             (*itScreen)->getAttributeValue("videoDeadline", (uint32_t &)screenSettings.Video.enmDeadline);
             (*itScreen)->getAttributeValue("horzRes",       screenSettings.Video.ulWidth);
             (*itScreen)->getAttributeValue("vertRes",       screenSettings.Video.ulHeight);
             (*itScreen)->getAttributeValue("rateKbps",      screenSettings.Video.ulRate);
             (*itScreen)->getAttributeValue("fps",           screenSettings.Video.ulFPS);
 
+            if ((*itScreen)->getAttributeValue("audioCodec", strTemp)) /* Stick with default if not set. */
+                RecordingScreenSettings::audioCodecFromString(strTemp, screenSettings.Audio.enmCodec);
             (*itScreen)->getAttributeValue("audioDeadline", (uint32_t &)screenSettings.Audio.enmDeadline);
             (*itScreen)->getAttributeValue("audioHz",       (uint32_t &)screenSettings.Audio.uHz);
             (*itScreen)->getAttributeValue("audioBits",     (uint32_t &)screenSettings.Audio.cBits);
@@ -8285,8 +8295,10 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
         /* Note: elmParent is Machine or Snapshot. */
         xml::ElementNode *pelmRecording = elmParent.createChild("Recording");
 
-        if (recordingSettings.common.fEnabled)
+        if (!recordingSettings.common.areDefaultSettings())
+        {
             pelmRecording->setAttribute("enabled", recording.common.fEnabled);
+        }
 
         /* Only serialize screens which have non-default settings. */
         uint32_t cScreensToWrite = 0;
@@ -8311,9 +8323,9 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
 
                 pelmScreen->setAttribute("id",                  itScreen->first); /* The key equals the monitor ID. */
                 pelmScreen->setAttribute("enabled",             itScreen->second.fEnabled);
-                com::Utf8Str strFeatures;
-                RecordingScreenSettings::featuresToString(itScreen->second.featureMap, strFeatures);
-                pelmScreen->setAttribute("featuresEnabled",     strFeatures);
+                com::Utf8Str strTemp;
+                RecordingScreenSettings::featuresToString(itScreen->second.featureMap, strTemp);
+                pelmScreen->setAttribute("featuresEnabled",     strTemp);
                 if (itScreen->second.ulMaxTimeS)
                     pelmScreen->setAttribute("maxTimeS",        itScreen->second.ulMaxTimeS);
                 if (itScreen->second.strOptions.isNotEmpty())
@@ -8324,8 +8336,12 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 if (itScreen->second.File.ulMaxSizeMB)
                     pelmScreen->setAttribute("maxSizeMB",       itScreen->second.File.ulMaxSizeMB);
 
+                RecordingScreenSettings::videoCodecToString(itScreen->second.Video.enmCodec, strTemp);
+                pelmScreen->setAttribute("videoCodec",          strTemp);
                 if (itScreen->second.Video.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("videoDeadline",   itScreen->second.Video.enmDeadline);
+                if (itScreen->second.Video.enmScalingMode != RecordingVideoScalingMode_None)
+                    pelmScreen->setAttribute("videoScalingMode",itScreen->second.Video.enmScalingMode);
                 if (   itScreen->second.Video.ulWidth  != 1024
                     || itScreen->second.Video.ulHeight != 768)
                 {
@@ -8337,6 +8353,8 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 if (itScreen->second.Video.ulFPS)
                     pelmScreen->setAttribute("fps",             itScreen->second.Video.ulFPS);
 
+                RecordingScreenSettings::audioCodecToString(itScreen->second.Audio.enmCodec, strTemp);
+                pelmScreen->setAttribute("audioCodec",          strTemp);
                 if (itScreen->second.Audio.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("audioDeadline",   itScreen->second.Audio.enmDeadline);
                 if (itScreen->second.Audio.uHz != 22050)
@@ -8355,8 +8373,10 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
         /* Note: elmParent is Hardware or Snapshot. */
         xml::ElementNode *pelmVideoCapture = elmParent.createChild("VideoCapture");
 
-        if (recording.common.fEnabled)
+        if (!recordingSettings.common.areDefaultSettings())
+        {
             pelmVideoCapture->setAttribute("enabled", recording.common.fEnabled);
+        }
 
         /* Convert the enabled screens to the former uint64_t bit array and vice versa. */
         uint64_t uScreensBitmap = 0;

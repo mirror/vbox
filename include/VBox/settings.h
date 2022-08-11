@@ -679,9 +679,12 @@ struct RecordingScreenSettings
     struct Audio
     {
         /** The audio codec type to use. */
-        RecordingAudioCodec_T    enmAudioCodec; // requires settings version 1.19 (VirtualBox 7.0)
+        RecordingAudioCodec_T    enmCodec;      // requires settings version 1.19 (VirtualBox 7.0)
         /** Codec deadline to use. */
         RecordingCodecDeadline_T enmDeadline;   // requires settings version 1.19 (VirtualBox 7.0)
+        /** Rate control mode to use. */
+        RecordingRateControlMode_T
+                                 enmRateCtlMode;// requires settings version 1.19 (VirtualBox 7.0)
         /** Hz rate. */
         uint16_t                 uHz;           // requires settings version 1.19 (VirtualBox 7.0)
         /** Bits per sample. */
@@ -699,8 +702,14 @@ struct RecordingScreenSettings
         RecordingVideoCodec_T    enmCodec;    // requires settings version 1.19 (VirtualBox 7.0)
         /** Codec deadline to use. */
         RecordingCodecDeadline_T enmDeadline; // requires settings version 1.19 (VirtualBox 7.0)
+        /** Rate control mode to use. */
+        RecordingRateControlMode_T
+                                 enmRateCtlMode; // requires settings version 1.19 (VirtualBox 7.0)
+        /** Rate control mode to use. */
+        RecordingVideoScalingMode_T
+                                 enmScalingMode; // requires settings version 1.19 (VirtualBox 7.0)
         /** Target frame width in pixels (X). */
-            uint32_t             ulWidth;     // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t                 ulWidth;     // requires settings version 1.14 (VirtualBox 4.3)
         /** Target frame height in pixels (Y). */
         uint32_t                 ulHeight;    // requires settings version 1.14 (VirtualBox 4.3)
         /** Encoding rate. */
