@@ -97,7 +97,7 @@ int         RT_NOCRT(atoi)(const char *psz);
 double      RT_NOCRT(strtod)(const char *psz, char **ppszNext);
 double      RT_NOCRT(atof)(const char *psz);
 void       *RT_NOCRT(bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
-                              int (*pfnCompare)(const void *pv1, const void *pv2));
+                              int (*pfnCompare)(const void *pvKey, const void *pvEntry));
 void        RT_NOCRT(qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
                             int (*pfnCompare)(const void *pv1, const void *pv2));
 void        RT_NOCRT(qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
