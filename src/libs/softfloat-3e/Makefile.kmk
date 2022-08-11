@@ -20,7 +20,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_SOFTFLOAT_SPECIALIZATION := 8086
 
-LIBRARIES += VBox-SoftFloat
+ifndef defined(VBOX_ONLY_ADDITIONS)
+ LIBRARIES += VBox-SoftFloat
+endif
 VBox-SoftFloat_TEMPLATE    := VBoxR3DllNonPedantic
 VBox-SoftFloat_DEFS        := \
 	INLINE_LEVEL=5
@@ -349,7 +351,7 @@ VBox-SoftFloat_SOURCES += \
 #
 # Ring-0 version of the above (has different compiler settings).
 #
-if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
+if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_ADDITIONS)
  LIBRARIES += VBox-SoftFloatR0
 endif
 VBox-SoftFloatR0_EXTENDS   := VBox-SoftFloat
@@ -371,6 +373,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
 LIBRARIES.win += VBox-SoftFloatGuestR3Shared
 VBox-SoftFloatGuestR3Shared_TEMPLATE    := NewerVccVBoxGuestR3Dll
 VBox-SoftFloatGuestR3Shared_EXTENDS     := VBox-SoftFloat
+VBox-SoftFloatGuestR3Shared_INST         = $(INST_ADDITIONS_LIB)
 
 # -wd4389: f64_to_i64_r_minMag.c(93): warning C4389: '!=': signed/unsigned mismatch
 VBox-SoftFloatGuestR3Shared_CFLAGS.win  := $(VBox-SoftFloat_CFLAGS.win) -wd4245 -wd4389
