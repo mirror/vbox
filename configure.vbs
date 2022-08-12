@@ -2211,8 +2211,10 @@ function Main
    end if
    CheckForQt           strOptQt5, strOptQt5Infix
    CheckForPython       strOptPython
-   CfgPrintAssign "VBOX_WITH_LIBVPX",  "" '' @todo look for libvpx 1.1.0+
-   CfgPrintAssign "VBOX_WITH_LIBOPUS", "" '' @todo look for libopus 1.2.1+
+   CfgPrintAssign "VBOX_WITH_LIBVPX",    "" '' @todo look for libvpx 1.1.0+
+   CfgPrintAssign "VBOX_WITH_LIBOPUS",   "" '' @todo look for libopus 1.2.1+
+   CfgPrintAssign "VBOX_WITH_LIBOGG",    "" '' @todo look for libogg 1.3.5+
+   CfgPrintAssign "VBOX_WITH_LIBVORBIS", "" '' @todo look for libvorbis 1.3.7+
 
    EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win." & g_strHostArch & "\bin"), ";"
    if g_strHostArch = "amd64" then

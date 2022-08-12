@@ -101,12 +101,13 @@ struct RecordingBlockSet
 
 /**
  * Class for managing a recording stream.
+ *
+ * A recording stream represents one entity to record (e.g. on screen / monitor),
+ * so there is a 1:1 mapping (stream <-> monitors).
  */
 class RecordingStream
 {
 public:
-
-    RecordingStream(RecordingContext *pCtx);
 
     RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
 
@@ -123,8 +124,16 @@ public:
 
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->uScreenID; };
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    const PRECORDINGCODEC GetAudioCodec(void) { return &this->CodecAudio; };
+#endif
+    const PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
     bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
+
+protected:
+
+    static int codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser);
 
 protected:
 
@@ -134,23 +143,16 @@ protected:
     int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
     int uninitInternal(void);
 
-    int initVideo(void);
+    int initVideo(const settings::RecordingScreenSettings &Settings);
     int unitVideo(void);
 
-    int initAudio(void);
+    int initAudio(const settings::RecordingScreenSettings &Settings);
 
     bool isLimitReachedInternal(uint64_t msTimestamp) const;
     int iterateInternal(uint64_t msTimestamp);
 
-#ifdef VBOX_WITH_LIBVPX
-    int initVideoVPX(void);
-    int uninitVideoVPX(void);
-    int writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pFrame);
-#endif
     void lock(void);
     void unlock(void);
-
-    int parseOptionsString(const com::Utf8Str &strOptions);
 
 protected:
 
@@ -179,11 +181,11 @@ protected:
         WebMWriter         *pWEBM;
     } File;
     bool                fEnabled;
-#ifdef VBOX_WITH_AUDIO_RECORDING
-    /** Track number of audio stream. */
+    /** Track number of audio stream.
+     *  Set to UINT8_MAX if not being used. */
     uint8_t             uTrackAudio;
-#endif
-    /** Track number of video stream. */
+    /** Track number of video stream.
+     *  Set to UINT8_MAX if not being used. */
     uint8_t             uTrackVideo;
     /** Screen ID. */
     uint16_t            uScreenID;
@@ -192,18 +194,13 @@ protected:
     /** Timestamp (in ms) of when recording has been start. */
     uint64_t            tsStartMs;
 
-    struct
-    {
-        /** Minimal delay (in ms) between two video frames.
-         *  This value is based on the configured FPS rate. */
-        uint32_t            uDelayMs;
-        /** Timestamp (in ms) of the last video frame we encoded. */
-        uint64_t            uLastTimeStampMs;
-        /** Number of failed attempts to encode the current video frame in a row. */
-        uint16_t            cFailedEncodingFrames;
-        RECORDINGVIDEOCODEC Codec;
-    } Video;
-
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    /** Audio codec instance data to use. */
+    RECORDINGCODEC                    CodecAudio;
+#endif
+    /** Video codec instance data to use. */
+    RECORDINGCODEC                    CodecVideo;
+    /** Screen settings to use. */
     settings::RecordingScreenSettings ScreenSettings;
     /** Common set of recording (data) blocks, needed for
      *  multiplexing to all recording streams. */

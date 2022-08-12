@@ -27,32 +27,24 @@
 # include <iprt/formats/bmp.h>
 #endif
 
+#ifdef VBOX_WITH_AUDIO_RECORDING
+# include <VBox/vmm/pdmaudioinline.h>
+#endif
+
 #include "Recording.h"
 #include "RecordingUtils.h"
 #include "WebMWriter.h"
 
 
-RecordingStream::RecordingStream(RecordingContext *a_pCtx)
-    : pCtx(a_pCtx)
-    , enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
-    , tsStartMs(0)
-    , ScreenSettings(UINT32_MAX)
-{
-    File.pWEBM = NULL;
-    File.hFile = NIL_RTFILE;
-}
-
 RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
     : enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
-    , tsStartMs(0)
-    , ScreenSettings(uScreen)
 {
-    File.pWEBM = NULL;
-    File.hFile = NIL_RTFILE;
-
     int vrc2 = initInternal(a_pCtx, uScreen, Settings);
     if (RT_FAILURE(vrc2))
+    {
+        LogRel(("Recording: Initialization failed with %Rrc\n", vrc2));
         throw vrc2;
+    }
 }
 
 RecordingStream::~RecordingStream(void)
@@ -172,76 +164,6 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
-}
-
-/**
- * Parses an options string to configure advanced / hidden / experimental features of a recording stream.
- * Unknown values will be skipped.
- *
- * @returns IPRT status code.
- * @param   strOptions          Options string to parse.
- */
-int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
-{
-    size_t pos = 0;
-    com::Utf8Str key, value;
-    while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
-    {
-        if (key.compare("vc_quality", com::Utf8Str::CaseInsensitive) == 0)
-        {
-#ifdef VBOX_WITH_LIBVPX
-            Assert(this->ScreenSettings.Video.ulFPS);
-            if (value.compare("realtime", com::Utf8Str::CaseInsensitive) == 0)
-                this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
-            else if (value.compare("good", com::Utf8Str::CaseInsensitive) == 0)
-                this->Video.Codec.VPX.uEncoderDeadline = 1000000 / this->ScreenSettings.Video.ulFPS;
-            else if (value.compare("best", com::Utf8Str::CaseInsensitive) == 0)
-                this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
-            else
-            {
-                this->Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
-#endif
-            }
-        }
-        else if (key.compare("vc_enabled", com::Utf8Str::CaseInsensitive) == 0)
-        {
-            if (value.compare("false", com::Utf8Str::CaseInsensitive) == 0)
-                this->ScreenSettings.featureMap[RecordingFeature_Video] = false;
-        }
-        else if (key.compare("ac_enabled", com::Utf8Str::CaseInsensitive) == 0)
-        {
-#ifdef VBOX_WITH_AUDIO_RECORDING
-            if (value.compare("true", com::Utf8Str::CaseInsensitive) == 0)
-                this->ScreenSettings.featureMap[RecordingFeature_Audio] = true;
-#endif
-        }
-        else if (key.compare("ac_profile", com::Utf8Str::CaseInsensitive) == 0)
-        {
-#ifdef VBOX_WITH_AUDIO_RECORDING
-            if (value.compare("low", com::Utf8Str::CaseInsensitive) == 0)
-            {
-                this->ScreenSettings.Audio.uHz       = 8000;
-                this->ScreenSettings.Audio.cBits     = 16;
-                this->ScreenSettings.Audio.cChannels = 1;
-            }
-            else if (value.startsWith("med" /* "med[ium]" */, com::Utf8Str::CaseInsensitive) == 0)
-            {
-                /* Stay with the default set above. */
-            }
-            else if (value.compare("high", com::Utf8Str::CaseInsensitive) == 0)
-            {
-                this->ScreenSettings.Audio.uHz       = 48000;
-                this->ScreenSettings.Audio.cBits     = 16;
-                this->ScreenSettings.Audio.cChannels = 2;
-            }
-#endif
-        }
-        else
-            LogRel(("Recording: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
-
-    } /* while */
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -399,25 +321,18 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
             RecordingBlock *pBlock = pBlocks->List.front();
             AssertPtr(pBlock);
 
-#ifdef VBOX_WITH_LIBVPX
             if (pBlock->enmType == RECORDINGBLOCKTYPE_VIDEO)
             {
-                PRECORDINGVIDEOFRAME pVideoFrame  = (PRECORDINGVIDEOFRAME)pBlock->pvData;
+                RECORDINGFRAME Frame;
+                Frame.VideoPtr    = (PRECORDINGVIDEOFRAME)pBlock->pvData;
+                Frame.msTimestamp = msTimestamp;
 
-                int vrc2 = RecordingUtilsRGBToYUV(pVideoFrame->uPixelFormat,
-                                                  /* Destination */
-                                                  this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                                  /* Source */
-                                                  pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
-                if (RT_SUCCESS(vrc2))
-                {
-                    vrc2 = writeVideoVPX(msTimestamp, pVideoFrame);
-                    AssertRC(vrc2);
-                    if (RT_SUCCESS(vrc))
-                        vrc = vrc2;
-                }
+                int vrc2 = recordingCodecEncode(&this->CodecVideo, &Frame, NULL, 0, NULL, NULL);
+                AssertRC(vrc2);
+                if (RT_SUCCESS(vrc))
+                    vrc = vrc2;
             }
-#endif /* VBOX_WITH_LIBVPX */
+
             pBlocks->List.pop_front();
             delete pBlock;
         }
@@ -450,8 +365,8 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
                     AssertPtr(pAudioFrame->pvBuf);
                     Assert(pAudioFrame->cbBuf);
 
-                    WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
-                                                             pBlockCommon->msTimestamp };
+                    WebMWriter::BlockData_Audio blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
+                                                              pBlockCommon->msTimestamp };
                     AssertPtr(this->File.pWEBM);
                     int vrc2 = this->File.pWEBM->WriteBlock(this->uTrackAudio, &blockData, sizeof(blockData));
                     AssertRC(vrc2);
@@ -522,6 +437,8 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     LogFlowFunc(("msTimestamp=%RU64\n", msTimestamp));
 
+    PRECORDINGCODEC pCodec = &this->CodecVideo;
+
     PRECORDINGVIDEOFRAME pFrame = NULL;
 
     int vrc = iterateInternal(msTimestamp);
@@ -533,13 +450,13 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     do
     {
-        if (msTimestamp < this->Video.uLastTimeStampMs + this->Video.uDelayMs)
+        if (msTimestamp < pCodec->uLastTimeStampMs + pCodec->Parms.Video.uDelayMs)
         {
             vrc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
             break;
         }
 
-        this->Video.uLastTimeStampMs = msTimestamp;
+        pCodec->uLastTimeStampMs = msTimestamp;
 
         int xDiff = ((int)this->ScreenSettings.Video.ulWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
@@ -758,21 +675,25 @@ int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const sett
  */
 int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
 {
+    AssertReturn(enmState == RECORDINGSTREAMSTATE_UNINITIALIZED, VERR_WRONG_ORDER);
+
     this->pCtx           = a_pCtx;
+    this->uTrackAudio    = UINT8_MAX;
+    this->uTrackVideo    = UINT8_MAX;
+    this->tsStartMs      = 0;
     this->uScreenID      = uScreen;
     this->ScreenSettings = Settings;
 
-    int vrc = parseOptionsString(this->ScreenSettings.strOptions);
-    if (RT_FAILURE(vrc))
-        return vrc;
-
     settings::RecordingScreenSettings *pSettings = &this->ScreenSettings;
 
-    vrc = RTCritSectInit(&this->CritSect);
+    int vrc = RTCritSectInit(&this->CritSect);
     if (RT_FAILURE(vrc))
         return vrc;
 
-    vrc = open(this->ScreenSettings);
+    this->File.pWEBM = NULL;
+    this->File.hFile = NIL_RTFILE;
+
+    vrc = open(*pSettings);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -781,19 +702,19 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 
     if (fVideoEnabled)
     {
-        vrc = initVideo();
+        vrc = initVideo(*pSettings);
         if (RT_FAILURE(vrc))
             return vrc;
     }
 
     if (fAudioEnabled)
     {
-        vrc = initAudio();
+        vrc = initAudio(*pSettings);
         if (RT_FAILURE(vrc))
             return vrc;
     }
 
-    switch (this->ScreenSettings.enmDest)
+    switch (pSettings->enmDest)
     {
         case RecordingDestination_File:
         {
@@ -803,11 +724,11 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
             AssertPtr(File.pWEBM);
             vrc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                                     fAudioEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
+                                     fAudioEnabled ? pSettings->Audio.enmCodec : RecordingAudioCodec_None,
 #else
-                                     WebMWriter::AudioCodec_None,
+                                     RecordingAudioCodec_None,
 #endif
-                                     fVideoEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+                                     fVideoEnabled ? pSettings->Video.enmCodec : RecordingVideoCodec_None);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Failed to create output file '%s' (%Rrc)\n", pszFile, vrc));
@@ -816,7 +737,8 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 
             if (fVideoEnabled)
             {
-                vrc = this->File.pWEBM->AddVideoTrack(pSettings->Video.ulWidth, pSettings->Video.ulHeight, pSettings->Video.ulFPS,
+                vrc = this->File.pWEBM->AddVideoTrack(&this->CodecVideo,
+                                                      pSettings->Video.ulWidth, pSettings->Video.ulHeight, pSettings->Video.ulFPS,
                                                       &this->uTrackVideo);
                 if (RT_FAILURE(vrc))
                 {
@@ -832,7 +754,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 #ifdef VBOX_WITH_AUDIO_RECORDING
             if (fAudioEnabled)
             {
-                vrc = this->File.pWEBM->AddAudioTrack(pSettings->Audio.uHz, pSettings->Audio.cChannels, pSettings->Audio.cBits,
+                vrc = this->File.pWEBM->AddAudioTrack(&this->CodecAudio, pSettings->Audio.uHz, pSettings->Audio.cChannels, pSettings->Audio.cBits,
                                                       &this->uTrackAudio);
                 if (RT_FAILURE(vrc))
                 {
@@ -998,226 +920,97 @@ int RecordingStream::uninitInternal(void)
         return vrc;
 
     if (this->ScreenSettings.isFeatureEnabled(RecordingFeature_Video))
+        vrc = recordingCodecDestroy(&this->CodecVideo);
+
+    if (RT_SUCCESS(vrc))
     {
-        int vrc2 = unitVideo();
-        if (RT_SUCCESS(vrc))
-            vrc = vrc2;
+        RTCritSectDelete(&this->CritSect);
+
+        this->enmState = RECORDINGSTREAMSTATE_UNINITIALIZED;
+        this->fEnabled = false;
     }
-
-    RTCritSectDelete(&this->CritSect);
-
-    this->enmState = RECORDINGSTREAMSTATE_UNINITIALIZED;
-    this->fEnabled = false;
 
     return vrc;
 }
 
-/**
- * Uninitializes video recording for a recording stream.
- *
- * @returns IPRT status code.
- */
-int RecordingStream::unitVideo(void)
+/* static */
+int RecordingStream::codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser)
 {
-#ifdef VBOX_WITH_LIBVPX
-    /* At the moment we only have VPX. */
-    return uninitVideoVPX();
-#else
-    return VERR_NOT_SUPPORTED;
-#endif
+    RT_NOREF(pCodec);
+
+    RecordingStream *pThis = (RecordingStream *)pvUser;
+    AssertPtr(pThis);
+
+    AssertPtr(pThis->File.pWEBM);
+    return pThis->File.pWEBM->WriteBlock(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO
+                                         ? pThis->uTrackAudio : pThis->uTrackVideo, pvData, cbData);
 }
-
-#ifdef VBOX_WITH_LIBVPX
-/**
- * Uninitializes the VPX codec for a recording stream.
- *
- * @returns IPRT status code.
- */
-int RecordingStream::uninitVideoVPX(void)
-{
-    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
-    vpx_img_free(&pCodec->VPX.RawImage);
-    pCodec->VPX.pu8YuvBuf = NULL; /* Was pointing to VPX.RawImage. */
-
-    vpx_codec_err_t rcv = vpx_codec_destroy(&this->Video.Codec.VPX.Ctx);
-    Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
-
-    return VINF_SUCCESS;
-}
-#endif
 
 /**
  * Initializes the video recording for a recording stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @param   Settings            Settings to use.
  */
-int RecordingStream::initVideo(void)
+int RecordingStream::initVideo(const settings::RecordingScreenSettings &Settings)
 {
     /* Sanity. */
-    AssertReturn(this->ScreenSettings.Video.ulRate,   VERR_INVALID_PARAMETER);
-    AssertReturn(this->ScreenSettings.Video.ulWidth,  VERR_INVALID_PARAMETER);
-    AssertReturn(this->ScreenSettings.Video.ulHeight, VERR_INVALID_PARAMETER);
-    AssertReturn(this->ScreenSettings.Video.ulFPS,    VERR_INVALID_PARAMETER);
+    AssertReturn(Settings.Video.ulRate,   VERR_INVALID_PARAMETER);
+    AssertReturn(Settings.Video.ulWidth,  VERR_INVALID_PARAMETER);
+    AssertReturn(Settings.Video.ulHeight, VERR_INVALID_PARAMETER);
+    AssertReturn(Settings.Video.ulFPS,    VERR_INVALID_PARAMETER);
 
-    this->Video.cFailedEncodingFrames = 0;
-    this->Video.uLastTimeStampMs      = 0;
-    this->Video.uDelayMs              = RT_MS_1SEC / this->ScreenSettings.Video.ulFPS;
+    PRECORDINGCODEC pCodec = &this->CodecVideo;
 
-    int vrc;
+    RECORDINGCODECCALLBACKS Callbacks;
+    Callbacks.pvUser       = this;
+    Callbacks.pfnWriteData = RecordingStream::codecWriteDataCallback;
 
-#ifdef VBOX_WITH_LIBVPX
-    /* At the moment we only have VPX. */
-    vrc = initVideoVPX();
-#else
-    vrc = VERR_NOT_SUPPORTED;
-#endif
+    int vrc = recordingCodecCreateVideo(pCodec, Settings.Video.enmCodec);
+    if (RT_SUCCESS(vrc))
+        vrc = recordingCodecInit(pCodec, &Callbacks, Settings);
 
     if (RT_FAILURE(vrc))
-        LogRel(("Recording: Failed to initialize video encoding (%Rrc)\n", vrc));
+        LogRel(("Recording: Initializing video codec failed with %Rrc\n", vrc));
 
     return vrc;
 }
-
-#ifdef VBOX_WITH_LIBVPX
-/**
- * Initializes the VPX codec for a recording stream.
- *
- * @returns IPRT status code.
- */
-int RecordingStream::initVideoVPX(void)
-{
-# ifdef VBOX_WITH_LIBVPX_VP9
-    vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
-# else /* Default is using VP8. */
-    vpx_codec_iface_t *pCodecIface = vpx_codec_vp8_cx();
-# endif
-
-    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
-
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(pCodecIface, &pCodec->VPX.Cfg, 0 /* Reserved */);
-    if (rcv != VPX_CODEC_OK)
-    {
-        LogRel(("Recording: Failed to get default config for VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_RECORDING_CODEC_INIT_FAILED;
-    }
-
-    /* Target bitrate in kilobits per second. */
-    pCodec->VPX.Cfg.rc_target_bitrate = this->ScreenSettings.Video.ulRate;
-    /* Frame width. */
-    pCodec->VPX.Cfg.g_w = this->ScreenSettings.Video.ulWidth;
-    /* Frame height. */
-    pCodec->VPX.Cfg.g_h = this->ScreenSettings.Video.ulHeight;
-    /* 1ms per frame. */
-    pCodec->VPX.Cfg.g_timebase.num = 1;
-    pCodec->VPX.Cfg.g_timebase.den = 1000;
-    /* Disable multithreading. */
-    pCodec->VPX.Cfg.g_threads = 0;
-
-    /* Initialize codec. */
-    rcv = vpx_codec_enc_init(&pCodec->VPX.Ctx, pCodecIface, &pCodec->VPX.Cfg, 0 /* Flags */);
-    if (rcv != VPX_CODEC_OK)
-    {
-        LogRel(("Recording: Failed to initialize VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_RECORDING_CODEC_INIT_FAILED;
-    }
-
-    if (!vpx_img_alloc(&pCodec->VPX.RawImage, VPX_IMG_FMT_I420,
-                       this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight, 1))
-    {
-        LogRel(("Recording: Failed to allocate image %RU32x%RU32\n",
-                this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight));
-        return VERR_NO_MEMORY;
-    }
-
-    /* Save a pointer to the first raw YUV plane. */
-    pCodec->VPX.pu8YuvBuf = pCodec->VPX.RawImage.planes[0];
-
-    return VINF_SUCCESS;
-}
-#endif
 
 /**
  * Initializes the audio part of a recording stream,
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the selected codec is not supported / available.
+ * @param   Settings            Settings to use.
  */
-int RecordingStream::initAudio(void)
+int RecordingStream::initAudio(const settings::RecordingScreenSettings &Settings)
 {
-#ifdef VBOX_WITH_AUDIO_RECORDING
-    if (this->ScreenSettings.isFeatureEnabled(RecordingFeature_Audio))
+    if (Settings.Audio.enmCodec == RecordingAudioCodec_None)
+        return VINF_SUCCESS;
+
+    if (Settings.isFeatureEnabled(RecordingFeature_Audio))
     {
         /* Sanity. */
-        AssertReturn(this->ScreenSettings.Audio.uHz,       VERR_INVALID_PARAMETER);
-        AssertReturn(this->ScreenSettings.Audio.cBits,     VERR_INVALID_PARAMETER);
-        AssertReturn(this->ScreenSettings.Audio.cChannels, VERR_INVALID_PARAMETER);
-    }
-#endif
-
-    return VINF_SUCCESS;
-}
-
-#ifdef VBOX_WITH_LIBVPX
-/**
- * Encodes the source image and write the encoded image to the stream's destination.
- *
- * @returns IPRT status code.
- * @param   msTimestamp         Absolute timestamp (PTS) of frame (in ms) to encode.
- * @param   pFrame              Frame to encode and submit.
- */
-int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pFrame)
-{
-    AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
-
-    int vrc;
-
-    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
-
-    /* Presentation TimeStamp (PTS). */
-    vpx_codec_pts_t pts = msTimestamp;
-    vpx_codec_err_t rcv = vpx_codec_encode(&pCodec->VPX.Ctx,
-                                           &pCodec->VPX.RawImage,
-                                           pts                          /* Timestamp */,
-                                           this->Video.uDelayMs         /* How long to show this frame */,
-                                           0                            /* Flags */,
-                                           pCodec->VPX.uEncoderDeadline /* Quality setting */);
-    if (rcv != VPX_CODEC_OK)
-    {
-        if (this->Video.cFailedEncodingFrames++ < 64) /** @todo Make this configurable. */
-        {
-            LogRel(("Recording: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
-            return VERR_GENERAL_FAILURE;
-        }
+        AssertReturn(Settings.Audio.uHz,       VERR_INVALID_PARAMETER);
+        AssertReturn(Settings.Audio.cBits,     VERR_INVALID_PARAMETER);
+        AssertReturn(Settings.Audio.cChannels, VERR_INVALID_PARAMETER);
     }
 
-    this->Video.cFailedEncodingFrames = 0;
+    PRECORDINGCODEC pCodec = &this->CodecAudio;
 
-    vpx_codec_iter_t iter = NULL;
-    vrc = VERR_NO_DATA;
-    for (;;)
-    {
-        const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pCodec->VPX.Ctx, &iter);
-        if (!pPacket)
-            break;
+    RECORDINGCODECCALLBACKS Callbacks;
+    Callbacks.pvUser       = this;
+    Callbacks.pfnWriteData = RecordingStream::codecWriteDataCallback;
 
-        switch (pPacket->kind)
-        {
-            case VPX_CODEC_CX_FRAME_PKT:
-            {
-                WebMWriter::BlockData_VP8 blockData = { &pCodec->VPX.Cfg, pPacket };
-                vrc = this->File.pWEBM->WriteBlock(this->uTrackVideo, &blockData, sizeof(blockData));
-                break;
-            }
+    int vrc = recordingCodecCreateAudio(pCodec, Settings.Audio.enmCodec);
+    if (RT_SUCCESS(vrc))
+        vrc = recordingCodecInit(pCodec, &Callbacks, Settings);
 
-            default:
-                AssertFailed();
-                LogFunc(("Unexpected video packet type %ld\n", pPacket->kind));
-                break;
-        }
-    }
+    if (RT_FAILURE(vrc))
+        LogRel(("Recording: Initializing audio codec failed with %Rrc\n", vrc));
 
     return vrc;
 }
-#endif /* VBOX_WITH_LIBVPX */
 
 /**
  * Locks a recording stream.

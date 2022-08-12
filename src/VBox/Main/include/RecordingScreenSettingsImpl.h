@@ -123,10 +123,6 @@ private:
 
 private:
 
-    static int i_parseOptionsString(const com::Utf8Str &strOptions, settings::RecordingScreenSettings &screenSettings);
-
-private:
-
     struct Data;
     Data *m;
 };

@@ -6001,24 +6001,6 @@
         settings, and are subject to change.</para>
 
         This setting cannot be changed while recording is enabled.
-
-        The following keys and their corresponding values are available:
-
-        <table>
-          <tr>
-            <td>vc_enabled</td>
-            <td>Enables video recording when set to <pre>true</pre>, otherwise
-                set to <pre>false</pre> to disable.</td>
-          </tr>
-          <tr>
-            <td>ac_enabled</td>
-            <td>Enables audio recording when set to <pre>true</pre>, otherwise
-                set to <pre>false</pre> to disable.
-
-                <b>This feature is considered being experimental.</b></td>
-          </tr>
-        </table>
-
       </desc>
     </attribute>
 

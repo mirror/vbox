@@ -21,15 +21,20 @@
 # pragma once
 #endif
 
+#include <iprt/buildconfig.h>
+#include <iprt/mem.h>
+#include <iprt/rand.h>
+#include <iprt/string.h>
+
+#include "VBox/com/VirtualBox.h"
+#include <VBox/version.h>
+
 #include "EBMLWriter.h"
 #include "EBML_MKV.h"
 
 #include <queue>
 #include <map>
 #include <list>
-
-#include <iprt/mem.h>
-#include <iprt/rand.h>
 
 #ifdef VBOX_WITH_LIBVPX
 # ifdef _MSC_VER
@@ -94,6 +99,38 @@
 # pragma pack(pop)
 #endif /* VBOX_WITH_LIBOPUS */
 
+#ifdef VBOX_WITH_LIBVORBIS
+# pragma pack(push)
+# pragma pack(1)
+    /** Ogg Vorbis codec private data within the MKV (WEBM) container.
+     *  Taken from: https://www.matroska.org/technical/codec_specs.html */
+    typedef struct WEBMOGGVORBISPRIVDATA
+    {
+        WEBMOGGVORBISPRIVDATA(uint32_t a_cbHdrIdent, uint32_t a_cbHdrComments, uint32_t a_cbHdrSetup)
+            : cbHdrIdent(a_cbHdrIdent)
+            , cbHdrComments(a_cbHdrComments)
+        {
+            /* We supply 3 headers total: The "real" header, comments header + setup header. */
+            cHeaders = 3 /* Headers */ - 1; /* Note: Always "minus one" here. */
+
+            Assert(a_cbHdrIdent    <= UINT8_MAX);
+            Assert(a_cbHdrComments <= UINT8_MAX);
+            Assert(a_cbHdrSetup    <= _8K);
+            Assert(a_cbHdrIdent + a_cbHdrComments + a_cbHdrSetup <= sizeof(abHdr));
+        }
+
+        /** Number of private headers - 1. */
+        uint8_t  cHeaders;
+        /** Size of identification header (in bytes). */
+        uint8_t  cbHdrIdent;
+        /** < Size of comments header (in bytes). */
+        uint8_t  cbHdrComments;
+        /** < Header code area. */
+        uint8_t  abHdr[UINT8_MAX /* Header */ + UINT8_MAX /* Comments header */ + _8K /* Setup header */];
+
+    } WEBMOGGVORBISPRIVDATA, *PWEBMOGGVORBISPRIVDATA;
+# pragma pack(pop)
+#endif
 
 class WebMWriter : public EBMLWriter
 {
@@ -108,28 +145,6 @@ public:
 
     /** Defines the WebM block flags data type. */
     typedef uint8_t  WebMBlockFlags;
-
-    /**
-     * Supported audio codecs.
-     */
-    enum AudioCodec
-    {
-        /** No audio codec specified. */
-        AudioCodec_None = 0,
-        /** Opus. */
-        AudioCodec_Opus = 1
-    };
-
-    /**
-     * Supported video codecs.
-     */
-    enum VideoCodec
-    {
-        /** No video codec specified. */
-        VideoCodec_None = 0,
-        /** VP8. */
-        VideoCodec_VP8  = 1
-    };
 
     /**
      * Track type enumeration.
@@ -248,8 +263,9 @@ public:
      */
     struct WebMTrack
     {
-        WebMTrack(WebMTrackType a_enmType, uint8_t a_uTrack, uint64_t a_offID)
+        WebMTrack(WebMTrackType a_enmType, PRECORDINGCODEC pTheCodec, uint8_t a_uTrack, uint64_t a_offID)
             : enmType(a_enmType)
+            , pCodec(pTheCodec)
             , uTrack(a_uTrack)
             , offUUID(a_offID)
             , cTotalBlocks(0)
@@ -259,7 +275,9 @@ public:
         }
 
         /** The type of this track. */
-        WebMTrackType enmType;
+        WebMTrackType   enmType;
+        /** Pointer to codec data to use. */
+        PRECORDINGCODEC pCodec;
         /** Track parameters. */
         union
         {
@@ -486,9 +504,9 @@ public:
     } CurSeg;
 
     /** Audio codec to use. */
-    WebMWriter::AudioCodec      m_enmAudioCodec;
+    RecordingAudioCodec_T       m_enmAudioCodec;
     /** Video codec to use. */
-    WebMWriter::VideoCodec      m_enmVideoCodec;
+    RecordingVideoCodec_T       m_enmVideoCodec;
 
     /** Whether we're currently in the tracks section. */
     bool                        m_fInTracksSection;
@@ -509,20 +527,18 @@ public:
     };
 #endif /* VBOX_WITH_LIBVPX */
 
-#ifdef VBOX_WITH_LIBOPUS
     /**
-     * Block data for Opus-encoded audio data.
+     * Block data for encoded audio data.
      */
-    struct BlockData_Opus
+    struct BlockData_Audio
     {
-        /** Pointer to encoded Opus audio data. */
+        /** Pointer to encoded audio data. */
         const void *pvData;
-        /** Size (in bytes) of encoded Opus audio data. */
+        /** Size (in bytes) of encoded audio data. */
         size_t      cbData;
-        /** PTS (in ms) of encoded Opus audio data. */
+        /** PTS (in ms) of encoded audio data. */
         uint64_t    uPTSMs;
     };
-#endif /* VBOX_WITH_LIBOPUS */
 
 public:
 
@@ -533,16 +549,16 @@ public:
 public:
 
     int OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
-               WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
+               RecordingAudioCodec_T a_enmAudioCodec, RecordingVideoCodec_T a_enmVideoCodec);
 
     int Open(const char *a_pszFilename, uint64_t a_fOpen,
-             WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
+             RecordingAudioCodec_T a_enmAudioCodec, RecordingVideoCodec_T a_enmVideoCodec);
 
     int Close(void);
 
-    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack);
+    int AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack);
 
-    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack);
+    int AddVideoTrack(PRECORDINGCODEC pCodec, uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack);
 
     int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData);
 
@@ -561,7 +577,7 @@ public:
 
 protected:
 
-    int init(void);
+    int init(RecordingAudioCodec_T a_enmAudioCodec, RecordingVideoCodec_T a_enmVideoCodec);
 
     void destroy(void);
 
@@ -579,9 +595,7 @@ protected:
     int writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
 #endif
 
-#ifdef VBOX_WITH_LIBOPUS
-    int writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs);
-#endif
+    int writeSimpleBlockAudio(WebMTrack *pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs);
 
     int processQueue(WebMQueue *pQueue, bool fForce);
 

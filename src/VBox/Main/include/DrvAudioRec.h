@@ -60,9 +60,9 @@ private:
     virtual int configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM) RT_OVERRIDE;
 
     /** Pointer to the associated video recording audio driver. */
-    struct DRVAUDIORECORDING         *mpDrv;
-    /** Capturing configuration used for configuring the driver. */
-    struct settings::RecordingSettings mVideoRecCfg;
+    struct DRVAUDIORECORDING          *mpDrv;
+    /** Recording settings used for configuring the driver. */
+    struct settings::RecordingSettings mSettings;
 };
 
 #endif /* !MAIN_INCLUDED_DrvAudioRec_h */

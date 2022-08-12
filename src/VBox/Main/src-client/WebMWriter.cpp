@@ -29,6 +29,7 @@
 
 #include <VBox/version.h>
 
+#include "RecordingInternals.h"
 #include "WebMWriter.h"
 
 
@@ -56,19 +57,16 @@ WebMWriter::~WebMWriter(void)
  * @param   a_enmVideoCodec Video codec to use.
  */
 int WebMWriter::OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
-                       WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
+                       RecordingAudioCodec_T a_enmAudioCodec, RecordingVideoCodec_T a_enmVideoCodec)
 {
     try
     {
-        m_enmAudioCodec = a_enmAudioCodec;
-        m_enmVideoCodec = a_enmVideoCodec;
-
         LogFunc(("Creating '%s'\n", a_pszFilename));
 
         int vrc = createEx(a_pszFilename, a_phFile);
         if (RT_SUCCESS(vrc))
         {
-            vrc = init();
+            vrc = init(a_enmAudioCodec, a_enmVideoCodec);
             if (RT_SUCCESS(vrc))
                 vrc = writeHeader();
         }
@@ -90,19 +88,16 @@ int WebMWriter::OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
  * @param   a_enmVideoCodec Video codec to use.
  */
 int WebMWriter::Open(const char *a_pszFilename, uint64_t a_fOpen,
-                     WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
+                     RecordingAudioCodec_T a_enmAudioCodec, RecordingVideoCodec_T a_enmVideoCodec)
 {
     try
     {
-        m_enmAudioCodec = a_enmAudioCodec;
-        m_enmVideoCodec = a_enmVideoCodec;
-
         LogFunc(("Creating '%s'\n", a_pszFilename));
 
         int vrc = create(a_pszFilename, a_fOpen);
         if (RT_SUCCESS(vrc))
         {
-            vrc = init();
+            vrc = init(a_enmAudioCodec, a_enmVideoCodec);
             if (RT_SUCCESS(vrc))
                 vrc = writeHeader();
         }
@@ -157,32 +152,19 @@ int WebMWriter::Close(void)
  * Adds an audio track.
  *
  * @returns IPRT status code.
+ * @param   pCodec          Audio codec to use.
  * @param   uHz             Input sampling rate.
  *                          Must be supported by the selected audio codec.
  * @param   cChannels       Number of input audio channels.
  * @param   cBits           Number of input bits per channel.
  * @param   puTrack         Track number on successful creation. Optional.
  */
-int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
+int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
 {
-#ifdef VBOX_WITH_LIBOPUS
+#if defined(VBOX_WITH_LIBOPUS) || defined(VBOX_WITH_LIBVORBIS)
     AssertReturn(uHz,       VERR_INVALID_PARAMETER);
     AssertReturn(cBits,     VERR_INVALID_PARAMETER);
     AssertReturn(cChannels, VERR_INVALID_PARAMETER);
-
-    /*
-     * Adjust the handed-in Hz rate to values which are supported by the Opus codec.
-     *
-     * Only the following values are supported by an Opus standard build
-     * -- every other rate only is supported by a custom build.
-     *
-     * See opus_encoder_create() for more information.
-     */
-    if      (uHz > 24000) uHz = 48000;
-    else if (uHz > 16000) uHz = 24000;
-    else if (uHz > 12000) uHz = 16000;
-    else if (uHz > 8000 ) uHz = 12000;
-    else     uHz = 8000;
 
     /* Some players (e.g. Firefox with Nestegg) rely on track numbers starting at 1.
      * Using a track number 0 will show those files as being corrupted. */
@@ -194,38 +176,157 @@ int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, ui
     serializeString         (MkvElem_Language,    "und" /* "Undefined"; see ISO-639-2. */);
     serializeUnsignedInteger(MkvElem_FlagLacing,  (uint8_t)0);
 
-    WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(getFile()));
+    int vrc = VINF_SUCCESS;
 
-    pTrack->Audio.uHz            = uHz;
-    pTrack->Audio.msPerBlock     = 20; /** Opus uses 20ms by default. Make this configurable? */
-    pTrack->Audio.framesPerBlock = uHz / (1000 /* s in ms */ / pTrack->Audio.msPerBlock);
+    WebMTrack *pTrack = NULL;
+    try
+    {
+        pTrack = new WebMTrack(WebMTrackType_Audio, pCodec, uTrack, RTFileTell(getFile()));
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
 
-    WEBMOPUSPRIVDATA opusPrivData(uHz, cChannels);
+    if (RT_SUCCESS(vrc))
+    {
+        serializeUnsignedInteger(MkvElem_TrackUID,     pTrack->uUUID, 4)
+              .serializeUnsignedInteger(MkvElem_TrackType,    2 /* Audio */);
 
-    LogFunc(("Opus @ %RU16Hz (%RU16ms + %RU16 frames per block)\n",
-             pTrack->Audio.uHz, pTrack->Audio.msPerBlock, pTrack->Audio.framesPerBlock));
+        switch (m_enmAudioCodec)
+        {
+# ifdef VBOX_WITH_LIBOPUS
+            case RecordingAudioCodec_Opus:
+            {
+                /*
+                 * Adjust the handed-in Hz rate to values which are supported by the Opus codec.
+                 *
+                 * Only the following values are supported by an Opus standard build
+                 * -- every other rate only is supported by a custom build.
+                 *
+                 * See opus_encoder_create() for more information.
+                 */
+                if      (uHz > 24000) uHz = VBOX_RECORDING_OPUS_HZ_MAX;
+                else if (uHz > 16000) uHz = 24000;
+                else if (uHz > 12000) uHz = 16000;
+                else if (uHz > 8000 ) uHz = 12000;
+                else     uHz = 8000;
 
-    serializeUnsignedInteger(MkvElem_TrackUID,     pTrack->uUUID, 4)
-          .serializeUnsignedInteger(MkvElem_TrackType,    2 /* Audio */)
-          .serializeString(MkvElem_CodecID,               "A_OPUS")
-          .serializeData(MkvElem_CodecPrivate,            &opusPrivData, sizeof(opusPrivData))
-          .serializeUnsignedInteger(MkvElem_CodecDelay,   0)
-          .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80 * 1000000) /* 80ms in ns. */
-          .subStart(MkvElem_Audio)
-              .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
-              .serializeUnsignedInteger(MkvElem_Channels, cChannels)
-              .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
-          .subEnd(MkvElem_Audio)
-          .subEnd(MkvElem_TrackEntry);
+                WEBMOPUSPRIVDATA opusPrivData(uHz, cChannels);
 
-    CurSeg.mapTracks[uTrack] = pTrack;
+                pTrack->Audio.msPerBlock = 0; /** @todo */
+                if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
+                    pTrack->Audio.msPerBlock = VBOX_RECORDING_OPUS_FRAME_MS_DEFAULT;
 
-    if (puTrack)
-        *puTrack = uTrack;
+                serializeString(MkvElem_CodecID,    "A_OPUS");
+                serializeData(MkvElem_CodecPrivate, &opusPrivData, sizeof(opusPrivData));
+                break;
+            }
+# endif /* VBOX_WITH_LIBOPUS */
+# ifdef VBOX_WITH_LIBVORBIS
+            case RecordingAudioCodec_OggVorbis:
+            {
+            #if 0 /* Own header code -- more compact and does not require libvorbis. */
+                WEBMOGGVORBISPRIVDATA vorbisPrivData;
 
-    return VINF_SUCCESS;
-#else
-    RT_NOREF(uHz, cChannels, cBits, puTrack);
+                /* Vorbis I allows the following block sizes (bytes):
+                 * 64, 128, 256, 512, 1024, 2048, 4096 and 8192. */
+                pTrack->Audio.msPerBlock = msBlockSize;
+                if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
+                    pTrack->Audio.msPerBlock = VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT;
+
+                serializeString(MkvElem_CodecID,    "A_VORBIS");
+                serializeData(MkvElem_CodecPrivate, &vorbisPrivData, sizeof(vorbisPrivData));
+            #else
+                pTrack->Audio.msPerBlock = 0; /** @todo */
+                if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
+                    pTrack->Audio.msPerBlock = VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT;
+
+            #if 0
+                vorbis_info      m_vi;
+                /** Encoder state. */
+                vorbis_dsp_state m_vd;
+                /** Current block being worked on. */
+                vorbis_block     m_vb;
+                vorbis_comment m_vc;
+            #endif
+
+
+            #if 0 /* Must be done by the caller. */
+                vorbis_info_init(&pCodec->Audio.Vorbis.info);
+                int bitrate = 0;
+                if (bitrate)
+                    vorbis_encode_init(&pCodec->Audio.Vorbis.info, cChannels, uHz, -1, 128000, -1);
+                else
+                    vorbis_encode_init_vbr(&pCodec->Audio.Vorbis.info, cChannels, uHz, (float).4);
+                vorbis_analysis_init(&pCodec->Audio.Vorbis.dsp_state, &pCodec->Audio.Vorbis.info);
+                vorbis_block_init(&pCodec->Audio.Vorbis.dsp_state, &pCodec->Audio.Vorbis.block_cur);
+            #endif
+
+                 vorbis_comment vc;
+                 vorbis_comment_init(&vc);
+                 vorbis_comment_add_tag(&vc,"ENCODER", vorbis_version_string());
+
+                 ogg_packet pkt_ident;
+                 ogg_packet pkt_comments;
+                 ogg_packet pkt_setup;
+                 vorbis_analysis_headerout(&pCodec->Audio.Vorbis.dsp_state, &vc, &pkt_ident, &pkt_comments, &pkt_setup);
+                 AssertMsgBreakStmt(pkt_ident.bytes <= 255 && pkt_comments.bytes <= 255,
+                                    ("Too long header / comment packets\n"), vrc = VERR_INVALID_PARAMETER);
+
+                 WEBMOGGVORBISPRIVDATA vorbisPrivData(pkt_ident.bytes, pkt_comments.bytes, pkt_setup.bytes);
+
+                 uint8_t *pabHdr = &vorbisPrivData.abHdr[0];
+                 memcpy(pabHdr, pkt_ident.packet, pkt_ident.bytes);
+                 pabHdr += pkt_ident.bytes;
+                 memcpy(pabHdr, pkt_comments.packet, pkt_comments.bytes);
+                 pabHdr += pkt_comments.bytes;
+                 memcpy(pabHdr, pkt_setup.packet, pkt_setup.bytes);
+                 pabHdr += pkt_setup.bytes;
+
+                 vorbis_comment_clear(&vc);
+
+                 size_t const offHeaders = RT_OFFSETOF(WEBMOGGVORBISPRIVDATA, abHdr);
+
+                 serializeString(MkvElem_CodecID,    "A_VORBIS");
+                 serializeData(MkvElem_CodecPrivate, &vorbisPrivData,
+                               offHeaders + pkt_ident.bytes + pkt_comments.bytes + pkt_setup.bytes);
+            #endif
+                break;
+            }
+# endif /* VBOX_WITH_LIBVORBIS */
+            default:
+                AssertFailed(); /* Shouldn't ever happen (tm). */
+                break;
+        }
+               serializeUnsignedInteger(MkvElem_CodecDelay,   0)
+              .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80 * 1000000) /* 80ms in ns. */
+              .subStart(MkvElem_Audio)
+                  .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
+                  .serializeUnsignedInteger(MkvElem_Channels, cChannels)
+                  .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
+              .subEnd(MkvElem_Audio)
+              .subEnd(MkvElem_TrackEntry);
+
+        pTrack->Audio.uHz            = uHz;
+        pTrack->Audio.framesPerBlock = uHz / (1000 /* s in ms */ / pTrack->Audio.msPerBlock);
+
+        LogRel2(("Recording: WebM track #%RU8: Audio codec @ %RU16Hz (%RU16ms, %RU16 frames per block)\n",
+                 pTrack->uTrack, pTrack->Audio.uHz, pTrack->Audio.msPerBlock, pTrack->Audio.framesPerBlock));
+
+        CurSeg.mapTracks[uTrack] = pTrack;
+
+        if (puTrack)
+            *puTrack = uTrack;
+
+        return VINF_SUCCESS;
+    }
+
+    if (pTrack)
+        delete pTrack;
+    return vrc;
+#else /* defined(VBOX_WITH_LIBOPUS) || defined(VBOX_WITH_LIBVORBIS) */
+    RT_NOREF(pCodec, uHz, cChannels, cBits, puTrack);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -234,12 +335,13 @@ int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, ui
  * Adds a video track.
  *
  * @returns IPRT status code.
+ * @param   pCodec              Codec data to use.
  * @param   uWidth              Width (in pixels) of the video track.
  * @param   uHeight             Height (in pixels) of the video track.
  * @param   uFPS                FPS (Frames Per Second) of the video track.
  * @param   puTrack             Track number of the added video track on success. Optional.
  */
-int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack)
+int WebMWriter::AddVideoTrack(PRECORDINGCODEC pCodec, uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack)
 {
 #ifdef VBOX_WITH_LIBVPX
     /* Some players (e.g. Firefox with Nestegg) rely on track numbers starting at 1.
@@ -252,7 +354,7 @@ int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, 
     serializeString         (MkvElem_Language,    "und" /* "Undefined"; see ISO-639-2. */);
     serializeUnsignedInteger(MkvElem_FlagLacing,  (uint8_t)0);
 
-    WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(getFile()));
+    WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, pCodec, uTrack, RTFileTell(getFile()));
 
     /** @todo Resolve codec type. */
     serializeUnsignedInteger(MkvElem_TrackUID,    pTrack->uUUID /* UID */, 4)
@@ -268,6 +370,8 @@ int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, 
 
     subEnd(MkvElem_TrackEntry);
 
+    LogRel2(("Recording: WebM track #%RU8: Video\n", pTrack->uTrack));
+
     CurSeg.mapTracks[uTrack] = pTrack;
 
     if (puTrack)
@@ -275,7 +379,7 @@ int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, 
 
     return VINF_SUCCESS;
 #else
-    RT_NOREF(uWidth, uHeight, dbFPS, puTrack);
+    RT_NOREF(pCodec, uWidth, uHeight, uFPS, puTrack);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -313,10 +417,25 @@ uint64_t WebMWriter::GetAvailableSpace(void)
 /**
  * Takes care of the initialization of the instance.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if a given codec is not supported.
+ * @param   enmAudioCodec       Audio codec to use.
+ * @param   enmVideoCodec       Video codec to use.
  */
-int WebMWriter::init(void)
+int WebMWriter::init(RecordingAudioCodec_T enmAudioCodec, RecordingVideoCodec_T enmVideoCodec)
 {
+#ifndef VBOX_WITH_LIBOPUS
+    AssertReturn(enmAudioCodec != RecordingAudioCodec_Opus, VERR_NOT_SUPPORTED);
+#endif
+#ifndef VBOX_WITH_LIBVORBIS
+    AssertReturn(enmAudioCodec != RecordingAudioCodec_OggVorbis, VERR_NOT_SUPPORTED);
+#endif
+    AssertReturn(   enmVideoCodec == RecordingVideoCodec_None
+                 || enmVideoCodec == RecordingVideoCodec_VP8, VERR_NOT_SUPPORTED);
+
+    m_enmAudioCodec = enmAudioCodec;
+    m_enmVideoCodec = enmVideoCodec;
+
     return CurSeg.init();
 }
 
@@ -483,31 +602,29 @@ int WebMWriter::writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg
 }
 #endif /* VBOX_WITH_LIBVPX */
 
-#ifdef VBOX_WITH_LIBOPUS
 /**
  * Writes an Opus (audio) simple data block.
  *
  * @returns IPRT status code.
- * @param   a_pTrack        Track ID to write data to.
+ * @param   pTrack          Track ID to write data to.
  * @param   pvData          Pointer to simple data block to write.
  * @param   cbData          Size (in bytes) of simple data block to write.
  * @param   tcAbsPTSMs      Absolute PTS of simple data block.
  *
  * @remarks Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks.
  */
-int WebMWriter::writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs)
+int WebMWriter::writeSimpleBlockAudio(WebMTrack *pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs)
 {
-    AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
-    AssertReturn(cbData,      VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pTrack, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData,    VERR_INVALID_PARAMETER);
 
     /* Every Opus frame is a key frame. */
     const uint8_t fFlags = VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
 
-    return writeSimpleBlockQueued(a_pTrack,
-                                  new WebMSimpleBlock(a_pTrack, tcAbsPTSMs, pvData, cbData, fFlags));
+    return writeSimpleBlockQueued(pTrack,
+                                  new WebMSimpleBlock(pTrack, tcAbsPTSMs, pvData, cbData, fFlags));
 }
-#endif /* VBOX_WITH_LIBOPUS */
 
 /**
  * Writes a data block to the specified track.
@@ -545,23 +662,21 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
 
         case WebMTrackType_Audio:
         {
-#ifdef VBOX_WITH_LIBOPUS
-            if (m_enmAudioCodec == WebMWriter::AudioCodec_Opus)
+            if (   m_enmAudioCodec == RecordingAudioCodec_Opus
+                || m_enmAudioCodec == RecordingAudioCodec_OggVorbis)
             {
-                Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
-                WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                vrc = writeSimpleBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
+                Assert(cbData == sizeof(WebMWriter::BlockData_Audio));
+                WebMWriter::BlockData_Audio *pData = (WebMWriter::BlockData_Audio *)pvData;
+                vrc = writeSimpleBlockAudio(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
             }
-            else
-#endif /* VBOX_WITH_LIBOPUS */
-                vrc = VERR_NOT_SUPPORTED;
+            /* else nothing to do here; WebM only supports Opus or Ogg Vorbis. */
             break;
         }
 
         case WebMTrackType_Video:
         {
 #ifdef VBOX_WITH_LIBVPX
-            if (m_enmVideoCodec == WebMWriter::VideoCodec_VP8)
+            if (m_enmVideoCodec == RecordingVideoCodec_VP8)
             {
                 Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
                 WebMWriter::BlockData_VP8 *pData = (WebMWriter::BlockData_VP8 *)pvData;

@@ -3024,7 +3024,18 @@ void RecordingScreenSettings::applyDefaults(void)
     Video.ulHeight       = 768;
     Video.ulRate         = 512;
     Video.ulFPS          = 25;
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    /* When both codecs are defined, prefer Ogg Vorbis as a default. */
+# if   defined(VBOX_WITH_LIBVORBIS)
+    Audio.enmCodec       = RecordingAudioCodec_OggVorbis;
+# elif defined(VBOX_WITH_LIBOPUS)
     Audio.enmCodec       = RecordingAudioCodec_Opus;
+# else
+    Audio.enmCodec       = RecordingAudioCodec_None;
+# endif
+#else
+    Audio.enmCodec       = RecordingAudioCodec_None;
+#endif /* VBOX_WITH_RECORDING */
     Audio.enmDeadline    = RecordingCodecDeadline_Default;
     Audio.enmRateCtlMode = RecordingRateControlMode_VBR;
     Audio.cBits          = 16;
@@ -3060,7 +3071,18 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
            && Video.ulHeight                                  == 768
            && Video.ulRate                                    == 512
            && Video.ulFPS                                     == 25
+#ifdef VBOX_WITH_AUDIO_RECORDING
+/* When both codecs are defined, prefer Ogg Vorbis as a default. */
+# if   defined(VBOX_WITH_LIBVORBIS)
+           && Audio.enmCodec                                  == RecordingAudioCodec_OggVorbis
+# elif defined(VBOX_WITH_LIBOPUS)
            && Audio.enmCodec                                  == RecordingAudioCodec_Opus
+# else
+           && Audio.enmCodec                                  == RecordingAudioCodec_None
+# endif
+#else
+           && Audio.enmCodec                                  == RecordingAudioCodec_None
+#endif /* VBOX_WITH_AUDIO_RECORDING */
            && Audio.enmDeadline                               == RecordingCodecDeadline_Default
            && Audio.enmRateCtlMode                            == RecordingRateControlMode_VBR
            && Audio.cBits                                     == 16
@@ -3092,25 +3114,28 @@ bool RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T enmFeature) co
  */
 bool RecordingScreenSettings::operator==(const RecordingScreenSettings &d) const
 {
-    return    fEnabled            == d.fEnabled
-           && enmDest             == d.enmDest
-           && featureMap          == d.featureMap
-           && ulMaxTimeS          == d.ulMaxTimeS
-           && strOptions          == d.strOptions
-           && File.strName        == d.File.strName
-           && File.ulMaxSizeMB    == d.File.ulMaxSizeMB
-           && Video.enmDeadline   == d.Video.enmDeadline
-           && Video.enmCodec      == d.Video.enmCodec
-           && Video.ulWidth       == d.Video.ulWidth
-           && Video.ulHeight      == d.Video.ulHeight
-           && Video.ulRate        == d.Video.ulRate
-           && Video.ulFPS         == d.Video.ulFPS
-           && Audio.enmCodec      == d.Audio.enmCodec
-           && Audio.enmDeadline   == d.Audio.enmDeadline
-           && Audio.cBits         == d.Audio.cBits
-           && Audio.cChannels     == d.Audio.cChannels
-           && Audio.uHz           == d.Audio.uHz
-           && featureMap          == d.featureMap;
+    return    fEnabled             == d.fEnabled
+           && enmDest              == d.enmDest
+           && featureMap           == d.featureMap
+           && ulMaxTimeS           == d.ulMaxTimeS
+           && strOptions           == d.strOptions
+           && File.strName         == d.File.strName
+           && File.ulMaxSizeMB     == d.File.ulMaxSizeMB
+           && Video.enmCodec       == d.Video.enmCodec
+           && Video.enmDeadline    == d.Video.enmDeadline
+           && Video.enmRateCtlMode == d.Video.enmRateCtlMode
+           && Video.enmScalingMode == d.Video.enmScalingMode
+           && Video.ulWidth        == d.Video.ulWidth
+           && Video.ulHeight       == d.Video.ulHeight
+           && Video.ulRate         == d.Video.ulRate
+           && Video.ulFPS          == d.Video.ulFPS
+           && Audio.enmCodec       == d.Audio.enmCodec
+           && Audio.enmDeadline    == d.Audio.enmDeadline
+           && Audio.enmRateCtlMode == d.Audio.enmRateCtlMode
+           && Audio.cBits          == d.Audio.cBits
+           && Audio.cChannels      == d.Audio.cChannels
+           && Audio.uHz            == d.Audio.uHz
+           && featureMap           == d.featureMap;
 }
 
 /**
@@ -6271,8 +6296,9 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             (*itScreen)->getAttributeValue("maxSizeMB", screenSettings.File.ulMaxSizeMB);
             if ((*itScreen)->getAttributeValue("videoCodec", strTemp)) /* Stick with default if not set. */
                 RecordingScreenSettings::videoCodecFromString(strTemp, screenSettings.Video.enmCodec);
-            (*itScreen)->getAttributeValue("videoScalingMode", (uint32_t &)screenSettings.Video.enmScalingMode);
             (*itScreen)->getAttributeValue("videoDeadline", (uint32_t &)screenSettings.Video.enmDeadline);
+            (*itScreen)->getAttributeValue("videoRateCtlMode", (uint32_t &)screenSettings.Video.enmRateCtlMode);
+            (*itScreen)->getAttributeValue("videoScalingMode", (uint32_t &)screenSettings.Video.enmScalingMode);
             (*itScreen)->getAttributeValue("horzRes",       screenSettings.Video.ulWidth);
             (*itScreen)->getAttributeValue("vertRes",       screenSettings.Video.ulHeight);
             (*itScreen)->getAttributeValue("rateKbps",      screenSettings.Video.ulRate);
@@ -6281,6 +6307,7 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             if ((*itScreen)->getAttributeValue("audioCodec", strTemp)) /* Stick with default if not set. */
                 RecordingScreenSettings::audioCodecFromString(strTemp, screenSettings.Audio.enmCodec);
             (*itScreen)->getAttributeValue("audioDeadline", (uint32_t &)screenSettings.Audio.enmDeadline);
+            (*itScreen)->getAttributeValue("audioRateCtlMode", (uint32_t &)screenSettings.Audio.enmRateCtlMode);
             (*itScreen)->getAttributeValue("audioHz",       (uint32_t &)screenSettings.Audio.uHz);
             (*itScreen)->getAttributeValue("audioBits",     (uint32_t &)screenSettings.Audio.cBits);
             (*itScreen)->getAttributeValue("audioChannels", (uint32_t &)screenSettings.Audio.cChannels);
@@ -8340,6 +8367,8 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 pelmScreen->setAttribute("videoCodec",          strTemp);
                 if (itScreen->second.Video.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("videoDeadline",   itScreen->second.Video.enmDeadline);
+                if (itScreen->second.Video.enmRateCtlMode != RecordingRateControlMode_VBR) /* Is default. */
+                    pelmScreen->setAttribute("videoRateCtlMode", itScreen->second.Video.enmRateCtlMode);
                 if (itScreen->second.Video.enmScalingMode != RecordingVideoScalingMode_None)
                     pelmScreen->setAttribute("videoScalingMode",itScreen->second.Video.enmScalingMode);
                 if (   itScreen->second.Video.ulWidth  != 1024
@@ -8357,6 +8386,8 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 pelmScreen->setAttribute("audioCodec",          strTemp);
                 if (itScreen->second.Audio.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("audioDeadline",   itScreen->second.Audio.enmDeadline);
+                if (itScreen->second.Audio.enmRateCtlMode != RecordingRateControlMode_VBR) /* Is default. */
+                    pelmScreen->setAttribute("audioRateCtlMode", itScreen->second.Audio.enmRateCtlMode);
                 if (itScreen->second.Audio.uHz != 22050)
                     pelmScreen->setAttribute("audioHz",         itScreen->second.Audio.uHz);
                 if (itScreen->second.Audio.cBits != 16)

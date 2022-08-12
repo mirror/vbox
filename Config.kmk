@@ -838,10 +838,20 @@ VBOX_WITH_RECORDING = 1
 VBOX_WITH_LIBVPX = 1
 # Enables audio support for recording (depends on VBOX_WITH_RECORDING).
 VBOX_WITH_AUDIO_RECORDING =
+if defined(VBOX_WITH_AUDIO_RECORDING) && !defined(VBOX_WITH_RECORDING)
+ $(error Audio recording (VBOX_WITH_AUDIO_RECORDING) needs the general recording feature (VBOX_WITH_RECORDING) enabled)
+endif
 # Enables libopus (Opus), required for encoding audio into the recorded data.
 VBOX_WITH_LIBOPUS =
 # Enable SEE (+ AVX) optimizations for Opus.
 VBOX_WITH_OPUS_SSE = 1
+# Enables libvorbis (Ogg Vorbis), required for encoding audio into the recorded data.
+VBOX_WITH_LIBVORBIS =
+# Enables libogg (Ogg file format). Required for building libvorbis above.
+VBOX_WITH_LIBOGG =
+if defined(VBOX_WITH_LIBVORBIS) && !defined(VBOX_WITH_LIBOGG)
+ $(error Need libogg (VBOX_WITH_LIBOGG) in order to build libvorbis (VBOX_WITH_LIBVORBIS))
+endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
 # Enable shared clipboard
@@ -1447,6 +1457,8 @@ ifdef VBOX_OSE
   # Undefine codec libraries which are not needed.
   VBOX_WITH_LIBVPX=
   VBOX_WITH_LIBOPUS=
+  VBOX_WITH_LIBVORBIS=
+  VBOX_WITH_LIBOGG=
   # Disable recording (with audio support).
   VBOX_WITH_RECORDING=
   VBOX_WITH_AUDIO_RECORDING=
@@ -4831,6 +4843,20 @@ ifdef VBOX_WITH_LIBOPUS
  SDK_VBOX_OPUS_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libopus-1.3.1/include
  SDK_VBOX_OPUS_INCS            ?= $(SDK_VBOX_OPUS_DEFAULT_INCS)
  SDK_VBOX_OPUS_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_LIBOGG
+ SDK_VBOX_OGG                  := libogg for dll linking.
+ SDK_VBOX_OGG_DEFAULT_INCS     := $(PATH_ROOT)/src/libs/libogg-1.3.5/include
+ SDK_VBOX_OGG_INCS             ?= $(SDK_VBOX_OGG_DEFAULT_INCS)
+ SDK_VBOX_OGG_LIBS             ?= $(PATH_STAGE_LIB)/VBox-libogg$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_LIBVORBIS
+ SDK_VBOX_VORBIS               := libvorbis for dll linking.
+ SDK_VBOX_VORBIS_DEFAULT_INCS  := $(PATH_ROOT)/src/libs/libvorbis-1.3.7/include
+ SDK_VBOX_VORBIS_INCS          ?= $(SDK_VBOX_VORBIS_DEFAULT_INCS)
+ SDK_VBOX_VORBIS_LIBS          ?= $(PATH_STAGE_LIB)/VBox-libvorbis$(VBOX_SUFF_LIB)
 endif
 
 SDK_VBOX_SOFTFLOAT             := SoftFloat 3 for dll linking.
