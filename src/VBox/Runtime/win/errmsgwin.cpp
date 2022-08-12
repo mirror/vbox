@@ -40,17 +40,8 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if !defined(IPRT_ERRMSG_DEFINES_ONLY) && defined(IN_RT_STATIC) /* No message text in static builds to save space. */
-# define IPRT_ERRMSG_DEFINES_ONLY
-#endif
-
-#ifdef IPRT_ERRMSG_DEFINES_ONLY
-# define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
+#define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
     { a_pszDefine, a_pszDefine, a_iCode }
-#else
-# define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
-    { a_pszMsg, a_pszDefine, a_iCode }
-#endif
 
 
 /*********************************************************************************************************************************
@@ -71,10 +62,8 @@ static const struct
 {
     { 0, 0, 13, 0, 13, },
 };
-#elif defined(IPRT_ERRMSG_DEFINES_ONLY)
-# include "errmsgwindata-only-defines.h"
 #else
-# include "errmsgwindata-all.h"
+# include "errmsgwindata-only-defines.h"
 #endif
 
 
@@ -200,41 +189,7 @@ RTDECL(size_t)  RTErrWinFormatDefine(long rc, PFNRTSTROUTPUT pfnOutput, void *pv
 
 RTDECL(size_t)  RTErrWinFormatMsg(long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp)
 {
-#ifdef IPRT_ERRMSG_DEFINES_ONLY
     return RTErrWinFormatDefine(rc, pfnOutput, pvArgOutput, pszTmp, cbTmp);
-#else
-    size_t idx = rtErrWinLookup(rc);
-    if (idx != ~(size_t)0)
-        return RTBldProgStrTabQueryOutput(&g_WinMsgStrTab,
-                                          g_aWinMsgs[idx].offMsgFull, g_aWinMsgs[idx].cchMsgFull,
-                                          pfnOutput, pvArgOutput);
-
-    /*
-     * If FACILITY_WIN32 kind of status, look up the win32 code.
-     */
-    const char *pszTail = NULL;
-    size_t cchRet;
-    if (   SCODE_FACILITY(rc) == FACILITY_WIN32
-        && (idx = rtErrWinLookup(HRESULT_CODE(rc))) != ~(size_t)0)
-    {
-        /* Append the incoming rc, so we know it's not a regular WIN32 status: */
-        cchRet  = RTBldProgStrTabQueryOutput(&g_WinMsgStrTab,
-                                             g_aWinMsgs[idx].offMsgFull, g_aWinMsgs[idx].cchMsgFull,
-                                             pfnOutput, pvArgOutput);
-        cchRet += pfnOutput(pvArgOutput, RT_STR_TUPLE(" ("));
-        pszTail = ")";
-    }
-    else
-        cchRet  = pfnOutput(pvArgOutput, RT_STR_TUPLE("Unknown Status "));
-
-    ssize_t cchValue = RTStrFormatU32(pszTmp, cbTmp, rc, 16, 0, 0, RTSTR_F_SPECIAL);
-    Assert(cchValue > 0);
-    cchRet += pfnOutput(pvArgOutput, pszTmp, cchValue);
-
-    if (pszTail)
-        cchRet += pfnOutput(pvArgOutput, pszTail, 1);
-    return cchRet;
-#endif
 }
 
 
@@ -259,15 +214,6 @@ RTDECL(size_t)  RTErrWinFormatMsgAll(long rc, PFNRTSTROUTPUT pfnOutput, void *pv
     Assert(cchValue > 0);
     cchRet += pfnOutput(pvArgOutput, pszTmp, cchValue);
 
-#ifndef IPRT_ERRMSG_DEFINES_ONLY
-    if (idx != ~(size_t)0)
-    {
-        cchRet += pfnOutput(pvArgOutput, RT_STR_TUPLE(") - "));
-        cchRet += RTBldProgStrTabQueryOutput(&g_WinMsgStrTab,
-                                             g_aWinMsgs[idx].offMsgFull, g_aWinMsgs[idx].cchMsgFull,
-                                             pfnOutput, pvArgOutput);
-    }
-#endif
     return cchRet;
 }
 
