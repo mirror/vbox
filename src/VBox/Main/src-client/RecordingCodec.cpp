@@ -18,6 +18,7 @@
 #define LOG_GROUP LOG_GROUP_RECORDING
 #include "LoggingNew.h"
 
+#include <VBox/com/string.h>
 #include <VBox/err.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
@@ -99,7 +100,7 @@ static DECLCALLBACK(int) recordingCodecVPXDestroy(PRECORDINGCODEC pCodec)
 }
 
 /** @copydoc RECORDINGCODECOPS::pfnParseOptions */
-static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, const Utf8Str &strOptions)
+static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions)
 {
     size_t pos = 0;
     com::Utf8Str key, value;
@@ -547,7 +548,7 @@ static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
 {
     AssertReturn(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO, VERR_INVALID_PARAMETER);
 
-    Utf8Str strCodec;
+    com::Utf8Str strCodec;
     settings::RecordingScreenSettings::audioCodecToString(pCodec->Parms.enmAudioCodec, strCodec);
     LogRel(("Recording: Initializing audio codec '%s'\n", strCodec.c_str()));
 
@@ -605,7 +606,7 @@ static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
 static int recordingCodecInitVideo(const PRECORDINGCODEC pCodec,
                                    const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
 {
-    Utf8Str strTemp;
+    com::Utf8Str strTemp;
     settings::RecordingScreenSettings::videoCodecToString(pCodec->Parms.enmVideoCodec, strTemp);
     LogRel(("Recording: Initializing video codec '%s'\n", strTemp.c_str()));
 
@@ -653,7 +654,7 @@ static int recordingCodecInitVideo(const PRECORDINGCODEC pCodec,
  * @param   pCodec              Codec instance to parse options for.
  * @param   strOptions          Options string to parse.
  */
-static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec, const Utf8Str &strOptions)
+static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions)
 {
     AssertReturn(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO, VERR_INVALID_PARAMETER);
 

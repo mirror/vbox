@@ -133,7 +133,7 @@ public:
 
 protected:
 
-    static int codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser);
+    static DECLCALLBACK(int) codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser);
 
 protected:
 
