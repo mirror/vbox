@@ -1550,7 +1550,7 @@ typedef union RTFLOAT128U
 
 #ifdef RT_COMPILER_WITH_128BIT_LONG_DOUBLE
     /** Long double view. */
-    long double lrd;
+    long double lrd, r;
 #endif
     /** 128-bit view. */
     RTUINT128U  u128;
@@ -1577,6 +1577,25 @@ typedef const RTFLOAT128U RT_FAR *PCRTFLOAT128U;
 #endif
 #define RTFLOAT128U_INIT_C(a_fSign, a_uFractionHi, a_uFractionLo, a_uExponent) \
     RTFLOAT128U_INIT((a_fSign), UINT64_C(a_uFractionHi), UINT64_C(a_uFractionLo), (a_uExponent))
+
+#define RTFLOAT128U_INIT_ZERO(a_fSign)               RTFLOAT128U_INIT((a_fSign), UINT64_C(0), UINT64_C(0), 0)
+#define RTFLOAT128U_INIT_INF(a_fSign)                RTFLOAT128U_INIT((a_fSign), UINT64_C(0), UINT64_C(0), RTFLOAT128U_EXP_MAX)
+#define RTFLOAT128U_INIT_SNAN(a_fSign)               RTFLOAT128U_INIT((a_fSign), UINT64_C(0), UINT64_C(1), RTFLOAT128U_EXP_MAX)
+#define RTFLOAT128U_INIT_SNAN_EX(a_fSign, a_uValHi, a_uValLo) \
+    RTFLOAT128U_INIT((a_fSign), (a_uValHi), (a_uValHi) || (a_uValLo) ? (a_uValLo) : UINT64_C(1), RTFLOAT128U_EXP_MAX)
+#define RTFLOAT128U_INIT_SIGNALLING_NAN(a_fSign)     RTFLOAT128U_INIT_SNAN(a_fSign)
+#define RTFLOAT128U_INIT_QNAN(a_fSign) \
+    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64), UINT64_C(1), RTFLOAT128U_EXP_MAX)
+#define RTFLOAT128U_INIT_QNAN_EX(a_fSign, a_uValHi, a_uValLo) \
+    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) | (a_uValHi), \
+                     (a_uValLo) || (a_uValHi) ? (a_uValLo) : UINT64_C(1), RTFLOAT128U_EXP_MAX)
+#define RTFLOAT128U_INIT_QUIET_NAN(a_fSign)          RTFLOAT128U_INIT_QNAN(a_fSign)
+#define RTFLOAT128U_INIT_NAN_EX(a_fQuiet, a_fSign, a_uValHi, a_uValLo) \
+    RTFLOAT128U_INIT((a_fSign), \
+                     ((a_fQuiet) ? RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) : 0) | (a_uValHi), \
+                     (a_uValLo) || (a_uValHi) || (a_fQuiet) /*?*/ ? (a_uValLo) : UINT64_C(1), \
+                     RTFLOAT128U_EXP_MAX)
+
 /** The exponent bias for the RTFLOAT128U format. */
 #define RTFLOAT128U_EXP_BIAS                    (16383)
 /** The max exponent value for the RTFLOAT128U format. */

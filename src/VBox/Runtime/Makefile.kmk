@@ -2612,7 +2612,7 @@ ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
 VBoxRT_SDKS                   += VBOX_OPENSSL
-if1of ($(KBUILD_TARGET), $(VBOX_SUPPORTED_HOST_ARCHS))
+if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
 VBoxRT_SDKS                   += VBOX_SOFTFLOAT
 endif
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL

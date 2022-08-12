@@ -42,7 +42,7 @@
 # include <fenv.h>
 #endif
 
-#if defined(SOFTFLOAT_FAST_INT64) /** @todo better softfloat indicator? */
+#if defined(SOFTFLOAT_FAST_INT64) && !defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE) /** @todo better softfloat indicator? */
 # define USE_SOFTFLOAT /* for scaling by power of 10 */
 #endif
 #ifdef USE_SOFTFLOAT
@@ -55,7 +55,11 @@
 *********************************************************************************************************************************/
 typedef struct FLOATUNION
 {
+#ifdef RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+    RTFLOAT128U lrd;
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
     RTFLOAT80U2 lrd;
+#endif
     RTFLOAT64U  rd;
     RTFLOAT32U  r;
 } FLOATUNION;
@@ -64,10 +68,18 @@ typedef struct FLOATUNION
 #define RET_TYPE_DOUBLE       1
 #define RET_TYPE_LONG_DOUBLE  2
 
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#ifdef RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+typedef RTFLOAT128U LONG_DOUBLE_U_T;
+typedef __uint128_t UINT_MANTISSA_T;
+# define UINT_MANTISSA_T_BITS   128
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
 typedef RTFLOAT80U2 LONG_DOUBLE_U_T;
+typedef uint64_t    UINT_MANTISSA_T;
+# define UINT_MANTISSA_T_BITS   64
 #else
 typedef RTFLOAT64U  LONG_DOUBLE_U_T;
+typedef uint64_t    UINT_MANTISSA_T;
+# define UINT_MANTISSA_T_BITS   64
 #endif
 
 
@@ -88,7 +100,9 @@ static const int32_t g_iMaxExp[3] =
 {
     RTFLOAT32U_EXP_MAX - 1 - RTFLOAT32U_EXP_BIAS,
     RTFLOAT64U_EXP_MAX - 1 - RTFLOAT64U_EXP_BIAS,
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    RTFLOAT128U_EXP_MAX - 1 - RTFLOAT128U_EXP_BIAS,
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
     RTFLOAT80U_EXP_MAX - 1 - RTFLOAT80U_EXP_BIAS,
 #else
     RTFLOAT64U_EXP_MAX - 1 - RTFLOAT64U_EXP_BIAS,
@@ -100,7 +114,9 @@ static const int32_t g_iMinExp[3] =
 {
     1 - RTFLOAT32U_EXP_BIAS,
     1 - RTFLOAT64U_EXP_BIAS,
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    1 - RTFLOAT128U_EXP_BIAS,
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
     1 - RTFLOAT80U_EXP_BIAS,
 #else
     1 - RTFLOAT64U_EXP_BIAS,
@@ -111,23 +127,25 @@ static const int32_t g_iMinExp[3] =
 /** NaN fraction value masks. */
 static uint64_t const g_fNanMasks[3] =
 {
-    RT_BIT_64(RTFLOAT32U_FRACTION_BITS - 1) - 1,    /* 22=quiet(1) / silent(0) */
-    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,    /* 51=quiet(1) / silent(0) */
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
-    RT_BIT_64(RTFLOAT80U_FRACTION_BITS - 1) - 1,    /* bit 63=NaN; bit 62=quiet(1) / silent(0) */
+    RT_BIT_64(RTFLOAT32U_FRACTION_BITS - 1) - 1,        /* 22=quiet(1) / silent(0) */
+    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,        /* 51=quiet(1) / silent(0) */
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) - 1,  /* 111=quiet(1) / silent(0) */
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
+    RT_BIT_64(RTFLOAT80U_FRACTION_BITS - 1) - 1,        /* bit 63=NaN; bit 62=quiet(1) / silent(0) */
 #else
     RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,
 #endif
 };
 
 #if 0 /* unused */
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
 static const long double g_lrdPowerMin10 = 1e4931L;
 static const long double g_lrdPowerMax10 = 1e4932L;
-#else
+# else
 static const long double g_lrdPowerMin10 = 1e307L;
 static const long double g_lrdPowerMax10 = 1e308L;
-#endif
+# endif
 #endif
 
 #ifdef USE_SOFTFLOAT
@@ -229,7 +247,7 @@ static const long double a_lrdPower10[] =
     1e64L,
     1e128L,
     1e256L,
-# ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
     1e512L,
     1e1024L,
     1e2048L,
@@ -296,13 +314,13 @@ static int rtStrToLongDoubleExp10(LONG_DOUBLE_U_T *pVal, int iExponent10)
 
     softfloat_state_t   SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
     float128_t          Val;
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
     extFloat80M         Tmp = EXTFLOAT80M_INIT(pVal->s2.uSignAndExponent, pVal->s2.uMantissa);
     extF80M_to_f128M(&Tmp, &Val, &SoftState);
-#else
+# else
     float64_t           Tmp = { pVal->u };
     f64_to_f128M(Tmp, &Val, &SoftState);
-#endif
+# endif
 
     /*
      * Calculate the scaling factor.  If we need to make use of the last table
@@ -354,14 +372,14 @@ static int rtStrToLongDoubleExp10(LONG_DOUBLE_U_T *pVal, int iExponent10)
     else
         f128M_div(&Val, &Factor, &Val, &SoftState);
 
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
     f128M_to_extF80M(&Val, &Tmp, &SoftState);
     pVal->s2.uSignAndExponent = Tmp.signExp;
     pVal->s2.uMantissa        = Tmp.signif;
-#else
+# else
     Tmp = f128M_to_f64(&Val, &SoftState);
     pVal->u = Tmp.v;
-#endif
+# endif
 
     /*
      * Check for under/overflow and return.
@@ -370,14 +388,11 @@ static int rtStrToLongDoubleExp10(LONG_DOUBLE_U_T *pVal, int iExponent10)
     if (!(SoftState.exceptionFlags & (softfloat_flag_underflow | softfloat_flag_overflow)))
         rc = VINF_SUCCESS;
     else if (SoftState.exceptionFlags & softfloat_flag_underflow)
-    {
-RTAssertMsg2("VERR_FLOAT_UNDERFLOW r128=%.16Rhxs r64=%.8Rhxs\n", &Val, &Tmp);
         rc = VERR_FLOAT_UNDERFLOW;
-    }
     else
         rc = VERR_FLOAT_OVERFLOW;
 
-#else
+#else  /* !USE_SOFTFLOAT */
 # if 0
     /*
      * Use RTBigNum, falling back on the simple approach if we don't need the
@@ -452,7 +467,7 @@ RTAssertMsg2("VERR_FLOAT_UNDERFLOW r128=%.16Rhxs r64=%.8Rhxs\n", &Val, &Tmp);
     fesetenv(&SavedFpuEnv);
 # endif
 
-#endif
+#endif /* !USE_SOFTFLOAT */
     return rc;
 }
 
@@ -534,9 +549,13 @@ static int rtStrToLongDoubleReturnInf(const char *psz, char **ppszNext, size_t c
         }
 
         case RET_TYPE_LONG_DOUBLE:
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
         {
+# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
             RTFLOAT80U2 const uRet = RTFLOAT80U_INIT_INF(!fPositive);
+# else
+            RTFLOAT128U const uRet = RTFLOAT128U_INIT_INF(!fPositive);
+# endif
             pRet->lrd.lrd = uRet.lrd;
             break;
         }
@@ -573,8 +592,9 @@ static int rtStrToLongDoubleReturnInf(const char *psz, char **ppszNext, size_t c
  * @param   pchTag  The tag string to parse.  Not zero terminated.
  * @param   cchTag  The length of the tag string value.
  * @param   pfQuiet Where to return the type of NaN.  Default is quiet.
+ * @param   puHiNum Where to rturn the high 64-bits of the tag.
  */
-static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuiet)
+static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuiet, uint64_t *puHiNum)
 {
     *pfQuiet = true;
 
@@ -590,15 +610,20 @@ static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuie
     /*
      * Parse the number, ignoring overflows and stopping on non-xdigit.
      */
+    *puHiNum = 0;
     uint64_t uRet = 0;
+    unsigned iXDigit = 0;
     while (cchTag > 0)
     {
         unsigned char uch      = (unsigned char)*pchTag;
         unsigned char uchDigit = g_auchDigits[uch];
         if (uchDigit >= 16)
             break;
-        uRet *= 16;
-        uRet += uchDigit;
+        iXDigit++;
+        if (iXDigit >= 16)
+            *puHiNum = (*puHiNum << 4) | (uRet >> 60);
+        uRet <<= 4;
+        uRet  += uchDigit;
         pchTag++;
         cchTag--;
     }
@@ -641,6 +666,7 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
      */
     bool     fQuiet = true;
     uint64_t uNum   = 1;
+    uint64_t uHiNum = 0;
     if (cchMax >= 2 && *psz == '(')
     {
         unsigned cch = 1;
@@ -649,14 +675,25 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
             cch++;
         if (ch == ')')
         {
-            uNum = rtStrParseNanTag(psz + 1, cch - 1, &fQuiet);
+            uNum = rtStrParseNanTag(psz + 1, cch - 1, &fQuiet, &uHiNum);
             psz    += cch + 1;
             cchMax -= cch + 1;
 
             Assert(iRetType < RT_ELEMENTS(g_fNanMasks));
-            uNum &= g_fNanMasks[iRetType];
-            if (!uNum)
-                uNum = 1; /* must not be zero, or it'll turn into an infinity */
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+            if (iRetType == RET_TYPE_LONG_DOUBLE)
+            {
+                uHiNum &= g_fNanMasks[RET_TYPE_LONG_DOUBLE];
+                if (!uNum && !uHiNum)
+                    uNum = 1; /* must not be zero, or it'll turn into an infinity */
+            }
+            else
+#endif
+            {
+                uNum &= g_fNanMasks[iRetType];
+                if (!uNum)
+                    uNum = 1; /* must not be zero, or it'll turn into an infinity */
+            }
         }
     }
 
@@ -673,9 +710,13 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
         }
 
         case RET_TYPE_LONG_DOUBLE:
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
         {
+# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
             RTFLOAT80U2 const uRet = RTFLOAT80U_INIT_NAN_EX(fQuiet, !fPositive, uNum);
+# else
+            RTFLOAT128U const uRet = RTFLOAT128U_INIT_NAN_EX(fQuiet, !fPositive, uHiNum, uNum);
+# endif
             pRet->lrd = uRet;
             break;
         }
@@ -718,7 +759,7 @@ static int rtStrToLongDoubleReturnZero(const char *psz, char **ppszNext, size_t 
             break;
 
         case RET_TYPE_LONG_DOUBLE:
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
             pRet->lrd.lrd = fPositive ? +0.0L : -0.0L;
             break;
 #else
@@ -764,7 +805,7 @@ static int rtStrToLongDoubleReturnOverflow(const char *psz, char **ppszNext, siz
 static int rtStrToLongDoubleReturnSubnormal(const char *psz, char **ppszNext, size_t cchMax, LONG_DOUBLE_U_T const *pVal,
                                             unsigned iRetType, FLOATUNION *pRet)
 {
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
     Assert(iRetType == RET_TYPE_LONG_DOUBLE);
     pRet->lrd = *pVal;
 #else
@@ -781,7 +822,7 @@ static int rtStrToLongDoubleReturnSubnormal(const char *psz, char **ppszNext, si
  * return value.
  */
 static int rtStrToLongDoubleReturnValue(const char *psz, char **ppszNext, size_t cchMax,
-                                        bool fPositive, uint64_t uMantissa, int32_t iExponent,
+                                        bool fPositive, UINT_MANTISSA_T uMantissa, int32_t iExponent,
                                         unsigned iRetType, FLOATUNION *pRet)
 {
     int rc = VINF_SUCCESS;
@@ -793,37 +834,60 @@ static int rtStrToLongDoubleReturnValue(const char *psz, char **ppszNext, size_t
             {
                 /* Produce a subnormal value if it's within range, otherwise return zero. */
                 if (iExponent < -RTFLOAT32U_FRACTION_BITS)
-                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_UNDERFLOW, iRetType, pRet);
+                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_UNDERFLOW, iRetType, pRet);
                 rc = VWRN_FLOAT_UNDERFLOW;
                 uMantissa >>= -iExponent + 1;
                 iExponent   = 0;
             }
             else if (iExponent >= RTFLOAT32U_EXP_MAX)
-                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_OVERFLOW, iRetType, pRet);
+                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_OVERFLOW, iRetType, pRet);
 
-            pRet->r.s.uFraction = (uMantissa >> (63 - RTFLOAT32U_FRACTION_BITS)) & (RT_BIT_64(RTFLOAT32U_FRACTION_BITS) - 1);
+            pRet->r.s.uFraction = (uMantissa >> (UINT_MANTISSA_T_BITS - 1 - RTFLOAT32U_FRACTION_BITS))
+                                & (RT_BIT_32(RTFLOAT32U_FRACTION_BITS) - 1);
             pRet->r.s.uExponent = iExponent;
             pRet->r.s.fSign     = !fPositive;
             break;
 
         case RET_TYPE_LONG_DOUBLE:
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# if UINT_MANTISSA_T_BITS != 64
+#  error Unsupported UINT_MANTISSA_T_BITS count.
+# endif
             iExponent += RTFLOAT80U_EXP_BIAS;
             if (iExponent <= 0)
             {
                 /* Produce a subnormal value if it's within range, otherwise return zero. */
                 if (iExponent < -RTFLOAT80U_FRACTION_BITS)
-                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_UNDERFLOW, iRetType, pRet);
+                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_UNDERFLOW, iRetType, pRet);
                 rc = VWRN_FLOAT_UNDERFLOW;
                 uMantissa >>= -iExponent + 1;
                 iExponent   = 0;
             }
             else if (iExponent >= RTFLOAT80U_EXP_MAX)
-                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_OVERFLOW, iRetType, pRet);
+                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_OVERFLOW, iRetType, pRet);
 
             pRet->lrd.s.uMantissa = uMantissa;
             pRet->lrd.s.uExponent = iExponent;
             pRet->lrd.s.fSign     = !fPositive;
+            break;
+#elif defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+            iExponent += RTFLOAT128U_EXP_BIAS;
+            uMantissa >>= 128 - RTFLOAT128U_FRACTION_BITS;
+            if (iExponent <= 0)
+            {
+                /* Produce a subnormal value if it's within range, otherwise return zero. */
+                if (iExponent < -RTFLOAT128U_FRACTION_BITS)
+                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_UNDERFLOW, iRetType, pRet);
+                rc = VWRN_FLOAT_UNDERFLOW;
+                uMantissa >>= -iExponent + 1;
+                iExponent   = 0;
+            }
+            else if (iExponent >= RTFLOAT80U_EXP_MAX)
+                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_OVERFLOW, iRetType, pRet);
+            pRet->lrd.s64.uFractionHi = (uint64_t)(uMantissa >> 64) & (RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 64) - 1);
+            pRet->lrd.s64.uFractionLo = (uint64_t)uMantissa;
+            pRet->lrd.s64.uExponent   = iExponent;
+            pRet->lrd.s64.fSign       = !fPositive;
             break;
 #else
             AssertCompile(sizeof(long double) == sizeof(pRet->rd.rd));
@@ -835,15 +899,16 @@ static int rtStrToLongDoubleReturnValue(const char *psz, char **ppszNext, size_t
             {
                 /* Produce a subnormal value if it's within range, otherwise return zero. */
                 if (iExponent < -RTFLOAT64U_FRACTION_BITS)
-                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_UNDERFLOW, iRetType, pRet);
+                    return rtStrToLongDoubleReturnZero(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_UNDERFLOW, iRetType, pRet);
                 rc = VWRN_FLOAT_UNDERFLOW;
                 uMantissa >>= -iExponent + 1;
                 iExponent   = 0;
             }
             else if (iExponent >= RTFLOAT64U_EXP_MAX)
-                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VWRN_FLOAT_OVERFLOW, iRetType, pRet);
+                return rtStrToLongDoubleReturnInf(psz, ppszNext, cchMax, fPositive, VERR_FLOAT_OVERFLOW, iRetType, pRet);
 
-            pRet->rd.s64.uFraction = (uMantissa >> (63 - RTFLOAT64U_FRACTION_BITS)) & (RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1);
+            pRet->rd.s64.uFraction = (uMantissa >> (UINT_MANTISSA_T_BITS - 1 - RTFLOAT64U_FRACTION_BITS))
+                                   & (RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1);
             pRet->rd.s64.uExponent = iExponent;
             pRet->rd.s64.fSign     = !fPositive;
             break;
@@ -916,7 +981,9 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
     /*
      * Check for hex prefix.
      */
-#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#ifdef RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+    unsigned cMaxDigits      = 33;
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
     unsigned cMaxDigits      = 19;
 #else
     unsigned cMaxDigits      = 18;
@@ -935,7 +1002,11 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
     /*
      * Now, parse the mantissa.
      */
+#ifdef RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+    uint8_t     abDigits[36];
+#else
     uint8_t     abDigits[20];
+#endif
     unsigned    cDigits           = 0;
     unsigned    cFractionDigits   = 0;
     uint8_t     fSeenNonZeroDigit = 0;
@@ -1049,21 +1120,29 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
      */
     if (uBase == 16)
     {
-        uint64_t uMantissa = 0;
+        UINT_MANTISSA_T uMantissa = 0;
         for (unsigned iDigit = 0; iDigit < cDigits; iDigit++)
         {
-            uMantissa |= (uint64_t)abDigits[iDigit] << (64 - 4 - iDigit * 4);
+            uMantissa |= (UINT_MANTISSA_T)abDigits[iDigit] << (UINT_MANTISSA_T_BITS - 4 - iDigit * 4);
             iExponent += 4;
         }
         Assert(uMantissa != 0);
 
         /* Shift to the left till the most significant bit is 1. */
-        if (!(uMantissa & RT_BIT_64(63)))
+        if (!((uMantissa >> (UINT_MANTISSA_T_BITS - 1)) & 1))
         {
+#if UINT_MANTISSA_T_BITS == 64
             unsigned cShift = 64 - ASMBitLastSetU64(uMantissa);
             uMantissa <<= cShift;
             iExponent  -= cShift;
             Assert(uMantissa & RT_BIT_64(63));
+#else
+            do
+            {
+                uMantissa <<= 1;
+                iExponent  -= 1;
+            } while (!((uMantissa >> (UINT_MANTISSA_T_BITS - 1)) & 1));
+#endif
         }
 
         /* Account for the 1 left of the decimal point. */
@@ -1079,7 +1158,7 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
      * For the decimal format, we'll rely on the floating point conversion of
      * the compiler/CPU for the mantissa.
      */
-    uint64_t uMantissa = 0;
+    UINT_MANTISSA_T uMantissa = 0;
     for (unsigned iDigit = 0; iDigit < cDigits; iDigit++)
     {
         uMantissa *= 10;
@@ -1100,12 +1179,16 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
         rtStrToLongDoubleExp10(&uTmp, iExponent);
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
         if (!RTFLOAT80U_IS_NORMAL(&uTmp))
+#elif defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+        if (!RTFLOAT128U_IS_NORMAL(&uTmp))
 #else
         if (!RTFLOAT64U_IS_NORMAL(&uTmp))
 #endif
         {
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
             if (RTFLOAT80U_IS_DENORMAL(&uTmp) && iRetType == RET_TYPE_LONG_DOUBLE)
+#elif defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+            if (RTFLOAT128U_IS_SUBNORMAL(&uTmp) && iRetType == RET_TYPE_LONG_DOUBLE)
 #else
             if (RTFLOAT64U_IS_SUBNORMAL(&uTmp) && iRetType != RET_TYPE_FLOAT)
 #endif
@@ -1128,6 +1211,21 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
     fPositive = uTmp.s.fSign;
     iExponent = uTmp.s.uExponent - RTFLOAT80U_EXP_BIAS;
     uMantissa = uTmp.s.uMantissa;
+# if UINT_MANTISSA_T_BITS > 64
+    uMantissa <<= UINT_MANTISSA_T_BITS - 64;
+# endif
+#elif defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    Assert(RTFLOAT128U_IS_NORMAL(&uTmp));
+    if (iRetType == RET_TYPE_LONG_DOUBLE)
+    {
+        pRet->lrd = uTmp;
+        return rtStrToLongDoubleReturnChecks(psz, ppszNext, cchMax, VINF_SUCCESS);
+    }
+    fPositive  = uTmp.s64.fSign;
+    iExponent  = uTmp.s64.uExponent - RTFLOAT128U_EXP_BIAS;
+    uMantissa  = (UINT_MANTISSA_T)uTmp.s64.uFractionHi << (UINT_MANTISSA_T_BITS - RTFLOAT128U_FRACTION_BITS - 1 + 64);
+    uMantissa |= (UINT_MANTISSA_T)uTmp.s64.uFractionLo << (UINT_MANTISSA_T_BITS - RTFLOAT128U_FRACTION_BITS - 1);
+    uMantissa |= (UINT_MANTISSA_T)1 << (UINT_MANTISSA_T_BITS - 1);
 #else
     Assert(RTFLOAT64U_IS_NORMAL(&uTmp));
     if (   iRetType == RET_TYPE_DOUBLE
@@ -1139,6 +1237,9 @@ static int rtStrToLongDoubleWorker(const char *pszValue, char **ppszNext, size_t
     fPositive = uTmp.s64.fSign;
     iExponent = uTmp.s64.uExponent - RTFLOAT64U_EXP_BIAS;
     uMantissa = uTmp.s64.uFraction | RT_BIT_64(RTFLOAT64U_FRACTION_BITS);
+# if UINT_MANTISSA_T_BITS > 64
+    uMantissa <<= UINT_MANTISSA_T_BITS - 64;
+# endif
 #endif
     return rtStrToLongDoubleReturnValue(psz, ppszNext, cchMax, fPositive, uMantissa, iExponent, iRetType, pRet);
 }

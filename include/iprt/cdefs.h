@@ -1121,7 +1121,7 @@
  * Macro that is defined if the compiler implements long double as the
  * IEEE quadruple precision floating (128-bit).
  * @note Currently not able to detect this, so must be explicitly defined. */
-#if 0
+#if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 # define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
 #endif
 
