@@ -515,7 +515,10 @@ static int rtStrToLongDoubleReturnChecks(const char *psz, char **ppszNext, size_
  * @param   ppszNext    Where to return the pointer to the end of the value.
  *                      Optional.
  * @param   cchMax      Number of bytes left in the string starting at @a psz.
+ * @param   fPositive   Whether the infinity should be positive or negative.
  * @param   rc          The status code to return.
+ * @param   iRetType    The target type.
+ * @param   pRet        Where to store the result.
  */
 static int rtStrToLongDoubleReturnInf(const char *psz, char **ppszNext, size_t cchMax, bool fPositive,
                                       int rc, unsigned iRetType, FLOATUNION *pRet)
@@ -655,7 +658,9 @@ static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuie
  * @param   ppszNext    Where to return the pointer to the end of the value.
  *                      Optional.
  * @param   cchMax      Number of bytes left in the string starting at @a psz.
- * @param   rc          The status code to return.
+ * @param   fPositive   Whether the NaN should be positive or negative.
+ * @param   iRetType    The target type.
+ * @param   pRet        Where to store the result.
  */
 static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t cchMax, bool fPositive,
                                       unsigned iRetType, FLOATUNION *pRet)
@@ -748,6 +753,8 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
  *                      Optional.
  * @param   cchMax      Number of bytes left in the string starting at @a psz.
  * @param   rc          The status code to return.
+ * @param   iRetType    The target type.
+ * @param   pRet        Where to store the result.
  */
 static int rtStrToLongDoubleReturnZero(const char *psz, char **ppszNext, size_t cchMax, bool fPositive,
                                        int rc, unsigned iRetType, FLOATUNION *pRet)
@@ -785,7 +792,10 @@ static int rtStrToLongDoubleReturnZero(const char *psz, char **ppszNext, size_t 
  * @param   ppszNext    Where to return the pointer to the end of the value.
  *                      Optional.
  * @param   cchMax      Number of bytes left in the string starting at @a psz.
- * @param   rc          The status code to return.
+ * @param   fPositive   Whether the value should be positive or negative.
+ * @param   iExponent   Overflow/underflow indicator.
+ * @param   iRetType    The target type.
+ * @param   pRet        Where to store the result.
  */
 static int rtStrToLongDoubleReturnOverflow(const char *psz, char **ppszNext, size_t cchMax, bool fPositive,
                                            int32_t iExponent, unsigned iRetType, FLOATUNION *pRet)

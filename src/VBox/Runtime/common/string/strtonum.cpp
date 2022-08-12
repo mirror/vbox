@@ -943,7 +943,6 @@ RT_EXPORT_SYMBOL(RTStrToInt32);
  *                          is zero the function will look for known prefixes before
  *                          defaulting to 10.  A max length of zero means no length
  *                          restriction.
- * @param   pu8             Where to store the converted number. (optional)
  * @param   pi16            Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, int16_t *pi16)
