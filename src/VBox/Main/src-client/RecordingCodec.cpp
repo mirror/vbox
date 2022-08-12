@@ -534,7 +534,6 @@ static DECLCALLBACK(int) recordingCodecVorbisFinalize(PRECORDINGCODEC pCodec)
 *   Codec API                                                                                                                    *
 *********************************************************************************************************************************/
 
-#ifdef VBOX_WITH_AUDIO_RECORDING
 /**
  * Initializes an audio codec.
  *
@@ -594,7 +593,6 @@ static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
 
     return vrc;
 }
-#endif /* VBOX_WITH_AUDIO_RECORDING */
 
 /**
  * Initializes a video codec.
@@ -648,7 +646,7 @@ static int recordingCodecInitVideo(const PRECORDINGCODEC pCodec,
 }
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
-/**s
+/**
  * Lets an audio codec parse advanced options given from a string.
  *
  * @returns VBox status code.
@@ -685,6 +683,7 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
 
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * Creates an audio codec.
@@ -739,7 +738,6 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 
     return vrc;
 }
-#endif /* VBOX_WITH_AUDIO_RECORDING */
 
 /**
  * Creates a video codec.

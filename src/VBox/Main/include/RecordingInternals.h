@@ -443,9 +443,7 @@ struct RecordingBlock
 /** List for keeping video recording (data) blocks. */
 typedef std::list<RecordingBlock *> RecordingBlockList;
 
-#ifdef VBOX_WITH_AUDIO_RECORDING
 int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmAudioCodec);
-#endif
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec);
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings);
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);

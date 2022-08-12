@@ -125,9 +125,9 @@ public:
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->uScreenID; };
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    const PRECORDINGCODEC GetAudioCodec(void) { return &this->CodecAudio; };
+    PRECORDINGCODEC GetAudioCodec(void) { return &this->CodecAudio; };
 #endif
-    const PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
+    PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
     bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
 
@@ -194,10 +194,8 @@ protected:
     /** Timestamp (in ms) of when recording has been start. */
     uint64_t            tsStartMs;
 
-#ifdef VBOX_WITH_AUDIO_RECORDING
     /** Audio codec instance data to use. */
     RECORDINGCODEC                    CodecAudio;
-#endif
     /** Video codec instance data to use. */
     RECORDINGCODEC                    CodecVideo;
     /** Screen settings to use. */
