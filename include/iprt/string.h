@@ -3320,7 +3320,7 @@ RTDECL(int) RTStrToLongDoubleEx(const char *pszValue, char **ppszNext, size_t cc
  * @param   ppszNext    Where to store the pointer to the first char following
  *                      the number.  Optional.
  * @param   cchMax      Max number of character to parse.  Zero means unlimited.
- * @param   plrd        Where to return the number.  Optional.
+ * @param   prd         Where to return the number.  Optional.
  *
  * @note    This code isn't entirely perfect yet.  It could exhibit rounding
  *          differences compared to strtold & the compiler, and extreme value
@@ -3344,7 +3344,7 @@ RTDECL(int) RTStrToDoubleEx(const char *pszValue, char **ppszNext, size_t cchMax
  * @param   ppszNext    Where to store the pointer to the first char following
  *                      the number.  Optional.
  * @param   cchMax      Max number of character to parse.  Zero means unlimited.
- * @param   plrd        Where to return the number.  Optional.
+ * @param   pr          Where to return the number.  Optional.
  *
  * @note    This code isn't entirely perfect yet.  It could exhibit rounding
  *          differences compared to strtold & the compiler, and extreme value
