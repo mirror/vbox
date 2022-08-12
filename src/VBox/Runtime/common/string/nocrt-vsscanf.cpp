@@ -32,6 +32,7 @@
 #include "internal/nocrt.h"
 #include <iprt/nocrt/stdio.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
@@ -138,6 +139,36 @@ static const char *rtNoCrtScanInt(const char *pszString, unsigned uBase, bool fS
             pszString = NULL;
     }
 
+    return pszString;
+}
+
+
+static const char *rtNoCrtScanFloat(const char *pszString, char chPrefix, int cchWidth, void *pvDst, int *pcMatches)
+{
+    size_t const cchMax = cchWidth > 0 ? (unsigned)cchWidth : 0;
+    int          rc;
+    switch (chPrefix)
+    {
+        default:
+        case '\0':
+#ifndef RT_OS_WINDOWS /* Windows doesn't do float, only double and "long" double (same as double). */
+            rc = RTStrToFloatEx(pszString, (char **)&pszString, cchMax, (float *)pvDst);
+            break;
+#else
+            RT_FALL_THRU();
+#endif
+        case 'l':
+            rc = RTStrToDoubleEx(pszString, (char **)&pszString, cchMax, (double *)pvDst);
+            break;
+
+        case 'L':
+            rc = RTStrToLongDoubleEx(pszString, (char **)&pszString, cchMax, (long double *)pvDst);
+            break;
+    }
+    if (rc != VERR_NO_DIGITS)
+        *pcMatches += pvDst != NULL;
+    else
+        pszString = NULL;
     return pszString;
 }
 
@@ -270,11 +301,35 @@ int RT_NOCRT(vsscanf)(const char *pszString, const char *pszFormat, va_list va)
 
                         void *pvDst = NULL;
                         if (fAssign)
-                            pvDst = va_arg(va, void *); /* This ought to work most place... Probably standard conforming. */
+                            pvDst = va_arg(va, void *); /* This ought to work most place... Probably not standard conforming. */
                         pszString = rtNoCrtScanInt(pszString,
                                                    chFmt == 'i' ? 0 : chFmt == 'd' || chFmt == 'u' ? 10 : chFmt == 'o' ? 8 :  16,
                                                    chFmt == 'd' || chFmt == 'i' /* fSigned */,
                                                    chPrefix, cchWidth, pvDst, &cMatches);
+                        if (!pszString)
+                            return cMatches;
+                        break;
+                    }
+
+                    case 'a':
+                    case 'A':
+                    case 'e':
+                    case 'E':
+                    case 'f':
+                    case 'F':
+                    case 'g':
+                    case 'G':
+                    {
+                        while (RT_C_IS_SPACE(*pszString))
+                            pszString++;
+
+                        /* Note! We don't really give a hoot what input format type we're given,
+                                 we keep and open mind and acceept whatever we find that looks like
+                                 floating point.  This is doubtfully standard compliant. */
+                        void *pvDst = NULL;
+                        if (fAssign)
+                            pvDst = va_arg(va, void *); /* This ought to work most place... Probably not standard conforming. */
+                        pszString = rtNoCrtScanFloat(pszString, chPrefix, cchWidth, pvDst, &cMatches);
                         if (!pszString)
                             return cMatches;
                         break;
