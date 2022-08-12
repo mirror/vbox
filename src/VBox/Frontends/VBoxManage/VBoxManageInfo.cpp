@@ -2845,8 +2845,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             CHECK_ERROR_RET(screenSettings, COMGETTER(Enabled)(&fEnabled), hrc);
             ULONG idScreen;
             CHECK_ERROR_RET(screenSettings, COMGETTER(Id)(&idScreen), hrc);
-            ULONG fFeatures;
-            CHECK_ERROR_RET(screenSettings, COMGETTER(Features)(&fFeatures), hrc);
+            com::SafeArray<RecordingFeature_T> vecFeatures;
+            CHECK_ERROR_RET(screenSettings, COMGETTER(Features)(ComSafeArrayAsOutParam(vecFeatures)), hrc);
             ULONG Width;
             CHECK_ERROR_RET(screenSettings, COMGETTER(VideoWidth)(&Width), hrc);
             ULONG Height;
@@ -2866,21 +2866,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 # ifdef VBOX_WITH_AUDIO_RECORDING
             BOOL fRecordAudio = FALSE;
 # endif
-            Utf8Str strOptions(bstrOptions);
-            size_t pos = 0;
-            com::Utf8Str key, value;
-            while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+            for (size_t f = 0; f < vecFeatures.size(); ++f)
             {
-                if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
-                {
-                    fRecordVideo = value.compare("true", Utf8Str::CaseInsensitive) == 0;
-                }
-                else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
-                {
-# ifdef VBOX_WITH_AUDIO_RECORDING
-                    fRecordAudio = value.compare("true", Utf8Str::CaseInsensitive) == 0;
-# endif
-                }
+                if (vecFeatures[f] == RecordingFeature_Audio)
+                    fRecordAudio = TRUE;
+                else if (vecFeatures[f] == RecordingFeature_Video)
+                    fRecordVideo = TRUE;
             }
 
             SHOW_BOOL_VALUE_EX("rec_screen_enabled",         Info::tr("    Enabled:"), fEnabled,

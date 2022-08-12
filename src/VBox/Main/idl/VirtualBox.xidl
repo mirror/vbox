@@ -5915,7 +5915,7 @@
 
   <interface
     name="IRecordingScreenSettings" extends="$unknown"
-    uuid="2377f7d2-1971-40ff-8e39-e61089bb3a22"
+    uuid="c1844087-ec6b-488d-afbb-c90f6452a04b"
     wsmap="managed"
     rest="managed"
     >
@@ -5949,7 +5949,7 @@
       </desc>
     </attribute>
 
-    <attribute name="features" type="unsigned long">
+    <attribute name="features" type="RecordingFeature" safearray="yes">
       <desc>This setting determines all enabled recording features for this
         screen.</desc>
     </attribute>

@@ -7289,6 +7289,16 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
         hrc = pRecScreenSettings->COMGETTER(Enabled)(&fTemp);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         recScreenSettings.fEnabled = RT_BOOL(fTemp);
+        com::SafeArray<RecordingFeature_T> vecFeatures;
+        hrc = pRecScreenSettings->COMGETTER(Features)(ComSafeArrayAsOutParam(vecFeatures));
+        AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
+        for (size_t f = 0; f < vecFeatures.size(); ++f)
+        {
+            if (vecFeatures[f] == RecordingFeature_Audio)
+                recScreenSettings.featureMap[RecordingFeature_Audio] = true;
+            else if (vecFeatures[f] == RecordingFeature_Video)
+                recScreenSettings.featureMap[RecordingFeature_Video] = true;
+        }
         hrc = pRecScreenSettings->COMGETTER(MaxTime)((ULONG *)&recScreenSettings.ulMaxTimeS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         hrc = pRecScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&recScreenSettings.File.ulMaxSizeMB);

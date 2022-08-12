@@ -72,8 +72,8 @@ private:
     HRESULT getId(ULONG *id);
     HRESULT getEnabled(BOOL *enabled);
     HRESULT setEnabled(BOOL enabled);
-    HRESULT getFeatures(ULONG *aFeatures);
-    HRESULT setFeatures(ULONG aFeatures);
+    HRESULT getFeatures(std::vector<RecordingFeature_T> &aFeatures);
+    HRESULT setFeatures(const std::vector<RecordingFeature_T> &aFeatures);
     HRESULT getDestination(RecordingDestination_T *aDestination);
     HRESULT setDestination(RecordingDestination_T aDestination);
 

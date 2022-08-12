@@ -2806,9 +2806,9 @@ int RecordingScreenSettings::featuresFromString(const com::Utf8Str &strFeatures,
     RTCList<RTCString> lstFeatures = strFeatures.split(" ");
     for (size_t i = 0; i < lstFeatures.size(); i++)
     {
-        if (lstFeatures.at(i).compare("video", RTCString::CaseInsensitive))
+        if (lstFeatures.at(i).compare("video", RTCString::CaseInsensitive) == 0)
             featureMap[RecordingFeature_Video] = true;
-        else if (lstFeatures.at(i).compare("audio", RTCString::CaseInsensitive))
+        else if (lstFeatures.at(i).compare("audio", RTCString::CaseInsensitive) == 0)
             featureMap[RecordingFeature_Audio] = true;
         /* ignore everything else */
     }
@@ -2825,6 +2825,8 @@ int RecordingScreenSettings::featuresFromString(const com::Utf8Str &strFeatures,
 /* static */
 void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures)
 {
+    strFeatures = "";
+
     RecordingFeatureMap::const_iterator itFeature = featureMap.begin();
     while (itFeature != featureMap.end())
     {
@@ -2832,8 +2834,6 @@ void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featur
             strFeatures += "video ";
         if (itFeature->first == RecordingFeature_Audio && itFeature->second)
             strFeatures += "audio ";
-        strFeatures += " ";
-
         ++itFeature;
     }
     strFeatures.strip();

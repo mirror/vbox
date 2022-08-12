@@ -303,20 +303,20 @@ HRESULT RecordingScreenSettings::setEnabled(BOOL enabled)
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::getFeatures(ULONG *aFeatures)
+HRESULT RecordingScreenSettings::getFeatures(std::vector<RecordingFeature_T> &aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aFeatures = 0;
+    aFeatures.clear();
 
     settings::RecordingFeatureMap::const_iterator itFeature = m->bd->featureMap.begin();
     while (itFeature != m->bd->featureMap.end())
     {
         if (itFeature->second) /* Is feature enable? */
-            *aFeatures |= (ULONG)itFeature->first;
+            aFeatures.push_back(itFeature->first);
 
         ++itFeature;
     }
@@ -324,7 +324,7 @@ HRESULT RecordingScreenSettings::getFeatures(ULONG *aFeatures)
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::setFeatures(ULONG aFeatures)
+HRESULT RecordingScreenSettings::setFeatures(const std::vector<RecordingFeature_T> &aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -339,10 +339,22 @@ HRESULT RecordingScreenSettings::setFeatures(ULONG aFeatures)
     settings::RecordingFeatureMap featureMapOld = m->bd->featureMap;
     m->bd->featureMap.clear();
 
-    if (aFeatures & RecordingFeature_Audio)
-        m->bd->featureMap[RecordingFeature_Audio] = true;
-    if (aFeatures & RecordingFeature_Video)
-        m->bd->featureMap[RecordingFeature_Video] = true;
+    for (size_t i = 0; i < aFeatures.size(); i++)
+    {
+        switch (aFeatures[i])
+        {
+            case RecordingFeature_Audio:
+                m->bd->featureMap[RecordingFeature_Audio] = true;
+                break;
+
+            case RecordingFeature_Video:
+                m->bd->featureMap[RecordingFeature_Video] = true;
+                break;
+
+            default:
+                break;
+        }
+    }
 
     if (m->bd->featureMap != featureMapOld)
     {
