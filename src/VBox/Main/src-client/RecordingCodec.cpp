@@ -156,12 +156,12 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                                            pVPX->uEncoderDeadline       /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
-        if (pCodec->Stats.cEncErrors++ < 64) /** @todo Make this configurable. */
+        if (pCodec->cEncErrors++ < 64) /** @todo Make this configurable. */
             LogRel(("Recording: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_RECORDING_ENCODING_FAILED;
     }
 
-    pCodec->Stats.cEncErrors = 0;
+    pCodec->cEncErrors = 0;
 
     vpx_codec_iter_t iter = NULL;
     vrc = VERR_NO_DATA;
@@ -774,11 +774,6 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
     {
         pCodec->Parms.enmType       = RECORDINGCODECTYPE_VIDEO;
         pCodec->Parms.enmVideoCodec = enmVideoCodec;
-
-#ifdef VBOX_WITH_STATISTICS
-        pCodec->Stats.cEncBlocks = 0;
-        pCodec->Stats.msEncTotal = 0;
-#endif
     }
 
     return vrc;
@@ -801,6 +796,16 @@ int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBA
         vrc = recordingCodecInitVideo(pCodec, pCallbacks, Settings);
     else
         AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
+
+    if (RT_SUCCESS(vrc))
+    {
+        pCodec->cEncErrors       = 0;
+#ifdef VBOX_WITH_STATISTICS
+        pCodec->Stats.cEncBlocks = 0;
+        pCodec->Stats.msEncTotal = 0;
+#endif
+    }
+
     return vrc;
 }
 

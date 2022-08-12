@@ -288,12 +288,12 @@ typedef struct RECORDINGCODEC
 
     /** Timestamp (in ms) of the last frame was encoded. */
     uint64_t            uLastTimeStampMs;
+    /** Number of encoding errors. */
+    uint64_t            cEncErrors;
 
 #ifdef VBOX_WITH_STATISTICS /** @todo Register these values with STAM. */
     struct
     {
-        /** Number of encoding errors. */
-        uint64_t        cEncErrors;
         /** Number of frames encoded. */
         uint64_t        cEncBlocks;
         /** Total time (in ms) of already encoded audio data. */
