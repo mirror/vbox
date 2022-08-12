@@ -40,7 +40,7 @@ int RT_NOCRT(atoi)(const char *psz)
 {
 #if INT_MAX == INT32_MAX
     int32_t iValue = 0;
-    int rc = RTStrToInt32Ex(psz, NULL, 10, &iValue);
+    int rc = RTStrToInt32Ex(RTStrStripL(psz), NULL, 10, &iValue);
 #else
 # error "Unsupported integer size"
 #endif

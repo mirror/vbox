@@ -40,7 +40,7 @@
 double RT_NOCRT(strtod)(const char *psz, char **ppszNext)
 {
     double rd = 0.0;
-    int rc = RTStrToDoubleEx(psz, ppszNext, 0, &rd);
+    int rc = RTStrToDoubleEx(RTStrStripL(psz), ppszNext, 0, &rd);
     if (rc != VINF_SUCCESS)
         errno = RTErrConvertToErrno(rc);
     return rd;

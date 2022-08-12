@@ -42,7 +42,7 @@ unsigned long long RT_NOCRT(strtoull)(const char *psz, char **ppszNext, int iBas
 {
 #if LLONG_BIT == 64
     uint64_t uValue = 0;
-    int rc = RTStrToUInt64Ex(psz, ppszNext, (unsigned)iBase, &uValue);
+    int rc = RTStrToUInt64Ex(RTStrStripL(psz), ppszNext, (unsigned)iBase, &uValue);
 #else
 # error "Unsupported LLONG_BIT value"
 #endif
