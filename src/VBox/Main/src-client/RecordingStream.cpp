@@ -934,7 +934,7 @@ int RecordingStream::uninitInternal(void)
 }
 
 /* static */
-int RecordingStream::codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser)
+DECLCALLBACK(int) RecordingStream::codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser)
 {
     RT_NOREF(pCodec);
 
