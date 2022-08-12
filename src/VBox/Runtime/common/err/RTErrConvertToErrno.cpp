@@ -155,7 +155,11 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         //case VERR_INVALID_PARAMETER:    return EDOM;
 #endif
 #ifdef ERANGE
-        //case VERR_INVALID_PARAMETER:    return ERANGE;
+        case VERR_OUT_OF_RANGE:                     return ERANGE;
+        case VERR_FLOAT_UNDERFLOW:                  return ERANGE;
+        case VWRN_FLOAT_UNDERFLOW:                  return ERANGE;
+        case VERR_FLOAT_OVERFLOW:                   return ERANGE;
+        case VWRN_FLOAT_OVERFLOW:                   return ERANGE;
 #endif
 #ifdef EDEADLK
         case VERR_DEADLOCK:                         return EDEADLK;

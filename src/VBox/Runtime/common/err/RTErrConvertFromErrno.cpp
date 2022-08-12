@@ -153,7 +153,7 @@ RTDECL(int)  RTErrConvertFromErrno(int iNativeCode)
         case EDOM:              return VERR_INVALID_PARAMETER;  /** @todo fix duplicate error */
 #endif
 #ifdef ERANGE
-        case ERANGE:            return VERR_INVALID_PARAMETER;  /** @todo fix duplicate error */
+        case ERANGE:            return VERR_OUT_OF_RANGE;
 #endif
 #ifdef EDEADLK
         case EDEADLK:           return VERR_DEADLOCK;

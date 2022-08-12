@@ -1739,7 +1739,7 @@ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_
 	$$(QUIET)$$(APPEND) -tn "$$@" "$(target)_2_VBOX_NOCRT_ALIASES := \\"
 	$$(xargs $$(QUIET)$$(SED) -rn -f "$$(VBOX_PATH_RUNTIME_SRC)/nocrt-aliases.sed" --append "$$@" , $$(filter %.c %.cpp %.asm, $$^) )
 	$$(QUIET)$$(APPEND) -n "$$@" "" ""
-	$$(QUIET)$$(CP) --changed -f -- "$$@" "$$(patsubst %.ts,%s,$$@)"
+	$$(QUIET)$$(CP) --changed -f -- "$$@" "$$(patsubst %.ts,%,$$@)"
 
 $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
 	$$(call MSG_GENERATE,$(target),$$@,)
@@ -1853,9 +1853,10 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/sort/nocrt-qsort.cpp \
   	common/sort/nocrt-qsort_r.cpp \
   	common/sort/nocrt-bsearch.cpp \
-  	common/string/nocrt-atof.cpp \
   	common/string/nocrt-strdup.cpp \
   	common/string/nocrt-stricmp.cpp \
+  	common/string/nocrt-strtod.cpp \
+  	common/string/nocrt-atof.cpp \
   	common/string/nocrt-strtol.cpp \
   	common/string/nocrt-strtoll.cpp \
   	common/string/nocrt-strtoul.cpp \
