@@ -12849,14 +12849,14 @@
 
     <attribute name="supportedRecordingARCModes" type="RecordingRateControlMode" safearray="yes" readonly="yes">
       <desc>
-        Returns an array of officially supported audio codec values for enum <link to="RecordingVideoRateControlMode"/>,
+        Returns an array of officially supported audio codec values for enum <link to="RecordingRateControlMode"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
 
     <attribute name="supportedRecordingVRCModes" type="RecordingRateControlMode" safearray="yes" readonly="yes">
       <desc>
-        Returns an array of officially supported video codec values for enum <link to="RecordingVideoRateControlMode"/>,
+        Returns an array of officially supported video codec values for enum <link to="RecordingRateControlMode"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
