@@ -2868,8 +2868,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 # endif
             for (size_t f = 0; f < vecFeatures.size(); ++f)
             {
+# ifdef VBOX_WITH_AUDIO_RECORDING
                 if (vecFeatures[f] == RecordingFeature_Audio)
                     fRecordAudio = TRUE;
+# endif
                 else if (vecFeatures[f] == RecordingFeature_Video)
                     fRecordVideo = TRUE;
             }
