@@ -2849,7 +2849,7 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2);
  *                          restriction.
  * @param   pu64            Where to store the converted number. (optional)
  */
-RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndLen, uint64_t *pu64);
+RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, uint64_t *pu64);
 
 /**
  * Converts a string representation of a number to a 64-bit unsigned number,
