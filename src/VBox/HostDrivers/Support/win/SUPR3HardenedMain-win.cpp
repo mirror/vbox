@@ -5261,7 +5261,7 @@ static void supR3HardenedWinOpenStubDevice(void)
                 supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, rc,
                                       "NtCreateFile(%ls) failed: VERR_SUPDRV_APIPORT_OPEN_ERROR\n"
                                       "\n"
-                                      "Error getting %s\\ApiPort in the driver from vboxdrv.\n"
+                                      "Error getting %s\\ApiPort in the driver from vboxsup.\n"
                                       "\n"
                                       "Could be due to security software is redirecting access to it, so please include full "
                                       "details of such software in a bug report. VBoxStartup.log may contain details important "
@@ -5342,9 +5342,9 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(int iWhich)
     /*
      * Before the 2nd respawn we set up a child protection deal with the
      * support driver via /Devices/VBoxDrvStub.  (We tried to do this
-     * during the early init, but in case we had trouble accessing vboxdrv we
-     * retry it here where we have kernel32.dll and others to pull in for
-     * better diagnostics.)
+     * during the early init, but in case we had trouble accessing vboxdrv
+     * (renamed to vboxsup in 7.0 and 6.1.34) we retry it here where we
+     * have kernel32.dll and others to pull in for better diagnostics.)
      */
     if (iWhich == 2)
         supR3HardenedWinOpenStubDevice();
@@ -6826,9 +6826,9 @@ DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPIN
  * to opening the driver from SUPR3HardenedMain.  It also avoids issues with so
  * call protection software that is in the habit of patching half of the ntdll
  * and kernel32 APIs in the process, making it almost indistinguishable from
- * software that is up to no good.  Once we've opened vboxdrv, the process
- * should be locked down so thighly that only kernel software and csrss can mess
- * with the process.
+ * software that is up to no good.  Once we've opened vboxdrv (renamed to
+ * vboxsup in 7.0 and 6.1.34), the process should be locked down so tightly
+ * that only kernel software and csrss can mess with the process.
  */
 DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
 {
@@ -6969,13 +6969,13 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
      */
     if (cArgs >= 1 && suplibHardenedStrCmp(papszArgs[0], SUPR3_RESPAWN_1_ARG0) == 0)
     {
-        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv stub...\n"));
+        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxsup stub...\n"));
         supR3HardenedWinOpenStubDevice();
         g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_STUB_DEVICE_OPENED;
     }
     else if (cArgs >= 1 && suplibHardenedStrCmp(papszArgs[0], SUPR3_RESPAWN_2_ARG0) == 0)
     {
-        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv...\n"));
+        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxsup...\n"));
         supR3HardenedMainOpenDevice();
         g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_REAL_DEVICE_OPENED;
     }
