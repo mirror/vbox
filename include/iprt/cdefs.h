@@ -1110,19 +1110,35 @@
 # endif
 #endif
 
+/** @def RT_COMPILER_LONG_DOUBLE_BITS
+ * Number of relevant bits in the long double type: 64, 80 or 128  */
+/** @def RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+ * Macro that is defined if the compiler implements long double as the
+ * IEEE precision floating. */
 /** @def RT_COMPILER_WITH_80BIT_LONG_DOUBLE
  * Macro that is defined if the compiler implements long double as the
  * IEEE extended precision floating. */
-#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(RT_OS_WINDOWS)
-# define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
-#endif
-
 /** @def RT_COMPILER_WITH_128BIT_LONG_DOUBLE
- * Macro that is defined if the compiler implements long double as the
- * IEEE quadruple precision floating (128-bit).
- * @note Currently not able to detect this, so must be explicitly defined. */
-#if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+* Macro that is defined if the compiler implements long double as the
+* IEEE quadruple precision floating (128-bit).
+* @note Currently not able to detect this, so must be explicitly defined. */
+#if defined(RT_OS_WINDOWS) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32) /* the M1 arm64 at least */
+# define RT_COMPILER_LONG_DOUBLE_BITS       64
+# define RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+# undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+#elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# define RT_COMPILER_LONG_DOUBLE_BITS       80
+# undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+# define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+#elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# define RT_COMPILER_LONG_DOUBLE_BITS       128
+# undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+# undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 # define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+#else
+# error "Port me!"
 #endif
 
 /** @def RT_COMPILER_WITH_128BIT_INT_TYPES

@@ -1084,6 +1084,10 @@ typedef union RTFLOAT64U
     /** Double view. */
     double      rd, r;
 #endif
+#ifdef RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+    /** Long double view. */
+    long double lrd;
+#endif
     /** Unsigned integer view. */
     uint64_t    u;
     /** 64-bit view. */
