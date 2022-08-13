@@ -104,8 +104,8 @@ void        RT_NOCRT(qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
                               int (*pfnCompare)(const void *pv1, const void *pv2, void *pvUser), void *pvUser);
 
 /* Map exit & abort onto fatal assert. */
-DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(exit)(int iExitCode) { AssertMsgFailed(("exit: iExitCode=%d\n", iExitCode)); }
-DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(abort)(void) { AssertMsgFailed(("abort\n")); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(exit)(int iExitCode) { AssertFatalMsgFailed(("exit: iExitCode=%d\n", iExitCode)); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(abort)(void)         { AssertFatalMsgFailed(("abort\n")); }
 
 /*
  * Underscored versions:
