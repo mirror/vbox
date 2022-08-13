@@ -321,6 +321,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVideoRecHA_GetStatus(PPDMIHOSTAU
  * @param   pThis               Driver instance.
  * @param   pStreamAV           Audio output stream to create.
  * @param   pSink               Recording sink to associate audio output stream to.
+ * @param   pCodec              The audio codec, for stream parameters.
  * @param   pCfgReq             Requested configuration by the audio backend.
  * @param   pCfgAcq             Acquired configuration by the audio output stream.
  */
@@ -330,6 +331,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pCodec,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,   VERR_INVALID_POINTER);
 
