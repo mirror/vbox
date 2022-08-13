@@ -41,6 +41,9 @@
 #if !defined(_MSC_VER) || !defined(IPRT_NO_CRT) /** @todo fix*/
 # include <fenv.h>
 #endif
+#ifndef INFINITY  /* Not defined on older Solaris (like the one in the add build VM). */
+# define INFINITY HUGE_VALF
+#endif
 
 #if defined(SOFTFLOAT_FAST_INT64) && !defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE) /** @todo better softfloat indicator? */
 # define USE_SOFTFLOAT /* for scaling by power of 10 */
