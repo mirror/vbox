@@ -1122,18 +1122,37 @@
 * Macro that is defined if the compiler implements long double as the
 * IEEE quadruple precision floating (128-bit).
 * @note Currently not able to detect this, so must be explicitly defined. */
-#if defined(RT_OS_WINDOWS) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32) /* the M1 arm64 at least */
-# define RT_COMPILER_LONG_DOUBLE_BITS       64
+#if defined(__LDBL_MANT_DIG__) /* GCC & clang have this defined and should be more reliable.  */
+# if __LDBL_MANT_DIG__ == 53
+#  define RT_COMPILER_LONG_DOUBLE_BITS          64
+#  define RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+#  undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#  undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+# elif __LDBL_MANT_DIG__ == 64
+#  define RT_COMPILER_LONG_DOUBLE_BITS          80
+#  undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+#  define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#  undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+# elif __LDBL_MANT_DIG__ == 113
+#  define RT_COMPILER_LONG_DOUBLE_BITS          128
+#  undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+#  undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#  define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
+# else
+#  error "Port me!"
+# endif
+#elif defined(RT_OS_WINDOWS) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32) /* the M1 arm64 at least */
+# define RT_COMPILER_LONG_DOUBLE_BITS           64
 # define RT_COMPILER_WITH_64BIT_LONG_DOUBLE
 # undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 # undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
 #elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# define RT_COMPILER_LONG_DOUBLE_BITS       80
+# define RT_COMPILER_LONG_DOUBLE_BITS           80
 # undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 # undef  RT_COMPILER_WITH_128BIT_LONG_DOUBLE
 #elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
-# define RT_COMPILER_LONG_DOUBLE_BITS       128
+# define RT_COMPILER_LONG_DOUBLE_BITS           128
 # undef  RT_COMPILER_WITH_64BIT_LONG_DOUBLE
 # undef  RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 # define RT_COMPILER_WITH_128BIT_LONG_DOUBLE
