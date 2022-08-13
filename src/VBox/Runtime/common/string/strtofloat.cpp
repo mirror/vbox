@@ -59,6 +59,8 @@ typedef struct FLOATUNION
     RTFLOAT128U lrd;
 #elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
     RTFLOAT80U2 lrd;
+#else
+    RTFLOAT64U  lrd;
 #endif
     RTFLOAT64U  rd;
     RTFLOAT32U  r;
@@ -94,6 +96,35 @@ extern const unsigned char g_auchDigits[256];
 #define DIGITS_SPACE     252
 #define DIGITS_DOT       251
 
+/** Pair of default float quiet NaN values (indexed by fPositive). */
+static RTFLOAT32U const     g_ar32QNan[2]   = { RTFLOAT32U_INIT_QNAN(0), RTFLOAT32U_INIT_QNAN(1) };
+
+/** Pair of default double quiet NaN values (indexed by fPositive). */
+static RTFLOAT64U const     g_ardQNan[2]    = { RTFLOAT64U_INIT_QNAN(0), RTFLOAT64U_INIT_QNAN(1) };
+
+/** Pair of default double quiet NaN values (indexed by fPositive). */
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+static RTFLOAT128U const    g_lardQNan[2]   = { RTFLOAT128U_INIT_QNAN(0), RTFLOAT128U_INIT_QNAN(1) };
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
+static RTFLOAT80U const     g_alrdQNan[2]   = { RTFLOAT80U_INIT_QNAN(0), RTFLOAT80U_INIT_QNAN(1) };
+#else
+static RTFLOAT64U const     g_alrdQNan[2]   = { RTFLOAT64U_INIT_QNAN(0), RTFLOAT64U_INIT_QNAN(1) };
+#endif
+
+/** NaN fraction value masks. */
+static uint64_t const       g_fNanMasks[3] =
+{
+    RT_BIT_64(RTFLOAT32U_FRACTION_BITS - 1) - 1,        /* 22=quiet(1) / silent(0) */
+    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,        /* 51=quiet(1) / silent(0) */
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) - 1,  /* 111=quiet(1) / silent(0) */
+#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
+    RT_BIT_64(RTFLOAT80U_FRACTION_BITS - 1) - 1,        /* bit 63=NaN; bit 62=quiet(1) / silent(0) */
+#else
+    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,
+#endif
+};
+
 #if 0
 /** Maximum exponent value in the binary representation for a RET_TYPE_XXX. */
 static const int32_t g_iMaxExp[3] =
@@ -123,20 +154,6 @@ static const int32_t g_iMinExp[3] =
 #endif
 };
 #endif
-
-/** NaN fraction value masks. */
-static uint64_t const g_fNanMasks[3] =
-{
-    RT_BIT_64(RTFLOAT32U_FRACTION_BITS - 1) - 1,        /* 22=quiet(1) / silent(0) */
-    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,        /* 51=quiet(1) / silent(0) */
-#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
-    RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) - 1,  /* 111=quiet(1) / silent(0) */
-#elif defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
-    RT_BIT_64(RTFLOAT80U_FRACTION_BITS - 1) - 1,        /* bit 63=NaN; bit 62=quiet(1) / silent(0) */
-#else
-    RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) - 1,
-#endif
-};
 
 #if 0 /* unused */
 # if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
@@ -588,19 +605,17 @@ static int rtStrToLongDoubleReturnInf(const char *psz, char **ppszNext, size_t c
  * Parses the tag of a "NaN(tag)" value.
  *
  * We take the tag to be a number to be put in the mantissa of the NaN, possibly
- * prefixed by 'quiet_' or 'silent_' (all or part) to indicate the type of NaN.
+ * suffixed by '[_]quiet' or '[_]signaling' (all or part) to indicate the type
+ * of NaN.
  *
- * @returns Value found in the tag string. Caller must mask it to fit in the
- *          target format.
- * @param   pchTag  The tag string to parse.  Not zero terminated.
- * @param   cchTag  The length of the tag string value.
- * @param   pfQuiet Where to return the type of NaN.  Default is quiet.
- * @param   puHiNum Where to rturn the high 64-bits of the tag.
+ * @param   pchTag      The tag string to parse.  Not zero terminated.
+ * @param   cchTag      The length of the tag string value.
+ * @param   fPositive   Whether the NaN should be positive or negative.
+ * @param   iRetType    The target type.
+ * @param   pRet        Where to store the result.
  */
-static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuiet, uint64_t *puHiNum)
+static void rtStrParseNanTag(const char *pchTag, size_t cchTag, bool fPositive, unsigned iRetType, FLOATUNION *pRet)
 {
-    *pfQuiet = true;
-
     /*
      * Skip 0x - content is hexadecimal, so this is not necessary.
      */
@@ -613,8 +628,8 @@ static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuie
     /*
      * Parse the number, ignoring overflows and stopping on non-xdigit.
      */
-    *puHiNum = 0;
-    uint64_t uRet = 0;
+    uint64_t uHiNum  = 0;
+    uint64_t uLoNum    = 0;
     unsigned iXDigit = 0;
     while (cchTag > 0)
     {
@@ -624,9 +639,9 @@ static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuie
             break;
         iXDigit++;
         if (iXDigit >= 16)
-            *puHiNum = (*puHiNum << 4) | (uRet >> 60);
-        uRet <<= 4;
-        uRet  += uchDigit;
+            uHiNum = (uHiNum << 4) | (uLoNum >> 60);
+        uLoNum <<= 4;
+        uLoNum  += uchDigit;
         pchTag++;
         cchTag--;
     }
@@ -636,16 +651,88 @@ static uint64_t rtStrParseNanTag(const char *pchTag, size_t cchTag, bool *pfQuie
      */
     while (cchTag > 0 && *pchTag == '_')
         pchTag++, cchTag--;
+    bool fQuiet = true;
     if (cchTag > 0)
     {
-        char const ch = pchTag[0];
+        //const char *pszSkip = NULL;
+        char       ch       = pchTag[0];
         if (ch == 'q' || ch == 'Q')
-            *pfQuiet = true;
+        {
+            fQuiet  = true;
+            //pszSkip = "qQuUiIeEtT\0"; /* cchTag stop before '\0', so we put two at the end to break out of the loop below. */
+        }
         else if (ch == 's' || ch == 'S')
-            *pfQuiet = false;
+        {
+            fQuiet  = false;
+            //pszSkip = "sSiIgGnNaAlLiInNgG\0";
+        }
+        //if (pszSkip)
+        //    do
+        //    {
+        //        pchTag++;
+        //        cchTag--;
+        //        pszSkip += 2;
+        //    } while (cchTag > 0 && ((ch = *pchTag) == pszSkip[0] || ch == pszSkip[1]));
     }
 
-    return uRet;
+    /*
+     * Adjust the number according to the type.
+     */
+    Assert(iRetType < RT_ELEMENTS(g_fNanMasks));
+#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+    if (iRetType == RET_TYPE_LONG_DOUBLE)
+    {
+        uHiNum &= g_fNanMasks[RET_TYPE_LONG_DOUBLE];
+        if (!uLoNum && !uHiNum)
+            uLoNum = 1; /* must not be zero, or it'll turn into an infinity */
+    }
+    else
+#endif
+    {
+        uHiNum  = 0;
+        uLoNum &= g_fNanMasks[iRetType];
+        if (!uLoNum)
+            uLoNum = 1; /* must not be zero, or it'll turn into an infinity */
+    }
+
+    /*
+     * Set the return value.
+     */
+    switch (iRetType)
+    {
+        case RET_TYPE_FLOAT:
+        {
+            RTFLOAT32U const uRet = RTFLOAT32U_INIT_NAN_EX(fQuiet, !fPositive, (uint32_t)uLoNum);
+            pRet->r = uRet;
+            break;
+        }
+
+        case RET_TYPE_LONG_DOUBLE:
+#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
+        {
+# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
+            RTFLOAT80U2 const uRet = RTFLOAT80U_INIT_NAN_EX(fQuiet, !fPositive, uLoNum);
+# else
+            RTFLOAT128U const uRet = RTFLOAT128U_INIT_NAN_EX(fQuiet, !fPositive, uHiNum, uLoNum);
+# endif
+            pRet->lrd = uRet;
+            break;
+        }
+#else
+            AssertCompile(sizeof(long double) == sizeof(pRet->rd.rd));
+            RT_FALL_THRU();
+#endif
+        case RET_TYPE_DOUBLE:
+        {
+            RTFLOAT64U const uRet = RTFLOAT64U_INIT_NAN_EX(fQuiet, !fPositive, uLoNum);
+            pRet->rd = uRet;
+            break;
+        }
+
+        default: AssertFailedBreak();
+    }
+
+    //return cchTag == 0;
 }
 
 
@@ -669,77 +756,90 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
      * Any NaN sub-number? E.g. NaN(1) or Nan(0x42).  We'll require a closing
      * parenthesis or we'll just ignore it.
      */
-    bool     fQuiet = true;
-    uint64_t uNum   = 1;
-    uint64_t uHiNum = 0;
     if (cchMax >= 2 && *psz == '(')
     {
-        unsigned cch = 1;
-        char     ch  = '\0';
-        while (cch < cchMax && (RT_C_IS_ALNUM((ch = psz[cch])) || ch == '_'))
-            cch++;
+        unsigned cchTag = 1;
+        char     ch     = '\0';
+        while (cchTag < cchMax && (RT_C_IS_ALNUM((ch = psz[cchTag])) || ch == '_'))
+            cchTag++;
         if (ch == ')')
         {
-            uNum = rtStrParseNanTag(psz + 1, cch - 1, &fQuiet, &uHiNum);
-            psz    += cch + 1;
-            cchMax -= cch + 1;
-
-            Assert(iRetType < RT_ELEMENTS(g_fNanMasks));
-#if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
-            if (iRetType == RET_TYPE_LONG_DOUBLE)
-            {
-                uHiNum &= g_fNanMasks[RET_TYPE_LONG_DOUBLE];
-                if (!uNum && !uHiNum)
-                    uNum = 1; /* must not be zero, or it'll turn into an infinity */
-            }
-            else
-#endif
-            {
-                uNum &= g_fNanMasks[iRetType];
-                if (!uNum)
-                    uNum = 1; /* must not be zero, or it'll turn into an infinity */
-            }
+            rtStrParseNanTag(psz + 1, cchTag - 1, fPositive, iRetType, pRet);
+            psz    += cchTag + 1;
+            cchMax -= cchTag + 1;
+            return rtStrToLongDoubleReturnChecks(psz, ppszNext, cchMax, VINF_SUCCESS);
         }
     }
 
     /*
-     * Set the return value.
+     * Set the return value to the default NaN value.
      */
     switch (iRetType)
     {
         case RET_TYPE_FLOAT:
-        {
-            RTFLOAT32U const uRet = RTFLOAT32U_INIT_NAN_EX(fQuiet, !fPositive, (uint32_t)uNum);
-            pRet->r = uRet;
+            pRet->r = g_ar32QNan[fPositive];
             break;
-        }
+
+        case RET_TYPE_DOUBLE:
+            pRet->rd = g_alrdQNan[fPositive];
+            break;
 
         case RET_TYPE_LONG_DOUBLE:
-#if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE) || defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
-        {
-# if defined(RT_COMPILER_WITH_80BIT_LONG_DOUBLE)
-            RTFLOAT80U2 const uRet = RTFLOAT80U_INIT_NAN_EX(fQuiet, !fPositive, uNum);
-# else
-            RTFLOAT128U const uRet = RTFLOAT128U_INIT_NAN_EX(fQuiet, !fPositive, uHiNum, uNum);
-# endif
-            pRet->lrd = uRet;
+            pRet->lrd = g_alrdQNan[fPositive];
             break;
-        }
-#else
-            AssertCompile(sizeof(long double) == sizeof(pRet->rd.rd));
-            RT_FALL_THRU();
-#endif
-        case RET_TYPE_DOUBLE:
-        {
-            RTFLOAT64U const uRet = RTFLOAT64U_INIT_NAN_EX(fQuiet, !fPositive, uNum);
-            pRet->rd = uRet;
-            break;
-        }
 
         default: AssertFailedBreak();
     }
 
     return rtStrToLongDoubleReturnChecks(psz, ppszNext, cchMax, VINF_SUCCESS);
+}
+
+
+RTDECL(long double) RTStrNanLongDouble(const char *pszTag, bool fPositive)
+{
+    if (pszTag)
+    {
+        size_t cchTag = strlen(pszTag);
+        if (cchTag > 0)
+        {
+            FLOATUNION u;
+            rtStrParseNanTag(pszTag, cchTag, fPositive, RET_TYPE_LONG_DOUBLE, &u);
+            return u.lrd.r;
+        }
+    }
+    return g_alrdQNan[fPositive].r;
+}
+
+
+RTDECL(double) RTStrNanDouble(const char *pszTag, bool fPositive)
+{
+    if (pszTag)
+    {
+        size_t cchTag = strlen(pszTag);
+        if (cchTag > 0)
+        {
+            FLOATUNION u;
+            rtStrParseNanTag(pszTag, cchTag, fPositive, RET_TYPE_DOUBLE, &u);
+            return u.rd.r;
+        }
+    }
+    return g_ardQNan[fPositive].r;
+}
+
+
+RTDECL(float) RTStrNanFloat(const char *pszTag, bool fPositive)
+{
+    if (pszTag)
+    {
+        size_t cchTag = strlen(pszTag);
+        if (cchTag > 0)
+        {
+            FLOATUNION u;
+            rtStrParseNanTag(pszTag, cchTag, fPositive, RET_TYPE_FLOAT, &u);
+            return u.r.r;
+        }
+    }
+    return g_ar32QNan[fPositive].r;
 }
 
 

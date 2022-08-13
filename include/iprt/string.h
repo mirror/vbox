@@ -3354,6 +3354,63 @@ RTDECL(int) RTStrToFloatEx(const char *pszValue, char **ppszNext, size_t cchMax,
 
 
 /**
+ * Gets a long double NaN.
+ *
+ * @returns NaN value.
+ * @param   pszTag      Optional NaN tag for modifying the NaN value.  We
+ *                      recognizes a string of hex digits for inserting into the
+ *                      fraction part.  This may be followed 'quiet' or
+ *                      'signaling', ignoring case and requiring at only the
+ *                      first character.  The two components may be separated by
+ *                      zero or more '_' characters.  Any other stuff in the tag
+ *                      will be ignored.
+ *
+ *                      If the tag is empty or we cannot grok any of it, we'll
+ *                      return a default quiet NaN.
+ * @param   fPositive   Whether the NaN value should be positive or negative
+ *                      (for what that's worth).
+ */
+RTDECL(long double) RTStrNanLongDouble(const char *pszTag, bool fPositive);
+
+/**
+ * Gets a double NaN.
+ *
+ * @returns NaN value.
+ * @param   pszTag      Optional NaN tag for modifying the NaN value.  We
+ *                      recognizes a string of hex digits for inserting into the
+ *                      fraction part.  This may be followed 'quiet' or
+ *                      'signaling', ignoring case and requiring at only the
+ *                      first character.  The two components may be separated by
+ *                      zero or more '_' characters.  Any other stuff in the tag
+ *                      will be ignored.
+ *
+ *                      If the tag is empty or we cannot grok any of it, we'll
+ *                      return a default quiet NaN.
+ * @param   fPositive   Whether the NaN value should be positive or negative
+ *                      (for what that's worth).
+ */
+RTDECL(double) RTStrNanDouble(const char *pszTag, bool fPositive);
+
+/**
+ * Gets a float NaN.
+ *
+ * @returns NaN value.
+ * @param   pszTag      Optional NaN tag for modifying the NaN value.  We
+ *                      recognizes a string of hex digits for inserting into the
+ *                      fraction part.  This may be followed 'quiet' or
+ *                      'signaling', ignoring case and requiring at only the
+ *                      first character.  The two components may be separated by
+ *                      zero or more '_' characters.  Any other stuff in the tag
+ *                      will be ignored.
+ *
+ *                      If the tag is empty or we cannot grok any of it, we'll
+ *                      return a default quiet NaN.
+ * @param   fPositive   Whether the NaN value should be positive or negative
+ *                      (for what that's worth).
+ */
+RTDECL(float) RTStrNanFloat(const char *pszTag, bool fPositive);
+
+/**
  * Formats a buffer stream as hex bytes.
  *
  * The default is no separating spaces or line breaks or anything.
