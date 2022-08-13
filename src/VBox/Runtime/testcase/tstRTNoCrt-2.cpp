@@ -176,4 +176,3 @@ int main()
     return RTTestSummaryAndDestroy(g_hTest);
 }
 
-
