@@ -1904,6 +1904,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/cosf.asm  \
   	common/math/ceil.asm  \
   	common/math/ceilf.asm  \
+  	common/math/exp2.asm  \
+  	common/math/exp2f.asm  \
   	common/math/fabs.asm  \
   	common/math/fabsf.asm \
   	common/math/floor.asm \
@@ -1956,6 +1958,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/cosf.asm  \
   	common/math/ceil.asm  \
   	common/math/ceilf.asm  \
+  	common/math/exp2.asm  \
+  	common/math/exp2f.asm  \
   	common/math/fabs.asm  \
   	common/math/fabsf.asm \
   	common/math/floor.asm \
@@ -2030,18 +2034,10 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/win/nocrt-WinMainCRTStartup-win.asm \
   	common/compiler/vcc/guard-vcc.asm \
   	common/compiler/vcc/stack-vcc.asm
-  RuntimeR3_VBOX_NOCRT_ALIASES.win = strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
-  	cosl=nocrt_cos          _cosl=nocrt_cos \
-  	ceill=nocrt_ceil        _ceill=nocrt_ceil \
-  	fabsl=nocrt_fabs        _fabsl=nocrt_fabs \
-  	floorl=nocrt_floor      _floorl=nocrt_floor \
-  	ldexpl=nocrt_ldexp      _ldexpl=nocrt_ldexp \
-  	logl=nocrt_log          _logl=nocrt_log \
-  	lrintl=nocrt_lrint      _lrintl=nocrt_lrint \
-  	llrintl=nocrt_llrint    _llrintl=nocrt_llrint \
-  	remainderl=nocrt_remainder _remainderl=nocrt_remainder \
-  	sinl=nocrt_sin           _sinl=nocrt_sin \
-  	tanl=nocrt_tan           _tanl=nocrt_tan
+  RuntimeR3_VBOX_NOCRT_ALIASES.win := \
+  	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
+       $(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
+		,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
  endif
 endif
 
