@@ -42,7 +42,7 @@
 # include <fenv.h>
 #endif
 #ifndef INFINITY  /* Not defined on older Solaris (like the one in the add build VM). */
-# define INFINITY HUGE_VALF
+# define INFINITY HUGE_VAL
 #endif
 
 #if defined(SOFTFLOAT_FAST_INT64) && !defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE) /** @todo better softfloat indicator? */
