@@ -196,12 +196,20 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 	tstRTInlineAsmPIC3
 endif
 
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ PROGRAMS += \
+ 	tstNoCrt-1
+ if1of ($(KBUILD_TARGET), win)
+  PROGRAMS += \
+  	tstRTNoCrt-2
+ endif
+endif
+
 if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
  PROGRAMS += \
  	tstLdr-2 \
  	tstLdr-3 \
  	tstLdr-4 \
- 	tstNoCrt-1 \
 	tstTSC
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
   PROGRAMS += \
@@ -571,6 +579,93 @@ tstNoCrt-1_SOURCES = \
 	../common/string/strcmp.asm \
 	../common/string/strcpy.asm \
 	../common/string/strlen.asm
+
+tstRTNoCrt-2_TEMPLATE = VBOXR3TSTEXE
+tstRTNoCrt-2_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
+tstRTNoCrt-2_INCS = ../include
+tstRTNoCrt-2_SDKS = VBOX_SOFTFLOAT
+tstRTNoCrt-2_SOURCES = \
+	tstRTNoCrt-2.cpp \
+       \
+	../common/math/copysign.cpp \
+	../common/math/copysignf.cpp \
+	../common/math/copysignl.cpp \
+	../common/math/fma.cpp \
+	../common/math/fmaf.cpp \
+	../common/math/fmax.cpp \
+	../common/math/fmaxf.cpp \
+	../common/math/fmaxl.cpp \
+	../common/math/fmin.cpp \
+	../common/math/fminf.cpp \
+	../common/math/fminl.cpp \
+	../common/math/isinf.cpp \
+	../common/math/isnan.cpp \
+	../common/math/isnanf.cpp \
+	../common/math/llround.cpp \
+	../common/math/llroundf.cpp \
+	../common/math/lround.cpp \
+	../common/math/lroundf.cpp \
+	../common/math/nocrt-abs.cpp \
+	../common/math/nocrt-labs.cpp \
+	../common/math/nocrt-llabs.cpp \
+	../common/math/round.cpp \
+	../common/math/roundf.cpp \
+	../common/math/__fpclassifyd.cpp \
+	../common/math/__fpclassifyf.cpp \
+	../common/math/__fpclassifyl.cpp \
+	../common/math/__isfinite.cpp \
+	../common/math/__isfinitef.cpp \
+	../common/math/__isfinitel.cpp \
+	../common/math/__isinff.cpp \
+	../common/math/__isinfl.cpp \
+	../common/math/__isnanl.cpp \
+	../common/math/__isnormal.cpp \
+	../common/math/__isnormalf.cpp \
+	../common/math/__isnormall.cpp \
+	../common/math/__signbit.cpp \
+	../common/math/__signbitf.cpp \
+	../common/math/__signbitl.cpp
+
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+tstRTNoCrt-2_SOURCES += \
+	../common/math/atan.asm \
+	../common/math/atan2.asm \
+	../common/math/atan2f.asm \
+	../common/math/atanf.asm \
+	../common/math/ceil.asm \
+	../common/math/ceilf.asm \
+	../common/math/cos.asm \
+	../common/math/cosf.asm \
+	../common/math/cosl.asm \
+	../common/math/exp2.asm \
+	../common/math/exp2f.asm \
+	../common/math/fabs.asm \
+	../common/math/fabsf.asm \
+	../common/math/floor.asm \
+	../common/math/floorf.asm \
+	../common/math/fma-asm.asm \
+	../common/math/fmaf-asm.asm \
+	../common/math/ldexp.asm \
+	../common/math/ldexpf.asm \
+	../common/math/llrint.asm \
+	../common/math/llrintf.asm \
+	../common/math/log.asm \
+	../common/math/logf.asm \
+	../common/math/lrint.asm \
+	../common/math/lrintf.asm \
+	../common/math/remainder.asm \
+	../common/math/remainderf.asm \
+	../common/math/rint.asm \
+	../common/math/rintf.asm \
+	../common/math/sin.asm \
+	../common/math/sinf.asm \
+	../common/math/sqrt.asm \
+	../common/math/sqrtf.asm \
+	../common/math/tan.asm \
+	../common/math/tanf.asm \
+	../common/math/trunc.asm \
+	../common/math/truncf.asm
+endif
 
 tstRTNtPath-1_TEMPLATE = VBOXR3TSTEXE
 tstRTNtPath-1_SOURCES = tstRTNtPath-1.cpp

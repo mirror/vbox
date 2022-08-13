@@ -80,43 +80,47 @@ extern const union __nanf_un {
 #define __MATH_BUILTIN_RELOPS
 #endif
 
-#if defined(__MATH_BUILTIN_CONSTANTS) \
+#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS
+
+# if defined(__MATH_BUILTIN_CONSTANTS) \
  || (RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)) /** @todo when was this added exactly? 2015, 2017 & 2019 has it for C++. */
-# define HUGE_VAL   __builtin_huge_val()
-#else
-# define HUGE_VAL   (RT_NOCRT(__infinity).__ud)
-#endif
+#  define HUGE_VAL   __builtin_huge_val()
+# else
+#  define HUGE_VAL   (RT_NOCRT(__infinity).__ud)
+# endif
 
 /*
  * XOPEN/SVID
  */
-#if 1/* __BSD_VISIBLE || __XSI_VISIBLE*/
-#define M_E     2.7182818284590452354   /* e */
-#define M_LOG2E     1.4426950408889634074   /* log 2e */
-#define M_LOG10E    0.43429448190325182765  /* log 10e */
-#define M_LN2       0.69314718055994530942  /* log e2 */
-#define M_LN10      2.30258509299404568402  /* log e10 */
-#define M_PI        3.14159265358979323846  /* pi */
-#define M_PI_2      1.57079632679489661923  /* pi/2 */
-#define M_PI_4      0.78539816339744830962  /* pi/4 */
-#define M_1_PI      0.31830988618379067154  /* 1/pi */
-#define M_2_PI      0.63661977236758134308  /* 2/pi */
-#define M_2_SQRTPI  1.12837916709551257390  /* 2/sqrt(pi) */
-#define M_SQRT2     1.41421356237309504880  /* sqrt(2) */
-#define M_SQRT1_2   0.70710678118654752440  /* 1/sqrt(2) */
+# if 1/* __BSD_VISIBLE || __XSI_VISIBLE*/
+# define M_E     2.7182818284590452354   /* e */
+# define M_LOG2E     1.4426950408889634074   /* log 2e */
+# define M_LOG10E    0.43429448190325182765  /* log 10e */
+# define M_LN2       0.69314718055994530942  /* log e2 */
+# define M_LN10      2.30258509299404568402  /* log e10 */
+# define M_PI        3.14159265358979323846  /* pi */
+# define M_PI_2      1.57079632679489661923  /* pi/2 */
+# define M_PI_4      0.78539816339744830962  /* pi/4 */
+# define M_1_PI      0.31830988618379067154  /* 1/pi */
+# define M_2_PI      0.63661977236758134308  /* 2/pi */
+# define M_2_SQRTPI  1.12837916709551257390  /* 2/sqrt(pi) */
+# define M_SQRT2     1.41421356237309504880  /* sqrt(2) */
+# define M_SQRT1_2   0.70710678118654752440  /* 1/sqrt(2) */
 
-#define MAXFLOAT    ((float)3.40282346638528860e+38)
+# define MAXFLOAT    ((float)3.40282346638528860e+38)
 extern int RT_NOCRT(signgam);
-#endif /* __BSD_VISIBLE || __XSI_VISIBLE */
+# endif /* __BSD_VISIBLE || __XSI_VISIBLE */
 
-#if 1/* __BSD_VISIBLE*/
-#if 0
+# if 1/* __BSD_VISIBLE*/
+#  if 0
 /* Old value from 4.4BSD-Lite math.h; this is probably better. */
-#define HUGE        HUGE_VAL
-#else
-#define HUGE        MAXFLOAT
-#endif
-#endif /* __BSD_VISIBLE */
+#   define HUGE        HUGE_VAL
+#  else
+#   define HUGE        MAXFLOAT
+#  endif
+# endif /* __BSD_VISIBLE */
+
+#endif /* !IPRT_NOCRT_WITHOUT_MATH_CONSTANTS */
 
 /*
  * Most of these functions depend on the rounding mode and have the side
@@ -429,25 +433,25 @@ float           RT_NOCRT(nanf)(const char *);
 
 #endif /* __ISO_C_VISIBLE >= 1999 */
 
-#if 1/*def __USE_GNU*/
+#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /*def __USE_GNU*/
 /*
  * In GLIBC there are long variants of the XOPEN/SVID constant
  * block some pages ago. We need this to get the math tests going.
  */
-#define M_El                2.7182818284590452353602874713526625L
-#define M_LOG2El            1.4426950408889634073599246810018921L
-#define M_LOG10El           0.4342944819032518276511289189166051L
-#define M_LN2l              0.6931471805599453094172321214581766L
-#define M_LN10l             2.3025850929940456840179914546843642L
-#define M_PIl               3.1415926535897932384626433832795029L
-#define M_PI_2l             1.5707963267948966192313216916397514L
-#define M_PI_4l             0.7853981633974483096156608458198757L
-#define M_1_PIl             0.3183098861837906715377675267450287L
-#define M_2_PIl             0.6366197723675813430755350534900574L
-#define M_2_SQRTPIl         1.1283791670955125738961589031215452L
-#define M_SQRT2l            1.4142135623730950488016887242096981L
-#define M_SQRT1_2l          0.7071067811865475244008443621048490L
-#endif
+# define M_El                2.7182818284590452353602874713526625L
+# define M_LOG2El            1.4426950408889634073599246810018921L
+# define M_LOG10El           0.4342944819032518276511289189166051L
+# define M_LN2l              0.6931471805599453094172321214581766L
+# define M_LN10l             2.3025850929940456840179914546843642L
+# define M_PIl               3.1415926535897932384626433832795029L
+# define M_PI_2l             1.5707963267948966192313216916397514L
+# define M_PI_4l             0.7853981633974483096156608458198757L
+# define M_1_PIl             0.3183098861837906715377675267450287L
+# define M_2_PIl             0.6366197723675813430755350534900574L
+# define M_2_SQRTPIl         1.1283791670955125738961589031215452L
+# define M_SQRT2l            1.4142135623730950488016887242096981L
+# define M_SQRT1_2l          0.7071067811865475244008443621048490L
+#endif /* !IPRT_NOCRT_WITHOUT_MATH_CONSTANTS */
 
 #if 1/*def __USE_GNU*/
 
@@ -478,97 +482,97 @@ RT_C_DECLS_END
 
 
 /* bird 2022-08-03: moved this block down so we can prototype isnan & isinf without runnning into the macro forms. */
-#if 1 /* __ISO_C_VISIBLE >= 1999*/
-#define FP_ILOGB0   (-__INT_MAX)
-#define FP_ILOGBNAN __INT_MAX
+#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /* __ISO_C_VISIBLE >= 1999*/
+# define FP_ILOGB0   (-__INT_MAX)
+# define FP_ILOGBNAN __INT_MAX
 
-#ifdef __MATH_BUILTIN_CONSTANTS
-# define HUGE_VALF   __builtin_huge_valf()
-# define HUGE_VALL   __builtin_huge_vall()
-# define INFINITY    __builtin_inf()
-# define NAN         __builtin_nan("")
-#elif RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)
+# ifdef __MATH_BUILTIN_CONSTANTS
+#  define HUGE_VALF   __builtin_huge_valf()
+#  define HUGE_VALL   __builtin_huge_vall()
+#  define INFINITY    __builtin_inf()
+#  define NAN         __builtin_nan("")
+# elif RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)
 /** @todo When were these introduced exactly? 2015, 2017 & 2019 has them.
  * However, they only work in C++ even if the c1.dll includes the strings. Oh, well. */
-# define HUGE_VALF   __builtin_huge_valf()
-# define HUGE_VALL   __builtin_huge_val()
-# define INFINITY    __builtin_huge_val()
-# define NAN         __builtin_nan("0")     /* same as we use in climits */
-#else
-# define HUGE_VALF   (float)HUGE_VAL
-# define HUGE_VALL   (long double)HUGE_VAL
-# define INFINITY    HUGE_VALF
-# define NAN         (__nanf.__uf)
-#endif /* __MATH_BUILTIN_CONSTANTS */
+#  define HUGE_VALF   __builtin_huge_valf()
+#  define HUGE_VALL   __builtin_huge_val()
+#  define INFINITY    __builtin_huge_val()
+#  define NAN         __builtin_nan("0")     /* same as we use in climits */
+# else
+#  define HUGE_VALF   (float)HUGE_VAL
+#  define HUGE_VALL   (long double)HUGE_VAL
+#  define INFINITY    HUGE_VALF
+#  define NAN         (__nanf.__uf)
+# endif /* __MATH_BUILTIN_CONSTANTS */
 
-#ifndef IPRT_NO_CRT
-#define MATH_ERRNO  1
-#endif
-#define MATH_ERREXCEPT  2
-#define math_errhandling    MATH_ERREXCEPT
+# ifndef IPRT_NO_CRT
+#  define MATH_ERRNO  1
+# endif
+# define MATH_ERREXCEPT  2
+# define math_errhandling    MATH_ERREXCEPT
 
 /* XXX We need a <machine/math.h>. */
-#if defined(__ia64__) || defined(__sparc64__)
-#define FP_FAST_FMA
-#endif
-#ifdef __ia64__
-#define FP_FAST_FMAL
-#endif
-#define FP_FAST_FMAF
+# if defined(__ia64__) || defined(__sparc64__)
+#  define FP_FAST_FMA
+# endif
+# ifdef __ia64__
+#  define FP_FAST_FMAL
+# endif
+# define FP_FAST_FMAF
 
 /* Symbolic constants to classify floating point numbers. */
-#define FP_INFINITE 0x01
-#define FP_NAN      0x02
-#define FP_NORMAL   0x04
-#define FP_SUBNORMAL    0x08
-#define FP_ZERO     0x10
-#define fpclassify(x) \
+# define FP_INFINITE 0x01
+# define FP_NAN      0x02
+# define FP_NORMAL   0x04
+# define FP_SUBNORMAL    0x08
+# define FP_ZERO     0x10
+# define fpclassify(x) \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__fpclassifyf)(x) \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__fpclassifyd)(x) \
     : RT_NOCRT(__fpclassifyl)(x))
 
-#define isfinite(x)                 \
+# define isfinite(x)                 \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isfinitef)(x)    \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isfinite)(x)   \
     : RT_NOCRT(__isfinitel)(x))
-#define isinf(x)                    \
+# define isinf(x)                    \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isinff)(x)   \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(isinf)(x)    \
     : RT_NOCRT(__isinfl)(x))
-#define isnan(x)                    \
+# define isnan(x)                    \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(isnanf)(x)     \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(isnan)(x)    \
     : RT_NOCRT(__isnanl)(x))
-#define isnormal(x)                 \
+# define isnormal(x)                 \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__isnormalf)(x)    \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__isnormal)(x)   \
     : RT_NOCRT(__isnormall)(x))
 
-#ifdef __MATH_BUILTIN_RELOPS
-#define isgreater(x, y)     __builtin_isgreater((x), (y))
-#define isgreaterequal(x, y)    __builtin_isgreaterequal((x), (y))
-#define isless(x, y)        __builtin_isless((x), (y))
-#define islessequal(x, y)   __builtin_islessequal((x), (y))
-#define islessgreater(x, y) __builtin_islessgreater((x), (y))
-#define isunordered(x, y)   __builtin_isunordered((x), (y))
-#else
-#define isgreater(x, y)     (!isunordered((x), (y)) && (x) > (y))
-#define isgreaterequal(x, y)    (!isunordered((x), (y)) && (x) >= (y))
-#define isless(x, y)        (!isunordered((x), (y)) && (x) < (y))
-#define islessequal(x, y)   (!isunordered((x), (y)) && (x) <= (y))
-#define islessgreater(x, y) (!isunordered((x), (y)) && \
+# ifdef __MATH_BUILTIN_RELOPS
+#  define isgreater(x, y)     __builtin_isgreater((x), (y))
+#  define isgreaterequal(x, y)    __builtin_isgreaterequal((x), (y))
+#  define isless(x, y)        __builtin_isless((x), (y))
+#  define islessequal(x, y)   __builtin_islessequal((x), (y))
+#  define islessgreater(x, y) __builtin_islessgreater((x), (y))
+#  define isunordered(x, y)   __builtin_isunordered((x), (y))
+# else
+#  define isgreater(x, y)     (!isunordered((x), (y)) && (x) > (y))
+#  define isgreaterequal(x, y)    (!isunordered((x), (y)) && (x) >= (y))
+#  define isless(x, y)        (!isunordered((x), (y)) && (x) < (y))
+#  define islessequal(x, y)   (!isunordered((x), (y)) && (x) <= (y))
+#  define islessgreater(x, y) (!isunordered((x), (y)) && \
                     ((x) > (y) || (y) > (x)))
-#define isunordered(x, y)   (isnan(x) || isnan(y))
-#endif /* __MATH_BUILTIN_RELOPS */
+#  define isunordered(x, y)   (isnan(x) || isnan(y))
+# endif /* __MATH_BUILTIN_RELOPS */
 
-#define signbit(x)                  \
+# define signbit(x)                  \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__signbitf)(x) \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__signbit)(x)    \
     : RT_NOCRT(__signbitl)(x))
 
 typedef double  double_t;
 typedef float   float_t;
-#endif /* __ISO_C_VISIBLE >= 1999 */
+#endif /* !IPRT_NOCRT_WITHOUT_MATH_CONSTANTS */ /* __ISO_C_VISIBLE >= 1999 */
 
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)

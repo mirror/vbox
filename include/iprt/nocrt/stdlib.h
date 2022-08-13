@@ -84,18 +84,18 @@ DECLINLINE(const char *) RT_NOCRT(getenv)(const char *pszVar)
     return RTEnvGet(pszVar);
 }
 
-int         RT_NOCRT(abs)(int);
-long        RT_NOCRT(labs)(long);
-long long   RT_NOCRT(llabs)(long long);
-int         RT_NOCRT(rand)(void);
-void        RT_NOCRT(srand)(unsigned);
-long        RT_NOCRT(strtol)(const char *psz, char **ppszNext, int iBase);
-long long   RT_NOCRT(strtoll)(const char *psz, char **ppszNext, int iBase);
-unsigned long RT_NOCRT(strtoul)(const char *psz, char **ppszNext, int iBase);
-unsigned long long RT_NOCRT(strtoull)(const char *psz, char **ppszNext, int iBase);
-int         RT_NOCRT(atoi)(const char *psz);
-double      RT_NOCRT(strtod)(const char *psz, char **ppszNext);
-double      RT_NOCRT(atof)(const char *psz);
+int         RT_NOCRT(abs)(int) RT_NOEXCEPT;
+long        RT_NOCRT(labs)(long) RT_NOEXCEPT;
+long long   RT_NOCRT(llabs)(long long) RT_NOEXCEPT;
+int         RT_NOCRT(rand)(void) RT_NOEXCEPT;
+void        RT_NOCRT(srand)(unsigned) RT_NOEXCEPT;
+long        RT_NOCRT(strtol)(const char *psz, char **ppszNext, int iBase) RT_NOEXCEPT;
+long long   RT_NOCRT(strtoll)(const char *psz, char **ppszNext, int iBase) RT_NOEXCEPT;
+unsigned long RT_NOCRT(strtoul)(const char *psz, char **ppszNext, int iBase) RT_NOEXCEPT;
+unsigned long long RT_NOCRT(strtoull)(const char *psz, char **ppszNext, int iBase) RT_NOEXCEPT;
+int         RT_NOCRT(atoi)(const char *psz) RT_NOEXCEPT;
+double      RT_NOCRT(strtod)(const char *psz, char **ppszNext) RT_NOEXCEPT;
+double      RT_NOCRT(atof)(const char *psz) RT_NOEXCEPT;
 void       *RT_NOCRT(bsearch)(const void *pvKey, const void *pvBase, size_t cEntries, size_t cbEntry,
                               int (*pfnCompare)(const void *pvKey, const void *pvEntry));
 void        RT_NOCRT(qsort)(void *pvBase, size_t cEntries, size_t cbEntry,
