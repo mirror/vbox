@@ -781,7 +781,7 @@ static int rtStrToLongDoubleReturnNan(const char *psz, char **ppszNext, size_t c
             break;
 
         case RET_TYPE_DOUBLE:
-            pRet->rd = g_alrdQNan[fPositive];
+            pRet->rd = g_ardQNan[fPositive];
             break;
 
         case RET_TYPE_LONG_DOUBLE:
