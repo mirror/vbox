@@ -3066,7 +3066,6 @@ RuntimeR3NoCRTGCC_SOURCES += \
 endif
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
-	common/math/x86/fenv-x86.c \
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
 	common/math/gcc/ashldi3.c \
