@@ -43,9 +43,11 @@ long RT_NOCRT(lroundf)(float r32)
         if (r32 >= (float)LONG_MIN && r32 <= (float)LONG_MAX)
             return (long)r32;
         /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
-        return r32 > 0 ? LONG_MAX : LONG_MIN;
+        return r32 > 0.0f ? LONG_MAX : LONG_MIN;
     }
     /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
+    if (RT_NOCRT(__isinff)(r32) && r32 < 0.0)
+        return LONG_MIN;
     return LONG_MAX;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(lroundf);

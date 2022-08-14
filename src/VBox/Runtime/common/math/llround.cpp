@@ -41,11 +41,13 @@ long long RT_NOCRT(llround)(double rd)
     {
         rd = RT_NOCRT(round)(rd);
         if (rd >= (double)LLONG_MIN && rd <= (double)LLONG_MAX)
-            return (long)rd;
+            return (long long)rd;
         /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
-        return rd > 0 ? LLONG_MAX : LLONG_MIN;
+        return rd > 0.0 ? LLONG_MAX : LLONG_MIN;
     }
     /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
+    if (RT_NOCRT(isinf)(rd) && rd < 0.0)
+        return LLONG_MIN;
     return LLONG_MAX;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(llround);
