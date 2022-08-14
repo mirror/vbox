@@ -1124,6 +1124,7 @@
 %define X86_MXCSR_OE          RT_BIT_32(3)
 %define X86_MXCSR_UE          RT_BIT_32(4)
 %define X86_MXCSR_PE          RT_BIT_32(5)
+%define X86_MXCSR_XCPT_FLAGS  0x003f
 %define X86_MXCSR_DAZ         RT_BIT_32(6)
 %define X86_MXCSR_IM          RT_BIT_32(7)
 %define X86_MXCSR_DM          RT_BIT_32(8)
@@ -1131,6 +1132,8 @@
 %define X86_MXCSR_OM          RT_BIT_32(10)
 %define X86_MXCSR_UM          RT_BIT_32(11)
 %define X86_MXCSR_PM          RT_BIT_32(12)
+%define X86_MXCSR_XCPT_MASK   0x1f80
+%define X86_MXCSR_XCPT_MASK_SHIFT 7
 %define X86_MXCSR_RC_MASK     0x6000
 %define X86_MXCSR_RC_SHIFT    13
 %define X86_MXCSR_RC_NEAREST  0x0000

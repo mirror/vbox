@@ -3407,6 +3407,8 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_MXCSR_UE          RT_BIT_32(4)
 /** Exception Flag: Precision.  */
 #define X86_MXCSR_PE          RT_BIT_32(5)
+/** Exception Flags: mask */
+#define X86_MXCSR_XCPT_FLAGS  UINT32_C(0x003f)
 
 /** Denormals are zero. */
 #define X86_MXCSR_DAZ         RT_BIT_32(6)
@@ -3423,6 +3425,10 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_MXCSR_UM          RT_BIT_32(11)
 /** Exception Mask: Precision.  */
 #define X86_MXCSR_PM          RT_BIT_32(12)
+/** Exception Mask: mask.  */
+#define X86_MXCSR_XCPT_MASK   UINT32_C(0x1f80)
+/** Exception Mask: shift.  */
+#define X86_MXCSR_XCPT_MASK_SHIFT 7
 
 /** Rounding control mask. */
 #define X86_MXCSR_RC_MASK     UINT32_C(0x6000)
