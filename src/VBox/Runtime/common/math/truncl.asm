@@ -25,35 +25,42 @@
 ;
 
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
 ;;
 ; Round to truncated integer value.
 ; @returns st(0)
-; @param    rd      [rbp + 8]
+; @param    lrd     [rbp + 8]
 RT_NOCRT_BEGINPROC truncl
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
 
-    fld     tword [xBP + xCB*2]
+        fld     tword [xBP + xCB*2]
 
-    ; Make it truncate up by modifying the fpu control word.
-    fstcw   [xBP - 10h]
-    mov     eax, [xBP - 10h]
-    or      eax, 00c00h
-    mov     [xBP - 08h], eax
-    fldcw   [xBP - 08h]
+        ; Make it truncate up by modifying the fpu control word.
+        fstcw   [xBP - 10h]
+        mov     eax, [xBP - 10h]
+        or      eax, X86_FCW_RC_ZERO    ; both bits set, so no need to clear anything first.
+        mov     [xBP - 08h], eax
+        fldcw   [xBP - 08h]
 
-    ; Round ST(0) to integer.
-    frndint
+        ; Round ST(0) to integer.
+        frndint
 
-    ; Restore the fpu control word.
-    fldcw   [xBP - 10h]
+        ; Restore the fpu control word.
+        fldcw   [xBP - 10h]
 
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(truncl)
 

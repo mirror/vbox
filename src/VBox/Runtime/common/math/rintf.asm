@@ -24,8 +24,11 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
 %define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
@@ -47,17 +50,39 @@ RT_NOCRT_BEGINPROC rintf
 %endif
         SEH64_END_PROLOGUE
 
+        ;
+        ; Load the value into st(0).  This messes up SNaN values.
+        ;
 %ifdef RT_ARCH_AMD64
         movss   dword [xSP], xmm0
         fld     dword [xSP]
-        frndint
-        fstp    dword [xSP]
-        movss   xmm0, dword [xSP]
 %else
         fld     dword [xBP + xCB*2]
-        frndint
 %endif
 
+        ;
+        ; Return immediately if NaN or infinity.
+        ;
+        fxam
+        fstsw   ax
+        test    ax, X86_FSW_C0          ; C0 is set for NaN, Infinity and Empty register. The latter is not the case.
+        jz      .input_ok
+%ifdef RT_ARCH_AMD64
+        ffreep  st0                     ; return the xmm0 register value unchanged, as FLD changes SNaN to QNaN.
+%endif
+        jmp     .return
+.input_ok:
+
+        ;
+        ; Do the job and return.
+        ;
+        frndint
+
+%ifdef RT_ARCH_AMD64
+        fstp    dword [xSP]
+        movss   xmm0, dword [xSP]
+%endif
+.return:
         leave
         ret
 ENDPROC   RT_NOCRT(rintf)

@@ -25,7 +25,10 @@
 ;
 
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
@@ -34,35 +37,62 @@ BEGINCODE
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rd      32-bit: [ebp + 8]   64-bit: xmm0
 RT_NOCRT_BEGINPROC trunc
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
 
+        ;
+        ; Load the value into st(0).  This messes up SNaN values.
+        ;
 %ifdef RT_ARCH_AMD64
-    movsd   [xSP], xmm0
-    fld     qword [xSP]
+        movsd   [xSP], xmm0
+        fld     qword [xSP]
 %else
-    fld     qword [xBP + xCB*2]
+        fld     qword [xBP + xCB*2]
 %endif
 
-    ; Make it truncate up by modifying the fpu control word.
-    fstcw   [xBP - 10h]
-    mov     eax, [xBP - 10h]
-    or      eax, 00c00h
-    mov     [xBP - 08h], eax
-    fldcw   [xBP - 08h]
+        ;
+        ; Return immediately if NaN or infinity.
+        ;
+        fxam
+        fstsw   ax
+        test    ax, X86_FSW_C0          ; C0 is set for NaN, Infinity and Empty register. The latter is not the case.
+        jz      .input_ok
+%ifdef RT_ARCH_AMD64
+        ffreep  st0                     ; return the xmm0 register value unchanged, as FLD changes SNaN to QNaN.
+%endif
+        jmp     .return_val
+.input_ok:
 
-    ; Round ST(0) to integer.
-    frndint
+        ;
+        ; Make it truncate up by modifying the fpu control word.
+        ;
+        fstcw   [xBP - 10h]
+        mov     eax, [xBP - 10h]
+        or      eax, X86_FCW_RC_ZERO    ; both bits set, so no need to clear anything first.
+        mov     [xBP - 08h], eax
+        fldcw   [xBP - 08h]
 
-    ; Restore the fpu control word.
-    fldcw   [xBP - 10h]
+        ;
+        ; Round ST(0) to integer.
+        ;
+        frndint
+
+        ;
+        ; Restore the fpu control word and return.
+        ;
+        fldcw   [xBP - 10h]
 
 %ifdef RT_ARCH_AMD64
-    fstp    qword [xSP]
-    movsd   xmm0, [xSP]
+        fstp    qword [xSP]
+        movsd   xmm0, [xSP]
 %endif
-    leave
-    ret
+.return_val:
+        leave
+        ret
 ENDPROC   RT_NOCRT(trunc)
 

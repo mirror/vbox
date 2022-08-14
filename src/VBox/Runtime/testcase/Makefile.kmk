@@ -641,6 +641,8 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/exp2f.asm \
 	../common/math/fabs.asm \
 	../common/math/fabsf.asm \
+	../common/math/fegetround.asm \
+	../common/math/fesetround.asm \
 	../common/math/floor.asm \
 	../common/math/floorf.asm \
 	../common/math/fma-asm.asm \
