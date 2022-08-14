@@ -29,6 +29,12 @@
 %define VBOX_INCLUDED_param_h
 %ifndef RT_WITHOUT_PRAGMA_ONCE
 %endif
+%define GUEST_PAGE_SIZE             0x1000
+%define GUEST_PAGE_OFFSET_MASK      0xfff
+%define GUEST_PAGE_SHIFT            12
+%define HOST_PAGE_SIZE              PAGE_SIZE
+%define HOST_PAGE_OFFSET_MASK       PAGE_OFFSET_MASK
+%define HOST_PAGE_SHIFT             PAGE_SHIFT
 %if ARCH_BITS == 64
  %define VBOX_MAX_ALLOC_PAGE_COUNT   (_512M / PAGE_SIZE)
 %else
@@ -56,6 +62,8 @@
  %define MM_MMIO_64_MAX             (_1G64 * 16)
 %endif
 %define MM_MMIO_32_MAX              _2G
+%define PDM_NET_SHAPER_MAX_GROUPS   32
+%define PDM_NET_SHAPER_MAX_NAME_LEN 63
 %define PGM_HANDY_PAGES             128
 %define PGM_HANDY_PAGES_SET_FF      32
 %define PGM_HANDY_PAGES_R3_ALLOC    8
