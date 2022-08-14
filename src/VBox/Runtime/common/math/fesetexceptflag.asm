@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT fesetround - AMD64 & X86.
+; IPRT - No-CRT fesetexceptflag - AMD64 & X86.
 ;
 
 ;
@@ -33,43 +33,61 @@
 BEGINCODE
 
 ;;
-; Sets the hardware rounding mode.
+; Gets the pending exceptions.
 ;
 ; @returns  eax = 0 on success, non-zero on failure.
-; @param    iRoundingMode   32-bit: [xBP+8]     msc64: ecx      gcc64: edi
+; @param    pfXcpts   32-bit: [xBP+8]     msc64: rcx      gcc64: rdi   - pointer to fexcept_t (16-bit)
+; @param    fXcptMask 32-bit: [xBP+c]     msc64: edx      gcc64: esi   - X86_FSW_XCPT_MASK
 ;
-RT_NOCRT_BEGINPROC fesetround
+RT_NOCRT_BEGINPROC fesetexceptflag
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
         SEH64_SET_FRAME_xBP 0
         sub     xSP, 10h
-        SEH64_ALLOCATE_STACK 10h
+        SEH64_ALLOCATE_STACK 20h
         SEH64_END_PROLOGUE
 
         ;
-        ; Load the parameter into ecx.
+        ; Load the parameter into ecx (*pfXcpts) and edx (fXcptMask).
         ;
-        or      eax, -1
 %ifdef ASM_CALL64_GCC
-        mov     ecx, edi
+        movzx   ecx, word [rdi]
+        mov     edx, esi
+%elifdef ASM_CALL64_MSC
+        movzx   ecx, word [rcx]
 %elifdef RT_ARCH_X86
         mov     ecx, [xBP + xCB*2]
+        movzx   ecx, word [ecx]
+        mov     edx, [xBP + xCB*3]
 %endif
-        test    ecx, ~X86_FCW_RC_MASK
+%if 0
+        and     ecx, X86_FSW_XCPT_MASK
+        and     edx, X86_FSW_XCPT_MASK
+%else
+        or      eax, -1
+        test    edx, ~X86_FSW_XCPT_MASK
         jnz     .return
+        test    ecx, ~X86_FSW_XCPT_MASK
+        jnz     .return
+%endif
+
+        ; Apply the AND mask to ECX and invert it so we can use it to clear flags
+        ; before OR'ing in the new values.
+        and     ecx, edx
+        not     edx
 
         ;
-        ; Make the changes.
+        ; Make the modifications
         ;
 
-        ; Set x87 rounding first (ecx preserved).
-        fstcw   [xBP - 10h]
-        mov     ax, word [xBP - 10h]
-        and     ax, ~X86_FCW_RC_MASK
+        ; Modify the pending x87 exceptions (FSW).
+        fnstenv [xBP - 20h]
+        mov     ax, [xBP - 20h + 4]       ; FSW is the 2nd qword in the 32-bit protected mode layout
+        and     ax, dx
         or      ax, cx
-        mov     [xBP - 10h], ax
-        fldcw   [xBP - 10h]
+        mov     [xBP - 20h + 4], ax
+        fldenv  [xSP - 20h]
 
 %ifdef RT_ARCH_X86
         ; SSE supported (ecx preserved)?
@@ -79,11 +97,10 @@ RT_NOCRT_BEGINPROC fesetround
         jz      .return_ok
 %endif
 
-        ; Set SSE rounding (modifies ecx).
+        ; Modify the pending SSE exceptions (same bit positions as in FSW).
         stmxcsr [xBP - 10h]
         mov     eax, [xBP - 10h]
-        and     eax, ~X86_MXCSR_RC_MASK
-        shl     ecx, X86_MXCSR_RC_SHIFT - X86_FCW_RC_SHIFT
+        and     eax, edx
         or      eax, ecx
         mov     [xBP - 10h], eax
         ldmxcsr [xBP - 10h]
@@ -93,5 +110,5 @@ RT_NOCRT_BEGINPROC fesetround
 .return:
         leave
         ret
-ENDPROC   RT_NOCRT(fesetround)
+ENDPROC   RT_NOCRT(fesetexceptflag)
 

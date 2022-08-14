@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT fesetround - AMD64 & X86.
+; IPRT - No-CRT fetestexcept - AMD64 & X86.
 ;
 
 ;
@@ -33,12 +33,14 @@
 BEGINCODE
 
 ;;
-; Sets the hardware rounding mode.
+; Return the pending exceptions in the given mask.
 ;
-; @returns  eax = 0 on success, non-zero on failure.
-; @param    iRoundingMode   32-bit: [xBP+8]     msc64: ecx      gcc64: edi
+; Basically a simpler fegetexceptflags function.
 ;
-RT_NOCRT_BEGINPROC fesetround
+; @returns  eax = pending exceptions (X86_FSW_XCPT_MASK) & fXcptMask.
+; @param    fXcptMask 32-bit: [xBP+8]     msc64: ecx      gcc64: edi - exceptions to test for (X86_FSW_XCPT_MASK).
+;
+RT_NOCRT_BEGINPROC fetestexcept
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
@@ -48,50 +50,46 @@ RT_NOCRT_BEGINPROC fesetround
         SEH64_END_PROLOGUE
 
         ;
-        ; Load the parameter into ecx.
+        ; Load the parameter into ecx (fXcptMask).
         ;
-        or      eax, -1
 %ifdef ASM_CALL64_GCC
         mov     ecx, edi
 %elifdef RT_ARCH_X86
         mov     ecx, [xBP + xCB*2]
 %endif
-        test    ecx, ~X86_FCW_RC_MASK
+%if 0
+        and     ecx, X86_FSW_XCPT_MASK
+%else
+        or      eax, -1
+        test    ecx, ~X86_FSW_XCPT_MASK
         jnz     .return
+%endif
 
         ;
-        ; Make the changes.
+        ; Get the pending exceptions.
         ;
 
-        ; Set x87 rounding first (ecx preserved).
-        fstcw   [xBP - 10h]
-        mov     ax, word [xBP - 10h]
-        and     ax, ~X86_FCW_RC_MASK
-        or      ax, cx
-        mov     [xBP - 10h], ax
-        fldcw   [xBP - 10h]
+        ; Get x87 exceptions first.
+        fnstsw  ax
+        and     eax, ecx
 
 %ifdef RT_ARCH_X86
         ; SSE supported (ecx preserved)?
+        mov     ch, al                  ; Save the return value - it's only the lower 6 bits.
         extern  NAME(rtNoCrtHasSse)
         call    NAME(rtNoCrtHasSse)
         test    al, al
-        jz      .return_ok
+        mov     al, ch                  ; Restore the return value - no need for movzx here.
+        jz      .return
 %endif
 
-        ; Set SSE rounding (modifies ecx).
+        ; OR in the SSE exceptions (modifies ecx).
         stmxcsr [xBP - 10h]
-        mov     eax, [xBP - 10h]
-        and     eax, ~X86_MXCSR_RC_MASK
-        shl     ecx, X86_MXCSR_RC_SHIFT - X86_FCW_RC_SHIFT
+        and     ecx, [xBP - 10h]
         or      eax, ecx
-        mov     [xBP - 10h], eax
-        ldmxcsr [xBP - 10h]
 
-.return_ok:
-        xor     eax, eax
 .return:
         leave
         ret
-ENDPROC   RT_NOCRT(fesetround)
+ENDPROC   RT_NOCRT(fetestexcept)
 

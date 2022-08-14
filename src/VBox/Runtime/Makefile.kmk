@@ -1909,8 +1909,21 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/fabs.asm  \
   	common/math/fabsf.asm \
   	common/math/rtNoCrtHasSse.asm \
+  	common/math/fegetenv.asm \
+  	common/math/fesetenv.asm \
+  	common/math/feholdexcept.asm \
+  	common/math/feupdateenv.asm \
   	common/math/fegetround.asm \
   	common/math/fesetround.asm \
+  	common/math/fegetx87precision.asm \
+  	common/math/fesetx87precision.asm \
+  	common/math/fegetexcept.asm \
+  	common/math/feenableexcept.asm \
+  	common/math/fedisableexcept.asm \
+  	common/math/feclearexcept.asm \
+  	common/math/fegetexceptflag.asm \
+  	common/math/fesetexceptflag.asm \
+  	common/math/fetestexcept.asm \
   	common/math/floor.asm \
   	common/math/floorf.asm \
   	common/math/ldexp.asm \
@@ -1965,8 +1978,21 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/exp2f.asm  \
   	common/math/fabs.asm  \
   	common/math/fabsf.asm \
+  	common/math/fegetenv.asm \
+  	common/math/fesetenv.asm \
+  	common/math/feholdexcept.asm \
+  	common/math/feupdateenv.asm \
   	common/math/fegetround.asm \
   	common/math/fesetround.asm \
+  	common/math/fegetx87precision.asm \
+  	common/math/fesetx87precision.asm \
+  	common/math/fegetexcept.asm \
+  	common/math/feenableexcept.asm \
+  	common/math/fedisableexcept.asm \
+  	common/math/feclearexcept.asm \
+  	common/math/fegetexceptflag.asm \
+  	common/math/fesetexceptflag.asm \
+  	common/math/fetestexcept.asm \
   	common/math/floor.asm \
   	common/math/floorf.asm \
   	common/math/ldexp.asm \

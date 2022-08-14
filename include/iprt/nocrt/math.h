@@ -80,7 +80,7 @@ extern const union __nanf_un {
 #define __MATH_BUILTIN_RELOPS
 #endif
 
-#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS
+#ifndef IPRT_NOCRT_WITHOUT_CONFLICTING_CONSTANTS
 
 # if defined(__MATH_BUILTIN_CONSTANTS) \
  || (RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(__cplusplus)) /** @todo when was this added exactly? 2015, 2017 & 2019 has it for C++. */
@@ -433,7 +433,7 @@ float           RT_NOCRT(nanf)(const char *);
 
 #endif /* __ISO_C_VISIBLE >= 1999 */
 
-#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /*def __USE_GNU*/
+#ifndef IPRT_NOCRT_WITHOUT_CONFLICTING_CONSTANTS /*def __USE_GNU*/
 /*
  * In GLIBC there are long variants of the XOPEN/SVID constant
  * block some pages ago. We need this to get the math tests going.
@@ -491,7 +491,7 @@ RT_C_DECLS_END
 /** @} */
 
 /* bird 2022-08-03: moved this block down so we can prototype isnan & isinf without runnning into the macro forms. */
-#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /* __ISO_C_VISIBLE >= 1999*/
+#ifndef IPRT_NOCRT_WITHOUT_CONFLICTING_CONSTANTS /* __ISO_C_VISIBLE >= 1999*/
 # define FP_ILOGB0   (-__INT_MAX)
 # define FP_ILOGBNAN __INT_MAX
 

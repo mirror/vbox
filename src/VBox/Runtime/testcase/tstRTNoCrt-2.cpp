@@ -37,7 +37,8 @@
 #include <math.h>
 
 #define IPRT_NO_CRT_FOR_3RD_PARTY
-#define IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /* so we can include both the CRT one and our no-CRT header */
+#define IPRT_NOCRT_WITHOUT_CONFLICTING_CONSTANTS /* so we can include both the CRT one and our no-CRT header */
+#define IPRT_NOCRT_WITHOUT_CONFLICTING_TYPES     /* so we can include both the CRT one and our no-CRT header */
 #include <iprt/nocrt/math.h>
 #define IPRT_INCLUDED_nocrt_limits_h /* prevent our limits from being included */
 #include <iprt/nocrt/stdlib.h>
@@ -1103,11 +1104,11 @@ void testRInt()
      * Round nearest.
      */
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    AssertCompile(FE_TONEAREST  == X86_FCW_RC_NEAREST);
-    AssertCompile(FE_DOWNWARD   == X86_FCW_RC_DOWN);
-    AssertCompile(FE_UPWARD     == X86_FCW_RC_UP);
-    AssertCompile(FE_TOWARDZERO == X86_FCW_RC_ZERO);
-    AssertCompile(_ROUND_MASK   == X86_FCW_RC_MASK);
+    AssertCompile(RT_NOCRT_FE_TONEAREST  == X86_FCW_RC_NEAREST);
+    AssertCompile(RT_NOCRT_FE_DOWNWARD   == X86_FCW_RC_DOWN);
+    AssertCompile(RT_NOCRT_FE_UPWARD     == X86_FCW_RC_UP);
+    AssertCompile(RT_NOCRT_FE_TOWARDZERO == X86_FCW_RC_ZERO);
+    AssertCompile(RT_NOCRT_FE_ROUND_MASK == X86_FCW_RC_MASK);
 #endif
     int const iSavedMode = RT_NOCRT(fegetround)();
     RT_NOCRT(fesetround)(FE_TONEAREST);

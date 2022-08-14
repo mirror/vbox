@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT fegetround - AMD64 & X86.
+; IPRT - No-CRT fegetexcept - AMD64 & X86.
 ;
 
 ;
@@ -33,10 +33,11 @@
 BEGINCODE
 
 ;;
-; Gets the hardware rounding mode.
-; @returns  eax x87 rounding mask (X86_FCW_RC_MASK)
+; Gets the mask of enabled exceptions, e.g. unmaksed (BSD/GNU extension).
 ;
-RT_NOCRT_BEGINPROC fegetround
+; @returns  eax = inverted x87 exception mask (X86_FCW_XCPT_MASK)
+;
+RT_NOCRT_BEGINPROC fegetexcept
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
@@ -46,7 +47,7 @@ RT_NOCRT_BEGINPROC fegetround
         SEH64_END_PROLOGUE
 
         ;
-        ; Save control word and isolate the rounding mode.
+        ; Save control word and isolate the exception mask.
         ;
         ; On 64-bit we'll use the MXCSR since the windows compiler/CRT doesn't
         ; necessarily keep them in sync.  We'll still return the x87-style flags.
@@ -54,16 +55,17 @@ RT_NOCRT_BEGINPROC fegetround
 %ifdef RT_ARCH_AMD64
         stmxcsr [xBP - 10h]
         mov     eax, [xBP - 10h]
-        and     eax, X86_MXCSR_RC_MASK
-        shr     eax, X86_MXCSR_RC_SHIFT - X86_FCW_RC_SHIFT
+        shr     eax, X86_MXCSR_XCPT_MASK_SHIFT
 %else
         fstcw   [xBP - 10h]
         movzx   eax, word [xBP - 10h]
-        and     eax, X86_FCW_RC_MASK
 %endif
+
+        not     eax                     ; Invert it as we return the enabled rather than masked exceptions.
+        and     eax, X86_FCW_XCPT_MASK
 
 .return_val:
         leave
         ret
-ENDPROC   RT_NOCRT(fegetround)
+ENDPROC   RT_NOCRT(fegetexcept)
 

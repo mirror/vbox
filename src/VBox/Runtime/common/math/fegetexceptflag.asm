@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT fegetround - AMD64 & X86.
+; IPRT - No-CRT fegetexceptflag - AMD64 & X86.
 ;
 
 ;
@@ -33,10 +33,13 @@
 BEGINCODE
 
 ;;
-; Gets the hardware rounding mode.
-; @returns  eax x87 rounding mask (X86_FCW_RC_MASK)
+; Gets the pending exceptions.
 ;
-RT_NOCRT_BEGINPROC fegetround
+; @returns  eax = 0 on success, non-zero on failure.
+; @param    pfXcpts   32-bit: [xBP+8]     msc64: rcx      gcc64: rdi   - pointer to fexcept_t (16-bit)
+; @param    fXcptMask 32-bit: [xBP+c]     msc64: edx      gcc64: esi   - X86_FSW_XCPT_MASK
+;
+RT_NOCRT_BEGINPROC fegetexceptflag
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
@@ -46,24 +49,50 @@ RT_NOCRT_BEGINPROC fegetround
         SEH64_END_PROLOGUE
 
         ;
-        ; Save control word and isolate the rounding mode.
+        ; Load the parameter into rcx (pfXcpts) and edx (fXcptMask).
         ;
-        ; On 64-bit we'll use the MXCSR since the windows compiler/CRT doesn't
-        ; necessarily keep them in sync.  We'll still return the x87-style flags.
-        ;
-%ifdef RT_ARCH_AMD64
-        stmxcsr [xBP - 10h]
-        mov     eax, [xBP - 10h]
-        and     eax, X86_MXCSR_RC_MASK
-        shr     eax, X86_MXCSR_RC_SHIFT - X86_FCW_RC_SHIFT
+%ifdef ASM_CALL64_GCC
+        mov     rcx, rdi
+        mov     edx, esi
+%elifdef RT_ARCH_X86
+        mov     ecx, [xBP + xCB*2]
+        mov     edx, [xBP + xCB*3]
+%endif
+%if 0
+        and     edx, X86_FSW_XCPT_MASK
 %else
-        fstcw   [xBP - 10h]
-        movzx   eax, word [xBP - 10h]
-        and     eax, X86_FCW_RC_MASK
+        or      eax, -1
+        test    edx, ~X86_FSW_XCPT_MASK
+        jnz     .return
 %endif
 
-.return_val:
+        ;
+        ; Get the pending exceptions.
+        ;
+
+        ; x87.
+        fnstsw  ax
+        and     ax, dx
+        mov     [xCX], ax
+
+%ifdef RT_ARCH_X86
+        ; SSE supported (ecx preserved)?
+        extern  NAME(rtNoCrtHasSse)
+        call    NAME(rtNoCrtHasSse)
+        test    al, al
+        jz      .return_ok
+%endif
+
+        ; Modify the SSE flags.
+        stmxcsr [xBP - 10h]
+        mov     ax, [xBP - 10h]
+        and     ax, dx
+        or      [xCX], ax
+
+.return_ok:
+        xor     eax, eax
+.return:
         leave
         ret
-ENDPROC   RT_NOCRT(fegetround)
+ENDPROC   RT_NOCRT(fegetexceptflag)
 

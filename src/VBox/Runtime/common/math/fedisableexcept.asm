@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT fesetround - AMD64 & X86.
+; IPRT - No-CRT fedisableexcept - AMD64 & X86.
 ;
 
 ;
@@ -33,12 +33,13 @@
 BEGINCODE
 
 ;;
-; Sets the hardware rounding mode.
+; Enables a set of exceptions (BSD/GNU extension).
 ;
-; @returns  eax = 0 on success, non-zero on failure.
-; @param    iRoundingMode   32-bit: [xBP+8]     msc64: ecx      gcc64: edi
+; @returns  eax = Previous enabled exceptions on success (not subject to fXcpt),
+;                 -1 on failure.
+; @param    fXcpt   32-bit: [xBP+8]     msc64: ecx      gcc64: edi - Mask of exceptions to disable.
 ;
-RT_NOCRT_BEGINPROC fesetround
+RT_NOCRT_BEGINPROC fedisableexcept
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
@@ -56,19 +57,19 @@ RT_NOCRT_BEGINPROC fesetround
 %elifdef RT_ARCH_X86
         mov     ecx, [xBP + xCB*2]
 %endif
-        test    ecx, ~X86_FCW_RC_MASK
+        test    ecx, ~X86_FCW_XCPT_MASK
         jnz     .return
 
         ;
-        ; Make the changes.
+        ; Make the changes (old mask in eax).
         ;
 
-        ; Set x87 rounding first (ecx preserved).
+        ; Modify the x87 mask first (ecx preserved).
         fstcw   [xBP - 10h]
-        mov     ax, word [xBP - 10h]
-        and     ax, ~X86_FCW_RC_MASK
-        or      ax, cx
-        mov     [xBP - 10h], ax
+%ifdef RT_ARCH_X86 ; Return the inverted x87 mask in 32-bit mode.
+        movzx   eax, word [xBP - 10h]
+%endif
+        or      word [xBP - 10h], cx
         fldcw   [xBP - 10h]
 
 %ifdef RT_ARCH_X86
@@ -79,19 +80,21 @@ RT_NOCRT_BEGINPROC fesetround
         jz      .return_ok
 %endif
 
-        ; Set SSE rounding (modifies ecx).
+        ; Modify the SSE mask (modifies ecx).
         stmxcsr [xBP - 10h]
+%ifdef RT_ARCH_AMD64 ; Return the inverted MXCSR exception mask on AMD64 because windows doesn't necessarily set the x87 one.
         mov     eax, [xBP - 10h]
-        and     eax, ~X86_MXCSR_RC_MASK
-        shl     ecx, X86_MXCSR_RC_SHIFT - X86_FCW_RC_SHIFT
-        or      eax, ecx
-        mov     [xBP - 10h], eax
+        shr     eax, X86_MXCSR_XCPT_MASK_SHIFT
+%endif
+        shl     ecx, X86_MXCSR_XCPT_MASK_SHIFT
+        or      [xBP - 10h], ecx
         ldmxcsr [xBP - 10h]
 
 .return_ok:
-        xor     eax, eax
+        not     eax                     ; Invert it as we return the enabled rather than masked exceptions.
+        and     eax, X86_FCW_XCPT_MASK
 .return:
         leave
         ret
-ENDPROC   RT_NOCRT(fesetround)
+ENDPROC   RT_NOCRT(fedisableexcept)
 

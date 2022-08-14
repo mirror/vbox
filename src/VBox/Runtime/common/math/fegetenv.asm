@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT rtNoCrtHasSse - X86.
+; IPRT - No-CRT fegetenv - AMD64 & X86.
 ;
 
 ;
@@ -25,44 +25,56 @@
 ;
 
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 %include "iprt/x86.mac"
-
-
-BEGINDATA
-g_frtNoCrtHasSse:   db  0x80
 
 
 BEGINCODE
 
 ;;
-; Checks if SSE is supported.
-; @returns  1 if supported, 0 if not.  Entire eax/rax is set.
-; @uses     rax only
+; Gets the FPU+SSE environment.
 ;
-BEGINPROC rtNoCrtHasSse
-        mov     al, [g_frtNoCrtHasSse]
-        test    al, 0x80
-        jnz     .detect_sse
-        ret
+; @returns  eax = x87 exception mask (X86_FCW_XCPT_MASK)
+; @param    pEnv    32-bit: [xBP+8]     msc64: rcx      gcc64: rdi
+;
+RT_NOCRT_BEGINPROC fegetenv
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        SEH64_END_PROLOGUE
 
-.detect_sse:
-        push    ebx
-        push    ecx
-        push    edx
+        ;
+        ; Load the parameter into rcx.
+        ;
+%ifdef ASM_CALL64_GCC
+        mov     rcx, rdi
+%elifdef RT_ARCH_X86
+        mov     ecx, [xBP + xCB*2]
+%endif
 
-        mov     eax, 1
-        cpuid
+        ;
+        ; Save the FPU environment and MXCSR.
+        ;
+        fnstenv [xCX]
 
-        mov     eax, 1
-        test    edx, X86_CPUID_FEATURE_EDX_SSE
-        jz      .no_supported
+%ifdef RT_ARCH_X86
+        ; SSE supported (ecx preserved)?
+        and     dword [xCX + 28], 0h
+        extern  NAME(rtNoCrtHasSse)
+        call    NAME(rtNoCrtHasSse)
+        test    al, al
+        jz      .return_nosse
+%endif
+        stmxcsr [xCX + 28]
+.return_nosse:
+
+        ;
+        ; Return success.
+        ;
         xor     eax, eax
-.no_supported:
-
-        pop     edx
-        pop     ecx
-        pop     ebx
+        leave
         ret
-ENDPROC   rtNoCrtHasSse
+ENDPROC   RT_NOCRT(fegetenv)
 

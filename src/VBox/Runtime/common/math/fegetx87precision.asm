@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT rtNoCrtHasSse - X86.
+; IPRT - No-CRT fegetx87precision - AMD64 & X86.
 ;
 
 ;
@@ -25,44 +25,36 @@
 ;
 
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 %include "iprt/x86.mac"
-
-
-BEGINDATA
-g_frtNoCrtHasSse:   db  0x80
 
 
 BEGINCODE
 
 ;;
-; Checks if SSE is supported.
-; @returns  1 if supported, 0 if not.  Entire eax/rax is set.
-; @uses     rax only
+; Gets the x87 hardware precision mode - IPRT extension.
 ;
-BEGINPROC rtNoCrtHasSse
-        mov     al, [g_frtNoCrtHasSse]
-        test    al, 0x80
-        jnz     .detect_sse
+; @returns  eax = precision mode, -1 on failure.
+;
+RT_NOCRT_BEGINPROC fegetx87precision
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
+
+        ;
+        ; Extract the current from the x87 FCW and return it.
+        ;
+        fnstcw  [xBP - 10h]
+        mov     ax, [xBP - 10h]
+        and     eax, X86_FCW_PC_MASK
+
+.return:
+        leave
         ret
-
-.detect_sse:
-        push    ebx
-        push    ecx
-        push    edx
-
-        mov     eax, 1
-        cpuid
-
-        mov     eax, 1
-        test    edx, X86_CPUID_FEATURE_EDX_SSE
-        jz      .no_supported
-        xor     eax, eax
-.no_supported:
-
-        pop     edx
-        pop     ecx
-        pop     ebx
-        ret
-ENDPROC   rtNoCrtHasSse
+ENDPROC   RT_NOCRT(fegetx87precision)
 
