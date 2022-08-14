@@ -3425,15 +3425,17 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_MXCSR_PM          RT_BIT_32(12)
 
 /** Rounding control mask. */
-#define X86_MXCSR_RC_MASK     UINT16_C(0x6000)
+#define X86_MXCSR_RC_MASK     UINT32_C(0x6000)
+/** Rounding control shift. */
+#define X86_MXCSR_RC_SHIFT    13
 /** Rounding control: To nearest. */
-#define X86_MXCSR_RC_NEAREST  UINT16_C(0x0000)
+#define X86_MXCSR_RC_NEAREST  UINT32_C(0x0000)
 /** Rounding control: Down. */
-#define X86_MXCSR_RC_DOWN     UINT16_C(0x2000)
+#define X86_MXCSR_RC_DOWN     UINT32_C(0x2000)
 /** Rounding control: Up. */
-#define X86_MXCSR_RC_UP       UINT16_C(0x4000)
+#define X86_MXCSR_RC_UP       UINT32_C(0x4000)
 /** Rounding control: Towards zero. */
-#define X86_MXCSR_RC_ZERO     UINT16_C(0x6000)
+#define X86_MXCSR_RC_ZERO     UINT32_C(0x6000)
 
 /** Flush-to-zero for masked underflow.  */
 #define X86_MXCSR_FZ          RT_BIT_32(15)
