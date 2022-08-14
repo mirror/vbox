@@ -481,6 +481,15 @@ long double RT_NOCRT(gammal)(long double);
 RT_C_DECLS_END
 
 
+/** @name fpclassify return values
+ * @{  */
+#define RT_NOCRT_FP_INFINITE    0x01
+#define RT_NOCRT_FP_NAN         0x02
+#define RT_NOCRT_FP_NORMAL      0x04
+#define RT_NOCRT_FP_SUBNORMAL   0x08
+#define RT_NOCRT_FP_ZERO        0x10
+/** @} */
+
 /* bird 2022-08-03: moved this block down so we can prototype isnan & isinf without runnning into the macro forms. */
 #ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS /* __ISO_C_VISIBLE >= 1999*/
 # define FP_ILOGB0   (-__INT_MAX)
@@ -521,11 +530,11 @@ RT_C_DECLS_END
 # define FP_FAST_FMAF
 
 /* Symbolic constants to classify floating point numbers. */
-# define FP_INFINITE 0x01
-# define FP_NAN      0x02
-# define FP_NORMAL   0x04
-# define FP_SUBNORMAL    0x08
-# define FP_ZERO     0x10
+# define FP_INFINITE            RT_NOCRT_FP_INFINITE
+# define FP_NAN                 RT_NOCRT_FP_NAN
+# define FP_NORMAL              RT_NOCRT_FP_NORMAL
+# define FP_SUBNORMAL           RT_NOCRT_FP_SUBNORMAL
+# define FP_ZERO                RT_NOCRT_FP_ZERO
 # define fpclassify(x) \
     ((sizeof (x) == sizeof (float)) ? RT_NOCRT(__fpclassifyf)(x) \
     : (sizeof (x) == sizeof (double)) ? RT_NOCRT(__fpclassifyd)(x) \

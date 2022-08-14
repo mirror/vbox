@@ -42,15 +42,15 @@ int RT_NOCRT(__fpclassifyf)(float r32)
     RTFLOAT32U u;
     u.r = r32;
     if (RTFLOAT32U_IS_ZERO(&u))
-        return FP_ZERO;
+        return RT_NOCRT_FP_ZERO;
     if (RTFLOAT32U_IS_NORMAL(&u))
-        return FP_NORMAL;
+        return RT_NOCRT_FP_NORMAL;
     if (RTFLOAT32U_IS_NAN(&u))
-        return FP_NAN;
+        return RT_NOCRT_FP_NAN;
     if (RTFLOAT32U_IS_INF(&u))
-        return FP_INFINITE;
+        return RT_NOCRT_FP_INFINITE;
     Assert(RTFLOAT32U_IS_SUBNORMAL(&u));
-    return FP_SUBNORMAL;
+    return RT_NOCRT_FP_SUBNORMAL;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL_WITHOUT_UNDERSCORE(__fpclassifyf);
 
