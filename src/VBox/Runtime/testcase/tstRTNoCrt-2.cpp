@@ -2539,6 +2539,9 @@ void testRemainder()
     CHECK_DBL_SAME_RELAXED_NAN(remainder,(        +INFINITY,                    2.4));
     CHECK_DBL_SAME_RELAXED_NAN(remainder,(2.34960584706e100,       7.6050698459e+13));
     CHECK_DBL_SAME_RELAXED_NAN(remainder,(2.34960584706e300,      -7.6050698459e-13));
+    CHECK_DBL_SAME_RELAXED_NAN(remainder,(2.34960584706e300, RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME_RELAXED_NAN(remainder,(RTStrNanDouble(NULL, true),           2.0));
+    CHECK_DBL_SAME_RELAXED_NAN(remainder,(RTStrNanDouble(NULL, true), RTStrNanDouble("s", false)));
 
     CHECK_FLT(        RT_NOCRT(remainderf)(              1.0f,                   1.0f), +0.0f);
     CHECK_FLT(        RT_NOCRT(remainderf)(              1.5f,                   1.0f), -0.5f);
@@ -2559,6 +2562,68 @@ void testRemainder()
     CHECK_FLT_SAME_RELAXED_NAN(remainderf,(         +INFINITY,                   2.4f));
     CHECK_FLT_SAME_RELAXED_NAN(remainderf,(-2.34960584706e+35f,     7.6050698459e-23f));
     CHECK_FLT_SAME_RELAXED_NAN(remainderf,(2.34960584706e+35f,      7.6050698459e-13f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(2.34960584706e+30f, RTStrNanFloat(NULL, true)));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(RTStrNanFloat(NULL, true),           2.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(RTStrNanFloat(NULL, true), RTStrNanFloat("s", false)));
+}
+
+
+void testLog()
+{
+    RTTestSub(g_hTest, "log[f]");
+
+    CHECK_DBL(RT_NOCRT(log)(                  1.0), +0.0);
+    CHECK_DBL(RT_NOCRT(log)(2.7182818284590452354), +1.0);
+    CHECK_DBL(RT_NOCRT(log)(2.0), 0.69314718055994530942);
+    CHECK_DBL_SAME(log,(              1.0));
+    CHECK_DBL_SAME(log,(              1.5));
+    CHECK_DBL_SAME(log,(             +0.0));
+    CHECK_DBL_SAME(log,(             +0.0));
+    CHECK_DBL_SAME(log,(             -0.0));
+    CHECK_DBL_SAME(log,(             -0.0));
+    CHECK_DBL_SAME(log,(         999999.0));
+    CHECK_DBL_SAME(log,(        -999999.0));
+    CHECK_DBL_SAME(log,(        -999999.0));
+    CHECK_DBL_SAME(log,(         999999.0));
+    CHECK_DBL_SAME(log,(      39560.32334));
+    CHECK_DBL_SAME(log,(      39560.32334));
+    CHECK_DBL_SAME(log,(        +INFINITY));
+    CHECK_DBL_SAME(log,(        -INFINITY));
+    CHECK_DBL_SAME(log,(         +DBL_MAX));
+    CHECK_DBL_SAME(log,(         -DBL_MAX));
+    CHECK_DBL_SAME(log,(2.34960584706e100));
+    CHECK_DBL_SAME(log,(2.34960584706e300));
+    CHECK_DBL_SAME(log,(2.34960584706e300));
+    CHECK_DBL_SAME(log,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(log,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(log,(RTStrNanDouble("s", false)));
+
+    CHECK_FLT(RT_NOCRT(logf)(                  1.0f), +0.0f);
+    CHECK_FLT(RT_NOCRT(logf)((float)2.7182818284590452354), +0.99999995f); /* floating point is fun */
+    CHECK_FLT(RT_NOCRT(logf)(2.0f), (float)0.69314718055994530942);
+    CHECK_FLT_SAME(logf,((float)2.7182818284590452354));
+    CHECK_FLT_SAME(logf,(              1.0f));
+    CHECK_FLT_SAME(logf,(              1.5f));
+    CHECK_FLT_SAME(logf,(             +0.0f));
+    CHECK_FLT_SAME(logf,(             +0.0f));
+    CHECK_FLT_SAME(logf,(             -0.0f));
+    CHECK_FLT_SAME(logf,(             -0.0f));
+    CHECK_FLT_SAME(logf,(         999999.0f));
+    CHECK_FLT_SAME(logf,(        -999999.0f));
+    CHECK_FLT_SAME(logf,(        -999999.0f));
+    CHECK_FLT_SAME(logf,(         999999.0f));
+    CHECK_FLT_SAME(logf,(      39560.32334f));
+    CHECK_FLT_SAME(logf,(      39560.32334f));
+    CHECK_FLT_SAME(logf,(        +INFINITY));
+    CHECK_FLT_SAME(logf,(        -INFINITY));
+    CHECK_FLT_SAME(logf,(         +FLT_MAX));
+    CHECK_FLT_SAME(logf,(         -FLT_MAX));
+    CHECK_FLT_SAME(logf,(2.34960584706e+10f));
+    CHECK_FLT_SAME(logf,(2.34960584706e+30f));
+    CHECK_FLT_SAME(logf,(2.34960584706e+30f));
+    CHECK_FLT_SAME(logf,(RTStrNanFloat(NULL, true)));
+    CHECK_FLT_SAME(logf,(RTStrNanFloat("s",  true)));
+    CHECK_FLT_SAME(logf,(RTStrNanFloat("s", false)));
 }
 
 
@@ -2615,6 +2680,7 @@ int main()
     testLdExp();
     testFma();
     testRemainder();
+    testLog();
 
 #if 0
     ../common/math/atan.asm \

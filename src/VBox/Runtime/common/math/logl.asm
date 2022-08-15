@@ -24,7 +24,11 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
@@ -33,32 +37,37 @@ BEGINCODE
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
 RT_NOCRT_BEGINPROC logl
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        SEH64_END_PROLOGUE
 
-    fldln2                              ; st0=log(2)
-    fld     tword [xBP + xCB*2]         ; st1=log(2) st0=lrd
-    fld     st0                         ; st1=log(2) st0=lrd st0=lrd
-    fsub    qword [.one xWrtRIP]        ; st2=log(2) st1=lrd st0=lrd-1.0
-    fld     st0                         ; st3=log(2) st2=lrd st1=lrd-1.0 st0=lrd-1.0
-    fabs                                ; st3=log(2) st2=lrd st1=lrd-1.0 st0=abs(lrd-1.0)
-    fcomp   qword [.limit xWrtRIP]      ; st2=log(2) st1=lrd st0=lrd-1.0
-    fnstsw  ax
-    and     eax, 04500h
-    jnz     .use_st1
+        fldln2                              ; st0=log(2)
+        fld     tword [xBP + xCB*2]         ; st1=log(2) st0=lrd
+        fld     st0                         ; st1=log(2) st0=lrd st0=lrd
+        fsub    qword [.one xWrtRIP]        ; st2=log(2) st1=lrd st0=lrd-1.0
+        fld     st0                         ; st3=log(2) st2=lrd st1=lrd-1.0 st0=lrd-1.0
 
-    fstp    st0                         ; st1=log(2) st0=lrd
-    fyl2x                               ; log(lrd)
-    jmp     .done
+        fabs                                ; st3=log(2) st2=lrd st1=lrd-1.0 st0=abs(lrd-1.0)
+        fcomp   qword [.limit xWrtRIP]      ; st2=log(2) st1=lrd st0=lrd-1.0
+        fnstsw  ax
+        and     eax, X86_FSW_C3 | X86_FSW_C2 | X86_FSW_C0
+        jnz     .use_st1
+
+        fstp    st0                         ; st1=log(2) st0=lrd
+        fyl2x                               ; log(lrd)
+        jmp     .done
 
 .use_st1:
-    fstp    st1                         ; st1=log(2) st0=lrd-1.0
-    fyl2xp1                             ; log(lrd)
+        fstp    st1                         ; st1=log(2) st0=lrd-1.0
+        fyl2xp1                             ; log(lrd)
 
 .done:
-    leave
-    ret
+        leave
+        ret
+
+ALIGNCODE(8)
 .one:   dq  1.0
 .limit: dq  0.29
 ENDPROC   RT_NOCRT(logl)
