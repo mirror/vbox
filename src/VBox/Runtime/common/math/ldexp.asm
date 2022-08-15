@@ -24,7 +24,10 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
@@ -32,38 +35,45 @@ BEGINCODE
 ; Computes rd * 2^exp
 ; @returns st(0) / xmm0
 ; @param    rd      [rbp + xCB*2] / xmm0
-; @param    exp     [ebp + 10h]  gcc:edi  msc:ecx
+; @param    exp     [ebp + 10h]  gcc:edi  msc:edx
 RT_NOCRT_BEGINPROC ldexp
-    push    xBP
-    mov     xBP, xSP
-%ifdef RT_ARCH_AMD64
-    sub     xSP, 20h
-%else
-    sub     xSP, 10h
-%endif
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
 
-    ; load exp
+        ;
+        ; Load the value and scaling factor.
+        ;
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    mov     [rsp], edi
+        mov     [rbp - 8h], edi
  %else
-    mov     [rsp], ecx
+        mov     [rbp - 8h], edx
  %endif
-    fild    dword [rsp]
-    movsd   [rsp + 8], xmm0
-    fld     qword [rsp + 8]
+        fild    dword [rbp - 8h]
+        movsd   [rbp - 10h], xmm0
+        fld     qword [rbp - 10h]
 %else
-    fild    dword [ebp + xCB*2 + 8]
-    fld     qword [xBP + xCB*2]
+        fild    dword [xBP + xCB*2 + 8]
+        fld     qword [xBP + xCB*2]
 %endif
-    fscale
-    fstp    st1
 
+        ;
+        ; Do the scaling and return the result.
+        ;
+        fscale
+
+        fstp    st1
 %ifdef RT_ARCH_AMD64
-    fstp    qword [xSP]
-    movsd   xmm0, [xSP]
+        fstp    qword [rbp - 10h]
+        movsd   xmm0, [rbp - 10h]
 %endif
-    leave
-    ret
+
+        leave
+        ret
 ENDPROC   RT_NOCRT(ldexp)
 

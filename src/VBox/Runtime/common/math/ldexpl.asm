@@ -24,6 +24,7 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
@@ -32,24 +33,38 @@ BEGINCODE
 ; Computes lrd * 2^exp
 ; @returns st(0)
 ; @param    lrd     [rbp + xCB*2]
-; @param    exp     [ebp + 14h]  gcc:edi  msc:ecx
+; @param    exp     [ebp + 14h]  gcc:edi  msc:edx
 RT_NOCRT_BEGINPROC ldexpl
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
 
-    ; load exp
-%ifdef RT_ARCH_AMD64 ; ASSUMES ONLY GCC HERE!
-    mov     [rsp], edi
-    fild    dword [rsp]
+        ;
+        ; Load the value and scaling factor.
+        ;
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+        mov     [rbp - 10h], edi
+ %else
+        mov     [rbp - 10h], edx
+ %endif
+        fild    dword [rbp - 10h]
 %else
-    fild    dword [ebp + xCB*2 + RTLRD_CB]
+        fild    dword [ebp + xCB*2 + RTLRD_CB]
 %endif
-    fld     tword [xBP + xCB*2]
-    fscale
-    fstp    st1
+        fld     tword [xBP + xCB*2]
 
-    leave
-    ret
+        ;
+        ; Do the scaling and return the result.
+        ;
+        fscale
+        fstp    st1
+
+        leave
+        ret
 ENDPROC   RT_NOCRT(ldexpl)
 

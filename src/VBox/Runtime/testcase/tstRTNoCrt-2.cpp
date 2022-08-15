@@ -2345,6 +2345,79 @@ void testExp2()
 }
 
 
+void testLdExp()
+{
+    RTTestSub(g_hTest, "ldexp[f]");
+
+    CHECK_DBL(RT_NOCRT(ldexp)(1.0,  1),          2.0);
+    CHECK_DBL(RT_NOCRT(ldexp)(1.0,  2),          4.0);
+    CHECK_DBL(RT_NOCRT(ldexp)(1.0, 32), 4294967296.0);
+    CHECK_DBL(RT_NOCRT(ldexp)(2.0, 31), 4294967296.0);
+    CHECK_DBL(RT_NOCRT(ldexp)(0.5, 33), 4294967296.0);
+    CHECK_DBL(RT_NOCRT(ldexp)(1.0, -1),          0.5);
+    CHECK_DBL(RT_NOCRT(ldexp)(1.0, -3),        0.125);
+    CHECK_DBL_SAME(ldexp, (0.0, 0));
+    CHECK_DBL_SAME(ldexp, (+INFINITY, 1));
+    CHECK_DBL_SAME(ldexp, (+INFINITY, 2));
+    CHECK_DBL_SAME(ldexp, (-INFINITY, 1));
+    CHECK_DBL_SAME(ldexp, (-INFINITY, 2));
+    CHECK_DBL_SAME(ldexp, (nan("1"), 1));
+    CHECK_DBL_SAME(ldexp, (RTStrNanDouble("ab305f", true), 2));
+    CHECK_DBL_SAME(ldexp, (RTStrNanDouble("fffffffff_signaling", true), 3));
+    CHECK_DBL_SAME(ldexp, (RTStrNanDouble("7777777777778_sig", false), -4));
+    CHECK_DBL_SAME(ldexp, (           1.0, 1));
+    CHECK_DBL_SAME(ldexp, (           2.0, 2));
+    CHECK_DBL_SAME(ldexp, (          -1.0, -1));
+    CHECK_DBL_SAME(ldexp, (          +0.5, 63));
+    CHECK_DBL_SAME(ldexp, (          -0.5, -73));
+    CHECK_DBL_SAME(ldexp, (          +1.5, -88));
+    CHECK_DBL_SAME(ldexp, (          -1.5, 99));
+    CHECK_DBL_SAME(ldexp, (         +3.25, -102));
+    CHECK_DBL_SAME(ldexp, (    99.2559430, -256));
+    CHECK_DBL_SAME(ldexp, (   -99.2559430, 256));
+    CHECK_DBL_SAME(ldexp, (  +305.2559430, 34));
+    CHECK_DBL_SAME(ldexp, (  -305.2559430, 79));
+    CHECK_DBL_SAME(ldexp, (    +309.99884, -99));
+    CHECK_DBL_SAME(ldexp, (   -309.111048, -38));
+    CHECK_DBL_SAME(ldexp, (+999.864597634, -21));
+    CHECK_DBL_SAME(ldexp, (-999.098234837, 21));
+
+    CHECK_FLT(RT_NOCRT(ldexpf)(1.0f,  1),          2.0f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(1.0f,  2),          4.0f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(1.0f, 32), 4294967296.0f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(2.0f, 31), 4294967296.0f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(0.5f, 33), 4294967296.0f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(1.0f, -1),          0.5f);
+    CHECK_FLT(RT_NOCRT(ldexpf)(1.0f, -3),        0.125f);
+    CHECK_FLT_SAME(ldexpf, (0.0f, 0));
+    CHECK_FLT_SAME(ldexpf, (+INFINITY, 1));
+    CHECK_FLT_SAME(ldexpf, (+INFINITY, 2));
+    CHECK_FLT_SAME(ldexpf, (-INFINITY, 1));
+    CHECK_FLT_SAME(ldexpf, (-INFINITY, 2));
+    CHECK_FLT_SAME(ldexpf, (nan("1"), 1));
+    CHECK_FLT_SAME(ldexpf, (RTStrNanDouble("ab305f", true), 2));
+    CHECK_FLT_SAME(ldexpf, (RTStrNanDouble("fffffffff_signaling", true), 3));
+    CHECK_FLT_SAME(ldexpf, (RTStrNanDouble("7777777777778_sig", false), -4));
+    CHECK_FLT_SAME(ldexpf, (           1.0f, 1));
+    CHECK_FLT_SAME(ldexpf, (           2.0f, 2));
+    CHECK_FLT_SAME(ldexpf, (          -1.0f, -1));
+    CHECK_FLT_SAME(ldexpf, (          +0.5f, 63));
+    CHECK_FLT_SAME(ldexpf, (          -0.5f, -73));
+    CHECK_FLT_SAME(ldexpf, (          +1.5f, -88));
+    CHECK_FLT_SAME(ldexpf, (          -1.5f, 99));
+    CHECK_FLT_SAME(ldexpf, (         +3.25f, -102));
+    CHECK_FLT_SAME(ldexpf, (    99.2559430f, -256));
+    CHECK_FLT_SAME(ldexpf, (   -99.2559430f, 256));
+    CHECK_FLT_SAME(ldexpf, (  +305.2559430f, 34));
+    CHECK_FLT_SAME(ldexpf, (  -305.2559430f, 79));
+    CHECK_FLT_SAME(ldexpf, (    +309.99884f, -99));
+    CHECK_FLT_SAME(ldexpf, (   -309.111048f, -38));
+    CHECK_FLT_SAME(ldexpf, (+999.864597634f, -21));
+    CHECK_FLT_SAME(ldexpf, (-999.098234837f, 21));
+
+}
+
+
 void testFma()
 {
     RTTestSub(g_hTest, "fma[f]");
@@ -2429,6 +2502,7 @@ int main()
     testLLRInt();
 
     testExp2();
+    testLdExp();
     testFma();
 
 #if 0
@@ -2439,10 +2513,6 @@ int main()
     ../common/math/cos.asm \
     ../common/math/cosf.asm \
     ../common/math/cosl.asm \
-    ../common/math/exp2.asm \
-    ../common/math/exp2f.asm \
-    ../common/math/fabs.asm \
-    ../common/math/fabsf.asm \
     ../common/math/ldexp.asm \
     ../common/math/ldexpf.asm \
     ../common/math/log.asm \
