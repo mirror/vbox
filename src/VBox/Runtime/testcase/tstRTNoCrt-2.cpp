@@ -406,105 +406,6 @@ void testCopySign()
 }
 
 
-void testExp2()
-{
-    RTTestSub(g_hTest, "exp2[f]");
-
-    CHECK_DBL(RT_NOCRT(exp2)(1.0), 2.0);
-    CHECK_DBL(RT_NOCRT(exp2)(2.0), 4.0);
-    CHECK_DBL(RT_NOCRT(exp2)(32.0), 4294967296.0);
-    CHECK_DBL(RT_NOCRT(exp2)(-1.0), 0.5);
-    CHECK_DBL(RT_NOCRT(exp2)(-3.0), 0.125);
-    CHECK_DBL_SAME(exp2, (0.0));
-    CHECK_DBL_SAME(exp2, (+INFINITY));
-    CHECK_DBL_SAME(exp2, (-INFINITY));
-    CHECK_DBL_SAME(exp2, (nan("1")));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("ab305f", true)));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("fffffffff_signaling", true)));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("7777777777778_sig", false)));
-    CHECK_DBL_SAME(exp2, (1.0));
-    CHECK_DBL_SAME(exp2, (2.0));
-    CHECK_DBL_SAME(exp2, (-1.0));
-    CHECK_DBL_APPROX_SAME(exp2, (+0.5));
-    CHECK_DBL_APPROX_SAME(exp2, (-0.5));
-    CHECK_DBL_APPROX_SAME(exp2, (+1.5));
-    CHECK_DBL_APPROX_SAME(exp2, (-1.5));
-    CHECK_DBL_APPROX_SAME(exp2, (+3.25));
-    CHECK_DBL_APPROX_SAME(exp2, (99.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (-99.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (+305.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (-305.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (+309.99884));
-    CHECK_DBL_APPROX_SAME(exp2, (-309.111048));
-    CHECK_DBL_APPROX_SAME(exp2, (+999.864597634));
-    CHECK_DBL_APPROX_SAME(exp2, (-999.098234837));
-
-
-    CHECK_FLT(RT_NOCRT(exp2f)(1.0f), 2.0f);
-    CHECK_FLT(RT_NOCRT(exp2f)(2.0f), 4.0f);
-    CHECK_FLT(RT_NOCRT(exp2f)(32.0f), 4294967296.0f);
-    CHECK_FLT(RT_NOCRT(exp2f)(-1.0f), 0.5f);
-    CHECK_FLT(RT_NOCRT(exp2f)(-3.0f), 0.125f);
-    CHECK_FLT_SAME(exp2f, (0.0f));
-    CHECK_FLT_SAME(exp2f, (+INFINITY));
-    CHECK_FLT_SAME(exp2f, (-INFINITY));
-    CHECK_FLT_SAME(exp2f, (nan("1")));
-    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("ab305f", true)));
-    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("3fffff_signaling", true)));
-    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("79778_sig", false)));
-    CHECK_FLT_SAME(exp2f, (1.0f));
-    CHECK_FLT_SAME(exp2f, (2.0f));
-    CHECK_FLT_SAME(exp2f, (-1.0f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+0.5f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-0.5f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+1.5f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-1.5f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+3.25f));
-    CHECK_FLT_APPROX_SAME(exp2f, (99.25594f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-99.25594f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+305.25594f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-305.25594f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+309.99884f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-309.111048f));
-    CHECK_FLT_APPROX_SAME(exp2f, (+999.86459f));
-    CHECK_FLT_APPROX_SAME(exp2f, (-999.09823f));
-}
-
-
-void testFma()
-{
-    RTTestSub(g_hTest, "fma[f]");
-
-    CHECK_DBL(RT_NOCRT(fma)(1.0, 1.0,  1.0), 2.0);
-    CHECK_DBL(RT_NOCRT(fma)(4.0, 2.0,  1.0), 9.0);
-    CHECK_DBL(RT_NOCRT(fma)(4.0, 2.0, -1.0), 7.0);
-    CHECK_DBL_SAME(fma, (0.0, 0.0, 0.0));
-    CHECK_DBL_SAME(fma, (999999.0,            33334.0,       29345.0));
-    CHECK_DBL_SAME(fma, (39560.32334,       9605.5546, -59079.345069));
-    CHECK_DBL_SAME(fma, (39560.32334,   -59079.345069,     9605.5546));
-    CHECK_DBL_SAME(fma, (-59079.345069,   39560.32334,     9605.5546));
-    CHECK_DBL_SAME(fma, (+INFINITY, +INFINITY, -INFINITY));
-    CHECK_DBL_SAME(fma, (4.0, +INFINITY, 2.0));
-    CHECK_DBL_SAME(fma, (4.0, 4.0, +INFINITY));
-    CHECK_DBL_SAME(fma, (-INFINITY, 4.0, 4.0));
-    CHECK_DBL_SAME(fma, (2.34960584706e100, 7.6050698459e-13, 9.99996777e77));
-
-    CHECK_FLT(RT_NOCRT(fmaf)(1.0f, 1.0f, 1.0), 2.0);
-    CHECK_FLT(RT_NOCRT(fmaf)(4.0f, 2.0f, 1.0), 9.0);
-    CHECK_FLT(RT_NOCRT(fmaf)(4.0f, 2.0f, -1.0), 7.0);
-    CHECK_FLT_SAME(fmaf, (0.0f, 0.0f, 0.0f));
-    CHECK_FLT_SAME(fmaf, (999999.0f,            33334.0f,       29345.0f));
-    CHECK_FLT_SAME(fmaf, (39560.32334f,       9605.5546f, -59079.345069f));
-    CHECK_FLT_SAME(fmaf, (39560.32334f,   -59079.345069f,     9605.5546f));
-    CHECK_FLT_SAME(fmaf, (-59079.345069f,   39560.32334f,     9605.5546f));
-    CHECK_FLT_SAME(fmaf, (+INFINITY, +INFINITY, -INFINITY));
-    CHECK_FLT_SAME(fmaf, (4.0f, +INFINITY, 2.0f));
-    CHECK_FLT_SAME(fmaf, (4.0f, 4.0f, +INFINITY));
-    CHECK_FLT_SAME(fmaf, (-INFINITY, 4.0f, 4.0f));
-    CHECK_FLT_SAME(fmaf, (2.34960584706e22f, 7.6050698459e-13f, 9.99996777e27f));
-}
-
-
 void testFmax()
 {
     RTTestSub(g_hTest, "fmax[fl]");
@@ -1111,6 +1012,8 @@ void testRInt()
     AssertCompile(RT_NOCRT_FE_ROUND_MASK == X86_FCW_RC_MASK);
 #endif
     int const iSavedMode = RT_NOCRT(fegetround)();
+    if (iSavedMode != FE_TONEAREST)
+        RTTestFailed(g_hTest, "expected FE_TONEAREST as default rounding mode, not %#x (%d)", iSavedMode, iSavedMode);
     RT_NOCRT(fesetround)(FE_TONEAREST);
 
     CHECK_DBL(RT_NOCRT(rint)(  +0.0),  +0.0);
@@ -1553,6 +1456,873 @@ void testLLRound()
 }
 
 
+void testLRInt()
+{
+    RTTestSub(g_hTest, "lrint[f]");
+
+    /*
+     * Round nearest.
+     */
+    int const iSavedMode = RT_NOCRT(fegetround)();
+    if (iSavedMode != FE_TONEAREST)
+        RTTestFailed(g_hTest, "expected FE_TONEAREST as default rounding mode, not %#x (%d)", iSavedMode, iSavedMode);
+    RT_NOCRT(fesetround)(FE_TONEAREST);
+
+    CHECK_LONG(RT_NOCRT(lrint)(              +0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(              -0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.0),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.5),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             +42.5),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -43.5),              -44);
+    CHECK_LONG(RT_NOCRT(lrint)(             +43.5),              +44);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.25),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.25),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.75),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.75),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(+1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(-1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e-10),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrint)(-INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(+INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble(NULL, true)), LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble("s", false)), LONG_MIN);
+    CHECK_LONG_SAME(lrint,(              -0.0));
+    CHECK_LONG_SAME(lrint,(              +0.0));
+    CHECK_LONG_SAME(lrint,(            +42.25));
+    CHECK_LONG_SAME(lrint,(            -42.25));
+    CHECK_LONG_SAME(lrint,(            +42.75));
+    CHECK_LONG_SAME(lrint,(            -42.75));
+    CHECK_LONG_SAME(lrint,(             +22.5));
+    CHECK_LONG_SAME(lrint,(             -22.5));
+    CHECK_LONG_SAME(lrint,(             +23.5));
+    CHECK_LONG_SAME(lrint,(             -23.5));
+    CHECK_LONG_SAME(lrint,(         +42.25e+6));
+    CHECK_LONG_SAME(lrint,(         -42.25e+6));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e-10));
+    CHECK_LONG_SAME(lrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrint,(+1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(-1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e+20));
+    CHECK_LONG_SAME(lrint,(-INFINITY));
+    CHECK_LONG_SAME(lrint,(+INFINITY));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LONG(RT_NOCRT(lrintf)(              +0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(              -0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.0f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.5f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +42.5f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -43.5f),              -44);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +43.5f),              +44);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.25f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.25f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.75f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.75f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(+1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(-1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e-10f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrintf)(-INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(+INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble(NULL, true)),  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble("s", false)),  LONG_MIN);
+    CHECK_LONG_SAME(lrintf,(              -0.0f));
+    CHECK_LONG_SAME(lrintf,(              +0.0f));
+    CHECK_LONG_SAME(lrintf,(            +42.25f));
+    CHECK_LONG_SAME(lrintf,(            -42.25f));
+    CHECK_LONG_SAME(lrintf,(            +42.75f));
+    CHECK_LONG_SAME(lrintf,(            -42.75f));
+    CHECK_LONG_SAME(lrintf,(             +22.5f));
+    CHECK_LONG_SAME(lrintf,(             -22.5f));
+    CHECK_LONG_SAME(lrintf,(             +23.5f));
+    CHECK_LONG_SAME(lrintf,(             -23.5f));
+    CHECK_LONG_SAME(lrintf,(         +42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(         -42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e-10f));
+    CHECK_LONG_SAME(lrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrintf,(+1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(-1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e+20f));
+    CHECK_LONG_SAME(lrintf,(-INFINITY));
+    CHECK_LONG_SAME(lrintf,(+INFINITY));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round UP.
+     */
+    RT_NOCRT(fesetround)(FE_UPWARD);
+
+    CHECK_LONG(RT_NOCRT(lrint)(              +0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(              -0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.0),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.5),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             +42.5),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(             -43.5),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(             +43.5),              +44);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.25),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.25),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.75),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.75),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(+1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(-1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e-10),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrint)(-INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(+INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble(NULL, true)), LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble("s", false)), LONG_MIN);
+    CHECK_LONG_SAME(lrint,(              -0.0));
+    CHECK_LONG_SAME(lrint,(              +0.0));
+    CHECK_LONG_SAME(lrint,(            +42.25));
+    CHECK_LONG_SAME(lrint,(            -42.25));
+    CHECK_LONG_SAME(lrint,(            +42.75));
+    CHECK_LONG_SAME(lrint,(            -42.75));
+    CHECK_LONG_SAME(lrint,(             +22.5));
+    CHECK_LONG_SAME(lrint,(             -22.5));
+    CHECK_LONG_SAME(lrint,(             +23.5));
+    CHECK_LONG_SAME(lrint,(             -23.5));
+    CHECK_LONG_SAME(lrint,(         +42.25e+6));
+    CHECK_LONG_SAME(lrint,(         -42.25e+6));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e-10));
+    CHECK_LONG_SAME(lrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrint,(+1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(-1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e+20));
+    CHECK_LONG_SAME(lrint,(-INFINITY));
+    CHECK_LONG_SAME(lrint,(+INFINITY));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LONG(RT_NOCRT(lrintf)(              +0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(              -0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.0f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.5f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +42.5f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -43.5f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +43.5f),              +44);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.25f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.25f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.75f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.75f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(+1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(-1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e-10f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrintf)(-INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(+INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble(NULL, true)),  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble("s", false)),  LONG_MIN);
+    CHECK_LONG_SAME(lrintf,(              -0.0f));
+    CHECK_LONG_SAME(lrintf,(              +0.0f));
+    CHECK_LONG_SAME(lrintf,(            +42.25f));
+    CHECK_LONG_SAME(lrintf,(            -42.25f));
+    CHECK_LONG_SAME(lrintf,(            +42.75f));
+    CHECK_LONG_SAME(lrintf,(            -42.75f));
+    CHECK_LONG_SAME(lrintf,(             +22.5f));
+    CHECK_LONG_SAME(lrintf,(             -22.5f));
+    CHECK_LONG_SAME(lrintf,(             +23.5f));
+    CHECK_LONG_SAME(lrintf,(             -23.5f));
+    CHECK_LONG_SAME(lrintf,(         +42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(         -42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e-10f));
+    CHECK_LONG_SAME(lrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrintf,(+1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(-1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e+20f));
+    CHECK_LONG_SAME(lrintf,(-INFINITY));
+    CHECK_LONG_SAME(lrintf,(+INFINITY));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round DOWN.
+     */
+    RT_NOCRT(fesetround)(FE_DOWNWARD);
+
+    CHECK_LONG(RT_NOCRT(lrint)(              +0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(              -0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.0),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.5),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(             +42.5),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -43.5),              -44);
+    CHECK_LONG(RT_NOCRT(lrint)(             +43.5),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.25),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.25),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.75),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.75),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(+1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(-1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e-10),               -1);
+    CHECK_LONG(RT_NOCRT(lrint)(      -2.1984e-310),               -1); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrint)(-INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(+INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble(NULL, true)), LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble("s", false)), LONG_MIN);
+    CHECK_LONG_SAME(lrint,(              -0.0));
+    CHECK_LONG_SAME(lrint,(              +0.0));
+    CHECK_LONG_SAME(lrint,(            +42.25));
+    CHECK_LONG_SAME(lrint,(            -42.25));
+    CHECK_LONG_SAME(lrint,(            +42.75));
+    CHECK_LONG_SAME(lrint,(            -42.75));
+    CHECK_LONG_SAME(lrint,(             +22.5));
+    CHECK_LONG_SAME(lrint,(             -22.5));
+    CHECK_LONG_SAME(lrint,(             +23.5));
+    CHECK_LONG_SAME(lrint,(             -23.5));
+    CHECK_LONG_SAME(lrint,(         +42.25e+6));
+    CHECK_LONG_SAME(lrint,(         -42.25e+6));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e-10));
+    CHECK_LONG_SAME(lrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrint,(+1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(-1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e+20));
+    CHECK_LONG_SAME(lrint,(-INFINITY));
+    CHECK_LONG_SAME(lrint,(+INFINITY));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LONG(RT_NOCRT(lrintf)(              +0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(              -0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.0f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.5f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +42.5f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -43.5f),              -44);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +43.5f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.25f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.25f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.75f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.75f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(+1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(-1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e-10f),               -1);
+    CHECK_LONG(RT_NOCRT(lrintf)(       -2.1984e-40f),               -1); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrintf)(-INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(+INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble(NULL, true)),  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble("s", false)),  LONG_MIN);
+    CHECK_LONG_SAME(lrintf,(              -0.0f));
+    CHECK_LONG_SAME(lrintf,(              +0.0f));
+    CHECK_LONG_SAME(lrintf,(            +42.25f));
+    CHECK_LONG_SAME(lrintf,(            -42.25f));
+    CHECK_LONG_SAME(lrintf,(            +42.75f));
+    CHECK_LONG_SAME(lrintf,(            -42.75f));
+    CHECK_LONG_SAME(lrintf,(             +22.5f));
+    CHECK_LONG_SAME(lrintf,(             -22.5f));
+    CHECK_LONG_SAME(lrintf,(             +23.5f));
+    CHECK_LONG_SAME(lrintf,(             -23.5f));
+    CHECK_LONG_SAME(lrintf,(         +42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(         -42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e-10f));
+    CHECK_LONG_SAME(lrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrintf,(+1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(-1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e+20f));
+    CHECK_LONG_SAME(lrintf,(-INFINITY));
+    CHECK_LONG_SAME(lrintf,(+INFINITY));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round towards ZERO.
+     */
+    RT_NOCRT(fesetround)(FE_TOWARDZERO);
+
+    CHECK_LONG(RT_NOCRT(lrint)(              +0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(              -0.0),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.0),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -42.5),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(             +42.5),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(             -43.5),              -43);
+    CHECK_LONG(RT_NOCRT(lrint)(             +43.5),              +43);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.25),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.25),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(            -42.75),              -42);
+    CHECK_LONG(RT_NOCRT(lrint)(            +42.75),              +42);
+    CHECK_LONG(RT_NOCRT(lrint)(+1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(-1234.60958634e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e+20),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(  -1234.499999e-10),                0);
+    CHECK_LONG(RT_NOCRT(lrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrint)(-INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(+INFINITY),                  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble(NULL, true)), LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrint)(RTStrNanDouble("s", false)), LONG_MIN);
+    CHECK_LONG_SAME(lrint,(              -0.0));
+    CHECK_LONG_SAME(lrint,(              +0.0));
+    CHECK_LONG_SAME(lrint,(            +42.25));
+    CHECK_LONG_SAME(lrint,(            -42.25));
+    CHECK_LONG_SAME(lrint,(            +42.75));
+    CHECK_LONG_SAME(lrint,(            -42.75));
+    CHECK_LONG_SAME(lrint,(             +22.5));
+    CHECK_LONG_SAME(lrint,(             -22.5));
+    CHECK_LONG_SAME(lrint,(             +23.5));
+    CHECK_LONG_SAME(lrint,(             -23.5));
+    CHECK_LONG_SAME(lrint,(         +42.25e+6));
+    CHECK_LONG_SAME(lrint,(         -42.25e+6));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e-10));
+    CHECK_LONG_SAME(lrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrint,(+1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(-1234.60958634e+20));
+    CHECK_LONG_SAME(lrint,(  -1234.499999e+20));
+    CHECK_LONG_SAME(lrint,(-INFINITY));
+    CHECK_LONG_SAME(lrint,(+INFINITY));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LONG_SAME(lrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LONG(RT_NOCRT(lrintf)(              +0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(              -0.0f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.0f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -42.5f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +42.5f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(             -43.5f),              -43);
+    CHECK_LONG(RT_NOCRT(lrintf)(             +43.5f),              +43);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.25f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.25f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            -42.75f),              -42);
+    CHECK_LONG(RT_NOCRT(lrintf)(            +42.75f),              +42);
+    CHECK_LONG(RT_NOCRT(lrintf)(+1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(-1234.60958634e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e+20f),         LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(  -1234.499999e-10f),                0);
+    CHECK_LONG(RT_NOCRT(lrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LONG(RT_NOCRT(lrintf)(-INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(+INFINITY),                   LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble(NULL, true)),  LONG_MIN);
+    CHECK_LONG(RT_NOCRT(lrintf)(RTStrNanDouble("s", false)),  LONG_MIN);
+    CHECK_LONG_SAME(lrintf,(              -0.0f));
+    CHECK_LONG_SAME(lrintf,(              +0.0f));
+    CHECK_LONG_SAME(lrintf,(            +42.25f));
+    CHECK_LONG_SAME(lrintf,(            -42.25f));
+    CHECK_LONG_SAME(lrintf,(            +42.75f));
+    CHECK_LONG_SAME(lrintf,(            -42.75f));
+    CHECK_LONG_SAME(lrintf,(             +22.5f));
+    CHECK_LONG_SAME(lrintf,(             -22.5f));
+    CHECK_LONG_SAME(lrintf,(             +23.5f));
+    CHECK_LONG_SAME(lrintf,(             -23.5f));
+    CHECK_LONG_SAME(lrintf,(         +42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(         -42.25e+6f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e-10f));
+    CHECK_LONG_SAME(lrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LONG_SAME(lrintf,(+1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(-1234.60958634e+20f));
+    CHECK_LONG_SAME(lrintf,(  -1234.499999e+20f));
+    CHECK_LONG_SAME(lrintf,(-INFINITY));
+    CHECK_LONG_SAME(lrintf,(+INFINITY));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LONG_SAME(lrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    RT_NOCRT(fesetround)(iSavedMode);
+}
+
+
+void testLLRInt()
+{
+    RTTestSub(g_hTest, "llrint[f]");
+
+    /*
+     * Round nearest.
+     */
+    int const iSavedMode = RT_NOCRT(fegetround)();
+    if (iSavedMode != FE_TONEAREST)
+        RTTestFailed(g_hTest, "expected FE_TONEAREST as default rounding mode, not %#x (%d)", iSavedMode, iSavedMode);
+    RT_NOCRT(fesetround)(FE_TONEAREST);
+
+    CHECK_LLONG(RT_NOCRT(llrint)(              +0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(              -0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.0),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.5),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +42.5),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -43.5),              -44);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +43.5),              +44);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.25),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.25),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.75),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.75),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(+1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(-1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e-10),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrint)(-INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(+INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble(NULL, true)),LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble("s", false)),LLONG_MIN);
+    CHECK_LLONG_SAME(llrint,(              -0.0));
+    CHECK_LLONG_SAME(llrint,(              +0.0));
+    CHECK_LLONG_SAME(llrint,(            +42.25));
+    CHECK_LLONG_SAME(llrint,(            -42.25));
+    CHECK_LLONG_SAME(llrint,(            +42.75));
+    CHECK_LLONG_SAME(llrint,(            -42.75));
+    CHECK_LLONG_SAME(llrint,(             +22.5));
+    CHECK_LLONG_SAME(llrint,(             -22.5));
+    CHECK_LLONG_SAME(llrint,(             +23.5));
+    CHECK_LLONG_SAME(llrint,(             -23.5));
+    CHECK_LLONG_SAME(llrint,(         +42.25e+6));
+    CHECK_LLONG_SAME(llrint,(         -42.25e+6));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e-10));
+    CHECK_LLONG_SAME(llrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrint,(+1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(-1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e+20));
+    CHECK_LLONG_SAME(llrint,(-INFINITY));
+    CHECK_LLONG_SAME(llrint,(+INFINITY));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LLONG(RT_NOCRT(llrintf)(              +0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(              -0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.0f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.5f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +42.5f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -43.5f),              -44);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +43.5f),              +44);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.25f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.25f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.75f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.75f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(-1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e-10f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrintf)(-INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble(NULL, true)), LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble("s", false)), LLONG_MIN);
+    CHECK_LLONG_SAME(llrintf,(              -0.0f));
+    CHECK_LLONG_SAME(llrintf,(              +0.0f));
+    CHECK_LLONG_SAME(llrintf,(            +42.25f));
+    CHECK_LLONG_SAME(llrintf,(            -42.25f));
+    CHECK_LLONG_SAME(llrintf,(            +42.75f));
+    CHECK_LLONG_SAME(llrintf,(            -42.75f));
+    CHECK_LLONG_SAME(llrintf,(             +22.5f));
+    CHECK_LLONG_SAME(llrintf,(             -22.5f));
+    CHECK_LLONG_SAME(llrintf,(             +23.5f));
+    CHECK_LLONG_SAME(llrintf,(             -23.5f));
+    CHECK_LLONG_SAME(llrintf,(         +42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(         -42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e-10f));
+    CHECK_LLONG_SAME(llrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrintf,(+1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(-1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e+20f));
+    CHECK_LLONG_SAME(llrintf,(-INFINITY));
+    CHECK_LLONG_SAME(llrintf,(+INFINITY));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round UP.
+     */
+    RT_NOCRT(fesetround)(FE_UPWARD);
+
+    CHECK_LLONG(RT_NOCRT(llrint)(              +0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(              -0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.0),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.5),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +42.5),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -43.5),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +43.5),              +44);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.25),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.25),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.75),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.75),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(+1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(-1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e-10),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrint)(-INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(+INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble(NULL, true)),LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble("s", false)),LLONG_MIN);
+    CHECK_LLONG_SAME(llrint,(              -0.0));
+    CHECK_LLONG_SAME(llrint,(              +0.0));
+    CHECK_LLONG_SAME(llrint,(            +42.25));
+    CHECK_LLONG_SAME(llrint,(            -42.25));
+    CHECK_LLONG_SAME(llrint,(            +42.75));
+    CHECK_LLONG_SAME(llrint,(            -42.75));
+    CHECK_LLONG_SAME(llrint,(             +22.5));
+    CHECK_LLONG_SAME(llrint,(             -22.5));
+    CHECK_LLONG_SAME(llrint,(             +23.5));
+    CHECK_LLONG_SAME(llrint,(             -23.5));
+    CHECK_LLONG_SAME(llrint,(         +42.25e+6));
+    CHECK_LLONG_SAME(llrint,(         -42.25e+6));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e-10));
+    CHECK_LLONG_SAME(llrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrint,(+1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(-1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e+20));
+    CHECK_LLONG_SAME(llrint,(-INFINITY));
+    CHECK_LLONG_SAME(llrint,(+INFINITY));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LLONG(RT_NOCRT(llrintf)(              +0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(              -0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.0f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.5f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +42.5f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -43.5f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +43.5f),              +44);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.25f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.25f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.75f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.75f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(-1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e-10f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrintf)(-INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble(NULL, true)), LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble("s", false)), LLONG_MIN);
+    CHECK_LLONG_SAME(llrintf,(              -0.0f));
+    CHECK_LLONG_SAME(llrintf,(              +0.0f));
+    CHECK_LLONG_SAME(llrintf,(            +42.25f));
+    CHECK_LLONG_SAME(llrintf,(            -42.25f));
+    CHECK_LLONG_SAME(llrintf,(            +42.75f));
+    CHECK_LLONG_SAME(llrintf,(            -42.75f));
+    CHECK_LLONG_SAME(llrintf,(             +22.5f));
+    CHECK_LLONG_SAME(llrintf,(             -22.5f));
+    CHECK_LLONG_SAME(llrintf,(             +23.5f));
+    CHECK_LLONG_SAME(llrintf,(             -23.5f));
+    CHECK_LLONG_SAME(llrintf,(         +42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(         -42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e-10f));
+    CHECK_LLONG_SAME(llrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrintf,(+1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(-1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e+20f));
+    CHECK_LLONG_SAME(llrintf,(-INFINITY));
+    CHECK_LLONG_SAME(llrintf,(+INFINITY));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round DOWN.
+     */
+    RT_NOCRT(fesetround)(FE_DOWNWARD);
+
+    CHECK_LLONG(RT_NOCRT(llrint)(              +0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(              -0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.0),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.5),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +42.5),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -43.5),              -44);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +43.5),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.25),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.25),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.75),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.75),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(+1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(-1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e-10),               -1);
+    CHECK_LLONG(RT_NOCRT(llrint)(      -2.1984e-310),               -1); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrint)(-INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(+INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble(NULL, true)),LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble("s", false)),LLONG_MIN);
+    CHECK_LLONG_SAME(llrint,(              -0.0));
+    CHECK_LLONG_SAME(llrint,(              +0.0));
+    CHECK_LLONG_SAME(llrint,(            +42.25));
+    CHECK_LLONG_SAME(llrint,(            -42.25));
+    CHECK_LLONG_SAME(llrint,(            +42.75));
+    CHECK_LLONG_SAME(llrint,(            -42.75));
+    CHECK_LLONG_SAME(llrint,(             +22.5));
+    CHECK_LLONG_SAME(llrint,(             -22.5));
+    CHECK_LLONG_SAME(llrint,(             +23.5));
+    CHECK_LLONG_SAME(llrint,(             -23.5));
+    CHECK_LLONG_SAME(llrint,(         +42.25e+6));
+    CHECK_LLONG_SAME(llrint,(         -42.25e+6));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e-10));
+    CHECK_LLONG_SAME(llrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrint,(+1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(-1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e+20));
+    CHECK_LLONG_SAME(llrint,(-INFINITY));
+    CHECK_LLONG_SAME(llrint,(+INFINITY));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LLONG(RT_NOCRT(llrintf)(              +0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(              -0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.0f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.5f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +42.5f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -43.5f),              -44);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +43.5f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.25f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.25f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.75f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.75f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(-1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e-10f),               -1);
+    CHECK_LLONG(RT_NOCRT(llrintf)(       -2.1984e-40f),               -1); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrintf)(-INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble(NULL, true)), LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble("s", false)), LLONG_MIN);
+    CHECK_LLONG_SAME(llrintf,(              -0.0f));
+    CHECK_LLONG_SAME(llrintf,(              +0.0f));
+    CHECK_LLONG_SAME(llrintf,(            +42.25f));
+    CHECK_LLONG_SAME(llrintf,(            -42.25f));
+    CHECK_LLONG_SAME(llrintf,(            +42.75f));
+    CHECK_LLONG_SAME(llrintf,(            -42.75f));
+    CHECK_LLONG_SAME(llrintf,(             +22.5f));
+    CHECK_LLONG_SAME(llrintf,(             -22.5f));
+    CHECK_LLONG_SAME(llrintf,(             +23.5f));
+    CHECK_LLONG_SAME(llrintf,(             -23.5f));
+    CHECK_LLONG_SAME(llrintf,(         +42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(         -42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e-10f));
+    CHECK_LLONG_SAME(llrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrintf,(+1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(-1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e+20f));
+    CHECK_LLONG_SAME(llrintf,(-INFINITY));
+    CHECK_LLONG_SAME(llrintf,(+INFINITY));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    /*
+     * Round towards ZERO.
+     */
+    RT_NOCRT(fesetround)(FE_TOWARDZERO);
+
+    CHECK_LLONG(RT_NOCRT(llrint)(              +0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(              -0.0),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.0),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -42.5),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +42.5),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(             -43.5),              -43);
+    CHECK_LLONG(RT_NOCRT(llrint)(             +43.5),              +43);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.25),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.25),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            -42.75),              -42);
+    CHECK_LLONG(RT_NOCRT(llrint)(            +42.75),              +42);
+    CHECK_LLONG(RT_NOCRT(llrint)(+1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(-1234.60958634e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e+20),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(  -1234.499999e-10),                0);
+    CHECK_LLONG(RT_NOCRT(llrint)(      -2.1984e-310),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrint)(-INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(+INFINITY),                 LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble(NULL, true)),LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrint)(RTStrNanDouble("s", false)),LLONG_MIN);
+    CHECK_LLONG_SAME(llrint,(              -0.0));
+    CHECK_LLONG_SAME(llrint,(              +0.0));
+    CHECK_LLONG_SAME(llrint,(            +42.25));
+    CHECK_LLONG_SAME(llrint,(            -42.25));
+    CHECK_LLONG_SAME(llrint,(            +42.75));
+    CHECK_LLONG_SAME(llrint,(            -42.75));
+    CHECK_LLONG_SAME(llrint,(             +22.5));
+    CHECK_LLONG_SAME(llrint,(             -22.5));
+    CHECK_LLONG_SAME(llrint,(             +23.5));
+    CHECK_LLONG_SAME(llrint,(             -23.5));
+    CHECK_LLONG_SAME(llrint,(         +42.25e+6));
+    CHECK_LLONG_SAME(llrint,(         -42.25e+6));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e-10));
+    CHECK_LLONG_SAME(llrint,(      -2.1984e-310)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrint,(+1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(-1234.60958634e+20));
+    CHECK_LLONG_SAME(llrint,(  -1234.499999e+20));
+    CHECK_LLONG_SAME(llrint,(-INFINITY));
+    CHECK_LLONG_SAME(llrint,(+INFINITY));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble(NULL, true)));
+    CHECK_LLONG_SAME(llrint,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_LLONG(RT_NOCRT(llrintf)(              +0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(              -0.0f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.0f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -42.5f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +42.5f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             -43.5f),              -43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(             +43.5f),              +43);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.25f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.25f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            -42.75f),              -42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(            +42.75f),              +42);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(-1234.60958634e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e+20f),        LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(  -1234.499999e-10f),                0);
+    CHECK_LLONG(RT_NOCRT(llrintf)(       -2.1984e-40f),                0); /* subnormal */
+    CHECK_LLONG(RT_NOCRT(llrintf)(-INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(+INFINITY),                  LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble(NULL, true)), LLONG_MIN);
+    CHECK_LLONG(RT_NOCRT(llrintf)(RTStrNanDouble("s", false)), LLONG_MIN);
+    CHECK_LLONG_SAME(llrintf,(              -0.0f));
+    CHECK_LLONG_SAME(llrintf,(              +0.0f));
+    CHECK_LLONG_SAME(llrintf,(            +42.25f));
+    CHECK_LLONG_SAME(llrintf,(            -42.25f));
+    CHECK_LLONG_SAME(llrintf,(            +42.75f));
+    CHECK_LLONG_SAME(llrintf,(            -42.75f));
+    CHECK_LLONG_SAME(llrintf,(             +22.5f));
+    CHECK_LLONG_SAME(llrintf,(             -22.5f));
+    CHECK_LLONG_SAME(llrintf,(             +23.5f));
+    CHECK_LLONG_SAME(llrintf,(             -23.5f));
+    CHECK_LLONG_SAME(llrintf,(         +42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(         -42.25e+6f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e-10f));
+    CHECK_LLONG_SAME(llrintf,(       -2.1984e-40f)); /* subnormal */
+#if 0 /* Undefined, we disagree with UCRT on windows. */
+    CHECK_LLONG_SAME(llrintf,(+1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(-1234.60958634e+20f));
+    CHECK_LLONG_SAME(llrintf,(  -1234.499999e+20f));
+    CHECK_LLONG_SAME(llrintf,(-INFINITY));
+    CHECK_LLONG_SAME(llrintf,(+INFINITY));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat(NULL, true)));
+    CHECK_LLONG_SAME(llrintf,(RTStrNanFloat("s", false)));
+#endif
+
+    RT_NOCRT(fesetround)(iSavedMode);
+}
+
+
+void testExp2()
+{
+    RTTestSub(g_hTest, "exp2[f]");
+
+    CHECK_DBL(RT_NOCRT(exp2)(1.0), 2.0);
+    CHECK_DBL(RT_NOCRT(exp2)(2.0), 4.0);
+    CHECK_DBL(RT_NOCRT(exp2)(32.0), 4294967296.0);
+    CHECK_DBL(RT_NOCRT(exp2)(-1.0), 0.5);
+    CHECK_DBL(RT_NOCRT(exp2)(-3.0), 0.125);
+    CHECK_DBL_SAME(exp2, (0.0));
+    CHECK_DBL_SAME(exp2, (+INFINITY));
+    CHECK_DBL_SAME(exp2, (-INFINITY));
+    CHECK_DBL_SAME(exp2, (nan("1")));
+    CHECK_DBL_SAME(exp2, (RTStrNanDouble("ab305f", true)));
+    CHECK_DBL_SAME(exp2, (RTStrNanDouble("fffffffff_signaling", true)));
+    CHECK_DBL_SAME(exp2, (RTStrNanDouble("7777777777778_sig", false)));
+    CHECK_DBL_SAME(exp2, (1.0));
+    CHECK_DBL_SAME(exp2, (2.0));
+    CHECK_DBL_SAME(exp2, (-1.0));
+    CHECK_DBL_APPROX_SAME(exp2, (+0.5));
+    CHECK_DBL_APPROX_SAME(exp2, (-0.5));
+    CHECK_DBL_APPROX_SAME(exp2, (+1.5));
+    CHECK_DBL_APPROX_SAME(exp2, (-1.5));
+    CHECK_DBL_APPROX_SAME(exp2, (+3.25));
+    CHECK_DBL_APPROX_SAME(exp2, (99.2559430));
+    CHECK_DBL_APPROX_SAME(exp2, (-99.2559430));
+    CHECK_DBL_APPROX_SAME(exp2, (+305.2559430));
+    CHECK_DBL_APPROX_SAME(exp2, (-305.2559430));
+    CHECK_DBL_APPROX_SAME(exp2, (+309.99884));
+    CHECK_DBL_APPROX_SAME(exp2, (-309.111048));
+    CHECK_DBL_APPROX_SAME(exp2, (+999.864597634));
+    CHECK_DBL_APPROX_SAME(exp2, (-999.098234837));
+
+
+    CHECK_FLT(RT_NOCRT(exp2f)(1.0f), 2.0f);
+    CHECK_FLT(RT_NOCRT(exp2f)(2.0f), 4.0f);
+    CHECK_FLT(RT_NOCRT(exp2f)(32.0f), 4294967296.0f);
+    CHECK_FLT(RT_NOCRT(exp2f)(-1.0f), 0.5f);
+    CHECK_FLT(RT_NOCRT(exp2f)(-3.0f), 0.125f);
+    CHECK_FLT_SAME(exp2f, (0.0f));
+    CHECK_FLT_SAME(exp2f, (+INFINITY));
+    CHECK_FLT_SAME(exp2f, (-INFINITY));
+    CHECK_FLT_SAME(exp2f, (nan("1")));
+    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("ab305f", true)));
+    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("3fffff_signaling", true)));
+    CHECK_FLT_SAME(exp2f, (RTStrNanFloat("79778_sig", false)));
+    CHECK_FLT_SAME(exp2f, (1.0f));
+    CHECK_FLT_SAME(exp2f, (2.0f));
+    CHECK_FLT_SAME(exp2f, (-1.0f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+0.5f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-0.5f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+1.5f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-1.5f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+3.25f));
+    CHECK_FLT_APPROX_SAME(exp2f, (99.25594f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-99.25594f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+305.25594f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-305.25594f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+309.99884f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-309.111048f));
+    CHECK_FLT_APPROX_SAME(exp2f, (+999.86459f));
+    CHECK_FLT_APPROX_SAME(exp2f, (-999.09823f));
+}
+
+
+void testFma()
+{
+    RTTestSub(g_hTest, "fma[f]");
+
+    CHECK_DBL(RT_NOCRT(fma)(1.0, 1.0,  1.0), 2.0);
+    CHECK_DBL(RT_NOCRT(fma)(4.0, 2.0,  1.0), 9.0);
+    CHECK_DBL(RT_NOCRT(fma)(4.0, 2.0, -1.0), 7.0);
+    CHECK_DBL_SAME(fma, (0.0, 0.0, 0.0));
+    CHECK_DBL_SAME(fma, (999999.0,            33334.0,       29345.0));
+    CHECK_DBL_SAME(fma, (39560.32334,       9605.5546, -59079.345069));
+    CHECK_DBL_SAME(fma, (39560.32334,   -59079.345069,     9605.5546));
+    CHECK_DBL_SAME(fma, (-59079.345069,   39560.32334,     9605.5546));
+    CHECK_DBL_SAME(fma, (+INFINITY, +INFINITY, -INFINITY));
+    CHECK_DBL_SAME(fma, (4.0, +INFINITY, 2.0));
+    CHECK_DBL_SAME(fma, (4.0, 4.0, +INFINITY));
+    CHECK_DBL_SAME(fma, (-INFINITY, 4.0, 4.0));
+    CHECK_DBL_SAME(fma, (2.34960584706e100, 7.6050698459e-13, 9.99996777e77));
+
+    CHECK_FLT(RT_NOCRT(fmaf)(1.0f, 1.0f, 1.0), 2.0);
+    CHECK_FLT(RT_NOCRT(fmaf)(4.0f, 2.0f, 1.0), 9.0);
+    CHECK_FLT(RT_NOCRT(fmaf)(4.0f, 2.0f, -1.0), 7.0);
+    CHECK_FLT_SAME(fmaf, (0.0f, 0.0f, 0.0f));
+    CHECK_FLT_SAME(fmaf, (999999.0f,            33334.0f,       29345.0f));
+    CHECK_FLT_SAME(fmaf, (39560.32334f,       9605.5546f, -59079.345069f));
+    CHECK_FLT_SAME(fmaf, (39560.32334f,   -59079.345069f,     9605.5546f));
+    CHECK_FLT_SAME(fmaf, (-59079.345069f,   39560.32334f,     9605.5546f));
+    CHECK_FLT_SAME(fmaf, (+INFINITY, +INFINITY, -INFINITY));
+    CHECK_FLT_SAME(fmaf, (4.0f, +INFINITY, 2.0f));
+    CHECK_FLT_SAME(fmaf, (4.0f, 4.0f, +INFINITY));
+    CHECK_FLT_SAME(fmaf, (-INFINITY, 4.0f, 4.0f));
+    CHECK_FLT_SAME(fmaf, (2.34960584706e22f, 7.6050698459e-13f, 9.99996777e27f));
+}
+
+
+
+
 int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTNoCrt-2", &g_hTest);
@@ -1581,8 +2351,6 @@ int main()
 
     /* math.h */
     testCopySign();
-    testExp2();
-    testFma();
     testFmax();
     testFmin();
     testIsInf();
@@ -1598,6 +2366,11 @@ int main()
     testRInt();
     testLRound();
     testLLRound();
+    testLRInt();
+    testLLRInt();
+
+    testExp2();
+    testFma();
 
 #if 0
     ../common/math/atan.asm \
@@ -1613,16 +2386,10 @@ int main()
     ../common/math/fabsf.asm \
     ../common/math/ldexp.asm \
     ../common/math/ldexpf.asm \
-    ../common/math/llrint.asm \
-    ../common/math/llrintf.asm \
     ../common/math/log.asm \
     ../common/math/logf.asm \
-    ../common/math/lrint.asm \
-    ../common/math/lrintf.asm \
     ../common/math/remainder.asm \
     ../common/math/remainderf.asm \
-    ../common/math/rint.asm \
-    ../common/math/rintf.asm \
     ../common/math/sin.asm \
     ../common/math/sinf.asm \
     ../common/math/sqrt.asm \

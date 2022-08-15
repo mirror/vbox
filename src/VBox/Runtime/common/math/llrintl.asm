@@ -24,30 +24,37 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
 ;;
-; Round rd to the nearest integer value, rounding according to the current rounding direction.
+; Round lrd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: edx:eax  64-bit: rax
 ; @param    lrd     [rbp + xCB*2]
 RT_NOCRT_BEGINPROC llrintl
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+        SEH64_END_PROLOGUE
 
-    fld     tword [xBP + xCB*2]
-    fistp   qword [xSP]
-    fwait
+        fld     tword [xBP + xCB*2]
+        fistp   qword [xSP]
+        fwait
 %ifdef RT_ARCH_AMD64
-    mov     rax, [xSP]
+        mov     rax, [xSP]
 %else
-    mov     eax, [xSP]
-    mov     edx, [xSP + 4]
+        mov     eax, [xSP]
+        mov     edx, [xSP + 4]
 %endif
 
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(llrintl)
 
