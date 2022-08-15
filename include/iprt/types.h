@@ -996,12 +996,12 @@ typedef const RTFLOAT32U RT_FAR *PCRTFLOAT32U;
 #define RTFLOAT32U_INIT_SNAN(a_fSign)               RTFLOAT32U_INIT((a_fSign), 1, RTFLOAT32U_EXP_MAX)
 #define RTFLOAT32U_INIT_SNAN_EX(a_fSign, a_uVal)    RTFLOAT32U_INIT((a_fSign), (a_uVal) ? (a_uVal) : 1, RTFLOAT32U_EXP_MAX)
 #define RTFLOAT32U_INIT_SIGNALLING_NAN(a_fSign)     RTFLOAT32U_INIT_SNAN(a_fSign)
-#define RTFLOAT32U_INIT_QNAN(a_fSign)               RTFLOAT32U_INIT((a_fSign), 1 | RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1), RTFLOAT32U_EXP_MAX)
-#define RTFLOAT32U_INIT_QNAN_EX(a_fSign, a_uVal)    RTFLOAT32U_INIT((a_fSign), ((a_uVal) ? (a_uVal) : 1) | RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1), RTFLOAT32U_EXP_MAX)
+#define RTFLOAT32U_INIT_QNAN(a_fSign)               RTFLOAT32U_INIT((a_fSign), RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1), RTFLOAT32U_EXP_MAX)
+#define RTFLOAT32U_INIT_QNAN_EX(a_fSign, a_uVal)    RTFLOAT32U_INIT((a_fSign), RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1) | (a_uVal), RTFLOAT32U_EXP_MAX)
 #define RTFLOAT32U_INIT_QUIET_NAN(a_fSign)          RTFLOAT32U_INIT_QNAN(a_fSign)
 #define RTFLOAT32U_INIT_NAN_EX(a_fQuiet, a_fSign, a_uVal) \
     RTFLOAT32U_INIT((a_fSign), \
-                    ((a_uVal) ? (a_uVal) : 1) | ((a_fQuiet) ? RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1) : 0), \
+                    ((a_uVal) || (a_fQuiet) ? (a_uVal) : 1) | ((a_fQuiet) ? RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1) : 0), \
                     RTFLOAT32U_EXP_MAX)
 
 /** The exponent bias for the RTFLOAT32U format. */
@@ -1117,12 +1117,12 @@ typedef const RTFLOAT64U RT_FAR *PCRTFLOAT64U;
 #define RTFLOAT64U_INIT_SNAN(a_fSign)               RTFLOAT64U_INIT((a_fSign), UINT64_C(1), RTFLOAT64U_EXP_MAX)
 #define RTFLOAT64U_INIT_SNAN_EX(a_fSign, a_uVal)    RTFLOAT64U_INIT((a_fSign), (a_uVal) ? (a_uVal) : UINT64_C(1), RTFLOAT64U_EXP_MAX)
 #define RTFLOAT64U_INIT_SIGNALLING_NAN(a_fSign)     RTFLOAT64U_INIT_SNAN(a_fSign)
-#define RTFLOAT64U_INIT_QNAN(a_fSign)               RTFLOAT64U_INIT((a_fSign), UINT64_C(1) | RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1), RTFLOAT64U_EXP_MAX)
-#define RTFLOAT64U_INIT_QNAN_EX(a_fSign, a_uVal)    RTFLOAT64U_INIT((a_fSign), ((a_uVal) ? (a_uVal) : UINT64_C(1)) | RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1), RTFLOAT64U_EXP_MAX)
+#define RTFLOAT64U_INIT_QNAN(a_fSign)               RTFLOAT64U_INIT((a_fSign), RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1), RTFLOAT64U_EXP_MAX)
+#define RTFLOAT64U_INIT_QNAN_EX(a_fSign, a_uVal)    RTFLOAT64U_INIT((a_fSign), RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) | (a_uVal), RTFLOAT64U_EXP_MAX)
 #define RTFLOAT64U_INIT_QUIET_NAN(a_fSign)          RTFLOAT64U_INIT_QNAN(a_fSign)
 #define RTFLOAT64U_INIT_NAN_EX(a_fQuiet, a_fSign, a_uVal) \
     RTFLOAT64U_INIT((a_fSign), \
-                    ((a_uVal) ? (a_uVal) : UINT64_C(1)) | ((a_fQuiet) ? RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) : UINT64_C(0)), \
+                    ((a_uVal) || (a_fQuiet) ? (a_uVal) : UINT64_C(1)) | ((a_fQuiet) ? RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1) : UINT64_C(0)), \
                     RTFLOAT64U_EXP_MAX)
 
 /** The exponent bias for the RTFLOAT64U format. */
@@ -1252,11 +1252,11 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
 # define RTFLOAT80U_INIT_SNAN(a_fSign)              RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | 1, RTFLOAT80U_EXP_MAX)
 # define RTFLOAT80U_INIT_SNAN_EX(a_fSign, a_uVal)   RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | (a_uVal), RTFLOAT80U_EXP_MAX)
 # define RTFLOAT80U_INIT_QUIET_NAN(a_fSign)         RTFLOAT80U_INIT_QNAN((a_fSign))
-# define RTFLOAT80U_INIT_QNAN(a_fSign)              RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | RT_BIT_64(62) | 1, RTFLOAT80U_EXP_MAX)
+# define RTFLOAT80U_INIT_QNAN(a_fSign)              RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | RT_BIT_64(62), RTFLOAT80U_EXP_MAX)
 # define RTFLOAT80U_INIT_QNAN_EX(a_fSign, a_uVal)   RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | RT_BIT_64(62) | (a_uVal), RTFLOAT80U_EXP_MAX)
 #define RTFLOAT80U_INIT_NAN_EX(a_fQuiet, a_fSign, a_uVal) \
     RTFLOAT80U_INIT((a_fSign), \
-                    ((a_uVal) ? (a_uVal) : UINT64_C(1)) | ((a_fQuiet) ? RT_BIT_64(63) | RT_BIT_64(62) : RT_BIT_64(63)), \
+                    ((a_uVal) || (a_fQuiet) ? (a_uVal) : UINT64_C(1)) | ((a_fQuiet) ? RT_BIT_64(63) | RT_BIT_64(62) : RT_BIT_64(63)), \
                     RTFLOAT80U_EXP_MAX)
 # define RTFLOAT80U_INIT_INDEFINITE(a_fSign)        RTFLOAT80U_INIT((a_fSign), RT_BIT_64(63) | RT_BIT_64(62), RTFLOAT80U_EXP_MAX)
 # define RTFLOAT80U_INIT_IND(a_fSign)               RTFLOAT80U_INIT_INDEFINITE(a_fSign)
@@ -1589,15 +1589,14 @@ typedef const RTFLOAT128U RT_FAR *PCRTFLOAT128U;
     RTFLOAT128U_INIT((a_fSign), (a_uValHi), (a_uValHi) || (a_uValLo) ? (a_uValLo) : UINT64_C(1), RTFLOAT128U_EXP_MAX)
 #define RTFLOAT128U_INIT_SIGNALLING_NAN(a_fSign)     RTFLOAT128U_INIT_SNAN(a_fSign)
 #define RTFLOAT128U_INIT_QNAN(a_fSign) \
-    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64), UINT64_C(1), RTFLOAT128U_EXP_MAX)
+    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64), UINT64_C(0), RTFLOAT128U_EXP_MAX)
 #define RTFLOAT128U_INIT_QNAN_EX(a_fSign, a_uValHi, a_uValLo) \
-    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) | (a_uValHi), \
-                     (a_uValLo) || (a_uValHi) ? (a_uValLo) : UINT64_C(1), RTFLOAT128U_EXP_MAX)
+    RTFLOAT128U_INIT((a_fSign), RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) | (a_uValHi), (a_uValLo), RTFLOAT128U_EXP_MAX)
 #define RTFLOAT128U_INIT_QUIET_NAN(a_fSign)          RTFLOAT128U_INIT_QNAN(a_fSign)
 #define RTFLOAT128U_INIT_NAN_EX(a_fQuiet, a_fSign, a_uValHi, a_uValLo) \
     RTFLOAT128U_INIT((a_fSign), \
                      ((a_fQuiet) ? RT_BIT_64(RTFLOAT128U_FRACTION_BITS - 1 - 64) : 0) | (a_uValHi), \
-                     (a_uValLo) || (a_uValHi) || (a_fQuiet) /*?*/ ? (a_uValLo) : UINT64_C(1), \
+                     (a_uValLo) || (a_uValHi) || (a_fQuiet) ? (a_uValLo) : UINT64_C(1), \
                      RTFLOAT128U_EXP_MAX)
 
 /** The exponent bias for the RTFLOAT128U format. */

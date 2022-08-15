@@ -684,19 +684,15 @@ static void rtStrParseNanTag(const char *pchTag, size_t cchTag, bool fPositive, 
     Assert(iRetType < RT_ELEMENTS(g_fNanMasks));
 #if defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
     if (iRetType == RET_TYPE_LONG_DOUBLE)
-    {
         uHiNum &= g_fNanMasks[RET_TYPE_LONG_DOUBLE];
-        if (!uLoNum && !uHiNum)
-            uLoNum = 1; /* must not be zero, or it'll turn into an infinity */
-    }
     else
 #endif
     {
         uHiNum  = 0;
         uLoNum &= g_fNanMasks[iRetType];
-        if (!uLoNum)
-            uLoNum = 1; /* must not be zero, or it'll turn into an infinity */
     }
+    if (!uLoNum && !uHiNum && !fQuiet)
+        uLoNum = 1; /* must not be zero, or it'll turn into an infinity */
 
     /*
      * Set the return value.
