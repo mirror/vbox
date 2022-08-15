@@ -827,7 +827,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 {
     AssertReturn(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO, VERR_INVALID_PARAMETER);
 
-    int vrc;
+    int vrc = VINF_SUCCESS;
 
     pSink->pCodec = pCodec;
 
