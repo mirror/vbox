@@ -2686,6 +2686,70 @@ void testSqRt()
     CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble(NULL, true)));
     CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble("s",  true)));
     CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble("s", false)));
+}
+
+
+void testATan()
+{
+    RTTestSub(g_hTest, "atan[f]");
+
+    CHECK_DBL(RT_NOCRT(atan)(             +1.0), +0.78539816339744830962 /*+M_PI_4*/);
+    CHECK_DBL(RT_NOCRT(atan)(             -1.0), -0.78539816339744830962 /*-M_PI_4*/);
+    CHECK_DBL(RT_NOCRT(atan)(        +INFINITY), +1.57079632679489661923 /*+M_PI_2*/);
+    CHECK_DBL(RT_NOCRT(atan)(        -INFINITY), -1.57079632679489661923 /*-M_PI_2*/);
+    CHECK_DBL_SAME(    atan,(              1.0));
+    CHECK_DBL_SAME(    atan,(              1.5));
+    CHECK_DBL_SAME(    atan,(             +0.0));
+    CHECK_DBL_SAME(    atan,(             +0.0));
+    CHECK_DBL_SAME(    atan,(             -0.0));
+    CHECK_DBL_SAME(    atan,(             -0.0));
+    CHECK_DBL_SAME(    atan,(      238.6634566));
+    CHECK_DBL_SAME(    atan,(      -49.4578999));
+    CHECK_DBL_SAME(    atan,(         999999.0));
+    CHECK_DBL_SAME(    atan,(        -999999.0));
+    CHECK_DBL_SAME(    atan,(        -999999.0));
+    CHECK_DBL_SAME(    atan,(         999999.0));
+    CHECK_DBL_SAME(    atan,(      39560.32334));
+    CHECK_DBL_SAME(    atan,(      39560.32334));
+    CHECK_DBL_SAME(    atan,(        +INFINITY));
+    CHECK_DBL_SAME(    atan,(        -INFINITY));
+    CHECK_DBL_SAME(    atan,(         +DBL_MAX));
+    CHECK_DBL_SAME(    atan,(         -DBL_MAX));
+    CHECK_DBL_SAME(    atan,(2.34960584706e100));
+    CHECK_DBL_SAME(    atan,(2.34960584706e300));
+    CHECK_DBL_SAME(    atan,(2.34960584706e300));
+    CHECK_DBL_SAME(    atan,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(    atan,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(    atan,(RTStrNanDouble("s", false)));
+
+    CHECK_DBL(RT_NOCRT(atanf)(             +1.0f), +0.78539816339744830962f /*+M_PI_4*/);
+    CHECK_DBL(RT_NOCRT(atanf)(             -1.0f), -0.78539816339744830962f /*-M_PI_4*/);
+    CHECK_DBL(RT_NOCRT(atanf)(         +INFINITY), +1.57079632679489661923f /*+M_PI_2*/);
+    CHECK_DBL(RT_NOCRT(atanf)(         -INFINITY), -1.57079632679489661923f /*-M_PI_2*/);
+    CHECK_DBL_SAME(    atanf,(              1.0f));
+    CHECK_DBL_SAME(    atanf,(              1.5f));
+    CHECK_DBL_SAME(    atanf,(             +0.0f));
+    CHECK_DBL_SAME(    atanf,(             +0.0f));
+    CHECK_DBL_SAME(    atanf,(             -0.0f));
+    CHECK_DBL_SAME(    atanf,(             -0.0f));
+    CHECK_DBL_SAME(    atanf,(      238.6634566f));
+    CHECK_DBL_SAME(    atanf,(      -49.4578999f));
+    CHECK_DBL_SAME(    atanf,(         999999.0f));
+    CHECK_DBL_SAME(    atanf,(        -999999.0f));
+    CHECK_DBL_SAME(    atanf,(        -999999.0f));
+    CHECK_DBL_SAME(    atanf,(         999999.0f));
+    CHECK_DBL_SAME(    atanf,(      39560.32334f));
+    CHECK_DBL_SAME(    atanf,(      39560.32334f));
+    CHECK_DBL_SAME(    atanf,(         +INFINITY));
+    CHECK_DBL_SAME(    atanf,(         -INFINITY));
+    CHECK_DBL_SAME(    atanf,(          +FLT_MAX));
+    CHECK_DBL_SAME(    atanf,(          -FLT_MAX));
+    CHECK_DBL_SAME(    atanf,(2.34960584706e+10f));
+    CHECK_DBL_SAME(    atanf,(2.34960584706e+30f));
+    CHECK_DBL_SAME(    atanf,(2.34960584706e+30f));
+    CHECK_DBL_SAME(    atanf,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(    atanf,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(    atanf,(RTStrNanDouble("s", false)));
 
 }
 
@@ -2746,11 +2810,11 @@ int main()
     testLog();
     testSqRt();
 
+    testATan();
+
 #if 0
-    ../common/math/atan.asm \
     ../common/math/atan2.asm \
     ../common/math/atan2f.asm \
-    ../common/math/atanf.asm \
     ../common/math/cos.asm \
     ../common/math/cosf.asm \
     ../common/math/cosl.asm \
