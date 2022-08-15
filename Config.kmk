@@ -837,18 +837,18 @@ VBOX_WITH_RECORDING = 1
 # Enable VPX (VP8 / VP9 codec), required for video capturing.
 VBOX_WITH_LIBVPX = 1
 # Enables audio support for recording (depends on VBOX_WITH_RECORDING).
-VBOX_WITH_AUDIO_RECORDING =
+VBOX_WITH_AUDIO_RECORDING = 1
 if defined(VBOX_WITH_AUDIO_RECORDING) && !defined(VBOX_WITH_RECORDING)
  $(error Audio recording (VBOX_WITH_AUDIO_RECORDING) needs the general recording feature (VBOX_WITH_RECORDING) enabled)
 endif
 # Enables libopus (Opus), required for encoding audio into the recorded data.
 VBOX_WITH_LIBOPUS =
 # Enable SEE (+ AVX) optimizations for Opus.
-VBOX_WITH_OPUS_SSE = 1
+VBOX_WITH_OPUS_SSE =
 # Enables libvorbis (Ogg Vorbis), required for encoding audio into the recorded data.
-VBOX_WITH_LIBVORBIS =
+VBOX_WITH_LIBVORBIS = 1
 # Enables libogg (Ogg file format). Required for building libvorbis above.
-VBOX_WITH_LIBOGG =
+VBOX_WITH_LIBOGG = 1
 if defined(VBOX_WITH_LIBVORBIS) && !defined(VBOX_WITH_LIBOGG)
  $(error Need libogg (VBOX_WITH_LIBOGG) in order to build libvorbis (VBOX_WITH_LIBVORBIS))
 endif
