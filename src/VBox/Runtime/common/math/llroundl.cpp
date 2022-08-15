@@ -32,6 +32,7 @@
 #include "internal/nocrt.h"
 #include <iprt/nocrt/math.h>
 #include <iprt/nocrt/limits.h>
+#include <iprt/nocrt/fenv.h>
 
 
 #undef llroundl
@@ -42,10 +43,10 @@ long long RT_NOCRT(llroundl)(long double lrd)
         lrd = RT_NOCRT(roundl)(lrd);
         if (lrd >= (long double)LLONG_MIN && lrd <= (long double)LLONG_MAX)
             return (long long)lrd;
-        /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
+        RT_NOCRT(feraiseexcept)(FE_INVALID);
         return lrd > 0.0L ? LLONG_MAX : LLONG_MIN;
     }
-    /** @todo RT_NOCRT(feraiseexcept)(FE_INVALID); */
+    RT_NOCRT(feraiseexcept)(FE_INVALID);
     if (RT_NOCRT(__isinfl)(lrd) && lrd < 0.0)
         return LLONG_MIN;
     return LLONG_MAX;
