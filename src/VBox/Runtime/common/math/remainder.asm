@@ -24,44 +24,71 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
 ;;
 ; See SUS.
-; @returns st(0)
-; @param    rd1    [ebp + 8h]  xmm0
-; @param    rd2    [ebp + 10h]  xmm1
+; @returns  st(0) / xmm0
+; @param    rd1    [ebp + 8h]   xmm0    Dividend.
+; @param    rd2    [ebp + 10h]  xmm1    Divisor.
 RT_NOCRT_BEGINPROC remainder
-    push    xBP
-    mov     xBP, xSP
-    sub     xSP, 20h
-;int3
-
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
 %ifdef RT_ARCH_AMD64
-    movsd   [rsp + 10h], xmm1
-    movsd   [rsp], xmm0
-    fld     qword [rsp + 10h]
-    fld     qword [rsp]
+        sub     xSP, 20h
+        SEH64_ALLOCATE_STACK 20h
+%endif
+        SEH64_END_PROLOGUE
+
+        ;
+        ; Load the dividend into st0 and divisor into st1.
+        ;
+%ifdef RT_ARCH_AMD64
+        movsd   [xBP - 20h], xmm1
+        movsd   [xBP - 10h], xmm0
+        fld     qword [xBP - 20h]
+        fld     qword [xBP - 10h]
 %else
-    fld     qword [ebp + 10h]
-    fld     qword [ebp + 8h]
+        fld     qword [ebp + 10h]
+        fld     qword [ebp + 08h]
 %endif
 
-    fprem1
-    fstsw   ax
-    test    ah, 04h
-    jnz     .done
-    fstp    st1
+        ;
+        ; The fprem1 only does between 32 and 64 rounds, so we have to loop
+        ; here till we've got a final result.  We count down in ECX to
+        ; avoid getting stuck here...
+        ;
+        mov     ecx, 2048 / 32 + 4
+.again:
+        fprem1
+        fstsw   ax
+        test    ah, (X86_FSW_C2 >> 8)
+        jz      .done
+        dec     cx
+        jnz     .again
+%ifdef RT_STRICT
+        int3
+%endif
 
+        ;
+        ; Return the result.
+        ;
 .done:
+        fstp    st1
 %ifdef RT_ARCH_AMD64
-    fstp    qword [rsp]
-    movsd   xmm0, [rsp]
+        fstp    qword [rsp]
+        movsd   xmm0, [rsp]
 %endif
 
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(remainder)
 

@@ -24,7 +24,11 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
@@ -34,25 +38,41 @@ BEGINCODE
 ; @param    lrd1    [rbp + 10h]
 ; @param    lrd2    [rbp + 20h]
 RT_NOCRT_BEGINPROC remainderl
-    push    xBP
-    mov     xBP, xSP
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        SEH64_END_PROLOGUE
 
-%ifdef RT_ARCH_AMD64
-    fld     tword [rbp + 10h + RTLRD_CB]
-    fld     tword [rbp + 10h]
-%else
-    fld     tword [ebp + 8h + RTLRD_CB]
-    fld     tword [ebp + 8h]
+        ;
+        ; Load the dividend into st0 and divisor into st1.
+        ;
+        fld     tword [xBP + 2*xCB + RTLRD_CB]
+        fld     tword [xBP + 2*xCB]
+
+        ;
+        ; The fprem1 only does between 32 and 64 rounds, so we have to loop
+        ; here till we've got a final result.  We count down in ECX to
+        ; avoid getting stuck here...
+        ;
+        mov     ecx, 16384 / 32 + 4
+.again:
+        fprem1
+        fstsw   ax
+        test    ah, (X86_FSW_C2 >> 8)
+        jz      .done
+        dec     cx
+        jnz     .again
+%ifdef RT_STRICT
+        int3
 %endif
 
-    fprem1
-    fstsw   ax
-    test    ah, 04h
-    jnz     .done
-    fstp    st1
-
+        ;
+        ; Return the result.
+        ;
 .done:
-    leave
-    ret
+        fstp    st1
+        leave
+        ret
 ENDPROC   RT_NOCRT(remainderl)
 
