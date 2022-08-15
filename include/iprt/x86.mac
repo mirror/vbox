@@ -1056,13 +1056,21 @@
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86_FSW_IE          RT_BIT_32(0)
+%define X86_FSW_IE_BIT      0
 %define X86_FSW_DE          RT_BIT_32(1)
+%define X86_FSW_DE_BIT      1
 %define X86_FSW_ZE          RT_BIT_32(2)
+%define X86_FSW_ZE_BIT      2
 %define X86_FSW_OE          RT_BIT_32(3)
+%define X86_FSW_OE_BIT      3
 %define X86_FSW_UE          RT_BIT_32(4)
+%define X86_FSW_UE_BIT      4
 %define X86_FSW_PE          RT_BIT_32(5)
+%define X86_FSW_PE_BIT      5
 %define X86_FSW_SF          RT_BIT_32(6)
+%define X86_FSW_SF_BIT      6
 %define X86_FSW_ES          RT_BIT_32(7)
+%define X86_FSW_ES_BIT      7
 %define X86_FSW_XCPT_MASK   0x007f
 %define X86_FSW_XCPT_ES_MASK 0x00ff
 %define X86_FSW_C0          RT_BIT_32(X86_FSW_C0_BIT)

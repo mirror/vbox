@@ -3273,20 +3273,28 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
  * @{ */
 /** Exception Flag: Invalid operation.  */
 #define X86_FSW_IE          RT_BIT_32(0)
+#define X86_FSW_IE_BIT      0
 /** Exception Flag: Denormalized operand.  */
 #define X86_FSW_DE          RT_BIT_32(1)
+#define X86_FSW_DE_BIT      1
 /** Exception Flag: Zero divide.  */
 #define X86_FSW_ZE          RT_BIT_32(2)
+#define X86_FSW_ZE_BIT      2
 /** Exception Flag: Overflow.  */
 #define X86_FSW_OE          RT_BIT_32(3)
+#define X86_FSW_OE_BIT      3
 /** Exception Flag: Underflow.  */
 #define X86_FSW_UE          RT_BIT_32(4)
+#define X86_FSW_UE_BIT      4
 /** Exception Flag: Precision.  */
 #define X86_FSW_PE          RT_BIT_32(5)
+#define X86_FSW_PE_BIT      5
 /** Stack fault. */
 #define X86_FSW_SF          RT_BIT_32(6)
+#define X86_FSW_SF_BIT      6
 /** Error summary status. */
 #define X86_FSW_ES          RT_BIT_32(7)
+#define X86_FSW_ES_BIT      7
 /** Mask of exceptions flags, excluding the summary bit. */
 #define X86_FSW_XCPT_MASK   UINT16_C(0x007f)
 /** Mask of exceptions flags, including the summary bit. */
