@@ -24,7 +24,10 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
@@ -33,14 +36,16 @@ BEGINCODE
 ; @returns st(0)
 ; @param    lrd     [xSP + xCB*2]
 RT_NOCRT_BEGINPROC fabsl
-    push    xBP
-    mov     xBP, xSP
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        SEH64_END_PROLOGUE
 
-    fld     tword [xBP + xCB*2]
-    fabs
+        fld     tword [xBP + xCB*2]
+        fabs
 
-.done:
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(fabsl)
 

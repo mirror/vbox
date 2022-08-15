@@ -24,7 +24,10 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
@@ -33,26 +36,27 @@ BEGINCODE
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rf      32-bit: [ebp + 8]   64-bit: xmm0
 RT_NOCRT_BEGINPROC fabsf
-    push    xBP
-    mov     xBP, xSP
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        SEH64_END_PROLOGUE
 
 %ifdef RT_ARCH_AMD64
-    sub     xSP, 10h
-
-    movsd   [xSP], xmm0
-    fld     dword [xSP]
-
-    fabs
-
-    fstp    dword [xSP]
-    movsd   xmm0, [xSP]
-
+        andps   xmm0, [g_r32ClearSignMask xWrtRIP]
 %else
-    fld     dword [xBP + xCB*2]
-    fabs
+        fld     dword [xBP + xCB*2]     ; This turns SNaN into QNaN.
+        fabs
 %endif
 
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(fabsf)
+
+ALIGNCODE(16)
+g_r32ClearSignMask:
+        dd      07fffffffh
+        dd      07fffffffh
+        dd      07fffffffh
+        dd      07fffffffh
 
