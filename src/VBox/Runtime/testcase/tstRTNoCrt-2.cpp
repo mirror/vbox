@@ -153,8 +153,25 @@
                          __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1]); \
         } \
     } while (0)
+
+# define CHECK_LDBL_SAME_RELAXED_NAN(a_Fn, a_Args) do { \
+        RTFLOAT80U2 uNoCrtRet, uCrtRet; \
+        uNoCrtRet.r = RT_NOCRT(a_Fn) a_Args; \
+        uCrtRet.r   =          a_Fn  a_Args; \
+        if (   !RTFLOAT80U_ARE_IDENTICAL(&uNoCrtRet, &uCrtRet) \
+            && (   !RTFLOAT80U_IS_NAN(&uNoCrtRet) \
+                || !RTFLOAT80U_IS_NAN(&uCrtRet) ) ) \
+        { \
+            RTStrFormatR80u2(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR80u2(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
+            RTTestFailed(g_hTest, "line %u: %s%s: noCRT => %s; CRT => %s", \
+                         __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1]); \
+        } \
+    } while (0)
+
 #elif defined(RT_COMPILER_WITH_128BIT_LONG_DOUBLE)
 # error todo
+
 #else
 # define CHECK_LDBL(a_Expr, a_lrdExpect) do { \
         RTFLOAT64U uRet; \
@@ -170,7 +187,7 @@
         } \
     } while (0)
 
-#define CHECK_LDBL_SAME(a_Fn, a_Args) do { \
+# define CHECK_LDBL_SAME(a_Fn, a_Args) do { \
         RTFLOAT64U uNoCrtRet, uCrtRet; \
         uNoCrtRet.lrd = RT_NOCRT(a_Fn) a_Args; \
         uCrtRet.lrd   =          a_Fn  a_Args; \
@@ -183,7 +200,7 @@
         } \
     } while (0)
 
-#define CHECK_LDBL_APPROX_SAME(a_Fn, a_Args) do { \
+# define CHECK_LDBL_APPROX_SAME(a_Fn, a_Args) do { \
         RTFLOAT64U uNoCrtRet, uCrtRet; \
         uNoCrtRet.lrd = RT_NOCRT(a_Fn) a_Args; \
         uCrtRet.lrd   =          a_Fn  a_Args; \
@@ -191,6 +208,21 @@
             && (  (uNoCrtRet.u >= uCrtRet.u ? uNoCrtRet.u - uCrtRet.u : uCrtRet.u - uNoCrtRet.u) > 1 /* off by one is okay */ \
                 || RTFLOAT64U_IS_NAN(&uNoCrtRet) \
                 || RTFLOAT64U_IS_NAN(&uCrtRet) ) ) \
+        { \
+            RTStrFormatR64(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR64(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
+            RTTestFailed(g_hTest, "line %u: %s%s: noCRT => %s; CRT => %s", \
+                         __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1]); \
+        } \
+    } while (0)
+
+# define CHECK_LDBL_SAME_RELAXED_NAN(a_Fn, a_Args) do { \
+        RTFLOAT64U uNoCrtRet, uCrtRet; \
+        uNoCrtRet.lrd = RT_NOCRT(a_Fn) a_Args; \
+        uCrtRet.lrd   =          a_Fn  a_Args; \
+        if (   !RTFLOAT64U_ARE_IDENTICAL(&uNoCrtRet, &uCrtRet) \
+            && (   !RTFLOAT64U_IS_NAN(&uNoCrtRet) \
+                || !RTFLOAT64U_IS_NAN(&uCrtRet) ) ) \
         { \
             RTStrFormatR64(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
             RTStrFormatR64(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
@@ -300,6 +332,21 @@
             && (  (uNoCrtRet.u >= uCrtRet.u ? uNoCrtRet.u - uCrtRet.u : uCrtRet.u - uNoCrtRet.u) > 1 /* off by one is okay */ \
                 || RTFLOAT32U_IS_NAN(&uNoCrtRet) \
                 || RTFLOAT32U_IS_NAN(&uCrtRet) ) ) \
+        { \
+            RTStrFormatR32(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR32(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
+            RTTestFailed(g_hTest, "line %u: %s%s: noCRT => %s; CRT => %s", \
+                         __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1]); \
+        } \
+    } while (0)
+
+#define CHECK_FLT_SAME_RELAXED_NAN(a_Fn, a_Args) do { \
+        RTFLOAT32U uNoCrtRet, uCrtRet; \
+        uNoCrtRet.r = RT_NOCRT(a_Fn) a_Args; \
+        uCrtRet.r   =          a_Fn  a_Args; \
+        if (   !RTFLOAT32U_ARE_IDENTICAL(&uNoCrtRet, &uCrtRet) \
+            && (   !RTFLOAT32U_IS_NAN(&uNoCrtRet) \
+                || !RTFLOAT32U_IS_NAN(&uCrtRet) ) ) \
         { \
             RTStrFormatR32(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
             RTStrFormatR32(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
@@ -2493,26 +2540,25 @@ void testRemainder()
     CHECK_DBL_SAME_RELAXED_NAN(remainder,(2.34960584706e100,       7.6050698459e+13));
     CHECK_DBL_SAME_RELAXED_NAN(remainder,(2.34960584706e300,      -7.6050698459e-13));
 
-    CHECK_DBL(        RT_NOCRT(remainderf)(              1.0f,                   1.0f), +0.0f);
-    CHECK_DBL(        RT_NOCRT(remainderf)(              1.5f,                   1.0f), -0.5f);
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(              1.0f,                   1.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(              1.5f,                   1.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(             +0.0f,                  +0.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(             +0.0f,                  -0.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(             -0.0f,                  -0.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(             -0.0f,                  +0.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(         999999.0f,               33334.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(        -999999.0f,               33334.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(        -999999.0f,              -33334.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(         999999.0f,              -33334.0f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(      39560.32334f,             9605.5546f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(      39560.32334f,         -59079.345069f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(         +INFINITY,              +INFINITY));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(              2.4f,              +INFINITY));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(         +INFINITY,                   2.4f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(-2.34960584706e+35f,     7.6050698459e-23f));
-    CHECK_DBL_SAME_RELAXED_NAN(remainderf,(2.34960584706e+35f,      7.6050698459e-13f));
-
+    CHECK_FLT(        RT_NOCRT(remainderf)(              1.0f,                   1.0f), +0.0f);
+    CHECK_FLT(        RT_NOCRT(remainderf)(              1.5f,                   1.0f), -0.5f);
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(              1.0f,                   1.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(              1.5f,                   1.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(             +0.0f,                  +0.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(             +0.0f,                  -0.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(             -0.0f,                  -0.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(             -0.0f,                  +0.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(         999999.0f,               33334.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(        -999999.0f,               33334.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(        -999999.0f,              -33334.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(         999999.0f,              -33334.0f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(      39560.32334f,             9605.5546f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(      39560.32334f,         -59079.345069f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(         +INFINITY,              +INFINITY));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(              2.4f,              +INFINITY));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(         +INFINITY,                   2.4f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(-2.34960584706e+35f,     7.6050698459e-23f));
+    CHECK_FLT_SAME_RELAXED_NAN(remainderf,(2.34960584706e+35f,      7.6050698459e-13f));
 }
 
 
