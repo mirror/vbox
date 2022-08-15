@@ -2627,6 +2627,69 @@ void testLog()
 }
 
 
+void testSqRt()
+{
+    RTTestSub(g_hTest, "sqrt[f]");
+
+    CHECK_DBL(RT_NOCRT(sqrt)(              1.0),  +1.0);
+    CHECK_DBL(RT_NOCRT(sqrt)(              4.0),  +2.0);
+    CHECK_DBL(RT_NOCRT(sqrt)(            144.0), +12.0);
+    CHECK_DBL(RT_NOCRT(sqrt)(             -1.0),  RTStrNanDouble(NULL, false));
+    CHECK_DBL(RT_NOCRT(sqrt)(        -995.4547),  RTStrNanDouble(NULL, false));
+    CHECK_DBL_SAME(    sqrt,(              1.0));
+    CHECK_DBL_SAME(    sqrt,(              1.5));
+    CHECK_DBL_SAME(    sqrt,(             +0.0));
+    CHECK_DBL_SAME(    sqrt,(             +0.0));
+    CHECK_DBL_SAME(    sqrt,(             -0.0));
+    CHECK_DBL_SAME(    sqrt,(             -0.0));
+    CHECK_DBL_SAME(    sqrt,(         999999.0));
+    CHECK_DBL_SAME(    sqrt,(        -999999.0));
+    CHECK_DBL_SAME(    sqrt,(        -999999.0));
+    CHECK_DBL_SAME(    sqrt,(         999999.0));
+    CHECK_DBL_SAME(    sqrt,(      39560.32334));
+    CHECK_DBL_SAME(    sqrt,(      39560.32334));
+    CHECK_DBL_SAME(    sqrt,(        +INFINITY));
+    CHECK_DBL_SAME(    sqrt,(        -INFINITY));
+    CHECK_DBL_SAME(    sqrt,(         +DBL_MAX));
+    CHECK_DBL_SAME(    sqrt,(         -DBL_MAX));
+    CHECK_DBL_SAME(    sqrt,(2.34960584706e100));
+    CHECK_DBL_SAME(    sqrt,(2.34960584706e300));
+    CHECK_DBL_SAME(    sqrt,(2.34960584706e300));
+    CHECK_DBL_SAME(    sqrt,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(    sqrt,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(    sqrt,(RTStrNanDouble("s", false)));
+
+    CHECK_FLT(RT_NOCRT(sqrtf)(              1.0f),  +1.0f);
+    CHECK_FLT(RT_NOCRT(sqrtf)(              4.0f),  +2.0f);
+    CHECK_FLT(RT_NOCRT(sqrtf)(            144.0f), +12.0f);
+    CHECK_FLT(RT_NOCRT(sqrtf)(             -1.0f),  RTStrNanDouble(NULL, false));
+    CHECK_FLT(RT_NOCRT(sqrtf)(        -995.4547f),  RTStrNanDouble(NULL, false));
+    CHECK_FLT_SAME(    sqrtf,(              1.0f));
+    CHECK_FLT_SAME(    sqrtf,(              1.5f));
+    CHECK_FLT_SAME(    sqrtf,(             +0.0f));
+    CHECK_FLT_SAME(    sqrtf,(             +0.0f));
+    CHECK_FLT_SAME(    sqrtf,(             -0.0f));
+    CHECK_FLT_SAME(    sqrtf,(             -0.0f));
+    CHECK_FLT_SAME(    sqrtf,(         999999.0f));
+    CHECK_FLT_SAME(    sqrtf,(        -999999.0f));
+    CHECK_FLT_SAME(    sqrtf,(        -999999.0f));
+    CHECK_FLT_SAME(    sqrtf,(         999999.0f));
+    CHECK_FLT_SAME(    sqrtf,(      39560.32334f));
+    CHECK_FLT_SAME(    sqrtf,(      39560.32334f));
+    CHECK_FLT_SAME(    sqrtf,(        +INFINITY));
+    CHECK_FLT_SAME(    sqrtf,(        -INFINITY));
+    CHECK_FLT_SAME(    sqrtf,(         +FLT_MAX));
+    CHECK_FLT_SAME(    sqrtf,(         -FLT_MAX));
+    CHECK_FLT_SAME(    sqrtf,(2.34960584706e+10f));
+    CHECK_FLT_SAME(    sqrtf,(2.34960584706e+30f));
+    CHECK_FLT_SAME(    sqrtf,(2.34960584706e+30f));
+    CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble(NULL, true)));
+    CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble("s",  true)));
+    CHECK_FLT_SAME(    sqrtf,(RTStrNanDouble("s", false)));
+
+}
+
+
 
 
 int main()
@@ -2681,6 +2744,7 @@ int main()
     testFma();
     testRemainder();
     testLog();
+    testSqRt();
 
 #if 0
     ../common/math/atan.asm \
@@ -2690,12 +2754,8 @@ int main()
     ../common/math/cos.asm \
     ../common/math/cosf.asm \
     ../common/math/cosl.asm \
-    ../common/math/log.asm \
-    ../common/math/logf.asm \
     ../common/math/sin.asm \
     ../common/math/sinf.asm \
-    ../common/math/sqrt.asm \
-    ../common/math/sqrtf.asm \
     ../common/math/tan.asm \
     ../common/math/tanf.asm \
 
