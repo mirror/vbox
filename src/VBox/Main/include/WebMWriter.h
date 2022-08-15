@@ -110,6 +110,8 @@
             : cbHdrIdent(a_cbHdrIdent)
             , cbHdrComments(a_cbHdrComments)
         {
+            RT_NOREF(a_cbHdrSetup);
+
             /* We supply 3 headers total: The "real" header, comments header + setup header. */
             cHeaders = 3 /* Headers */ - 1; /* Note: Always "minus one" here. */
 
