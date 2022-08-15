@@ -1924,6 +1924,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/fegetexceptflag.asm \
   	common/math/fesetexceptflag.asm \
   	common/math/fetestexcept.asm \
+  	common/math/feraiseexcept.asm \
   	common/math/floor.asm \
   	common/math/floorf.asm \
   	common/math/ldexp.asm \
@@ -1993,6 +1994,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/fegetexceptflag.asm \
   	common/math/fesetexceptflag.asm \
   	common/math/fetestexcept.asm \
+  	common/math/feraiseexcept.asm \
   	common/math/floor.asm \
   	common/math/floorf.asm \
   	common/math/ldexp.asm \

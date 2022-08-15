@@ -35,8 +35,8 @@ BEGINCODE
 ;;
 ; Gets the FPU+SSE environment.
 ;
-; @returns  eax = x87 exception mask (X86_FCW_XCPT_MASK)
-; @param    pEnv    32-bit: [xBP+8]     msc64: rcx      gcc64: rdi
+; @returns  eax = 0 on success (-1 on failure),
+; @param    pEnv    32-bit: [xBP+8]; msc64: rcx; gcc64: rdi -- Pointer to where to store the enviornment.
 ;
 RT_NOCRT_BEGINPROC fegetenv
         push    xBP

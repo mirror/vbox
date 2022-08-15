@@ -41,7 +41,7 @@ extern  NAME(RT_NOCRT(feraiseexcept))
 ; This will restore @a pEnv and merge in pending exception flags.
 ;
 ; @returns  eax = 0 on success, -1 on failure.
-; @param    pEnv    32-bit: [xBP+8]     msc64: rcx      gcc64: rdi - Saved enviornment.
+; @param    pEnv    32-bit: [xBP+8]     msc64: rcx      gcc64: rdi - Saved environment.
 ;
 RT_NOCRT_BEGINPROC feupdateenv
         push    xBP
@@ -73,10 +73,11 @@ RT_NOCRT_BEGINPROC feupdateenv
 %endif
         stmxcsr [xBP - 10h]
         mov     edx, [xBP - 10h]
+        and     edx, X86_MXCSR_XCPT_FLAGS
 .no_sse:
         fnstsw  ax
         or      edx, eax
-        mov     [xBP - 8h], edx        ; save the pending exceptions here (will apply mask later).
+        mov     [xBP - 8h], edx        ; save the pending exceptions here (will apply X86_FSW_XCPT_MASK later).
 
         ;
         ; Call fesetenv to update the environment.
@@ -94,13 +95,13 @@ RT_NOCRT_BEGINPROC feupdateenv
         ;
 %ifdef ASM_CALL64_GCC
         mov     edi, [xBP - 8h]
-        and     edi, X86_FCW_XCPT_MASK
+        and     edi, X86_FSW_XCPT_MASK
 %elifdef ASM_CALL64_MSC
         mov     ecx, [xBP - 8h]
-        and     ecx, X86_FCW_XCPT_MASK
+        and     ecx, X86_FSW_XCPT_MASK
 %else
         mov     ecx, [xBP - 8h]
-        and     ecx, X86_FCW_XCPT_MASK
+        and     ecx, X86_FSW_XCPT_MASK
         mov     [xSP], ecx
 %endif
         jz      .no_exceptions_to_raise

@@ -36,7 +36,7 @@ BEGINCODE
 ; Sets the x87 hardware precision mode - IPRT extension.
 ;
 ; @returns  eax = previous precision mode, -1 on failure.
-; @param    iRoundingMode   32-bit: [xBP+8]     msc64: ecx      gcc64: edi
+; @param    iPrecisionMode  32-bit: [xBP+8]     msc64: ecx      gcc64: edi
 ;
 RT_NOCRT_BEGINPROC fesetx87precision
         push    xBP

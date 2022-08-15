@@ -31,6 +31,9 @@
 
 %define RT_NOCRT_FE_DFL_ENV     1
 %define RT_NOCRT_FE_NOMASK_ENV  2
+%define RT_NOCRT_FE_PC53_ENV    3
+%define RT_NOCRT_FE_PC64_ENV    4
+%define RT_NOCRT_FE_LAST_ENV    4
 
 
 BEGINCODE
@@ -65,24 +68,54 @@ RT_NOCRT_BEGINPROC fesetenv
         ;
         fnstenv [xBP - 20h]
 
-        cmp     xCX, RT_NOCRT_FE_DFL_ENV
-        je      .x87_default_env
+        ; Check for special "pointer" values:
+        cmp     xCX, RT_NOCRT_FE_LAST_ENV
+        ja      .x87_regular
+
+        or      eax, -1
+        test    xCX, xCX
+        jnz     .x87_special
+%ifdef RT_STRICT
+        int3
+%endif
+        jmp     .return
+
+        ;
+        ; Special x87 state. Clear all pending exceptions.
+        ;
+        ; We have 4 special environments with only some differences in FCW differs, so set
+        ; up FCW in AX, starting with a NOMASK environment as it has the fewest bits set.
+        ;
+.x87_special:
+        and     word [xBP - 20h  + X86FSTENV32P.FSW], ~X86_FSW_XCPT_ES_MASK
+        mov     ax, [xBP - 20h  + X86FSTENV32P.FCW]
+        and     ax, ~(X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK    | X86_FCW_IC_MASK)
+%ifdef RT_OS_WINDOWS
+        or      ax,         X86_FCW_DM | X86_FCW_PC_53   | X86_FCW_RC_NEAREST | X86_FCW_IC_PROJECTIVE
+%else
+        or      ax,         X86_FCW_DM | X86_FCW_PC_64   | X86_FCW_RC_NEAREST | X86_FCW_IC_PROJECTIVE
+%endif
         cmp     xCX, RT_NOCRT_FE_NOMASK_ENV
-        je      .x87_default_nomask_env
-        jmp     .x87_regular
+        je      .x87_special_done
+        or      ax, X86_FCW_MASK_ALL
 
-.x87_default_env:
-        and     word [xCX + X86FSTENV32P.FCW], ~(X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK    | X86_FCW_IC_MASK)
-        or      word [xCX + X86FSTENV32P.FCW],   X86_FCW_MASK_ALL | X86_FCW_PC_64   | X86_FCW_RC_NEAREST | X86_FCW_IC_PROJECTIVE
-        and     word [xCX + X86FSTENV32P.FSW], ~X86_FSW_XCPT_ES_MASK
+%ifdef RT_OS_WINDOWS
+        cmp     xCX, RT_NOCRT_FE_PC64_ENV
+        jne     .x87_special_done
+        or      ax, X86_FCW_PC_64                   ; X86_FCW_PC_64 is a super set of X86_FCW_PC_53, so no need to clear bits
+%else
+        cmp     xCX, RT_NOCRT_FE_PC53_ENV
+        jne     .x87_special_done
+        and     ax, X86_FCW_PC_64 & ~X86_FCW_PC_53  ; X86_FCW_PC_64 is a super set of X86_FCW_PC_53, so clear the bit that differs.
+%endif
+
+.x87_special_done:
+        mov     [xBP - 20h  + X86FSTENV32P.FCW], ax
         jmp     .x87_common
 
-.x87_default_nomask_env:
-        and     word [xCX + X86FSTENV32P.FCW], ~(X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK    | X86_FCW_IC_MASK)
-        or      word [xCX + X86FSTENV32P.FCW],         X86_FCW_DM | X86_FCW_PC_64   | X86_FCW_RC_NEAREST | X86_FCW_IC_PROJECTIVE
-        and     word [xCX + X86FSTENV32P.FSW], ~X86_FSW_XCPT_ES_MASK
-        jmp     .x87_common
-
+        ;
+        ; Merge input and current.
+        ;
 .x87_regular:
         ; FCW:
         mov     ax, [xCX + X86FSTENV32P.FCW]
@@ -110,6 +143,7 @@ RT_NOCRT_BEGINPROC fesetenv
         ; Load the merged and cleaned up environment.
         fldenv  [xBP - 20h]
 
+
         ;
         ; Now for SSE, if supported, where we'll restore everything as is.
         ;
@@ -121,10 +155,8 @@ RT_NOCRT_BEGINPROC fesetenv
         jz      .return_okay
 %endif
 
-        cmp     xCX, RT_NOCRT_FE_DFL_ENV
-        je      .sse_special_env
-        cmp     xCX, RT_NOCRT_FE_NOMASK_ENV
-        je      .sse_special_env
+        cmp     xCX, RT_NOCRT_FE_LAST_ENV
+        jb      .sse_special_env
         ldmxcsr [xCX + 28]
         jmp     .return_okay
 
@@ -133,9 +165,9 @@ RT_NOCRT_BEGINPROC fesetenv
         mov     eax, [xBP - 10h]
         and     eax, ~(X86_MXCSR_XCPT_FLAGS | X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ)
         or      eax, X86_MXCSR_RC_NEAREST | X86_MXCSR_DM
-        cmp     xCX, RT_NOCRT_FE_NOMASK_ENV
+        cmp     xCX, RT_NOCRT_FE_NOMASK_ENV                     ; Only the NOMASK one differs here.
         je      .sse_special_load_eax
-        or      eax, X86_MXCSR_RC_NEAREST | X86_MXCSR_XCPT_MASK ; default enviornment masks all exceptions
+        or      eax, X86_MXCSR_RC_NEAREST | X86_MXCSR_XCPT_MASK ; default environment masks all exceptions
 .sse_special_load_eax:
         mov     [xBP - 10h], eax
         ldmxcsr [xBP - 10h]
@@ -145,6 +177,7 @@ RT_NOCRT_BEGINPROC fesetenv
         ;
 .return_okay:
         xor     eax, eax
+.return:
         leave
         ret
 ENDPROC   RT_NOCRT(fesetenv)

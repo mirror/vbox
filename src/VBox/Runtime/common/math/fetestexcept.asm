@@ -38,7 +38,8 @@ BEGINCODE
 ; Basically a simpler fegetexceptflags function.
 ;
 ; @returns  eax = pending exceptions (X86_FSW_XCPT_MASK) & fXcptMask.
-; @param    fXcptMask 32-bit: [xBP+8]     msc64: ecx      gcc64: edi - exceptions to test for (X86_FSW_XCPT_MASK).
+; @param    fXcptMask   32-bit: [xBP+8]; msc64: ecx; gcc64: edi; -- Exceptions to test for (X86_FSW_XCPT_MASK).
+;                       Accepts X86_FSW_SF and will return it if given as input.
 ;
 RT_NOCRT_BEGINPROC fetestexcept
         push    xBP
@@ -86,6 +87,7 @@ RT_NOCRT_BEGINPROC fetestexcept
         ; OR in the SSE exceptions (modifies ecx).
         stmxcsr [xBP - 10h]
         and     ecx, [xBP - 10h]
+        and     ecx, X86_MXCSR_XCPT_FLAGS
         or      eax, ecx
 
 .return:

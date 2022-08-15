@@ -36,7 +36,7 @@ BEGINCODE
 ; Sets the hardware rounding mode.
 ;
 ; @returns  eax = 0 on success, non-zero on failure.
-; @param    fXcpts  32-bit: [xBP+8]     msc64: ecx      gcc64: edi   - X86_FSW_XCPT_MASK
+; @param    fXcpts  32-bit: [xBP+8]; msc64: ecx; gcc64: edi; -- Zero or more bits from X86_FSW_XCPT_MASK
 ;
 RT_NOCRT_BEGINPROC feclearexcept
         push    xBP
@@ -48,7 +48,7 @@ RT_NOCRT_BEGINPROC feclearexcept
         SEH64_END_PROLOGUE
 
         ;
-        ; Load the parameter into ecx.
+        ; Load the parameter into ecx, validate and adjust it.
         ;
 %ifdef ASM_CALL64_GCC
         mov     ecx, edi
@@ -63,6 +63,12 @@ RT_NOCRT_BEGINPROC feclearexcept
         jnz     .return
 %endif
 
+        ; #IE implies #SF
+        mov     al, cl
+        and     al, X86_FSW_IE
+        shl     al, X86_FSW_SF_BIT - X86_FSW_IE_BIT
+        or      cl, al
+
         ; Make it into and AND mask suitable for clearing the specified exceptions.
         not     ecx
 
@@ -71,8 +77,8 @@ RT_NOCRT_BEGINPROC feclearexcept
         ;
 
         ; Modify the x87 flags first (ecx preserved).
-        cmp     ecx, X86_FSW_XCPT_MASK
-        jne     .partial_mask
+        cmp     ecx, ~X86_FSW_XCPT_MASK     ; This includes all the x87 exceptions, including stack error.
+        jne    .partial_mask
         fnclex
         jmp     .do_sse
 
@@ -92,6 +98,7 @@ RT_NOCRT_BEGINPROC feclearexcept
 
         ; Modify the SSE flags (modifies ecx).
         stmxcsr [xBP - 10h]
+        or      ecx, X86_FSW_XCPT_MASK & ~X86_MXCSR_XCPT_FLAGS      ; Don't mix X86_FSW_SF with X86_MXCSR_DAZ.
         and     [xBP - 10h], ecx
         ldmxcsr [xBP - 10h]
 

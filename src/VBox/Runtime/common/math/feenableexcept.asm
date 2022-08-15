@@ -51,14 +51,21 @@ RT_NOCRT_BEGINPROC feenableexcept
         ;
         ; Load the parameter into ecx.
         ;
-        or      eax, -1
 %ifdef ASM_CALL64_GCC
         mov     ecx, edi
 %elifdef RT_ARCH_X86
         mov     ecx, [xBP + xCB*2]
 %endif
+        or      eax, -1
         test    ecx, ~X86_FCW_XCPT_MASK
+%ifndef RT_STRICT
         jnz     .return
+%else
+        jz      .input_ok
+        int3
+        jmp     .return
+.input_ok:
+%endif
 
         ; Invert the mask as we're enabling the exceptions, not masking them.
         not     ecx
@@ -70,7 +77,8 @@ RT_NOCRT_BEGINPROC feenableexcept
         ; Modify the x87 mask first (ecx preserved).
         fstcw   [xBP - 10h]
 %ifdef RT_ARCH_X86 ; Return the inverted x87 mask in 32-bit mode.
-        movzx   eax, word [xBP - 10h]
+        mov     ax, word [xBP - 10h]
+        and     eax, X86_FCW_XCPT_MASK
 %endif
         and     word [xBP - 10h], cx
         fldcw   [xBP - 10h]
@@ -87,6 +95,7 @@ RT_NOCRT_BEGINPROC feenableexcept
         stmxcsr [xBP - 10h]
 %ifdef RT_ARCH_AMD64 ; Return the inverted MXCSR exception mask on AMD64 because windows doesn't necessarily set the x87 one.
         mov     eax, [xBP - 10h]
+        and     eax, X86_MXCSR_XCPT_MASK
         shr     eax, X86_MXCSR_XCPT_MASK_SHIFT
 %endif
         rol     ecx, X86_MXCSR_XCPT_MASK_SHIFT
@@ -95,7 +104,6 @@ RT_NOCRT_BEGINPROC feenableexcept
 
 .return_ok:
         not     eax                     ; Invert it as we return the enabled rather than masked exceptions.
-        and     eax, X86_FCW_XCPT_MASK
 .return:
         leave
         ret

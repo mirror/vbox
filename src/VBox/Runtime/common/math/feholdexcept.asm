@@ -35,7 +35,7 @@ BEGINCODE
 ;;
 ; Gets the FPU+SSE environment and disables (masks) all exceptions.
 ;
-; @returns  eax = x87 exception mask (X86_FCW_XCPT_MASK)
+; @returns  eax = 0 on success (-1 on failure)
 ; @param    pEnv    32-bit: [xBP+8]     msc64: rcx      gcc64: rdi
 ;
 RT_NOCRT_BEGINPROC feholdexcept

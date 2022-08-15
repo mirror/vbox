@@ -53,7 +53,9 @@ typedef RTNOCRTFENV     fenv_t;
 typedef RTNOCRTFEXCEPT  fexcept_t;
 #endif
 
-/** @name Exception flags (same as X86_FCW_xM and X86_FSW_xE)
+/** @name Exception flags (same as X86_FCW_xM, X86_FSW_xE, X86_MXCSR_xE)
+ * @note The X86_FSW_SF is not covered here as it is more of a sub-type of
+ *       invalid operand exception, and it is not part of MXCSR.
  * @{ */
 #define RT_NOCRT_FE_INVALID      0x0001
 #define RT_NOCRT_FE_DENORMAL     0x0002
@@ -108,6 +110,18 @@ typedef RTNOCRTFEXCEPT  fexcept_t;
 /** The default FPU+SSE environment set, but all exceptions enabled (unmasked)
  *  except for RT_NOCRT_FE_DENORMAL. */
 #define RT_NOCRT_FE_NOMASK_ENV  ((RTNOCRTFENV const *)(intptr_t)2)
+/** The default FPU+SSE environment set, all exceptions disabled (masked),
+ *  double precision (53 bit mantissa). */
+#define RT_NOCRT_FE_PC53_ENV    ((RTNOCRTFENV const *)(intptr_t)3)
+/** The default FPU+SSE environment set, all exceptions disabled (masked),
+ *  extended double precision (64 bit mantissa). */
+#define RT_NOCRT_FE_PC64_ENV    ((RTNOCRTFENV const *)(intptr_t)4)
+#ifndef IPRT_NOCRT_WITHOUT_MATH_CONSTANTS
+# define FE_DFL_ENV              RT_NOCRT_FE_DFL_ENV
+# define FE_NOMASK_ENV           RT_NOCRT_FE_NOMASK_ENV
+# define FE_PC53_ENV             RT_NOCRT_FE_PC53_ENV
+# define FE_PC64_ENV             RT_NOCRT_FE_PC64_ENV
+#endif
 /** @} */
 
 RT_C_DECLS_BEGIN

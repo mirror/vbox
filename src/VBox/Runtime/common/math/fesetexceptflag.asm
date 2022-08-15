@@ -36,8 +36,9 @@ BEGINCODE
 ; Gets the pending exceptions.
 ;
 ; @returns  eax = 0 on success, non-zero on failure.
-; @param    pfXcpts   32-bit: [xBP+8]     msc64: rcx      gcc64: rdi   - pointer to fexcept_t (16-bit)
-; @param    fXcptMask 32-bit: [xBP+c]     msc64: edx      gcc64: esi   - X86_FSW_XCPT_MASK
+; @param    pfXcpts     32-bit: [xBP+8]; msc64: rcx; gcc64: rdi; -- pointer to fexcept_t (16-bit)
+; @param    fXcptMask   32-bit: [xBP+c]; msc64: edx; gcc64: esi; -- X86_MXCSR_XCPT_FLAGS (X86_FSW_XCPT_MASK)
+;                       Accepts X86_FSW_SF.
 ;
 RT_NOCRT_BEGINPROC fesetexceptflag
         push    xBP
@@ -49,7 +50,7 @@ RT_NOCRT_BEGINPROC fesetexceptflag
         SEH64_END_PROLOGUE
 
         ;
-        ; Load the parameter into ecx (*pfXcpts) and edx (fXcptMask).
+        ; Load the parameter into ecx (*pfXcpts) and edx (fXcptMask) and validate the latter.
         ;
 %ifdef ASM_CALL64_GCC
         movzx   ecx, word [rdi]
@@ -72,8 +73,10 @@ RT_NOCRT_BEGINPROC fesetexceptflag
         jnz     .return
 %endif
 
+        ;
         ; Apply the AND mask to ECX and invert it so we can use it to clear flags
         ; before OR'ing in the new values.
+        ;
         and     ecx, edx
         not     edx
 
@@ -83,10 +86,8 @@ RT_NOCRT_BEGINPROC fesetexceptflag
 
         ; Modify the pending x87 exceptions (FSW).
         fnstenv [xBP - 20h]
-        mov     ax, [xBP - 20h + 4]       ; FSW is the 2nd qword in the 32-bit protected mode layout
-        and     ax, dx
-        or      ax, cx
-        mov     [xBP - 20h + 4], ax
+        and     [xBP - 20h + X86FSTENV32P.FSW], dx
+        or      [xBP - 20h + X86FSTENV32P.FSW], cx
         fldenv  [xSP - 20h]
 
 %ifdef RT_ARCH_X86
@@ -100,6 +101,8 @@ RT_NOCRT_BEGINPROC fesetexceptflag
         ; Modify the pending SSE exceptions (same bit positions as in FSW).
         stmxcsr [xBP - 10h]
         mov     eax, [xBP - 10h]
+        or      edx, X86_FSW_XCPT_MASK & ~X86_MXCSR_XCPT_FLAGS      ; Don't mix X86_FSW_SF with X86_MXCSR_DAZ.
+        and     ecx, X86_MXCSR_XCPT_FLAGS                           ; Ditto
         and     eax, edx
         or      eax, ecx
         mov     [xBP - 10h], eax

@@ -36,8 +36,9 @@ BEGINCODE
 ; Gets the pending exceptions.
 ;
 ; @returns  eax = 0 on success, non-zero on failure.
-; @param    pfXcpts   32-bit: [xBP+8]     msc64: rcx      gcc64: rdi   - pointer to fexcept_t (16-bit)
-; @param    fXcptMask 32-bit: [xBP+c]     msc64: edx      gcc64: esi   - X86_FSW_XCPT_MASK
+; @param    pfXcpts     32-bit: [xBP+8]; msc64: rcx; gcc64: rdi; -- Where to store the flags (pointer to fexcept_t (16-bit)).
+; @param    fXcptMask   32-bit: [xBP+c]; msc64: edx; gcc64: esi; -- The exception flags to get (X86_FSW_XCPT_MASK).
+;                       Accepts X86_FSW_SF and will return it if given as input.
 ;
 RT_NOCRT_BEGINPROC fegetexceptflag
         push    xBP
@@ -63,7 +64,14 @@ RT_NOCRT_BEGINPROC fegetexceptflag
 %else
         or      eax, -1
         test    edx, ~X86_FSW_XCPT_MASK
+ %ifndef RT_STRICT
         jnz     .return
+ %else
+        jz      .input_ok
+        int3
+        jmp     .return
+.input_ok:
+ %endif
 %endif
 
         ;
@@ -87,6 +95,7 @@ RT_NOCRT_BEGINPROC fegetexceptflag
         stmxcsr [xBP - 10h]
         mov     ax, [xBP - 10h]
         and     ax, dx
+        and     ax, X86_MXCSR_XCPT_FLAGS        ; Don't confuse X86_MXCSR_DAZ for X86_FSW_SF.
         or      [xCX], ax
 
 .return_ok:

@@ -37,7 +37,7 @@ BEGINCODE
 ;
 ; @returns  eax = Previous enabled exceptions on success (not subject to fXcpt),
 ;                 -1 on failure.
-; @param    fXcpt   32-bit: [xBP+8]     msc64: ecx      gcc64: edi - Mask of exceptions to disable.
+; @param    fXcpt   32-bit: [xBP+8]; msc64: ecx; gcc64: edi; -- Mask of exceptions to disable.
 ;
 RT_NOCRT_BEGINPROC fedisableexcept
         push    xBP
@@ -51,14 +51,21 @@ RT_NOCRT_BEGINPROC fedisableexcept
         ;
         ; Load the parameter into ecx.
         ;
-        or      eax, -1
 %ifdef ASM_CALL64_GCC
         mov     ecx, edi
 %elifdef RT_ARCH_X86
         mov     ecx, [xBP + xCB*2]
 %endif
+        or      eax, -1
         test    ecx, ~X86_FCW_XCPT_MASK
+%ifndef RT_STRICT
         jnz     .return
+%else
+        jz      .input_ok
+        int3
+        jmp     .return
+.input_ok:
+%endif
 
         ;
         ; Make the changes (old mask in eax).
