@@ -155,8 +155,8 @@ void        RT_NOCRT(_qsort_r)(void *pvBase, size_t cEntries, size_t cbEntry,
                                int (*pfnCompare)(const void *pv1, const void *pv2, void *pvUser), void *pvUser);
 
 /* Map exit & abort onto fatal assert. */
-DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_exit)(int iExitCode) { AssertMsgFailed(("_exit: iExitCode=%d\n", iExitCode)); }
-DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_abort)(void) { AssertMsgFailed(("_abort\n")); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_exit)(int iExitCode) { AssertFatalMsgFailed(("_exit: iExitCode=%d\n", iExitCode)); }
+DECL_NO_RETURN(DECLINLINE(void)) RT_NOCRT(_abort)(void)         { AssertFatalMsgFailed(("_abort\n")); }
 
 /* Some windows CRT error control functions we totally ignore (only underscored): */
 # define _set_error_mode(a_Mode)                    (0)
