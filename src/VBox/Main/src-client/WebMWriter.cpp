@@ -565,67 +565,6 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
     return vrc;
 }
 
-#ifdef VBOX_WITH_LIBVPX
-/**
- * Writes VPX (VP8 video) simple data block.
- *
- * @returns IPRT status code.
- * @param   a_pTrack        Track ID to write data to.
- * @param   a_pCfg          VPX encoder configuration to use.
- * @param   a_pPkt          VPX packet video data packet to write.
- */
-int WebMWriter::writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
-{
-    RT_NOREF(a_pTrack);
-
-    /* Calculate the absolute PTS of this frame (in ms). */
-    WebMTimecodeAbs tcAbsPTSMs =   a_pPkt->data.frame.pts * 1000
-                                 * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
-    if (   tcAbsPTSMs
-        && tcAbsPTSMs <= a_pTrack->tcAbsLastWrittenMs)
-    {
-        AssertFailed(); /* Should never happen. */
-        tcAbsPTSMs = a_pTrack->tcAbsLastWrittenMs + 1;
-    }
-
-    const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
-
-    uint8_t fFlags = VBOX_WEBM_BLOCK_FLAG_NONE;
-    if (fKeyframe)
-        fFlags |= VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
-    if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
-        fFlags |= VBOX_WEBM_BLOCK_FLAG_INVISIBLE;
-
-    return writeSimpleBlockQueued(a_pTrack,
-                                  new WebMSimpleBlock(a_pTrack,
-                                                      tcAbsPTSMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags));
-}
-#endif /* VBOX_WITH_LIBVPX */
-
-/**
- * Writes an Opus (audio) simple data block.
- *
- * @returns IPRT status code.
- * @param   pTrack          Track ID to write data to.
- * @param   pvData          Pointer to simple data block to write.
- * @param   cbData          Size (in bytes) of simple data block to write.
- * @param   tcAbsPTSMs      Absolute PTS of simple data block.
- *
- * @remarks Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks.
- */
-int WebMWriter::writeSimpleBlockAudio(WebMTrack *pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs)
-{
-    AssertPtrReturn(pTrack, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData,    VERR_INVALID_PARAMETER);
-
-    /* Every Opus frame is a key frame. */
-    const uint8_t fFlags = VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
-
-    return writeSimpleBlockQueued(pTrack,
-                                  new WebMSimpleBlock(pTrack, tcAbsPTSMs, pvData, cbData, fFlags));
-}
-
 /**
  * Writes a data block to the specified track.
  *
@@ -633,20 +572,22 @@ int WebMWriter::writeSimpleBlockAudio(WebMTrack *pTrack, const void *pvData, siz
  * @param   uTrack          Track ID to write data to.
  * @param   pvData          Pointer to data block to write.
  * @param   cbData          Size (in bytes) of data block to write.
+ * @param   tcAbsPTSMs      Absolute PTS of simple data block.
+ * @param   uFlags          WebM block flags to use for this block.
  */
-int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
+int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs, WebMBlockFlags uFlags)
 {
-    RT_NOREF(cbData); /* Only needed for assertions for now. */
-
     int vrc = RTCritSectEnter(&CurSeg.CritSect);
     AssertRC(vrc);
 
+#ifdef DEBUG /* Only validate in debug builds, to speed things up in release builds. */
     WebMTracks::iterator itTrack = CurSeg.mapTracks.find(uTrack);
     if (itTrack == CurSeg.mapTracks.end())
     {
         RTCritSectLeave(&CurSeg.CritSect);
         return VERR_NOT_FOUND;
     }
+#endif
 
     WebMTrack *pTrack = itTrack->second;
     AssertPtr(pTrack);
@@ -657,40 +598,15 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
         m_fInTracksSection = false;
     }
 
-    switch (pTrack->enmType)
+    try
     {
-
-        case WebMTrackType_Audio:
-        {
-            if (   m_enmAudioCodec == RecordingAudioCodec_Opus
-                || m_enmAudioCodec == RecordingAudioCodec_OggVorbis)
-            {
-                Assert(cbData == sizeof(WebMWriter::BlockData_Audio));
-                WebMWriter::BlockData_Audio *pData = (WebMWriter::BlockData_Audio *)pvData;
-                vrc = writeSimpleBlockAudio(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
-            }
-            /* else nothing to do here; WebM only supports Opus or Ogg Vorbis. */
-            break;
-        }
-
-        case WebMTrackType_Video:
-        {
-#ifdef VBOX_WITH_LIBVPX
-            if (m_enmVideoCodec == RecordingVideoCodec_VP8)
-            {
-                Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
-                WebMWriter::BlockData_VP8 *pData = (WebMWriter::BlockData_VP8 *)pvData;
-                vrc = writeSimpleBlockVP8(pTrack, pData->pCfg, pData->pPkt);
-            }
-            else
-#endif /* VBOX_WITH_LIBVPX */
-                vrc = VERR_NOT_SUPPORTED;
-            break;
-        }
-
-        default:
-            vrc = VERR_NOT_SUPPORTED;
-            break;
+        vrc = writeSimpleBlockQueued(pTrack,
+                                     new WebMSimpleBlock(pTrack,
+                                                         tcAbsPTSMs, pvData, cbData, uFlags));
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
     }
 
     int vrc2 = RTCritSectLeave(&CurSeg.CritSect);

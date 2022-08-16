@@ -125,31 +125,31 @@ public:
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->uScreenID; };
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    PRECORDINGCODEC GetAudioCodec(void) { return &this->CodecAudio; };
+    PRECORDINGCODEC GetAudioCodec(void) { return this->pCodecAudio; };
 #endif
     PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
     bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
 
+public:
+
+    static DECLCALLBACK(int) codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
+
 protected:
 
-    static DECLCALLBACK(int) codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser);
-
-protected:
-
-    int open(const settings::RecordingScreenSettings &Settings);
+    int open(const settings::RecordingScreenSettings &screenSettings);
     int close(void);
 
-    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
+    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &screenSettings);
     int uninitInternal(void);
 
-    int initVideo(const settings::RecordingScreenSettings &Settings);
+    int initVideo(const settings::RecordingScreenSettings &screenSettings);
     int unitVideo(void);
-
-    int initAudio(const settings::RecordingScreenSettings &Settings);
 
     bool isLimitReachedInternal(uint64_t msTimestamp) const;
     int iterateInternal(uint64_t msTimestamp);
+
+    int codecWriteToWebM(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
 
     void lock(void);
     void unlock(void);
@@ -170,7 +170,7 @@ protected:
     };
 
     /** Recording context this stream is associated to. */
-    RecordingContext       *pCtx;
+    RecordingContext       *m_pCtx;
     /** The current state. */
     RECORDINGSTREAMSTATE    enmState;
     struct
@@ -191,18 +191,27 @@ protected:
     uint16_t            uScreenID;
     /** Critical section to serialize access. */
     RTCRITSECT          CritSect;
-    /** Timestamp (in ms) of when recording has been start. */
+    /** Timestamp (in ms) of when recording has been started. */
     uint64_t            tsStartMs;
-
-    /** Audio codec instance data to use. */
-    RECORDINGCODEC                    CodecAudio;
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    /** Pointer to audio codec instance data to use.
+     *
+     *  We multiplex audio data from the recording context to all streams,
+     *  to avoid encoding the same audio data for each stream. We ASSUME that
+     *  all audio data of a VM will be the same for each stream at a given
+     *  point in time.
+     *
+     *  Might be NULL if not being used. */
+    PRECORDINGCODEC     pCodecAudio;
+#endif /* VBOX_WITH_AUDIO_RECORDING */
     /** Video codec instance data to use. */
-    RECORDINGCODEC                    CodecVideo;
+    RECORDINGCODEC      CodecVideo;
     /** Screen settings to use. */
-    settings::RecordingScreenSettings ScreenSettings;
+    settings::RecordingScreenSettings
+                        ScreenSettings;
     /** Common set of recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
-    RecordingBlockSet                 Blocks;
+    RecordingBlockSet   Blocks;
 };
 
 /** Vector of recording streams. */

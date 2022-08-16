@@ -562,7 +562,7 @@ public:
 
     int AddVideoTrack(PRECORDINGCODEC pCodec, uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack);
 
-    int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData);
+    int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs, WebMBlockFlags uFlags);
 
     const com::Utf8Str& GetFileName(void);
 
@@ -592,12 +592,6 @@ protected:
     int writeSimpleBlockEBML(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBlock);
 
     int writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBlock);
-
-#ifdef VBOX_WITH_LIBVPX
-    int writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
-#endif
-
-    int writeSimpleBlockAudio(WebMTrack *pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs);
 
     int processQueue(WebMQueue *pQueue, bool fForce);
 

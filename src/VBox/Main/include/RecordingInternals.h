@@ -121,12 +121,10 @@ typedef struct RECORDINGCODECOPS
      * @returns VBox status code.
      * @param   pCodec              Codec instance to use.
      * @param   pFrame              Pointer to frame data to encode.
-     * @param   pvDst               Where to store the encoded data on success.
-     * @param   cbDst               Size (in bytes) of \a pvDst.
      * @param   pcEncoded           Where to return the number of encoded blocks in \a pvDst on success. Optional.
      * @param   pcbEncoded          Where to return the number of encoded bytes in \a pvDst on success. Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnEncode,       (PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, void *pvDst, size_t cbDst, size_t *pcEncoded, size_t *pcbEncoded));
+    DECLCALLBACKMEMBER(int, pfnEncode,       (PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded));
 
     /**
      * Tells the codec to finalize the current stream. Optional.
@@ -137,14 +135,34 @@ typedef struct RECORDINGCODECOPS
     DECLCALLBACKMEMBER(int, pfnFinalize,     (PRECORDINGCODEC pCodec));
 } RECORDINGCODECOPS, *PRECORDINGCODECOPS;
 
+/** No encoding flags set. */
+#define RECORDINGCODEC_ENC_F_NONE               UINT32_C(0)
+/** Data block is a key block. */
+#define RECORDINGCODEC_ENC_F_BLOCK_IS_KEY       RT_BIT_32(0)
+/** Data block is invisible. */
+#define RECORDINGCODEC_ENC_F_BLOCK_IS_INVISIBLE RT_BIT_32(1)
+/** Encoding flags valid mask. */
+#define RECORDINGCODEC_ENC_F_VALID_MASK         0x1
+
 /**
  * Structure for keeping a codec callback table.
  */
 typedef struct RECORDINGCODECCALLBACKS
 {
-    DECLCALLBACKMEMBER(int, pfnWriteData, (PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, void *pvUser));
+    /**
+     * Callback for notifying that encoded data has been written.
+     *
+     * @returns VBox status code.
+     * @param   pCodec          Pointer to codec instance which has written the data.
+     * @param   pvData          Pointer to written data (encoded).
+     * @param   cbData          Size (in bytes) of \a pvData.
+     * @param   msAbsPTS        Absolute PTS (in ms) of the written data.
+     * @param   uFlags          Encoding flags of type RECORDINGCODEC_ENC_F_XXX.
+     * @param   pvUser          User-supplied pointer.
+     */
+    DECLCALLBACKMEMBER(int, pfnWriteData, (PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser));
     /** User-supplied data pointer. */
-    void                       *pvUser;
+    void                   *pvUser;
 } RECORDINGCODECCALLBACKS, *PRECORDINGCODECCALLBACKS;
 
 /**
@@ -185,7 +203,7 @@ typedef struct RECORDINGCODECPARMS
     /** Desired (average) bitrate (in kbps) to use, for codecs which support bitrate management.
      *  Set to 0 to use a variable bit rate (VBR) (if available, otherwise fall back to CBR). */
     uint32_t                    uBitrate;
-    /** Time (in ms) an (encoded) frame takes.
+    /** Time (in ms) the encoder expects us to send data to encode.
      *
      *  For Opus, valid frame sizes are:
      *  ms           Frame size
@@ -195,11 +213,13 @@ typedef struct RECORDINGCODECPARMS
      *  20 (Default) 960
      *  40           1920
      *  60           2880
+     *
+     *  For Vorbis, valid frame sizes are powers of two from 64 to 8192 bytes.
      */
     uint32_t                    msFrame;
-    /** The frame size in bytes (based on msFrame). */
+    /** The frame size in bytes (based on \a msFrame). */
     uint32_t                    cbFrame;
-    /** The frame size in samples per frame (based on msFrame). */
+    /** The frame size in samples per frame (based on \a msFrame). */
     uint32_t                    csFrame;
 } RECORDINGCODECPARMS, *PRECORDINGCODECPARMS;
 
@@ -257,6 +277,19 @@ typedef RECORDINGCODECVORBIS *PRECORDINGCODECVORBIS;
 #endif /* VBOX_WITH_LIBVORBIS */
 
 /**
+ * Structure for keeping a codec's internal state.
+ */
+typedef struct RECORDINGCODECSTATE
+{
+    /** Timestamp (in ms, absolute) of the last frame was encoded. */
+    uint64_t            tsLastWrittenMs;
+    /** Number of encoding errors. */
+    uint64_t            cEncErrors;
+} RECORDINGCODECSTATE;
+/** Pointer to an internal encoder state. */
+typedef RECORDINGCODECSTATE *PRECORDINGCODECSTATE;
+
+/**
  * Structure for keeping codec-specific data.
  */
 typedef struct RECORDINGCODEC
@@ -267,6 +300,8 @@ typedef struct RECORDINGCODEC
     RECORDINGCODECCALLBACKS     Callbacks;
     /** Generic codec parameters. */
     RECORDINGCODECPARMS         Parms;
+    /** Generic codec parameters. */
+    RECORDINGCODECSTATE         State;
 
 #ifdef VBOX_WITH_LIBVPX
     union
@@ -287,10 +322,10 @@ typedef struct RECORDINGCODEC
     } Audio;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 
-    /** Timestamp (in ms) of the last frame was encoded. */
-    uint64_t            uLastTimeStampMs;
-    /** Number of encoding errors. */
-    uint64_t            cEncErrors;
+    /** Internal scratch buffer for en-/decoding steps. */
+    void               *pvScratch;
+    /** Size (in bytes) of \a pvScratch. */
+    uint32_t            cbScratch;
 
 #ifdef VBOX_WITH_STATISTICS /** @todo Register these values with STAM. */
     struct
@@ -299,7 +334,7 @@ typedef struct RECORDINGCODEC
         uint64_t        cEncBlocks;
         /** Total time (in ms) of already encoded audio data. */
         uint64_t        msEncTotal;
-    } Stats;
+    } STAM;
 #endif
 } RECORDINGCODEC, *PRECORDINGCODEC;
 
@@ -394,6 +429,7 @@ struct RecordingBlock
     RecordingBlock()
         : enmType(RECORDINGBLOCKTYPE_UNKNOWN)
         , cRefs(0)
+        , uFlags(RECORDINGCODEC_ENC_F_NONE)
         , pvData(NULL)
         , cbData(0) { }
 
@@ -433,6 +469,8 @@ struct RecordingBlock
     RECORDINGBLOCKTYPE enmType;
     /** Number of references held of this block. */
     uint16_t           cRefs;
+    /** Block flags of type RECORDINGCODEC_ENC_F_XXX. */
+    uint64_t           uFlags;
     /** The (absolute) timestamp (in ms, PTS) of this block. */
     uint64_t           msTimestamp;
     /** Opaque data block to the actual block data, depending on the block's type. */
@@ -448,7 +486,7 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec);
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings);
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);
-int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, void *pvDst, size_t cbDst, size_t *pcEncoded, size_t *pcbEncoded);
+int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded);
 int recordingCodecFinalize(PRECORDINGCODEC pCodec);
 #endif /* !MAIN_INCLUDED_RecordingInternals_h */
 

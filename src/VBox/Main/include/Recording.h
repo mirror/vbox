@@ -37,7 +37,7 @@ public:
 
     RecordingContext();
 
-    RecordingContext(Console *ptrConsole, const settings::RecordingSettings &settings);
+    RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings);
 
     virtual ~RecordingContext(void);
 
@@ -46,8 +46,11 @@ public:
     const settings::RecordingSettings &GetConfig(void) const;
     RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    PRECORDINGCODEC GetCodecAudio(void) { return &this->CodecAudio; }
+#endif
 
-    int Create(Console *pConsole, const settings::RecordingSettings &settings);
+    int Create(Console *pConsole, const settings::RecordingSettings &Settings);
     void Destroy(void);
 
     int Start(void);
@@ -71,7 +74,7 @@ public:
 
 protected:
 
-    int createInternal(Console *ptrConsole, const settings::RecordingSettings &settings);
+    int createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings);
     int startInternal(void);
     int stopInternal(void);
 
@@ -79,12 +82,20 @@ protected:
 
     RecordingStream *getStreamInternal(unsigned uScreen) const;
 
+    int writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
+
     int lock(void);
     int unlock(void);
 
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
 
     int threadNotify(void);
+
+protected:
+
+    int audioInit(const settings::RecordingScreenSettings &screenSettings);
+
+    static DECLCALLBACK(int) audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
 
 protected:
 
@@ -106,7 +117,7 @@ protected:
     /** Pointer to the console object. */
     Console                     *pConsole;
     /** Used recording configuration. */
-    settings::RecordingSettings  Settings;
+    settings::RecordingSettings  m_Settings;
     /** The current state. */
     RECORDINGSTS                 enmState;
     /** Critical section to serialize access. */
@@ -115,7 +126,7 @@ protected:
     RTSEMEVENT                   WaitEvent;
     /** Shutdown indicator. */
     bool                         fShutdown;
-    /** Worker thread. */
+    /** Encoding worker thread. */
     RTTHREAD                     Thread;
     /** Vector of current recording streams.
      *  Per VM screen (display) one recording stream is being used. */
@@ -124,6 +135,15 @@ protected:
     uint16_t                     cStreamsEnabled;
     /** Timestamp (in ms) of when recording has been started. */
     uint64_t                     tsStartMs;
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    /** Audio codec to use.
+     *
+     *  We multiplex audio data from this recording context to all streams,
+     *  to avoid encoding the same audio data for each stream. We ASSUME that
+     *  all audio data of a VM will be the same for each stream at a given
+     *  point in time. */
+    RECORDINGCODEC               CodecAudio;
+#endif /* VBOX_WITH_AUDIO_RECORDING */
     /** Block map of common blocks which need to get multiplexed
      *  to all recording streams. This common block maps should help
      *  reducing the time spent in EMT and avoid doing the (expensive)

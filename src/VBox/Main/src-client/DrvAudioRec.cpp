@@ -170,7 +170,7 @@ typedef struct AVRECCONTAINER
  */
 typedef struct AVRECSINK
 {
-    /** Pointer to audio codec to use. */
+    /** Pointer (weak) to audio codec to use. */
     PRECORDINGCODEC      pCodec;
     /** Container data to use for data processing. */
     AVRECCONTAINER       Con;
@@ -197,10 +197,6 @@ typedef struct AVRECSTREAM
     void                   *pvSrcBuf;
     /** Size (in bytes) of the temporary buffer holding the input (source) data to encode. */
     size_t                  cbSrcBuf;
-    /** Temporary buffer for the encoded output (destination) data. */
-    void                   *pvDstBuf;
-    /** Size (in bytes) of the temporary buffer holding the encoded output (destination) data. */
-    size_t                  cbDstBuf;
 } AVRECSTREAM, *PAVRECSTREAM;
 
 /**
@@ -354,27 +350,20 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
         if (pStreamAV->pvSrcBuf)
         {
             pStreamAV->cbSrcBuf = cbScratchBuf;
-            pStreamAV->pvDstBuf = RTMemAlloc(cbScratchBuf);
-            if (pStreamAV->pvDstBuf)
-            {
-                pStreamAV->cbDstBuf = cbScratchBuf;
 
-                pStreamAV->pSink      = pSink; /* Assign sink to stream. */
-                pStreamAV->uLastPTSMs = 0;
+            pStreamAV->pSink      = pSink; /* Assign sink to stream. */
+            pStreamAV->uLastPTSMs = 0;
 
-                /* Make sure to let the driver backend know that we need the audio data in
-                 * a specific sampling rate the codec is optimized for. */
+            /* Make sure to let the driver backend know that we need the audio data in
+             * a specific sampling rate the codec is optimized for. */
 /** @todo r=bird: pCfgAcq->Props isn't initialized at all, except for uHz... */
-                pCfgAcq->Props.uHz         = pCodec->Parms.Audio.PCMProps.uHz;
+            pCfgAcq->Props.uHz         = pCodec->Parms.Audio.PCMProps.uHz;
 //                pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
-                /* Every Opus frame marks a period for now. Optimize this later. */
-                pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pCodec->Parms.msFrame);
-                pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
-                pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
-            }
-            else
-                vrc = VERR_NO_MEMORY;
+            /* Every Opus frame marks a period for now. Optimize this later. */
+            pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pCodec->Parms.msFrame);
+            pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
+            pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
         }
         else
             vrc = VERR_NO_MEMORY;
@@ -434,14 +423,6 @@ static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
         RTMemFree(pStreamAV->pvSrcBuf);
         pStreamAV->pvSrcBuf = NULL;
         pStreamAV->cbSrcBuf = 0;
-    }
-
-    if (pStreamAV->pvDstBuf)
-    {
-        Assert(pStreamAV->cbDstBuf);
-        RTMemFree(pStreamAV->pvDstBuf);
-        pStreamAV->pvDstBuf = NULL;
-        pStreamAV->cbDstBuf = 0;
     }
 
     return VINF_SUCCESS;
@@ -628,44 +609,11 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         size_t cEncoded /* Blocks encoded */, cbEncoded /* Bytes encoded */;
         vrc = recordingCodecEncode(pSink->pCodec,
                                    /* Source */
-                                   &Frame,
-                                   /* Dest */
-                                   pStreamAV->pvDstBuf, pStreamAV->cbDstBuf, &cEncoded, &cbEncoded);
+                                   &Frame, &cEncoded, &cbEncoded);
         if (   RT_SUCCESS(vrc)
             && cEncoded)
         {
             Assert(cbEncoded);
-
-            if (pStreamAV->uLastPTSMs == 0)
-                pStreamAV->uLastPTSMs = RTTimeProgramMilliTS(); /* We want the absolute time (in ms) since program start. */
-
-            const uint64_t uDurationMs = pSink->pCodec->Parms.msFrame * cEncoded;
-            const uint64_t uPTSMs      = pStreamAV->uLastPTSMs;
-
-            pStreamAV->uLastPTSMs += uDurationMs;
-
-            switch (pSink->Con.Parms.enmType)
-            {
-                case AVRECCONTAINERTYPE_MAIN_CONSOLE:
-                {
-                    HRESULT hrc = pSink->Con.Main.pConsole->i_recordingSendAudio(pStreamAV->pvDstBuf, cbEncoded, uPTSMs);
-                    Assert(hrc == S_OK);
-                    RT_NOREF(hrc);
-                    break;
-                }
-
-                case AVRECCONTAINERTYPE_WEBM:
-                {
-                    WebMWriter::BlockData_Audio blockData = { pStreamAV->pvDstBuf, cbEncoded, uPTSMs };
-                    vrc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
-                    AssertRC(vrc);
-                    break;
-                }
-
-                default:
-                    AssertFailedStmt(vrc = VERR_NOT_IMPLEMENTED);
-                    break;
-            }
         }
         else if (RT_FAILURE(vrc)) /* Something went wrong -- report all bytes as being processed, to not hold up others. */
             cbWrittenTotal = cbBuf;
@@ -736,8 +684,6 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
 {
     AssertPtrReturnVoid(pSink);
 
-    recordingCodecFinalize(pSink->pCodec);
-    recordingCodecDestroy(pSink->pCodec);
     pSink->pCodec = NULL;
 
     switch (pSink->Con.Parms.enmType)
@@ -900,9 +846,6 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 
         return VINF_SUCCESS;
     }
-
-    recordingCodecDestroy(pSink->pCodec);
-    pSink->pCodec = NULL;
 
     LogRel(("Recording: Error creating sink (%Rrc)\n", vrc));
     return vrc;

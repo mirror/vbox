@@ -38,6 +38,10 @@
 /** @copydoc RECORDINGCODECOPS::pfnInit */
 static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
 {
+    pCodec->cbScratch = _4K;
+    pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
+    AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
+
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
 # else /* Default is using VP8. */
@@ -131,9 +135,9 @@ static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, c
 
 /** @copydoc RECORDINGCODECOPS::pfnEncode */
 static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORDINGFRAME pFrame,
-                                                 void *pvDst, size_t cbDst, size_t *pcEncoded, size_t *pcbEncoded)
+                                                 size_t *pcEncoded, size_t *pcbEncoded)
 {
-    RT_NOREF(pvDst, cbDst, pcEncoded, pcbEncoded);
+    RT_NOREF(pcEncoded, pcbEncoded);
 
     AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
 
@@ -157,35 +161,47 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                                            pVPX->uEncoderDeadline       /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
-        if (pCodec->cEncErrors++ < 64) /** @todo Make this configurable. */
+        if (pCodec->State.cEncErrors++ < 64) /** @todo Make this configurable. */
             LogRel(("Recording: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_RECORDING_ENCODING_FAILED;
     }
 
-    pCodec->cEncErrors = 0;
+    pCodec->State.cEncErrors = 0;
 
     vpx_codec_iter_t iter = NULL;
     vrc = VERR_NO_DATA;
     for (;;)
     {
-        const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pVPX->Ctx, &iter);
-        if (!pPacket)
+        const vpx_codec_cx_pkt_t *pPkt = vpx_codec_get_cx_data(&pVPX->Ctx, &iter);
+        if (!pPkt)
             break;
 
-        switch (pPacket->kind)
+        switch (pPkt->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
             {
-                WebMWriter::BlockData_VP8 blockData = { &pCodec->Video.VPX.Cfg, pPacket };
-                AssertPtr(pCodec->Callbacks.pfnWriteData);
+                /* Calculate the absolute PTS of this frame (in ms). */
+                uint64_t tsAbsPTSMs =   pPkt->data.frame.pts * 1000
+                                      * (uint64_t)pCodec->Video.VPX.Cfg.g_timebase.num / pCodec->Video.VPX.Cfg.g_timebase.den;
 
-                vrc = pCodec->Callbacks.pfnWriteData(pCodec, &blockData, sizeof(blockData), pCodec->Callbacks.pvUser);
+                pCodec->State.tsLastWrittenMs += pCodec->Parms.msFrame;
+
+                const bool fKeyframe = RT_BOOL(pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
+
+                uint32_t fFlags = RECORDINGCODEC_ENC_F_NONE;
+                if (fKeyframe)
+                    fFlags |= RECORDINGCODEC_ENC_F_BLOCK_IS_KEY;
+                if (pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
+                    fFlags |= RECORDINGCODEC_ENC_F_BLOCK_IS_INVISIBLE;
+
+                vrc = pCodec->Callbacks.pfnWriteData(pCodec, pPkt->data.frame.buf, pPkt->data.frame.sz,
+                                                     tsAbsPTSMs, fFlags, pCodec->Callbacks.pvUser);
                 break;
             }
 
             default:
                 AssertFailed();
-                LogFunc(("Unexpected video packet type %ld\n", pPacket->kind));
+                LogFunc(("Unexpected video packet type %ld\n", pPkt->kind));
                 break;
         }
     }
@@ -203,6 +219,10 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
 /** @copydoc RECORDINGCODECOPS::pfnInit */
 static DECLCALLBACK(int) recordingCodecOpusInit(PRECORDINGCODEC pCodec)
 {
+    pCodec->cbScratch = _4K;
+    pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
+    AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
+
     const PPDMAUDIOPCMPROPS pProps = &pCodec->Parms.Audio.PCMProps;
 
     uint32_t       uHz       = PDMAudioPropsHz(pProps);
@@ -274,8 +294,7 @@ static DECLCALLBACK(int) recordingCodecOpusDestroy(PRECORDINGCODEC pCodec)
 
 /** @copydoc RECORDINGCODECOPS::pfnEncode */
 static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
-                                                  const PRECORDINGFRAME pFrame, void *pvDst, size_t cbDst,
-                                                  size_t *pcEncoded, size_t *pcbEncoded)
+                                                  const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
 {
     const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
 
@@ -283,10 +302,14 @@ static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
     AssertReturn   (pFrame->Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
     Assert         (pFrame->Audio.cbBuf);
     AssertReturn   (pFrame->Audio.cbBuf % pPCMProps->cbFrame == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->cbScratch >= pFrame->Audio.cbBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcEncoded,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcbEncoded, VERR_INVALID_POINTER);
 
     int vrc = VINF_SUCCESS;
+
+    size_t cBlocksEncoded = 0;
+    size_t cBytesEncoded  = 0;
 
     /*
      * Opus always encodes PER "OPUS FRAME", that is, exactly 2.5, 5, 10, 20, 40 or 60 ms of audio data.
@@ -297,22 +320,39 @@ static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
      */
     opus_int32 cbWritten = opus_encode(pCodec->Audio.Opus.pEnc,
                                        (opus_int16 *)pFrame->Audio.pvBuf, (int)(pFrame->Audio.cbBuf / pPCMProps->cbFrame /* Number of audio frames */),
-                                       (uint8_t *)pvDst, (opus_int32)cbDst);
+                                       (uint8_t *)pCodec->pvScratch, (opus_int32)pCodec->cbScratch);
     if (cbWritten < 0)
     {
         LogRel(("Recording: opus_encode() failed (%s)\n", opus_strerror(cbWritten)));
         return VERR_RECORDING_ENCODING_FAILED;
     }
 
-    /* Get overall frames encoded. */
-    *pcEncoded  = opus_packet_get_nb_frames((uint8_t *)pvDst, cbWritten);
-    *pcbEncoded = cbWritten;
+    if (cbWritten)
+    {
+        vrc = pCodec->Callbacks.pfnWriteData(pCodec, pCodec->pvScratch, (size_t)cbWritten, pCodec->State.tsLastWrittenMs,
+                                             RECORDINGCODEC_ENC_F_BLOCK_IS_KEY /* Every Opus frame is a key frame */,
+                                             pCodec->Callbacks.pvUser);
+        if (RT_SUCCESS(vrc))
+            pCodec->State.tsLastWrittenMs += pCodec->Parms.msFrame;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        /* Get overall frames encoded. */
+        cBlocksEncoded = opus_packet_get_nb_frames((uint8_t *)pCodec->pvScratch, cbWritten);
+        cBytesEncoded  = cbWritten;
+
+        if (pcEncoded)
+            *pcEncoded  = cBlocksEncoded;
+        if (pcbEncoded)
+            *pcbEncoded = cBytesEncoded;
+    }
 
     if (RT_FAILURE(vrc))
         LogRel(("Recording: Encoding Opus data failed, rc=%Rrc\n", vrc));
 
-    Log3Func(("cbSrc=%zu, cbDst=%zu, cEncoded=%zu, cbEncoded=%zu, vrc=%Rrc\n", pFrame->Audio.cbBuf, cbDst,
-              RT_SUCCESS(vrc) ? *pcEncoded : 0, RT_SUCCESS(vrc) ? *pcbEncoded : 0, vrc));
+    Log3Func(("cbSrc=%zu, cbDst=%zu, cEncoded=%zu, cbEncoded=%zu, vrc=%Rrc\n",
+              pFrame->Audio.cbBuf, pCodec->cbScratch, cBlocksEncoded, cBytesEncoded, vrc));
 
     return vrc;
 }
@@ -327,6 +367,10 @@ static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
 /** @copydoc RECORDINGCODECOPS::pfnInit */
 static DECLCALLBACK(int) recordingCodecVorbisInit(PRECORDINGCODEC pCodec)
 {
+    pCodec->cbScratch = _4K;
+    pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
+    AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
+
     const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
 
     /** @todo BUGBUG When left out this call, vorbis_block_init() does not find oggpack_writeinit and all goes belly up ... */
@@ -394,15 +438,15 @@ static DECLCALLBACK(int) recordingCodecVorbisDestroy(PRECORDINGCODEC pCodec)
 
 /** @copydoc RECORDINGCODECOPS::pfnEncode */
 static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
-                                                    const PRECORDINGFRAME pFrame, void *pvDst, size_t cbDst,
-                                                    size_t *pcEncoded, size_t *pcbEncoded)
+                                                    const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
 {
     const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
 
-    Assert         (pCodec->Parms.cbFrame);
-    AssertReturn   (pFrame->Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
-    Assert         (pFrame->Audio.cbBuf);
-    AssertReturn   (pFrame->Audio.cbBuf % PDMAudioPropsFrameSize(pPCMProps) == 0, VERR_INVALID_PARAMETER);
+    Assert      (pCodec->Parms.cbFrame);
+    AssertReturn(pFrame->Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
+    Assert      (pFrame->Audio.cbBuf);
+    AssertReturn(pFrame->Audio.cbBuf % PDMAudioPropsFrameSize(pPCMProps) == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->cbScratch >= pFrame->Audio.cbBuf, VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
@@ -442,7 +486,7 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
     size_t cBlocksEncoded = 0;
     size_t cBytesEncoded  = 0;
 
-    uint8_t *puDst = (uint8_t *)pvDst;
+    uint8_t *puDst = (uint8_t *)pCodec->pvScratch;
 
     while (vorbis_analysis_blockout(&pCodec->Audio.Vorbis.dsp_state, &pCodec->Audio.Vorbis.block_cur) == 1 /* More available? */)
     {
@@ -473,16 +517,14 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
         while ((vorbis_rc = vorbis_bitrate_flushpacket(&pCodec->Audio.Vorbis.dsp_state, &op)) > 0)
         {
             cBytesEncoded += op.bytes;
-            AssertBreakStmt(cBytesEncoded <= cbDst, vrc = VERR_BUFFER_OVERFLOW);
+            AssertBreakStmt(cBytesEncoded <= pCodec->cbScratch, vrc = VERR_BUFFER_OVERFLOW);
             cBlocksEncoded++;
 
-            if (pCodec->Callbacks.pfnWriteData)
-            {
-                WebMWriter::BlockData_Audio blockData = { op.packet, (size_t)op.bytes, pCodec->uLastTimeStampMs };
-                pCodec->Callbacks.pfnWriteData(pCodec, &blockData, sizeof(blockData), pCodec->Callbacks.pvUser);
-            }
-
-            pCodec->uLastTimeStampMs += uDurationMs;
+            vrc = pCodec->Callbacks.pfnWriteData(pCodec, op.packet, (size_t)op.bytes, pCodec->State.tsLastWrittenMs,
+                                                 RECORDINGCODEC_ENC_F_BLOCK_IS_KEY /* Every Vorbis frame is a key frame */,
+                                                 pCodec->Callbacks.pvUser);
+            if (RT_SUCCESS(vrc))
+                pCodec->State.tsLastWrittenMs += uDurationMs;
         }
 
         RT_NOREF(puDst);
@@ -512,7 +554,7 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
         LogRel(("Recording: Encoding Vorbis audio data failed, rc=%Rrc\n", vrc));
 
     Log3Func(("cbSrc=%zu, cbDst=%zu, cEncoded=%zu, cbEncoded=%zu, vrc=%Rrc\n",
-              pFrame->Audio.cbBuf, cbDst, cBlocksEncoded, cBytesEncoded, vrc));
+              pFrame->Audio.cbBuf, pCodec->cbScratch, cBlocksEncoded, cBytesEncoded, vrc));
 
     return vrc;
 }
@@ -686,6 +728,28 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
 }
 #endif
 
+static void recordingCodecReset(PRECORDINGCODEC pCodec)
+{
+    pCodec->State.tsLastWrittenMs = 0;
+
+    pCodec->State.cEncErrors = 0;
+#ifdef VBOX_WITH_STATISTICS
+    pCodec->STAM.cEncBlocks  = 0;
+    pCodec->STAM.msEncTotal  = 0;
+#endif
+}
+
+/**
+ * Common code for codec creation.
+ *
+ * @param   pCodec              Codec instance to create.
+ */
+static void recordingCodecCreateCommon(PRECORDINGCODEC pCodec)
+{
+    RT_ZERO(pCodec->Ops);
+    RT_ZERO(pCodec->Callbacks);
+}
+
 /**
  * Creates an audio codec.
  *
@@ -696,6 +760,8 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
 int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmAudioCodec)
 {
     int vrc;
+
+    recordingCodecCreateCommon(pCodec);
 
     switch (enmAudioCodec)
     {
@@ -727,6 +793,7 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 # endif /* VBOX_WITH_LIBVORBIS */
 
         default:
+            LogRel(("Recording: Selected codec is not supported!\n"));
             vrc = VERR_RECORDING_CODEC_NOT_SUPPORTED;
             break;
     }
@@ -750,6 +817,8 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec)
 {
     int vrc;
+
+    recordingCodecCreateCommon(pCodec);
 
     switch (enmVideoCodec)
     {
@@ -790,6 +859,8 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
  */
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
 {
+    recordingCodecReset(pCodec);
+
     int vrc;
     if (pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO)
         vrc = recordingCodecInitAudio(pCodec, pCallbacks, Settings);
@@ -797,15 +868,6 @@ int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBA
         vrc = recordingCodecInitVideo(pCodec, pCallbacks, Settings);
     else
         AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
-
-    if (RT_SUCCESS(vrc))
-    {
-        pCodec->cEncErrors       = 0;
-#ifdef VBOX_WITH_STATISTICS
-        pCodec->Stats.cEncBlocks = 0;
-        pCodec->Stats.msEncTotal = 0;
-#endif
-    }
 
     return vrc;
 }
@@ -858,6 +920,14 @@ int recordingCodecDestroy(PRECORDINGCODEC pCodec)
 
     if (RT_SUCCESS(vrc))
     {
+        if (pCodec->pvScratch)
+        {
+            Assert(pCodec->cbScratch);
+            RTMemFree(pCodec->pvScratch);
+            pCodec->pvScratch = NULL;
+            pCodec->cbScratch = 0;
+        }
+
         pCodec->Parms.enmType       = RECORDINGCODECTYPE_INVALID;
         pCodec->Parms.enmVideoCodec = RecordingVideoCodec_None;
     }
@@ -871,24 +941,21 @@ int recordingCodecDestroy(PRECORDINGCODEC pCodec)
  * @returns VBox status code.
  * @param   pCodec              Codec to use.
  * @param   pFrame              Pointer to frame data to encode.
- * @param   pvDst               Where to store the encoded data on success.
- * @param   cbDst               Size (in bytes) of \a pvDst.
  * @param   pcEncoded           Where to return the number of encoded blocks in \a pvDst on success. Optional.
  * @param   pcbEncoded          Where to return the number of encoded bytes in \a pvDst on success. Optional.
  */
 int recordingCodecEncode(PRECORDINGCODEC pCodec,
-                         const PRECORDINGFRAME pFrame, void *pvDst, size_t cbDst,
-                         size_t *pcEncoded, size_t *pcbEncoded)
+                         const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
 {
     AssertPtrReturn(pCodec->Ops.pfnEncode, VERR_NOT_SUPPORTED);
 
     size_t cEncoded, cbEncoded;
-    int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, pvDst, cbDst, &cEncoded, &cbEncoded);
+    int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, &cEncoded, &cbEncoded);
     if (RT_SUCCESS(vrc))
     {
 #ifdef VBOX_WITH_STATISTICS
-        pCodec->Stats.cEncBlocks += cEncoded;
-        pCodec->Stats.msEncTotal += pCodec->Parms.msFrame * cEncoded;
+        pCodec->STAM.cEncBlocks += cEncoded;
+        pCodec->STAM.msEncTotal += pCodec->Parms.msFrame * cEncoded;
 #endif
         if (pcEncoded)
             *pcEncoded = cEncoded;

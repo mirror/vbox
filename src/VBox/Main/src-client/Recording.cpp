@@ -60,7 +60,7 @@ using namespace com;
 /**
  * Recording context constructor.
  *
- * @note    Will throw when unable to create.
+ * @note    Will throw rc when unable to create.
  */
 RecordingContext::RecordingContext(void)
     : pConsole(NULL)
@@ -76,11 +76,11 @@ RecordingContext::RecordingContext(void)
  * Recording context constructor.
  *
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
- * @param   settings            Reference to recording settings to use for creation.
+ * @param   Settings            Reference to recording settings to use for creation.
  *
- * @note    Will throw when unable to create.
+ * @note    Will throw rc when unable to create.
  */
-RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &settings)
+RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings)
     : pConsole(NULL)
     , enmState(RECORDINGSTS_UNINITIALIZED)
     , cStreamsEnabled(0)
@@ -89,7 +89,7 @@ RecordingContext::RecordingContext(Console *ptrConsole, const settings::Recordin
     if (RT_FAILURE(vrc))
         throw vrc;
 
-    vrc = RecordingContext::createInternal(ptrConsole, settings);
+    vrc = RecordingContext::createInternal(ptrConsole, Settings);
     if (RT_FAILURE(vrc))
         throw vrc;
 }
@@ -169,20 +169,196 @@ int RecordingContext::threadNotify(void)
 }
 
 /**
+ * Writes block data which are common (shared) between all streams.
+ *
+ * To save time spent in EMT or other important threads (such as audio async I/O),
+ * do the required audio multiplexing in the encoding thread.
+ *
+ * The multiplexing is needed to supply all recorded (enabled) screens with the same
+ * data at the same given point in time.
+ *
+ * Currently this only is being used for audio data.
+ */
+int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
+                                      uint64_t msAbsPTS, uint32_t uFlags)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    LogFlowFunc(("pCodec=%p, cbData=%zu, msAbsPTS=%zu, uFlags=%#x\n",
+                 pCodec, cbData, msAbsPTS, uFlags));
+
+    /** @todo Optimize this! Three allocations in here! */
+
+    RECORDINGBLOCKTYPE const enmType = pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO
+                                     ? RECORDINGBLOCKTYPE_AUDIO : RECORDINGBLOCKTYPE_UNKNOWN;
+
+    AssertReturn(enmType != RECORDINGBLOCKTYPE_UNKNOWN, VERR_NOT_SUPPORTED);
+
+    RecordingBlock *pBlock = new RecordingBlock();
+
+    switch (enmType)
+    {
+        case RECORDINGBLOCKTYPE_AUDIO:
+        {
+            PRECORDINGAUDIOFRAME pFrame = (PRECORDINGAUDIOFRAME)RTMemAlloc(sizeof(RECORDINGAUDIOFRAME));
+            AssertPtrReturn(pFrame, VERR_NO_MEMORY);
+
+            pFrame->pvBuf = (uint8_t *)RTMemAlloc(cbData);
+            AssertPtrReturn(pFrame->pvBuf, VERR_NO_MEMORY);
+            pFrame->cbBuf = cbData;
+
+            memcpy(pFrame->pvBuf, pvData, cbData);
+
+            pBlock->enmType     = enmType;
+            pBlock->pvData      = pFrame;
+            pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
+            pBlock->cRefs       = this->cStreamsEnabled;
+            pBlock->msTimestamp = msAbsPTS;
+            pBlock->uFlags      = uFlags;
+
+            break;
+        }
+
+        default:
+            AssertFailed();
+            break;
+    }
+
+    lock();
+
+    int vrc;
+
+    try
+    {
+        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(msAbsPTS);
+        if (itBlocks == this->mapBlocksCommon.end())
+        {
+            RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
+            pRecordingBlocks->List.push_back(pBlock);
+
+            this->mapBlocksCommon.insert(std::make_pair(msAbsPTS, pRecordingBlocks));
+        }
+        else
+            itBlocks->second->List.push_back(pBlock);
+
+        vrc = VINF_SUCCESS;
+    }
+    catch (const std::exception &ex)
+    {
+        RT_NOREF(ex);
+        vrc = VERR_NO_MEMORY;
+    }
+
+    unlock();
+
+    if (RT_SUCCESS(vrc))
+        vrc = threadNotify();
+
+    return vrc;
+}
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+/**
+ * Callback function for taking care of multiplexing the encoded audio data to all connected streams.
+ *
+ * @copydoc RECORDINGCODECCALLBACKS::pfnWriteData
+ */
+/* static */
+DECLCALLBACK(int) RecordingContext::audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
+                                                                uint64_t msAbsPTS, uint32_t uFlags, void *pvUser)
+{
+#if 0
+    RecordingContext *pThis = (RecordingContext *)pvUser;
+
+    int vrc = VINF_SUCCESS;
+
+    RecordingStreams::iterator itStream = pThis->vecStreams.begin();
+    while (itStream != pThis->vecStreams.end())
+    {
+        RecordingStream *pStream = (*itStream);
+
+        LogFlowFunc(("pStream=%p\n", pStream));
+
+        if (pStream->GetConfig().isFeatureEnabled(RecordingFeature_Audio)) /** @todo Optimize this! Use a dedicated stream group for video-only / audio-only streams. */
+        {
+            vrc = RecordingStream::codecWriteDataCallback(pCodec, pvData, cbData, msAbsPTS, uFlags, pStream);
+            if (RT_FAILURE(vrc))
+            {
+                LogRel(("Recording: Calling audio write callback for stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
+                break;
+            }
+        }
+
+        ++itStream;
+    }
+
+    return vrc;
+#else
+    RecordingContext *pThis = (RecordingContext *)pvUser;
+
+    return pThis->writeCommonData(pCodec, pvData, cbData, msAbsPTS, uFlags);
+#endif
+}
+
+/**
+ * Initializes the audio codec for a (multiplexing) recording context.
+ *
+ * @returns VBox status code.
+ * @param   screenSettings      Reference to recording screen settings to use for initialization.
+ */
+int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenSettings)
+{
+    RecordingAudioCodec_T const enmCodec = screenSettings.Audio.enmCodec;
+
+    if (enmCodec == RecordingAudioCodec_None)
+    {
+        LogRel2(("Recording: No audio codec configured, skipping audio init\n"));
+        return VINF_SUCCESS;
+    }
+
+    RECORDINGCODECCALLBACKS Callbacks;
+    Callbacks.pvUser       = this;
+    Callbacks.pfnWriteData = RecordingContext::audioCodecWriteDataCallback;
+
+    int vrc = recordingCodecCreateAudio(&this->CodecAudio, enmCodec);
+    if (RT_SUCCESS(vrc))
+        vrc = recordingCodecInit(&this->CodecAudio, &Callbacks, screenSettings);
+
+    return vrc;
+}
+#endif /* VBOX_WITH_AUDIO_RECORDING */
+
+/**
  * Creates a recording context.
  *
  * @returns IPRT status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
- * @param   settings            Reference to recording settings to use for creation.
+ * @param   Settings            Reference to recording settings to use for creation.
  */
-int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &settings)
+int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings)
 {
     int vrc = VINF_SUCCESS;
 
+    /* Copy the settings to our context. */
+    m_Settings = Settings;
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    settings::RecordingScreenSettingsMap::const_iterator itScreen0 = m_Settings.mapScreens.begin();
+    AssertReturn(itScreen0 != m_Settings.mapScreens.end(), VERR_WRONG_ORDER);
+
+    /* We always use the audio settings from screen 0, as we multiplex the audio data anyway. */
+    settings::RecordingScreenSettings const &screen0Settings = itScreen0->second;
+
+    vrc = this->audioInit(screen0Settings);
+    if (RT_FAILURE(vrc))
+        return vrc;
+#endif
+
     this->pConsole = ptrConsole;
 
-    settings::RecordingScreenSettingsMap::const_iterator itScreen = settings.mapScreens.begin();
-    while (itScreen != settings.mapScreens.end())
+    settings::RecordingScreenSettingsMap::const_iterator itScreen = m_Settings.mapScreens.begin();
+    while (itScreen != m_Settings.mapScreens.end())
     {
         RecordingStream *pStream = NULL;
         try
@@ -191,6 +367,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
             this->vecStreams.push_back(pStream);
             if (itScreen->second.fEnabled)
                 this->cStreamsEnabled++;
+            LogFlowFunc(("pStream=%p\n", pStream));
         }
         catch (std::bad_alloc &)
         {
@@ -211,9 +388,6 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
         this->tsStartMs = RTTimeMilliTS();
         this->enmState  = RECORDINGSTS_CREATED;
         this->fShutdown = false;
-
-        /* Copy the settings to our context. */
-        this->Settings  = settings;
 
         vrc = RTSemEventCreate(&this->WaitEvent);
         AssertRCReturn(vrc, vrc);
@@ -342,7 +516,7 @@ void RecordingContext::destroyInternal(void)
  */
 const settings::RecordingSettings &RecordingContext::GetConfig(void) const
 {
-    return this->Settings;
+    return this->m_Settings;
 }
 
 /**
@@ -367,6 +541,11 @@ RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
     return pStream;
 }
 
+/**
+ * Locks the recording context for serializing access.
+ *
+ * @returns VBox status code.
+ */
 int RecordingContext::lock(void)
 {
     int vrc = RTCritSectEnter(&this->CritSect);
@@ -374,6 +553,11 @@ int RecordingContext::lock(void)
     return vrc;
 }
 
+/**
+ * Unlocks the recording context for serializing access.
+ *
+ * @returns VBox status code.
+ */
 int RecordingContext::unlock(void)
 {
     int vrc = RTCritSectLeave(&this->CritSect);
@@ -407,11 +591,11 @@ size_t RecordingContext::GetStreamCount(void) const
  *
  * @returns IPRT status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
- * @param   settings            Reference to recording settings to use for creation.
+ * @param   Settings            Reference to recording settings to use for creation.
  */
-int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &settings)
+int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &Settings)
 {
-    return createInternal(ptrConsole, settings);
+    return createInternal(ptrConsole, Settings);
 }
 
 /**
@@ -604,62 +788,7 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-
-    /* To save time spent in EMT, do the required audio multiplexing in the encoding thread.
-     *
-     * The multiplexing is needed to supply all recorded (enabled) screens with the same
-     * audio data at the same given point in time.
-     */
-    RecordingBlock *pBlock = new RecordingBlock();
-    pBlock->enmType = RECORDINGBLOCKTYPE_AUDIO;
-
-    PRECORDINGAUDIOFRAME pFrame = (PRECORDINGAUDIOFRAME)RTMemAlloc(sizeof(RECORDINGAUDIOFRAME));
-    AssertPtrReturn(pFrame, VERR_NO_MEMORY);
-
-    pFrame->pvBuf = (uint8_t *)RTMemAlloc(cbData);
-    AssertPtrReturn(pFrame->pvBuf, VERR_NO_MEMORY);
-    pFrame->cbBuf = cbData;
-
-    memcpy(pFrame->pvBuf, pvData, cbData);
-
-    pBlock->pvData      = pFrame;
-    pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
-    pBlock->cRefs       = this->cStreamsEnabled;
-    pBlock->msTimestamp = msTimestamp;
-
-    lock();
-
-    int vrc;
-
-    try
-    {
-        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(msTimestamp);
-        if (itBlocks == this->mapBlocksCommon.end())
-        {
-            RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
-            pRecordingBlocks->List.push_back(pBlock);
-
-            this->mapBlocksCommon.insert(std::make_pair(msTimestamp, pRecordingBlocks));
-        }
-        else
-            itBlocks->second->List.push_back(pBlock);
-
-        vrc = VINF_SUCCESS;
-    }
-    catch (const std::exception &ex)
-    {
-        RT_NOREF(ex);
-        vrc = VERR_NO_MEMORY;
-    }
-
-    unlock();
-
-    if (RT_SUCCESS(vrc))
-        vrc = threadNotify();
-
-    return vrc;
+    return writeCommonData(&this->CodecAudio, pvData, cbData, msTimestamp, RECORDINGCODEC_ENC_F_BLOCK_IS_KEY);
 #else
     RT_NOREF(pvData, cbData, msTimestamp);
     return VINF_SUCCESS;
