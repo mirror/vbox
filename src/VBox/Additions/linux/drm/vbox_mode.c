@@ -46,6 +46,10 @@
 # include <drm/drm_probe_helper.h>
 #endif
 
+#if RTLNX_VER_MIN(6,0,0)
+# include <drm/drm_edid.h>
+#endif
+
 #include "VBoxVideo.h"
 
 static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,

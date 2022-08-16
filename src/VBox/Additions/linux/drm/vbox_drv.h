@@ -185,6 +185,10 @@
 # include <drm/ttm/ttm_resource.h>
 #endif
 
+#if RTLNX_VER_MIN(6,0,0)
+# include <drm/drm_framebuffer.h>
+#endif
+
 #include "vboxvideo_guest.h"
 #include "vboxvideo_vbe.h"
 #include "hgsmi_ch_setup.h"
