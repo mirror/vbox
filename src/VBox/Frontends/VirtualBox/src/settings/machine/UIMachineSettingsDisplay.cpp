@@ -1330,7 +1330,27 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             {
                 comRecordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
                 fSuccess = comRecordingScreenSettings.isOk();
+
+                /** @todo The m_strRecordingVideoOptions must not be used for enabling / disabling the recording features;
+                 *        instead, SetFeatures() has to be used for 7.0.
+                 *
+                 *        Also for the audio profile settings (Hz rate, bits, ++)
+                 *        there are now audioHz, audioBits, audioChannels and so on.
+                 *
+                 *        So it's probably best to get rid of m_strRecordingVideoOptions altogether.
+                 */
+                QVector<KRecordingFeature> vecFeatures;
+                if (UIDataSettingsMachineDisplay::isRecordingOptionEnabled(newDisplayData.m_strRecordingVideoOptions,
+                                                                           UIDataSettingsMachineDisplay::RecordingOption_VC))
+                    vecFeatures.append(KRecordingFeature_Video);
+
+                if (UIDataSettingsMachineDisplay::isRecordingOptionEnabled(newDisplayData.m_strRecordingVideoOptions,
+                                                                           UIDataSettingsMachineDisplay::RecordingOption_AC))
+                    vecFeatures.append(KRecordingFeature_Audio);
+
+                comRecordingScreenSettings.SetFeatures(vecFeatures);
             }
+
             /* Finally, save the screen's recording state: */
             /* Note: Must come last, as modifying options with an enabled recording state is not possible. */
             if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
