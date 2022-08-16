@@ -7292,6 +7292,8 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
         com::SafeArray<RecordingFeature_T> vecFeatures;
         hrc = pRecScreenSettings->COMGETTER(Features)(ComSafeArrayAsOutParam(vecFeatures));
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
+        /* Make sure to clear map first, as we want to (re-)set enabled features. */
+        recScreenSettings.featureMap.clear();
         for (size_t f = 0; f < vecFeatures.size(); ++f)
         {
             if (vecFeatures[f] == RecordingFeature_Audio)
