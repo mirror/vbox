@@ -454,8 +454,8 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
         case KNetworkAttachmentType_HostOnly:
             m_pComboName->setToolTip(tr("Holds the virtual network adapter on the host system that traffic "
                                         "to and from this network card will go through. "
-                                        "You can create and remove adapters using the global network "
-                                        "settings in the virtual machine manager window."));
+                                        "You can create and remove adapters using the Network Manager "
+                                        "tool in the virtual machine manager window."));
             break;
         case KNetworkAttachmentType_Generic:
             m_pComboName->setToolTip(tr("Holds the driver to be used with this network card."));
@@ -470,7 +470,7 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
         case KNetworkAttachmentType_Cloud:
             m_pComboName->setToolTip(tr("(experimental) Holds the name of the cloud network that this network card "
                                         "will be connected to. You can add and remove networks "
-                                        "using the Cloud Profile Manager tool in the virtual machine "
+                                        "using the Network Manager tool in the virtual machine "
                                         "manager window."));
             break;
 #endif /* VBOX_WITH_CLOUD_NET */

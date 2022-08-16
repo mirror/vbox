@@ -461,31 +461,31 @@ void UIFileManagerGuestTable::retranslateUi()
         switch (m_enmState)
         {
             case State_InvalidMachineReference:
-                strWarningText = UIFileManager::tr("<p>Machine reference is invalid.</p>");
+                strWarningText = UIFileManager::tr("Machine reference is invalid.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_MachineNotRunning:
-                strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest is not currently running.</p>");
+                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currently running.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_MachinePaused:
-                strWarningText = UIFileManager::tr("<p>File manager cannot work since the guest is paused.</p>");
+                strWarningText = UIFileManager::tr("File manager cannot work since the guest is paused.");
                 icon = UIIconPool::iconSet(":/session_info_16px.png");
                 break;
             case State_NoGuestAdditions:
-                strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest does not have the guest additions.</p>");
+                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_SessionPossible:
-                strWarningText = UIFileManager::tr("<p>Enter a valid user name and password to initiate the file manager.</p>");
+                strWarningText = UIFileManager::tr("Enter a valid user name and password to initiate the file manager.");
                 icon = UIIconPool::iconSet(":/session_info_16px.png");
                 break;
             case State_SessionRunning:
-                strWarningText = UIFileManager::tr("<p>Guest control session is running.</p>");
+                strWarningText = UIFileManager::tr("Guest control session is running.");
                 icon = UIIconPool::iconSet(":/status_check_16px.png");
                 break;
             case State_SessionError:
-                strWarningText = UIFileManager::tr("<p>Some error has occurred. Please check the log panel.</p>");
+                strWarningText = UIFileManager::tr("Some error has occurred. Please check the log panel.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             default:

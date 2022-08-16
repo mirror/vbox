@@ -76,7 +76,7 @@ void UICloudMachineSettingsDialog::retranslateUi()
     if (m_strName.isNull())
         setWindowTitle(strCaption);
     else
-        setWindowTitle(tr("%1 - %2").arg(m_strName, strCaption));
+        setWindowTitle(QString("%1 - %2").arg(m_strName, strCaption));
 }
 
 void UICloudMachineSettingsDialog::setOkButtonEnabled(bool fEnabled)

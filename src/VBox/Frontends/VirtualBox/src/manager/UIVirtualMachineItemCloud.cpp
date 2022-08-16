@@ -375,7 +375,7 @@ void UIVirtualMachineItemCloud::retranslateUi()
                               .arg(m_strName);
 
         /* We have our own translation for Null states: */
-        m_strMachineStateName = tr("Inaccessible");
+        m_strMachineStateName = tr("Inaccessible", "VM");
     }
 }
 

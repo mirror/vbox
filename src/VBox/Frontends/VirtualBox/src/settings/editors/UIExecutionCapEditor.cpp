@@ -80,18 +80,18 @@ void UIExecutionCapEditor::retranslateUi()
         m_pSlider->setToolTip(strToolTip);
     if (m_pSpinBox)
     {
-        m_pSpinBox->setSuffix(tr("%"));
+        m_pSpinBox->setSuffix(QString("%"));
         m_pSpinBox->setToolTip(strToolTip);
     }
 
     if (m_pLabelExecCapMin)
     {
-        m_pLabelExecCapMin->setText(tr("%1%").arg(m_uMinExecCap));
+        m_pLabelExecCapMin->setText(QString("%1%").arg(m_uMinExecCap));
         m_pLabelExecCapMin->setToolTip(tr("Minimum possible execution cap."));
     }
     if (m_pLabelExecCapMax)
     {
-        m_pLabelExecCapMax->setText(tr("%1%").arg(m_uMaxExecCap));
+        m_pLabelExecCapMax->setText(QString("%1%").arg(m_uMaxExecCap));
         m_pLabelExecCapMax->setToolTip(tr("Maximum possible virtual CPU count."));
     }
 }

@@ -484,11 +484,11 @@ void UIMachineSettingsSerial::retranslateUi()
     if (m_pLabelPath)
         m_pLabelPath->setText(tr("&Path/Address:"));
     if (m_pEditorPath)
-        m_pEditorPath->setToolTip(tr("<p>In Host Pipe mode: Holds the path to the serial port's pipe on the host. "
+        m_pEditorPath->setToolTip(tr("In Host Pipe mode: Holds the path to the serial port's pipe on the host. "
                                      "Examples: \"\\\\.\\pipe\\myvbox\" or \"/tmp/myvbox\", for Windows and UNIX-like systems "
-                                     "respectively.</p><p>In Host Device mode: Holds the host serial device name. "
-                                     "Examples: \"COM1\" or \"/dev/ttyS0\".</p><p>In Raw File mode: Holds the file-path "
-                                     "on the host system, where the serial output will be dumped.</p><p>In TCP mode: "
+                                     "respectively. In Host Device mode: Holds the host serial device name. "
+                                     "Examples: \"COM1\" or \"/dev/ttyS0\". In Raw File mode: Holds the file-path "
+                                     "on the host system, where the serial output will be dumped. In TCP mode: "
                                      "Holds the TCP \"port\" when in server mode, or \"hostname:port\" when in client mode."));
 
     /* Translate combo-boxes content: */

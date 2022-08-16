@@ -195,12 +195,12 @@ void UIScaleFactorEditor::retranslateUi()
 
     if (m_pMinScaleLabel)
     {
-        m_pMinScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->minimum()));
+        m_pMinScaleLabel->setText(QString("%1%").arg(m_pScaleSlider->minimum()));
         m_pMinScaleLabel->setToolTip(tr("Minimum possible scale factor."));
     }
     if (m_pMaxScaleLabel)
     {
-        m_pMaxScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->maximum()));
+        m_pMaxScaleLabel->setText(QString("%1%").arg(m_pScaleSlider->maximum()));
         m_pMaxScaleLabel->setToolTip(tr("Maximum possible scale factor."));
     }
 }
