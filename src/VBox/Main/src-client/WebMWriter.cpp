@@ -112,7 +112,7 @@ int WebMWriter::Open(const char *a_pszFilename, uint64_t a_fOpen,
 /**
  * Closes the WebM file and drains all queues.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int WebMWriter::Close(void)
 {
@@ -151,7 +151,7 @@ int WebMWriter::Close(void)
 /**
  * Adds an audio track.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCodec          Audio codec to use.
  * @param   uHz             Input sampling rate.
  *                          Must be supported by the selected audio codec.
@@ -334,7 +334,7 @@ int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cCha
 /**
  * Adds a video track.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCodec              Codec data to use.
  * @param   uWidth              Width (in pixels) of the video track.
  * @param   uHeight             Height (in pixels) of the video track.
@@ -450,7 +450,7 @@ void WebMWriter::destroy(void)
 /**
  * Writes the WebM file header.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int WebMWriter::writeHeader(void)
 {
@@ -486,7 +486,7 @@ int WebMWriter::writeHeader(void)
 /**
  * Writes a simple block into the EBML structure.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   a_pTrack        Track the simple block is assigned to.
  * @param   a_pBlock        Simple block to write.
  */
@@ -523,7 +523,7 @@ int WebMWriter::writeSimpleBlockEBML(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBl
 /**
  * Writes a simple block and enqueues it into the segment's render queue.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   a_pTrack        Track the simple block is assigned to.
  * @param   a_pBlock        Simple block to write and enqueue.
  */
@@ -568,7 +568,7 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
 /**
  * Writes a data block to the specified track.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   uTrack          Track ID to write data to.
  * @param   pvData          Pointer to data block to write.
  * @param   cbData          Size (in bytes) of data block to write.
@@ -618,7 +618,7 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData, We
 /**
  * Processes a render queue.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pQueue          Queue to process.
  * @param   fForce          Whether forcing to process the render queue or not.
  *                          Needed to drain the queues when terminating.
@@ -794,7 +794,7 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
 /**
  * Writes the WebM footer.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int WebMWriter::writeFooter(void)
 {

@@ -53,7 +53,7 @@ RecordingStream::~RecordingStream(void)
 /**
  * Opens a recording stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   screenSettings      Recording settings to use.
  */
 int RecordingStream::open(const settings::RecordingScreenSettings &screenSettings)
@@ -219,7 +219,7 @@ bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
  * Internal iteration main loop.
  * Does housekeeping and recording context notification.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   msTimestamp         Current timestamp (in ms).
  */
 int RecordingStream::iterateInternal(uint64_t msTimestamp)
@@ -286,7 +286,7 @@ bool RecordingStream::IsReady(void) const
  * This function takes care of the actual encoding and writing of a certain stream.
  * As this can be very CPU intensive, this function usually is called from a separate thread.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   mapBlocksCommon     Map of common block to process for this stream.
  *
  * @note    Runs in recording thread.
@@ -414,7 +414,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 /**
  * Sends a raw (e.g. not yet encoded) video frame to the recording stream.
  *
- * @returns IPRT status code. Will return VINF_RECORDING_LIMIT_REACHED if the stream's recording
+ * @returns VBox status code. Will return VINF_RECORDING_LIMIT_REACHED if the stream's recording
  *          limit has been reached or VINF_RECORDING_THROTTLED if the frame is too early for the current
  *          FPS setting.
  * @param   x                   Upper left (X) coordinate where the video frame starts.
@@ -652,7 +652,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 /**
  * Initializes a recording stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCtx                Pointer to recording context.
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Recording screen configuration to use for initialization.
@@ -665,7 +665,7 @@ int RecordingStream::Init(RecordingContext *pCtx, uint32_t uScreen, const settin
 /**
  * Initializes a recording stream, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCtx                Pointer to recording context.
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   screenSettings      Recording screen configuration to use for initialization.
@@ -815,7 +815,7 @@ int RecordingStream::initInternal(RecordingContext *pCtx, uint32_t uScreen,
  * Depending on the stream's recording destination, this function closes all associated handles
  * and finalizes recording.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingStream::close(void)
 {
@@ -895,7 +895,7 @@ int RecordingStream::close(void)
 /**
  * Uninitializes a recording stream.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingStream::Uninit(void)
 {
@@ -905,7 +905,7 @@ int RecordingStream::Uninit(void)
 /**
  * Uninitializes a recording stream, internal version.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingStream::uninitInternal(void)
 {

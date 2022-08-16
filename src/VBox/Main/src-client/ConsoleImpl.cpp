@@ -7352,7 +7352,7 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
 /**
  * Creates the recording context.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int Console::i_recordingCreate(void)
 {
@@ -7376,7 +7376,7 @@ void Console::i_recordingDestroy(void)
 /**
  * Starts recording. Does nothing if recording is already active.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 {

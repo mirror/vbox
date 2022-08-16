@@ -428,7 +428,7 @@ public:
         /**
          * Initializes a segment.
          *
-         * @returns IPRT status code.
+         * @returns VBox status code.
          */
         int init(void)
         {

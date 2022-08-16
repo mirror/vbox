@@ -161,7 +161,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 /**
  * Notifies a recording context's encoding thread.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingContext::threadNotify(void)
 {
@@ -332,7 +332,7 @@ int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenS
 /**
  * Creates a recording context.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
  * @param   Settings            Reference to recording settings to use for creation.
  */
@@ -402,7 +402,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
 /**
  * Starts a recording context by creating its worker thread.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingContext::startInternal(void)
 {
@@ -431,7 +431,7 @@ int RecordingContext::startInternal(void)
 /**
  * Stops a recording context by telling the worker thread to stop and finalizing its operation.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingContext::stopInternal(void)
 {
@@ -589,7 +589,7 @@ size_t RecordingContext::GetStreamCount(void) const
 /**
  * Creates a new recording context.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
  * @param   Settings            Reference to recording settings to use for creation.
  */
@@ -609,7 +609,7 @@ void RecordingContext::Destroy(void)
 /**
  * Starts a recording context.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  */
 int RecordingContext::Start(void)
 {
@@ -780,7 +780,7 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
  *
  * @thread  EMT
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pvData              Audio frame data to send.
  * @param   cbData              Size (in bytes) of (encoded) audio frame data.
  * @param   msTimestamp         Timestamp (in ms) of audio playback.
@@ -801,7 +801,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  *
  * @thread  EMT
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   uScreen            Screen number to send video frame to.
  * @param   x                  Starting x coordinate of the video frame.
  * @param   y                  Starting y coordinate of the video frame.
