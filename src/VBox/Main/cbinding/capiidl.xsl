@@ -7,7 +7,7 @@
  *  works on Windows, by using the C bindings header created by the MS COM IDL
  *  compiler (which simultaneously supports C and C++, unlike XPCOM).
 
-    Copyright (C) 2008-2020 Oracle Corporation
+    Copyright (C) 2008-2022 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -72,12 +72,12 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2022 Oracle Corporation
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General
  * Public License version 2.1 as published by the Free Software
- * Foundation and shipped in the "COPYING" file with this library.
+ * Foundation and shipped in the "COPYING.LIB" file with this library.
  * The library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY of any kind.
  *
