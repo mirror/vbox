@@ -1978,6 +1978,7 @@ static int rtStrmWriteWinConsoleLocked(PRTSTREAM pStream, const void *pvBuf, siz
         PRTUTF16 pwszSrc = NULL;
         size_t   cwcSrc = 0;
         rc = RTStrToUtf16Ex((const char *)pvBuf, cbToWrite, &pwszSrc, 0, &cwcSrc);
+        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             if (!WriteConsoleW(hCon, pwszSrc, (DWORD)cwcSrc, &cwcWritten, NULL))
@@ -2228,6 +2229,7 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbToWr
         {
             char *pszSrcCurCP;
             rc = RTStrUtf8ToCurrentCP(&pszSrcCurCP, pszSrc);
+            AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
                 size_t  cchSrcCurCP = strlen(pszSrcCurCP);
