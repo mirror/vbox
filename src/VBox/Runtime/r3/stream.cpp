@@ -2250,8 +2250,12 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbToWr
 
     /*
      * Update error status on failure and return.
+     *
+     * We ignore failures from RTStrUtf8ToCurrentCP and RTStrToUtf16Ex regarding
+     * invalid UTF-8 encoding, as that's an input issue and shouldn't affect the
+     * stream state.
      */
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc) && rc != VERR_INVALID_UTF8_ENCODING)
         ASMAtomicWriteS32(&pStream->i32Error, rc);
     return rc;
 }
