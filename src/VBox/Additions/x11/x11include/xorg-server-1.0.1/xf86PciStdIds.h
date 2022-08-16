@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright © 2002 by the XFree86 Project, Inc.
+ * Copyright Â© 2002 by the XFree86 Project, Inc.
  *
  * The pci.ids file and the data it contains are from the Linux PCI ID's
  * Project (http://pciids.sf.net/).  It is maintained by Martin Mares

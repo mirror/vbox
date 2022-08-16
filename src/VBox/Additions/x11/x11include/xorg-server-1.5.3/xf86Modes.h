@@ -1,5 +1,5 @@
 /*
- * Copyright © 2006 Intel Corporation
+ * Copyright Â© 2006 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -46,7 +46,7 @@ unsigned int xf86ModeBandwidth(DisplayModePtr mode, int depth);
 
 int
 xf86ModeWidth (DisplayModePtr mode, Rotation rotation);
-    
+
 int
 xf86ModeHeight (DisplayModePtr mode, Rotation rotation);
 

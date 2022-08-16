@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright © 2002 by the XFree86 Project, Inc.
+ * Copyright Â© 2002 by the XFree86 Project, Inc.
  *
  * The pci.ids file and the data it contains are from the Linux PCI ID's
  * Project (http://pciids.sf.net/).  It is maintained by Martin Mares
@@ -14806,7 +14806,7 @@ static const char pci_device_1385_620a[] = "GA620 Gigabit Ethernet";
 static const char pci_device_1385_622a[] = "GA622";
 static const char pci_device_1385_630a[] = "GA630 Gigabit Ethernet";
 static const char pci_device_1385_6b00[] = "WG311v3 54 Mbps Wireless PCI Adapter";
-static const char pci_device_1385_6d00[] = "WPNT511  RangeMax™ 240 Mbps Wireless PC Card";
+static const char pci_device_1385_6d00[] = "WPNT511  RangeMaxÂ™ 240 Mbps Wireless PC Card";
 static const char pci_device_1385_f004[] = "FA310TX";
 #endif
 #ifdef VENDOR_INCLUDE_NONVIDEO
