@@ -3456,6 +3456,8 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 
 /** Misaligned Exception Mask (AMD MISALIGNSSE).  */
 #define X86_MXCSR_MM          RT_BIT_32(17)
+/** Bits which should be zero, apparently. */
+#define X86_MXCSR_ZERO_MASK   UINT32_C(0xfffd0000)
 /** @} */
 
 /**
