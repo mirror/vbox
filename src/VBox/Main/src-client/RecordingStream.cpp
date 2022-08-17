@@ -318,16 +318,25 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
             RecordingBlock *pBlock = pBlocks->List.front();
             AssertPtr(pBlock);
 
-            if (pBlock->enmType == RECORDINGBLOCKTYPE_VIDEO)
+            switch (pBlock->enmType)
             {
-                RECORDINGFRAME Frame;
-                Frame.VideoPtr    = (PRECORDINGVIDEOFRAME)pBlock->pvData;
-                Frame.msTimestamp = msTimestamp;
+                case RECORDINGBLOCKTYPE_VIDEO:
+                {
+                    RECORDINGFRAME Frame;
+                    Frame.VideoPtr    = (PRECORDINGVIDEOFRAME)pBlock->pvData;
+                    Frame.msTimestamp = msTimestamp;
 
-                int vrc2 = recordingCodecEncode(&this->CodecVideo, &Frame, NULL, NULL);
-                AssertRC(vrc2);
-                if (RT_SUCCESS(vrc))
-                    vrc = vrc2;
+                    int vrc2 = recordingCodecEncode(&this->CodecVideo, &Frame, NULL, NULL);
+                    AssertRC(vrc2);
+                    if (RT_SUCCESS(vrc))
+                        vrc = vrc2;
+
+                    break;
+                }
+
+                default:
+                    /* Note: Audio data already is encoded. */
+                    break;
             }
 
             pBlocks->List.pop_front();
@@ -409,6 +418,21 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+/**
+ * Sends a raw (e.g. not yet encoded) audio frame to the recording stream.
+ *
+ * @returns VBox status code.
+ * @param   pvData              Pointer to audio data.
+ * @param   cbData              Size (in bytes) of \a pvData.
+ * @param   msTimestamp         Absolute PTS timestamp (in ms).
+ */
+int RecordingStream::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
+{
+    /* As audio data is common across all streams, re-route this to the recording context, where
+     * the data is being encoded and stored in the common blocks queue. */
+    return m_pCtx->SendAudioFrame(pvData, cbData, msTimestamp);
 }
 
 /**

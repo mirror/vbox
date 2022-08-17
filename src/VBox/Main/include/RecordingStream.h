@@ -119,6 +119,7 @@ public:
     int Uninit(void);
 
     int Process(RecordingBlockMap &mapBlocksCommon);
+    int SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp);
     int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                        uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp);
 

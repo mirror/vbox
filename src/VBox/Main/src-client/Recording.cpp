@@ -114,7 +114,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
     /* Signal that we're up and rockin'. */
     RTThreadUserSignal(hThreadSelf);
 
-    LogFunc(("Thread started\n"));
+    LogRel2(("Recording: Thread started\n"));
 
     for (;;)
     {
@@ -122,6 +122,9 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
         AssertRCBreak(vrc);
 
         Log2Func(("Processing %zu streams\n", pThis->vecStreams.size()));
+
+        /* Process common raw blocks (data which not has been encoded yet). */
+        vrc = pThis->processCommonData(pThis->mapBlocksRaw, 100 /* ms timeout */);
 
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
@@ -131,7 +134,8 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
         {
             RecordingStream *pStream = (*itStream);
 
-            vrc = pStream->Process(pThis->mapBlocksCommon);
+            /* Hand-in common encoded blocks. */
+            vrc = pStream->Process(pThis->mapBlocksEncoded);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
@@ -154,7 +158,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 
     } /* for */
 
-    LogFunc(("Thread ended\n"));
+    LogRel2(("Recording: Thread ended\n"));
     return VINF_SUCCESS;
 }
 
@@ -169,24 +173,99 @@ int RecordingContext::threadNotify(void)
 }
 
 /**
- * Writes block data which are common (shared) between all streams.
+ * Worker function for processing common block data.
  *
- * To save time spent in EMT or other important threads (such as audio async I/O),
- * do the required audio multiplexing in the encoding thread.
+ * @returns VBox status code.
+ * @param   mapCommon           Common block map to handle.
+ * @param   msTimeout           Timeout to use for maximum time spending to process data.
+ *                              Use RT_INDEFINITE_WAIT for processing all data.
+ *
+ * @note    Runs in recording thread.
+ */
+int RecordingContext::processCommonData(RecordingBlockMap &mapCommon, RTMSINTERVAL msTimeout)
+{
+    Log2Func(("Processing %zu common blocks (%RU32ms timeout)\n", mapCommon.size(), msTimeout));
+
+    int vrc = VINF_SUCCESS;
+
+    uint64_t const msStart = RTTimeMilliTS();
+    RecordingBlockMap::iterator itCommonBlocks = mapCommon.begin();
+    while (itCommonBlocks != mapCommon.end())
+    {
+        RecordingBlockList::iterator itBlock = itCommonBlocks->second->List.begin();
+        while (itBlock != itCommonBlocks->second->List.end())
+        {
+            RecordingBlock *pBlockCommon = (RecordingBlock *)(*itBlock);
+            switch (pBlockCommon->enmType)
+            {
+#ifdef VBOX_WITH_AUDIO_RECORDING
+                case RECORDINGBLOCKTYPE_AUDIO:
+                {
+                    PRECORDINGAUDIOFRAME pAudioFrame = (PRECORDINGAUDIOFRAME)pBlockCommon->pvData;
+
+                    RECORDINGFRAME Frame;
+                    Frame.msTimestamp = pBlockCommon->msTimestamp;
+                    Frame.Audio.pvBuf = pAudioFrame->pvBuf;
+                    Frame.Audio.cbBuf = pAudioFrame->cbBuf;
+
+                    vrc = recordingCodecEncode(&this->CodecAudio, &Frame, NULL, NULL);
+                    break;
+                }
+#endif /* VBOX_WITH_AUDIO_RECORDING */
+                default:
+                    /* Skip unknown stuff. */
+                    break;
+            }
+
+            itCommonBlocks->second->List.erase(itBlock);
+            delete pBlockCommon;
+            itBlock = itCommonBlocks->second->List.begin();
+
+            if (RT_FAILURE(vrc) || RTTimeMilliTS() > msStart + msTimeout)
+                break;
+        }
+
+        /* If no entries are left over in the block map, remove it altogether. */
+        if (itCommonBlocks->second->List.empty())
+        {
+            delete itCommonBlocks->second;
+            mapCommon.erase(itCommonBlocks);
+            itCommonBlocks = mapCommon.begin();
+        }
+        else
+            ++itCommonBlocks;
+
+        if (RT_FAILURE(vrc))
+            break;
+    }
+
+    return vrc;
+}
+
+/**
+ * Writes common block data (i.e. shared / the same) in all streams.
  *
  * The multiplexing is needed to supply all recorded (enabled) screens with the same
  * data at the same given point in time.
  *
  * Currently this only is being used for audio data.
+ *
+ * @returns VBox status code.
+ * @param   mapCommon       Common block map to write data to.
+ * @param   pCodec          Pointer to codec instance which has written the data.
+ * @param   pvData          Pointer to written data (encoded).
+ * @param   cbData          Size (in bytes) of \a pvData.
+ * @param   msTimestamp     Absolute PTS (in ms) of the written data.
+ * @param   uFlags          Encoding flags of type RECORDINGCODEC_ENC_F_XXX.
  */
-int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
-                                      uint64_t msAbsPTS, uint32_t uFlags)
+int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
+                                      uint64_t msTimestamp, uint32_t uFlags)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("pCodec=%p, cbData=%zu, msAbsPTS=%zu, uFlags=%#x\n",
-                 pCodec, cbData, msAbsPTS, uFlags));
+    LogFlowFunc(("pCodec=%p, cbData=%zu, msTimestamp=%zu, uFlags=%#x\n",
+                 pCodec, cbData, msTimestamp, uFlags));
 
     /** @todo Optimize this! Three allocations in here! */
 
@@ -214,7 +293,7 @@ int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData
             pBlock->pvData      = pFrame;
             pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
             pBlock->cRefs       = this->cStreamsEnabled;
-            pBlock->msTimestamp = msAbsPTS;
+            pBlock->msTimestamp = msTimestamp;
             pBlock->uFlags      = uFlags;
 
             break;
@@ -231,13 +310,13 @@ int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData
 
     try
     {
-        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(msAbsPTS);
-        if (itBlocks == this->mapBlocksCommon.end())
+        RecordingBlockMap::iterator itBlocks = mapCommon.find(msTimestamp);
+        if (itBlocks == mapCommon.end())
         {
             RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
             pRecordingBlocks->List.push_back(pBlock);
 
-            this->mapBlocksCommon.insert(std::make_pair(msAbsPTS, pRecordingBlocks));
+            mapCommon.insert(std::make_pair(msTimestamp, pRecordingBlocks));
         }
         else
             itBlocks->second->List.push_back(pBlock);
@@ -260,7 +339,9 @@ int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
 /**
- * Callback function for taking care of multiplexing the encoded audio data to all connected streams.
+ * Callback function for writing encoded audio data into the common encoded block map.
+ *
+ * This is called by the audio codec when finishing encoding audio data.
  *
  * @copydoc RECORDINGCODECCALLBACKS::pfnWriteData
  */
@@ -268,37 +349,8 @@ int RecordingContext::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData
 DECLCALLBACK(int) RecordingContext::audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
                                                                 uint64_t msAbsPTS, uint32_t uFlags, void *pvUser)
 {
-#if 0
     RecordingContext *pThis = (RecordingContext *)pvUser;
-
-    int vrc = VINF_SUCCESS;
-
-    RecordingStreams::iterator itStream = pThis->vecStreams.begin();
-    while (itStream != pThis->vecStreams.end())
-    {
-        RecordingStream *pStream = (*itStream);
-
-        LogFlowFunc(("pStream=%p\n", pStream));
-
-        if (pStream->GetConfig().isFeatureEnabled(RecordingFeature_Audio)) /** @todo Optimize this! Use a dedicated stream group for video-only / audio-only streams. */
-        {
-            vrc = RecordingStream::codecWriteDataCallback(pCodec, pvData, cbData, msAbsPTS, uFlags, pStream);
-            if (RT_FAILURE(vrc))
-            {
-                LogRel(("Recording: Calling audio write callback for stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
-                break;
-            }
-        }
-
-        ++itStream;
-    }
-
-    return vrc;
-#else
-    RecordingContext *pThis = (RecordingContext *)pvUser;
-
-    return pThis->writeCommonData(pCodec, pvData, cbData, msAbsPTS, uFlags);
-#endif
+    return pThis->writeCommonData(pThis->mapBlocksEncoded, pCodec, pvData, cbData, msAbsPTS, uFlags);
 }
 
 /**
@@ -502,7 +554,8 @@ void RecordingContext::destroyInternal(void)
 
     /* Sanity. */
     Assert(this->vecStreams.empty());
-    Assert(this->mapBlocksCommon.size() == 0);
+    Assert(this->mapBlocksRaw.size() == 0);
+    Assert(this->mapBlocksEncoded.size() == 0);
 
     this->enmState = RECORDINGSTS_UNINITIALIZED;
 
@@ -778,8 +831,6 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 /**
  * Sends an audio frame to the video encoding thread.
  *
- * @thread  EMT
- *
  * @returns VBox status code.
  * @param   pvData              Audio frame data to send.
  * @param   cbData              Size (in bytes) of (encoded) audio frame data.
@@ -788,10 +839,11 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    return writeCommonData(&this->CodecAudio, pvData, cbData, msTimestamp, RECORDINGCODEC_ENC_F_BLOCK_IS_KEY);
+    return writeCommonData(this->mapBlocksRaw, &this->CodecAudio,
+                           pvData, cbData, msTimestamp, RECORDINGCODEC_ENC_F_BLOCK_IS_KEY);
 #else
     RT_NOREF(pvData, cbData, msTimestamp);
-    return VINF_SUCCESS;
+    return VERR_NOT_SUPPORTED;
 #endif
 }
 

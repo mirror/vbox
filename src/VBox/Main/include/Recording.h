@@ -82,7 +82,8 @@ protected:
 
     RecordingStream *getStreamInternal(unsigned uScreen) const;
 
-    int writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
+    int processCommonData(RecordingBlockMap &mapCommon, RTMSINTERVAL msTimeout);
+    int writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
 
     int lock(void);
     int unlock(void);
@@ -144,14 +145,19 @@ protected:
      *  point in time. */
     RECORDINGCODEC               CodecAudio;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
-    /** Block map of common blocks which need to get multiplexed
-     *  to all recording streams. This common block maps should help
-     *  reducing the time spent in EMT and avoid doing the (expensive)
-     *  multiplexing work in there.
+    /** Block map of raw common data blocks which need to get encoded first. */
+    RecordingBlockMap            mapBlocksRaw;
+    /** Block map of encoded common blocks.
+     *
+     *  Only do the encoding of common data blocks only once and then multiplex
+     *  the encoded data to all affected recording streams.
+     *
+     *  This avoids doing the (expensive) encoding + multiplexing work in other
+     *  threads like EMT / audio async I/O..
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */
-    RecordingBlockMap            mapBlocksCommon;
+    RecordingBlockMap            mapBlocksEncoded;
 };
 #endif /* !MAIN_INCLUDED_Recording_h */
 

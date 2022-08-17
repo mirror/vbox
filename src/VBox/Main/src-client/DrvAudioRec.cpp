@@ -170,8 +170,8 @@ typedef struct AVRECCONTAINER
  */
 typedef struct AVRECSINK
 {
-    /** Pointer (weak) to audio codec to use. */
-    PRECORDINGCODEC      pCodec;
+    /** Pointer (weak) to recording stream to bind to. */
+    RecordingStream     *pRecStream;
     /** Container data to use for data processing. */
     AVRECCONTAINER       Con;
     /** Timestamp (in ms) of when the sink was created. */
@@ -322,12 +322,11 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVideoRecHA_GetStatus(PPDMIHOSTAU
  * @param   pCfgAcq             Acquired configuration by the audio output stream.
  */
 static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV,
-                                PAVRECSINK pSink, PRECORDINGCODEC pCodec, PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+                                PAVRECSINK pSink, PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pCodec,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,   VERR_INVALID_POINTER);
 
@@ -337,6 +336,8 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
         AssertFailed();
         return VERR_NOT_SUPPORTED;
     }
+
+    PRECORDINGCODEC pCodec = pSink->pRecStream->GetAudioCodec();
 
     /* Stuff which has to be set by now. */
     Assert(pCodec->Parms.cbFrame);
@@ -356,14 +357,12 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
 
             /* Make sure to let the driver backend know that we need the audio data in
              * a specific sampling rate the codec is optimized for. */
-/** @todo r=bird: pCfgAcq->Props isn't initialized at all, except for uHz... */
-            pCfgAcq->Props.uHz         = pCodec->Parms.Audio.PCMProps.uHz;
-//                pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
+            pCfgAcq->Props = pCodec->Parms.Audio.PCMProps;
 
-            /* Every Opus frame marks a period for now. Optimize this later. */
+            /* Every codec frame marks a period for now. Optimize this later. */
             pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pCodec->Parms.msFrame);
-            pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
-            pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
+            pCfgAcq->Backend.cFramesBufferSize   = pCfgAcq->Backend.cFramesPeriod * 2;
+            pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod;
         }
         else
             vrc = VERR_NO_MEMORY;
@@ -393,7 +392,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
      * Later each stream could have its own one, to e.g. router different stream to different sinks .*/
     PAVRECSINK pSink = &pThis->Sink;
 
-    int vrc = avRecCreateStreamOut(pThis, pStreamAV, pSink, pSink->pCodec, pCfgReq, pCfgAcq);
+    int vrc = avRecCreateStreamOut(pThis, pStreamAV, pSink, pCfgReq, pCfgAcq);
     PDMAudioStrmCfgCopy(&pStreamAV->Cfg, pCfgAcq);
 
     return vrc;
@@ -515,8 +514,13 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvAudioVideoRecHA_StreamGetState(P
  */
 static DECLCALLBACK(uint32_t) drvAudioVideoRecHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    return UINT32_MAX;
+    RT_NOREF(pInterface);
+    PAVRECSTREAM pStreamAV = (PAVRECSTREAM)pStream;
+
+    RecordingStream *pRecStream = pStreamAV->pSink->pRecStream;
+    PRECORDINGCODEC  pCodec     = pRecStream->GetAudioCodec();
+
+    return pCodec->Parms.cbFrame;
 }
 
 
@@ -539,84 +543,74 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
     PAVRECSINK pSink       = pStreamAV->pSink;
     AssertPtr(pSink);
-    PRECORDINGCODEC pCodec = pSink->pCodec;
-    AssertPtr(pCodec);
     PRTCIRCBUF pCircBuf    = pStreamAV->pCircBuf;
     AssertPtr(pCircBuf);
 
-    uint32_t cbToWrite = cbBuf;
+    uint32_t cbToWrite = RT_MIN(cbBuf, RTCircBufFree(pCircBuf));
+    AssertReturn(cbToWrite, VERR_BUFFER_OVERFLOW);
 
     /*
      * Write as much as we can into our internal ring buffer.
      */
-    while (   cbToWrite > 0
-           && RTCircBufFree(pCircBuf))
+    while (cbToWrite)
     {
         void  *pvCircBuf = NULL;
         size_t cbCircBuf = 0;
         RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvCircBuf, &cbCircBuf);
 
-        if (cbCircBuf)
-        {
-            memcpy(pvCircBuf, (uint8_t *)pvBuf + cbWrittenTotal, cbCircBuf),
-            cbWrittenTotal += (uint32_t)cbCircBuf;
-            Assert(cbToWrite >= cbCircBuf);
-            cbToWrite      -= (uint32_t)cbCircBuf;
-        }
+        Log3Func(("cbToWrite=%RU32, cbCircBuf=%zu\n", cbToWrite, cbCircBuf));
+
+        memcpy(pvCircBuf, (uint8_t *)pvBuf + cbWrittenTotal, cbCircBuf),
+        cbWrittenTotal += (uint32_t)cbCircBuf;
+        Assert(cbWrittenTotal <= cbBuf);
+        Assert(cbToWrite >= cbCircBuf);
+        cbToWrite      -= (uint32_t)cbCircBuf;
 
         RTCircBufReleaseWriteBlock(pCircBuf, cbCircBuf);
-        AssertBreak(cbCircBuf);
     }
 
+    RecordingStream *pRecStream = pStreamAV->pSink->pRecStream;
+    PRECORDINGCODEC  pCodec     = pRecStream->GetAudioCodec();
+
     /*
-     * Process our internal ring buffer and encode the data.
+     * Process our internal ring buffer and send the obtained audio data to our encoding thread.
      */
+    cbToWrite = RTCircBufUsed(pCircBuf);
 
-    /* Only encode data if we have data for at least one full frame. */
-    while (RTCircBufUsed(pCircBuf) >= pCodec->Parms.cbFrame)
+    /** @todo Can we encode more than a frame at a time? Optimize this! */
+    uint32_t const cbFrame = pCodec->Parms.cbFrame;
+
+    /* Only encode data if we have data for at least one full codec frame. */
+    while (cbToWrite >= cbFrame)
     {
-        LogFunc(("cbAvail=%zu, csFrame=%RU32, cbFrame=%RU32\n",
-                 RTCircBufUsed(pCircBuf), pCodec->Parms.csFrame, pCodec->Parms.cbFrame));
-
-        /** @todo Can we encode more than a frame at a time? Optimize this! */
-        uint32_t const cbFramesToEncode = pCodec->Parms.cbFrame; /* 1 frame. */
-
         uint32_t cbSrc = 0;
-        while (cbSrc < cbFramesToEncode)
+        do
         {
             void  *pvCircBuf = NULL;
             size_t cbCircBuf = 0;
-            RTCircBufAcquireReadBlock(pCircBuf, cbFramesToEncode - cbSrc, &pvCircBuf, &cbCircBuf);
+            RTCircBufAcquireReadBlock(pCircBuf, cbFrame - cbSrc, &pvCircBuf, &cbCircBuf);
 
-            if (cbCircBuf)
-            {
-                memcpy((uint8_t *)pStreamAV->pvSrcBuf + cbSrc, pvCircBuf, cbCircBuf);
+            Log3Func(("cbSrc=%RU32, cbCircBuf=%zu\n", cbSrc, cbCircBuf));
 
-                cbSrc += (uint32_t)cbCircBuf;
-                Assert(cbSrc <= pStreamAV->cbSrcBuf);
-            }
+            memcpy((uint8_t *)pStreamAV->pvSrcBuf + cbSrc, pvCircBuf, cbCircBuf);
+
+            cbSrc += (uint32_t)cbCircBuf;
+            Assert(cbSrc <= pStreamAV->cbSrcBuf);
+            Assert(cbSrc <= cbFrame);
 
             RTCircBufReleaseReadBlock(pCircBuf, cbCircBuf);
-            AssertBreak(cbCircBuf);
-        }
 
-        Assert(cbSrc == cbFramesToEncode);
+            if (cbSrc == cbFrame) /* Only send full codec frames. */
+            {
+                vrc = pRecStream->SendAudioFrame(pStreamAV->pvSrcBuf, cbSrc, 0);
+                if (RT_FAILURE(vrc))
+                    break;
+            }
 
-        RECORDINGFRAME Frame;
-        Frame.Audio.cbBuf = cbFramesToEncode;
-        Frame.Audio.pvBuf = (uint8_t *)pStreamAV->pvSrcBuf;
+        } while (cbSrc < cbFrame);
 
-        size_t cEncoded /* Blocks encoded */, cbEncoded /* Bytes encoded */;
-        vrc = recordingCodecEncode(pSink->pCodec,
-                                   /* Source */
-                                   &Frame, &cEncoded, &cbEncoded);
-        if (   RT_SUCCESS(vrc)
-            && cEncoded)
-        {
-            Assert(cbEncoded);
-        }
-        else if (RT_FAILURE(vrc)) /* Something went wrong -- report all bytes as being processed, to not hold up others. */
-            cbWrittenTotal = cbBuf;
+        Assert(cbToWrite >= cbFrame);
+        cbToWrite -= cbFrame;
 
         if (RT_FAILURE(vrc))
             break;
@@ -625,7 +619,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
     *pcbWritten = cbWrittenTotal;
 
-    LogFlowFunc(("csReadTotal=%RU32, vrc=%Rrc\n", cbWrittenTotal, vrc));
+    LogFlowFunc(("cbBuf=%RU32, cbWrittenTotal=%RU32, vrc=%Rrc\n", cbBuf, cbWrittenTotal, vrc));
     return VINF_SUCCESS; /* Don't propagate encoding errors to the caller. */
 }
 
@@ -684,7 +678,7 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
 {
     AssertPtrReturnVoid(pSink);
 
-    pSink->pCodec = NULL;
+    pSink->pRecStream = NULL;
 
     switch (pSink->Con.Parms.enmType)
     {
@@ -767,15 +761,13 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
  * @param   pThis               Driver instance.
  * @param   pSink               Sink to initialize.
  * @param   pConParms           Container parameters to set.
- * @param   pCodec              Codec to use.
+ * @param   pStream             Recording stream to asssign sink to.
  */
-static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PRECORDINGCODEC pCodec)
+static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, RecordingStream *pStream)
 {
-    AssertReturn(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO, VERR_INVALID_PARAMETER);
+    pSink->pRecStream = pStream;
 
     int vrc = VINF_SUCCESS;
-
-    pSink->pCodec = pCodec;
 
     /*
      * Container setup.
@@ -797,6 +789,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 
             case AVRECCONTAINERTYPE_WEBM:
             {
+        #if 0
                 /* If we only record audio, create our own WebM writer instance here. */
                 if (!pSink->Con.WebM.pWebM) /* Do we already have our WebM writer instance? */
                 {
@@ -827,6 +820,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
                         LogRel(("Recording: Error creating audio file '%s' (%Rrc)\n", pszFile, vrc));
                 }
                 break;
+        #endif
             }
 
             default:
@@ -947,7 +941,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     /*
      * Obtain the recording context.
      */
-    pThis->pRecCtx =  pConsole->i_recordingGetContext();
+    pThis->pRecCtx = pConsole->i_recordingGetContext();
     AssertPtrReturn(pThis->pRecCtx, VERR_INVALID_POINTER);
 
     /*
@@ -956,13 +950,10 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     RecordingStream *pStream = pThis->pRecCtx->GetStream(pConParams->idxStream);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    const PRECORDINGCODEC pCodec = pStream->GetAudioCodec();
-    AssertPtrReturn(pCodec, VERR_INVALID_POINTER);
-
     /*
      * Init the recording sink.
      */
-    vrc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, pCodec);
+    vrc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, pStream);
     if (RT_SUCCESS(vrc))
         LogRel2(("Recording: Audio recording driver initialized\n"));
     else
