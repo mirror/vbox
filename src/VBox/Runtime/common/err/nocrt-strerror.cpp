@@ -33,6 +33,7 @@
 #include <iprt/nocrt/string.h>
 #include <iprt/nocrt/errno.h>
 #include <iprt/assert.h>
+#include <iprt/log.h>
 
 
 #undef strerror

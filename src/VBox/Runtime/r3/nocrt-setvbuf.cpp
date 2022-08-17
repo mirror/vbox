@@ -40,8 +40,8 @@
 #undef setvbuf
 int RT_NOCRT(setvbuf)(FILE *pFile, char *pchBuf, int iBufferingType, size_t cbBuf)
 {
-    Assert(!pchBuf); /* ignored */
-    Assert(!cbBuf);  /* ignored */
+    Assert(!pchBuf); RT_NOREF(pchBuf); /* ignored */
+    Assert(!cbBuf);  RT_NOREF(cbBuf);  /* ignored */
 
     RTSTRMBUFMODE enmBufMode;
     switch (iBufferingType)
