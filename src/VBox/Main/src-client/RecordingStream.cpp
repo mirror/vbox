@@ -982,6 +982,7 @@ int RecordingStream::codecWriteToWebM(PRECORDINGCODEC pCodec, const void *pvData
  * @param   cbData              Size (in bytes) of \a pvData.
  * @param   msAbsPTS            Absolute PTS (in ms) of written data.
  * @param   uFlags              Encoding flags of type RECORDINGCODEC_ENC_F_XXX.
+ * @param   pvUser              User-supplied pointer.
  */
 /* static */
 DECLCALLBACK(int) RecordingStream::codecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
