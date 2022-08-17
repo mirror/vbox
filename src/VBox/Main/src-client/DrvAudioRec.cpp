@@ -541,8 +541,6 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
     uint32_t cbWrittenTotal = 0;
 
-    PAVRECSINK pSink       = pStreamAV->pSink;
-    AssertPtr(pSink);
     PRTCIRCBUF pCircBuf    = pStreamAV->pCircBuf;
     AssertPtr(pCircBuf);
 
