@@ -1066,13 +1066,13 @@ ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDD
 #
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
  define def_valkit_unittest_iprt
-  $(unittest)_ValKit_TEMPLATE := VBoxValidationKitR3TstExe
-  $(unittest)_ValKit_EXTENDS  := $(unittest)
-  $(unittest)_ValKit_NAME     := $(unittest)
-  PROGRAMS += $(unittest)_ValKit
+  PROGRAMS += $(unittest)-ValKit
+  $(unittest)-ValKit_TEMPLATE := VBoxValidationKitR3TstExe
+  $(unittest)-ValKit_EXTENDS  := $(unittest)
+  $(unittest)-ValKit_NAME     := $(unittest)
  endef
- $(foreach unittest, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $($(VALKIT_UNITTESTS_WHITELIST_IPRT).$(KBUILD_TARGET)), \
-	$(eval $(call def_valkit_unittest_iprt)))
+ $(foreach unittest, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $($(VALKIT_UNITTESTS_WHITELIST_IPRT).$(KBUILD_TARGET)) \
+	,$(evalcall2 def_valkit_unittest_iprt))
 endif
 
 endif # VBOX_WITH_TESTCASES
