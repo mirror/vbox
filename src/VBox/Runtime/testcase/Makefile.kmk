@@ -54,212 +54,210 @@ IPRT_OUT_DIR ?= $(PATH_TARGET)/Runtime
 #
 # Target lists
 #
-PROGRAMS += \
-	tstRTAssertCompile \
-	tstRTAvl \
-	tstRTBase64 \
-	tstRTBitOperations \
-	tstRTBigNum \
-	tstRTCidr \
-	tstRTCritSect \
-	tstRTCritSectRw \
-	tstRTCrPkix-1 \
-	tstRTCrX509-1 \
-	tstRTCType \
-	tstRTDigest \
-	tstRTDigest-2 \
-	tstDir \
-	tstDir-2 \
-	tstDir-3 \
-	tstRTDvm \
-	tstRTEnv \
-	tstRTErr-1 \
-	tstFile \
-	tstRTFileAio \
-	tstRTFileAppend-1 \
-	tstRTFileQuerySize-1 \
-	tstRTFileModeStringToFlags \
-	tstFileLock \
-	tstRTFileOpenEx-1 \
-	tstFork \
-	tstRTFsQueries \
-	tstRTFilesystem \
-	tstRTExprEval\
-	tstRTGetOpt \
-	tstRTGetOptArgv \
-	tstHandleTable \
-	tstRTHeapOffset \
-	tstRTHeapSimple \
-	tstIprtList \
-	tstIprtMiniString \
-	tstLdr \
-	tstLdrLoad \
-	tstRTLocalIpc \
-	tstRTLdrVerifyPeImage \
-	tstRTList \
-	tstRTLockValidator \
-	tstLog \
-	tstRTMath \
-	tstRTMemEf \
-	tstRTMemCache \
-	tstRTMemPool \
-	tstRTMemWipe \
-	tstRTMemSafer \
-	tstMove \
-	tstRTMp-1 \
-	tstRTNetIPv4 \
-	tstRTNetIPv6 \
-	tstOnce \
-	tstRTPath \
-	tstRTPathGlob \
-	tstRTPathQueryInfo \
-	tstRTPipe \
-	tstRTPoll \
-	tstRTPrfIO \
-	tstRTProcCreateEx \
-	tstRTProcCreatePrf \
-	tstRTProcQueryUsername \
-	tstPrfRT \
-	tstRand \
-	tstRTReqPool \
-	tstRTSemEvent \
-	tstRTSemEventMulti \
-	tstSemMutex \
-	tstSemPingPong \
-	tstRTSemRW \
-	tstRTSemXRoads \
-	tstRTSort \
-	tstRTStrAlloc \
-	tstRTStrCache \
-	tstRTStrCatCopy \
-	tstRTStrFormat \
-	tstRTStrSplit \
-	tstRTStrSimplePattern \
-	tstStrToNum \
-	tstRTStrVersion \
-	tstRTSymlink \
-	tstRTSystemQueryDmi \
-	tstRTSystemQueryFirmware \
-	tstRTSystemQueryOsInfo \
-	tstRTTcp-1 \
-	tstRTTemp \
-	tstRTDirCreateUniqueNumbered \
-	tstTermCallbacks \
-	tstThread-1 \
-	tstRTThreadPoke \
-	tstRTThreadExecutionTime \
-	tstRTTime \
-	tstTime-2 \
-	tstTime-3 \
-	tstTime-4 \
-	tstTimer \
-	tstRTTimerLR \
-	tstRTTimeSpec \
-	tstRTTls-1 \
-	tstRTTraceLog \
-	tstRTUdp-1 \
-	tstUtf8 \
-	tstRTUuid \
-	tstRTCircBuf \
-	tstRTManifest \
-	tstRTUri \
-	tstVector \
-	tstRTVfs \
-	tstRTZip \
-	tstRTJson \
-	tstRTShMem
-
-PROGRAMS.win += \
-	tstRTCritSectW32 \
-	tstRTProcWait \
-	tstFileAppendWin-1 \
-	tstRTNtPath-1 \
-	ntGetTimerResolution \
-	tstRTDarwinMachKernel
-
-PROGRAMS.linux += \
-	tstRTProcWait \
-	tstRTProcIsRunningByName \
-	tstRTBitOperationsPIC3
-PROGRAMS.solaris += \
-	tstRTCoreDump
-PROGRAMS.darwin += \
-	tstDarwinSched \
-	tstRTDarwinMachKernel
-ifdef VBOX_WITH_LIBCURL
- PROGRAMS += \
- 	tstRTHttp-1 \
- 	tstRTCRest-1 \
- 	tstRTS3
-endif
 ifndef VBOX_ONLY_VALIDATIONKIT
- # Stuff which does not build yet with the Validation Kit build box. Skip those for now.
  PROGRAMS += \
-	tstRTInlineAsm
+ 	tstRTAssertCompile \
+ 	tstRTAvl \
+ 	tstRTBase64 \
+ 	tstRTBitOperations \
+ 	tstRTBigNum \
+ 	tstRTCidr \
+ 	tstRTCritSect \
+ 	tstRTCritSectRw \
+ 	tstRTCrPkix-1 \
+ 	tstRTCrX509-1 \
+ 	tstRTCType \
+ 	tstRTDigest \
+ 	tstRTDigest-2 \
+ 	tstDir \
+ 	tstDir-2 \
+ 	tstDir-3 \
+ 	tstRTDvm \
+ 	tstRTEnv \
+ 	tstRTErr-1 \
+ 	tstFile \
+ 	tstRTFileAio \
+ 	tstRTFileAppend-1 \
+ 	tstRTFileQuerySize-1 \
+ 	tstRTFileModeStringToFlags \
+ 	tstFileLock \
+ 	tstRTFileOpenEx-1 \
+ 	tstFork \
+ 	tstRTFsQueries \
+ 	tstRTFilesystem \
+ 	tstRTExprEval\
+ 	tstRTGetOpt \
+ 	tstRTGetOptArgv \
+ 	tstHandleTable \
+ 	tstRTHeapOffset \
+ 	tstRTHeapSimple \
+ 	tstRTInlineAsm \
+ 	tstIprtList \
+ 	tstIprtMiniString \
+ 	tstLdr \
+ 	tstLdrLoad \
+ 	tstRTLocalIpc \
+ 	tstRTLdrVerifyPeImage \
+ 	tstRTList \
+ 	tstRTLockValidator \
+ 	tstLog \
+ 	tstRTMath \
+ 	tstRTMemEf \
+ 	tstRTMemCache \
+ 	tstRTMemPool \
+ 	tstRTMemWipe \
+ 	tstRTMemSafer \
+ 	tstMove \
+ 	tstRTMp-1 \
+ 	tstRTNetIPv4 \
+ 	tstRTNetIPv6 \
+ 	tstOnce \
+ 	tstRTPath \
+ 	tstRTPathGlob \
+ 	tstRTPathQueryInfo \
+ 	tstRTPipe \
+ 	tstRTPoll \
+ 	tstRTPrfIO \
+ 	tstRTProcCreateEx \
+ 	tstRTProcCreatePrf \
+ 	tstRTProcQueryUsername \
+ 	tstPrfRT \
+ 	tstRand \
+ 	tstRTReqPool \
+ 	tstRTSemEvent \
+ 	tstRTSemEventMulti \
+ 	tstSemMutex \
+ 	tstSemPingPong \
+ 	tstRTSemRW \
+ 	tstRTSemXRoads \
+ 	tstRTSort \
+ 	tstRTStrAlloc \
+ 	tstRTStrCache \
+ 	tstRTStrCatCopy \
+ 	tstRTStrFormat \
+ 	tstRTStrSplit \
+ 	tstRTStrSimplePattern \
+ 	tstStrToNum \
+ 	tstRTStrVersion \
+ 	tstRTSymlink \
+ 	tstRTSystemQueryDmi \
+ 	tstRTSystemQueryFirmware \
+ 	tstRTSystemQueryOsInfo \
+ 	tstRTTcp-1 \
+ 	tstRTTemp \
+ 	tstRTDirCreateUniqueNumbered \
+ 	tstTermCallbacks \
+ 	tstThread-1 \
+ 	tstRTThreadPoke \
+ 	tstRTThreadExecutionTime \
+ 	tstRTTime \
+ 	tstTime-2 \
+ 	tstTime-3 \
+ 	tstTime-4 \
+ 	tstTimer \
+ 	tstRTTimerLR \
+ 	tstRTTimeSpec \
+ 	tstRTTls-1 \
+ 	tstRTTraceLog \
+ 	tstRTUdp-1 \
+ 	tstUtf8 \
+ 	tstRTUuid \
+ 	tstRTCircBuf \
+ 	tstRTManifest \
+ 	tstRTUri \
+ 	tstVector \
+ 	tstRTVfs \
+ 	tstRTZip \
+ 	tstRTJson \
+ 	tstRTShMem
+
+ PROGRAMS.win += \
+ 	tstRTCritSectW32 \
+ 	tstRTProcWait \
+ 	tstFileAppendWin-1 \
+ 	tstRTNtPath-1 \
+ 	ntGetTimerResolution \
+ 	tstRTDarwinMachKernel
+
  PROGRAMS.linux += \
-	tstRTInlineAsmPIC \
-	tstRTInlineAsmPIC3
-endif
-
-if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
- PROGRAMS += \
- 	tstNoCrt-1
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64) ## Build and test x86 too!
+ 	tstRTProcWait \
+ 	tstRTProcIsRunningByName \
+ 	tstRTBitOperationsPIC3 \
+ 	tstRTInlineAsmPIC \
+ 	tstRTInlineAsmPIC3
+ PROGRAMS.solaris += \
+ 	tstRTCoreDump
+ PROGRAMS.darwin += \
+ 	tstDarwinSched \
+ 	tstRTDarwinMachKernel
+ ifdef VBOX_WITH_LIBCURL
   PROGRAMS += \
-  	tstRTNoCrt-2
+  	tstRTHttp-1 \
+  	tstRTCRest-1 \
+  	tstRTS3
  endif
-endif
 
-if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for the Validation Kit (yet).
- PROGRAMS += \
- 	tstLdr-2 \
- 	tstLdr-3 \
- 	tstLdr-4 \
-	tstTSC
- if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
   PROGRAMS += \
-  	tstRTR0MemUserKernelDriverHardened \
-  	tstRTR0SemMutexDriverHardened \
-  	tstRTR0TimerDriverHardened \
-  	tstRTR0ThreadPreemptionDriverHardened \
-  	tstRTR0ThreadDriverHardened
-  DLLS     += \
-  	tstRTR0MemUserKernelDriver \
-  	tstRTR0SemMutexDriver \
-  	tstRTR0TimerDriver \
-  	tstRTR0ThreadPreemptionDriver \
-  	tstRTR0ThreadDriver
- else
-  PROGRAMS += \
-  	tstRTR0MemUserKernelDriver \
-  	tstRTR0SemMutexDriver \
-  	tstRTR0TimerDriver \
-  	tstRTR0ThreadPreemptionDriver \
-  	tstRTR0ThreadDriver
- endif
- if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
-  	tstLdrObjR0
-  ifdef VBOX_WITH_RAW_MODE
-   SYSMODS += tstLdrObj
+  	tstNoCrt-1
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64) ## Build and test x86 too!
+   PROGRAMS += \
+   	tstRTNoCrt-2
   endif
  endif
- $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
- 	tstRTR0MemUserKernel \
- 	tstRTR0SemMutex \
- 	tstRTR0Timer \
- 	tstRTR0ThreadPreemption \
- 	tstRTR0Thread
- if1of ($(KBUILD_TARGET), solaris darwin)
-  PROGRAMS += tstRTR0DbgKrnlInfoDriver
-  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += tstRTR0DbgKrnlInfo
- endif # VBOX_SUPPORTED_HOST_ARCHS only
 
-endif
-if1of ($(VBOX_LDR_FMT)), lx pe)
- LIBRARIES += \
- 	tstLdr-4Imp
-endif
+ if defined(VBOX_WITH_R0_MODULES)
+  PROGRAMS += \
+  	tstLdr-2 \
+  	tstLdr-3 \
+  	tstLdr-4 \
+ 	tstTSC
+  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
+   PROGRAMS += \
+   	tstRTR0MemUserKernelDriverHardened \
+   	tstRTR0SemMutexDriverHardened \
+   	tstRTR0TimerDriverHardened \
+   	tstRTR0ThreadPreemptionDriverHardened \
+   	tstRTR0ThreadDriverHardened
+   DLLS     += \
+   	tstRTR0MemUserKernelDriver \
+   	tstRTR0SemMutexDriver \
+   	tstRTR0TimerDriver \
+   	tstRTR0ThreadPreemptionDriver \
+   	tstRTR0ThreadDriver
+  else
+   PROGRAMS += \
+   	tstRTR0MemUserKernelDriver \
+   	tstRTR0SemMutexDriver \
+   	tstRTR0TimerDriver \
+   	tstRTR0ThreadPreemptionDriver \
+   	tstRTR0ThreadDriver
+  endif
+  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+   $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
+   	tstLdrObjR0
+   ifdef VBOX_WITH_RAW_MODE
+    SYSMODS += tstLdrObj
+   endif
+  endif
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
+  	tstRTR0MemUserKernel \
+  	tstRTR0SemMutex \
+  	tstRTR0Timer \
+  	tstRTR0ThreadPreemption \
+  	tstRTR0Thread
+  if1of ($(KBUILD_TARGET), solaris darwin)
+   PROGRAMS += tstRTR0DbgKrnlInfoDriver
+   $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += tstRTR0DbgKrnlInfo
+  endif # VBOX_SUPPORTED_HOST_ARCHS only
+
+ endif
+ if1of ($(VBOX_LDR_FMT)), lx pe)
+  LIBRARIES += \
+  	tstLdr-4Imp
+ endif
+
+endif # !VBOX_ONLY_VALIDATIONKIT
 
 
 #
@@ -1062,79 +1060,20 @@ tstRTDarwinMachKernel_SOURCES  = \
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
 ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 
+
 #
-# Filter out testcases which don't yet work when statically linked as Guest Additions R3 programs.
+# ValKit versions of selected tests.
 #
-# We currently do this for running those via the Validation Kit on old / ancient guests.
-# Note that we not necessarily run all unit tests available (white list).
-#
-# See @bugref:10195.
-#
-if defined(VBOX_ONLY_VALIDATIONKIT)
- VBOX_VALIDATIONKIT_UNITTESTS_SKIP=\
-	tstIprtList \
-	tstIprtMiniString \
-	tstLdr \
-	tstLdrLoad \
-	tstRTBigNum \
-	tstRTCRest-1 \
-	tstRTCrPkix-1 \
-	tstRTCrX509-1 \
-	tstRTS3 \
-	tstRTHttp-1 \
-	tstRTInlineAsm \
-	tstRTInlineAsmPIC \
-	tstRTInlineAsmPIC3 \
-	tstRTLdrVerifyPeImage \
-	tstRTLocalIpc \
-	tstRTMemSafer \
-	tstRTMp-1 \
-	tstRTNtPath-1 \
-	tstRTSemEvent \
-	tstRTSemEventMulti \
-	tstRTSystemQueryDmi \
-	tstRTSystemQueryFirmware \
-	tstRTSystemQueryOsInfo \
-	tstRTTime \
-	tstRTTimerLR \
-	tstTime-2 \
-	tstTime-3 \
-	tstTime-4 \
-	tstTimer \
-	tstRTZip
-
- VBOX_VALIDATIONKIT_UNITTESTS_SKIP.win +=\
-	ntGetTimerResolution
-
- # Filter out all programs not starting with "tst", as there might be build-related
- # programs like bldRTIsoMaker etc. not needed here.
- VBOX_VALIDATIONKIT_UNITTESTS := $(filter tst%,$(PROGRAMS))
-
- # Filter out all unit tests we want to skip (see above).
- VBOX_VALIDATIONKIT_UNITTESTS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(VBOX_VALIDATIONKIT_UNITTESTS))
-
- # Also apply filtering to the host's testcases.
- PROGRAMS := $(filter-out $(VBOX_VALIDATIONKIT_UNITTESTS_SKIP),$(PROGRAMS))
-
- if defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
-  ## @todo There might be a more elegant want of copying a target's stuff. Works for now.
-  define def_unittest_valkit
-   $(unittest)_ValKit_TEMPLATE       := VBoxValidationKitR3TstExe
-   $(unittest)_ValKit_SOURCES        += $$($(unittest)_SOURCES)
-   $(unittest)_ValKit_SOURCES.x86    += $$($(unittest)_SOURCES.x86)
-   $(unittest)_ValKit_SOURCES.amd64  += $$($(unittest)_SOURCES.amd64)
-   $(unittest)_ValKit_INCS           += $$($(unittest)_INCS)
-   $(unittest)_ValKit_INTERMEDIATES  += $$($(unittest)_INTERMEDIATES)
-   $(unittest)_ValKit_CLEAN          += $$($(unittest)_CLEAN)
-   $(unittest)_ValKit_NAME           := $(unittest)
-   PROGRAMS += $(unittest)_ValKit
-  endef
- endif
-
- $(foreach unittest, $(VBOX_VALIDATIONKIT_UNITTESTS), \
-	$(eval $(call def_unittest_valkit)))
-
-endif # defined(VBOX_ONLY_VALIDATIONKIT) && defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ define def_valkit_unittest_iprt
+  $(unittest)_ValKit_TEMPLATE := VBoxValidationKitR3TstExe
+  $(unittest)_ValKit_EXTENDS  := $(unittest)
+  $(unittest)_ValKit_NAME     := $(unittest)
+  PROGRAMS += $(unittest)_ValKit
+ endef
+ $(foreach unittest, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $($(VALKIT_UNITTESTS_WHITELIST_IPRT).$(KBUILD_TARGET)), \
+	$(eval $(call def_valkit_unittest_iprt)))
+endif
 
 endif # VBOX_WITH_TESTCASES
 

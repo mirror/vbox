@@ -307,61 +307,21 @@ endif
 # See @bugref{10195}
 #
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
-
-# Only include testcases being on the whitelist.
-VALKIT_UNITTESTS_WHITELIST_IPRT := \
-	tstFile \
-	tstFileLock \
-	tstRTPathQueryInfo \
-	tstRTPipe \
-	tstRTProcCreateEx \
-	tstRTProcCreatePrf \
-	tstRTProcQueryUsername \
-	tstThread-1 \
-	tstUtf8
-
-VALKIT_UNITTESTS_WHITELIST_IPRT.linux += \
-	tstRTProcWait \
-	tstRTProcIsRunningByName
-
-VALKIT_UNITTESTS_WHITELIST_IPRT.win += \
-	tstRTProcWait
-
-#
-# Note: We do not include VBoxRT and stuff here, as this wouldn't work because
-#       of CRTs on old / ancient guest OSes. See @bugref:10195.
-#
-# Needs careful checking for each and every testcase being run.
-# Try to get and include what we have by using wildcards.
-#
-## @todo Also include R0 and hardening stuff?
-#
-TMP_UNITTESTS_DEPS_LIB :=
-
-define def_vbox_validationkit_unittests
+ define def_vbox_validationkit_unittests
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
-  	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $(VALKIT_UNITTESTS_WHITELIST_IPRT).$(os), \
+  	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $(VALKIT_UNITTESTS_WHITELIST_IPRT.$(os)), \
 		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
-  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
-  	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
-		$$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/$(file_dep)$(TMP_SUFF_LIB)))
-endef
+ endef
 
-TMP_SUFF_EXE=.exe
-TMP_SUFF_LIB=.dll
-$(foreach os, win,$(foreach arch, x86 amd64, \
-	$(eval $(def_vbox_validationkit_unittests)) \
-))
-TMP_SUFF_EXE=
-TMP_SUFF_LIB=.so
-$(foreach os, freebsd linux solaris,$(foreach arch, x86 amd64, \
-	$(eval $(def_vbox_validationkit_unittests)) \
-))
-TMP_SUFF_EXE=
-TMP_SUFF_LIB=.dylib
-$(foreach os, darwin,$(foreach arch, amd64, \
-	$(eval $(def_vbox_validationkit_unittests)) \
-))
+ TMP_SUFF_EXE=.exe
+ $(foreach os, win,$(foreach arch, x86 amd64, \
+ 	$(eval $(def_vbox_validationkit_unittests)) \
+ ))
+ TMP_SUFF_EXE=
+ $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
+ 	$(eval $(def_vbox_validationkit_unittests)) \
+ ))
+
 endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 #

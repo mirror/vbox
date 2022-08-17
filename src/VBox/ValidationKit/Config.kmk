@@ -238,3 +238,29 @@ $(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0, \
 	$(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check))),)
 endef
 endif
+
+
+#
+# List of IPRT testcases that will be included in the ValKit.
+#
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ VALKIT_UNITTESTS_WHITELIST_IPRT := \
+ 	tstFile \
+ 	tstFileLock \
+ 	tstRTPathQueryInfo \
+ 	tstRTPipe \
+ 	tstRTProcCreateEx \
+ 	tstRTProcCreatePrf \
+ 	tstRTProcQueryUsername \
+ 	tstThread-1 \
+ 	tstUtf8
+
+ VALKIT_UNITTESTS_WHITELIST_IPRT.linux += \
+ 	tstRTProcWait \
+ 	tstRTProcIsRunningByName
+
+ VALKIT_UNITTESTS_WHITELIST_IPRT.win += \
+ 	tstRTProcWait
+
+endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+
