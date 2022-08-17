@@ -82,6 +82,7 @@ enum UIActionIndex
     UIActionIndex_Simple_BugTracker,
     UIActionIndex_Simple_Forums,
     UIActionIndex_Simple_Oracle,
+    UIActionIndex_Simple_OnlineManual,
 #ifndef VBOX_WS_MAC
     UIActionIndex_Simple_About,
 #endif

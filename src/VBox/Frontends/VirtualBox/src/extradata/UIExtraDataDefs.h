@@ -554,8 +554,9 @@ public:
         MenuHelpActionType_BugTracker           = RT_BIT(2),
         MenuHelpActionType_Forums               = RT_BIT(3),
         MenuHelpActionType_Oracle               = RT_BIT(4),
+        MenuHelpActionType_OnlineManual         = RT_BIT(5),
 #ifndef VBOX_WS_MAC
-        MenuHelpActionType_About                = RT_BIT(5),
+        MenuHelpActionType_About                = RT_BIT(6),
 #endif
         MenuHelpActionType_All                  = 0xFFFF
     };

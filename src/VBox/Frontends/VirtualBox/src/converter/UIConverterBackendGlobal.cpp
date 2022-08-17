@@ -580,6 +580,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionTyp
         case UIExtraDataMetaDefs::MenuHelpActionType_BugTracker:           strResult = "BugTracker"; break;
         case UIExtraDataMetaDefs::MenuHelpActionType_Forums:               strResult = "Forums"; break;
         case UIExtraDataMetaDefs::MenuHelpActionType_Oracle:               strResult = "Oracle"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_OnlineManual:         strResult = "OnlineManual"; break;
 #ifndef VBOX_WS_MAC
         case UIExtraDataMetaDefs::MenuHelpActionType_About:                strResult = "About"; break;
 #endif /* !VBOX_WS_MAC */
@@ -607,6 +608,8 @@ fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMe
         return UIExtraDataMetaDefs::MenuHelpActionType_Forums;
     if (strMenuHelpActionType.compare("Oracle", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::MenuHelpActionType_Oracle;
+    if (strMenuHelpActionType.compare("OnlineManual", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_OnlineManual;
 #ifndef VBOX_WS_MAC
     if (strMenuHelpActionType.compare("About", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::MenuHelpActionType_About;
