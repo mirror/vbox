@@ -13781,3 +13781,209 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovzxdq_u256_fallback,(PRTUINT256U puDst, PCR
     puDst->au64[3] = uSrc1.au32[3];
 }
 
+
+/**
+ * Converts from the packed IPRT 32-bit (single precision) floating point format to
+ * the SoftFloat 32-bit floating point format (float32_t).
+ *
+ * This is only a structure format conversion, nothing else.
+ */
+DECLINLINE(float32_t) iemFpSoftF32FromIprt(PCRTFLOAT32U pr32Val)
+{
+    float32_t Tmp;
+    Tmp.v = pr32Val->u;
+    return Tmp;
+}
+
+
+/**
+ * Converts from SoftFloat 32-bit floating point format (float32_t)
+ * to the packed IPRT 32-bit floating point (RTFLOAT32U) format.
+ *
+ * This is only a structure format conversion, nothing else.
+ */
+DECLINLINE(PRTFLOAT32U) iemFpSoftF32ToIprt(PRTFLOAT32U pr32Dst, float32_t const r32XSrc)
+{
+    pr32Dst->u = r32XSrc.v;
+    return pr32Dst;
+}
+
+
+/**
+ * Converts from the packed IPRT 64-bit (single precision) floating point format to
+ * the SoftFloat 64-bit floating point format (float64_t).
+ *
+ * This is only a structure format conversion, nothing else.
+ */
+DECLINLINE(float64_t) iemFpSoftF64FromIprt(PCRTFLOAT64U pr64Val)
+{
+    float64_t Tmp;
+    Tmp.v = pr64Val->u;
+    return Tmp;
+}
+
+
+/**
+ * Converts from SoftFloat 64-bit floating point format (float64_t)
+ * to the packed IPRT 64-bit floating point (RTFLOAT64U) format.
+ *
+ * This is only a structure format conversion, nothing else.
+ */
+DECLINLINE(PRTFLOAT64U) iemFpSoftF64ToIprt(PRTFLOAT64U pr64Dst, float64_t const r64XSrc)
+{
+    pr64Dst->u = r64XSrc.v;
+    return pr64Dst;
+}
+
+
+/** Initializer for the SoftFloat state structure. */
+# define IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(a_Mxcsr) \
+    { \
+        softfloat_tininess_afterRounding, \
+          ((a_Mxcsr) & X86_MXCSR_RC_MASK) == X86_MXCSR_RC_NEAREST ? (uint8_t)softfloat_round_near_even \
+        : ((a_Mxcsr) & X86_MXCSR_RC_MASK) == X86_MXCSR_RC_UP      ? (uint8_t)softfloat_round_max \
+        : ((a_Mxcsr) & X86_MXCSR_RC_MASK) == X86_MXCSR_RC_DOWN    ? (uint8_t)softfloat_round_min \
+        :                                                           (uint8_t)softfloat_round_minMag, \
+        0, \
+        (uint8_t)(((a_Mxcsr) & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT), /* Matches X86_FSW_?E */\
+        32 /* Rounding precision, not relevant for SIMD. */ \
+    }
+
+
+/**
+ * Helper for transfering exception to MXCSR and setting the result value
+ * accordingly.
+ *
+ * @returns Updated MXCSR.
+ * @param   pSoftState      The SoftFloat state following the operation.
+ * @param   r32Result       The result of the SoftFloat operation.
+ * @param   pr32Result      Where to store the result for IEM.
+ * @param   fMxcsr          The original MXCSR value.
+ * @param   pr32Src1        The first source operand (for setting #DE under certain circumstances).
+ * @param   pr32Src2        The second source operand (for setting #DE under certain circumstances).
+ */
+DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t const *pSoftState, float32_t r32Result,
+                                                               PRTFLOAT32U pr32Result, uint32_t fMxcsr,
+                                                               PCRTFLOAT32U pr32Src1, PCRTFLOAT32U pr32Src2)
+{
+    uint8_t fXcpt = pSoftState->exceptionFlags;
+    if (   (fMxcsr & X86_MXCSR_FZ)
+        && RTFLOAT32U_IS_SUBNORMAL((PRTFLOAT32U)&r32Result))
+    {
+        /* Underflow masked and flush to zero is set. */
+        iemFpSoftF32ToIprt(pr32Result, r32Result);
+        pr32Result->s.uFraction = 0;
+        pr32Result->s.uExponent = 0;
+        fXcpt |= X86_MXCSR_UE | X86_MXCSR_PE;
+    }
+    else
+        iemFpSoftF32ToIprt(pr32Result, r32Result);
+
+    /* If DAZ is set \#DE is never set. */
+    if (fMxcsr & X86_MXCSR_DAZ)
+        fXcpt &= ~X86_MXCSR_DE;
+    else /* Need to set \#DE when either the result or one of the source operands is a De-normal (softfloat doesn't do this always). */
+        fXcpt |=   (   RTFLOAT32U_IS_SUBNORMAL(pr32Result)
+                    || RTFLOAT32U_IS_SUBNORMAL(pr32Src1)
+                    || RTFLOAT32U_IS_SUBNORMAL(pr32Src2))
+                 ? X86_MXCSR_DE
+                 : 0;
+
+    return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+/**
+ * Sets the given floating point input value to the given output taking the Denormals-as-zero flag
+ * in MXCSR into account.
+ *
+ * @returns nothing.
+ * @param   pr32Val         Where to store the result.
+ * @param   fMxcsr          The input MXCSR value.
+ * @param   pr32Src         The value to use.
+ */
+DECLINLINE(void) iemSsePrepareValueR32(PRTFLOAT32U pr32Val, uint32_t fMxcsr, PCRTFLOAT32U pr32Src)
+{
+    /* De-normals are changed to 0. */
+    if (   fMxcsr & X86_MXCSR_DAZ
+        && RTFLOAT32U_IS_SUBNORMAL(pr32Src))
+    {
+        pr32Val->s.fSign     = pr32Src->s.fSign;
+        pr32Val->s.uFraction = 0;
+        pr32Val->s.uExponent = 0;
+    }
+    else
+        *pr32Val = *pr32Src;
+}
+
+
+/**
+ * Validates the given input operands returning whether the operation can continue or whether one
+ * of the source operands contains a NaN value, setting the output accordingly.
+ *
+ * @returns Flag whether the operation can continue (true) or whether a NaN value was detected in one of the operands (false).
+ * @param   pr32Res         Where to store the result in case the operation can't continue.
+ * @param   pr32Val1        The first input operand.
+ * @param   pr32Val2        The second input operand.
+ * @param   pfMxcsr         Where to return the modified MXCSR state when false is returned.
+ */
+DECLINLINE(bool) iemSseCheckInputBinaryR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2, uint32_t *pfMxcsr)
+{
+    uint8_t cQNan = RTFLOAT32U_IS_QUIET_NAN(pr32Val1) + RTFLOAT32U_IS_QUIET_NAN(pr32Val2);
+    uint8_t cSNan = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) + RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val2);
+    if (cSNan + cQNan == 2)
+    {
+        /* Both values are either SNan or QNan, first operand is placed into the result and converted to a QNan. */
+        *pr32Res = *pr32Val1;
+        pr32Res->s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
+        *pfMxcsr |= (cSNan ? X86_MXCSR_IE : 0);
+        return false;
+    }
+    else if (cSNan)
+    {
+        /* One operand is an SNan and placed into the result, converting it to a QNan. */
+        *pr32Res = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
+        pr32Res->s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
+        *pfMxcsr |= X86_MXCSR_IE;
+        return false;
+    }
+    else if (cQNan)
+    {
+        /* The QNan operand is placed into the result. */
+        *pr32Res = RTFLOAT32U_IS_QUIET_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
+        return false;
+    }
+
+    Assert(!cQNan && !cSNan);
+    return true;
+}
+#endif
+
+
+/**
+ * ADDPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
+{
+    if (!iemSseCheckInputBinaryR32(pr32Res, pr32Val1, pr32Val2, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT32U r32Src1, r32Src2;
+    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_add(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_addps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+}
+#endif

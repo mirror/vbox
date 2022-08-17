@@ -461,6 +461,8 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_unpckhps_u128          NULL
 #define iemAImpl_unpckhpd_u128          NULL
 
+#define iemAImpl_addps_u128             NULL
+
 /** @}  */
 
 
@@ -521,6 +523,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
     do { (void)fMcBegin; AssertCompile(RT_IS_POWER_OF_TWO(a_cbAlign)); CHK_TYPE(RTGCPTR,  a_EffAddr); } while (0)
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()              do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) do { (void)fMcBegin; } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() do { (void)fMcBegin; } while (0)
 
 #define IEM_MC_LOCAL(a_Type, a_Name) (void)fMcBegin; \
     a_Type a_Name; NOREF(a_Name); (void)fMcBegin
@@ -683,6 +686,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)           do { (a_pu128Dst) = (PRTUINT128U)((uintptr_t)0);        CHK_PTYPE(PRTUINT128U, a_pu128Dst);     (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)     do { (a_pu128Dst) = (PCRTUINT128U)((uintptr_t)0);       CHK_PTYPE(PCRTUINT128U, a_pu128Dst);    (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg)       do { (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0);   CHK_PTYPE(uint64_t const *, a_pu64Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg)       do { (a_pXmmDst) = (PCX86XMMREG)((uintptr_t)0);         CHK_PTYPE(PCX86XMMREG, a_pXmmDst);      (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc)       do { (void)fSseWrite; (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_YREG_U256(a_u256Value, a_iYRegSrc)           do { (a_u256Value).au64[0] = (a_u256Value).au64[1] = (a_u256Value).au64[2] = (a_u256Value).au64[3] = 0; CHK_TYPE(RTUINT256U, a_u256Value); (void)fAvxRead; (void)fMcBegin; } while (0)
@@ -748,6 +752,9 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U128_NO_AC(a_u128Dst, a_iSeg, a_GCPtrMem)      do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_XMM(a_XmmDst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(X86XMMREG, a_XmmDst); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_XMM_NO_AC(a_XmmDst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(X86XMMREG, a_XmmDst); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem)    do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(X86XMMREG, a_XmmDst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256_NO_AC(a_u256Dst, a_iSeg, a_GCPtrMem)      do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
@@ -851,6 +858,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
     const int fFpuRead = 1, fFpuWrite = 1, fFpuHost = 1, fSseRead = 1, fSseWrite = 1, fSseHost = 1, fAvxRead = 1, fAvxWrite = 1, fAvxHost = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   (void)fMcBegin; const int fFpuRead = 1, fSseRead = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() (void)fMcBegin; const int fFpuRead = 1, fFpuWrite = 1, fSseRead = 1, fSseWrite = 1
+#define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg)                                           do { (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_PREPARE_SSE_USAGE()              (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1, fSseHost = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   (void)fMcBegin; const int fSseRead = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1

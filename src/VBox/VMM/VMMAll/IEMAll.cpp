@@ -4174,6 +4174,13 @@ DECL_NO_RETURN(void) iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu) RT_NOEXC
 #endif
 
 
+/** \#XF(0)/\#XM(0) - 19.   */
+VBOXSTRICTRC iemRaiseSimdFpException(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_XF, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+
+
 /** Accessed via IEMOP_RAISE_DIVIDE_ERROR.   */
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError)
 {
@@ -5126,6 +5133,27 @@ void iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR G
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
     iemFpuStackPushOverflowOnly(pVCpu, pFpuCtx);
+}
+
+/** @}  */
+
+
+/** @name   SSE+AVX SIMD access and helpers.
+ *
+ * @{
+ */
+/**
+ * Stores a result in a SIMD XMM register, updates the MXCSR.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pResult             The result to store.
+ * @param   iXmmReg             Which SIMD XMM register to store the result in.
+ */
+void iemSseStoreResult(PVMCPUCC pVCpu, PCIEMSSERESULT pResult, uint8_t iXmmReg) RT_NOEXCEPT
+{
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
+    pFpuCtx->MXCSR |= pResult->MXCSR & X86_MXCSR_XCPT_FLAGS;
+    pVCpu->cpum.GstCtx.XState.x87.aXMM[iXmmReg] = pResult->uResult;
 }
 
 /** @}  */

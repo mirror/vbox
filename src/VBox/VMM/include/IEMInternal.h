@@ -2355,6 +2355,73 @@ typedef IEMOPMEDIAOPTF2 const *PCIEMOPMEDIAOPTF2;
 /** @} */
 
 
+/** @name SSE/AVX single/double precision floating point operations.
+ * @{ */
+/**
+ * A SSE result.
+ */
+typedef struct IEMSSERESULT
+{
+    /** The output value. */
+    X86XMMREG       uResult;
+    /** The output status. */
+    uint32_t        MXCSR;
+} IEMSSERESULT;
+AssertCompileMemberOffset(IEMSSERESULT, MXCSR, 128 / 8);
+/** Pointer to a SSE result. */
+typedef IEMSSERESULT *PIEMSSERESULT;
+/** Pointer to a const SSE result. */
+typedef IEMSSERESULT const *PCIEMSSERESULT;
+
+
+/**
+ * A AVX128 result.
+ */
+typedef struct IEMAVX128RESULT
+{
+    /** The output value. */
+    X86XMMREG       uResult;
+    /** The output status. */
+    uint32_t        MXCSR;
+} IEMAVX128RESULT;
+AssertCompileMemberOffset(IEMAVX128RESULT, MXCSR, 128 / 8);
+/** Pointer to a AVX128 result. */
+typedef IEMAVX128RESULT *PIEMAVX128RESULT;
+/** Pointer to a const AVX128 result. */
+typedef IEMAVX128RESULT const *PCIEMAVX128RESULT;
+
+
+/**
+ * A AVX256 result.
+ */
+typedef struct IEMAVX256RESULT
+{
+    /** The output value. */
+    X86YMMREG       uResult;
+    /** The output status. */
+    uint32_t        MXCSR;
+} IEMAVX256RESULT;
+AssertCompileMemberOffset(IEMAVX256RESULT, MXCSR, 256 / 8);
+/** Pointer to a AVX256 result. */
+typedef IEMAVX256RESULT *PIEMAVX256RESULT;
+/** Pointer to a const AVX256 result. */
+typedef IEMAVX256RESULT const *PCIEMAVX256RESULT;
+
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPSSEF2U128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
+typedef FNIEMAIMPLFPSSEF2U128  *PFNIEMAIMPLFPSSEF2U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPAVXF3U128,(PX86XSAVEAREA pExtState, PIEMAVX128RESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
+typedef FNIEMAIMPLFPAVXF3U128  *PFNIEMAIMPLFPAVXF3U128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPAVXF3U256,(PX86XSAVEAREA pExtState, PIEMAVX256RESULT pResult, PCX86YMMREG puSrc1, PCX86YMMREG puSrc2));
+typedef FNIEMAIMPLFPAVXF3U256  *PFNIEMAIMPLFPAVXF3U256;
+
+FNIEMAIMPLFPSSEF2U128 iemAImpl_addps_u128;
+
+FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddps_u128, iemAImpl_vaddps_u128_fallback;
+
+FNIEMAIMPLFPAVXF3U256 iemAImpl_vaddps_u256, iemAImpl_vaddps_u256_fallback;
+/** @} */
+
 /** @name C instruction implementations for anything slightly complicated.
  * @{ */
 
@@ -3180,6 +3247,7 @@ VBOXSTRICTRC            iemRaiseAlignmentCheckException(PVMCPUCC pVCpu);
 #ifdef IEM_WITH_SETJMP
 DECL_NO_RETURN(void)    iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu)  RT_NOEXCEPT;
 #endif
+VBOXSTRICTRC            iemRaiseSimdFpException(PVMCPUCC pVCpu) RT_NOEXCEPT;
 
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError);
 IEM_CIMPL_DEF_0(iemCImplRaiseInvalidLockPrefix);
@@ -3250,6 +3318,11 @@ void            iemFpuStackPushUnderflow(PVMCPUCC pVCpu) RT_NOEXCEPT;
 void            iemFpuStackPushUnderflowTwo(PVMCPUCC pVCpu) RT_NOEXCEPT;
 void            iemFpuStackPushOverflow(PVMCPUCC pVCpu) RT_NOEXCEPT;
 void            iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT;
+/** @} */
+
+/** @name SSE+AVX SIMD access and helpers.
+ * @{ */
+void            iemSseStoreResult(PVMCPUCC pVCpu, PCIEMSSERESULT pResult, uint8_t iXmmReg) RT_NOEXCEPT;
 /** @} */
 
 /** @name   Memory access.

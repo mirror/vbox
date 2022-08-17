@@ -192,6 +192,17 @@
         if (!IEM_IS_CANONICAL(a_u64Addr)) \
             return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
+    do { \
+        if ((  ((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0) \
+        { \
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)\
+                return iemRaiseSimdFpException(pVCpu); \
+            else \
+                return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
+    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
@@ -435,6 +446,8 @@
     (a_pu128Dst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].uXmm)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
     (a_pu128Dst) = ((PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].uXmm)
+#define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg) \
+    (a_pXmmDst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)])
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
     (a_pu64Dst) = ((uint64_t const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0])
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc) \
@@ -705,6 +718,13 @@
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_XMM(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_XMM_NO_AC(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem))
@@ -712,6 +732,13 @@
     iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_XMM(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_XMM_NO_AC(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -721,6 +748,13 @@
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedSse(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_YMM(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_YMM_NO_AC(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_YMM_ALIGN_AVX(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedSse(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256Jmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
@@ -728,6 +762,13 @@
     iemMemFetchDataU256Jmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_YMM(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_YMM_NO_AC(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_YMM_ALIGN_AVX(a_YmmDst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
 #endif
 
 
@@ -1246,6 +1287,9 @@
 /** Actualizes the guest FPU state so it can be accessed and modified. */
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() iemFpuActualizeStateForChange(pVCpu)
 
+/** Stores SSE SIMD result in a stack register. */
+#define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg) \
+    iemSseStoreResult(pVCpu, &a_SseData, a_iXmmReg)
 /** Prepares for using the SSE state.
  * Ensures that we can use the host SSE/FPU in the current context (RC+R0.
  * Ensures the guest SSE state in the CPUMCTX is up to date. */

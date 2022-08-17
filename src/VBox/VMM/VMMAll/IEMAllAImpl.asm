@@ -4403,3 +4403,185 @@ IEMIMPL_V_PMOV_SZ_X pmovzxwd
 IEMIMPL_V_PMOV_SZ_X pmovzxwq
 IEMIMPL_V_PMOV_SZ_X pmovzxdq
 
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMSSERESULT
+    .uResult      resd 4
+    .MXCSR        resd 1
+endstruc
+
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMAVX128RESULT
+    .uResult      resd 4
+    .MXCSR        resd 1
+endstruc
+
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMAVX256RESULT
+    .uResult      resd 8
+    .MXCSR        resd 1
+endstruc
+
+
+;;
+; Initialize the SSE MXCSR register using the guest value partially to
+; account for rounding mode.
+;
+; @uses     4 bytes of stack to save the original value, T0.
+; @param    1       Expression giving the address of the FXSTATE of the guest.
+;
+%macro SSE_LD_FXSTATE_MXCSR 1
+        sub     xSP, 4
+
+        stmxcsr [xSP]
+        mov     T0_32, [%1 + X86FXSTATE.MXCSR]
+        and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
+        or      T0_32, X86_MXCSR_XCPT_MASK
+        sub     xSP, 4
+        mov     [xSP], T0_32
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Restores the SSE MXCSR register with the original value.
+;
+; @uses     4 bytes of stack to save the content of MXCSR value, T0, T1.
+; @param    1       Expression giving the address where to return the MXCSR value.
+; @param    2       Expression giving the address of the FXSTATE of the guest.
+;
+; @note Restores the stack pointer.
+;
+%macro SSE_ST_FXSTATE_MXCSR 2
+        sub     xSP, 4
+        stmxcsr [xSP]
+        mov     T0_32, [xSP]
+        add     xSP, 4
+        ; Merge the status bits into the original MXCSR value.
+        mov     T1_32, [%2 + X86FXSTATE.MXCSR]
+        and     T0_32, X86_MXCSR_XCPT_FLAGS
+        or      T0_32, T1_32
+        mov     [%1 + IEMSSERESULT.MXCSR], T0_32
+
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Initialize the SSE MXCSR register using the guest value partially to
+; account for rounding mode.
+;
+; @uses     4 bytes of stack to save the original value.
+; @param    1       Expression giving the address of the FXSTATE of the guest.
+;
+%macro AVX_LD_XSAVEAREA_MXCSR 1
+        sub     xSP, 4
+
+        stmxcsr [xSP]
+        mov     T0_32, [%1 + X86FXSTATE.MXCSR]
+        and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
+        sub     xSP, 4
+        mov     [xSP], T0_32
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Restores the AVX128 MXCSR register with the original value.
+;
+; @param    1       Expression giving the address where to return the MXCSR value.
+;
+; @note Restores the stack pointer.
+;
+%macro AVX128_ST_XSAVEAREA_MXCSR 1
+        stmxcsr [%1 + IEMAVX128RESULT.MXCSR]
+
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Restores the AVX256 MXCSR register with the original value.
+;
+; @param    1       Expression giving the address where to return the MXCSR value.
+;
+; @note Restores the stack pointer.
+;
+%macro AVX256_ST_XSAVEAREA_MXCSR 1
+        stmxcsr [%1 + IEMAVX256RESULT.MXCSR]
+
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Floating point instruction working on two full sized registers.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the result including the MXCSR value.
+; @param    A2      Pointer to the first media register size operand (input/output).
+; @param    A3      Pointer to the second media register size operand (input).
+;
+%macro IEMIMPL_FP_F2 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        movdqu   xmm0, [A2]
+        movdqu   xmm1, [A3]
+        %1       xmm0, xmm1
+        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+
+        SSE_ST_FXSTATE_MXCSR A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu  xmm0, [A2]
+        vmovdqu  xmm1, [A3]
+        v %+ %1  xmm0, xmm0, xmm1
+        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+
+        AVX128_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu  ymm0, [A2]
+        vmovdqu  ymm1, [A3]
+        v %+ %1  ymm0, ymm0, ymm1
+        vmovdqu  [A1 + IEMAVX256RESULT.uResult], ymm0
+
+        AVX256_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_FP_F2 addps
