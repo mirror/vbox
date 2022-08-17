@@ -3162,12 +3162,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+959"/>
+        <location line="+962"/>
         <source>Description</source>
         <translation>Opis</translation>
     </message>
     <message>
-        <location line="-958"/>
+        <location line="-961"/>
         <source>License</source>
         <translation>Dovoljenje</translation>
     </message>
@@ -3187,7 +3187,12 @@
         <translation>RAM</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
+        <source>Storage Controller (VirtioSCSI)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>DVD</source>
         <translation>DVD</translation>
     </message>
@@ -3242,12 +3247,12 @@
         <translation>&lt;b&gt;Izvirna vrednost:&lt;/b&gt; %1</translation>
     </message>
     <message>
-        <location line="+854"/>
+        <location line="+856"/>
         <source>Configuration</source>
         <translation>Nastavitve</translation>
     </message>
     <message>
-        <location line="+456"/>
+        <location line="+457"/>
         <source>Detailed list of all components of all virtual machines of the current appliance</source>
         <translation>Podorben seznam sestavnih delov vseh navideznih računalnikov trenutne namenske naprave</translation>
     </message>
@@ -3265,7 +3270,7 @@
         <translation type="vanished">&amp;Ponovno vpelji naslov MAC vseh omrežnih kartic</translation>
     </message>
     <message>
-        <location line="-1414"/>
+        <location line="-1418"/>
         <source>Storage Controller (IDE)</source>
         <translation>Krmilnik pomnilniških naprav (IDE)</translation>
     </message>
@@ -3280,7 +3285,7 @@
         <translation>Krmilnik pomnilniških naprav (SCSI)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Storage Controller (SAS)</source>
         <translation>Krmilnik pomnilniških naprav (SAS)</translation>
     </message>
@@ -3299,7 +3304,7 @@
 <context>
     <name>UIApplianceModelItem</name>
     <message>
-        <location line="-210"/>
+        <location line="-211"/>
         <source>%1</source>
         <comment>col.1 text</comment>
         <translation>%1</translation>
@@ -3969,9 +3974,8 @@
         <translation type="unfinished">Nastavitve</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp" line="+60"/>
@@ -4152,8 +4156,8 @@
 <context>
     <name>UICommon</name>
     <message>
-        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+248"/>
-        <location line="+284"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+249"/>
+        <location line="+285"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+152"/>
         <location line="+19"/>
         <source>MB</source>
@@ -5672,8 +5676,8 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Bridget Adapter</source>
-        <translation type="unfinished"></translation>
+        <source>Bridged Adapter</source>
+        <translation type="unfinished">Povezan vmesnik</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -7680,18 +7684,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation type="obsolete">%</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location line="+5"/>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation type="obsolete">%1%</translation>
     </message>
     <message>
-        <location line="-4"/>
+        <location line="+14"/>
         <source>Minimum possible execution cap.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7704,20 +7705,23 @@
 <context>
     <name>UIExtensionPackManager</name>
     <message>
-        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+157"/>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished">%1, %2: %3, %4</translation>
+        <translation type="obsolete">%1, %2: %3, %4</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3</translation>
+        <translation type="obsolete">%1, %2: %3</translation>
     </message>
     <message>
-        <location line="+42"/>
         <source>Active</source>
+        <translation type="obsolete">Dejavno</translation>
+    </message>
+    <message>
+        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+203"/>
+        <source>Active</source>
+        <comment>ext pack</comment>
         <translation type="unfinished">Dejavno</translation>
     </message>
     <message>
@@ -8154,37 +8158,37 @@
     </message>
     <message>
         <location line="+9"/>
-        <source>&lt;p&gt;Machine reference is invalid.&lt;/p&gt;</source>
+        <source>Machine reference is invalid.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the selected guest is not currently running.&lt;/p&gt;</source>
+        <source>File manager cannot work since the selected guest is not currently running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the guest is paused.&lt;/p&gt;</source>
+        <source>File manager cannot work since the guest is paused.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the selected guest does not have the guest additions.&lt;/p&gt;</source>
+        <source>File manager cannot work since the selected guest does not have the guest additions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Enter a valid user name and password to initiate the file manager.&lt;/p&gt;</source>
+        <source>Enter a valid user name and password to initiate the file manager.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Guest control session is running.&lt;/p&gt;</source>
+        <source>Guest control session is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Some error has occurred. Please check the log panel.&lt;/p&gt;</source>
+        <source>Some error has occurred. Please check the log panel.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -12936,7 +12940,7 @@
     </message>
     <message>
         <location line="+29"/>
-        <source>&lt;p&gt;In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
+        <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14811,7 +14815,7 @@
         <translation>Tega sporočila ne prikazuj več</translation>
     </message>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+95"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+96"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Odpiranje &lt;tt&gt;%1&lt;/tt&gt; je spodeltelo. Prepričajte se, da lahko vaše namizno okolje pravilno obvlada URL te vrste.</translation>
     </message>
@@ -16778,7 +16782,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+276"/>
+        <location line="+275"/>
         <source>Can&apos;t toggle VRDE server ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16884,7 +16888,7 @@
         <translation>&lt;p&gt;Uporabniški priročnik za VirtualBox je bil uspešno prejet iz &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;, vendar ga ni mogoče krajevno shraniti kot &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Izberite drugo mesto za to datoteko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-1401"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-1400"/>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uporabniški priročnik za VirtualBox je bil uspešno prejet iz &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; in krajevno shranjen kot &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
@@ -16930,7 +16934,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+13"/>
         <source>Can&apos;t toggle recording ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16945,7 +16949,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1063"/>
+        <location line="-1062"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Videti je, da program VirtualBox Guest Additions na tem navideznem računalniku ni na voljo in brez njega deljenih map ni mogoče uporabljati. Da jih uporabite v navideznem računalniku, namestite program Guest Additions, če še ni nameščen, ali ga z izbiro &lt;b&gt;Vstavi odtis CD Guest Additions&lt;/b&gt; iz menija &lt;b&gt;Naprave&lt;/b&gt; ponovno namestite, če ne delujejo pravilno. Če je program Guest Additions nameščen, vendar se računalnik še ni popolnoma zagnal, bo na voljo, ko se popolnoma zažene.&lt;/p&gt;</translation>
     </message>
@@ -17618,11 +17622,16 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
+        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+16"/>
+        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-10"/>
         <source>Holds the driver to be used with this network card.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17632,12 +17641,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Cloud Profile Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location line="+15"/>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18551,7 +18555,7 @@
 <context>
     <name>UINotificationDownloader</name>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+4019"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+4018"/>
         <source>Downloading Extension Pack ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19286,7 +19290,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+577"/>
+        <location line="+581"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation type="unfinished">&lt;i&gt;Okoli %1 MB na 5 min. videoposnetka&lt;/i&gt;</translation>
     </message>
@@ -19316,13 +19320,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+5"/>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation type="obsolete">%1%</translation>
     </message>
     <message>
-        <location line="-4"/>
+        <location line="+5"/>
         <source>Minimum possible scale factor.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22916,7 +22918,12 @@
     <message>
         <location line="+6"/>
         <source>Inaccessible</source>
+        <comment>VM</comment>
         <translation type="unfinished">Nedostopen</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="obsolete">Nedostopen</translation>
     </message>
 </context>
 <context>

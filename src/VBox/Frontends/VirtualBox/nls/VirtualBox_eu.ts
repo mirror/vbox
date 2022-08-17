@@ -3369,12 +3369,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+959"/>
+        <location line="+962"/>
         <source>Description</source>
         <translation>Azalpena</translation>
     </message>
     <message>
-        <location line="-958"/>
+        <location line="-961"/>
         <source>License</source>
         <translation>Baimena</translation>
     </message>
@@ -3407,6 +3407,11 @@
         <location line="+1"/>
         <source>Storage Controller (SCSI)</source>
         <translation>Biltegiratze Kontrolatzailea (SCSI)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Storage Controller (VirtioSCSI)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3481,12 +3486,12 @@
         <translation>&lt;b&gt;Jatorrizko Balioa:&lt;/b&gt; %1</translation>
     </message>
     <message>
-        <location line="+854"/>
+        <location line="+856"/>
         <source>Configuration</source>
         <translation>Itxurapena</translation>
     </message>
     <message>
-        <location line="+456"/>
+        <location line="+457"/>
         <source>Detailed list of all components of all virtual machines of the current appliance</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3522,7 +3527,7 @@
 <context>
     <name>UIApplianceModelItem</name>
     <message>
-        <location line="-1621"/>
+        <location line="-1625"/>
         <source>%1</source>
         <comment>col.1 text</comment>
         <translation type="unfinished">%1% {1?}</translation>
@@ -4160,9 +4165,8 @@
         <translation type="unfinished">Ezarpenak</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp" line="+60"/>
@@ -4335,8 +4339,8 @@
 <context>
     <name>UICommon</name>
     <message>
-        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+248"/>
-        <location line="+284"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+249"/>
+        <location line="+285"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+152"/>
         <location line="+19"/>
         <source>MB</source>
@@ -5855,8 +5859,8 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Bridget Adapter</source>
-        <translation type="unfinished"></translation>
+        <source>Bridged Adapter</source>
+        <translation type="unfinished">Zubi Egokitzailea</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -8082,18 +8086,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation type="obsolete">%</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location line="+5"/>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation type="obsolete">%1%</translation>
     </message>
     <message>
-        <location line="-4"/>
+        <location line="+14"/>
         <source>Minimum possible execution cap.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8106,20 +8107,9 @@
 <context>
     <name>UIExtensionPackManager</name>
     <message>
-        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+157"/>
-        <source>%1, %2: %3, %4</source>
-        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>%1, %2: %3</source>
-        <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+42"/>
+        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+203"/>
         <source>Active</source>
+        <comment>ext pack</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8539,37 +8529,37 @@
     </message>
     <message>
         <location line="+9"/>
-        <source>&lt;p&gt;Machine reference is invalid.&lt;/p&gt;</source>
+        <source>Machine reference is invalid.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the selected guest is not currently running.&lt;/p&gt;</source>
+        <source>File manager cannot work since the selected guest is not currently running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the guest is paused.&lt;/p&gt;</source>
+        <source>File manager cannot work since the guest is paused.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;File manager cannot work since the selected guest does not have the guest additions.&lt;/p&gt;</source>
+        <source>File manager cannot work since the selected guest does not have the guest additions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Enter a valid user name and password to initiate the file manager.&lt;/p&gt;</source>
+        <source>Enter a valid user name and password to initiate the file manager.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Guest control session is running.&lt;/p&gt;</source>
+        <source>Guest control session is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&lt;p&gt;Some error has occurred. Please check the log panel.&lt;/p&gt;</source>
+        <source>Some error has occurred. Please check the log panel.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13648,7 +13638,7 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>&lt;p&gt;In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
+        <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15645,7 +15635,7 @@
         <translation>Hutsegitea VirtualBox gain datuak ezartzerakoan &lt;i&gt;{%2}&lt;/i&gt; makinako &lt;i&gt;%1&lt;/i&gt; giltzarako &lt;i&gt;{%3}&lt;/i&gt; balioan.</translation>
     </message>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+123"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+124"/>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
         <translation>Enkriptaketa sarhitza &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt;-rako baliogabea da.</translation>
     </message>
@@ -15910,7 +15900,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+13"/>
         <source>Can&apos;t toggle recording ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15940,7 +15930,7 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualarentzako hurruneko mahaigain zerbitzaria ezgaitzerakoan.</translation>
     </message>
     <message>
-        <location line="-44"/>
+        <location line="-43"/>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18716,11 +18706,16 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
+        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+16"/>
+        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-10"/>
         <source>Holds the driver to be used with this network card.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18730,12 +18725,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Cloud Profile Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location line="+15"/>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19653,7 +19643,7 @@
 <context>
     <name>UINotificationDownloader</name>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+3988"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+3987"/>
         <source>Downloading Extension Pack ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20415,7 +20405,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+577"/>
+        <location line="+581"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation type="unfinished">&lt;i&gt;%1MB 5 minutuko bideo inguru&lt;/i&gt;</translation>
     </message>
@@ -20445,13 +20435,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+5"/>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation type="obsolete">%1%</translation>
     </message>
     <message>
-        <location line="-4"/>
+        <location line="+5"/>
         <source>Minimum possible scale factor.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23947,7 +23935,12 @@
     <message>
         <location line="+6"/>
         <source>Inaccessible</source>
+        <comment>VM</comment>
         <translation type="unfinished">Eskuraezina</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <translation type="obsolete">Eskuraezina</translation>
     </message>
 </context>
 <context>
