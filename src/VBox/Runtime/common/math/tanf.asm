@@ -24,49 +24,86 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
 ;;
-; Compute the sine of r32
+; Compute the sine of rf
 ; @returns st(0) / xmm0
-; @param    r32     [xSP + xCB*2] / xmm0
+; @param    rf      [xSP + xCB*2] / xmm0
 RT_NOCRT_BEGINPROC tanf
-    push    xBP
-    mov     xBP, xSP
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 20h
+        SEH64_ALLOCATE_STACK 20h
+        SEH64_END_PROLOGUE
 
+%ifdef RT_OS_WINDOWS
+        ;
+        ; Make sure we use full precision and not the windows default of 53 bits.
+        ;
+        fnstcw  [xBP - 20h]
+        mov     ax, [xBP - 20h]
+        or      ax, X86_FCW_PC_64           ; includes both bits, so no need to clear the mask.
+        mov     [xBP - 1ch], ax
+        fldcw   [xBP - 1ch]
+%endif
+
+        ;
+        ; Load the input into st0.
+        ;
 %ifdef RT_ARCH_AMD64
-    sub     xSP, 10h
-
-    movss   [xSP], xmm0
-    fld     dword [xSP]
+        movss   [xBP - 10h], xmm0
+        fld     dword [xBP - 10h]
 %else
-    fld     dword [xBP + xCB*2]
+        fld     dword [xBP + xCB*2]
 %endif
-    fptan
-    fnstsw  ax
-    test    ah, 04h                     ; check for C2
-    jz      .done
 
-    fldpi
-    fadd    st0
-    fxch    st1
+        ;
+        ; Calculate the tangent.
+        ;
+        fptan
+        fnstsw  ax
+        test    ah, (X86_FSW_C2 >> 8)       ; C2 is set if the input was out of range.
+        jz      .return_val
+
+        ;
+        ; Input was out of range, perform reduction to +/-2pi.
+        ;
+        fldpi
+        fadd    st0
+        fxch    st1
 .again:
-    fprem1
-    fnstsw  ax
-    test    ah, 04h
-    jnz     .again
-    fstp    st1
-    fptan
+        fprem1
+        fnstsw  ax
+        test    ah, (X86_FSW_C2 >> 8)       ; C2 is set if partial result.
+        jnz     .again                      ; Loop till C2 == 0 and we have a final result.
 
-.done:
-    fstp    st0
+        fstp    st1
+
+        fptan
+
+        ;
+        ; Run st0.
+        ;
+.return_val:
+        ffreep  st0                         ; ignore the 1.0 fptan pushed
 %ifdef RT_ARCH_AMD64
-    fstp    dword [xSP]
-    movss   xmm0, [xSP]
+        fstp    dword [xBP - 10h]
+        movss   xmm0, [xBP - 10h]
 %endif
-    leave
-    ret
+%ifdef RT_OS_WINDOWS
+        fldcw   [xBP - 20h]                 ; restore original
+%endif
+.return:
+        leave
+        ret
 ENDPROC   RT_NOCRT(tanf)
 

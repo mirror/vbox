@@ -400,6 +400,25 @@
         } \
     } while (0)
 
+#define CHECK_FLT_RANGE(a_Expr, a_rfExpect, a_rfPlusMin) do { \
+        RTFLOAT32U uRet; \
+        uRet.r = a_Expr; \
+        RTFLOAT32U uExpectMin; \
+        uExpectMin.r = (a_rfExpect) - (a_rfPlusMin); \
+        RTFLOAT32U uExpectMax; \
+        uExpectMax.r = (a_rfExpect) + (a_rfPlusMin); \
+        if (   !(RTFLOAT32U_IS_NORMAL(&uRet) || RTFLOAT32U_IS_ZERO(&uRet))\
+            || uRet.r < uExpectMin.r \
+            || uRet.r > uExpectMax.r ) \
+        { \
+            RTStrFormatR32(g_szFloat[0], sizeof(g_szFloat[0]), &uRet,       0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR32(g_szFloat[1], sizeof(g_szFloat[1]), &uExpectMin, 0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR32(g_szFloat[2], sizeof(g_szFloat[2]), &uExpectMax, 0, 0, RTSTR_F_SPECIAL); \
+            RTTestFailed(g_hTest, "line %u: %s -> %s, expected [%s,%s] (%s +/- %s)", \
+                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], #a_rfExpect, #a_rfPlusMin); \
+        } \
+    } while (0)
+
 #define CHECK_FLT_SAME_RELAXED_NAN(a_Fn, a_Args) do { \
         RTFLOAT32U uNoCrtRet, uCrtRet; \
         uNoCrtRet.r = RT_NOCRT(a_Fn) a_Args; \
@@ -3179,6 +3198,151 @@ void testCos()
 }
 
 
+void testTan()
+{
+    RTTestSub(g_hTest, "tan[f]");
+
+    /* See comment in testSin regarding testing and accuracy. Note that tan
+       and tanf have receive no extra attention yet and are solely based on
+       the FPU capabilities. */
+    //lvbe /mnt/e/misc/float/tan -d +1.0 +2.0 +3.0 +4.0 +5.0 +6.0 +7.0 +8.0 +9.0 +10.0 +100.0 +654.216812456 +10.10101010101010 +25.25252525252525 +252.25252525252525 +2525.25252525252525 +25252.25252525252525 +252525.25252525252525 +3.14 +1.57 +2.355 +1.1775
+    CHECK_DBL(      RT_NOCRT(tan)(                          +0.0),                           +0.0);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -0.0),                           -0.0);
+    CHECK_DBL(                tan(                          -0.0),                           -0.0);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(                         +M_PI),                           +0.0,  0.0000000000000100000);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(                         -M_PI),                           +0.0,  0.0000000000000100000);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +1.0),        +1.55740772465490229237);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +2.0),        -2.18503986326151888875);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +3.0),        -0.14254654307427780391);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +4.0),        +1.15782128234957748525);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +5.0),        -3.38051500624658585181);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +6.0),        -0.29100619138474914660);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +7.0),        +0.87144798272431878150);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +8.0),        -6.79971145522037900832);
+    CHECK_DBL(      RT_NOCRT(tan)(                          +9.0),        -0.45231565944180984751);
+    CHECK_DBL(      RT_NOCRT(tan)(                         +10.0),        +0.64836082745908663050);
+    CHECK_DBL(      RT_NOCRT(tan)(                        +100.0),        -0.58721391515692911156);
+    CHECK_DBL(      RT_NOCRT(tan)(                +654.216812456),        +0.96105296910208881656);
+    CHECK_DBL(      RT_NOCRT(tan)(            +10.10101010101010),        +0.80244848750680519700);
+    CHECK_DBL(      RT_NOCRT(tan)(            +25.25252525252525),        +0.12036022656173953060);
+    CHECK_DBL(      RT_NOCRT(tan)(           +252.25252525252525),        +1.32728909752762014307);
+    CHECK_DBL(      RT_NOCRT(tan)(          +2525.25252525252525),        -0.66661702242341180913);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(         +25252.25252525252525),        +0.13152635436679746550,  0.0000000000000010000);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(        +252525.25252525252525),        +1.24331239382105529501,  0.0000000000000100000);
+    CHECK_DBL(      RT_NOCRT(tan)(                         +3.14),        -0.00159265493640722302);
+    CHECK_DBL(      RT_NOCRT(tan)(                         +1.57),     +1255.76559150078969651076);
+    CHECK_DBL(      RT_NOCRT(tan)(                        +2.355),        -1.00239183854994351464);
+    CHECK_DBL(      RT_NOCRT(tan)(                       +1.1775),        +2.41014118913622787943);
+
+    CHECK_DBL(      RT_NOCRT(tan)(                          -1.0),        -1.55740772465490229237);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -2.0),        +2.18503986326151888875);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -3.0),        +0.14254654307427780391);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -4.0),        -1.15782128234957748525);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -5.0),        +3.38051500624658585181);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -6.0),        +0.29100619138474914660);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -7.0),        -0.87144798272431878150);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -8.0),        +6.79971145522037900832);
+    CHECK_DBL(      RT_NOCRT(tan)(                          -9.0),        +0.45231565944180984751);
+    CHECK_DBL(      RT_NOCRT(tan)(                         -10.0),        -0.64836082745908663050);
+    CHECK_DBL(      RT_NOCRT(tan)(                        -100.0),        +0.58721391515692911156);
+    CHECK_DBL(      RT_NOCRT(tan)(                -654.216812456),        -0.96105296910208881656);
+    CHECK_DBL(      RT_NOCRT(tan)(            -10.10101010101010),        -0.80244848750680519700);
+    CHECK_DBL(      RT_NOCRT(tan)(            -25.25252525252525),        -0.12036022656173953060);
+    CHECK_DBL(      RT_NOCRT(tan)(           -252.25252525252525),        -1.32728909752762014307);
+    CHECK_DBL(      RT_NOCRT(tan)(          -2525.25252525252525),        +0.66661702242341180913);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(         -25252.25252525252525),        -0.13152635436679746550,  0.0000000000000010000);
+    CHECK_DBL_RANGE(RT_NOCRT(tan)(        -252525.25252525252525),        -1.24331239382105529501,  0.0000000000000100000);
+    CHECK_DBL(      RT_NOCRT(tan)(                         -3.14),        +0.00159265493640722302);
+    CHECK_DBL(      RT_NOCRT(tan)(    RTStrNanDouble(NULL, true)),      RTStrNanDouble(NULL, true));
+    CHECK_DBL(      RT_NOCRT(tan)( RTStrNanDouble("4940", false)),   RTStrNanDouble("4940", false));
+    //CHECK_DBL(      RT_NOCRT(tan)( RTStrNanDouble("494s", false)),   RTStrNanDouble("494s", false)); //- not preserved
+    CHECK_DBL_SAME(tan,(             +0.0));
+    CHECK_DBL_SAME(tan,(             -0.0));
+    CHECK_DBL_SAME(tan,(             +1.0));
+    CHECK_DBL_SAME(tan,(             -1.0));
+#if 0 /* the FPU reduction isn't accurate enough, don't want to spend time on this now. */
+    CHECK_DBL_SAME(tan,(            +M_PI));
+    CHECK_DBL_SAME(tan,(            -M_PI));
+#endif
+    CHECK_DBL_SAME(tan,(             -6.0));
+    CHECK_DBL_SAME(tan,(           -6.333));
+    CHECK_DBL_SAME(tan,(           +6.666));
+    CHECK_DBL_SAME(tan,(        246.36775));
+    CHECK_DBL_SAME(tan,(        +INFINITY));
+    CHECK_DBL_SAME(tan,(        -INFINITY));
+    CHECK_DBL_SAME(tan,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(tan,(RTStrNanDouble("s", true)));
+
+
+    //lvbe /mnt/e/misc/float/tan -f +1.0 +2.0 +3.0 +4.0 +5.0 +6.0 +7.0 +8.0 +9.0 +10.0 +100.0 +654.216812456 +10.10101010101010 +25.25252525252525 +252.25252525252525 +2525.25252525252525 +25252.25252525252525 +252525.25252525252525 +3.14 +1.57 +2.355 +1.1775
+    //lvbe /mnt/e/misc/float/tan -f -1.0 -2.0 -3.0 -4.0 -5.0 -6.0 -7.0 -8.0 -9.0 -10.0 -100.0 -654.216812456 -10.10101010101010 -25.25252525252525 -252.25252525252525 -2525.25252525252525 -25252.25252525252525 -252525.25252525252525 -3.14 -1.57 -2.355 -1.1775
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +0.0f),                           +0.0f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -0.0f),                           -0.0f);
+    CHECK_FLT_RANGE(RT_NOCRT(tanf)(                   +(float)M_PI),                           +0.0f, 0.000000100000000f);
+    CHECK_FLT_RANGE(RT_NOCRT(tanf)(                   -(float)M_PI),                           +0.0f, 0.000000100000000f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +1.0f),            +1.557407736778259f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +2.0f),            -2.185039758682251f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +3.0f),            -0.142546549439430f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +4.0f),            +1.157821297645569f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +5.0f),            -3.380515098571777f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +6.0f),            -0.291006177663803f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +7.0f),            +0.871447980403900f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +8.0f),            -6.799711227416992f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          +9.0f),            -0.452315658330917f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         +10.0f),            +0.648360848426819f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                        +100.0f),            -0.587213933467865f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                +654.216812456f),            +0.961022973060608f);
+    CHECK_FLT(      RT_NOCRT(tanf)(            +10.10101010101010f),            +0.802448868751526f);
+    CHECK_FLT(      RT_NOCRT(tanf)(            +25.25252525252525f),            +0.120360307395458f);
+    CHECK_FLT(      RT_NOCRT(tanf)(           +252.25252525252525f),            +1.327268242835999f);
+    CHECK_FLT(      RT_NOCRT(tanf)(          +2525.25252525252525f),            -0.666738152503967f);
+    CHECK_FLT(      RT_NOCRT(tanf)(         +25252.25252525252525f),            +0.130944371223450f);
+    CHECK_FLT(      RT_NOCRT(tanf)(        +252525.25252525252525f),            +1.236903667449951f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         +3.14f),            -0.001592550077476f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         +1.57f),         +1255.848266601562500f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                        +2.355f),            -1.002391815185547f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                       +1.1775f),            +2.410141229629517f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -1.0f),            -1.557407736778259f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -2.0f),            +2.185039758682251f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -3.0f),            +0.142546549439430f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -4.0f),            -1.157821297645569f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -5.0f),            +3.380515098571777f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -6.0f),            +0.291006177663803f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -7.0f),            -0.871447980403900f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -8.0f),            +6.799711227416992f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                          -9.0f),            +0.452315658330917f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         -10.0f),            -0.648360848426819f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                        -100.0f),            +0.587213933467865f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                -654.216812456f),            -0.961022973060608f);
+    CHECK_FLT(      RT_NOCRT(tanf)(            -10.10101010101010f),            -0.802448868751526f);
+    CHECK_FLT(      RT_NOCRT(tanf)(            -25.25252525252525f),            -0.120360307395458f);
+    CHECK_FLT(      RT_NOCRT(tanf)(           -252.25252525252525f),            -1.327268242835999f);
+    CHECK_FLT(      RT_NOCRT(tanf)(          -2525.25252525252525f),            +0.666738152503967f);
+    CHECK_FLT(      RT_NOCRT(tanf)(         -25252.25252525252525f),            -0.130944371223450f);
+    CHECK_FLT(      RT_NOCRT(tanf)(        -252525.25252525252525f),            -1.236903667449951f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         -3.14f),            +0.001592550077476f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                         -1.57f),         -1255.848266601562500f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                        -2.355f),            +1.002391815185547f);
+    CHECK_FLT(      RT_NOCRT(tanf)(                       -1.1775f),            -2.410141229629517f);
+    CHECK_FLT(      RT_NOCRT(tanf)(      RTStrNanFloat(NULL, true)),      RTStrNanFloat(NULL, true));
+    CHECK_FLT(      RT_NOCRT(tanf)(   RTStrNanFloat("4940", false)),   RTStrNanFloat("4940", false));
+    //CHECK_FLT(      RT_NOCRT(tanf)(   RTStrNanFloat("494s", false)),   RTStrNanFloat("494s", false)); - not preserved
+
+    CHECK_FLT_SAME(tanf,(             +0.0f));
+    CHECK_FLT_SAME(tanf,(             -0.0f));
+    CHECK_FLT_SAME(tanf,(             +1.0f));
+    CHECK_FLT_SAME(tanf,(             -1.0f));
+    CHECK_FLT_SAME(tanf,(             -6.0f));
+    CHECK_FLT_SAME(tanf,(           -6.333f));
+    CHECK_FLT_SAME(tanf,(           +6.666f));
+    CHECK_FLT_SAME(tanf,(        246.36775f));
+
+    CHECK_FLT_SAME(tanf,(   +(float)INFINITY));
+    CHECK_FLT_SAME(tanf,(   -(float)INFINITY));
+    CHECK_FLT_SAME(tanf,(RTStrNanFloat(NULL, true)));
+    CHECK_FLT_SAME(tanf,(RTStrNanFloat("s", true)));
+}
+
 
 int main()
 {
@@ -3238,17 +3402,7 @@ int main()
     testATan2();
     testSin();
     testCos();
-
-#if 0
-    ../common/math/cos.asm \
-    ../common/math/cosf.asm \
-    ../common/math/cosl.asm \
-    ../common/math/sin.asm \
-    ../common/math/sinf.asm \
-    ../common/math/tan.asm \
-    ../common/math/tanf.asm \
-
-#endif
+    testTan();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
