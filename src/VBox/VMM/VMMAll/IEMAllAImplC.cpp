@@ -13899,11 +13899,11 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
  *
  * @returns Updated MXCSR.
  * @param   pSoftState      The SoftFloat state following the operation.
- * @param   r32Result       The result of the SoftFloat operation.
- * @param   pr32Result      Where to store the result for IEM.
+ * @param   r64Result       The result of the SoftFloat operation.
+ * @param   pr64Result      Where to store the result for IEM.
  * @param   fMxcsr          The original MXCSR value.
- * @param   pr32Src1        The first source operand (for setting #DE under certain circumstances).
- * @param   pr32Src2        The second source operand (for setting #DE under certain circumstances).
+ * @param   pr64Src1        The first source operand (for setting #DE under certain circumstances).
+ * @param   pr64Src2        The second source operand (for setting #DE under certain circumstances).
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t const *pSoftState, float64_t r64Result,
                                                                PRTFLOAT64U pr64Result, uint32_t fMxcsr,
