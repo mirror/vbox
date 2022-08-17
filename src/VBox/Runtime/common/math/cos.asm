@@ -109,7 +109,7 @@ RT_NOCRT_BEGINPROC cos
         fabs
         fld     qword [.s_r64TinyCosTo1 xWrtRIP]
         fcomip  st1
-        jbe      .zero_extra_pop
+        ja      .zero_extra_pop
 
 .not_that_tiny_input:
         fld     qword [.s_r64FCosOkay xWrtRIP]
