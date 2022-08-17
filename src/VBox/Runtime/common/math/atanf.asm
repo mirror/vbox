@@ -25,7 +25,9 @@
 ;
 
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
@@ -35,25 +37,31 @@ BEGINCODE
 ; @returns st(0) / xmm0
 ; @param    r32     [rbp + 8] / xmm0
 RT_NOCRT_BEGINPROC atanf
-    push    xBP
-    mov     xBP, xSP
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+%ifdef RT_ARCH_AMD64
+        sub     xSP, 10h
+        SEH64_ALLOCATE_STACK 10h
+%endif
+        SEH64_END_PROLOGUE
 
 %ifdef RT_ARCH_AMD64
-    sub     xSP, 10h
-    movss   [xSP], xmm0
-    fld     dword [xSP]
+        movss   [xSP], xmm0
+        fld     dword [xSP]
 %else
-    fld     dword [xBP + xCB*2]
+        fld     dword [xBP + xCB*2]
 %endif
-    fld1
+        fld1
 
-    fpatan
+        fpatan
 
 %ifdef RT_ARCH_AMD64
-    fstp    dword [xSP]
-    movss   xmm0, [xSP]
+        fstp    dword [xSP]
+        movss   xmm0, [xSP]
 %endif
-    leave
-    ret
+        leave
+        ret
 ENDPROC   RT_NOCRT(atanf)
 
