@@ -309,7 +309,7 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
 # Only include testcases being on the whitelist.
-TMP_UNITTESTS_WHITELIST := \
+VALKIT_UNITTESTS_WHITELIST_IPRT := \
 	tstFile \
 	tstFileLock \
 	tstRTPathQueryInfo \
@@ -320,11 +320,11 @@ TMP_UNITTESTS_WHITELIST := \
 	tstThread-1 \
 	tstUtf8
 
-TMP_UNITTESTS_WHITELIST.linux += \
+VALKIT_UNITTESTS_WHITELIST_IPRT.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName
 
-TMP_UNITTESTS_WHITELIST.win += \
+VALKIT_UNITTESTS_WHITELIST_IPRT.win += \
 	tstRTProcWait
 
 #
@@ -340,8 +340,8 @@ TMP_UNITTESTS_DEPS_LIB :=
 
 define def_vbox_validationkit_unittests
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
-  	$(foreach test_whitelist, $(TMP_UNITTESTS_WHITELIST), \
-		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(test_whitelist)$(TMP_SUFF_EXE)))
+  	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $(VALKIT_UNITTESTS_WHITELIST_IPRT).$(os), \
+		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach file_dep, $(TMP_UNITTESTS_DEPS_LIB), \
 		$$(wildcard $(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/$(file_dep)$(TMP_SUFF_LIB)))
