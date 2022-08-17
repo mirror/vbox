@@ -1781,12 +1781,18 @@ endef
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
+# We drop the windows error defines here for reason of size. The valkit tstUtf8
+# was reduced by 175KB, from 600KB to 425KB (about 30%). Come up with a way of
+# stripping it down or compressing it better and it can be added back.
+# - 2022-08-17, bird.
+#
 RuntimeR3_TEMPLATE = VBoxR3Static
 RuntimeR3_EXTENDS  = RuntimeBaseR3
+#RuntimeR3_DEFS.win = $(RuntimeBaseR3_DEFS.win) IPRT_NO_WIN_ERROR_DATA
 ifdef VBOX_WITH_NOCRT_STATIC
  if1of ($(KBUILD_TARGET), win)
-  RuntimeR3_USES  = $(RuntimeBaseR3_USES) VBoxNoCrtAliases
-  RuntimeR3_DEFS += $(filter-out RT_WITHOUT_NOCRT_WRAPPERS,$(RuntimeBaseR3_DEFS)) \
+  RuntimeR3_USES   = $(RuntimeBaseR3_USES) VBoxNoCrtAliases
+  RuntimeR3_DEFS   = $(filter-out RT_WITHOUT_NOCRT_WRAPPERS,$(RuntimeBaseR3_DEFS)) \
   	RT_FORCE_NOCRT_WRAPPERS \
 	RT_WITH_NOCRT_ALIASES RT_WITH_NOCRT_UNDERSCORE_ALIASES RT_WITH_GENALIAS_NOCRT_ALIASES
 
@@ -2074,6 +2080,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
 		,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
  endif
 endif
+
 
 #
 # Generate RTIsoMaker / VISO help text from the manpage xml.
