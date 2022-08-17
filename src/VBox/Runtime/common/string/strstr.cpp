@@ -44,21 +44,25 @@
 char *RT_NOCRT(strstr)(const char *pszString, const char *pszSubStr)
 {
     char const  ch0Sub = *pszSubStr;
-    pszString = strchr(pszString, ch0Sub);
-    if (pszString)
+    if (ch0Sub != '\0')
     {
-        size_t const cchSubStr = strlen(pszSubStr);
-        do
+        pszString = strchr(pszString, ch0Sub);
+        if (pszString)
         {
-            if (strncmp(pszString, pszSubStr, cchSubStr) == 0)
-                return (char *)pszString;
-            if (ch0Sub)
-                pszString = strchr(pszString + 1, ch0Sub);
-            else
-                break;
-        } while (pszString != NULL);
+            size_t const cchSubStr = strlen(pszSubStr);
+            do
+            {
+                if (strncmp(pszString, pszSubStr, cchSubStr) == 0)
+                    return (char *)pszString;
+                if (ch0Sub)
+                    pszString = strchr(pszString + 1, ch0Sub);
+                else
+                    break;
+            } while (pszString != NULL);
+        }
+        return NULL;
     }
-    return NULL;
+    return (char *)pszString;
 }
 RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL(strstr);
 
