@@ -742,11 +742,7 @@ int RecordingStream::initInternal(RecordingContext *pCtx, uint32_t uScreen,
 
             AssertPtr(File.pWEBM);
             vrc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
-#ifdef VBOX_WITH_AUDIO_RECORDING
                                      fAudioEnabled ? pSettings->Audio.enmCodec : RecordingAudioCodec_None,
-#else
-                                     RecordingAudioCodec_None,
-#endif
                                      fVideoEnabled ? pSettings->Video.enmCodec : RecordingVideoCodec_None);
             if (RT_FAILURE(vrc))
             {
