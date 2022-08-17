@@ -50,6 +50,47 @@
 # include <iprt/x86.h>
 #endif
 
+/* Stuff we provide in our math, but UCRT apparently doesn't: */
+#ifndef  M_E
+# define M_E     2.7182818284590452354   /* e */
+#endif
+#ifndef  M_LOG2E
+# define M_LOG2E     1.4426950408889634074   /* log 2e */
+#endif
+#ifndef  M_LOG10E
+# define M_LOG10E    0.43429448190325182765  /* log 10e */
+#endif
+#ifndef  M_LN2
+# define M_LN2       0.69314718055994530942  /* log e2 */
+#endif
+#ifndef  M_LN10
+# define M_LN10      2.30258509299404568402  /* log e10 */
+#endif
+#ifndef  M_PI
+# define M_PI        3.14159265358979323846  /* pi */
+#endif
+#ifndef  M_PI_2
+# define M_PI_2      1.57079632679489661923  /* pi/2 */
+#endif
+#ifndef  M_PI_4
+# define M_PI_4      0.78539816339744830962  /* pi/4 */
+#endif
+#ifndef  M_1_PI
+# define M_1_PI      0.31830988618379067154  /* 1/pi */
+#endif
+#ifndef  M_2_PI
+# define M_2_PI      0.63661977236758134308  /* 2/pi */
+#endif
+#ifndef  M_2_SQRTPI
+# define M_2_SQRTPI  1.12837916709551257390  /* 2/sqrt(pi) */
+#endif
+#ifndef  M_SQRT2
+# define M_SQRT2     1.41421356237309504880  /* sqrt(2) */
+#endif
+#ifndef  M_SQRT1_2
+# define M_SQRT1_2   0.70710678118654752440  /* 1/sqrt(2) */
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -279,6 +320,25 @@
         } \
     } while (0)
 
+#define CHECK_DBL_RANGE(a_Expr, a_rdExpect, a_rdPlusMin) do { \
+        RTFLOAT64U uRet; \
+        uRet.r = a_Expr; \
+        RTFLOAT64U uExpectMin; \
+        uExpectMin.r = (a_rdExpect) - (a_rdPlusMin); \
+        RTFLOAT64U uExpectMax; \
+        uExpectMax.r = (a_rdExpect) + (a_rdPlusMin); \
+        if (   !(RTFLOAT64U_IS_NORMAL(&uRet) || RTFLOAT64U_IS_ZERO(&uRet))\
+            || uRet.r < uExpectMin.r \
+            || uRet.r > uExpectMax.r ) \
+        { \
+            RTStrFormatR64(g_szFloat[0], sizeof(g_szFloat[0]), &uRet,       0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR64(g_szFloat[1], sizeof(g_szFloat[1]), &uExpectMin, 0, 0, RTSTR_F_SPECIAL); \
+            RTStrFormatR64(g_szFloat[2], sizeof(g_szFloat[2]), &uExpectMax, 0, 0, RTSTR_F_SPECIAL); \
+            RTTestFailed(g_hTest, "line %u: %s -> %s, expected [%s,%s] (%s +/- %s)", \
+                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], #a_rdExpect, #a_rdPlusMin); \
+        } \
+    } while (0)
+
 #define CHECK_DBL_SAME_RELAXED_NAN(a_Fn, a_Args) do { \
         RTFLOAT64U uNoCrtRet, uCrtRet; \
         uNoCrtRet.r = RT_NOCRT(a_Fn) a_Args; \
@@ -360,7 +420,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 RTTEST  g_hTest;
-char    g_szFloat[2][128];
+char    g_szFloat[4][128];
 
 
 #ifdef _MSC_VER
@@ -2693,10 +2753,10 @@ void testATan()
 {
     RTTestSub(g_hTest, "atan[f]");
 
-    CHECK_DBL(RT_NOCRT(atan)(             +1.0), +0.78539816339744830962 /*+M_PI_4*/);
-    CHECK_DBL(RT_NOCRT(atan)(             -1.0), -0.78539816339744830962 /*-M_PI_4*/);
-    CHECK_DBL(RT_NOCRT(atan)(        +INFINITY), +1.57079632679489661923 /*+M_PI_2*/);
-    CHECK_DBL(RT_NOCRT(atan)(        -INFINITY), -1.57079632679489661923 /*-M_PI_2*/);
+    CHECK_DBL(RT_NOCRT(atan)(             +1.0), +M_PI_4);
+    CHECK_DBL(RT_NOCRT(atan)(             -1.0), -M_PI_4);
+    CHECK_DBL(RT_NOCRT(atan)(        +INFINITY), +M_PI_2);
+    CHECK_DBL(RT_NOCRT(atan)(        -INFINITY), -M_PI_2);
     CHECK_DBL_SAME(    atan,(              1.0));
     CHECK_DBL_SAME(    atan,(              1.5));
     CHECK_DBL_SAME(    atan,(             +0.0));
@@ -2722,10 +2782,10 @@ void testATan()
     CHECK_DBL_SAME(    atan,(RTStrNanDouble("s",  true)));
     CHECK_DBL_SAME(    atan,(RTStrNanDouble("s", false)));
 
-    CHECK_DBL(RT_NOCRT(atanf)(             +1.0f), +0.78539816339744830962f /*+M_PI_4*/);
-    CHECK_DBL(RT_NOCRT(atanf)(             -1.0f), -0.78539816339744830962f /*-M_PI_4*/);
-    CHECK_DBL(RT_NOCRT(atanf)(         +INFINITY), +1.57079632679489661923f /*+M_PI_2*/);
-    CHECK_DBL(RT_NOCRT(atanf)(         -INFINITY), -1.57079632679489661923f /*-M_PI_2*/);
+    CHECK_DBL(RT_NOCRT(atanf)(             +1.0f), (float)+M_PI_4);
+    CHECK_DBL(RT_NOCRT(atanf)(             -1.0f), (float)-M_PI_4);
+    CHECK_DBL(RT_NOCRT(atanf)(         +INFINITY), (float)+M_PI_2);
+    CHECK_DBL(RT_NOCRT(atanf)(         -INFINITY), (float)-M_PI_2);
     CHECK_DBL_SAME(    atanf,(              1.0f));
     CHECK_DBL_SAME(    atanf,(              1.5f));
     CHECK_DBL_SAME(    atanf,(             +0.0f));
@@ -2747,12 +2807,211 @@ void testATan()
     CHECK_DBL_SAME(    atanf,(2.34960584706e+10f));
     CHECK_DBL_SAME(    atanf,(2.34960584706e+30f));
     CHECK_DBL_SAME(    atanf,(2.34960584706e+30f));
-    CHECK_DBL_SAME(    atanf,(RTStrNanDouble(NULL, true)));
-    CHECK_DBL_SAME(    atanf,(RTStrNanDouble("s",  true)));
-    CHECK_DBL_SAME(    atanf,(RTStrNanDouble("s", false)));
+    CHECK_DBL_SAME(    atanf,(RTStrNanFloat(NULL, true)));
+    CHECK_DBL_SAME(    atanf,(RTStrNanFloat("s",  true)));
+    CHECK_DBL_SAME(    atanf,(RTStrNanFloat("s", false)));
+}
+
+
+void testATan2()
+{
+    RTTestSub(g_hTest, "atan2[f]");
+
+    CHECK_DBL(RT_NOCRT(atan2)(             +1.0,            0.0), +M_PI_2);
+    CHECK_DBL(RT_NOCRT(atan2)(             -1.0,            0.0), -M_PI_2);
+    CHECK_DBL(RT_NOCRT(atan2)(             +1.0,           +1.0), +M_PI_4);
+    CHECK_DBL(RT_NOCRT(atan2)(             -1.0,           -1.0), -M_PI_2 - M_PI_4);
+    CHECK_DBL_SAME(    atan2,(             +1.0,            0.0));
+    CHECK_DBL_SAME(    atan2,(             +1.0,           -0.0));
+    CHECK_DBL_SAME(    atan2,(             -1.0,            0.0));
+    CHECK_DBL_SAME(    atan2,(             -1.0,           -0.0));
+    CHECK_DBL_SAME(    atan2,(             +1.0,           +1.0));
+    CHECK_DBL_SAME(    atan2,(             -1.0,           +1.0));
+    CHECK_DBL_SAME(    atan2,(             +1.0,           -1.0));
+    CHECK_DBL_SAME(    atan2,(             -1.0,           -1.0));
+    CHECK_DBL_SAME(    atan2,(      238.6634566,      -999999.0));
+    CHECK_DBL_SAME(    atan2,(     -905698045.1,       490876.0));
+    CHECK_DBL_SAME(    atan2,(     1.333334e-10,   -1.9993e+200));
+    CHECK_DBL_SAME(    atan2,(    1.333334e+168,   -1.9993e+299));
+    CHECK_DBL_SAME(    atan2,(         +DBL_MAX,       +DBL_MAX));
+    CHECK_DBL_SAME(    atan2,(         -DBL_MAX,       +DBL_MAX));
+    CHECK_DBL_SAME(    atan2,(        +INFINITY,      +INFINITY));
+    CHECK_DBL_SAME(    atan2,(        -INFINITY,      +INFINITY));
+    CHECK_DBL_SAME(    atan2,(        -INFINITY,      42.242424));
+    CHECK_DBL_SAME(    atan2,(RTStrNanDouble(NULL, true), RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(    atan2,(RTStrNanDouble(NULL, false), RTStrNanDouble(NULL, false)));
+    CHECK_DBL_SAME(    atan2,(RTStrNanDouble(NULL, false), RTStrNanDouble(NULL, true)));
+    //CHECK_DBL_SAME(    atan2,(RTStrNanDouble(NULL, true), RTStrNanDouble(NULL, false))); - UCRT returns -QNaN, we +QNaN
+    CHECK_DBL_SAME(    atan2,(RTStrNanDouble(NULL, true), RTStrNanDouble("s", false)));
+
+    CHECK_FLT(RT_NOCRT(atan2f)(             +1.0f,            0.0f), (float)+M_PI_2);
+    CHECK_FLT(RT_NOCRT(atan2f)(             -1.0f,            0.0f), (float)-M_PI_2);
+    CHECK_FLT(RT_NOCRT(atan2f)(             +1.0f,           +1.0f), (float)+M_PI_4);
+    CHECK_FLT(RT_NOCRT(atan2f)(             -1.0f,           -1.0f), (float)(-M_PI_2 - M_PI_4));
+    CHECK_FLT_SAME(    atan2f,(             +1.0f,            0.0f));
+    CHECK_FLT_SAME(    atan2f,(             +1.0f,           -0.0f));
+    CHECK_FLT_SAME(    atan2f,(             -1.0f,            0.0f));
+    CHECK_FLT_SAME(    atan2f,(             -1.0f,           -0.0f));
+    CHECK_FLT_SAME(    atan2f,(             +1.0f,           +1.0f));
+    CHECK_FLT_SAME(    atan2f,(             -1.0f,           +1.0f));
+    CHECK_FLT_SAME(    atan2f,(             +1.0f,           -1.0f));
+    CHECK_FLT_SAME(    atan2f,(             -1.0f,           -1.0f));
+    CHECK_FLT_SAME(    atan2f,(      238.6634566f,      -999999.0f));
+    CHECK_FLT_SAME(    atan2f,(     -905698045.1f,       490876.0f));
+    CHECK_FLT_SAME(    atan2f,(     1.333334e-10f,    -1.9993e+20f));
+    CHECK_FLT_SAME(    atan2f,(     1.333334e+35f,    -1.9993e+29f));
+    CHECK_FLT_SAME(    atan2f,(          +FLT_MAX,        +FLT_MAX));
+    CHECK_FLT_SAME(    atan2f,(          -FLT_MAX,        +FLT_MAX));
+    CHECK_FLT_SAME(    atan2f,(         +INFINITY,       +INFINITY));
+    CHECK_FLT_SAME(    atan2f,(         -INFINITY,       +INFINITY));
+    CHECK_FLT_SAME(    atan2f,(         -INFINITY,      42.242424f));
+    CHECK_FLT_SAME(    atan2f,(RTStrNanFloat(NULL, true), RTStrNanFloat(NULL, true)));
+    CHECK_FLT_SAME(    atan2f,(RTStrNanFloat(NULL, false), RTStrNanFloat(NULL, false)));
+    CHECK_FLT_SAME(    atan2f,(RTStrNanFloat(NULL, false), RTStrNanFloat(NULL, true)));
+    //CHECK_FLT_SAME(    atan2f,(RTStrNanFloat(NULL, true), RTStrNanFloat(NULL, false))); - UCRT returns -QNaN, we +QNaN
+    CHECK_FLT_SAME(    atan2f,(RTStrNanFloat(NULL, true), RTStrNanFloat("s", false)));
+}
+
+
+void testSin()
+{
+    RTTestSub(g_hTest, "sin[f]");
+
+    /*
+     * Note! sin, cos and friends are complicated the results may differ between
+     *       implementations.  The numbers below was computed using amd64 glibc
+     *       (2.27-3ubuntu1.4) sinl() and a %.33Lf printf.
+     *
+     *       Our code is based on the x87 CPU and does not have the best
+     *       reduction code is inaccurate, so accuracy drops. Also, with the
+     *       input accuracy difference we must expect differences too.
+     */
+    CHECK_DBL(      RT_NOCRT(sin)(                          +0.0),                           +0.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -0.0),                           -0.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                         +M_PI),                           +0.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                         -M_PI),                           +0.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                       +M_PI_2),                           +1.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                       -M_PI_2),                           -1.0);
+    CHECK_DBL(      RT_NOCRT(sin)(              +M_PI_2 + M_PI*4),                           +1.0);
+    CHECK_DBL(      RT_NOCRT(sin)(              -M_PI_2 - M_PI*4),                           -1.0);
+
+    CHECK_DBL(      RT_NOCRT(sin)(              +M_PI_2 + M_PI*2),                           +1.0);
+    CHECK_DBL(      RT_NOCRT(sin)(              -M_PI_2 - M_PI*2),                           -1.0);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +1.0),        +0.84147098480789650488);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +2.0),        +0.90929742682568170942);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +3.0),        +0.14112000805986721352);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +4.0),        -0.75680249530792820245);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +5.0),        -0.95892427466313845397);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +6.0),        -0.27941549819892586015);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +7.0),        +0.65698659871878906102);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +8.0),        +0.98935824662338178737);
+    CHECK_DBL(      RT_NOCRT(sin)(                          +9.0),        +0.41211848524175659358);
+    CHECK_DBL(      RT_NOCRT(sin)(                         +10.0),        -0.54402111088936977445);
+    CHECK_DBL(      RT_NOCRT(sin)(                        +100.0),        -0.50636564110975879061);
+    CHECK_DBL(      RT_NOCRT(sin)(                +654.216812456),        +0.69292681127157818022);
+    CHECK_DBL(      RT_NOCRT(sin)(     10.1010101010101010101010),        -0.62585878258501614901);
+    CHECK_DBL(      RT_NOCRT(sin)(    +25.2525252525252525252525),        +0.11949778146891366915);
+    CHECK_DBL(      RT_NOCRT(sin)(   +252.2525252525252525252525),        +0.79868874455343841223);
+    CHECK_DBL(      RT_NOCRT(sin)(  +2525.2525252525252525252525),        -0.55467159842968405403);
+    CHECK_DBL_RANGE(RT_NOCRT(sin)( +25252.2525252525252525252525),        +0.13040325588994761130, 0.0000000000000010000);
+    CHECK_DBL_RANGE(RT_NOCRT(sin)(+252525.2525252525252525252525),        -0.77923047482990159818, 0.0000000000000100000);
+
+    CHECK_DBL(      RT_NOCRT(sin)(                          -1.0),        -0.84147098480789650488);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -2.0),        -0.90929742682568170942);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -3.0),        -0.14112000805986721352);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -4.0),        +0.75680249530792820245);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -5.0),        +0.95892427466313845397);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -6.0),        +0.27941549819892586015);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -7.0),        -0.65698659871878906102);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -8.0),        -0.98935824662338178737);
+    CHECK_DBL(      RT_NOCRT(sin)(                          -9.0),        -0.41211848524175659358);
+    CHECK_DBL(      RT_NOCRT(sin)(                         -10.0),        +0.54402111088936977445);
+    CHECK_DBL(      RT_NOCRT(sin)(                        -100.0),        +0.50636564110975879061);
+    CHECK_DBL(      RT_NOCRT(sin)(                -654.216812456),        -0.69292681127157818022);
+    CHECK_DBL(      RT_NOCRT(sin)(    -10.1010101010101010101010),        +0.62585878258501614901);
+    CHECK_DBL(      RT_NOCRT(sin)(    -25.2525252525252525252525),        -0.11949778146891366915);
+    CHECK_DBL(      RT_NOCRT(sin)(   -252.2525252525252525252525),        -0.79868874455343841223);
+    CHECK_DBL(      RT_NOCRT(sin)(  -2525.2525252525252525252525),        +0.55467159842968405403);
+    CHECK_DBL_RANGE(RT_NOCRT(sin)( -25252.2525252525252525252525),        -0.13040325588994761130, 0.0000000000000010000);
+    CHECK_DBL_RANGE(RT_NOCRT(sin)(-252525.2525252525252525252525),        +0.77923047482990159818, 0.0000000000000100000);
+    CHECK_DBL(      RT_NOCRT(sin)(     RTStrNanDouble("s", true)),       RTStrNanDouble("s", true));
+    CHECK_DBL(      RT_NOCRT(sin)(RTStrNanDouble("9999s", false)),  RTStrNanDouble("9999s", false));
+
+    CHECK_DBL_SAME(    sin,(              1.0));
+    CHECK_DBL_SAME(    sin,(              1.5));
+    CHECK_DBL_SAME(    sin,(             +0.0));
+    CHECK_DBL_SAME(    sin,(             +0.0));
+    CHECK_DBL_SAME(    sin,(             -0.0));
+    CHECK_DBL_SAME(    sin,(             -0.0));
+    CHECK_DBL_SAME(    sin,(            -10.0));
+#if 0 /* UCRT returns tiny fractions for these in the 2**-53 range, we return 0.0 */
+    CHECK_DBL_SAME(    sin,(            +M_PI));
+    CHECK_DBL_SAME(    sin,(            -M_PI));
+#endif
+    CHECK_DBL_SAME(    sin,(          +M_PI_2));
+    CHECK_DBL_SAME(    sin,(          -M_PI_2));
+    CHECK_DBL_SAME(    sin,(        +INFINITY));
+    CHECK_DBL_SAME(    sin,(        -INFINITY));
+    CHECK_DBL_SAME(    sin,(RTStrNanDouble(NULL, true)));
+#if 0 /*UCRT converts these to quiet ones, we check above */
+    //CHECK_DBL_SAME(    sin,(RTStrNanDouble("s",  true)));
+    //CHECK_DBL_SAME(    sin,(RTStrNanDouble("s", false)));
+#endif
+
+
 
 }
 
+
+void testCos()
+{
+    RTTestSub(g_hTest, "cos[f]");
+
+    CHECK_DBL(RT_NOCRT(cos)(             +0.0),     1.0);
+    CHECK_DBL(          cos(             +0.0),     1.0);
+    CHECK_DBL(RT_NOCRT(cos)(            +M_PI),    -1.0);
+    CHECK_DBL(          cos(            +M_PI),    -1.0);
+    CHECK_DBL(RT_NOCRT(cos)(            -M_PI),    -1.0);
+    CHECK_DBL(          cos(            -M_PI),    -1.0);
+    CHECK_DBL(RT_NOCRT(cos)(          +M_PI_2),     0.0);
+    CHECK_DBL(          cos(          +M_PI_2),     0.0);
+    CHECK_DBL(RT_NOCRT(cos)(          -M_PI_2),     0.0);
+    CHECK_DBL(          cos(          -M_PI_2),     0.0);
+    CHECK_DBL(RT_NOCRT(cos)(             +1.0), +M_PI_4);
+    CHECK_DBL(          cos(             +1.0), +M_PI_4);
+    CHECK_DBL(RT_NOCRT(cos)(             -1.0), -M_PI_4);
+    CHECK_DBL(          cos(             -1.0), -M_PI_4);
+    CHECK_DBL_SAME(    cos,(              1.0));
+    CHECK_DBL_SAME(    cos,(              1.5));
+    CHECK_DBL_SAME(    cos,(             +0.0));
+    CHECK_DBL_SAME(    cos,(             +0.0));
+    CHECK_DBL_SAME(    cos,(             -0.0));
+    CHECK_DBL_SAME(    cos,(             -0.0));
+    CHECK_DBL_SAME(    cos,(            +M_PI));
+    CHECK_DBL_SAME(    cos,(            -M_PI));
+    CHECK_DBL_SAME(    cos,(          +M_PI_2));
+    CHECK_DBL_SAME(    cos,(          -M_PI_2));
+#if 0
+    CHECK_DBL_SAME(    cos,(      238.6634566));
+    CHECK_DBL_SAME(    cos,(      -49.4578999));
+    CHECK_DBL_SAME(    cos,(         999999.0));
+    CHECK_DBL_SAME(    cos,(        -999999.0));
+    CHECK_DBL_SAME(    cos,(        -999999.0));
+    CHECK_DBL_SAME(    cos,(         999999.0));
+    CHECK_DBL_SAME(    cos,(      39560.32334));
+    CHECK_DBL_SAME(    cos,(      39560.32334));
+    CHECK_DBL_SAME(    cos,(        +INFINITY));
+    CHECK_DBL_SAME(    cos,(        -INFINITY));
+    CHECK_DBL_SAME(    cos,(         +DBL_MAX));
+    CHECK_DBL_SAME(    cos,(         -DBL_MAX));
+    CHECK_DBL_SAME(    cos,(2.34960584706e100));
+    CHECK_DBL_SAME(    cos,(2.34960584706e300));
+    CHECK_DBL_SAME(    cos,(2.34960584706e300));
+    CHECK_DBL_SAME(    cos,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(    cos,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(    cos,(RTStrNanDouble("s", false)));
+#endif
+}
 
 
 
@@ -2811,10 +3070,11 @@ int main()
     testSqRt();
 
     testATan();
+    testATan2();
+    testSin();
+    //testCos();
 
 #if 0
-    ../common/math/atan2.asm \
-    ../common/math/atan2f.asm \
     ../common/math/cos.asm \
     ../common/math/cosf.asm \
     ../common/math/cosl.asm \

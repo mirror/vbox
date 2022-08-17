@@ -676,6 +676,7 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/rintf.asm \
 	../common/math/sin.asm \
 	../common/math/sinf.asm \
+	../common/math/sincore.asm \
 	../common/math/sqrt.asm \
 	../common/math/sqrtf.asm \
 	../common/math/tan.asm \

@@ -24,48 +24,180 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
 
 BEGINCODE
 
 ;;
-; compute the cosine of dr, measured in radians.
-; @returns st(0) / xmm0
+; Compute the cosine of rd, measured in radians.
+;
+; @returns  st(0) / xmm0
 ; @param    rd      [rbp + xCB*2] / xmm0
+;
 RT_NOCRT_BEGINPROC cos
-    push    xBP
-    mov     xBP, xSP
-%ifdef RT_ARCH_AMD64
-    sub     xSP, 10h
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        sub     xSP, 20h
+        SEH64_ALLOCATE_STACK 20h
+        SEH64_END_PROLOGUE
 
-    movsd   [xSP], xmm0
-    fld     qword [xSP]
+%ifdef RT_OS_WINDOWS
+        ;
+        ; Make sure we use full precision and not the windows default of 53 bits.
+        ;
+;; @todo not sure if this makes any difference...
+        fnstcw  [xBP - 20h]
+        mov     ax, [xBP - 20h]
+        or      ax, X86_FCW_PC_64       ; includes both bits, so no need to clear the mask.
+        mov     [xBP - 1ch], ax
+        fldcw   [xBP - 1ch]
+%endif
+
+        ;
+        ; Load the input into st0.
+        ;
+%ifdef RT_ARCH_AMD64
+        movsd   [xBP - 10h], xmm0
+        fld     qword [xBP - 10h]
 %else
-    fld     qword [xBP + xCB*2]
+        fld     qword [xBP + xCB*2]
 %endif
-    fcos
-    fnstsw  ax
-    test    ah, 4
-    jz      .done
 
-    fldpi
-    fadd    st0, st0
-    fxch    st1
-.again:
-    fprem1
-    fnstsw  ax
-    test    ah, 4
-    jnz     .again
+        ;
+        ; The FCOS instruction has a very narrow range (-3pi/8 to 3pi/8) where it
+        ; works reliably, so outside that we'll use the FSIN instruction instead
+        ; as it has a larger good range (-5pi/4 to 1pi/4 for cosine).
+        ; Input conversion follows: cos(x) = sin(x + pi/2)
+        ;
+        ; We examin the input and weed out non-finit numbers first.
+        ;
 
-    fstp    st0
-    fcos
+        ; We only do the range check on normal finite numbers.
+        fxam
+        fnstsw  ax
+        and     ax, X86_FSW_C3 | X86_FSW_C2 | X86_FSW_C0
+        cmp     ax, X86_FSW_C2              ; Normal finite number (excluding zero)
+        je      .finite
+        cmp     ax, X86_FSW_C3              ; Zero
+        je      .zero
+        cmp     ax, X86_FSW_C3 | X86_FSW_C2 ; Denormals - treat them as zero.
+        je      .zero
+        cmp     ax, X86_FSW_C0              ; NaN - must handle it special,
+        je      .nan
 
-.done:
+        ; Pass infinities and unsupported inputs to fcos, assuming it does the right thing.
+        ; We also jump here if we get a finite number in the "good" range, see below.
+.do_fcos:
+        fcos
+        jmp     .return_val
+
+        ;
+        ; Finite number.
+        ;
+        ; First check if it's a very tiny number where we can simply return 1.
+        ; Next check if it's in the range where FCOS is reasonable, otherwise
+        ; go to FSIN to do the work.
+        ;
+.finite:
+        fld     st0
+        fabs
+        fld     qword [.s_r64TinyCosTo1 xWrtRIP]
+        fcomip  st1
+        jbe      .zero_extra_pop
+
+.not_that_tiny_input:
+        fld     qword [.s_r64FCosOkay xWrtRIP]
+        fcomip  st1
+        ffreep  st0                         ; pop fabs(input)
+        ja      .do_fcos                    ; jmp if fabs(input) < .s_r64FCosOkay
+
+        ;
+        ; If we have a positive number we subtract 3pi/2, for negative we add pi/2.
+        ; We still have the FXAM result in AX.
+        ;
+.outside_fcos_range:
+        test    ax, X86_FSW_C1              ; The sign bit.
+        jnz     .adjust_negative_to_sine
+
+        ; Calc -3pi/2 using FPU-internal pi constant.
+        fldpi
+        fadd    st0, st0                    ; st0=2pi
+        fldpi
+        fdiv    qword [.s_r64Two xWrtRIP]   ; st1=2pi; st0=pi/2
+        fsubp   st1, st0                    ; st0=3pi/2
+        fchs                                ; st0=-3pi/2
+        jmp     .make_sine_adjustment
+
+.adjust_negative_to_sine:
+        ; Calc +pi/2.
+        fldpi
+        fdiv    qword [.s_r64Two xWrtRIP]   ; st1=2pi; st0=pi/2
+
+.make_sine_adjustment:
+        faddp   st1, st0
+
+        ;
+        ; Call internal sine worker to calculate st0=sin(st0)
+        ;
+.do_sine:
+        mov     ecx, 1                      ; double
+        extern  NAME(rtNoCrtMathSinCore)
+        call    NAME(rtNoCrtMathSinCore)
+
+        ;
+        ; Return st0.
+        ;
+.return_val:
 %ifdef RT_ARCH_AMD64
-    fstp    qword [xSP]
-    movsd   xmm0, [xSP]
+        fstp    qword [xBP - 10h]
+        movsd   xmm0, [xBP - 10h]
 %endif
-    leave
-    ret
+%ifdef RT_OS_WINDOWS
+        fldcw   [xBP - 20h]                 ; restore original
+%endif
+.return:
+        leave
+        ret
+
+        ;
+        ; cos(+/-0) = +1.0
+        ;
+.zero_extra_pop:
+        ffreep  st0
+.zero:
+        ffreep  st0
+        fld1
+        jmp     .return_val
+
+        ;
+        ; Input is NaN, output it unmodified as far as we can (FLD changes SNaN
+        ; to QNaN when masked).
+        ;
+.nan:
+%ifdef RT_ARCH_AMD64
+        ffreep  st0
+%endif
+        jmp     .return
+
+        ;
+        ; Local constants.
+        ;
+ALIGNCODE(8)
+        ; About 2**-27. When fabs(input) is below this limit we can consider cos(input) ~= 1.0.
+.s_r64TinyCosTo1:
+        dq  7.4505806e-9
+
+        ; The absolute limit for the range which FCOS is expected to produce reasonable results.
+.s_r64FCosOkay:
+        dq  1.1780972450961724644225   ; 3*pi/8
+
+.s_r64Two:
+        dq  2.0
 ENDPROC   RT_NOCRT(cos)
 

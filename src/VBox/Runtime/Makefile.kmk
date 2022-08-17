@@ -1941,6 +1941,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/rintf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
+  	common/math/sincore.asm \
   	common/math/sqrt.asm \
   	common/math/sqrtf.asm \
   	common/math/tan.asm \
@@ -2011,6 +2012,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/rintf.asm \
   	common/math/sin.asm \
   	common/math/sinf.asm \
+  	common/math/sincore.asm \
   	common/math/sqrt.asm \
   	common/math/sqrtf.asm \
   	common/math/tan.asm \
