@@ -450,7 +450,7 @@ public slots:
     void sltShowBugTracker();
     void sltShowForums();
     void sltShowOracle();
-    void sltShowOnlineManual();
+    void sltShowOnlineDocumentation();
     void sltShowHelpAboutDialog();
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();

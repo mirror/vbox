@@ -2045,7 +2045,7 @@ void UIMessageCenter::sltShowOracle()
     uiCommon().openURL("https://www.oracle.com/us/technologies/virtualization/virtualbox/overview/index.html");
 }
 
-void UIMessageCenter::sltShowOnlineManual()
+void UIMessageCenter::sltShowOnlineDocumentation()
 {
     uiCommon().openURL("https://docs.oracle.com/en/virtualization/virtualbox/7.0/user/index.html");
 }

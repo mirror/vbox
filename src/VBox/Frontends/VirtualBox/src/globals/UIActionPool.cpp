@@ -885,15 +885,15 @@ protected:
 };
 
 
-/** Simple action extension, used as 'Online Manual' action class. */
-class UIActionSimpleOnlineManual : public UIActionSimple
+/** Simple action extension, used as 'Online Documentation' action class. */
+class UIActionSimpleOnlineDocumentation : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleOnlineManual(UIActionPool *pParent)
+    UIActionSimpleOnlineDocumentation(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png", true)
     {
         retranslateUi();
@@ -904,29 +904,29 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const RT_OVERRIDE
     {
-        return UIExtraDataMetaDefs::MenuHelpActionType_OnlineManual;
+        return UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const RT_OVERRIDE
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_OnlineManual);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const RT_OVERRIDE
     {
-        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_OnlineManual);
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
     }
 
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
-        return QString("OnlineManual");
+        return QString("OnlineDocumentation");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "&Online Manual..."));
+        setName(QApplication::translate("UIActionPool", "&Online Documentation..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user manual"));
     }
 };
@@ -3128,7 +3128,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_BugTracker] = new UIActionSimpleBugTracker(this);
     m_pool[UIActionIndex_Simple_Forums] = new UIActionSimpleForums(this);
     m_pool[UIActionIndex_Simple_Oracle] = new UIActionSimpleOracle(this);
-    m_pool[UIActionIndex_Simple_OnlineManual] = new UIActionSimpleOnlineManual(this);
+    m_pool[UIActionIndex_Simple_OnlineDocumentation] = new UIActionSimpleOnlineDocumentation(this);
 #ifndef VBOX_WS_MAC
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 #endif
@@ -3251,8 +3251,8 @@ void UIActionPool::prepareConnections()
             &msgCenter(), &UIMessageCenter::sltShowForums, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_Oracle), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowOracle, Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_OnlineManual), &UIAction::triggered,
-            &msgCenter(), &UIMessageCenter::sltShowOnlineManual, Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_OnlineDocumentation), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowOnlineDocumentation, Qt::UniqueConnection);
 #ifndef VBOX_WS_MAC
     connect(action(UIActionIndex_Simple_About), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
@@ -3508,6 +3508,8 @@ void UIActionPool::updateMenuHelp()
 
     /* 'Contents' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents)) || fSeparator;
+    /* 'Online Documentation' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_OnlineDocumentation)) || fSeparator;
     /* 'Web Site' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite)) || fSeparator;
     /* 'Bug Tracker' action: */
@@ -3516,8 +3518,6 @@ void UIActionPool::updateMenuHelp()
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Forums)) || fSeparator;
     /* 'Oracle' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Oracle)) || fSeparator;
-    /* 'Online Manual' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_OnlineManual)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
