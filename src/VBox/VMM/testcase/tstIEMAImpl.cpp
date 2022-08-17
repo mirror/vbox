@@ -4523,7 +4523,7 @@ static void SseBinaryR32Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                                     | (iDaz ? X86_MXCSR_DAZ : 0)
                                     | (iFz  ? X86_MXCSR_FZ  : 0)
                                     | X86_MXCSR_XCPT_MASK;
-                        IEMSSERESULT ResM = { 0, 0 };
+                        IEMSSERESULT ResM = { { 0 }, 0 };
                         pfn(&State, &ResM, &XmmVal1, &XmmVal2);
                         RTStrmPrintf(pOutFn, "    { %#08x, %#08x, %s, %s, %s }, /* #%u/%u/%c/%c/m = #%u */\n",
                                      State.MXCSR, ResM.MXCSR, GenFormatR32(&XmmVal1.ar32[0]), GenFormatR32(&XmmVal2.ar32[0]),
@@ -4532,7 +4532,7 @@ static void SseBinaryR32Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                                      iTestOutput++);
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
-                        IEMSSERESULT ResU = { 0, 0 };
+                        IEMSSERESULT ResU = { { 0 }, 0 };
                         pfn(&State, &ResU, &XmmVal1, &XmmVal2);
                         RTStrmPrintf(pOutFn, "    { %#08x, %#08x, %s, %s, %s }, /* #%u/%u/%c/%c/u = #%u */\n",
                                      State.MXCSR, ResU.MXCSR, GenFormatR32(&XmmVal1.ar32[0]), GenFormatR32(&XmmVal2.ar32[0]),
@@ -4544,7 +4544,7 @@ static void SseBinaryR32Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                         if (fXcpt)
                         {
                             State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | fXcpt;
-                            IEMSSERESULT Res1 = { 0, 0 };
+                            IEMSSERESULT Res1 = { { 0 }, 0 };
                             pfn(&State, &Res1, &XmmVal1, &XmmVal2);
                             RTStrmPrintf(pOutFn, "    { %#08x, %#08x, %s, %s, %s }, /* #%u/%u/%c/%c/u = #%u */\n",
                                          State.MXCSR, Res1.MXCSR, GenFormatR32(&XmmVal1.ar32[0]), GenFormatR32(&XmmVal2.ar32[0]),
@@ -4555,7 +4555,7 @@ static void SseBinaryR32Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                             {
                                 fXcpt |= Res1.MXCSR & X86_MXCSR_XCPT_FLAGS;
                                 State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
-                                IEMSSERESULT Res2 = { 0, 0 };
+                                IEMSSERESULT Res2 = { { 0 }, 0 };
                                 pfn(&State, &Res2, &XmmVal1, &XmmVal2);
                                 RTStrmPrintf(pOutFn, "    { %#08x, %#08x, %s, %s, %s }, /* #%u/%u/%c/%c/%#x[!] = #%u */\n",
                                              State.MXCSR, Res2.MXCSR, GenFormatR32(&XmmVal1.ar32[0]), GenFormatR32(&XmmVal2.ar32[0]),
@@ -4568,7 +4568,7 @@ static void SseBinaryR32Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
                                     if (fUnmasked & fXcpt)
                                     {
                                         State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
-                                        IEMSSERESULT Res3 = { 0, 0 };
+                                        IEMSSERESULT Res3 = { { 0 }, 0 };
                                         pfn(&State, &Res3, &XmmVal1, &XmmVal2);
                                         RTStrmPrintf(pOutFn, "    { %#08x, %#08x, %s, %s, %s }, /* #%u/%u/%c/%c/u%#x = #%u */\n",
                                                      State.MXCSR, Res3.MXCSR, GenFormatR32(&XmmVal1.ar32[0]), GenFormatR32(&XmmVal2.ar32[0]),
