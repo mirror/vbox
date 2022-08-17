@@ -27,13 +27,18 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifdef VBOX_WITH_TESTCASES # The whole file
+
+#
+# Include the Validation Kit configuration to make use of build templates needed
+# for testcases to be included  on the Validation Kit .ISO.
+#
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
- # Include the Validation Kit configuration to make use of build templates needed for testcases to be included
- # on the Validation Kit .ISO.
- include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
+ ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+  include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
+ endif
 endif
 
-ifdef VBOX_WITH_TESTCASES
 
 #
 # Globals
