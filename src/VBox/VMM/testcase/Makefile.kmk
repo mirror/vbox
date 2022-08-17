@@ -248,7 +248,8 @@ tstIEMAImpl_CLEAN     = \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Amd.cpp \
-	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Intel.cpp
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Intel.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataSseBinary.cpp
 tstIEMAImpl_SOURCES   = \
 	tstIEMAImpl.cpp \
 	../VMMAll/IEMAllAImplC.cpp \
@@ -295,6 +296,7 @@ $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary2)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther-Amd)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther-Intel)
+$(evalcall2 def_tstIEMAImplData_adjust,SseBinary)
 
 
 #
