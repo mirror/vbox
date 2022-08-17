@@ -4585,3 +4585,4 @@ ENDPROC iemAImpl_v %+ %1 %+ _u256
 %endmacro
 
 IEMIMPL_FP_F2 addps
+IEMIMPL_FP_F2 addpd

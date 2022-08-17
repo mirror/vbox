@@ -3866,7 +3866,13 @@ FNIEMOP_DEF(iemOp_addps_Vps_Wps)
 
 
 /** Opcode 0x66 0x0f 0x58 - addpd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_addpd_Vpd_Wpd);
+FNIEMOP_DEF(iemOp_addpd_Vpd_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, ADDPD, addpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_addpd_u128);
+}
+
+
 /** Opcode 0xf3 0x0f 0x58 - addss Vss, Wss */
 FNIEMOP_STUB(iemOp_addss_Vss_Wss);
 /** Opcode 0xf2 0x0f 0x58 - addsd Vsd, Wsd */
