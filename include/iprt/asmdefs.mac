@@ -77,6 +77,17 @@
 
 
 ;;
+; Define RT_STRICT for debug builds like iprt/cdefs.h does.
+%ifndef RT_STRICT
+ %ifdef DEBUG
+  %define RT_STRICT
+ %endif
+%endif
+%ifdef RT_NO_STRICT
+ %undef RT_STRICT
+%endif
+
+;;
 ; Make the mask for the given bit.
 %define RT_BIT(bit)        (1 << bit)
 
