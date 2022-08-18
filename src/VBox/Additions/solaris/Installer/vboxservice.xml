@@ -3,6 +3,8 @@
 #
 # Solaris SMF service manifest for VBoxService (timesync).
 #
+-->
+<!--
     Copyright (C) 2008-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
