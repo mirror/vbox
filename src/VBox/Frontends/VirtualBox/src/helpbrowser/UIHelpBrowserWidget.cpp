@@ -2113,8 +2113,8 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     bool fURLValid = url.isValid();
 
     QMenu menu;
-    QAction *pOpen = menu.addAction(tr("Open in Link"));
-    QAction *pOpenInNewTab = menu.addAction(tr("Open in Link New Tab"));
+    QAction *pOpen = menu.addAction(tr("Open Link"));
+    QAction *pOpenInNewTab = menu.addAction(tr("Open Link in New Tab"));
     QAction *pCopyLink = menu.addAction(tr("Copy Link"));
 
     pOpen->setData(url);
@@ -2172,7 +2172,7 @@ void UIHelpBrowserWidget::sltAddNewBookmark(const QUrl &url, const QString &strT
     if (m_pBookmarksWidget)
         m_pBookmarksWidget->addBookmark(url, strTitle);
     Q_UNUSED(url);
-    emit sigStatusBarMessage(QString("%1%2").arg(tr("Bookmark added: ")).arg(strTitle), 3000);
+    emit sigStatusBarMessage(QString("%1 %2").arg(tr("Bookmark added:")).arg(strTitle), 3000);
 }
 
 void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab)
