@@ -531,6 +531,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_PT_, UINT64_C(0), UINT64_MAX,
 #define EPT_PG_ENTRIES          X86_PG_PAE_ENTRIES
 
 /**
+ * EPT present mask.
+ * This is common to all EPT page-table entries and does not rely on any CPU
+ * features.
+ */
+#define EPT_PRESENT_MASK       (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+
+/**
  * EPT Page Directory Pointer Entry. Bit view.
  * In accordance with the VT-x spec.
  *
@@ -632,8 +639,8 @@ AssertCompileSize(EPTPDPTEBITS, 8);
 #define EPT_PDPTE1G_SIZE_MASK       RT_BIT_64(7)
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PDPTE_PG_MASK           X86_PDPE_PG_MASK
-/** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDPTE1G_PG_MASK         X86_PDPE_PG_MASK
+/** Bits 30-51 - - EPT - Physical Page number of the 1G large page. */
+#define EPT_PDPTE1G_PG_MASK         X86_PDPE1G_PG_MASK
 
 /** The page shift to get the PDPT index. */
 #define EPT_PDPT_SHIFT              X86_PDPT_SHIFT
