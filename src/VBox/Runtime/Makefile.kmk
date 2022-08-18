@@ -1825,6 +1825,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/fmin.cpp \
   	common/math/fminf.cpp \
   	common/math/fminl.cpp \
+  	common/math/frexp.cpp \
+  	common/math/frexpf.cpp \
+  	common/math/frexpl.cpp \
   	common/math/__fpclassifyd.cpp \
   	common/math/__fpclassifyf.cpp \
   	common/math/__fpclassifyl.cpp \

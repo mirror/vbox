@@ -1028,6 +1028,67 @@ void testSignBit()
 }
 
 
+void testFrExp()
+{
+    RTTestSub(g_hTest, "frexp[fl]");
+    int iExp;
+
+    CHECK_DBL(RT_NOCRT(frexp)(                          +1.0, &iExp),        +0.50000000000000000000); CHECK_INT(iExp, 1);
+    CHECK_DBL(RT_NOCRT(frexp)(                          -1.0, &iExp),        -0.50000000000000000000); CHECK_INT(iExp, 1);
+    CHECK_DBL(RT_NOCRT(frexp)(                        +42.22, &iExp),        +0.65968749999999998224); CHECK_INT(iExp, 6);
+    CHECK_DBL(RT_NOCRT(frexp)(                        -42.22, &iExp),        -0.65968749999999998224); CHECK_INT(iExp, 6);
+    CHECK_DBL(RT_NOCRT(frexp)(                  +88888.88888, &iExp),        +0.67816840270996092688); CHECK_INT(iExp, 17);
+    CHECK_DBL(RT_NOCRT(frexp)(                  -999999.9999, &iExp),        -0.95367431631088261934); CHECK_INT(iExp, 20);
+    CHECK_DBL(RT_NOCRT(frexp)(               +1.3942340e+200, &iExp),        +0.91072771427195720051); CHECK_INT(iExp, 665);
+    CHECK_DBL(RT_NOCRT(frexp)(               -1.3942340e+200, &iExp),        -0.91072771427195720051); CHECK_INT(iExp, 665);
+    CHECK_DBL(RT_NOCRT(frexp)(                  -1.1984e-310, &iExp),        -0.68939374490207683266); CHECK_INT(iExp, -1029); /* subnormal */
+    CHECK_DBL(RT_NOCRT(frexp)(                     -INFINITY, &iExp),                      -INFINITY); CHECK_INT(iExp, INT_MIN);
+    CHECK_DBL(RT_NOCRT(frexp)(                     +INFINITY, &iExp),                      +INFINITY); CHECK_INT(iExp, INT_MAX);
+    CHECK_DBL(RT_NOCRT(frexp)( RTStrNanDouble(NULL,   true),  &iExp),   RTStrNanDouble(NULL,   true)); CHECK_INT(iExp, INT_MAX);
+    CHECK_DBL(RT_NOCRT(frexp)( RTStrNanDouble("4sig", false), &iExp),  RTStrNanDouble("4sig", false)); CHECK_INT(iExp, INT_MIN);
+
+    CHECK_FLT(RT_NOCRT(frexpf)(                         +1.0f, &iExp),            +0.500000000000000f); CHECK_INT(iExp, 1);
+    CHECK_FLT(RT_NOCRT(frexpf)(                         -1.0f, &iExp),            -0.500000000000000f); CHECK_INT(iExp, 1);
+    CHECK_FLT(RT_NOCRT(frexpf)(                       +42.22f, &iExp),            +0.659687519073486f); CHECK_INT(iExp, 6);
+    CHECK_FLT(RT_NOCRT(frexpf)(                       -42.22f, &iExp),            -0.659687519073486f); CHECK_INT(iExp, 6);
+    CHECK_FLT(RT_NOCRT(frexpf)(                 +88888.88888f, &iExp),            +0.678168416023254f); CHECK_INT(iExp, 17);
+    CHECK_FLT(RT_NOCRT(frexpf)(                 -999999.9999f, &iExp),            -0.953674316406250f); CHECK_INT(iExp, 20);
+    CHECK_FLT(RT_NOCRT(frexpf)(               +1.3942340e+32f, &iExp),            +0.859263062477112f); CHECK_INT(iExp, 107);
+    CHECK_FLT(RT_NOCRT(frexpf)(               -1.3942340e+35f, &iExp),            -0.839124083518982f); CHECK_INT(iExp, 117);
+    CHECK_FLT(RT_NOCRT(frexpf)(                  -2.1984e-40f, &iExp),            -0.598461151123047f); CHECK_INT(iExp, -131);
+    CHECK_FLT(RT_NOCRT(frexpf)(              -(float)INFINITY, &iExp),               -(float)INFINITY); CHECK_INT(iExp, INT_MIN);
+    CHECK_FLT(RT_NOCRT(frexpf)(              +(float)INFINITY, &iExp),               +(float)INFINITY); CHECK_INT(iExp, INT_MAX);
+    CHECK_FLT(RT_NOCRT(frexpf)(  RTStrNanFloat(NULL,   true),  &iExp),    RTStrNanFloat(NULL,   true)); CHECK_INT(iExp, INT_MAX);
+    CHECK_FLT(RT_NOCRT(frexpf)(  RTStrNanFloat("4sig", false), &iExp),   RTStrNanFloat("4sig", false)); CHECK_INT(iExp, INT_MIN);
+
+#ifdef RT_COMPILER_WITH_64BIT_LONG_DOUBLE
+    CHECK_LDBL(RT_NOCRT(frexpl)(                        +1.0L, &iExp),        +0.50000000000000000000L); CHECK_INT(iExp, 1);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                        -1.0L, &iExp),        -0.50000000000000000000L); CHECK_INT(iExp, 1);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                      +42.22L, &iExp),        +0.65968749999999998224L); CHECK_INT(iExp, 6);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                      -42.22L, &iExp),        -0.65968749999999998224L); CHECK_INT(iExp, 6);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                +88888.88888L, &iExp),        +0.67816840270996092688L); CHECK_INT(iExp, 17);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                -999999.9999L, &iExp),        -0.95367431631088261934L); CHECK_INT(iExp, 20);
+    CHECK_LDBL(RT_NOCRT(frexpl)(             +1.3942340e+200L, &iExp),        +0.91072771427195720051L); CHECK_INT(iExp, 665);
+    CHECK_LDBL(RT_NOCRT(frexpl)(             -1.3942340e+200L, &iExp),        -0.91072771427195720051L); CHECK_INT(iExp, 665);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                -1.1984e-310L, &iExp),        -0.68939374490207683266L); CHECK_INT(iExp, -1029); /* subnormal */
+#else
+    CHECK_LDBL(RT_NOCRT(frexpl)(                        +1.0L, &iExp), +0.500000000000000000000000000000000L); CHECK_INT(iExp, 1);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                        -1.0L, &iExp), -0.500000000000000000000000000000000L); CHECK_INT(iExp, 1);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                      +42.22L, &iExp), +0.659687500000000000017347234759768L); CHECK_INT(iExp, 6);
+    CHECK_LDBL(RT_NOCRT(frexpl)(                      -42.22L, &iExp), -0.659687500000000000017347234759768L); CHECK_INT(iExp, 6);
+    CHECK_LDBL(RT_NOCRT(frexpl)(           +8888888.88888888L, &iExp), +0.529819064670138359081450613041753L); CHECK_INT(iExp, 24);
+    CHECK_LDBL(RT_NOCRT(frexpl)(       -999999999999.9999999L, &iExp), -0.909494701772928237806618845251450L); CHECK_INT(iExp, 40);
+    CHECK_LDBL(RT_NOCRT(frexpl)(            +1.3942340e+4001L, &iExp), +0.713893296064537648672014558126619L); CHECK_INT(iExp, 13292);
+    CHECK_LDBL(RT_NOCRT(frexpl)(            -1.3942340e+2000L, &iExp), -0.630978384969008136966966970859971L); CHECK_INT(iExp, 6645);
+    CHECK_LDBL(RT_NOCRT(frexpl)(               -2.1984e-4935L, &iExp), -0.669569464164694649888076583010843L); CHECK_INT(iExp, -16392);
+#endif
+    CHECK_LDBL(RT_NOCRT(frexpl)(       -(long double)INFINITY, &iExp),         -(long double)INFINITY); CHECK_INT(iExp, INT_MIN);
+    CHECK_LDBL(RT_NOCRT(frexpl)(       +(long double)INFINITY, &iExp),         +(long double)INFINITY); CHECK_INT(iExp, INT_MAX);
+    CHECK_LDBL(RT_NOCRT(frexpl)(RTStrNanLongDouble(NULL,   true),  &iExp),  RTStrNanLongDouble(NULL,   true)); CHECK_INT(iExp, INT_MAX);
+    CHECK_LDBL(RT_NOCRT(frexpl)(RTStrNanLongDouble("4sig", false), &iExp), RTStrNanLongDouble("4sig", false)); CHECK_INT(iExp, INT_MIN);
+}
+
+
 void testCeil()
 {
     RTTestSub(g_hTest, "ceil[f]");
@@ -3536,6 +3597,7 @@ int main()
     testIsNormal();
     testFpClassify();
     testSignBit();
+    testFrExp();
     testCeil();
     testFloor();
     testTrunc();

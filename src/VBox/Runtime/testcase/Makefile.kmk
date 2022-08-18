@@ -613,6 +613,9 @@ tstRTNoCrt-2_SOURCES = \
 	../common/math/nocrt-llabs.cpp \
 	../common/math/round.cpp \
 	../common/math/roundf.cpp \
+	../common/math/frexp.cpp \
+	../common/math/frexpf.cpp \
+	../common/math/frexpl.cpp \
 	../common/math/__fpclassifyd.cpp \
 	../common/math/__fpclassifyf.cpp \
 	../common/math/__fpclassifyl.cpp \
