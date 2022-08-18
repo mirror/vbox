@@ -1,8 +1,10 @@
 <?xml version='1.0'?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
-#
 # Solaris SMF service manifest for Solaris Zone Access.
-#
+# $Id$
+-->
+<!--
     Copyright (C) 2008-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
@@ -13,7 +15,6 @@
     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
-<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 
 <service_bundle type='manifest' name='SUNWvbox:zoneaccess'>
 
