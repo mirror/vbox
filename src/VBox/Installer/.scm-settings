@@ -17,6 +17,7 @@
 
 # External stuff.
 /linux/rpm-kmod-VBoxGuest/kmodtool-VBoxGuest-el6.sh: --external-copyright
+/common/virtualbox.xml:                              --external-copyright
 
 # Dual licensed code.
 /common/vboxapisetup.py: --license-ose-dual
