@@ -1051,6 +1051,20 @@ size NAME(%1 %+ _EndProc)   4 ; make it non-zero to shut up warnigns from Linux'
   %define RTLRD_CB          16
 %endif
 
+;; @name Floating point constants along the lines of the iprt/types.h types.
+; @note YASM does support special  the __Infinity__ and __NaN__ nasm tokens.
+; @{
+%define RTFLOAT32U_QNAN_PLUS    0x7fc00000
+%define RTFLOAT32U_QNAN_MINUS   0xffc00000
+%define RTFLOAT32U_INF_PLUS     0x7f800000
+%define RTFLOAT32U_INF_MINUS    0xff800000
+
+%define RTFLOAT64U_QNAN_PLUS    0x7ff8000000000000
+%define RTFLOAT64U_QNAN_MINUS   0xfff8000000000000
+%define RTFLOAT64U_INF_PLUS     0x7ff0000000000000
+%define RTFLOAT64U_INF_MINUS    0xfff0000000000000
+; @}
+
 
 
 ;; @def ASM_CALL64_GCC
