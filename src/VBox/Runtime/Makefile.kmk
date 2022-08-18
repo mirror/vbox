@@ -1909,6 +1909,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/cosf.asm  \
   	common/math/ceil.asm  \
   	common/math/ceilf.asm  \
+  	common/math/exp.asm  \
   	common/math/exp2.asm  \
   	common/math/exp2f.asm  \
   	common/math/fabs.asm  \
@@ -1983,6 +1984,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/cosf.asm  \
   	common/math/ceil.asm  \
   	common/math/ceilf.asm  \
+  	common/math/exp.asm  \
   	common/math/exp2.asm  \
   	common/math/exp2f.asm  \
   	common/math/fabs.asm  \

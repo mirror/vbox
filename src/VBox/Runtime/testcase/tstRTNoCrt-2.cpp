@@ -304,19 +304,19 @@
         } \
     } while (0)
 
-#define CHECK_DBL_APPROX_SAME(a_Fn, a_Args) do { \
+#define CHECK_DBL_APPROX_SAME(a_Fn, a_Args, a_cMaxDelta) do { \
         RTFLOAT64U uNoCrtRet, uCrtRet; \
         uNoCrtRet.r = RT_NOCRT(a_Fn) a_Args; \
         uCrtRet.r   =          a_Fn  a_Args; \
         if (   !RTFLOAT64U_ARE_IDENTICAL(&uNoCrtRet, &uCrtRet) \
-            && (  (uNoCrtRet.u >= uCrtRet.u ? uNoCrtRet.u - uCrtRet.u : uCrtRet.u - uNoCrtRet.u) > 1 /* off by one is okay */ \
+            && (  (uNoCrtRet.u >= uCrtRet.u ? uNoCrtRet.u - uCrtRet.u : uCrtRet.u - uNoCrtRet.u) > (a_cMaxDelta) \
                 || RTFLOAT64U_IS_NAN(&uNoCrtRet) \
                 || RTFLOAT64U_IS_NAN(&uCrtRet) ) ) \
         { \
             RTStrFormatR64(g_szFloat[0], sizeof(g_szFloat[0]), &uNoCrtRet, 0, 0, RTSTR_F_SPECIAL); \
             RTStrFormatR64(g_szFloat[1], sizeof(g_szFloat[0]), &uCrtRet,   0, 0, RTSTR_F_SPECIAL); \
-            RTTestFailed(g_hTest, "line %u: %s%s: noCRT => %s; CRT => %s", \
-                         __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1]); \
+            RTTestFailed(g_hTest, "line %u: %s%s: noCRT => %s; CRT => %s (max delta %u)", \
+                         __LINE__, #a_Fn, #a_Args, g_szFloat[0], g_szFloat[1], (a_cMaxDelta)); \
         } \
     } while (0)
 
@@ -2433,38 +2433,79 @@ void testLLRInt()
 }
 
 
+void testExp()
+{
+    RTTestSub(g_hTest, "exp[f]");
+
+    CHECK_DBL(        RT_NOCRT(exp)(         +1.0),   M_E);
+    CHECK_DBL_RANGE(  RT_NOCRT(exp)(         +2.0),   M_E * M_E, 0.000000000000001);
+    CHECK_DBL(        RT_NOCRT(exp)(    +INFINITY),   +INFINITY);
+    CHECK_DBL(        RT_NOCRT(exp)(    -INFINITY),   +0.0);
+    CHECK_DBL(        RT_NOCRT(exp)(         +0.0),   +1.0);
+    CHECK_DBL(        RT_NOCRT(exp)(         -0.0),   +1.0);
+    CHECK_DBL_SAME(            exp,(         +0.0));
+    CHECK_DBL_SAME(            exp,(         -0.0));
+    CHECK_DBL_SAME(            exp,(         +1.0));
+    CHECK_DBL_SAME(            exp,(         +2.0));
+    CHECK_DBL_SAME(            exp,(         -1.0));
+    CHECK_DBL_APPROX_SAME(     exp,(          +0.5),    1);
+    CHECK_DBL_APPROX_SAME(     exp,(          -0.5),    1);
+    CHECK_DBL_APPROX_SAME(     exp,(          +1.5),    1);
+    CHECK_DBL_APPROX_SAME(     exp,(          -1.5),    1);
+    CHECK_DBL_APPROX_SAME(     exp,(         +3.25),   16);
+    CHECK_DBL_APPROX_SAME(     exp,(    99.2559430),   16);
+    CHECK_DBL_APPROX_SAME(     exp,(   -99.2559430),   32);
+    CHECK_DBL_APPROX_SAME(     exp,(  +305.2559430),  128);
+    CHECK_DBL_APPROX_SAME(     exp,(  -305.2559430),  128);
+    CHECK_DBL_APPROX_SAME(     exp,(    +309.99884),  128);
+    CHECK_DBL_APPROX_SAME(     exp,(   -309.111048),  128);
+    CHECK_DBL_APPROX_SAME(     exp,(+999.864597634),    1);
+    CHECK_DBL_APPROX_SAME(     exp,(-999.098234837),    1);
+    CHECK_DBL_SAME(            exp,(+DBL_MAX));
+    CHECK_DBL_SAME(            exp,(-DBL_MAX));
+    CHECK_DBL_SAME(            exp,(-DBL_MIN));
+    CHECK_DBL_SAME(            exp,(+DBL_MIN));
+    CHECK_DBL_SAME(            exp,(+INFINITY));
+    CHECK_DBL_SAME(            exp,(-INFINITY));
+    CHECK_DBL_SAME(            exp,(RTStrNanDouble(NULL, false)));
+    CHECK_DBL_SAME(            exp,(RTStrNanDouble("ab305f", true)));
+    CHECK_DBL_SAME_RELAXED_NAN(exp,(RTStrNanDouble("fffffffff_signaling", true)));
+    CHECK_DBL_SAME_RELAXED_NAN(exp,(RTStrNanDouble("7777777777778_sig", false)));
+}
+
+
 void testExp2()
 {
     RTTestSub(g_hTest, "exp2[f]");
 
-    CHECK_DBL(RT_NOCRT(exp2)(1.0), 2.0);
-    CHECK_DBL(RT_NOCRT(exp2)(2.0), 4.0);
-    CHECK_DBL(RT_NOCRT(exp2)(32.0), 4294967296.0);
-    CHECK_DBL(RT_NOCRT(exp2)(-1.0), 0.5);
-    CHECK_DBL(RT_NOCRT(exp2)(-3.0), 0.125);
-    CHECK_DBL_SAME(exp2, (0.0));
-    CHECK_DBL_SAME(exp2, (+INFINITY));
-    CHECK_DBL_SAME(exp2, (-INFINITY));
-    CHECK_DBL_SAME(exp2, (nan("1")));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("ab305f", true)));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("fffffffff_signaling", true)));
-    CHECK_DBL_SAME(exp2, (RTStrNanDouble("7777777777778_sig", false)));
-    CHECK_DBL_SAME(exp2, (1.0));
-    CHECK_DBL_SAME(exp2, (2.0));
-    CHECK_DBL_SAME(exp2, (-1.0));
-    CHECK_DBL_APPROX_SAME(exp2, (+0.5));
-    CHECK_DBL_APPROX_SAME(exp2, (-0.5));
-    CHECK_DBL_APPROX_SAME(exp2, (+1.5));
-    CHECK_DBL_APPROX_SAME(exp2, (-1.5));
-    CHECK_DBL_APPROX_SAME(exp2, (+3.25));
-    CHECK_DBL_APPROX_SAME(exp2, (99.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (-99.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (+305.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (-305.2559430));
-    CHECK_DBL_APPROX_SAME(exp2, (+309.99884));
-    CHECK_DBL_APPROX_SAME(exp2, (-309.111048));
-    CHECK_DBL_APPROX_SAME(exp2, (+999.864597634));
-    CHECK_DBL_APPROX_SAME(exp2, (-999.098234837));
+    CHECK_DBL(   RT_NOCRT(exp2)(           1.0), 2.0);
+    CHECK_DBL(   RT_NOCRT(exp2)(           2.0), 4.0);
+    CHECK_DBL(   RT_NOCRT(exp2)(          32.0), 4294967296.0);
+    CHECK_DBL(   RT_NOCRT(exp2)(          -1.0), 0.5);
+    CHECK_DBL(   RT_NOCRT(exp2)(          -3.0), 0.125);
+    CHECK_DBL_SAME(       exp2,(           0.0));
+    CHECK_DBL_SAME(       exp2,(           1.0));
+    CHECK_DBL_SAME(       exp2,(           2.0));
+    CHECK_DBL_SAME(       exp2,(          -1.0));
+    CHECK_DBL_APPROX_SAME(exp2,(          +0.5), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(          -0.5), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(          +1.5), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(          -1.5), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(         +3.25), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(    99.2559430), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(   -99.2559430), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(  +305.2559430), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(  -305.2559430), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(    +309.99884), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(   -309.111048), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(+999.864597634), 1);
+    CHECK_DBL_APPROX_SAME(exp2,(-999.098234837), 1);
+    CHECK_DBL_SAME(       exp2,(    +INFINITY));
+    CHECK_DBL_SAME(       exp2,(    -INFINITY));
+    CHECK_DBL_SAME(       exp2,(     nan("1")));
+    CHECK_DBL_SAME(       exp2,(RTStrNanDouble("ab305f", true)));
+    CHECK_DBL_SAME(       exp2,(RTStrNanDouble("fffffffff_signaling", true)));
+    CHECK_DBL_SAME(       exp2,(RTStrNanDouble("7777777777778_sig", false)));
 
 
     CHECK_FLT(RT_NOCRT(exp2f)(1.0f), 2.0f);
@@ -3470,6 +3511,7 @@ int main()
     testLRInt();
     testLLRInt();
 
+    testExp();
     testExp2();
     testLdExp();
     testFma();

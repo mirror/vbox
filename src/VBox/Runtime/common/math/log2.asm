@@ -113,7 +113,7 @@ RT_NOCRT_BEGINPROC log2
         fyl2x                               ; -> st0=1.0*log2(st0)
 
         ;
-        ; Run st0.
+        ; Return st0.
         ;
 .return_val:
 %ifdef RT_ARCH_AMD64
