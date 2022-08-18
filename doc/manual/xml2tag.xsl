@@ -3,7 +3,8 @@
 <!--
     xml2tag.xsl:
         XSLT stylesheet that extracts just the tags of an XML document.
-
+-->
+<!--
     Copyright (C) 2018-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

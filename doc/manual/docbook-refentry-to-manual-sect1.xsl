@@ -3,7 +3,8 @@
     docbook-refentry-to-manual-sect1.xsl:
         XSLT stylesheet for transforming a refentry (manpage)
         to a sect1 for the user manual.
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

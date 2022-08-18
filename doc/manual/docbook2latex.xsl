@@ -17,7 +17,8 @@
         \OQ{} and \CQ{} commands, which _are_ defined to the
         pretty quotes for English in the LaTeX output generated
         by this XSLT (see below).
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
@@ -27,7 +28,7 @@
     Foundation, in version 2 as it comes in the "COPYING" file of the
     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-  -->
+-->
 
 <xsl:stylesheet
   version="1.0"

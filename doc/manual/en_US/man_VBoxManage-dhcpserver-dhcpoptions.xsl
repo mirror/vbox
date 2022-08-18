@@ -2,8 +2,8 @@
 <!--
     Stylesheet that extracts the DHCP option descriptions from
     VirtualBox.xidl for cut & paste into man_VBoxManage-dhcpserver.xml.
-
-
+-->
+<!--
     Copyright (C) 2019-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
@@ -59,17 +59,25 @@ The work.
 &lt;!--
     Manually generated from src/VBox/Main/idl/VirtualBox.xidl by 'kmk dhcpoptions'.
     DO NOT EDIT!
+--&gt;
+&lt;!--
+Copyright (C) 2019-2022 Oracle Corporation and/or its affiliates.
 
+This file is part of VirtualBox Open Source Edition (OSE), as
+available from https://www.virtualbox.org.
 
-    Copyright (C) 2019-2020 Oracle Corporation
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, in version 3 of the
+License.
 
-    This file is part of VirtualBox Open Source Edition (OSE), as
-    available from http://www.virtualbox.org. This file is free software;
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License (GPL) as published by the Free Software
-    Foundation, in version 2 as it comes in the "COPYING" file of the
-    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, see &lt;https://www.gnu.org/licenses&gt;.
 --&gt;
 
       &lt;variablelist&gt;

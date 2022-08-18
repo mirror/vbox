@@ -33,9 +33,3 @@
 /*.graphml:                     --treat-as xml --external-copyright --no-convert-eol
 
 /*.iuml:                 --treat-as plaintext --add-action copyright-tick-style
-/Changelog.2*:           --treat-as plaintext
-
---filter-out-files /Qt/qt4.darwin.patch
-
-# Not UTF-8:
-/Devices/ACPI/devids.txt: --skip-unicode-checks
