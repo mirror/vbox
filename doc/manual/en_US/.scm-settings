@@ -18,4 +18,5 @@
 
 /oracle-accessibility-en.xml:   --external-copyright --no-strip-trailing-blanks
 /oracle-support-en.xml:         --external-copyright --no-strip-trailing-blanks
+/oracle-diversity.xml:          --external-copyright --no-strip-trailing-blanks
 
