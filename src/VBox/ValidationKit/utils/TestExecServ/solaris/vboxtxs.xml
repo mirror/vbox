@@ -2,7 +2,8 @@
 <!--
  Solaris SMF service manifest for the VirtualBox Test eXecution Service.
  $Id$
-
+-->
+<!--
     Copyright (C) 2010-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
