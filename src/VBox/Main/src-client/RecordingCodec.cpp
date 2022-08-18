@@ -15,6 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* This code makes use of the Vorbis (libvorbis):
+ *
+ * Copyright (c) 2002-2020 Xiph.org Foundation
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * - Neither the name of the Xiph.org Foundation nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define LOG_GROUP LOG_GROUP_RECORDING
 #include "LoggingNew.h"
 
@@ -211,152 +243,6 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
     return vrc;
 }
 #endif /* VBOX_WITH_LIBVPX */
-
-
-/*********************************************************************************************************************************
-*   Opus codec                                                                                                                   *
-*********************************************************************************************************************************/
-
-#ifdef VBOX_WITH_LIBOPUS
-/** @copydoc RECORDINGCODECOPS::pfnInit */
-static DECLCALLBACK(int) recordingCodecOpusInit(PRECORDINGCODEC pCodec)
-{
-    pCodec->cbScratch = _4K;
-    pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
-    AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
-
-    const PPDMAUDIOPCMPROPS pProps = &pCodec->Parms.Audio.PCMProps;
-
-    uint32_t       uHz       = PDMAudioPropsHz(pProps);
-    uint8_t  const cChannels = PDMAudioPropsChannels(pProps);
-
-    /* Opus only supports certain input sample rates in an efficient manner.
-     * So make sure that we use those by resampling the data to the requested rate. */
-    if      (uHz > 24000) uHz = VBOX_RECORDING_OPUS_HZ_MAX;
-    else if (uHz > 16000) uHz = 24000;
-    else if (uHz > 12000) uHz = 16000;
-    else if (uHz > 8000 ) uHz = 12000;
-    else     uHz = 8000;
-
-    int opus_rc;
-    OpusEncoder *pEnc = opus_encoder_create(uHz, cChannels, OPUS_APPLICATION_AUDIO, &opus_rc);
-    if (opus_rc != OPUS_OK)
-    {
-        LogRel(("Recording: Audio codec failed to initialize: %s\n", opus_strerror(opus_rc)));
-        return VERR_RECORDING_CODEC_INIT_FAILED;
-    }
-
-    AssertPtr(pEnc);
-
-    if (pCodec->Parms.uBitrate) /* Only explicitly set the bitrate management if we specified one. Otherwise let Opus decide. */
-    {
-        opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(pCodec->Parms.uBitrate));
-        if (opus_rc != OPUS_OK)
-        {
-            opus_encoder_destroy(pEnc);
-            pEnc = NULL;
-
-            LogRel(("Recording: Audio codec failed to set bitrate (%RU32): %s\n", pCodec->Parms.uBitrate, opus_strerror(opus_rc)));
-            return VERR_RECORDING_CODEC_INIT_FAILED;
-        }
-    }
-
-    opus_rc = opus_encoder_ctl(pEnc, OPUS_SET_VBR(pCodec->Parms.uBitrate == 0 ? 1 : 0));
-    if (opus_rc != OPUS_OK)
-    {
-        LogRel(("Recording: Audio codec failed to %s VBR mode: %s\n",
-                pCodec->Parms.uBitrate == 0 ? "disable" : "enable", opus_strerror(opus_rc)));
-        return VERR_RECORDING_CODEC_INIT_FAILED;
-    }
-
-    pCodec->Audio.Opus.pEnc = pEnc;
-
-    PDMAudioPropsInit(pProps,
-                      PDMAudioPropsSampleSize(pProps), PDMAudioPropsIsSigned(pProps), PDMAudioPropsChannels(pProps), uHz);
-
-    if (!pCodec->Parms.msFrame) /* No ms per frame defined? Use default. */
-        pCodec->Parms.msFrame = VBOX_RECORDING_OPUS_FRAME_MS_DEFAULT;
-
-    return VINF_SUCCESS;
-}
-
-/** @copydoc RECORDINGCODECOPS::pfnDestroy */
-static DECLCALLBACK(int) recordingCodecOpusDestroy(PRECORDINGCODEC pCodec)
-{
-    PRECORDINGCODECOPUS pOpus = &pCodec->Audio.Opus;
-
-    if (pOpus->pEnc)
-    {
-        opus_encoder_destroy(pOpus->pEnc);
-        pOpus->pEnc = NULL;
-    }
-
-    return VINF_SUCCESS;
-}
-
-/** @copydoc RECORDINGCODECOPS::pfnEncode */
-static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
-                                                  const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
-{
-    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
-
-    Assert         (pCodec->Parms.cbFrame);
-    AssertReturn   (pFrame->Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
-    Assert         (pFrame->Audio.cbBuf);
-    AssertReturn   (pFrame->Audio.cbBuf % pPCMProps->cbFrame == 0, VERR_INVALID_PARAMETER);
-    AssertReturn(pCodec->cbScratch >= pFrame->Audio.cbBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcEncoded,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbEncoded, VERR_INVALID_POINTER);
-
-    int vrc = VINF_SUCCESS;
-
-    size_t cBlocksEncoded = 0;
-    size_t cBytesEncoded  = 0;
-
-    /*
-     * Opus always encodes PER "OPUS FRAME", that is, exactly 2.5, 5, 10, 20, 40 or 60 ms of audio data.
-     *
-     * A packet can have up to 120ms worth of audio data.
-     * Anything > 120ms of data will result in a "corrupted package" error message by
-     * by decoding application.
-     */
-    opus_int32 cbWritten = opus_encode(pCodec->Audio.Opus.pEnc,
-                                       (opus_int16 *)pFrame->Audio.pvBuf, (int)(pFrame->Audio.cbBuf / pPCMProps->cbFrame /* Number of audio frames */),
-                                       (uint8_t *)pCodec->pvScratch, (opus_int32)pCodec->cbScratch);
-    if (cbWritten < 0)
-    {
-        LogRel(("Recording: opus_encode() failed (%s)\n", opus_strerror(cbWritten)));
-        return VERR_RECORDING_ENCODING_FAILED;
-    }
-
-    if (cbWritten)
-    {
-        vrc = pCodec->Callbacks.pfnWriteData(pCodec, pCodec->pvScratch, (size_t)cbWritten, pCodec->State.tsLastWrittenMs,
-                                             RECORDINGCODEC_ENC_F_BLOCK_IS_KEY /* Every Opus frame is a key frame */,
-                                             pCodec->Callbacks.pvUser);
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        /* Get overall frames encoded. */
-        cBlocksEncoded = opus_packet_get_nb_frames((uint8_t *)pCodec->pvScratch, cbWritten);
-        cBytesEncoded  = cbWritten;
-
-        if (pcEncoded)
-            *pcEncoded  = cBlocksEncoded;
-        if (pcbEncoded)
-            *pcbEncoded = cBytesEncoded;
-    }
-
-    if (RT_FAILURE(vrc))
-        LogRel(("Recording: Encoding Opus data failed, rc=%Rrc\n", vrc));
-
-    Log3Func(("cbSrc=%zu, cbDst=%zu, cEncoded=%zu, cbEncoded=%zu, vrc=%Rrc\n",
-              pFrame->Audio.cbBuf, pCodec->cbScratch, cBlocksEncoded, cBytesEncoded, vrc));
-
-    return vrc;
-}
-#endif /* VBOX_WITH_LIBOPUS */
 
 
 /*********************************************************************************************************************************
@@ -761,19 +647,6 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 
     switch (enmAudioCodec)
     {
-# ifdef VBOX_WITH_LIBOPUS
-        case RecordingAudioCodec_Opus:
-        {
-            pCodec->Ops.pfnInit         = recordingCodecOpusInit;
-            pCodec->Ops.pfnDestroy      = recordingCodecOpusDestroy;
-            pCodec->Ops.pfnParseOptions = recordingCodecAudioParseOptions;
-            pCodec->Ops.pfnEncode       = recordingCodecOpusEncode;
-
-            vrc = VINF_SUCCESS;
-            break;
-        }
-# endif /* VBOX_WITH_LIBOPUS */
-
 # ifdef VBOX_WITH_LIBVORBIS
         case RecordingAudioCodec_OggVorbis:
         {
@@ -998,4 +871,3 @@ uint32_t recordingCodecGetWritable(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
     AssertMsg(pCodec->Parms.cbFrame, ("Codec not initialized yet\n"));
     return pCodec->Parms.cbFrame;
 }
-

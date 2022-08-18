@@ -161,7 +161,7 @@ int WebMWriter::Close(void)
  */
 int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
 {
-#if defined(VBOX_WITH_LIBOPUS) || defined(VBOX_WITH_LIBVORBIS)
+#if defined(VBOX_WITH_LIBVORBIS)
     AssertReturn(uHz,       VERR_INVALID_PARAMETER);
     AssertReturn(cBits,     VERR_INVALID_PARAMETER);
     AssertReturn(cChannels, VERR_INVALID_PARAMETER);
@@ -195,34 +195,6 @@ int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cCha
 
         switch (m_enmAudioCodec)
         {
-# ifdef VBOX_WITH_LIBOPUS
-            case RecordingAudioCodec_Opus:
-            {
-                /*
-                 * Adjust the handed-in Hz rate to values which are supported by the Opus codec.
-                 *
-                 * Only the following values are supported by an Opus standard build
-                 * -- every other rate only is supported by a custom build.
-                 *
-                 * See opus_encoder_create() for more information.
-                 */
-                if      (uHz > 24000) uHz = VBOX_RECORDING_OPUS_HZ_MAX;
-                else if (uHz > 16000) uHz = 24000;
-                else if (uHz > 12000) uHz = 16000;
-                else if (uHz > 8000 ) uHz = 12000;
-                else     uHz = 8000;
-
-                WEBMOPUSPRIVDATA opusPrivData(uHz, cChannels);
-
-                pTrack->Audio.msPerBlock = 0; /** @todo */
-                if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
-                    pTrack->Audio.msPerBlock = VBOX_RECORDING_OPUS_FRAME_MS_DEFAULT;
-
-                serializeString(MkvElem_CodecID,    "A_OPUS");
-                serializeData(MkvElem_CodecPrivate, &opusPrivData, sizeof(opusPrivData));
-                break;
-            }
-# endif /* VBOX_WITH_LIBOPUS */
 # ifdef VBOX_WITH_LIBVORBIS
             case RecordingAudioCodec_OggVorbis:
             {
@@ -325,7 +297,7 @@ int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cCha
     if (pTrack)
         delete pTrack;
     return vrc;
-#else /* defined(VBOX_WITH_LIBOPUS) || defined(VBOX_WITH_LIBVORBIS) */
+#else /* !defined(VBOX_WITH_LIBVORBIS) */
     RT_NOREF(pCodec, uHz, cChannels, cBits, puTrack);
     return VERR_NOT_SUPPORTED;
 #endif
@@ -424,9 +396,6 @@ uint64_t WebMWriter::GetAvailableSpace(void)
  */
 int WebMWriter::init(RecordingAudioCodec_T enmAudioCodec, RecordingVideoCodec_T enmVideoCodec)
 {
-#ifndef VBOX_WITH_LIBOPUS
-    AssertReturn(enmAudioCodec != RecordingAudioCodec_Opus, VERR_NOT_SUPPORTED);
-#endif
 #ifndef VBOX_WITH_LIBVORBIS
     AssertReturn(enmAudioCodec != RecordingAudioCodec_OggVorbis, VERR_NOT_SUPPORTED);
 #endif
@@ -933,4 +902,3 @@ void WebMWriter::writeSeekHeader(void)
         .serializeString(MkvElem_WritingApp, szApp)
         .subEnd(MkvElem_Info);
 }
-

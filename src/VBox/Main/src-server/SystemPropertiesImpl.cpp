@@ -1601,9 +1601,6 @@ HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<Recording
 #ifdef DEBUG
         RecordingAudioCodec_WavPCM,
 #endif
-#ifdef VBOX_WITH_LIBOPUS
-        RecordingAudioCodec_Opus,
-#endif
 #ifdef VBOX_WITH_LIBVORBIS
         RecordingAudioCodec_OggVorbis,
 #endif
@@ -2397,4 +2394,3 @@ HRESULT SystemProperties::setLanguageId(const com::Utf8Str &aLanguageId)
     return E_NOTIMPL;
 #endif
 }
-

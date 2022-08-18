@@ -1386,7 +1386,6 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/libs/curl*/**' \
 		'--exclude=src/libs/libxml*/**' \
 		'--exclude=src/libs/libvpx*/**' \
-		'--exclude=src/libs/libopus*/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \
@@ -1425,7 +1424,6 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/libs/curl*/**' \
 		'--exclude=src/libs/libxml*/**' \
 		'--exclude=src/libs/libvpx*/**' \
-		'--exclude=src/libs/libopus*/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Artwork/x11/**' \

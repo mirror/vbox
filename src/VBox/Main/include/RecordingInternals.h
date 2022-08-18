@@ -38,10 +38,6 @@
 # include "vpx/vpx_encoder.h"
 #endif /* VBOX_WITH_LIBVPX */
 
-#ifdef VBOX_WITH_LIBOPUS
-# include <opus.h>
-#endif
-
 #ifdef VBOX_WITH_LIBVORBIS
 # include "vorbis/vorbisenc.h"
 #endif
@@ -50,9 +46,6 @@
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
-#define VBOX_RECORDING_OPUS_HZ_MAX               48000   /**< Maximum sample rate (in Hz) Opus can handle. */
-#define VBOX_RECORDING_OPUS_FRAME_MS_DEFAULT     20      /**< Default Opus frame size (in ms). */
-
 #define VBOX_RECORDING_VORBIS_HZ_MAX             48000   /**< Maximum sample rate (in Hz) Vorbis can handle. */
 #define VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT   20      /**< Default Vorbis frame size (in ms). */
 
@@ -205,15 +198,6 @@ typedef struct RECORDINGCODECPARMS
     uint32_t                    uBitrate;
     /** Time (in ms) the encoder expects us to send data to encode.
      *
-     *  For Opus, valid frame sizes are:
-     *  ms           Frame size
-     *  2.5          120
-     *  5            240
-     *  10           480
-     *  20 (Default) 960
-     *  40           1920
-     *  60           2880
-     *
      *  For Vorbis, valid frame sizes are powers of two from 64 to 8192 bytes.
      */
     uint32_t                    msFrame;
@@ -245,19 +229,6 @@ typedef struct RECORDINGCODECVPX
 /** Pointer to a VPX encoder state. */
 typedef RECORDINGCODECVPX *PRECORDINGCODECVPX;
 #endif /* VBOX_WITH_LIBVPX */
-
-#ifdef VBOX_WITH_LIBOPUS
-/**
- * Opus encoder state (needs libvorbis).
- */
-typedef struct RECORDINGCODECOPUS
-{
-    /** Encoder we're going to use. */
-    OpusEncoder    *pEnc;
-} RECORDINGCODECOPUS;
-/** Pointer to an Opus encoder state. */
-typedef RECORDINGCODECOPUS *PRECORDINGCODECOPUS;
-#endif /* VBOX_WITH_LIBOPUS */
 
 #ifdef VBOX_WITH_LIBVORBIS
 /**
@@ -313,9 +284,6 @@ typedef struct RECORDINGCODEC
 #ifdef VBOX_WITH_AUDIO_RECORDING
     union
     {
-# ifdef VBOX_WITH_LIBOPUS
-        RECORDINGCODECOPUS      Opus;
-# endif /* VBOX_WITH_LIBOPUS */
 # ifdef VBOX_WITH_LIBVORBIS
         RECORDINGCODECVORBIS    Vorbis;
 # endif /* VBOX_WITH_LIBVORBIS */
@@ -487,4 +455,3 @@ int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, s
 int recordingCodecFinalize(PRECORDINGCODEC pCodec);
 uint32_t recordingCodecGetWritable(PRECORDINGCODEC pCodec, uint64_t msTimestamp);
 #endif /* !MAIN_INCLUDED_RecordingInternals_h */
-

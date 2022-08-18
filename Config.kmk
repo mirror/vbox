@@ -841,10 +841,6 @@ VBOX_WITH_AUDIO_RECORDING = 1
 if defined(VBOX_WITH_AUDIO_RECORDING) && !defined(VBOX_WITH_RECORDING)
  $(error Audio recording (VBOX_WITH_AUDIO_RECORDING) needs the general recording feature (VBOX_WITH_RECORDING) enabled)
 endif
-# Enables libopus (Opus), required for encoding audio into the recorded data.
-VBOX_WITH_LIBOPUS =
-# Enable SEE (+ AVX) optimizations for Opus.
-VBOX_WITH_OPUS_SSE =
 # Enables libvorbis (Ogg Vorbis), required for encoding audio into the recorded data.
 VBOX_WITH_LIBVORBIS = 1
 # Enables libogg (Ogg file format). Required for building libvorbis above.
@@ -1456,7 +1452,6 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), win)
   # Undefine codec libraries which are not needed.
   VBOX_WITH_LIBVPX=
-  VBOX_WITH_LIBOPUS=
   VBOX_WITH_LIBVORBIS=
   VBOX_WITH_LIBOGG=
   # Disable recording (with audio support).
@@ -4836,13 +4831,6 @@ SDK_VBOX_OPENSSL2              := This is what you should be using!  It links ag
 SDK_VBOX_OPENSSL2_EXTENDS      := VBOX_OPENSSL
 if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
  SDK_VBOX_OPENSSL2_LIBS         = $(NO_SUCH_VARIABLE)
-endif
-
-ifdef VBOX_WITH_LIBOPUS
- SDK_VBOX_OPUS                 := libopus for dll linking.
- SDK_VBOX_OPUS_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libopus-1.3.1/include
- SDK_VBOX_OPUS_INCS            ?= $(SDK_VBOX_OPUS_DEFAULT_INCS)
- SDK_VBOX_OPUS_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_LIBOGG
