@@ -2,7 +2,8 @@
 
 <!--
     Generate a list of dependencies from a wixobj file.
-
+-->
+<!--
     Copyright (C) 2015-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

@@ -4,7 +4,8 @@
  *  A template to generate a WiX include file that contains
  *  type library definitions for VirtualBox COM components
  *  from the generic interface definition expressed in XML.
-
+-->
+<!--
     Copyright (C) 2007-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

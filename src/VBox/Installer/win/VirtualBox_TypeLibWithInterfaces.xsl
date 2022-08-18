@@ -3,7 +3,8 @@
 <!--
     Generates a wiX include files with Interface elements for
     the stuff in the proxy stub DLLs.
-
+-->
+<!--
     Copyright (C) 2007-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
