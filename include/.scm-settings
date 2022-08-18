@@ -23,6 +23,25 @@
 /Makefile.kmk:  --license-ose-gpl
 /.scm-settings: --license-ose-gpl
 
+# /iprt/nocrt/* C++ style header files
+/iprt/nocrt/algorithm
+/iprt/nocrt/cassert
+/iprt/nocrt/cstddef
+/iprt/nocrt/cstdlib
+/iprt/nocrt/exception
+/iprt/nocrt/fstream
+/iprt/nocrt/iomanip
+/iprt/nocrt/ios
+/iprt/nocrt/iosfwd
+/iprt/nocrt/iostream
+/iprt/nocrt/limits
+/iprt/nocrt/memory
+/iprt/nocrt/new
+/iprt/nocrt/ostream
+/iprt/nocrt/string
+/iprt/nocrt/type_traits
+/iprt/nocrt/vector
+
 # These three have no Oracle license or copyright stuff for some reason.
 /iprt/formats/elf-amd64.h:  --no-update-license  --no-update-copyright-year
 /iprt/formats/elf-common.h: --no-update-license  --no-update-copyright-year
@@ -32,7 +51,7 @@
 # external copyright
 /iprt/formats/lx.h:         --external-copyright
 
-# TODO: This is using LGPL with Oracle disclaimer. Implement.
+# This is using LGPL (from WINE) with Oracle disclaimer.
 /VBox/VBoxKeyboard.h: --external-copyright --lgpl-disclaimer
 
 # Some of the graphics stuff is using MIT.

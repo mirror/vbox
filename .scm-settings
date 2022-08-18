@@ -55,14 +55,22 @@
 # files specified directly on the command line.
 #
 --filter-out-files "/vslick.h"
+--filter-out-files "/.dir-locals.el"
+--filter-out-files "*/.gitignore"
 --filter-out-files "*/PkgInfo"
 --filter-out-files "*/*-PkgInfo"
+--filter-out-files "*.crt"
 --filter-out-files "*.plist"
+--filter-out-files "*.provisionprofile"
 --filter-out-files "*/Doxyfile*"
 --filter-out-files "*/COPYING"
 --filter-out-files "*/COPYING.LIB"
 --filter-out-files "*/COPYING.CDDL"
+--filter-out-files "*/COPYING.GPLv3"
+--filter-out-files "*/COPYING.UBDL"
 --filter-out-files "*.desktop"
+--filter-out-files "*/.swagger-codegen-ignore"
+--filter-out-files "*/.swagger-codegen/VERSION"
 
 
 #
