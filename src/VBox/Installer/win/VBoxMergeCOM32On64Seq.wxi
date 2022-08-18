@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <!--
     VirtualBox Windows Installation Script (WiX)
-
+-->
+<!--
     Copyright (C) 2014-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
