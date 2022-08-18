@@ -14177,3 +14177,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mulpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
     pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
+
+
+/**
+ * SUBPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_subps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
+{
+    if (iemSseBinaryValIsNaNR32(pr32Res, pr32Val1, pr32Val2, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT32U r32Src1, r32Src2;
+    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_sub(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_subps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+}
+#endif
+
+
+/**
+ * SUBPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_subpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
+{
+    if (iemSseBinaryValIsNaNR64(pr64Res, pr64Val1, pr64Val2, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT64U r64Src1, r64Src2;
+    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Result = f64_sub(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_subpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    pResult->MXCSR |= iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR |= iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+#endif

@@ -3917,10 +3917,23 @@ FNIEMOP_STUB(iemOp_cvtps2dq_Vdq_Wps);
 FNIEMOP_STUB(iemOp_cvttps2dq_Vdq_Wps);
 /*  Opcode 0xf2 0x0f 0x5b - invalid */
 
+
 /** Opcode      0x0f 0x5c - subps Vps, Wps */
-FNIEMOP_STUB(iemOp_subps_Vps_Wps);
+FNIEMOP_DEF(iemOp_subps_Vps_Wps)
+{
+    IEMOP_MNEMONIC2(RM, SUBPS, subps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_subps_u128);
+}
+
+
 /** Opcode 0x66 0x0f 0x5c - subpd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_subpd_Vpd_Wpd);
+FNIEMOP_DEF(iemOp_subpd_Vpd_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, SUBPD, subpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_subpd_u128);
+}
+
+
 /** Opcode 0xf3 0x0f 0x5c - subss Vss, Wss */
 FNIEMOP_STUB(iemOp_subss_Vss_Wss);
 /** Opcode 0xf2 0x0f 0x5c - subsd Vsd, Wsd */
