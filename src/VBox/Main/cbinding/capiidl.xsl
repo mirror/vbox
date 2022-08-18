@@ -6,7 +6,8 @@
  *  provided or needed for calling the VirtualBox API. The header file also
  *  works on Windows, by using the C bindings header created by the MS COM IDL
  *  compiler (which simultaneously supports C and C++, unlike XPCOM).
-
+-->
+<!--
     Copyright (C) 2008-2022 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

@@ -3,14 +3,14 @@
      xmlns:vbox="http://www.virtualbox.org/">
 
 <!--
-
     websrv-php.xsl:
         XSLT stylesheet that generates vboxServiceWrappers.php from
         VirtualBox.xidl. This PHP file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
      Contributed by James Lucas (mjlucas at eng.uts.edu.au).
-
+-->
+<!--
     Copyright (C) 2008-2022 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

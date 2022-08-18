@@ -3,11 +3,11 @@
      xmlns:vbox="http://www.virtualbox.org/">
 
 <!--
-
     constants-python.xsl:
         XSLT stylesheet that generates VirtualBox_constants.py from
         VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2009-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

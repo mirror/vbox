@@ -2,7 +2,8 @@
 
 <!--
     stringify-enums.xsl - Generates stringify functions for all the enums in VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2022 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

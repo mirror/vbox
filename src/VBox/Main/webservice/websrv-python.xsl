@@ -3,12 +3,12 @@
      xmlns:vbox="http://www.virtualbox.org/">
 
 <!--
-
     websrv-python.xsl:
         XSLT stylesheet that generates VirtualBox_services.py from
         VirtualBox.xidl. This Python file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
-
+-->
+<!--
     Copyright (C) 2008-2022 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

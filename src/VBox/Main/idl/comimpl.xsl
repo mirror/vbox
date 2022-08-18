@@ -5,14 +5,14 @@
      extension-element-prefixes="exsl">
 
 <!--
-
     comimpl.xsl:
         XSLT stylesheet that generates COM C++ classes implementing
         interfaces described in VirtualBox.xidl.
         For now we generate implementation for events, as they are
         rather trivial container classes for their read-only attributes.
         Further extension to other interfaces is possible and anticipated.
-
+-->
+<!--
     Copyright (C) 2010-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

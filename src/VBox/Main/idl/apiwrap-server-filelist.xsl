@@ -6,7 +6,8 @@
         XSLT stylesheet that generate a makefile include with
         the lists of files that apiwrap-server.xsl produces
         from VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2015-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

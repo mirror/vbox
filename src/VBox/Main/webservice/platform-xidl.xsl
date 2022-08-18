@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 
 <!--
-
     platform-xidl.xsl:
         XSLT stylesheet that generates a platform-specific
         VirtualBox.xidl from ../idl/VirtualBox.xidl, which
         is identical to the original except that all <if...>
         sections are resolved (for easier processing).
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 
 <!--
-
     websrv-wsdl.xsl:
         XSLT stylesheet that generates vboxweb.wsdl from
         VirtualBox.xidl. This WSDL file represents our
         web service API..
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

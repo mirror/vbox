@@ -10,7 +10,8 @@
         all SOAP calls into COM/XPCOM method calls.
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
-
+-->
+<!--
     Copyright (C) 2007-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

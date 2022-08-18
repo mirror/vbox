@@ -3,7 +3,8 @@
     this gets included from other XSLT stylesheets including those
     for the webservice, so we can share some definitions that must
     be the same for all of them (like method prefixes/suffices).
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

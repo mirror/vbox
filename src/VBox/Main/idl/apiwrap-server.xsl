@@ -4,7 +4,8 @@
     apiwrap-server.xsl:
         XSLT stylesheet that generates C++ API wrappers (server side) from
         VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2010-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

@@ -4,7 +4,8 @@
  *  A template to generate a generic IDL file from the generic interface
  *  definition expressed in XML. The generated file is intended solely to
  *  generate the documentation using Doxygen.
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as

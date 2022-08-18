@@ -5,11 +5,11 @@
     extension-element-prefixes="exsl">
 
 <!--
-
     glue-java.xsl:
         XSLT stylesheet that generates Java glue code for XPCOM, MSCOM and JAX-WS from
         VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2010-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
