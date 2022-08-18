@@ -24,23 +24,23 @@
 /.scm-settings: --license-ose-gpl
 
 # /iprt/nocrt/* C++ style header files
-/iprt/nocrt/algorithm
-/iprt/nocrt/cassert
-/iprt/nocrt/cstddef
-/iprt/nocrt/cstdlib
-/iprt/nocrt/exception
-/iprt/nocrt/fstream
-/iprt/nocrt/iomanip
-/iprt/nocrt/ios
-/iprt/nocrt/iosfwd
-/iprt/nocrt/iostream
-/iprt/nocrt/limits
-/iprt/nocrt/memory
-/iprt/nocrt/new
-/iprt/nocrt/ostream
-/iprt/nocrt/string
-/iprt/nocrt/type_traits
-/iprt/nocrt/vector
+/iprt/nocrt/algorithm:      --treat-as h
+/iprt/nocrt/cassert:        --treat-as h
+/iprt/nocrt/cstddef:        --treat-as h
+/iprt/nocrt/cstdlib:        --treat-as h
+/iprt/nocrt/exception:      --treat-as h
+/iprt/nocrt/fstream:        --treat-as h
+/iprt/nocrt/iomanip:        --treat-as h
+/iprt/nocrt/ios:            --treat-as h
+/iprt/nocrt/iosfwd:         --treat-as h
+/iprt/nocrt/iostream:       --treat-as h
+/iprt/nocrt/limits:         --treat-as h
+/iprt/nocrt/memory:         --treat-as h
+/iprt/nocrt/new:            --treat-as h
+/iprt/nocrt/ostream:        --treat-as h
+/iprt/nocrt/string:         --treat-as h
+/iprt/nocrt/type_traits:    --treat-as h
+/iprt/nocrt/vector:         --treat-as h
 
 # These three have no Oracle license or copyright stuff for some reason.
 /iprt/formats/elf-amd64.h:  --no-update-license  --no-update-copyright-year
