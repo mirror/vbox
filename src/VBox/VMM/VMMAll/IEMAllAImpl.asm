@@ -4586,3 +4586,5 @@ ENDPROC iemAImpl_v %+ %1 %+ _u256
 
 IEMIMPL_FP_F2 addps
 IEMIMPL_FP_F2 addpd
+IEMIMPL_FP_F2 mulps
+IEMIMPL_FP_F2 mulpd

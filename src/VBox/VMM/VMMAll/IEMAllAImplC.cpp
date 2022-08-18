@@ -13880,11 +13880,12 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
     }
 
     /* If DAZ is set \#DE is never set. */
-    if (fMxcsr & X86_MXCSR_DAZ)
+    if (   fMxcsr & X86_MXCSR_DAZ
+        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
+            && (RTFLOAT32U_IS_SUBNORMAL(pr32Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when either the result or one of the source operands is a De-normal (softfloat doesn't do this always). */
-        fXcpt |=   (   RTFLOAT32U_IS_SUBNORMAL(pr32Result)
-                    || RTFLOAT32U_IS_SUBNORMAL(pr32Src1)
+    else /* Need to set \#DE when one of the source operands is a De-normal. */
+        fXcpt |=   (   RTFLOAT32U_IS_SUBNORMAL(pr32Src1)
                     || RTFLOAT32U_IS_SUBNORMAL(pr32Src2))
                  ? X86_MXCSR_DE
                  : 0;
@@ -13923,11 +13924,12 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
     }
 
     /* If DAZ is set \#DE is never set. */
-    if (fMxcsr & X86_MXCSR_DAZ)
+    if (   fMxcsr & X86_MXCSR_DAZ
+        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
+            && (RTFLOAT64U_IS_SUBNORMAL(pr64Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when either the result or one of the source operands is a De-normal (softfloat doesn't do this always). */
-        fXcpt |=   (   RTFLOAT64U_IS_SUBNORMAL(pr64Result)
-                    || RTFLOAT64U_IS_SUBNORMAL(pr64Src1)
+    else /* Need to set \#DE when one of the source operands is a De-normal. */
+        fXcpt |=   (   RTFLOAT64U_IS_SUBNORMAL(pr64Src1)
                     || RTFLOAT64U_IS_SUBNORMAL(pr64Src2))
                  ? X86_MXCSR_DE
                  : 0;
@@ -13988,7 +13990,7 @@ DECLINLINE(void) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr, PCR
  * Validates the given input operands returning whether the operation can continue or whether one
  * of the source operands contains a NaN value, setting the output accordingly.
  *
- * @returns Flag whether the operation can continue (true) or whether a NaN value was detected in one of the operands (false).
+ * @returns Flag whether the operation can continue (false) or whether a NaN value was detected in one of the operands (true).
  * @param   pr32Res         Where to store the result in case the operation can't continue.
  * @param   pr32Val1        The first input operand.
  * @param   pr32Val2        The second input operand.
@@ -14004,7 +14006,7 @@ DECLINLINE(bool) iemSseCheckInputBinaryR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr3
         *pr32Res = *pr32Val1;
         pr32Res->s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
         *pfMxcsr |= (cSNan ? X86_MXCSR_IE : 0);
-        return false;
+        return true;
     }
     else if (cSNan)
     {
@@ -14012,17 +14014,39 @@ DECLINLINE(bool) iemSseCheckInputBinaryR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr3
         *pr32Res = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
         pr32Res->s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
         *pfMxcsr |= X86_MXCSR_IE;
-        return false;
+        return true;
     }
     else if (cQNan)
     {
         /* The QNan operand is placed into the result. */
         *pr32Res = RTFLOAT32U_IS_QUIET_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
-        return false;
+        return true;
     }
 
     Assert(!cQNan && !cSNan);
-    return true;
+    return false;
+}
+
+
+/**
+ * Checks all input values for valid inputs returning whether the operation can continue.
+ *
+ * @returns Flag whether the operation can continue (true) or whether a NaN value was detected in one of the operands (false).
+ * @param   pResult         Where to store the result in case the operation can't continue.
+ * @param   puSrc1          The first input operand.
+ * @param   puSrc2          The second input operand.
+ * @param   fMxcsr          The MXCSR flags.
+ */
+static bool iemSseCheckXmmInputBinaryR32(PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2, uint32_t fMxcsr)
+{
+    bool fNan = iemSseCheckInputBinaryR32(&pResult->uResult.ar32[0], &puSrc1->ar32[0], &puSrc2->ar32[0], &fMxcsr);
+    fNan     |= iemSseCheckInputBinaryR32(&pResult->uResult.ar32[1], &puSrc1->ar32[1], &puSrc2->ar32[1], &fMxcsr);
+    fNan     |= iemSseCheckInputBinaryR32(&pResult->uResult.ar32[2], &puSrc1->ar32[3], &puSrc2->ar32[2], &fMxcsr);
+    fNan     |= iemSseCheckInputBinaryR32(&pResult->uResult.ar32[3], &puSrc1->ar32[2], &puSrc2->ar32[3], &fMxcsr);
+    if (fNan)
+        pResult->MXCSR = fMxcsr;
+
+    return !fNan;
 }
 
 
@@ -14030,7 +14054,7 @@ DECLINLINE(bool) iemSseCheckInputBinaryR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr3
  * Validates the given double precision input operands returning whether the operation can continue or whether one
  * of the source operands contains a NaN value, setting the output accordingly.
  *
- * @returns Flag whether the operation can continue (true) or whether a NaN value was detected in one of the operands (false).
+ * @returns Flag whether the operation can continue (false) or whether a NaN value was detected in one of the operands (true).
  * @param   pr64Res         Where to store the result in case the operation can't continue.
  * @param   pr64Val1        The first input operand.
  * @param   pr64Val2        The second input operand.
@@ -14046,7 +14070,7 @@ DECLINLINE(bool) iemSseCheckInputBinaryR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr6
         *pr64Res = *pr64Val1;
         pr64Res->s64.uFraction |= RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1);
         *pfMxcsr |= (cSNan ? X86_MXCSR_IE : 0);
-        return false;
+        return true;
     }
     else if (cSNan)
     {
@@ -14054,18 +14078,39 @@ DECLINLINE(bool) iemSseCheckInputBinaryR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr6
         *pr64Res = RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val1) ? *pr64Val1 : *pr64Val2;
         pr64Res->s64.uFraction |= RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1);
         *pfMxcsr |= X86_MXCSR_IE;
-        return false;
+        return true;
     }
     else if (cQNan)
     {
         /* The QNan operand is placed into the result. */
         *pr64Res = RTFLOAT64U_IS_QUIET_NAN(pr64Val1) ? *pr64Val1 : *pr64Val2;
-        return false;
+        return true;
     }
 
     Assert(!cQNan && !cSNan);
-    return true;
+    return false;
 }
+
+
+/**
+ * Checks all input values for valid inputs returning whether the operation can continue.
+ *
+ * @returns Flag whether the operation can continue (true) or whether a NaN value was detected in one of the operands (false).
+ * @param   pResult         Where to store the result in case the operation can't continue.
+ * @param   puSrc1          The first input operand.
+ * @param   puSrc2          The second input operand.
+ * @param   fMxcsr          The MXCSR flags.
+ */
+static bool iemSseCheckXmmInputBinaryR64(PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2, uint32_t fMxcsr)
+{
+    bool fNan = iemSseCheckInputBinaryR64(&pResult->uResult.ar64[0], &puSrc1->ar64[0], &puSrc2->ar64[0], &fMxcsr);
+    fNan     |= iemSseCheckInputBinaryR64(&pResult->uResult.ar64[1], &puSrc1->ar64[1], &puSrc2->ar64[1], &fMxcsr);
+    if (fNan)
+        pResult->MXCSR = fMxcsr;
+
+    return !fNan;
+}
+
 #endif
 
 
@@ -14075,9 +14120,6 @@ DECLINLINE(bool) iemSseCheckInputBinaryR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr6
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
 {
-    if (!iemSseCheckInputBinaryR32(pr32Res, pr32Val1, pr32Val2, &fMxcsr))
-        return fMxcsr;
-
     RTFLOAT32U r32Src1, r32Src2;
     iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
     iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
@@ -14089,10 +14131,13 @@ static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_addps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+    if (iemSseCheckXmmInputBinaryR32(pResult, puSrc1, puSrc2, pFpuState->MXCSR))
+    {
+        pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+        pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
+        pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
+        pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+    }
 }
 #endif
 
@@ -14103,9 +14148,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_addps_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
 {
-    if (!iemSseCheckInputBinaryR64(pr64Res, pr64Val1, pr64Val2, &fMxcsr))
-        return fMxcsr;
-
     RTFLOAT64U r64Src1, r64Src2;
     iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
     iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
@@ -14117,7 +14159,64 @@ static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_addpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
-    pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+    if (iemSseCheckXmmInputBinaryR64(pResult, puSrc1, puSrc2, pFpuState->MXCSR))
+    {
+        pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+        pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+    }
+}
+#endif
+
+
+/**
+ * MULPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_mulps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
+{
+    RTFLOAT32U r32Src1, r32Src2;
+    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_mul(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_mulps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    if (iemSseCheckXmmInputBinaryR32(pResult, puSrc1, puSrc2, pFpuState->MXCSR))
+    {
+        pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+        pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
+        pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
+        pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+    }
+}
+#endif
+
+
+/**
+ * MULPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_mulpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
+{
+    RTFLOAT64U r64Src1, r64Src2;
+    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Result = f64_mul(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_mulpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    if (iemSseCheckXmmInputBinaryR64(pResult, puSrc1, puSrc2, pFpuState->MXCSR))
+    {
+        pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+        pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+    }
 }
 #endif
