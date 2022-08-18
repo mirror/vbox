@@ -21,6 +21,7 @@
 --filter-out-files /testcase/dev.tar.gz
 
 /include/PGMGstDefs.h: --no-fix-header-guards
+/include/PGMSlatDefs.h: --no-fix-header-guards
 /VMMR0/PGMR0Bth.h: --no-fix-header-guards
 /VMMR3/PGMPhysRWTmpl.h: --no-fix-header-guards
 /VMMRC/PGMRCBth.h: --no-fix-header-guards
