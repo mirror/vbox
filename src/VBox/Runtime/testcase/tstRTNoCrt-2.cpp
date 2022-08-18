@@ -435,6 +435,18 @@
     } while (0)
 
 
+
+#define CHECK_XCPT(a_InnerTestExpr, a_fXcptMask, a_fXcptExpect) do { \
+        RT_NOCRT(feclearexcept(RT_NOCRT_FE_ALL_EXCEPT)); \
+        a_InnerTestExpr; \
+        int const fXcpt = RT_NOCRT(fetestexcept)(RT_NOCRT_FE_ALL_EXCEPT); \
+        if ((fXcpt & (a_fXcptMask)) != (a_fXcptExpect)) \
+            RTTestFailed(g_hTest, "line %u: %s -^-> %#x, expected %#x (%s)", \
+                          __LINE__, #a_InnerTestExpr, fXcpt, (a_fXcptExpect), #a_fXcptExpect); \
+        RT_NOCRT(feclearexcept(RT_NOCRT_FE_ALL_EXCEPT)); \
+    } while (0)
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -2706,6 +2718,73 @@ void testLog()
 }
 
 
+void testLog2()
+{
+    RTTestSub(g_hTest, "log2[f]");
+
+    CHECK_DBL(           RT_NOCRT(log2)(RTStrNanDouble(NULL,    true)), RTStrNanDouble(NULL,    true));
+    CHECK_DBL(           RT_NOCRT(log2)(RTStrNanDouble("234",  false)), RTStrNanDouble("234",  false));
+    CHECK_DBL(           RT_NOCRT(log2)(RTStrNanDouble("999s", false)), RTStrNanDouble("999s", false));
+    CHECK_DBL(           RT_NOCRT(log2)(RTStrNanDouble("fffs",  true)), RTStrNanDouble("fffs",  true));
+    CHECK_XCPT(CHECK_DBL(RT_NOCRT(log2)(  +0.0), -INFINITY), RT_NOCRT_FE_DIVBYZERO, RT_NOCRT_FE_DIVBYZERO);
+    CHECK_XCPT(CHECK_DBL(RT_NOCRT(log2)(  -0.0), -INFINITY), RT_NOCRT_FE_DIVBYZERO, RT_NOCRT_FE_DIVBYZERO);
+    CHECK_XCPT(CHECK_DBL(RT_NOCRT(log2)(-123.0), RTStrNanDouble(NULL, false)), RT_NOCRT_FE_INVALID, RT_NOCRT_FE_INVALID);
+    CHECK_DBL(           RT_NOCRT(log2)(              1.0),   +0.0);
+    CHECK_DBL(           RT_NOCRT(log2)(              2.0),   +1.0);
+    CHECK_DBL(           RT_NOCRT(log2)(           1024.0),  +10.0);
+    CHECK_DBL(           RT_NOCRT(log2)(  1099511627776.0),  +40.0); /* _1T */
+    CHECK_DBL_SAME(               log2,(              1.0));
+    CHECK_DBL_SAME(               log2,(              2.0));
+    CHECK_DBL_SAME(               log2,(           1024.0));
+    CHECK_DBL_SAME(               log2,(  1099511627776.0)); /* _1T */
+    CHECK_DBL_SAME(               log2,(              1.5));
+    CHECK_DBL_SAME(               log2,(      1.234485e-5));
+    CHECK_DBL_SAME(               log2,(      1.234485e+9));
+    CHECK_DBL_SAME(               log2,(    1.234485e+253));
+    CHECK_DBL_SAME(               log2,(        +INFINITY));
+    CHECK_DBL_SAME(               log2,(        -INFINITY));
+    CHECK_DBL_SAME(               log2,(         +DBL_MAX));
+    CHECK_DBL_SAME(               log2,(         -DBL_MAX));
+    CHECK_DBL_SAME(               log2,(RTStrNanDouble(NULL, true)));
+    CHECK_DBL_SAME(               log2,(RTStrNanDouble(NULL, false)));
+#if 0 /* UCRT doesn't preserve signalling NaN */
+    CHECK_DBL_SAME(               log2,(RTStrNanDouble("s",  true)));
+    CHECK_DBL_SAME(               log2,(RTStrNanDouble("s", false)));
+#endif
+
+    CHECK_FLT(           RT_NOCRT(log2f)(RTStrNanFloat(NULL,    true)), RTStrNanFloat(NULL,    true));
+    CHECK_FLT(           RT_NOCRT(log2f)(RTStrNanFloat("234",  false)), RTStrNanFloat("234",  false));
+    CHECK_FLT(           RT_NOCRT(log2f)(RTStrNanFloat("999s", false)), RTStrNanFloat("999s", false));
+    CHECK_FLT(           RT_NOCRT(log2f)(RTStrNanFloat("fffs",  true)), RTStrNanFloat("fffs",  true));
+    CHECK_XCPT(CHECK_FLT(RT_NOCRT(log2f)(  +0.0f), -(float)INFINITY), RT_NOCRT_FE_DIVBYZERO, RT_NOCRT_FE_DIVBYZERO);
+    CHECK_XCPT(CHECK_FLT(RT_NOCRT(log2f)(  -0.0f), -(float)INFINITY), RT_NOCRT_FE_DIVBYZERO, RT_NOCRT_FE_DIVBYZERO);
+    CHECK_XCPT(CHECK_FLT(RT_NOCRT(log2f)(-123.0f), RTStrNanFloat(NULL, false)), RT_NOCRT_FE_INVALID, RT_NOCRT_FE_INVALID);
+    CHECK_FLT(           RT_NOCRT(log2f)(              1.0f),   +0.0f);
+    CHECK_FLT(           RT_NOCRT(log2f)(              2.0f),   +1.0f);
+    CHECK_FLT(           RT_NOCRT(log2f)(           1024.0f),  +10.0f);
+    CHECK_FLT(           RT_NOCRT(log2f)(  1099511627776.0f),  +40.0f); /* _1T */
+    CHECK_FLT_SAME(               log2f,(              1.0f));
+    CHECK_FLT_SAME(               log2f,(              2.0f));
+    CHECK_FLT_SAME(               log2f,(           1024.0f));
+    CHECK_FLT_SAME(               log2f,(  1099511627776.0f)); /* _1T */
+    CHECK_FLT_SAME(               log2f,(              1.5f));
+    CHECK_FLT_SAME(               log2f,(      1.234485e-5f));
+    CHECK_FLT_SAME(               log2f,(      1.234485e+9f));
+    CHECK_FLT_SAME(               log2f,(     1.234485e+35f));
+    CHECK_FLT_SAME_RELAXED_NAN(   log2f,(  +(float)INFINITY)); /* UCRT returns +QNaN here, but log2 reutrn -QNaN. */
+    CHECK_FLT_SAME_RELAXED_NAN(   log2f,(  -(float)INFINITY)); /* ditto */
+    CHECK_FLT_SAME(               log2f,(          +FLT_MAX));
+    CHECK_FLT_SAME_RELAXED_NAN(   log2f,(          -FLT_MAX)); /* UCRT returns +QNaN here, but log2 reutrn -QNaN. */
+    CHECK_FLT_SAME(               log2f,(RTStrNanFloat(NULL, true)));
+    CHECK_FLT_SAME(               log2f,(RTStrNanFloat(NULL, false)));
+#if 0 /* UCRT doesn't preserve signalling NaN */
+    CHECK_FLT_SAME(               log2f,(RTStrNanDouble("s",  true)));
+    CHECK_FLT_SAME(               log2f,(RTStrNanDouble("s", false)));
+#endif
+
+}
+
+
 void testSqRt()
 {
     RTTestSub(g_hTest, "sqrt[f]");
@@ -3396,6 +3475,7 @@ int main()
     testFma();
     testRemainder();
     testLog();
+    testLog2();
     testSqRt();
 
     testATan();

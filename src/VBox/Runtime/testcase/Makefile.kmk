@@ -671,6 +671,8 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/llrintf.asm \
 	../common/math/log.asm \
 	../common/math/logf.asm \
+	../common/math/log2.asm \
+	../common/math/log2f.asm \
 	../common/math/lrint.asm \
 	../common/math/lrintf.asm \
 	../common/math/remainder.asm \
