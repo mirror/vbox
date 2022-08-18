@@ -93,8 +93,8 @@ RT_NOCRT_BEGINPROC feraiseexcept
         test    cl, X86_FSW_ZE
         jz      .not_ze
 %ifdef RT_NOCRT_RAISE_FPU_EXCEPT_IN_SSE_MODE
-        movss   xmm0, [g_r32Zero xWrtRIP]
         movss   xmm0, [g_r32One  xWrtRIP]
+        movss   xmm1, [g_r32Zero xWrtRIP]
         divss   xmm0, xmm1
 %else
         fnstenv [xBP - 20h]
