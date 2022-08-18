@@ -4760,7 +4760,7 @@ static void SseBinaryR64Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTe
             XmmVal1.ar64[0] = InVal1_1;
             XmmVal2.ar64[0] = InVal1_2;
             XmmVal1.ar64[1] = InVal2_1;
-            XmmVal2.ar64[1] = InVal2_1;
+            XmmVal2.ar64[1] = InVal2_2;
 
             uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
