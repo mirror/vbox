@@ -22,6 +22,6 @@
 /src/precomp.h:     --no-fix-header-guards
 /src/precomp_vcc.h: --no-fix-header-guards
 /src/precomp_gcc.h: --no-fix-header-guards
+/src/platform/win/VirtualBox.VisualElementsManifest.xml: --external-copyright
 
 /precomptricks/*:   --no-fix-header-guards --no-update-license --no-update-copyright-year --treat-as .h
-

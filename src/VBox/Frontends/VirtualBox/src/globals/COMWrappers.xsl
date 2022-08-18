@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 
 <!--
-/*
  *  A template to generate wrapper classes for [XP]COM interfaces
  *  (defined in XIDL) to use them in the main Qt-based GUI
  *  in platform-independent script-like manner.
- */
-
+-->
+<!--
     Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
