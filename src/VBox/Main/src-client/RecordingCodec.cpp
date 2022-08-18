@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* This code makes use of the Vorbis (libvorbis):
+/* This code makes use of Vorbis (libvorbis):
  *
  * Copyright (c) 2002-2020 Xiph.org Foundation
  *
