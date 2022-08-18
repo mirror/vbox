@@ -368,7 +368,7 @@
         </para>
       </listitem>
 
-	    <listitem>
+      <listitem>
         <para>
           &product-name; may contain code from libvorbis ("Vorbis") which is
           governed by the license in
@@ -378,8 +378,8 @@
           Monty &lt;monty@xiph.org&gt;
 
           and the rest of the Xiph.org Foundation.
-  	    </para>
-  	  </listitem>
+        </para>
+      </listitem>
 
       <listitem>
         <para>
