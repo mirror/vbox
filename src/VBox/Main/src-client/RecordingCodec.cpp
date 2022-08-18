@@ -42,6 +42,10 @@ static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
     pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
     AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
 
+    pCodec->Parms.csFrame  = 0;
+    pCodec->Parms.cbFrame  = pCodec->Parms.Video.uWidth * pCodec->Parms.Video.uHeight * 4 /* 32-bit */;
+    pCodec->Parms.msFrame  = 1; /* 1ms per frame. */
+
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
 # else /* Default is using VP8. */
@@ -62,8 +66,8 @@ static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
     pVPX->Cfg.g_w = pCodec->Parms.Video.uWidth;
     /* Frame height. */
     pVPX->Cfg.g_h = pCodec->Parms.Video.uHeight;
-    /* 1ms per frame. */
-    pVPX->Cfg.g_timebase.num = 1;
+    /* ms per frame. */
+    pVPX->Cfg.g_timebase.num = pCodec->Parms.msFrame;
     pVPX->Cfg.g_timebase.den = 1000;
     /* Disable multithreading. */
     pVPX->Cfg.g_threads      = 0;
@@ -183,8 +187,6 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                 /* Calculate the absolute PTS of this frame (in ms). */
                 uint64_t tsAbsPTSMs =   pPkt->data.frame.pts * 1000
                                       * (uint64_t)pCodec->Video.VPX.Cfg.g_timebase.num / pCodec->Video.VPX.Cfg.g_timebase.den;
-
-                pCodec->State.tsLastWrittenMs += pCodec->Parms.msFrame;
 
                 const bool fKeyframe = RT_BOOL(pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
 
@@ -332,8 +334,6 @@ static DECLCALLBACK(int) recordingCodecOpusEncode(PRECORDINGCODEC pCodec,
         vrc = pCodec->Callbacks.pfnWriteData(pCodec, pCodec->pvScratch, (size_t)cbWritten, pCodec->State.tsLastWrittenMs,
                                              RECORDINGCODEC_ENC_F_BLOCK_IS_KEY /* Every Opus frame is a key frame */,
                                              pCodec->Callbacks.pvUser);
-        if (RT_SUCCESS(vrc))
-            pCodec->State.tsLastWrittenMs += pCodec->Parms.msFrame;
     }
 
     if (RT_SUCCESS(vrc))
@@ -508,8 +508,6 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
             break;
         }
 
-        uint64_t const uDurationMs = pCodec->Parms.msFrame;
-
         /* Vorbis expects us to flush packets one at a time directly to the container.
          *
          * If we flush more than one packet in a row, players can't decode this then. */
@@ -523,8 +521,6 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
             vrc = pCodec->Callbacks.pfnWriteData(pCodec, op.packet, (size_t)op.bytes, pCodec->State.tsLastWrittenMs,
                                                  RECORDINGCODEC_ENC_F_BLOCK_IS_KEY /* Every Vorbis frame is a key frame */,
                                                  pCodec->Callbacks.pvUser);
-            if (RT_SUCCESS(vrc))
-                pCodec->State.tsLastWrittenMs += uDurationMs;
         }
 
         RT_NOREF(puDst);
@@ -953,6 +949,8 @@ int recordingCodecEncode(PRECORDINGCODEC pCodec,
     int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, &cEncoded, &cbEncoded);
     if (RT_SUCCESS(vrc))
     {
+        pCodec->State.tsLastWrittenMs = pFrame->msTimestamp;
+
 #ifdef VBOX_WITH_STATISTICS
         pCodec->STAM.cEncBlocks += cEncoded;
         pCodec->STAM.msEncTotal += pCodec->Parms.msFrame * cEncoded;
@@ -977,5 +975,27 @@ int recordingCodecFinalize(PRECORDINGCODEC pCodec)
     if (pCodec->Ops.pfnFinalize)
         return pCodec->Ops.pfnFinalize(pCodec);
     return VINF_SUCCESS;
+}
+
+/**
+ * Returns the number of writable bytes for a given timestamp.
+ *
+ * This basically is a helper function to respect the set frames per second (FPS).
+ *
+ * @returns Number of writable bytes.
+ * @param   pCodec              Codec to return number of writable bytes for.
+ * @param   msTimestamp         Timestamp (PTS, in ms) return number of writable bytes for.
+ */
+uint32_t recordingCodecGetWritable(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
+{
+    Log3Func(("%RU64 -- tsLastWrittenMs=%RU64 + uDelayMs=%RU32\n",
+              msTimestamp, pCodec->State.tsLastWrittenMs,pCodec->Parms.Video.uDelayMs));
+
+    if (msTimestamp < pCodec->State.tsLastWrittenMs + pCodec->Parms.Video.uDelayMs)
+        return 0; /* Too early for writing (respect set FPS). */
+
+    /* For now we just return the complete frame space. */
+    AssertMsg(pCodec->Parms.cbFrame, ("Codec not initialized yet\n"));
+    return pCodec->Parms.cbFrame;
 }
 

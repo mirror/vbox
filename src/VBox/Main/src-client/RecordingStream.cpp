@@ -174,8 +174,8 @@ const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
 /**
  * Checks if a specified limit for a recording stream has been reached, internal version.
  *
- * @returns true if any limit has been reached.
- * @param   msTimestamp     Timestamp (in ms) to check for.
+ * @returns \c true if any limit has been reached, \c false if not.
+ * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
 bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
 {
@@ -220,7 +220,7 @@ bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
  * Does housekeeping and recording context notification.
  *
  * @returns VBox status code.
- * @param   msTimestamp         Current timestamp (in ms).
+ * @param   msTimestamp         Timestamp (PTS, in ms).
  */
 int RecordingStream::iterateInternal(uint64_t msTimestamp)
 {
@@ -260,8 +260,8 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
 /**
  * Checks if a specified limit for a recording stream has been reached.
  *
- * @returns true if any limit has been reached.
- * @param   msTimestamp         Timestamp (in ms) to check for.
+ * @returns \c true if any limit has been reached, \c false if not.
+ * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
 bool RecordingStream::IsLimitReached(uint64_t msTimestamp) const
 {
@@ -426,10 +426,14 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
  * @returns VBox status code.
  * @param   pvData              Pointer to audio data.
  * @param   cbData              Size (in bytes) of \a pvData.
- * @param   msTimestamp         Absolute PTS timestamp (in ms).
+ * @param   msTimestamp         Timestamp (PTS, in ms).
  */
 int RecordingStream::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
+    AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
+
+    Log3Func(("cbData=%zu, msTimestamp=%RU64\n", cbData, msTimestamp));
+
     /* As audio data is common across all streams, re-route this to the recording context, where
      * the data is being encoded and stored in the common blocks queue. */
     return m_pCtx->SendAudioFrame(pvData, cbData, msTimestamp);
@@ -449,14 +453,14 @@ int RecordingStream::SendAudioFrame(const void *pvData, size_t cbData, uint64_t 
  * @param   uSrcWidth           Width (in pixels) of the video frame.
  * @param   uSrcHeight          Height (in pixels) of the video frame.
  * @param   puSrcData           Actual pixel data of the video frame.
- * @param   msTimestamp         Absolute PTS timestamp (in ms).
+ * @param   msTimestamp         Timestamp (PTS, in ms).
  */
 int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                                     uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp)
 {
     lock();
 
-    LogFlowFunc(("tsAbsPTSMs=%RU64\n", msTimestamp));
+    Log3Func(("[%RU32 %RU32 %RU32 %RU32] msTimestamp=%RU64\n", x , y, uSrcWidth, uSrcHeight, msTimestamp));
 
     PRECORDINGCODEC pCodec = &this->CodecVideo;
 
@@ -471,13 +475,11 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     do
     {
-        if (msTimestamp < pCodec->State.tsLastWrittenMs + pCodec->Parms.Video.uDelayMs)
+        if (recordingCodecGetWritable(pCodec, msTimestamp) == 0)
         {
-            vrc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
+            vrc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second (FPS). */
             break;
         }
-
-        pCodec->State.tsLastWrittenMs = msTimestamp;
 
         int xDiff = ((int)this->ScreenSettings.Video.ulWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
@@ -670,6 +672,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     unlock();
 
+    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 

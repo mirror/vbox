@@ -600,7 +600,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
             if (cbSrc == cbFrame) /* Only send full codec frames. */
             {
-                vrc = pRecStream->SendAudioFrame(pStreamAV->pvSrcBuf, cbSrc, 0);
+                vrc = pRecStream->SendAudioFrame(pStreamAV->pvSrcBuf, cbSrc, RTTimeProgramMilliTS());
                 if (RT_FAILURE(vrc))
                     break;
             }

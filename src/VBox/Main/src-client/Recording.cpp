@@ -726,7 +726,7 @@ bool RecordingContext::IsReady(void)
  *
  * @returns @c true if the specified screen is ready, @c false if not.
  * @param   uScreen             Screen ID.
- * @param   msTimestamp         Current timestamp (in ms). Currently not being used.
+ * @param   msTimestamp         Timestamp (PTS, in ms). Currently not being used.
  */
 bool RecordingContext::IsReady(uint32_t uScreen, uint64_t msTimestamp)
 {
@@ -791,7 +791,7 @@ bool RecordingContext::IsLimitReached(void)
  *
  * @returns true if any limit has been reached.
  * @param   uScreen             Screen ID.
- * @param   msTimestamp         Timestamp (in ms) to check for.
+ * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
 bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t msTimestamp)
 {
@@ -829,12 +829,12 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 }
 
 /**
- * Sends an audio frame to the video encoding thread.
+ * Sends an audio frame to the recording thread.
  *
  * @returns VBox status code.
  * @param   pvData              Audio frame data to send.
  * @param   cbData              Size (in bytes) of (encoded) audio frame data.
- * @param   msTimestamp         Timestamp (in ms) of audio playback.
+ * @param   msTimestamp         Timestamp (PTS, in ms) of audio playback.
  */
 int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
@@ -848,8 +848,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 }
 
 /**
- * Copies a source video frame to the intermediate RGB buffer.
- * This function is executed only once per time.
+ * Sends a video frame to the recording thread.
  *
  * @thread  EMT
  *
@@ -863,7 +862,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  * @param   uSrcWidth          Width of the video frame.
  * @param   uSrcHeight         Height of the video frame.
  * @param   puSrcData          Pointer to video frame data.
- * @param   msTimestamp        Timestamp (in ms).
+ * @param   msTimestamp        Timestamp (PTS, in ms).
  */
 int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
                                      uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
