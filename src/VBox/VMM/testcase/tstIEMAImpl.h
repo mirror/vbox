@@ -728,8 +728,10 @@ TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_TWO_R80_TEST_T,   fsincos_
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_intel    );
 
 TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R32_TEST_T,      addps_u128               );
+TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R32_TEST_T,      mulps_u128               );
 
 TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R64_TEST_T,      addpd_u128               );
+TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R64_TEST_T,      mulpd_u128               );
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 
