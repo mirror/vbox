@@ -125,7 +125,7 @@
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
 # include <sys/ioccom.h>
-# define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOWRN('V', (Function), sizeof(VBGLREQHDR))
+# define VBGL_IOCTL_CODE_SIZE(Function, Size)       ((uintptr_t)(_IOWRN('V', (Function), sizeof(VBGLREQHDR))))
 # define VBGL_IOCTL_CODE_BIG(Function)              _IOWRN('V', (Function), sizeof(VBGLREQHDR))
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO(   'F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (a_uIOCtl)
