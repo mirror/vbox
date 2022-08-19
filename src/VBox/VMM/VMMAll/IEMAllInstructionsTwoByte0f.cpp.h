@@ -4247,9 +4247,19 @@ FNIEMOP_DEF(iemOp_maxpd_Vpd_Wpd)
 
 
 /** Opcode 0xf3 0x0f 0x5f - maxss Vss, Wss */
-FNIEMOP_STUB(iemOp_maxss_Vss_Wss);
+FNIEMOP_DEF(iemOp_maxss_Vss_Wss)
+{
+    IEMOP_MNEMONIC2(RM, MAXSS, maxss, Vss, Wss, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullR32_To_Full, iemAImpl_maxss_u128_r32);
+}
+
+
 /** Opcode 0xf2 0x0f 0x5f - maxsd Vsd, Wsd */
-FNIEMOP_STUB(iemOp_maxsd_Vsd_Wsd);
+FNIEMOP_DEF(iemOp_maxsd_Vsd_Wsd)
+{
+    IEMOP_MNEMONIC2(RM, MAXSD, maxsd, Vsd, Wsd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullR64_To_Full, iemAImpl_maxsd_u128_r64);
+}
 
 
 /** Opcode      0x0f 0x60 - punpcklbw Pq, Qd */
