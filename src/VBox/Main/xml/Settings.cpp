@@ -3046,7 +3046,7 @@ void RecordingScreenSettings::applyDefaults(void)
 /**
  * Check if all settings have default values.
  *
- * @returns \c true if default, \c false if not.
+ * @returns @c true if default, @c false if not.
  */
 bool RecordingScreenSettings::areDefaultSettings(void) const
 {
@@ -3089,7 +3089,7 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
 /**
  * Returns if a certain recording feature is enabled or not.
  *
- * @returns \c true if the feature is enabled, \c false if not.
+ * @returns @c true if the feature is enabled, @c false if not.
  * @param   enmFeature          Feature to check.
  */
 bool RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T enmFeature) const
@@ -8786,7 +8786,7 @@ void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
  * the current host platform. For example, this would return false
  * for AudioDriverType_DirectSound when compiled on a Linux host.
  *
-*  @return \c true if the current host supports the driver, \c false if not.
+*  @return @c true if the current host supports the driver, @c false if not.
  * @param enmDrvType            AudioDriverType_* enum to test.
  */
 /*static*/

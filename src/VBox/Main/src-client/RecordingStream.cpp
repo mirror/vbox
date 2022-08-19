@@ -174,7 +174,7 @@ const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
 /**
  * Checks if a specified limit for a recording stream has been reached, internal version.
  *
- * @returns \c true if any limit has been reached, \c false if not.
+ * @returns @c true if any limit has been reached, @c false if not.
  * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
 bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
@@ -260,7 +260,7 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
 /**
  * Checks if a specified limit for a recording stream has been reached.
  *
- * @returns \c true if any limit has been reached, \c false if not.
+ * @returns @c true if any limit has been reached, @c false if not.
  * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
 bool RecordingStream::IsLimitReached(uint64_t msTimestamp) const
@@ -274,7 +274,7 @@ bool RecordingStream::IsLimitReached(uint64_t msTimestamp) const
 /**
  * Returns whether a recording stream is ready (e.g. enabled and active) or not.
  *
- * @returns \c true if ready, \c false if not.
+ * @returns @c true if ready, @c false if not.
  */
 bool RecordingStream::IsReady(void) const
 {

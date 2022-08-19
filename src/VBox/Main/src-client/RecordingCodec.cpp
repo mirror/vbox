@@ -853,7 +853,7 @@ int recordingCodecFinalize(PRECORDINGCODEC pCodec)
 /**
  * Returns whether the codec has been initialized or not.
  *
- * @returns \c true if initialized, or \c false if not.
+ * @returns @c true if initialized, or @c false if not.
  * @param   pCodec              Codec to return initialization status for.
  */
 bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec)
