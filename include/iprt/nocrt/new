@@ -82,7 +82,7 @@ namespace std
 
 void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_THROWS_BAD_ALLOC;
 void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb, const std::nothrow_t &) RT_NEW_DELETE_NOTHROW;
-void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb, void *pvPlacment) RT_NEW_DELETE_NOTHROW;
+void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb, void *pvPlacement) RT_NEW_DELETE_NOTHROW;
 void RT_NEW_DELETE_CDECL operator delete(void *pv) RT_NEW_DELETE_NOTHROW;
 #ifdef __cpp_sized_deallocation
 void RT_NEW_DELETE_CDECL operator delete(void *pv, RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_NOTHROW;

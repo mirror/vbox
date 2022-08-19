@@ -34,10 +34,6 @@
 #include <iprt/mem.h>
 
 
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** @todo test this on MSC */
 
 void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_THROWS_BAD_ALLOC
 {
@@ -53,6 +49,13 @@ void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_TH
 void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb, const std::nothrow_t &) RT_NEW_DELETE_NOTHROW
 {
     return RTMemAlloc(cb);
+}
+
+
+void *RT_NEW_DELETE_CDECL operator new(RT_NEW_DELETE_SIZE_T cb, void *pvPlacement) RT_NEW_DELETE_NOTHROW
+{
+    RT_NOREF(cb);
+    return pvPlacement;
 }
 
 
@@ -100,6 +103,13 @@ void *RT_NEW_DELETE_CDECL operator new[](RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_
 void *RT_NEW_DELETE_CDECL operator new[](RT_NEW_DELETE_SIZE_T cb, const std::nothrow_t &) RT_NEW_DELETE_NOTHROW
 {
     return RTMemAlloc(cb);
+}
+
+
+void *RT_NEW_DELETE_CDECL operator new[](RT_NEW_DELETE_SIZE_T cb, void *pvPlacement) RT_NEW_DELETE_NOTHROW
+{
+    RT_NOREF(cb);
+    return pvPlacement;
 }
 
 
