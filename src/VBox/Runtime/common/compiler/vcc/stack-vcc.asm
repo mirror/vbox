@@ -67,7 +67,7 @@ struc RTC_ALLOCA_ENTRY_T
 endstruc
 
 %ifdef RT_ARCH_X86
- %define FASTCALL_NAME(a_Name, a_cbArgs)        @ %+ a_Name %+ @ %+ a_cbArgs
+ %define FASTCALL_NAME(a_Name, a_cbArgs)        $@ %+ a_Name %+ @ %+ a_cbArgs
 %else
  %define FASTCALL_NAME(a_Name, a_cbArgs)        NAME(a_Name)
 %endif
@@ -163,7 +163,7 @@ ENDPROC   _RTC_Shutdown
 ; @param        pFrameDesc      Frame descriptor.    [RDX/EDX]
 ;
 ALIGNCODE(64)
-BEGINPROC FASTCALL_NAME(_RTC_CheckStackVars, 8)
+BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
         push    xBP
 
         ;
@@ -245,7 +245,7 @@ BEGINPROC FASTCALL_NAME(_RTC_CheckStackVars, 8)
         pop     xDX
         pop     xAX
         jmp     .advance
-ENDPROC   FASTCALL_NAME(_RTC_CheckStackVars, 8)
+ENDPROC_RAW     FASTCALL_NAME(_RTC_CheckStackVars, 8)
 
 
 ;;
@@ -258,7 +258,7 @@ ENDPROC   FASTCALL_NAME(_RTC_CheckStackVars, 8)
 ; @param        ppHead          Pointer to the list head pointer.       [R8/stack]
 ;
 ALIGNCODE(64)
-BEGINPROC FASTCALL_NAME(_RTC_AllocaHelper, 12)
+BEGINPROC_RAW   FASTCALL_NAME(_RTC_AllocaHelper, 12)
         ;
         ; Check that input isn't NULL or the size isn't zero.
         ;
@@ -319,14 +319,14 @@ BEGINPROC FASTCALL_NAME(_RTC_AllocaHelper, 12)
 %else
         ret     4
 %endif
-ENDPROC   FASTCALL_NAME(_RTC_AllocaHelper, 12)
+ENDPROC_RAW     FASTCALL_NAME(_RTC_AllocaHelper, 12)
 
 
 ;;
 ; Checks if the secuity cookie ok, complaining and terminating if it isn't.
 ;
 ALIGNCODE(16)
-BEGINPROC FASTCALL_NAME(__security_check_cookie, 4)
+BEGINPROC_RAW   FASTCALL_NAME(__security_check_cookie, 4)
         cmp     xCX, [NAME(__security_cookie) xWrtRIP]
         jne     .corrupted
         ;; amd64 version checks if the top 16 bits are zero, we skip that for now.
@@ -344,7 +344,7 @@ BEGINPROC FASTCALL_NAME(__security_check_cookie, 4)
         leave
         ret
 %endif
-ENDPROC   FASTCALL_NAME(__security_check_cookie, 4)
+ENDPROC_RAW     FASTCALL_NAME(__security_check_cookie, 4)
 
 
 

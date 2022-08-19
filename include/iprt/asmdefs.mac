@@ -501,6 +501,49 @@ GLOBALNAME %1
 %endmacro
 
 ;;
+; Same as GLOBALNAME_EX, but without the name mangling.
+;
+; @param %1     The symbol name - subjected to NAME().
+; @param %2     ELF and PE attributes: 'function', 'object', 'data', 'notype'.
+;               PE ignores all but 'function' (yasm only).  Other formats ignores
+;               this completely.
+; @param %3     Symbol visibility: 'hidden', 'protected', 'internal', and
+;                                   RT_NOTHING (for 'default' visibility).
+;               These are ELF attributes, but 'hidden' is translated to
+;               'private_extern' for the Macho-O format.
+;               Ignored by other formats.
+;
+%macro GLOBALNAME_RAW 3
+%ifdef ASM_FORMAT_ELF
+global %1:%2 %3
+
+%elifdef ASM_FORMAT_PE
+ %ifidn %2,function
+  %ifdef __YASM__      ; nasm does not support any attributes, it errors out. So, nasm is no good with control flow guard atm.
+global %1:function
+  %else
+global %1
+  %endif
+ %else
+global %1
+ %endif
+
+%elifdef ASM_FORMAT_MACHO
+ %ifidn %3,hidden
+global %1:private_extern
+ %else
+global %1
+ %endif
+
+%elifndef ASM_FORMAT_BIN
+global %1
+
+%endif
+
+%1:
+%endmacro
+
+;;
 ; Global marker which is DECLASM() compatible.
 ;
 ; @param %1     The symbol name - subjected to NAME().
@@ -514,33 +557,29 @@ GLOBALNAME %1
 ;               Ignored by other formats.
 ;
 %macro GLOBALNAME_EX 3
-%ifdef ASM_FORMAT_ELF
-global NAME(%1):%2 %3
+GLOBALNAME_RAW NAME(%1), %2, %3
+%endmacro
 
-%elifdef ASM_FORMAT_PE
- %ifidn %2,function
-  %ifdef __YASM__      ; nasm does not support any attributes, it errors out. So, nasm is no good with control flow guard atm.
-global NAME(%1):function
-  %else
-global NAME(%1)
+
+;;
+; Global exported marker, raw version w/o automatic name mangling.
+;
+; @param %1     The internal symbol name.
+; @param %2     The external symbol name.
+; @param %3     ELF and PE attributes: 'function', 'object', 'data', 'notype'.
+;               PE ignores all but 'function' (yasm only).  Other formats ignores
+;               this completely.
+;
+%macro EXPORTEDNAME_RAW 3
+ %ifdef ASM_FORMAT_PE
+  export %2=%1
+ %endif
+ %ifdef __NASM__
+  %ifdef ASM_FORMAT_OMF
+   export %1 %2
   %endif
- %else
-global NAME(%1)
- %endif
-
-%elifdef ASM_FORMAT_MACHO
- %ifidn %3,hidden
-global NAME(%1):private_extern
- %else
-global NAME(%1)
- %endif
-
-%elifndef ASM_FORMAT_BIN
-global NAME(%1)
-
 %endif
-
-NAME(%1):
+GLOBALNAME_RAW %1, %3, RT_NOTHING
 %endmacro
 
 ;;
@@ -552,61 +591,70 @@ NAME(%1):
 ;               this completely.
 ;
 %macro EXPORTEDNAME_EX 2
- %ifdef ASM_FORMAT_PE
-  export %1=NAME(%1)
- %endif
- %ifdef __NASM__
-  %ifdef ASM_FORMAT_OMF
-   export NAME(%1) NAME(%1)
-  %endif
-%endif
-GLOBALNAME_EX %1, %2, RT_NOTHING
+EXPORTEDNAME_RAW NAME(%1), %1, %2
 %endmacro
 
+
 ;;
-; Begins a C callable procedure.
-%macro BEGINPROC 1
+; Begins a procedure, raw version w/o automatic name mangling.
+%macro BEGINPROC_RAW 1
  %ifdef RT_ASM_WITH_SEH64_ALT
   SEH64_ALT_START_UNWIND_INFO %1
  %endif
  %ifdef RT_ASM_WITH_SEH64
-global     NAME(%1):function
-proc_frame NAME(%1)
+global     %1:function
+proc_frame %1
  %else
-GLOBALNAME_EX %1, function, hidden
+GLOBALNAME_RAW %1, function, hidden
  %endif
 .start_of_prologue:
 %endmacro
 
 ;;
-; Begins a C callable exported procedure.
-%macro BEGINPROC_EXPORTED 1
+; Begins a C callable (DECLASM) procedure.
+%macro BEGINPROC 1
+BEGINPROC_RAW NAME(%1)
+%endmacro
+
+
+;;
+; Begins a exported procedure, raw version w/o automatic name mangling.
+; @param 1  Internal name.
+; @param 2  Exported name.
+%macro BEGINPROC_EXPORTED_RAW 2
  %ifdef RT_ASM_WITH_SEH64_ALT
   SEH64_ALT_START_UNWIND_INFO %1
  %endif
  %ifdef RT_ASM_WITH_SEH64
   %ifdef ASM_FORMAT_PE
-export  %1=NAME(%1)
+export  %2=%1
   %endif
-global     NAME(%1):function
-proc_frame NAME(%1)
+global     %1:function
+proc_frame %1
  %else
-EXPORTEDNAME_EX %1, function
+EXPORTEDNAME_RAW %1, %2, function
  %endif
 .start_of_prologue:
 %endmacro
 
 ;;
-; Ends a C callable procedure.
-%macro ENDPROC 1
+; Begins a C callable (DECLASM) exported procedure.
+%macro BEGINPROC_EXPORTED 1
+BEGINPROC_EXPORTED_RAW NAME(%1), %1
+%endmacro
+
+
+;;
+; Ends a procedure, raw version w/o automatic name mangling.
+%macro ENDPROC_RAW 1
  %ifdef RT_ASM_WITH_SEH64
 endproc_frame
  %endif
-GLOBALNAME_EX %1 %+ _EndProc, , hidden ; no function here, this isn't a valid code flow target.
+GLOBALNAME_RAW %1 %+ _EndProc, , hidden ; no function here, this isn't a valid code flow target.
 %ifdef ASM_FORMAT_ELF
  %ifndef __NASM__ ; nasm does this in the global directive.
-size NAME(%1)               NAME(%1 %+ _EndProc) - NAME(%1)
-size NAME(%1 %+ _EndProc)   4 ; make it non-zero to shut up warnigns from Linux's objtool.
+size %1               %1 %+ _EndProc - %1
+size %1 %+ _EndProc   4 ; make it non-zero to shut up warnigns from Linux's objtool.
  %endif
 %endif
     db  0xCC, 0xCC, 0xCC, 0xCC
@@ -620,14 +668,20 @@ size NAME(%1 %+ _EndProc)   4 ; make it non-zero to shut up warnigns from Linux'
    %else
         section .pdata
    %endif
-        dd      NAME(%1)                    wrt ..imagebase
-        dd      NAME(%1 %+ _EndProc)        wrt ..imagebase
-        dd      NAME(%1 %+ .unwind_info)    wrt ..imagebase
+        dd      %1                    wrt ..imagebase
+        dd      %1 %+ _EndProc        wrt ..imagebase
+        dd      %1 %+ .unwind_info    wrt ..imagebase
 
         ; Restore code section.
         BEGINCODE
   %endif
  %endif
+%endmacro
+
+;;
+; Ends a C callable procedure.
+%macro ENDPROC 1
+ENDPROC_RAW NAME(%1)
 %endmacro
 
 
