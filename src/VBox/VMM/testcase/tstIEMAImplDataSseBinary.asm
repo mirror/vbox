@@ -50,7 +50,9 @@ type g_cbTests_ %+ %1 object
 IEM_TEST_DATA addps_u128, "tstIEMAImplDataSseBinary-addps_u128.bin"
 IEM_TEST_DATA mulps_u128, "tstIEMAImplDataSseBinary-mulps_u128.bin"
 IEM_TEST_DATA subps_u128, "tstIEMAImplDataSseBinary-subps_u128.bin"
+IEM_TEST_DATA minps_u128, "tstIEMAImplDataSseBinary-minps_u128.bin"
 
 IEM_TEST_DATA addpd_u128, "tstIEMAImplDataSseBinary-addpd_u128.bin"
 IEM_TEST_DATA mulpd_u128, "tstIEMAImplDataSseBinary-mulpd_u128.bin"
 IEM_TEST_DATA subpd_u128, "tstIEMAImplDataSseBinary-subpd_u128.bin"
+IEM_TEST_DATA minpd_u128, "tstIEMAImplDataSseBinary-minpd_u128.bin"
