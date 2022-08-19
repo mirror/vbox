@@ -681,6 +681,7 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/lrint.asm \
 	../common/math/lrintf.asm \
 	../common/math/pow.asm \
+	../common/math/powf.asm \
 	../common/math/powcore.asm \
 	../common/math/remainder.asm \
 	../common/math/remainderf.asm \

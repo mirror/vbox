@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT pow - AMD64 & X86.
+; IPRT - No-CRT powf - AMD64 & X86.
 ;
 
 ;
@@ -35,12 +35,12 @@ BEGINCODE
 extern NAME(rtNoCrtMathPowCore)
 
 ;;
-; Compute the rdBase to the power of rdExp.
+; Compute the rfBase to the power of rfExp.
 ; @returns st(0) / xmm0
-; @param    rdBase      [xSP + xCB*2] / xmm0
-; @param    rdExp       [xSP + xCB*2 + 8] / xmm1
+; @param    rfBase      [xSP + xCB*2] / xmm0
+; @param    rfExp       [xSP + xCB*2 + 4] / xmm1
 ;
-RT_NOCRT_BEGINPROC pow
+RT_NOCRT_BEGINPROC powf
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP
@@ -55,21 +55,21 @@ RT_NOCRT_BEGINPROC pow
         ; Load rdBase into st1 and rdExp into st0.
         ;
 %ifdef RT_ARCH_AMD64
-        movsd   [xBP - 20h], xmm0
-        fld     qword [xBP - 20h]
+        movss   [xBP - 20h], xmm0
+        fld     dword [xBP - 20h]
         fxam
         fnstsw  ax
         mov     dx, ax                      ; dx=fxam(base)
 
-        movsd   [xBP - 30h], xmm1
-        fld     qword [xBP - 30h]
+        movss   [xBP - 30h], xmm1
+        fld     dword [xBP - 30h]
 %else
-        fld     qword [xBP + xCB*2]
+        fld     dword [xBP + xCB*2]
         fxam
         fnstsw  ax
         mov     dx, ax                      ; dx=fxam(base)
 
-        fld     qword [xBP + xCB*2 + RTLRD_CB]
+        fld     dword [xBP + xCB*2 + RTLRD_CB]
 %endif
 
         ;
@@ -85,8 +85,8 @@ RT_NOCRT_BEGINPROC pow
         cmp     eax, 0
         jne     .return_input_reg
 
-        fstp    qword [xSP - 30h]
-        movsd   xmm0, [xSP - 30h]
+        fstp    dword [xSP - 30h]
+        movss   xmm0, [xSP - 30h]
 
 .return:
         lea     xSP, [xBP - xCB]
@@ -111,7 +111,7 @@ RT_NOCRT_BEGINPROC pow
         jmp     .return
 
 .return_exp:
-        movsd   xmm0, xmm1
+        movss   xmm0, xmm1
         jmp     .return
-ENDPROC   RT_NOCRT(pow)
+ENDPROC   RT_NOCRT(powf)
 
