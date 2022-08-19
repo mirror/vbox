@@ -14550,6 +14550,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_divps_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 
 
 /**
+ * DIVSS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_divss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->MXCSR = iemAImpl_divps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
+    pResult->uResult.ar32[1] = puSrc1->ar32[1];
+    pResult->uResult.ar32[2] = puSrc1->ar32[2];
+    pResult->uResult.ar32[3] = puSrc1->ar32[3];
+}
+#endif
+
+
+/**
  * DIVPD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
@@ -14592,6 +14606,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_divpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 {
     pResult->MXCSR  = iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+#endif
+
+
+/**
+ * DIVSD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_divsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
+{
+    pResult->MXCSR = iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
+    pResult->uResult.ar64[1] = puSrc1->ar64[1];
 }
 #endif
 
