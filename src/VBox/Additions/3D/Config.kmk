@@ -93,10 +93,13 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS)
 	$(VBOX_PATH_MESA)/src/gallium/auxiliary \
 	$(VBOX_PATH_MESA)/src/gallium/include \
 	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
-ifdef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS    += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS) \
+ifdef VBOX_WITH_NOCRT_STATIC # Only the softfloat libs are added here as mesa includes a softfloat.h and we wish for no conflicts.
+TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86) \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.x86)
+TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-       $(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS) # only the library, not the sdk as mesa includes a softfloat.h.
+	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET))
 TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win) /VERBOSE:LIB
 endif
 
