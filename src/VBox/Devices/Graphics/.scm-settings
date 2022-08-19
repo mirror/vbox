@@ -63,10 +63,15 @@
 /shaderlib/wine/vbox/VBoxWineEx.h:       --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 /shaderlib/winoverride.h:                --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 
---filter-out-dirs  "/vmsvga_include/."
+/shaders/*.h: --external-copyright --no-fix-header-guards --dont-set-svn-keywords --no-strip-trailing-blanks
+
 --filter-out-dirs  "/svgadump/."
---filter-out-dirs  "/shaders/."
 
 /vmsvga_glext/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/vmsvga_include/includeCheck.h: --external-copyright --no-fix-header-guards
+/vmsvga_include/svga*.h:        --external-copyright --no-fix-header-guards --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords --no-page-restrictions
+/vmsvga_include/vmware*.h:      --external-copyright --no-fix-header-guards --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords
+/vmsvga_include/VGPU*.h:        --external-copyright --no-fix-header-guards --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords
+/vmsvga_include/vmsvga*.h:      --no-fix-header-guards
 
 /DevVGATmpl.h:                          --no-fix-header-guards
