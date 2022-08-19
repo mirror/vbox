@@ -4629,7 +4629,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 12
         IEMIMPL_AVX_PROLOGUE
         AVX_LD_XSAVEAREA_MXCSR A0
 
-        vmovd    xmm0, [A2]
+        vmovdqu  xmm0, [A2]
         vmovd    xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
         vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
@@ -4642,6 +4642,7 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128_r32
 
 IEMIMPL_FP_F2_R32 addss
 IEMIMPL_FP_F2_R32 mulss
+IEMIMPL_FP_F2_R32 subss
 
 
 ;;
@@ -4688,3 +4689,4 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128_r64
 
 IEMIMPL_FP_F2_R64 addsd
 IEMIMPL_FP_F2_R64 mulsd
+IEMIMPL_FP_F2_R64 subsd

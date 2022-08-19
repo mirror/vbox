@@ -14174,7 +14174,7 @@ static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_addps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
@@ -14188,7 +14188,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_addps_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_addss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
 {
-    pResult->MXCSR |= iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
+    pResult->MXCSR = iemAImpl_addps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
     pResult->uResult.ar32[1] = puSrc1->ar32[1];
     pResult->uResult.ar32[2] = puSrc1->ar32[2];
     pResult->uResult.ar32[3] = puSrc1->ar32[3];
@@ -14216,7 +14216,7 @@ static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_addpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
@@ -14228,7 +14228,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_addpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_addsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
 {
-    pResult->MXCSR |= iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
+    pResult->MXCSR = iemAImpl_addpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
     pResult->uResult.ar64[1] = puSrc1->ar64[1];
 }
 #endif
@@ -14254,7 +14254,7 @@ static uint32_t iemAImpl_mulps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_mulps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
@@ -14268,7 +14268,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mulps_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_mulss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
 {
-    pResult->MXCSR |= iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
+    pResult->MXCSR = iemAImpl_mulps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
     pResult->uResult.ar32[1] = puSrc1->ar32[1];
     pResult->uResult.ar32[2] = puSrc1->ar32[2];
     pResult->uResult.ar32[3] = puSrc1->ar32[3];
@@ -14296,7 +14296,7 @@ static uint32_t iemAImpl_mulpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_mulpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
@@ -14308,7 +14308,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mulpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_mulsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
 {
-    pResult->MXCSR |= iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
+    pResult->MXCSR = iemAImpl_mulpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
     pResult->uResult.ar64[1] = puSrc1->ar64[1];
 }
 #endif
@@ -14334,10 +14334,24 @@ static uint32_t iemAImpl_subps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_subps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_subps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_subps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+}
+#endif
+
+
+/**
+ * SUBSS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_subss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->MXCSR = iemAImpl_subps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], pr32Src2);
+    pResult->uResult.ar32[1] = puSrc1->ar32[1];
+    pResult->uResult.ar32[2] = puSrc1->ar32[2];
+    pResult->uResult.ar32[3] = puSrc1->ar32[3];
 }
 #endif
 
@@ -14362,8 +14376,20 @@ static uint32_t iemAImpl_subpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_subpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+#endif
+
+
+/**
+ * SUBSD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_subsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
+{
+    pResult->MXCSR = iemAImpl_subpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
+    pResult->uResult.ar64[1] = puSrc1->ar64[1];
 }
 #endif
 
@@ -14401,7 +14427,7 @@ static uint32_t iemAImpl_minps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_minps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_minps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_minps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_minps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_minps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_minps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
@@ -14419,7 +14445,7 @@ static uint32_t iemAImpl_minpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
     iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
     iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
 
-    if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT32U_IS_ZERO(&r64Src2))
+    if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT64U_IS_ZERO(&r64Src2))
     {
         *pr64Res = r64Src2;
         return fMxcsr;
@@ -14442,7 +14468,7 @@ static uint32_t iemAImpl_minpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_minpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_minpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_minpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_minpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
@@ -14489,7 +14515,7 @@ static uint32_t iemAImpl_divps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_divps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_divps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
@@ -14538,7 +14564,7 @@ static uint32_t iemAImpl_divpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_divpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
@@ -14577,7 +14603,7 @@ static uint32_t iemAImpl_maxps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_maxps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_maxps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR  = iemAImpl_maxps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
     pResult->MXCSR |= iemAImpl_maxps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
     pResult->MXCSR |= iemAImpl_maxps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
     pResult->MXCSR |= iemAImpl_maxps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
@@ -14595,7 +14621,7 @@ static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
     iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
     iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
 
-    if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT32U_IS_ZERO(&r64Src2))
+    if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT64U_IS_ZERO(&r64Src2))
     {
         *pr64Res = r64Src2;
         return fMxcsr;
@@ -14618,7 +14644,7 @@ static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_maxpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
-    pResult->MXCSR |= iemAImpl_maxpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR  = iemAImpl_maxpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_maxpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
