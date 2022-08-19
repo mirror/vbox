@@ -95,8 +95,7 @@
 /BaseTools/Source/C/Makefiles/*.makefile:      --treat-as Makefile
 /BaseTools/Source/C/Makefiles/ms.*:            --treat-as Makefile
 
-# Ignore text files, usually no license stuff there.
---filter-out-files *.txt
+# Ignore most text files, usually no license stuff there. See Readme.txt below.
 --filter-out-files *.rtf
 --filter-out-files *.1
 --filter-out-files /*/README
@@ -167,6 +166,7 @@
 /VBoxPkg/VBoxFsDxe/test/*: --external-copyright --no-strip-trailing-blanks --no-fix-todos --strip-no-trailing-lines
 /VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaFont*.h: --external-copyright
 /VBoxPkg/E1kNetDxe/*.*: --external-copyright
+/VBoxPkg/VBoxMisc/efi-app/Readme.txt: --treat-as .scm-settings
 
 #/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxVgaDxe/Edid.c: --no-convert-tabs
 #/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/*.*: --no-convert-tabs
