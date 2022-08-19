@@ -16,4 +16,7 @@
 #
 
 # Check .kmk files and some others selectively.
---filter-files *.kmk|genjifaces.xsl|VBoxObjectBase.java|gen_python_deps.py|vboxxpcom.py|_iprt_atomic.h|xptc*_vbox.*|xpcom-namespace-cleanup.map|VBoxXPCOM*.def|openssl-mangling.h|threads_iprt.c|extF80_scale_extF80.c|VBoxDxVkDeps.cpp|/softfloat-3e/build/vbox/platform.h
+--filter-files *.kmk|.scm-settings|genjifaces.xsl|VBoxObjectBase.java|gen_python_deps.py|vboxxpcom.py|_iprt_atomic.h|xptc*_vbox.*|xpcom-namespace-cleanup.map|VBoxXPCOM*.def|openssl-mangling.h|threads_iprt.c|extF80_scale_extF80.c|platform.h|VBoxDxVkDeps.cpp
+--filter-out-files /openssl-*/platform.h|/softfloat-3e/build/Linux-*/platform.h|/softfloat-3e/build/template-*/platform.h|/softfloat-3e/build/Win*/platform.h
+
+/xpcom18a4/xpcom-namespace-cleanup.map: --treat-as .scm-settings
