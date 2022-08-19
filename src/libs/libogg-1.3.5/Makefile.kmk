@@ -1,0 +1,55 @@
+# $Id$
+## @file
+# Sub-Makefile for the libogg.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+
+#
+# Need to drop some assembly flags and add some C flags (gcc) present in
+# VBoxR3DllNonPedantic.  So, create or own template deriving from it.
+#
+# Note! We ASSUME that see is available here (doesn't build cleanly on 32-bit
+#       linux without this assumption).  Too bad for anyone with ancient CPUs.
+#
+TEMPLATE_VBOXLIBOGG         = Template for adjusting assembler and C compiler flags.
+TEMPLATE_VBOXLIBOGG_EXTENDS = VBoxR3DllNonPedanticFast
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBOXLIBOGG_ASFLAGS.amd64 = $(filter-out -Worphan-labels -f win64, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.amd64)) \
+ 	-f x64
+else
+ TEMPLATE_VBOXLIBOGG_CFLAGS        = $(filter-out $(VBOX_GCC_fvisibility-hidden), $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS))
+ TEMPLATE_VBOXLIBOGG_CFLAGS.amd64  = $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.amd64) -msse # Needed?
+ TEMPLATE_VBOXLIBOGG_CFLAGS.x86    = $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.x86) -msse
+ TEMPLATE_VBOXLIBOGG_ASFLAGS.amd64 = $(filter-out -Worphan-labels, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.amd64))
+ TEMPLATE_VBOXLIBOGG_ASFLAGS.x86   = $(filter-out -Worphan-labels, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.x86))
+endif
+
+
+#
+# The VBox Ogg shared library.
+#
+LIBRARIES += VBox-libogg
+VBox-libogg_TEMPLATE   := VBOXLIBOGG
+
+VBox-libogg_INCS := \
+	. \
+	include/ \
+	include/ogg \
+	src
+
+VBox-libogg_SOURCES := \
+	src/bitwise.c \
+	src/framing.c
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
