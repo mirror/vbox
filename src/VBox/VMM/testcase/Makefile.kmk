@@ -248,12 +248,29 @@ tstIEMAImpl_CLEAN     = \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Amd.cpp \
-	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Intel.cpp \
-	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataSseBinary.cpp
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther-Intel.cpp
 tstIEMAImpl_SOURCES   = \
 	tstIEMAImpl.cpp \
 	../VMMAll/IEMAllAImplC.cpp \
 	$(tstIEMAImpl_CLEAN)
+tstIEMAImpl_SOURCES.x86   += tstIEMAImplDataSseBinary.asm
+tstIEMAImpl_SOURCES.amd64 += tstIEMAImplDataSseBinary.asm
+tstIEMAImplDataSseBinary.asm_DEPS = \
+	tstIEMAImplDataSseBinary-addps_u128.bin \
+	tstIEMAImplDataSseBinary-mulps_u128.bin \
+	tstIEMAImplDataSseBinary-subps_u128.bin \
+	tstIEMAImplDataSseBinary-addpd_u128.bin \
+	tstIEMAImplDataSseBinary-mulpd_u128.bin \
+	tstIEMAImplDataSseBinary-subpd_u128.bin
+
+tstIEMAImpl_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
+tstIEMAImplDataSseBinary.S_DEPS   = \
+	tstIEMAImplDataSseBinary-addps_u128.bin \
+	tstIEMAImplDataSseBinary-mulps_u128.bin \
+	tstIEMAImplDataSseBinary-subps_u128.bin \
+	tstIEMAImplDataSseBinary-addpd_u128.bin \
+	tstIEMAImplDataSseBinary-mulpd_u128.bin \
+	tstIEMAImplDataSseBinary-subpd_u128.bin
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
@@ -266,6 +283,24 @@ tstIEMAImplAsm_SOURCES   = \
 	../VMMAll/IEMAllAImpl.asm \
 	../VMMAll/IEMAllAImplC.cpp \
 	$(tstIEMAImpl_CLEAN)
+tstIEMAImplAsm_SOURCES.x86   += tstIEMAImplDataSseBinary.asm
+tstIEMAImplAsm_SOURCES.amd64 += tstIEMAImplDataSseBinary.asm
+tstIEMAImplDataSseBinary.asm_DEPS = \
+	tstIEMAImplDataSseBinary-addps_u128.bin \
+	tstIEMAImplDataSseBinary-mulps_u128.bin \
+	tstIEMAImplDataSseBinary-subps_u128.bin \
+	tstIEMAImplDataSseBinary-addpd_u128.bin \
+	tstIEMAImplDataSseBinary-mulpd_u128.bin \
+	tstIEMAImplDataSseBinary-subpd_u128.bin
+
+tstIEMAImplAsm_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
+tstIEMAImplDataSseBinary.S_DEPS   = \
+	tstIEMAImplDataSseBinary-addps_u128.bin \
+	tstIEMAImplDataSseBinary-mulps_u128.bin \
+	tstIEMAImplDataSseBinary-subps_u128.bin \
+	tstIEMAImplDataSseBinary-addpd_u128.bin \
+	tstIEMAImplDataSseBinary-mulpd_u128.bin \
+	tstIEMAImplDataSseBinary-subpd_u128.bin
 
 ## @param 1   The sub-name of the file in question.
 define def_tstIEMAImplData_adjust
@@ -296,7 +331,6 @@ $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary2)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther-Amd)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuOther-Intel)
-$(evalcall2 def_tstIEMAImplData_adjust,SseBinary)
 
 
 #

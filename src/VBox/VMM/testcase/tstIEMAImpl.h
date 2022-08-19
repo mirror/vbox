@@ -22,6 +22,7 @@
 #endif
 
 #include <iprt/types.h>
+#include <iprt/x86.h>
 
 
 /** @name Integer binary tests.
@@ -343,23 +344,15 @@ typedef struct FPU_UNARY_TWO_R80_TEST_T
     RTFLOAT80U              OutVal2;
 } FPU_UNARY_TWO_R80_TEST_T;
 
-typedef struct SSE_BINARY_R32_TEST_T
+typedef struct SSE_BINARY_TEST_T
 {
     uint32_t                fMxcsrIn;
     uint32_t                fMxcsrOut;
-    RTFLOAT32U              aInVal1[4];
-    RTFLOAT32U              aInVal2[4];
-    RTFLOAT32U              aOutVal[4];
-} SSE_BINARY_R32_TEST_T;
-
-typedef struct SSE_BINARY_R64_TEST_T
-{
-    uint32_t                fMxcsrIn;
-    uint32_t                fMxcsrOut;
-    RTFLOAT64U              aInVal1[2];
-    RTFLOAT64U              aInVal2[2];
-    RTFLOAT64U              aOutVal[2];
-} SSE_BINARY_R64_TEST_T;
+    uint32_t                au32Padding[2];
+    X86XMMREG               InVal1;
+    X86XMMREG               InVal2;
+    X86XMMREG               OutVal;
+} SSE_BINARY_TEST_T;
 
 /** @} */
 
@@ -368,9 +361,17 @@ typedef struct SSE_BINARY_R64_TEST_T
     extern a_Type const  RT_CONCAT(g_aTests_, a_Instr)[] = { {0} }; \
     extern uint32_t const RT_CONCAT(g_cTests_, a_Instr)  = 0
 
+#define TSTIEM_DEFINE_EMPTY_TEST_ARRAY_BIN(a_Type, a_Instr) \
+    extern a_Type const  RT_CONCAT(g_aTests_, a_Instr)[] = { {0} }; \
+    extern uint32_t const RT_CONCAT(g_cbTests_, a_Instr)  = 0
+
 #define TSTIEM_DECLARE_TEST_ARRAY(a_szFile, a_Type, a_Instr) \
     extern a_Type   const RT_CONCAT(g_aTests_, a_Instr)[]; \
     extern uint32_t const RT_CONCAT(g_cTests_, a_Instr)
+
+#define TSTIEM_DECLARE_TEST_ARRAY_BIN(a_szFile, a_Type, a_Instr) \
+    extern a_Type   const RT_CONCAT(g_aTests_, a_Instr)[]; \
+    extern uint32_t const RT_CONCAT(g_cbTests_, a_Instr)
 
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU8_TEST_T,               add_u8                   );
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU8_TEST_T,               add_u8_locked            );
@@ -727,11 +728,13 @@ TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fxtract_
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_amd      );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_intel    );
 
-TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R32_TEST_T,      addps_u128               );
-TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R32_TEST_T,      mulps_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          addps_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          mulps_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          subps_u128               );
 
-TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R64_TEST_T,      addpd_u128               );
-TSTIEM_DECLARE_TEST_ARRAY(SseBinary,        SSE_BINARY_R64_TEST_T,      mulpd_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          addpd_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          mulpd_u128               );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          subpd_u128               );
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 
