@@ -450,6 +450,10 @@
     (a_pXmmDst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)])
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
     (a_pu64Dst) = ((uint64_t const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0])
+#define IEM_MC_REF_XREG_R32_CONST(a_pr32Dst, a_iXReg) \
+    (a_pr32Dst) = ((RTFLOAT32U const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar32[0])
+#define IEM_MC_REF_XREG_R64_CONST(a_pr64Dst, a_iXReg) \
+    (a_pr64Dst) = ((RTFLOAT64U const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar64[0])
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXRegDst)].au64[0] \
             = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXRegSrc)].au64[0]; \
@@ -693,9 +697,9 @@
 
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pVCpu, &(a_r32Dst).u32, (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pVCpu, &(a_r32Dst).u, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R64(a_r64Dst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pVCpu, &(a_r64Dst).au64[0], (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pVCpu, &(a_r64Dst).u, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_D80(a_d80Dst, a_iSeg, a_GCPtrMem) \

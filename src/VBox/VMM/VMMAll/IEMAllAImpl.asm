@@ -4596,3 +4596,93 @@ IEMIMPL_FP_F2 divps
 IEMIMPL_FP_F2 divpd
 IEMIMPL_FP_F2 maxps
 IEMIMPL_FP_F2 maxpd
+
+
+;;
+; Floating point instruction working on a full sized register and a single precision operand.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the result including the MXCSR value.
+; @param    A2      Pointer to the first media register size operand (input/output).
+; @param    A3      Pointer to the second single precision floating point value (input).
+;
+%macro IEMIMPL_FP_F2_R32 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        movdqu   xmm0, [A2]
+        movd     xmm1, [A3]
+        %1       xmm0, xmm1
+        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+
+        SSE_ST_FXSTATE_MXCSR A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128_r32
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovd    xmm0, [A2]
+        vmovd    xmm1, [A3]
+        v %+ %1  xmm0, xmm0, xmm1
+        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+
+        AVX128_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u128_r32
+%endmacro
+
+IEMIMPL_FP_F2_R32 addss
+
+
+;;
+; Floating point instruction working on a full sized register and a double precision operand.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the result including the MXCSR value.
+; @param    A2      Pointer to the first media register size operand (input/output).
+; @param    A3      Pointer to the second double precision floating point value (input).
+;
+%macro IEMIMPL_FP_F2_R64 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        movdqu   xmm0, [A2]
+        movq     xmm1, [A3]
+        %1       xmm0, xmm1
+        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+
+        SSE_ST_FXSTATE_MXCSR A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128_r64
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu  xmm0, [A2]
+        vmovq    xmm1, [A3]
+        v %+ %1  xmm0, xmm0, xmm1
+        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+
+        AVX128_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u128_r64
+%endmacro
+
+IEMIMPL_FP_F2_R64 addsd
