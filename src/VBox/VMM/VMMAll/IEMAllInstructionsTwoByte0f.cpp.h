@@ -4101,9 +4101,20 @@ FNIEMOP_DEF(iemOp_mulpd_Vpd_Wpd)
 
 
 /** Opcode 0xf3 0x0f 0x59 - mulss Vss, Wss */
-FNIEMOP_STUB(iemOp_mulss_Vss_Wss);
+FNIEMOP_DEF(iemOp_mulss_Vss_Wss)
+{
+    IEMOP_MNEMONIC2(RM, MULSS, mulss, Vss, Wss, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullR32_To_Full, iemAImpl_mulss_u128_r32);
+}
+
+
 /** Opcode 0xf2 0x0f 0x59 - mulsd Vsd, Wsd */
-FNIEMOP_STUB(iemOp_mulsd_Vsd_Wsd);
+FNIEMOP_DEF(iemOp_mulsd_Vsd_Wsd)
+{
+    IEMOP_MNEMONIC2(RM, MULSD, mulsd, Vsd, Wsd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullR64_To_Full, iemAImpl_mulsd_u128_r64);
+}
+
 
 /** Opcode      0x0f 0x5a - cvtps2pd Vpd, Wps */
 FNIEMOP_STUB(iemOp_cvtps2pd_Vpd_Wps);

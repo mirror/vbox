@@ -476,6 +476,8 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 
 #define iemAImpl_addss_u128_r32         NULL
 #define iemAImpl_addsd_u128_r64         NULL
+#define iemAImpl_mulss_u128_r32         NULL
+#define iemAImpl_mulsd_u128_r64         NULL
 /** @}  */
 
 

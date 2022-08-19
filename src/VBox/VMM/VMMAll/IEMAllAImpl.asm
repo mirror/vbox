@@ -4641,6 +4641,7 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128_r32
 %endmacro
 
 IEMIMPL_FP_F2_R32 addss
+IEMIMPL_FP_F2_R32 mulss
 
 
 ;;
@@ -4686,3 +4687,4 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128_r64
 %endmacro
 
 IEMIMPL_FP_F2_R64 addsd
+IEMIMPL_FP_F2_R64 mulsd

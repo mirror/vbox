@@ -2440,6 +2440,8 @@ FNIEMAIMPLFPSSEF2U128 iemAImpl_maxpd_u128;
 
 FNIEMAIMPLFPSSEF2U128R32 iemAImpl_addss_u128_r32;
 FNIEMAIMPLFPSSEF2U128R64 iemAImpl_addsd_u128_r64;
+FNIEMAIMPLFPSSEF2U128R32 iemAImpl_mulss_u128_r32;
+FNIEMAIMPLFPSSEF2U128R64 iemAImpl_mulsd_u128_r64;
 
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddps_u128, iemAImpl_vaddps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddpd_u128, iemAImpl_vaddpd_u128_fallback;
@@ -2456,6 +2458,8 @@ FNIEMAIMPLFPAVXF3U128 iemAImpl_vmaxpd_u128, iemAImpl_vmaxpd_u128_fallback;
 
 FNIEMAIMPLFPAVXF3U128R32 iemAImpl_vaddss_u128_r32, iemAImpl_vaddss_u128_r32_fallback;
 FNIEMAIMPLFPAVXF3U128R64 iemAImpl_vaddsd_u128_r64, iemAImpl_vaddsd_u128_r64_fallback;
+FNIEMAIMPLFPAVXF3U128R32 iemAImpl_vmulss_u128_r32, iemAImpl_vmulss_u128_r32_fallback;
+FNIEMAIMPLFPAVXF3U128R64 iemAImpl_vmulsd_u128_r64, iemAImpl_vmulsd_u128_r64_fallback;
 
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vaddps_u256, iemAImpl_vaddps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vaddpd_u256, iemAImpl_vaddpd_u256_fallback;
