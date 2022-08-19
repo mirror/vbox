@@ -4183,9 +4183,19 @@ FNIEMOP_DEF(iemOp_minpd_Vpd_Wpd)
 
 
 /** Opcode 0xf3 0x0f 0x5d - minss Vss, Wss */
-FNIEMOP_STUB(iemOp_minss_Vss_Wss);
+FNIEMOP_DEF(iemOp_minss_Vss_Wss)
+{
+    IEMOP_MNEMONIC2(RM, MINSS, minss, Vss, Wss, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullR32_To_Full, iemAImpl_minss_u128_r32);
+}
+
+
 /** Opcode 0xf2 0x0f 0x5d - minsd Vsd, Wsd */
-FNIEMOP_STUB(iemOp_minsd_Vsd_Wsd);
+FNIEMOP_DEF(iemOp_minsd_Vsd_Wsd)
+{
+    IEMOP_MNEMONIC2(RM, MINSD, minsd, Vsd, Wsd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullR64_To_Full, iemAImpl_minsd_u128_r64);
+}
 
 
 /** Opcode      0x0f 0x5e - divps Vps, Wps */
