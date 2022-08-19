@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Source code massager settings for VBoxDTrace.
+# Source code massager settings for VBoxSVGA.
 #
 
 #
@@ -15,5 +15,4 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-
---filter-out-dirs  "*/winsys/."
+/winsys/*.c:    --no-convert-tabs --no-strip-trailing-blanks
