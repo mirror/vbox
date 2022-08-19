@@ -45,7 +45,6 @@
 --filter-out-dirs  "/webtools/."
 --filter-out-dirs  "/*kBuild*/."
 --filter-out-dirs  "/SlickEdit/."
---filter-out-dirs  "/src/libs/*/."
 
 
 #
@@ -66,7 +65,7 @@
 --filter-out-files "*/COPYING"
 --filter-out-files "*/COPYING.LIB"
 --filter-out-files "*/COPYING.CDDL"
---filter-out-files "*/COPYING.GPLv3"
+--filter-out-files "*/COPYING.GPLv2"
 --filter-out-files "*/COPYING.UBDL"
 --filter-out-files "*.desktop"
 --filter-out-files "*/.swagger-codegen-ignore"
