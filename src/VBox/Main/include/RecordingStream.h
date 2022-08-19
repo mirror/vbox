@@ -124,11 +124,11 @@ public:
                        uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp);
 
     const settings::RecordingScreenSettings &GetConfig(void) const;
-    uint16_t GetID(void) const { return this->uScreenID; };
+    uint16_t GetID(void) const { return this->m_uScreenID; };
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    PRECORDINGCODEC GetAudioCodec(void) { return this->pCodecAudio; };
+    PRECORDINGCODEC GetAudioCodec(void) { return this->m_pCodecAudio; };
 #endif
-    PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
+    PRECORDINGCODEC GetVideoCodec(void) { return &this->m_CodecVideo; };
 
     bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
@@ -175,27 +175,27 @@ protected:
     /** Recording context this stream is associated to. */
     RecordingContext       *m_pCtx;
     /** The current state. */
-    RECORDINGSTREAMSTATE    enmState;
+    RECORDINGSTREAMSTATE    m_enmState;
     struct
     {
         /** File handle to use for writing. */
-        RTFILE              hFile;
+        RTFILE              m_hFile;
         /** Pointer to WebM writer instance being used. */
-        WebMWriter         *pWEBM;
+        WebMWriter         *m_pWEBM;
     } File;
-    bool                fEnabled;
+    bool                m_fEnabled;
     /** Track number of audio stream.
      *  Set to UINT8_MAX if not being used. */
-    uint8_t             uTrackAudio;
+    uint8_t             m_uTrackAudio;
     /** Track number of video stream.
      *  Set to UINT8_MAX if not being used. */
-    uint8_t             uTrackVideo;
+    uint8_t             m_uTrackVideo;
     /** Screen ID. */
-    uint16_t            uScreenID;
+    uint16_t            m_uScreenID;
     /** Critical section to serialize access. */
-    RTCRITSECT          CritSect;
+    RTCRITSECT          m_CritSect;
     /** Timestamp (in ms) of when recording has been started. */
-    uint64_t            tsStartMs;
+    uint64_t            m_tsStartMs;
 #ifdef VBOX_WITH_AUDIO_RECORDING
     /** Pointer to audio codec instance data to use.
      *
@@ -205,16 +205,16 @@ protected:
      *  point in time.
      *
      *  Might be NULL if not being used. */
-    PRECORDINGCODEC     pCodecAudio;
+    PRECORDINGCODEC     m_pCodecAudio;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
     /** Video codec instance data to use. */
-    RECORDINGCODEC      CodecVideo;
+    RECORDINGCODEC      m_CodecVideo;
     /** Screen settings to use. */
     settings::RecordingScreenSettings
-                        ScreenSettings;
+                        m_ScreenSettings;
     /** Common set of recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
-    RecordingBlockSet   Blocks;
+    RecordingBlockSet   m_Blocks;
 };
 
 /** Vector of recording streams. */

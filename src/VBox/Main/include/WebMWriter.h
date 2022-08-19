@@ -372,18 +372,18 @@ public:
     struct WebMSegment
     {
         WebMSegment(void)
-            : tcAbsStartMs(0)
-            , tcAbsLastWrittenMs(0)
-            , offStart(0)
-            , offInfo(0)
-            , offSeekInfo(0)
-            , offTracks(0)
-            , offCues(0)
-            , cClusters(0)
+            : m_tcAbsStartMs(0)
+            , m_tcAbsLastWrittenMs(0)
+            , m_offStart(0)
+            , m_offInfo(0)
+            , m_offSeekInfo(0)
+            , m_offTracks(0)
+            , m_offCues(0)
+            , m_cClusters(0)
         {
-            uTimecodeScaleFactor = VBOX_WEBM_TIMECODESCALE_FACTOR_MS;
+            m_uTimecodeScaleFactor = VBOX_WEBM_TIMECODESCALE_FACTOR_MS;
 
-            LogFunc(("Default timecode scale is: %RU64ns\n", uTimecodeScaleFactor));
+            LogFunc(("Default timecode scale is: %RU64ns\n", m_uTimecodeScaleFactor));
         }
 
         virtual ~WebMSegment()
@@ -398,7 +398,7 @@ public:
          */
         int init(void)
         {
-            return RTCritSectInit(&CritSect);
+            return RTCritSectInit(&m_CritSect);
         }
 
         /**
@@ -408,7 +408,7 @@ public:
         {
             clear();
 
-            RTCritSectDelete(&CritSect);
+            RTCritSectDelete(&m_CritSect);
         }
 
         /**
@@ -416,60 +416,60 @@ public:
          */
         void clear(void)
         {
-            WebMCuePointList::iterator itCuePoint = lstCuePoints.begin();
-            while (itCuePoint != lstCuePoints.end())
+            WebMCuePointList::iterator itCuePoint = m_lstCuePoints.begin();
+            while (itCuePoint != m_lstCuePoints.end())
             {
                 WebMCuePoint *pCuePoint = (*itCuePoint);
                 AssertPtr(pCuePoint);
                 delete pCuePoint;
 
-                lstCuePoints.erase(itCuePoint);
-                itCuePoint = lstCuePoints.begin();
+                m_lstCuePoints.erase(itCuePoint);
+                itCuePoint = m_lstCuePoints.begin();
             }
 
-            Assert(lstCuePoints.empty());
+            Assert(m_lstCuePoints.empty());
         }
 
         /** Critical section for serializing access to this segment. */
-        RTCRITSECT                      CritSect;
+        RTCRITSECT                      m_CritSect;
 
         /** The timecode scale factor of this segment. */
-        uint64_t                        uTimecodeScaleFactor;
+        uint64_t                        m_uTimecodeScaleFactor;
 
         /** Absolute timecode (in ms) when starting this segment. */
-        WebMTimecodeAbs                 tcAbsStartMs;
+        WebMTimecodeAbs                 m_tcAbsStartMs;
         /** Absolute timecode (in ms) of last write. */
-        WebMTimecodeAbs                 tcAbsLastWrittenMs;
+        WebMTimecodeAbs                 m_tcAbsLastWrittenMs;
 
         /** Absolute offset (in bytes) of CurSeg. */
-        uint64_t                        offStart;
+        uint64_t                        m_offStart;
         /** Absolute offset (in bytes) of general info. */
-        uint64_t                        offInfo;
+        uint64_t                        m_offInfo;
         /** Absolute offset (in bytes) of seeking info. */
-        uint64_t                        offSeekInfo;
+        uint64_t                        m_offSeekInfo;
         /** Absolute offset (in bytes) of tracks. */
-        uint64_t                        offTracks;
+        uint64_t                        m_offTracks;
         /** Absolute offset (in bytes) of cues table. */
-        uint64_t                        offCues;
+        uint64_t                        m_offCues;
         /** List of cue points. Needed for seeking table. */
-        WebMCuePointList                lstCuePoints;
+        WebMCuePointList                m_lstCuePoints;
 
         /** Total number of clusters. */
-        uint64_t                        cClusters;
+        uint64_t                        m_cClusters;
 
         /** Map of tracks.
          *  The key marks the track number (*not* the UUID!). */
-        std::map <uint8_t, WebMTrack *> mapTracks;
+        std::map <uint8_t, WebMTrack *> m_mapTracks;
 
         /** Current cluster which is being handled.
          *
          *  Note that we don't need (and shouldn't need, as this can be a *lot* of data!) a
          *  list of all clusters. */
-        WebMCluster                     CurCluster;
+        WebMCluster                     m_CurCluster;
 
-        WebMQueue                       queueBlocks;
+        WebMQueue                       m_queueBlocks;
 
-    } CurSeg;
+    } m_CurSeg;
 
     /** Audio codec to use. */
     RecordingAudioCodec_T       m_enmAudioCodec;
@@ -541,7 +541,7 @@ public:
      *
      * @returns Number of written WebM clusters; 0 when no clusters written (empty file).
      */
-    uint64_t GetClusters(void) const { return CurSeg.cClusters; }
+    uint64_t GetClusters(void) const { return m_CurSeg.m_cClusters; }
 
 protected:
 

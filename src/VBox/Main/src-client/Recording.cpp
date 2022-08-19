@@ -63,11 +63,11 @@ using namespace com;
  * @note    Will throw rc when unable to create.
  */
 RecordingContext::RecordingContext(void)
-    : pConsole(NULL)
-    , enmState(RECORDINGSTS_UNINITIALIZED)
-    , cStreamsEnabled(0)
+    : m_pConsole(NULL)
+    , m_enmState(RECORDINGSTS_UNINITIALIZED)
+    , m_cStreamsEnabled(0)
 {
-    int vrc = RTCritSectInit(&this->CritSect);
+    int vrc = RTCritSectInit(&m_CritSect);
     if (RT_FAILURE(vrc))
         throw vrc;
 }
@@ -81,11 +81,11 @@ RecordingContext::RecordingContext(void)
  * @note    Will throw rc when unable to create.
  */
 RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings)
-    : pConsole(NULL)
-    , enmState(RECORDINGSTS_UNINITIALIZED)
-    , cStreamsEnabled(0)
+    : m_pConsole(NULL)
+    , m_enmState(RECORDINGSTS_UNINITIALIZED)
+    , m_cStreamsEnabled(0)
 {
-    int vrc = RTCritSectInit(&this->CritSect);
+    int vrc = RTCritSectInit(&m_CritSect);
     if (RT_FAILURE(vrc))
         throw vrc;
 
@@ -98,8 +98,8 @@ RecordingContext::~RecordingContext(void)
 {
     destroyInternal();
 
-    if (RTCritSectIsInitialized(&this->CritSect))
-        RTCritSectDelete(&this->CritSect);
+    if (RTCritSectIsInitialized(&m_CritSect))
+        RTCritSectDelete(&m_CritSect);
 }
 
 /**
@@ -118,24 +118,24 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 
     for (;;)
     {
-        int vrc = RTSemEventWait(pThis->WaitEvent, RT_INDEFINITE_WAIT);
+        int vrc = RTSemEventWait(pThis->m_WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(vrc);
 
-        Log2Func(("Processing %zu streams\n", pThis->vecStreams.size()));
+        Log2Func(("Processing %zu streams\n", pThis->m_vecStreams.size()));
 
         /* Process common raw blocks (data which not has been encoded yet). */
-        vrc = pThis->processCommonData(pThis->mapBlocksRaw, 100 /* ms timeout */);
+        vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
 
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
          *               all screens.  */
-        RecordingStreams::iterator itStream = pThis->vecStreams.begin();
-        while (itStream != pThis->vecStreams.end())
+        RecordingStreams::iterator itStream = pThis->m_vecStreams.begin();
+        while (itStream != pThis->m_vecStreams.end())
         {
             RecordingStream *pStream = (*itStream);
 
             /* Hand-in common encoded blocks. */
-            vrc = pStream->Process(pThis->mapBlocksEncoded);
+            vrc = pStream->Process(pThis->m_mapBlocksEncoded);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
@@ -150,7 +150,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 
         /* Keep going in case of errors. */
 
-        if (ASMAtomicReadBool(&pThis->fShutdown))
+        if (ASMAtomicReadBool(&pThis->m_fShutdown))
         {
             LogFunc(("Thread is shutting down ...\n"));
             break;
@@ -169,7 +169,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
  */
 int RecordingContext::threadNotify(void)
 {
-    return RTSemEventSignal(this->WaitEvent);
+    return RTSemEventSignal(m_WaitEvent);
 }
 
 /**
@@ -208,7 +208,7 @@ int RecordingContext::processCommonData(RecordingBlockMap &mapCommon, RTMSINTERV
                     Frame.Audio.pvBuf = pAudioFrame->pvBuf;
                     Frame.Audio.cbBuf = pAudioFrame->cbBuf;
 
-                    vrc = recordingCodecEncode(&this->CodecAudio, &Frame, NULL, NULL);
+                    vrc = recordingCodecEncode(&m_CodecAudio, &Frame, NULL, NULL);
                     break;
                 }
 #endif /* VBOX_WITH_AUDIO_RECORDING */
@@ -292,7 +292,7 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
             pBlock->enmType     = enmType;
             pBlock->pvData      = pFrame;
             pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
-            pBlock->cRefs       = this->cStreamsEnabled;
+            pBlock->cRefs       = m_cStreamsEnabled;
             pBlock->msTimestamp = msTimestamp;
             pBlock->uFlags      = uFlags;
 
@@ -350,7 +350,7 @@ DECLCALLBACK(int) RecordingContext::audioCodecWriteDataCallback(PRECORDINGCODEC 
                                                                 uint64_t msAbsPTS, uint32_t uFlags, void *pvUser)
 {
     RecordingContext *pThis = (RecordingContext *)pvUser;
-    return pThis->writeCommonData(pThis->mapBlocksEncoded, pCodec, pvData, cbData, msAbsPTS, uFlags);
+    return pThis->writeCommonData(pThis->m_mapBlocksEncoded, pCodec, pvData, cbData, msAbsPTS, uFlags);
 }
 
 /**
@@ -373,9 +373,9 @@ int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenS
     Callbacks.pvUser       = this;
     Callbacks.pfnWriteData = RecordingContext::audioCodecWriteDataCallback;
 
-    int vrc = recordingCodecCreateAudio(&this->CodecAudio, enmCodec);
+    int vrc = recordingCodecCreateAudio(&m_CodecAudio, enmCodec);
     if (RT_SUCCESS(vrc))
-        vrc = recordingCodecInit(&this->CodecAudio, &Callbacks, screenSettings);
+        vrc = recordingCodecInit(&m_CodecAudio, &Callbacks, screenSettings);
 
     return vrc;
 }
@@ -407,7 +407,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
         return vrc;
 #endif
 
-    this->pConsole = ptrConsole;
+    m_pConsole = ptrConsole;
 
     settings::RecordingScreenSettingsMap::const_iterator itScreen = m_Settings.mapScreens.begin();
     while (itScreen != m_Settings.mapScreens.end())
@@ -416,9 +416,9 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
         try
         {
             pStream = new RecordingStream(this, itScreen->first /* Screen ID */, itScreen->second);
-            this->vecStreams.push_back(pStream);
+            m_vecStreams.push_back(pStream);
             if (itScreen->second.fEnabled)
-                this->cStreamsEnabled++;
+                m_cStreamsEnabled++;
             LogFlowFunc(("pStream=%p\n", pStream));
         }
         catch (std::bad_alloc &)
@@ -437,11 +437,11 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
 
     if (RT_SUCCESS(vrc))
     {
-        this->tsStartMs = RTTimeMilliTS();
-        this->enmState  = RECORDINGSTS_CREATED;
-        this->fShutdown = false;
+        m_tsStartMs = RTTimeMilliTS();
+        m_enmState  = RECORDINGSTS_CREATED;
+        m_fShutdown = false;
 
-        vrc = RTSemEventCreate(&this->WaitEvent);
+        vrc = RTSemEventCreate(&m_WaitEvent);
         AssertRCReturn(vrc, vrc);
     }
 
@@ -458,21 +458,21 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
  */
 int RecordingContext::startInternal(void)
 {
-    if (this->enmState == RECORDINGSTS_STARTED)
+    if (m_enmState == RECORDINGSTS_STARTED)
         return VINF_SUCCESS;
 
-    Assert(this->enmState == RECORDINGSTS_CREATED);
+    Assert(m_enmState == RECORDINGSTS_CREATED);
 
-    int vrc = RTThreadCreate(&this->Thread, RecordingContext::threadMain, (void *)this, 0,
+    int vrc = RTThreadCreate(&m_Thread, RecordingContext::threadMain, (void *)this, 0,
                              RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "Record");
 
     if (RT_SUCCESS(vrc)) /* Wait for the thread to start. */
-        vrc = RTThreadUserWait(this->Thread, RT_MS_30SEC /* 30s timeout */);
+        vrc = RTThreadUserWait(m_Thread, RT_MS_30SEC /* 30s timeout */);
 
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Recording: Started\n"));
-        this->enmState = RECORDINGSTS_STARTED;
+        m_enmState = RECORDINGSTS_STARTED;
     }
     else
         Log(("Recording: Failed to start (%Rrc)\n", vrc));
@@ -487,25 +487,25 @@ int RecordingContext::startInternal(void)
  */
 int RecordingContext::stopInternal(void)
 {
-    if (this->enmState != RECORDINGSTS_STARTED)
+    if (m_enmState != RECORDINGSTS_STARTED)
         return VINF_SUCCESS;
 
     LogThisFunc(("Shutting down thread ...\n"));
 
     /* Set shutdown indicator. */
-    ASMAtomicWriteBool(&this->fShutdown, true);
+    ASMAtomicWriteBool(&m_fShutdown, true);
 
     /* Signal the thread and wait for it to shut down. */
     int vrc = threadNotify();
     if (RT_SUCCESS(vrc))
-        vrc = RTThreadWait(this->Thread, RT_MS_30SEC /* 30s timeout */, NULL);
+        vrc = RTThreadWait(m_Thread, RT_MS_30SEC /* 30s timeout */, NULL);
 
     lock();
 
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Recording: Stopped\n"));
-        this->enmState = RECORDINGSTS_CREATED;
+        m_enmState = RECORDINGSTS_CREATED;
     }
     else
         Log(("Recording: Failed to stop (%Rrc)\n", vrc));
@@ -523,7 +523,7 @@ void RecordingContext::destroyInternal(void)
 {
     lock();
 
-    if (this->enmState == RECORDINGSTS_UNINITIALIZED)
+    if (m_enmState == RECORDINGSTS_UNINITIALIZED)
     {
         unlock();
         return;
@@ -532,13 +532,13 @@ void RecordingContext::destroyInternal(void)
     int vrc = stopInternal();
     AssertRCReturnVoid(vrc);
 
-    vrc = RTSemEventDestroy(this->WaitEvent);
+    vrc = RTSemEventDestroy(m_WaitEvent);
     AssertRCReturnVoid(vrc);
 
-    this->WaitEvent = NIL_RTSEMEVENT;
+    m_WaitEvent = NIL_RTSEMEVENT;
 
-    RecordingStreams::iterator it = this->vecStreams.begin();
-    while (it != this->vecStreams.end())
+    RecordingStreams::iterator it = m_vecStreams.begin();
+    while (it != m_vecStreams.end())
     {
         RecordingStream *pStream = (*it);
 
@@ -548,16 +548,16 @@ void RecordingContext::destroyInternal(void)
         delete pStream;
         pStream = NULL;
 
-        this->vecStreams.erase(it);
-        it = this->vecStreams.begin();
+        m_vecStreams.erase(it);
+        it = m_vecStreams.begin();
     }
 
     /* Sanity. */
-    Assert(this->vecStreams.empty());
-    Assert(this->mapBlocksRaw.size() == 0);
-    Assert(this->mapBlocksEncoded.size() == 0);
+    Assert(m_vecStreams.empty());
+    Assert(m_mapBlocksRaw.size() == 0);
+    Assert(m_mapBlocksEncoded.size() == 0);
 
-    this->enmState = RECORDINGSTS_UNINITIALIZED;
+    m_enmState = RECORDINGSTS_UNINITIALIZED;
 
     unlock();
 }
@@ -569,7 +569,7 @@ void RecordingContext::destroyInternal(void)
  */
 const settings::RecordingSettings &RecordingContext::GetConfig(void) const
 {
-    return this->m_Settings;
+    return m_Settings;
 }
 
 /**
@@ -584,7 +584,7 @@ RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
 
     try
     {
-        pStream = this->vecStreams.at(uScreen);
+        pStream = m_vecStreams.at(uScreen);
     }
     catch (std::out_of_range &)
     {
@@ -601,7 +601,7 @@ RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
  */
 int RecordingContext::lock(void)
 {
-    int vrc = RTCritSectEnter(&this->CritSect);
+    int vrc = RTCritSectEnter(&m_CritSect);
     AssertRC(vrc);
     return vrc;
 }
@@ -613,7 +613,7 @@ int RecordingContext::lock(void)
  */
 int RecordingContext::unlock(void)
 {
-    int vrc = RTCritSectLeave(&this->CritSect);
+    int vrc = RTCritSectLeave(&m_CritSect);
     AssertRC(vrc);
     return vrc;
 }
@@ -636,7 +636,7 @@ RecordingStream *RecordingContext::GetStream(unsigned uScreen) const
  */
 size_t RecordingContext::GetStreamCount(void) const
 {
-    return this->vecStreams.size();
+    return m_vecStreams.size();
 }
 
 /**
@@ -689,8 +689,8 @@ bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature)
 {
     lock();
 
-    RecordingStreams::const_iterator itStream = this->vecStreams.begin();
-    while (itStream != this->vecStreams.end())
+    RecordingStreams::const_iterator itStream = m_vecStreams.begin();
+    while (itStream != m_vecStreams.end())
     {
         if ((*itStream)->GetConfig().isFeatureEnabled(enmFeature))
         {
@@ -714,7 +714,7 @@ bool RecordingContext::IsReady(void)
 {
     lock();
 
-    const bool fIsReady = this->enmState >= RECORDINGSTS_CREATED;
+    const bool fIsReady = m_enmState >= RECORDINGSTS_CREATED;
 
     unlock();
 
@@ -736,7 +736,7 @@ bool RecordingContext::IsReady(uint32_t uScreen, uint64_t msTimestamp)
 
     bool fIsReady = false;
 
-    if (this->enmState != RECORDINGSTS_STARTED)
+    if (m_enmState != RECORDINGSTS_STARTED)
     {
         const RecordingStream *pStream = getStreamInternal(uScreen);
         if (pStream)
@@ -761,7 +761,7 @@ bool RecordingContext::IsStarted(void)
 {
     lock();
 
-    const bool fIsStarted = this->enmState == RECORDINGSTS_STARTED;
+    const bool fIsStarted = m_enmState == RECORDINGSTS_STARTED;
 
     unlock();
 
@@ -777,9 +777,9 @@ bool RecordingContext::IsLimitReached(void)
 {
     lock();
 
-    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", this->cStreamsEnabled));
+    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", m_cStreamsEnabled));
 
-    const bool fLimitReached = this->cStreamsEnabled == 0;
+    const bool fLimitReached = m_cStreamsEnabled == 0;
 
     unlock();
 
@@ -824,10 +824,10 @@ bool RecordingContext::NeedsUpdate( uint32_t uScreen, uint64_t msTimestamp)
 
     bool fNeedsUpdate = false;
 
-    if (this->enmState == RECORDINGSTS_STARTED)
+    if (m_enmState == RECORDINGSTS_STARTED)
     {
-        if (   recordingCodecIsInitialized(&CodecAudio)
-            && recordingCodecGetWritable(&CodecAudio, msTimestamp) > 0)
+        if (   recordingCodecIsInitialized(&m_CodecAudio)
+            && recordingCodecGetWritable(&m_CodecAudio, msTimestamp) > 0)
         {
             fNeedsUpdate = true;
         }
@@ -852,10 +852,10 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 
     lock();
 
-    Assert(this->cStreamsEnabled);
-    this->cStreamsEnabled--;
+    Assert(m_cStreamsEnabled);
+    m_cStreamsEnabled--;
 
-    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", cStreamsEnabled));
+    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", m_cStreamsEnabled));
 
     unlock();
 
@@ -873,7 +873,7 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    return writeCommonData(this->mapBlocksRaw, &this->CodecAudio,
+    return writeCommonData(m_mapBlocksRaw, &m_CodecAudio,
                            pvData, cbData, msTimestamp, RECORDINGCODEC_ENC_F_BLOCK_IS_KEY);
 #else
     RT_NOREF(pvData, cbData, msTimestamp);

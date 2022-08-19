@@ -47,7 +47,7 @@ public:
     RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    PRECORDINGCODEC GetCodecAudio(void) { return &this->CodecAudio; }
+    PRECORDINGCODEC GetCodecAudio(void) { return &this->m_CodecAudio; }
 #endif
 
     int Create(Console *pConsole, const settings::RecordingSettings &Settings);
@@ -117,26 +117,26 @@ protected:
     };
 
     /** Pointer to the console object. */
-    Console                     *pConsole;
+    Console                     *m_pConsole;
     /** Used recording configuration. */
     settings::RecordingSettings  m_Settings;
     /** The current state. */
-    RECORDINGSTS                 enmState;
+    RECORDINGSTS                 m_enmState;
     /** Critical section to serialize access. */
-    RTCRITSECT                   CritSect;
+    RTCRITSECT                   m_CritSect;
     /** Semaphore to signal the encoding worker thread. */
-    RTSEMEVENT                   WaitEvent;
+    RTSEMEVENT                   m_WaitEvent;
     /** Shutdown indicator. */
-    bool                         fShutdown;
+    bool                         m_fShutdown;
     /** Encoding worker thread. */
-    RTTHREAD                     Thread;
+    RTTHREAD                     m_Thread;
     /** Vector of current recording streams.
      *  Per VM screen (display) one recording stream is being used. */
-    RecordingStreams             vecStreams;
+    RecordingStreams             m_vecStreams;
     /** Number of streams in vecStreams which currently are enabled for recording. */
-    uint16_t                     cStreamsEnabled;
+    uint16_t                     m_cStreamsEnabled;
     /** Timestamp (in ms) of when recording has been started. */
-    uint64_t                     tsStartMs;
+    uint64_t                     m_tsStartMs;
 #ifdef VBOX_WITH_AUDIO_RECORDING
     /** Audio codec to use.
      *
@@ -144,10 +144,10 @@ protected:
      *  to avoid encoding the same audio data for each stream. We ASSUME that
      *  all audio data of a VM will be the same for each stream at a given
      *  point in time. */
-    RECORDINGCODEC               CodecAudio;
+    RECORDINGCODEC               m_CodecAudio;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
     /** Block map of raw common data blocks which need to get encoded first. */
-    RecordingBlockMap            mapBlocksRaw;
+    RecordingBlockMap            m_mapBlocksRaw;
     /** Block map of encoded common blocks.
      *
      *  Only do the encoding of common data blocks only once and then multiplex
@@ -158,7 +158,7 @@ protected:
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */
-    RecordingBlockMap            mapBlocksEncoded;
+    RecordingBlockMap            m_mapBlocksEncoded;
 };
 #endif /* !MAIN_INCLUDED_Recording_h */
 
