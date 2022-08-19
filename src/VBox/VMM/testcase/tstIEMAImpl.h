@@ -390,8 +390,8 @@ typedef struct SSE_BINARY_U128_R64_TEST_T
     extern uint32_t const RT_CONCAT(g_cTests_, a_Instr)
 
 #define TSTIEM_DECLARE_TEST_ARRAY_BIN(a_szFile, a_Type, a_Instr) \
-    extern RTDATADECL(a_Type)   const RT_CONCAT(g_aTests_, a_Instr)[]; \
-    extern RTDATADECL(uint32_t) const RT_CONCAT(g_cbTests_, a_Instr)
+    extern a_Type   const RT_CONCAT(g_aTests_, a_Instr)[]; \
+    extern uint32_t const RT_CONCAT(g_cbTests_, a_Instr)
 
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU8_TEST_T,               add_u8                   );
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU8_TEST_T,               add_u8_locked            );
@@ -748,6 +748,8 @@ TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fxtract_
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Amd,     FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_amd      );
 TSTIEM_DECLARE_TEST_ARRAY(FpuOther-Intel,   FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80_intel    );
 
+RT_C_DECLS_BEGIN
+
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          addps_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          mulps_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          subps_u128               );
@@ -769,6 +771,8 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          maxpd_u1
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R64_TEST_T, addsd_u128_r64           );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R64_TEST_T, mulsd_u128_r64           );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R64_TEST_T, subsd_u128_r64           );
+
+RT_C_DECLS_END
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 
