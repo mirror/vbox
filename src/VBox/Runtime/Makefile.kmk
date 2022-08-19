@@ -1947,6 +1947,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/llrintf.asm \
   	common/math/lrint.asm \
   	common/math/lrintf.asm \
+  	common/math/pow.asm \
   	common/math/remainder.asm \
   	common/math/remainderf.asm \
   	common/math/rint.asm \
@@ -2022,6 +2023,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/llrintf.asm \
   	common/math/lrint.asm \
   	common/math/lrintf.asm \
+  	common/math/pow.asm \
   	common/math/remainder.asm \
   	common/math/remainderf.asm \
   	common/math/rint.asm \

@@ -335,7 +335,7 @@
             RTStrFormatR64(g_szFloat[1], sizeof(g_szFloat[1]), &uExpectMin, 0, 0, RTSTR_F_SPECIAL); \
             RTStrFormatR64(g_szFloat[2], sizeof(g_szFloat[2]), &uExpectMax, 0, 0, RTSTR_F_SPECIAL); \
             RTTestFailed(g_hTest, "line %u: %s -> %s, expected [%s,%s] (%s +/- %s)", \
-                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], #a_rdExpect, #a_rdPlusMin); \
+                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], g_szFloat[2], #a_rdExpect, #a_rdPlusMin); \
         } \
     } while (0)
 
@@ -415,7 +415,7 @@
             RTStrFormatR32(g_szFloat[1], sizeof(g_szFloat[1]), &uExpectMin, 0, 0, RTSTR_F_SPECIAL); \
             RTStrFormatR32(g_szFloat[2], sizeof(g_szFloat[2]), &uExpectMax, 0, 0, RTSTR_F_SPECIAL); \
             RTTestFailed(g_hTest, "line %u: %s -> %s, expected [%s,%s] (%s +/- %s)", \
-                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], #a_rfExpect, #a_rfPlusMin); \
+                         __LINE__, #a_Expr, g_szFloat[0], g_szFloat[1], g_szFloat[2], #a_rfExpect, #a_rfPlusMin); \
         } \
     } while (0)
 
@@ -2708,6 +2708,107 @@ void testLdExp()
 }
 
 
+void testPow()
+{
+    RTTestSub(g_hTest, "pow[f]");
+    CHECK_DBL(RT_NOCRT(pow)(1.0,  1.0),          1.0);
+    CHECK_DBL(RT_NOCRT(pow)(2.0,  1.0),          2.0);
+    CHECK_DBL(RT_NOCRT(pow)(2.0,  2.0),          4.0);
+    CHECK_DBL(RT_NOCRT(pow)(2.0,  43.0),  8796093022208.0);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                           43.0),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                           +0.0),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                           -0.0),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                       -34.5534),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                      +1.0e+128),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                      -1.0e+128),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                      +INFINITY),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                      -INFINITY),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,     RTStrNanDouble(NULL, true)),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,     RTStrNanDouble("s", false)),                        +1.0);  /* 6. base=1 exp=wathever -> +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -1.0,                      +INFINITY),                        +1.0);  /* 10. Exponent = +/-Inf and base = -1:  Return 1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.9,                      -INFINITY),                   +INFINITY);  /* 11. Exponent = -Inf and |base| < 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                       +0.3490,                      -INFINITY),                   +INFINITY);  /* 11. Exponent = -Inf and |base| < 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.9,                      -INFINITY),                   +INFINITY);  /* 11. Exponent = -Inf and |base| < 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -0.165634,                      -INFINITY),                   +INFINITY);  /* 11. Exponent = -Inf and |base| < 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -1.000001,                      -INFINITY),                        +0.0);  /* 12. Exponent = -Inf and |base| > 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +1.000001,                      -INFINITY),                        +0.0);  /* 12. Exponent = -Inf and |base| > 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                         +42.1,                      -INFINITY),                        +0.0);  /* 12. Exponent = -Inf and |base| > 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -42.1e+34,                      -INFINITY),                        +0.0);  /* 12. Exponent = -Inf and |base| > 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +42.1e+99,                      -INFINITY),                        +0.0);  /* 12. Exponent = -Inf and |base| > 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.8,                      +INFINITY),                        +0.0);  /* 13. Exponent = +Inf and |base| < 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.8,                      +INFINITY),                        +0.0);  /* 13. Exponent = +Inf and |base| < 1:   Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +1.000003,                      +INFINITY),                   +INFINITY);  /* 14. Exponent = +Inf and |base| > 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -1.000003,                      +INFINITY),                   +INFINITY);  /* 14. Exponent = +Inf and |base| > 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                +42.000003e+67,                      +INFINITY),                   +INFINITY);  /* 14. Exponent = +Inf and |base| > 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                -996.6567e+109,                      +INFINITY),                   +INFINITY);  /* 14. Exponent = +Inf and |base| > 1:   Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                         -1.23,                            1.1), RTStrNanDouble(NULL, false));  /* 1. Finit base < 0 and finit non-interger exponent: -> domain error (#IE) + NaN. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.0,                        -42.353), RTStrNanDouble(NULL, false));  /* 1. Finit base < 0 and finit non-interger exponent: -> domain error (#IE) + NaN. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.0,                           -0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.0,                           +0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           -0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           +0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           -0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           +0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(    RTStrNanDouble("s", false),                           -0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(    RTStrNanDouble(NULL, true),                           +0.0),                        +1.0);  /* 7. Exponent = +/-0.0, any base value including NaN: return +1.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                          -19.0),                   -INFINITY);  /* 4a. base == +/-0.0 and exp < 0 and exp is odd integer:  Return +/-Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           -7.0),                   +INFINITY);  /* 4a. base == +/-0.0 and exp < 0 and exp is odd integer:  Return +/-Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                           -8.0),                   +INFINITY);  /* 4b. base == +/-0.0 and exp < 0 and exp is not odd int:  Return +Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           -8.0),                   +INFINITY);  /* 4b. base == +/-0.0 and exp < 0 and exp is not odd int:  Return +Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                           -9.1),                   +INFINITY);  /* 4b. base == +/-0.0 and exp < 0 and exp is not odd int:  Return +Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           -9.1),                   +INFINITY);  /* 4b. base == +/-0.0 and exp < 0 and exp is not odd int:  Return +Inf, raise div/0. */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                          +49.0),                        -0.0);  /* 8. base == +/-0.0 and exp > 0 and exp is odd integer:  Return +/-0.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                   +999999999.0),                        -0.0);  /* 8. base == +/-0.0 and exp > 0 and exp is odd integer:  Return +/-0.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                    +88888881.0),                        +0.0);  /* 8. base == +/-0.0 and exp > 0 and exp is odd integer:  Return +/-0.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           +3.0),                        +0.0);  /* 8. base == +/-0.0 and exp > 0 and exp is odd integer:  Return +/-0.0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           +4.0),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                           +4.0),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                           +3.1),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                           +3.1),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          +0.0,                   +999999999.9),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                          -0.0,                   +999999999.9),                        +0.0);  /* 9. base == +/-0.0 and exp > 0 and exp is not odd int:  Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                   -999999999.0),                        -0.0);  /* 15. base == -Inf and exp < 0 and exp is odd integer: Return -0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           -3.0),                        -0.0);  /* 15. base == -Inf and exp < 0 and exp is odd integer: Return -0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           -3.1),                        +0.0);  /* 16. base == -Inf and exp < 0 and exp is not odd int: Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           -4.0),                        +0.0);  /* 16. base == -Inf and exp < 0 and exp is not odd int: Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           +3.0),                   -INFINITY);  /* 17. base == -Inf and exp > 0 and exp is odd integer: Return -Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                  +7777777777.0),                   -INFINITY);  /* 17. base == -Inf and exp > 0 and exp is odd integer: Return -Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                  +7777777777.7),                   +INFINITY);  /* 18. base == -Inf and exp > 0 and exp is not odd int: Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     -INFINITY,                           +4.0),                   +INFINITY);  /* 18. base == -Inf and exp > 0 and exp is not odd int: Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           -4.0),                        +0.0);  /* 19. base == +Inf and exp < 0:                        Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           -0.9),                        +0.0);  /* 19. base == +Inf and exp < 0:                        Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           -4.4),                        +0.0);  /* 19. base == +Inf and exp < 0:                        Return +0 */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           +4.0),                   +INFINITY);  /* 20. base == +Inf and exp > 0:                        Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           +4.4),                   +INFINITY);  /* 20. base == +Inf and exp > 0:                        Return +Inf */
+    CHECK_DBL(      RT_NOCRT(pow)(                     +INFINITY,                           +0.3),                   +INFINITY);  /* 20. base == +Inf and exp > 0:                        Return +Inf */
+
+    /* Integer exponents: */
+    //lvbe /mnt/e/misc/float/pow +1.0 +1.0 +2.0 +1.0 +2.0 +2.0  +2.0 +15.0  +2.0 +42.0  -2.5 +3.0  -2.5 +4.0  -2.5 +16.0  +2.0 -1.0  +2.0 -2.0  +2.0 -3.0   -42.5 -7.0 | clip
+    CHECK_DBL(      RT_NOCRT(pow)(                          +1.0,                           +1.0),                             +1);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           +1.0),                             +2);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           +2.0),                             +4);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                          +15.0),                         +32768);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                          +42.0),                 +4398046511104);
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.5,                           +3.0),                        -15.625);
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.5,                           +4.0),                       +39.0625);
+    CHECK_DBL(      RT_NOCRT(pow)(                          -2.5,                          +16.0),         +2328306.4365386962891);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           -1.0),                           +0.5);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           -2.0),                          +0.25);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           -3.0),                         +0.125);
+    /* Fractional exponents: */
+    //lvbe /mnt/e/misc/float/pow   +2.0 +1.0001  +2.0 +1.5  +2.0 -1.5  +2.0 -1.1  +2.0 -0.98   +2.5 +0.39 +42.424242 +22.34356458  +88888888.9999999e+10 +2.7182818284590452354  +9999387.349569 -2.7182818284590452354| clip
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                        +1.0001),         +2.0001386342407529995);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           +1.5),         +2.8284271247461902909);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           -1.5),        +0.35355339059327378637);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                           -1.1),        +0.46651649576840370504);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.0,                          -0.98),        +0.50697973989501454728);
+    CHECK_DBL(      RT_NOCRT(pow)(                          +2.5,                          +0.39),         +1.4295409595509598333);
+    CHECK_DBL_RANGE(RT_NOCRT(pow)(                    +42.424242,                   +22.34356458),     +2.3264866447369911544e+36, 0.00000000000001e+36);
+    CHECK_DBL_RANGE(RT_NOCRT(pow)(         +88888888.9999999e+10,         +2.7182818284590452354),     +6.1663183371503584444e+48, 0.00000000000001e+48);
+    CHECK_DBL_RANGE(RT_NOCRT(pow)(               +9999387.349569,         -2.7182818284590452354),     +9.3777689533441608684e-20, 0.00000000000001e-20);
+
+}
+
 void testFma()
 {
     RTTestSub(g_hTest, "fma[f]");
@@ -3611,6 +3712,7 @@ int main()
     testExp();
     testExp2();
     testLdExp();
+    testPow();
     testFma();
     testRemainder();
     testLog();

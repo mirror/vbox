@@ -680,6 +680,7 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/log2f.asm \
 	../common/math/lrint.asm \
 	../common/math/lrintf.asm \
+	../common/math/pow.asm \
 	../common/math/remainder.asm \
 	../common/math/remainderf.asm \
 	../common/math/rint.asm \
