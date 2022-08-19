@@ -260,10 +260,12 @@ tstIEMAImplDataSseBinary.asm_DEPS = \
 	tstIEMAImplDataSseBinary-mulps_u128.bin \
 	tstIEMAImplDataSseBinary-subps_u128.bin \
 	tstIEMAImplDataSseBinary-minps_u128.bin \
+	tstIEMAImplDataSseBinary-divps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin
+	tstIEMAImplDataSseBinary-minpd_u128.bin \
+	tstIEMAImplDataSseBinary-divpd_u128.bin
 
 tstIEMAImpl_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
 tstIEMAImplDataSseBinary.S_DEPS   = \
@@ -271,10 +273,12 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 	tstIEMAImplDataSseBinary-mulps_u128.bin \
 	tstIEMAImplDataSseBinary-subps_u128.bin \
 	tstIEMAImplDataSseBinary-minps_u128.bin \
+	tstIEMAImplDataSseBinary-divps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin
+	tstIEMAImplDataSseBinary-minpd_u128.bin \
+	tstIEMAImplDataSseBinary-divpd_u128.bin
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
@@ -294,10 +298,12 @@ tstIEMAImplDataSseBinary.asm_DEPS = \
 	tstIEMAImplDataSseBinary-mulps_u128.bin \
 	tstIEMAImplDataSseBinary-subps_u128.bin \
 	tstIEMAImplDataSseBinary-minps_u128.bin \
+	tstIEMAImplDataSseBinary-divps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin
+	tstIEMAImplDataSseBinary-minpd_u128.bin \
+	tstIEMAImplDataSseBinary-divpd_u128.bin
 
 tstIEMAImplAsm_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
 tstIEMAImplDataSseBinary.S_DEPS   = \
@@ -305,10 +311,12 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 	tstIEMAImplDataSseBinary-mulps_u128.bin \
 	tstIEMAImplDataSseBinary-subps_u128.bin \
 	tstIEMAImplDataSseBinary-minps_u128.bin \
+	tstIEMAImplDataSseBinary-divps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin
+	tstIEMAImplDataSseBinary-minpd_u128.bin \
+	tstIEMAImplDataSseBinary-divpd_u128.bin
 
 ## @param 1   The sub-name of the file in question.
 define def_tstIEMAImplData_adjust
