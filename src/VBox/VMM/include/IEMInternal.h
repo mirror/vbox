@@ -2425,6 +2425,8 @@ FNIEMAIMPLFPSSEF2U128 iemAImpl_minps_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_minpd_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_divps_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_divpd_u128;
+FNIEMAIMPLFPSSEF2U128 iemAImpl_maxps_u128;
+FNIEMAIMPLFPSSEF2U128 iemAImpl_maxpd_u128;
 
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddps_u128, iemAImpl_vaddps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddpd_u128, iemAImpl_vaddpd_u128_fallback;
@@ -2436,6 +2438,8 @@ FNIEMAIMPLFPAVXF3U128 iemAImpl_vminps_u128, iemAImpl_vminps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vminpd_u128, iemAImpl_vminpd_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vdivps_u128, iemAImpl_vdivps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vdivpd_u128, iemAImpl_vdivpd_u128_fallback;
+FNIEMAIMPLFPAVXF3U128 iemAImpl_vmaxps_u128, iemAImpl_vmaxps_u128_fallback;
+FNIEMAIMPLFPAVXF3U128 iemAImpl_vmaxpd_u128, iemAImpl_vmaxpd_u128_fallback;
 
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vaddps_u256, iemAImpl_vaddps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vaddpd_u256, iemAImpl_vaddpd_u256_fallback;
@@ -2447,6 +2451,8 @@ FNIEMAIMPLFPAVXF3U256 iemAImpl_vminps_u256, iemAImpl_vminps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vminpd_u256, iemAImpl_vminpd_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vdivps_u256, iemAImpl_vdivps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vdivpd_u256, iemAImpl_vdivpd_u256_fallback;
+FNIEMAIMPLFPAVXF3U256 iemAImpl_vmaxps_u256, iemAImpl_vmaxps_u256_fallback;
+FNIEMAIMPLFPAVXF3U256 iemAImpl_vmaxpd_u256, iemAImpl_vmaxpd_u256_fallback;
 /** @} */
 
 /** @name C instruction implementations for anything slightly complicated.
