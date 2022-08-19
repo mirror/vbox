@@ -5,10 +5,10 @@
      extension-element-prefixes="exsl">
 
 <!--
-
     genjifaces.xsl:
         XSLT stylesheet that generates Java XPCOM bridge interface code from VirtualBox.xidl.
-
+-->
+<!--
     Copyright (C) 2010-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
