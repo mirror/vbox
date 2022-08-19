@@ -150,7 +150,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies);
  *
  * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens.
+ *                          This will be NULL or a valid request pointer no matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -176,7 +176,7 @@ RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  *
  * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens.
+ *                          This will be NULL or a valid request pointer no matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -204,7 +204,7 @@ RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cM
  * @param   ppReq           Where to store the pointer to the request.  Optional
  *                          when RTREQFLAGS_NO_WAIT is used.
  *                          This variable will be set to NIL or a valid request
- *                          handle not matter what happens.
+ *                          handle no matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -233,7 +233,7 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  * @param   ppReq           Where to store the pointer to the request.  Optional
  *                          when RTREQFLAGS_NO_WAIT is used.
  *                          This variable will be set to NIL or a valid request
- *                          handle not matter what happens.
+ *                          handle no matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -456,7 +456,7 @@ RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
  * @param   phReq           Where to store the pointer to the request.  Optional
  *                          when RTREQFLAGS_NO_WAIT is used.
  *                          This variable will be set to NIL or a valid request
- *                          handle not matter what happens.
+ *                          handle no matter what happens.
  * @param   fFlags          A combination of RTREQFLAGS values.
  * @param   pfnFunction     The function to be called.  Must be declared by a
  *                          DECL macro because of calling conventions.
@@ -480,7 +480,7 @@ RTDECL(int) RTReqPoolCallEx(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phRe
  * @param   phReq           Where to store the pointer to the request.  Optional
  *                          when RTREQFLAGS_NO_WAIT is used.
  *                          This variable will be set to NIL or a valid request
- *                          handle not matter what happens.
+ *                          handle no matter what happens.
  * @param   fFlags          A combination of RTREQFLAGS values.
  * @param   pfnFunction     The function to be called.  Must be declared by a
  *                          DECL macro because of calling conventions.
