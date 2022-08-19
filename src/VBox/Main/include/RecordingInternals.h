@@ -453,5 +453,6 @@ int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBA
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);
 int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded);
 int recordingCodecFinalize(PRECORDINGCODEC pCodec);
-uint32_t recordingCodecGetWritable(PRECORDINGCODEC pCodec, uint64_t msTimestamp);
+bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec);
+uint32_t recordingCodecGetWritable(const PRECORDINGCODEC pCodec, uint64_t msTimestamp);
 #endif /* !MAIN_INCLUDED_RecordingInternals_h */

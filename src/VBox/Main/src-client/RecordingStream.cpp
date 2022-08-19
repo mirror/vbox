@@ -282,6 +282,17 @@ bool RecordingStream::IsReady(void) const
 }
 
 /**
+ * Returns if a recording stream needs to be fed with an update or not.
+ *
+ * @returns @c true if an update is needed, @c false if not.
+ * @param   msTimestamp         Timestamp (PTS, in ms).
+ */
+bool RecordingStream::NeedsUpdate(uint64_t msTimestamp) const
+{
+    return recordingCodecGetWritable((const PRECORDINGCODEC)&CodecVideo, msTimestamp) > 0;
+}
+
+/**
  * Processes a recording stream.
  * This function takes care of the actual encoding and writing of a certain stream.
  * As this can be very CPU intensive, this function usually is called from a separate thread.
@@ -431,6 +442,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 int RecordingStream::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
     AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
+    AssertReturn(NeedsUpdate(msTimestamp), VINF_RECORDING_THROTTLED); /* We ASSUME that the caller checked that first. */
 
     Log3Func(("cbData=%zu, msTimestamp=%RU64\n", cbData, msTimestamp));
 
@@ -458,11 +470,12 @@ int RecordingStream::SendAudioFrame(const void *pvData, size_t cbData, uint64_t 
 int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                                     uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp)
 {
+    AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
+    AssertReturn(NeedsUpdate(msTimestamp), VINF_RECORDING_THROTTLED); /* We ASSUME that the caller checked that first. */
+
     lock();
 
     Log3Func(("[%RU32 %RU32 %RU32 %RU32] msTimestamp=%RU64\n", x , y, uSrcWidth, uSrcHeight, msTimestamp));
-
-    PRECORDINGCODEC pCodec = &this->CodecVideo;
 
     PRECORDINGVIDEOFRAME pFrame = NULL;
 
@@ -475,12 +488,6 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     do
     {
-        if (recordingCodecGetWritable(pCodec, msTimestamp) == 0)
-        {
-            vrc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second (FPS). */
-            break;
-        }
-
         int xDiff = ((int)this->ScreenSettings.Video.ulWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* Nothing visible. */

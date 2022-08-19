@@ -129,8 +129,10 @@ public:
     PRECORDINGCODEC GetAudioCodec(void) { return this->pCodecAudio; };
 #endif
     PRECORDINGCODEC GetVideoCodec(void) { return &this->CodecVideo; };
+
     bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
+    bool NeedsUpdate(uint64_t msTimestamp) const;
 
 public:
 

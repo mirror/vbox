@@ -69,6 +69,7 @@ public:
     bool IsStarted(void);
     bool IsLimitReached(void);
     bool IsLimitReached(uint32_t uScreen, uint64_t msTimestamp);
+    bool NeedsUpdate( uint32_t uScreen, uint64_t msTimestamp);
 
     DECLCALLBACK(int) OnLimitReached(uint32_t uScreen, int rc);
 

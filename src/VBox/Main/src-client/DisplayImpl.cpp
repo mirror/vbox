@@ -2995,6 +2995,9 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 if (!pDisplay->maRecordingEnabled[uScreenId])
                     continue;
 
+                if (!pCtx->NeedsUpdate(uScreenId, tsNowMs))
+                    continue;
+
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
                 if (!pFBInfo->fDisabled)
                 {
