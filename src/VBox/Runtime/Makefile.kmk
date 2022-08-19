@@ -1743,7 +1743,7 @@ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_
 $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
 	$$(call MSG_GENERATE,$(target),$$@,)
 	$$(QUIET)$$(MKDIR) -p -- "$$($(target)_0_OUTDIR)/genalias/"
-	$$(QUIET)$$(VBOX_GENALIAS) -f $$(if-expr "$(bld_trg)" == "win",coff,$$(if-expr "$(bld_trg)" == "darwin",macho,omf)) \
+	$$(QUIET)$$(VBOX_GENALIAS) -f $$(if-expr "$(bld_trg)" == "win",coff.$(bld_trg_arch),$$(if-expr "$(bld_trg)" == "darwin",macho,omf)) \
 		-D "$$($(target)_0_OUTDIR)/genalias/" $$($(target)_2_VBOX_NOCRT_ALIASES) \
 		$$($(target)_VBOX_NOCRT_ALIASES) \
 		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \

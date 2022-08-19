@@ -28,7 +28,15 @@
 #include <time.h>
 #include <assert.h>
 
-#define GENALIAS_UNDERSCORED 0
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if defined(RT_OS_DARWIN) || (defined(RT_ARCH_X86) && (defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)))
+# define GENALIAS_UNDERSCORED 1
+#else
+# define GENALIAS_UNDERSCORED 0
+#endif
 
 
 
@@ -127,7 +135,7 @@ static int WriteAliasObjectAOUT(FILE *pOutput, const char *pszAlias, const char 
     return 0;
 }
 
-static int WriteAliasObjectCOFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
+static int WriteAliasObjectCOFF(FILE *pOutput, const char *pszAlias, const char *pszReal, bool fUnderscored)
 {
 #pragma pack(1)
     struct CoffHdr
@@ -142,7 +150,7 @@ static int WriteAliasObjectCOFF(FILE *pOutput, const char *pszAlias, const char 
     } Hdr;
     struct CoffShdr
     {
-        char    Name[8];
+        char        Name[8];
         uint32_t    VirtualSize;
         uint32_t    VirtualAddress;
         uint32_t    SizeOfRawData;
@@ -221,7 +229,7 @@ static int WriteAliasObjectCOFF(FILE *pOutput, const char *pszAlias, const char 
 
     /* The alias symbol. */
     memset(&Sym, 0, sizeof(Sym));
-    Sym.u.s.Offset = GENALIAS_UNDERSCORED + cchReal + 1 + 4;
+    Sym.u.s.Offset = fUnderscored + cchReal + 1 + 4;
     Sym.SectionNumber = IMAGE_SYM_UNDEFINED;
     Sym.Type = IMAGE_SYM_TYPE_NULL;
     Sym.StorageClass = IMAGE_SYM_CLASS_WEAK_EXTERNAL;
@@ -237,23 +245,37 @@ static int WriteAliasObjectCOFF(FILE *pOutput, const char *pszAlias, const char 
         return -2;
 
     /* the string table. */
-    u32 = 4 + cchReal + 1 + cchAlias + 1 + GENALIAS_UNDERSCORED * 2;
+    u32 = 4 + cchReal + 1 + cchAlias + 1 + fUnderscored * 2;
     if (fwrite(&u32, 4, 1, pOutput) != 1)
         return -2;
-#if GENALIAS_UNDERSCORED
-    if (fputc('_', pOutput) == EOF)
-        return -2;
-#endif
+    if (fUnderscored)
+        if (fputc('_', pOutput) == EOF)
+            return -2;
     if (fwrite(pszReal, cchReal + 1, 1, pOutput) != 1)
         return -2;
-#if GENALIAS_UNDERSCORED
-    if (fputc('_', pOutput) == EOF)
-        return -2;
-#endif
+    if (fUnderscored)
+        if (fputc('_', pOutput) == EOF)
+            return -2;
     if (fwrite(pszAlias, cchAlias + 1, 1, pOutput) != 1)
         return -2;
     return 0;
 }
+
+static int WriteAliasObjectTargetCOFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
+{
+    return WriteAliasObjectCOFF(pOutput, pszAlias, pszReal, GENALIAS_UNDERSCORED);
+}
+
+static int WriteAliasObjectX86COFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
+{
+    return WriteAliasObjectCOFF(pOutput, pszAlias, pszReal, true  /*fUnderscored*/);
+}
+
+static int WriteAliasObjectAmd64COFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
+{
+    return WriteAliasObjectCOFF(pOutput, pszAlias, pszReal, false /*fUnderscored*/);
+}
+
 
 static int WriteAliasObjectELF(FILE *pOutput, const char *pszAlias, const char *pszReal)
 {
@@ -387,7 +409,11 @@ int main(int argc, char **argv)
     if (!strcmp(argv[2], "aout"))
         pfnWriter = WriteAliasObjectAOUT;
     else if (!strcmp(argv[2], "coff"))
-        pfnWriter = WriteAliasObjectCOFF;
+        pfnWriter = WriteAliasObjectTargetCOFF;
+    else if (!strcmp(argv[2], "coff.x86"))
+        pfnWriter = WriteAliasObjectX86COFF;
+    else if (!strcmp(argv[2], "coff.amd64"))
+        pfnWriter = WriteAliasObjectAmd64COFF;
     else if (!strcmp(argv[2], "elf"))
         pfnWriter = WriteAliasObjectELF;
     else if (!strcmp(argv[2], "omf"))
