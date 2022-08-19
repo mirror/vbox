@@ -64,6 +64,7 @@
 /shaderlib/winoverride.h:                --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 
 /shaders/*.h: --external-copyright --no-fix-header-guards --dont-set-svn-keywords --no-strip-trailing-blanks
+/shaders/*.hlsl: --treat-as .cpp
 
 --filter-out-dirs  "/svgadump/."
 
