@@ -737,7 +737,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU12
 
 /**
  * Common worker for SSE instructions on the forms:
- *      pxx{s,d}    xmm1, xmm2/mem128
+ *      pxxs       xmm1, xmm2/mem128
  *
  * Proper alignment of the 128-bit operand is enforced.
  * Exceptions type 2. SSE cpuid checks.
@@ -785,6 +785,71 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2);
+        IEM_MC_STORE_SSE_RESULT(SseRes, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for SSE2 instructions on the forms:
+ *      pxxd       xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 2. SSE cpuid checks.
+ *
+ * @sa iemOpCommonSseFp_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 1);
+        IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
+        IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc2,                      2);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_XMM_CONST(pSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2);
+        IEM_MC_STORE_SSE_RESULT(SseRes, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(3, 2);
+        IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
+        IEM_MC_LOCAL(X86XMMREG,             uSrc2);
+        IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1);
+        IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,   pSrc2, uSrc2,               2);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
         IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
@@ -3869,7 +3934,7 @@ FNIEMOP_DEF(iemOp_addps_Vps_Wps)
 FNIEMOP_DEF(iemOp_addpd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC2(RM, ADDPD, addpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_addpd_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_addpd_u128);
 }
 
 
@@ -3891,7 +3956,7 @@ FNIEMOP_DEF(iemOp_mulps_Vps_Wps)
 FNIEMOP_DEF(iemOp_mulpd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC2(RM, MULPD, mulpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_mulpd_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_mulpd_u128);
 }
 
 
@@ -3930,7 +3995,7 @@ FNIEMOP_DEF(iemOp_subps_Vps_Wps)
 FNIEMOP_DEF(iemOp_subpd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC2(RM, SUBPD, subpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_subpd_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_subpd_u128);
 }
 
 
