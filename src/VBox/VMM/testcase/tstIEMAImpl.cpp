@@ -4806,9 +4806,9 @@ static void SseBinaryR64Test(void)
         PFNIEMAIMPLFPSSEF2U128          pfn     = g_aSseBinaryR64[iFn].pfn;
         uint32_t const                  cVars   = COUNT_VARIATIONS(g_aSseBinaryR64[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
-        for (uint32_t iVar = 0; iVar < cVars / sizeof(SSE_BINARY_TEST_T); iVar++)
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
-            for (uint32_t iTest = 0; iTest < cTests; iTest++)
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_TEST_T); iTest++)
             {
                 IEMSSERESULT Res; RT_ZERO(Res);
 
@@ -4848,6 +4848,7 @@ static const SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
 {
     ENTRY_BIN(addss_u128_r32),
     ENTRY_BIN(mulss_u128_r32),
+    ENTRY_BIN(subss_u128_r32),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -5033,6 +5034,7 @@ static const SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
 {
     ENTRY_BIN(addsd_u128_r64),
     ENTRY_BIN(mulsd_u128_r64),
+    ENTRY_BIN(subsd_u128_r64),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -5168,9 +5170,9 @@ static void SseBinaryU128R64Test(void)
         PFNIEMAIMPLFPSSEF2U128R64                pfn     = g_aSseBinaryU128R64[iFn].pfn;
         uint32_t const                           cVars   = COUNT_VARIATIONS(g_aSseBinaryU128R64[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
-        for (uint32_t iVar = 0; iVar < cVars / sizeof(SSE_BINARY_U128_R64_T); iVar++)
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
-            for (uint32_t iTest = 0; iTest < cTests; iTest++)
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_U128_R64_TEST_T); iTest++)
             {
                 IEMSSERESULT Res; RT_ZERO(Res);
 
