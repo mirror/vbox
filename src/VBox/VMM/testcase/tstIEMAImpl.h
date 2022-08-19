@@ -354,6 +354,26 @@ typedef struct SSE_BINARY_TEST_T
     X86XMMREG               OutVal;
 } SSE_BINARY_TEST_T;
 
+typedef struct SSE_BINARY_U128_R32_TEST_T
+{
+    uint32_t                fMxcsrIn;
+    uint32_t                fMxcsrOut;
+    uint32_t                au32Padding[2];
+    X86XMMREG               OutVal;
+    X86XMMREG               InVal1;
+    RTFLOAT32U              r32Val2;
+} SSE_BINARY_U128_R32_TEST_T;
+
+typedef struct SSE_BINARY_U128_R64_TEST_T
+{
+    uint32_t                fMxcsrIn;
+    uint32_t                fMxcsrOut;
+    uint32_t                au32Padding[2];
+    X86XMMREG               OutVal;
+    X86XMMREG               InVal1;
+    RTFLOAT64U              r64Val2;
+} SSE_BINARY_U128_R64_TEST_T;
+
 /** @} */
 
 
@@ -735,12 +755,16 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          minps_u1
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          divps_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          maxps_u128               );
 
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R32_TEST_T, addss_u128_r32           );
+
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          addpd_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          mulpd_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          subpd_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          minpd_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          divpd_u128               );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          maxpd_u128               );
+
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R64_TEST_T, addsd_u128_r64           );
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 
