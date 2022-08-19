@@ -380,6 +380,14 @@ VBox-SoftFloatGuestR3Shared_CFLAGS.win  := $(VBox-SoftFloat_CFLAGS.win) -wd4245 
  ifn1of ($(KBUILD_TARGET),win)
 VBox-SoftFloatGuestR3Shared_CFLAGS      := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
  endif
+
+#
+# And a x86 version of that again for amd64 targets.
+#
+LIBRARIES.win.amd64 += VBox-SoftFloatGuestR3Shared-x86
+VBox-SoftFloatGuestR3Shared-x86_TEMPLATE     := NewerVccVBoxGuestR3Dll
+VBox-SoftFloatGuestR3Shared-x86_EXTENDS      := VBox-SoftFloatGuestR3Shared
+VBox-SoftFloatGuestR3Shared-x86_BLD_TRG_ARCH := x86
 endif # VBOX_WITH_NOCRT_STATIC
 
 
