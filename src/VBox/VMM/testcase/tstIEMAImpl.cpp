@@ -4851,6 +4851,7 @@ static const SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
     ENTRY_BIN(subss_u128_r32),
     ENTRY_BIN(minss_u128_r32),
     ENTRY_BIN(divss_u128_r32),
+    ENTRY_BIN(maxss_u128_r32),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -5039,6 +5040,7 @@ static const SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
     ENTRY_BIN(subsd_u128_r64),
     ENTRY_BIN(minsd_u128_r64),
     ENTRY_BIN(divsd_u128_r64),
+    ENTRY_BIN(maxsd_u128_r64),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
