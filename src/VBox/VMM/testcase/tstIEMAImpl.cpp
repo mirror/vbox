@@ -4469,11 +4469,12 @@ TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_T, SSE_BINARY_TEST_T, PFNIEMAIMPLFPSSEF2U128
 
 static const SSE_BINARY_R32_T g_aSseBinaryR32[] =
 {
-    //ENTRY_BIN(addps_u128),
-    //ENTRY_BIN(mulps_u128),
-    //ENTRY_BIN(subps_u128),
-    //ENTRY_BIN(minps_u128),
+    ENTRY_BIN(addps_u128),
+    ENTRY_BIN(mulps_u128),
+    ENTRY_BIN(subps_u128),
+    ENTRY_BIN(minps_u128),
     ENTRY_BIN(divps_u128),
+    ENTRY_BIN(maxps_u128),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -4667,6 +4668,7 @@ static const SSE_BINARY_R64_T g_aSseBinaryR64[] =
     ENTRY_BIN(subpd_u128),
     ENTRY_BIN(minpd_u128),
     ENTRY_BIN(divpd_u128),
+    ENTRY_BIN(maxpd_u128),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR

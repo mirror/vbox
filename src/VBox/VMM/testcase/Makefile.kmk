@@ -231,6 +231,20 @@ tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
 #
 # Note! The IN_TSTVMSTRUCT define is for avoiding IEMInstructionStatisticsTmpl.h.
 #
+TSTIEMAIMPL_TEST_DATA_DEPS = \
+	tstIEMAImplDataSseBinary-addps_u128.bin \
+	tstIEMAImplDataSseBinary-mulps_u128.bin \
+	tstIEMAImplDataSseBinary-subps_u128.bin \
+	tstIEMAImplDataSseBinary-minps_u128.bin \
+	tstIEMAImplDataSseBinary-divps_u128.bin \
+	tstIEMAImplDataSseBinary-maxps_u128.bin \
+	tstIEMAImplDataSseBinary-addpd_u128.bin \
+	tstIEMAImplDataSseBinary-mulpd_u128.bin \
+	tstIEMAImplDataSseBinary-subpd_u128.bin \
+	tstIEMAImplDataSseBinary-minpd_u128.bin \
+	tstIEMAImplDataSseBinary-divpd_u128.bin \
+	tstIEMAImplDataSseBinary-maxpd_u128.bin
+
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
 tstIEMAImpl_SDKS      = VBOX_SOFTFLOAT
@@ -256,29 +270,11 @@ tstIEMAImpl_SOURCES   = \
 tstIEMAImpl_SOURCES.x86   += tstIEMAImplDataSseBinary.asm
 tstIEMAImpl_SOURCES.amd64 += tstIEMAImplDataSseBinary.asm
 tstIEMAImplDataSseBinary.asm_DEPS = \
-	tstIEMAImplDataSseBinary-addps_u128.bin \
-	tstIEMAImplDataSseBinary-mulps_u128.bin \
-	tstIEMAImplDataSseBinary-subps_u128.bin \
-	tstIEMAImplDataSseBinary-minps_u128.bin \
-	tstIEMAImplDataSseBinary-divps_u128.bin \
-	tstIEMAImplDataSseBinary-addpd_u128.bin \
-	tstIEMAImplDataSseBinary-mulpd_u128.bin \
-	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin \
-	tstIEMAImplDataSseBinary-divpd_u128.bin
+	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 
 tstIEMAImpl_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
 tstIEMAImplDataSseBinary.S_DEPS   = \
-	tstIEMAImplDataSseBinary-addps_u128.bin \
-	tstIEMAImplDataSseBinary-mulps_u128.bin \
-	tstIEMAImplDataSseBinary-subps_u128.bin \
-	tstIEMAImplDataSseBinary-minps_u128.bin \
-	tstIEMAImplDataSseBinary-divps_u128.bin \
-	tstIEMAImplDataSseBinary-addpd_u128.bin \
-	tstIEMAImplDataSseBinary-mulpd_u128.bin \
-	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin \
-	tstIEMAImplDataSseBinary-divpd_u128.bin
+	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
@@ -294,29 +290,11 @@ tstIEMAImplAsm_SOURCES   = \
 tstIEMAImplAsm_SOURCES.x86   += tstIEMAImplDataSseBinary.asm
 tstIEMAImplAsm_SOURCES.amd64 += tstIEMAImplDataSseBinary.asm
 tstIEMAImplDataSseBinary.asm_DEPS = \
-	tstIEMAImplDataSseBinary-addps_u128.bin \
-	tstIEMAImplDataSseBinary-mulps_u128.bin \
-	tstIEMAImplDataSseBinary-subps_u128.bin \
-	tstIEMAImplDataSseBinary-minps_u128.bin \
-	tstIEMAImplDataSseBinary-divps_u128.bin \
-	tstIEMAImplDataSseBinary-addpd_u128.bin \
-	tstIEMAImplDataSseBinary-mulpd_u128.bin \
-	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin \
-	tstIEMAImplDataSseBinary-divpd_u128.bin
+	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 
 tstIEMAImplAsm_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
 tstIEMAImplDataSseBinary.S_DEPS   = \
-	tstIEMAImplDataSseBinary-addps_u128.bin \
-	tstIEMAImplDataSseBinary-mulps_u128.bin \
-	tstIEMAImplDataSseBinary-subps_u128.bin \
-	tstIEMAImplDataSseBinary-minps_u128.bin \
-	tstIEMAImplDataSseBinary-divps_u128.bin \
-	tstIEMAImplDataSseBinary-addpd_u128.bin \
-	tstIEMAImplDataSseBinary-mulpd_u128.bin \
-	tstIEMAImplDataSseBinary-subpd_u128.bin \
-	tstIEMAImplDataSseBinary-minpd_u128.bin \
-	tstIEMAImplDataSseBinary-divpd_u128.bin
+	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 
 ## @param 1   The sub-name of the file in question.
 define def_tstIEMAImplData_adjust
