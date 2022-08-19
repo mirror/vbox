@@ -452,11 +452,15 @@ extern const RTFLOAT64U  g_ar64Zero[];
 extern const RTFLOAT80U  g_ar80Zero[];
 extern const RTFLOAT80U  g_ar80One[];
 extern const RTFLOAT80U  g_r80Indefinite;
+extern const RTFLOAT32U  g_ar32Infinity[];
+extern const RTFLOAT64U  g_ar64Infinity[];
 extern const RTFLOAT80U  g_ar80Infinity[];
 extern const RTFLOAT128U g_r128Ln2;
 extern const RTUINT128U  g_u128Ln2Mantissa;
 extern const RTUINT128U  g_u128Ln2MantissaIntel;
 extern const RTFLOAT128U g_ar128F2xm1HornerConsts[];
+extern const RTFLOAT32U  g_ar32QNaN[];
+extern const RTFLOAT64U  g_ar64QNaN[];
 
 /** Zero values (indexed by fSign). */
 RTFLOAT32U const g_ar32Zero[] = { RTFLOAT32U_INIT_ZERO(0), RTFLOAT32U_INIT_ZERO(1) };
@@ -471,7 +475,14 @@ RTFLOAT80U const g_ar80One[] =
 RTFLOAT80U const g_r80Indefinite = RTFLOAT80U_INIT_INDEFINITE(1);
 
 /** Infinities (indexed by fSign). */
+RTFLOAT32U const g_ar32Infinity[] = { RTFLOAT32U_INIT_INF(0), RTFLOAT32U_INIT_INF(1) };
+RTFLOAT64U const g_ar64Infinity[] = { RTFLOAT64U_INIT_INF(0), RTFLOAT64U_INIT_INF(1) };
 RTFLOAT80U const g_ar80Infinity[] = { RTFLOAT80U_INIT_INF(0), RTFLOAT80U_INIT_INF(1) };
+
+/** Default QNaNs (indexed by fSign). */
+RTFLOAT32U const g_ar32QNaN[] = { RTFLOAT32U_INIT_QNAN(0), RTFLOAT32U_INIT_QNAN(1) };
+RTFLOAT64U const g_ar64QNaN[] = { RTFLOAT64U_INIT_QNAN(0), RTFLOAT64U_INIT_QNAN(1) };
+
 
 #if 0
 /** 128-bit floating point constant: 2.0 */
@@ -14381,5 +14392,101 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_minpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 {
     pResult->MXCSR |= iemAImpl_minpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
     pResult->MXCSR |= iemAImpl_minpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+#endif
+
+
+/**
+ * DIVPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_divps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
+{
+    if (iemSseBinaryValIsNaNR32(pr32Res, pr32Val1, pr32Val2, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT32U r32Src1, r32Src2;
+    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+
+    if (RTFLOAT32U_IS_ZERO(&r32Src2))
+    {
+        if (   RTFLOAT32U_IS_ZERO(&r32Src1)
+            || RTFLOAT32U_IS_QUIET_NAN(&r32Src1))
+        {
+            *pr32Res = g_ar32QNaN[1];
+            return fMxcsr | X86_MXCSR_IE;
+        }
+        else if (RTFLOAT32U_IS_INF(&r32Src1))
+        {
+            *pr32Res = g_ar32Infinity[r32Src1.s.fSign != r32Src2.s.fSign];
+            return fMxcsr;
+        }
+        else
+        {
+            *pr32Res = g_ar32Infinity[r32Src1.s.fSign != r32Src2.s.fSign];
+            return fMxcsr | X86_MXCSR_ZE;
+        }
+    }
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_div(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_divps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc1->ar32[0], &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc1->ar32[1], &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc1->ar32[2], &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_divps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+}
+#endif
+
+
+/**
+ * DIVPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_divpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
+{
+    if (iemSseBinaryValIsNaNR64(pr64Res, pr64Val1, pr64Val2, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT64U r64Src1, r64Src2;
+    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+
+    if (RTFLOAT64U_IS_ZERO(&r64Src2))
+    {
+        if (   RTFLOAT64U_IS_ZERO(&r64Src1)
+            || RTFLOAT64U_IS_QUIET_NAN(&r64Src1))
+        {
+            *pr64Res = g_ar64QNaN[1];
+            return fMxcsr | X86_MXCSR_IE;
+        }
+        else if (RTFLOAT64U_IS_INF(&r64Src1))
+        {
+            *pr64Res = g_ar64Infinity[r64Src1.s.fSign != r64Src2.s.fSign];
+            return fMxcsr;
+        }
+        else
+        {
+            *pr64Res = g_ar64Infinity[r64Src1.s.fSign != r64Src2.s.fSign];
+            return fMxcsr | X86_MXCSR_ZE;
+        }
+    }
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Result = f64_div(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_divpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    pResult->MXCSR |= iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], &puSrc2->ar64[0]);
+    pResult->MXCSR |= iemAImpl_divpd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif

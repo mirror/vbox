@@ -469,6 +469,8 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_subpd_u128             NULL
 #define iemAImpl_minps_u128             NULL
 #define iemAImpl_minpd_u128             NULL
+#define iemAImpl_divps_u128             NULL
+#define iemAImpl_divpd_u128             NULL
 
 /** @}  */
 
