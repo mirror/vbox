@@ -357,7 +357,7 @@ namespace std
                 std::size_t cchCopied = m_cchPut - m_offPutNext;
                 if (cchCopied > 0)
                 {
-                    cchCopied = RT_MIN(cchCopied, a_cchSrc);
+                    cchCopied = RT_MIN(cchCopied, static_cast<std::size_t>(a_cchSrc));
                     traits_type::copy(&m_pachPut[m_offPutNext], a_pchSrc, cchCopied);
                     m_cchPut += cchCopied;
                 }

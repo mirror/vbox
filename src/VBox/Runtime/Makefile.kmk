@@ -1902,6 +1902,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/nocrt-getc.cpp \
   	r3/nocrt-clearerr.cpp \
   	r3/nocrt-ferror.cpp \
+  	r3/nocrt-cerr.cpp \
+  	r3/nocrt-cout.cpp \
 
   RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
   	common/math/atan.asm  \

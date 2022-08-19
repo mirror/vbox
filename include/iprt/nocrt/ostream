@@ -82,6 +82,19 @@ namespace std
         explicit basic_ostream(std::basic_streambuf<a_CharType,a_CharTraits> *a_pBuf)
             : basic_ios(a_pBuf)
         { }
+
+        /** For cerr initialization.
+         * @internal */
+        explicit basic_ostream(std::basic_streambuf<a_CharType,a_CharTraits> *a_pBuf,
+                               std::basic_ostream<a_CharType, a_CharTraits> *a_pTiedStream,
+                               bool a_fUnbuffered)
+            : basic_ios(a_pBuf)
+        {
+            m_pTiedStream = a_pTiedStream;
+            if (!a_fUnbuffered)
+                setf(std::ios_base::unitbuf);
+        }
+
     private:
         basic_ostream(basic_ostream const &a_rSrc);             /* not copyable */
         basic_ostream &operator=(basic_ostream const &a_rSrc);  /* not copyable */
@@ -115,14 +128,20 @@ namespace std
             return *this;
         }
 
-        basic_ostream &flush();
+        basic_ostream &flush()
+        {
+            if (m_pBuf)
+                m_pBuf->pubsync();
+            return *this;
+        }
+
         pos_type       tellp() RT_NOEXCEPT;
         basic_ostream &seekp(pos_type a_off) RT_NOEXCEPT;
         basic_ostream &seekp(off_type a_off, seekdir enmDir) RT_NOEXCEPT;
 
         /** @name Internal support methods
          * @{ */
-        basic_ostream &intWrite(const char *a_pchSrc, std::streamsize a_cchToWrite); /**< Internal method outputting char buffers. */
+        inline basic_ostream &intWrite(const char *a_pchSrc, std::streamsize a_cchToWrite); /**< Internal method outputting char buffers. */
 
         /** @returns 8, 10 or 16. */
         inline unsigned intGetIntegerBase() const RT_NOEXCEPT
@@ -239,7 +258,7 @@ namespace std
     /** @} */
 
     template<>
-    basic_ostream<char> &basic_ostream<char>::intWrite(const char *a_pchSrc, std::streamsize a_cchToWrite)
+    inline basic_ostream<char> &basic_ostream<char>::intWrite(const char *a_pchSrc, std::streamsize a_cchToWrite)
     {
         return write(a_pchSrc, a_cchToWrite);
     }
