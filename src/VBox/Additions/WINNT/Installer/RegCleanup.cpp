@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
+#include <iprt/cdefs.h> /* RT_STR_TUPLE */
 
 
 static BOOL isNT4(void)
