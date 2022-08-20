@@ -27,8 +27,8 @@
 
 %include "iprt/asmdefs.mac"
 
-extern  nocrt_atexit
+extern  NAME(nocrt_atexit)
 BEGINPROC atexit
-        jmp     nocrt_atexit
+        jmp     NAME(nocrt_atexit)
 ENDPROC   atexit
 
