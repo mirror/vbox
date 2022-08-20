@@ -2088,7 +2088,7 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                     pSignatureEntry->semanticName  = opcode.semanticName;
                 }
                 pSignatureEntry->mask          = opcode.aValOperand[0].mask;
-                pSignatureEntry->componentType = SVGADX_SIGNATURE_REGISTER_COMPONENT_UNKNOWN; /// @todo Proper value? Seems that it is not important.
+                pSignatureEntry->componentType = SVGADX_SIGNATURE_REGISTER_COMPONENT_UNKNOWN; // Will be updated by vboxDXUpdateVSInputSignature
                 pSignatureEntry->minPrecision  = SVGADX_SIGNATURE_MIN_PRECISION_DEFAULT;
             }
         }
@@ -2607,6 +2607,94 @@ VGPU10_RESOURCE_RETURN_TYPE DXShaderResourceReturnTypeFromFormat(SVGA3dSurfaceFo
     }
     return VGPU10_RETURN_TYPE_UNORM;
 }
+
+
+SVGA3dDXSignatureRegisterComponentType DXShaderComponentTypeFromFormat(SVGA3dSurfaceFormat format)
+{
+    /** @todo This is auto-generated from format names and needs a review. */
+    switch (format)
+    {
+        case SVGA3D_R32G32B32A32_UINT:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32G32B32A32_SINT:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R32G32B32_FLOAT:               return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R32G32B32_UINT:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32G32B32_SINT:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16G16B16A16_UINT:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R16G16B16A16_SNORM:            return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16G16B16A16_SINT:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R32G32_UINT:                   return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32G32_SINT:                   return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_D32_FLOAT_S8X24_UINT:          return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32_FLOAT_X8X24:               return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_X32_G8X24_UINT:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R10G10B10A2_UINT:              return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R11G11B10_FLOAT:               return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R8G8B8A8_UNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8B8A8_UNORM_SRGB:           return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8B8A8_UINT:                 return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8B8A8_SINT:                 return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16G16_UINT:                   return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R16G16_SINT:                   return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_D32_FLOAT:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R32_UINT:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32_SINT:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_D24_UNORM_S8_UINT:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R24_UNORM_X8:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_X24_G8_UINT:                   return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8_UNORM:                    return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8_UINT:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8_SINT:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R16_UINT:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R16_SNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16_SINT:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R8_UNORM:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8_UINT:                       return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8_SNORM:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R8_SINT:                       return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R8G8_B8G8_UNORM:               return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_G8R8_G8B8_UNORM:               return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC1_UNORM_SRGB:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC2_UNORM_SRGB:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC3_UNORM_SRGB:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC4_SNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_BC5_SNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R10G10B10_XR_BIAS_A2_UNORM:    return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B8G8R8A8_UNORM_SRGB:           return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B8G8R8X8_UNORM_SRGB:           return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32G32B32A32_FLOAT:            return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R16G16B16A16_FLOAT:            return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R16G16B16A16_UNORM:            return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R32G32_FLOAT:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R10G10B10A2_UNORM:             return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R8G8B8A8_SNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16G16_FLOAT:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R16G16_UNORM:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R16G16_SNORM:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R32_FLOAT:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_R8G8_SNORM:                    return SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32;
+        case SVGA3D_R16_FLOAT:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        case SVGA3D_D16_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_A8_UNORM:                      return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC1_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC2_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC3_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B5G6R5_UNORM:                  return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B5G5R5A1_UNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B8G8R8A8_UNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B8G8R8X8_UNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC4_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC5_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_B4G4R4A4_UNORM:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC7_UNORM:                     return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_BC7_UNORM_SRGB:                return SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32;
+        case SVGA3D_R9G9B9E5_SHAREDEXP:            return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+        default:
+            break;
+    }
+    return SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32;
+}
+
 
 int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceDimension,
                             VGPU10_RESOURCE_RETURN_TYPE *paResourceReturnType, uint32_t cResources)

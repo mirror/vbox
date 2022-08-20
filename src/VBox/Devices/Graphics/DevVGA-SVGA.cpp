@@ -3949,7 +3949,8 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             {
                 /* The 3d subsystem must be shut down from the fifo thread. */
                 PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
-                pSVGAState->pFuncs3D->pfnTerminate(pThisCC);
+                if (pSVGAState->pFuncs3D && pSVGAState->pFuncs3D->pfnTerminate)
+                    pSVGAState->pFuncs3D->pfnTerminate(pThisCC);
             }
 # endif
             break;

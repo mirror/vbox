@@ -34,6 +34,11 @@
 #pragma pack()
 #include "vmsvga_headers_end.h"
 
+/* SVGA3dDXSignatureRegisterComponentType */
+#define SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32  1
+#define SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32  2
+#define SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32 3
+
 typedef struct DXShaderAttributeSemantic
 {
     const char *pcszSemanticName;
@@ -65,6 +70,7 @@ void DXShaderFree(DXShaderInfo *pInfo);
 int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceDimension,
                             VGPU10_RESOURCE_RETURN_TYPE *paResourceReturnType, uint32_t cResources);
 VGPU10_RESOURCE_RETURN_TYPE DXShaderResourceReturnTypeFromFormat(SVGA3dSurfaceFormat format);
+SVGA3dDXSignatureRegisterComponentType DXShaderComponentTypeFromFormat(SVGA3dSurfaceFormat format);
 int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbDXBC);
 char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister, SVGA3dDXSignatureSemanticName *pSemanticName);
 
