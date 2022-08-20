@@ -4120,10 +4120,23 @@ FNIEMOP_DEF(iemOp_mulsd_Vsd_Wsd)
 FNIEMOP_STUB(iemOp_cvtps2pd_Vpd_Wps);
 /** Opcode 0x66 0x0f 0x5a - cvtpd2ps Vps, Wpd */
 FNIEMOP_STUB(iemOp_cvtpd2ps_Vps_Wpd);
+
+
 /** Opcode 0xf3 0x0f 0x5a - cvtss2sd Vsd, Wss */
-FNIEMOP_STUB(iemOp_cvtss2sd_Vsd_Wss);
+FNIEMOP_DEF(iemOp_cvtss2sd_Vsd_Wss)
+{
+    IEMOP_MNEMONIC2(RM, CVTSS2SD, cvtss2sd, Vsd, Wss, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullR32_To_Full, iemAImpl_cvtss2sd_u128_r32);
+}
+
+
 /** Opcode 0xf2 0x0f 0x5a - cvtsd2ss Vss, Wsd */
-FNIEMOP_STUB(iemOp_cvtsd2ss_Vss_Wsd);
+FNIEMOP_DEF(iemOp_cvtsd2ss_Vss_Wsd)
+{
+    IEMOP_MNEMONIC2(RM, CVTSD2SS, cvtsd2ss, Vss, Wsd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullR64_To_Full, iemAImpl_cvtsd2ss_u128_r64);
+}
+
 
 /** Opcode      0x0f 0x5b - cvtdq2ps Vps, Wdq */
 FNIEMOP_STUB(iemOp_cvtdq2ps_Vps_Wdq);

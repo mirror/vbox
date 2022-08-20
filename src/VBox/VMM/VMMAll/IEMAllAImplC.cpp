@@ -13875,12 +13875,9 @@ DECLINLINE(PRTFLOAT64U) iemFpSoftF64ToIprt(PRTFLOAT64U pr64Dst, float64_t const 
  * @param   r32Result       The result of the SoftFloat operation.
  * @param   pr32Result      Where to store the result for IEM.
  * @param   fMxcsr          The original MXCSR value.
- * @param   pr32Src1        The first source operand (for setting \#DE under certain circumstances).
- * @param   pr32Src2        The second source operand (for setting \#DE under certain circumstances).
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t const *pSoftState, float32_t r32Result,
-                                                               PRTFLOAT32U pr32Result, uint32_t fMxcsr,
-                                                               PCRTFLOAT32U pr32Src1, PCRTFLOAT32U pr32Src2)
+                                                               PRTFLOAT32U pr32Result, uint32_t fMxcsr)
 {
     iemFpSoftF32ToIprt(pr32Result, r32Result);
 
@@ -13899,11 +13896,6 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
         || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
             && (RTFLOAT32U_IS_SUBNORMAL(pr32Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when one of the source operands is a De-normal. */
-        fXcpt |=   (   RTFLOAT32U_IS_SUBNORMAL(pr32Src1)
-                    || RTFLOAT32U_IS_SUBNORMAL(pr32Src2))
-                 ? X86_MXCSR_DE
-                 : 0;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
@@ -13918,12 +13910,9 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
  * @param   r32Result       The result of the SoftFloat operation.
  * @param   pr32Result      Where to store the result for IEM.
  * @param   fMxcsr          The original MXCSR value.
- * @param   pr32Src1        The first source operand (for setting \#DE under certain circumstances).
- * @param   pr32Src2        The second source operand (for setting \#DE under certain circumstances).
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResultNoFz(softfloat_state_t const *pSoftState, float32_t r32Result,
-                                                                   PRTFLOAT32U pr32Result, uint32_t fMxcsr,
-                                                                   PCRTFLOAT32U pr32Src1, PCRTFLOAT32U pr32Src2)
+                                                                   PRTFLOAT32U pr32Result, uint32_t fMxcsr)
 {
     iemFpSoftF32ToIprt(pr32Result, r32Result);
 
@@ -13933,11 +13922,6 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResultNoFz(softfloat_sta
         || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
             && (RTFLOAT32U_IS_SUBNORMAL(pr32Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when one of the source operands is a De-normal. */
-        fXcpt |=   (   RTFLOAT32U_IS_SUBNORMAL(pr32Src1)
-                    || RTFLOAT32U_IS_SUBNORMAL(pr32Src2))
-                 ? X86_MXCSR_DE
-                 : 0;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
@@ -13952,12 +13936,9 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResultNoFz(softfloat_sta
  * @param   r64Result       The result of the SoftFloat operation.
  * @param   pr64Result      Where to store the result for IEM.
  * @param   fMxcsr          The original MXCSR value.
- * @param   pr64Src1        The first source operand (for setting \#DE under certain circumstances).
- * @param   pr64Src2        The second source operand (for setting \#DE under certain circumstances).
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t const *pSoftState, float64_t r64Result,
-                                                               PRTFLOAT64U pr64Result, uint32_t fMxcsr,
-                                                               PCRTFLOAT64U pr64Src1, PCRTFLOAT64U pr64Src2)
+                                                               PRTFLOAT64U pr64Result, uint32_t fMxcsr)
 {
     iemFpSoftF64ToIprt(pr64Result, r64Result);
     uint8_t fXcpt = pSoftState->exceptionFlags;
@@ -13977,11 +13958,6 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
         || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
             && (RTFLOAT64U_IS_SUBNORMAL(pr64Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when one of the source operands is a De-normal. */
-        fXcpt |=   (   RTFLOAT64U_IS_SUBNORMAL(pr64Src1)
-                    || RTFLOAT64U_IS_SUBNORMAL(pr64Src2))
-                 ? X86_MXCSR_DE
-                 : 0;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
@@ -13996,12 +13972,9 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
  * @param   r64Result       The result of the SoftFloat operation.
  * @param   pr64Result      Where to store the result for IEM.
  * @param   fMxcsr          The original MXCSR value.
- * @param   pr64Src1        The first source operand (for setting \#DE under certain circumstances).
- * @param   pr64Src2        The second source operand (for setting \#DE under certain circumstances).
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_state_t const *pSoftState, float64_t r64Result,
-                                                                   PRTFLOAT64U pr64Result, uint32_t fMxcsr,
-                                                                   PCRTFLOAT64U pr64Src1, PCRTFLOAT64U pr64Src2)
+                                                                   PRTFLOAT64U pr64Result, uint32_t fMxcsr)
 {
     iemFpSoftF64ToIprt(pr64Result, r64Result);
 
@@ -14011,11 +13984,6 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_sta
         || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
             && (RTFLOAT64U_IS_SUBNORMAL(pr64Result))))
         fXcpt &= ~X86_MXCSR_DE;
-    else /* Need to set \#DE when one of the source operands is a De-normal. */
-        fXcpt |=   (   RTFLOAT64U_IS_SUBNORMAL(pr64Src1)
-                    || RTFLOAT64U_IS_SUBNORMAL(pr64Src2))
-                 ? X86_MXCSR_DE
-                 : 0;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
@@ -14025,23 +13993,30 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_sta
  * Sets the given single precision floating point input value to the given output taking the Denormals-as-zero flag
  * in MXCSR into account.
  *
- * @returns nothing.
+ * @returns The output MXCSR De-normal flag if the input is a de-normal and the DAZ flag is not set.
  * @param   pr32Val         Where to store the result.
  * @param   fMxcsr          The input MXCSR value.
  * @param   pr32Src         The value to use.
  */
-DECLINLINE(void) iemSsePrepareValueR32(PRTFLOAT32U pr32Val, uint32_t fMxcsr, PCRTFLOAT32U pr32Src)
+DECLINLINE(uint32_t) iemSsePrepareValueR32(PRTFLOAT32U pr32Val, uint32_t fMxcsr, PCRTFLOAT32U pr32Src)
 {
-    /* De-normals are changed to 0. */
-    if (   fMxcsr & X86_MXCSR_DAZ
-        && RTFLOAT32U_IS_SUBNORMAL(pr32Src))
+    if (RTFLOAT32U_IS_SUBNORMAL(pr32Src))
     {
-        pr32Val->s.fSign     = pr32Src->s.fSign;
-        pr32Val->s.uFraction = 0;
-        pr32Val->s.uExponent = 0;
-    }
-    else
+        if (fMxcsr & X86_MXCSR_DAZ)
+        {
+            /* De-normals are changed to 0. */
+            pr32Val->s.fSign     = pr32Src->s.fSign;
+            pr32Val->s.uFraction = 0;
+            pr32Val->s.uExponent = 0;
+            return 0;
+        }
+
         *pr32Val = *pr32Src;
+        return X86_MXCSR_DE;
+    }
+
+    *pr32Val = *pr32Src;
+    return 0;
 }
 
 
@@ -14049,23 +14024,30 @@ DECLINLINE(void) iemSsePrepareValueR32(PRTFLOAT32U pr32Val, uint32_t fMxcsr, PCR
  * Sets the given double precision floating point input value to the given output taking the Denormals-as-zero flag
  * in MXCSR into account.
  *
- * @returns nothing.
+ * @returns The output MXCSR De-normal flag if the input is a de-normal and the DAZ flag is not set.
  * @param   pr64Val         Where to store the result.
  * @param   fMxcsr          The input MXCSR value.
  * @param   pr64Src         The value to use.
  */
-DECLINLINE(void) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr, PCRTFLOAT64U pr64Src)
+DECLINLINE(uint32_t) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr, PCRTFLOAT64U pr64Src)
 {
-    /* De-normals are changed to 0. */
-    if (   fMxcsr & X86_MXCSR_DAZ
-        && RTFLOAT64U_IS_SUBNORMAL(pr64Src))
+    if (RTFLOAT64U_IS_SUBNORMAL(pr64Src))
     {
-        pr64Val->s64.fSign     = pr64Src->s.fSign;
-        pr64Val->s64.uFraction = 0;
-        pr64Val->s64.uExponent = 0;
-    }
-    else
+        if (fMxcsr & X86_MXCSR_DAZ)
+        {
+            /* De-normals are changed to 0. */
+            pr64Val->s64.fSign     = pr64Src->s.fSign;
+            pr64Val->s64.uFraction = 0;
+            pr64Val->s64.uExponent = 0;
+            return 0;
+        }
+
         *pr64Val = *pr64Src;
+        return X86_MXCSR_DE;
+    }
+
+    *pr64Val = *pr64Src;
+    return 0;
 }
 
 
@@ -14164,11 +14146,11 @@ static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float32_t r32Result = f32_add(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
-    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
 }
 
 
@@ -14206,11 +14188,11 @@ static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float64_t r64Result = f64_add(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
-    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
 }
 
 
@@ -14244,11 +14226,11 @@ static uint32_t iemAImpl_mulps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float32_t r32Result = f32_mul(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
-    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
 }
 
 
@@ -14286,11 +14268,11 @@ static uint32_t iemAImpl_mulpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float64_t r64Result = f64_mul(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
-    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
 }
 
 
@@ -14324,11 +14306,11 @@ static uint32_t iemAImpl_subps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float32_t r32Result = f32_sub(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
-    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
 }
 
 
@@ -14366,11 +14348,11 @@ static uint32_t iemAImpl_subpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float64_t r64Result = f64_sub(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
-    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
 }
 
 
@@ -14400,19 +14382,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_subsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSER
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_minps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
 {
-    RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    if (RTFLOAT32U_IS_NAN(pr32Val1) || RTFLOAT32U_IS_NAN(pr32Val2))
+    {
+        /* The DAZ flag gets honored but the DE flag will not get set because \#IE has higher priority. */
+        iemSsePrepareValueR32(pr32Res, fMxcsr, pr32Val2);
+        return fMxcsr | X86_MXCSR_IE;
+    }
 
+    RTFLOAT32U r32Src1, r32Src2;
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     if (RTFLOAT32U_IS_ZERO(&r32Src1) && RTFLOAT32U_IS_ZERO(&r32Src2))
     {
         *pr32Res = r32Src2;
         return fMxcsr;
-    }
-    else if (RTFLOAT32U_IS_NAN(&r32Src1) || RTFLOAT32U_IS_NAN(&r32Src2))
-    {
-        *pr32Res = r32Src2;
-        return fMxcsr | X86_MXCSR_IE;
     }
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
@@ -14421,7 +14404,7 @@ static uint32_t iemAImpl_minps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
                                                            fLe
                                                          ? iemFpSoftF32FromIprt(&r32Src1)
                                                          : iemFpSoftF32FromIprt(&r32Src2),
-                                                         pr32Res, fMxcsr, &r32Src1, &r32Src2);
+                                                         pr32Res, fMxcsr);
 }
 
 
@@ -14455,19 +14438,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_minss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSER
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_minpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
 {
-    RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    if (RTFLOAT64U_IS_NAN(pr64Val1) || RTFLOAT64U_IS_NAN(pr64Val2))
+    {
+        /* The DAZ flag gets honored but the DE flag will not get set because \#IE has higher priority. */
+        iemSsePrepareValueR64(pr64Res, fMxcsr, pr64Val2);
+        return fMxcsr | X86_MXCSR_IE;
+    }
 
+    RTFLOAT64U r64Src1, r64Src2;
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT64U_IS_ZERO(&r64Src2))
     {
         *pr64Res = r64Src2;
         return fMxcsr;
-    }
-    else if (RTFLOAT64U_IS_NAN(&r64Src1) || RTFLOAT64U_IS_NAN(&r64Src2))
-    {
-        *pr64Res = r64Src2;
-        return fMxcsr | X86_MXCSR_IE;
     }
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
@@ -14476,7 +14460,7 @@ static uint32_t iemAImpl_minpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
                                                            fLe
                                                          ? iemFpSoftF64FromIprt(&r64Src1)
                                                          : iemFpSoftF64FromIprt(&r64Src2),
-                                                         pr64Res, fMxcsr, &r64Src1, &r64Src2);
+                                                         pr64Res, fMxcsr);
 }
 
 
@@ -14510,9 +14494,8 @@ static uint32_t iemAImpl_divps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
-
+    uint32_t fDe  = iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+             fDe |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     if (RTFLOAT32U_IS_ZERO(&r32Src2))
     {
         if (   RTFLOAT32U_IS_ZERO(&r32Src1)
@@ -14535,7 +14518,7 @@ static uint32_t iemAImpl_divps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float32_t r32Result = f32_div(iemFpSoftF32FromIprt(&r32Src1), iemFpSoftF32FromIprt(&r32Src2), &SoftState);
-    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr, &r32Src1, &r32Src2);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr | fDe);
 }
 
 
@@ -14573,9 +14556,8 @@ static uint32_t iemAImpl_divpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
         return fMxcsr;
 
     RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
-
+    uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+             fDe |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     if (RTFLOAT64U_IS_ZERO(&r64Src2))
     {
         if (   RTFLOAT64U_IS_ZERO(&r64Src1)
@@ -14598,7 +14580,7 @@ static uint32_t iemAImpl_divpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
     float64_t r64Result = f64_div(iemFpSoftF64FromIprt(&r64Src1), iemFpSoftF64FromIprt(&r64Src2), &SoftState);
-    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr, &r64Src1, &r64Src2);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr | fDe);
 }
 
 
@@ -14628,19 +14610,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_divsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSER
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_maxps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
 {
-    RTFLOAT32U r32Src1, r32Src2;
-    iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
-    iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
+    if (RTFLOAT32U_IS_NAN(pr32Val1) || RTFLOAT32U_IS_NAN(pr32Val2))
+    {
+        /* The DAZ flag gets honored but the DE flag will not get set because \#IE has higher priority. */
+        iemSsePrepareValueR32(pr32Res, fMxcsr, pr32Val2);
+        return fMxcsr | X86_MXCSR_IE;
+    }
 
+    RTFLOAT32U r32Src1, r32Src2;
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    fMxcsr |= iemSsePrepareValueR32(&r32Src2, fMxcsr, pr32Val2);
     if (RTFLOAT32U_IS_ZERO(&r32Src1) && RTFLOAT32U_IS_ZERO(&r32Src2))
     {
         *pr32Res = r32Src2;
         return fMxcsr;
-    }
-    else if (RTFLOAT32U_IS_NAN(&r32Src1) || RTFLOAT32U_IS_NAN(&r32Src2))
-    {
-        *pr32Res = r32Src2;
-        return fMxcsr | X86_MXCSR_IE;
     }
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
@@ -14649,7 +14632,7 @@ static uint32_t iemAImpl_maxps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
                                                            fLe
                                                          ? iemFpSoftF32FromIprt(&r32Src2)
                                                          : iemFpSoftF32FromIprt(&r32Src1),
-                                                         pr32Res, fMxcsr, &r32Src1, &r32Src2);
+                                                         pr32Res, fMxcsr);
 }
 
 
@@ -14683,19 +14666,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_maxss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSER
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
 {
-    RTFLOAT64U r64Src1, r64Src2;
-    iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
-    iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
+    if (RTFLOAT64U_IS_NAN(pr64Val1) || RTFLOAT64U_IS_NAN(pr64Val2))
+    {
+        /* The DAZ flag gets honored but the DE flag will not get set because \#IE has higher priority. */
+        iemSsePrepareValueR64(pr64Res, fMxcsr, pr64Val2);
+        return fMxcsr | X86_MXCSR_IE;
+    }
 
+    RTFLOAT64U r64Src1, r64Src2;
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+    fMxcsr |= iemSsePrepareValueR64(&r64Src2, fMxcsr, pr64Val2);
     if (RTFLOAT64U_IS_ZERO(&r64Src1) && RTFLOAT64U_IS_ZERO(&r64Src2))
     {
         *pr64Res = r64Src2;
         return fMxcsr;
-    }
-    else if (RTFLOAT64U_IS_NAN(&r64Src1) || RTFLOAT64U_IS_NAN(&r64Src2))
-    {
-        *pr64Res = r64Src2;
-        return fMxcsr | X86_MXCSR_IE;
     }
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
@@ -14704,7 +14688,7 @@ static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
                                                            fLe
                                                          ? iemFpSoftF64FromIprt(&r64Src2)
                                                          : iemFpSoftF64FromIprt(&r64Src1),
-                                                         pr64Res, fMxcsr, &r64Src1, &r64Src2);
+                                                         pr64Res, fMxcsr);
 }
 
 
@@ -14715,6 +14699,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_maxpd_u128,(PX86FXSTATE pFpuState, PIEMSSERESUL
 }
 #endif
 
+
 /**
  * MAXSD
  */
@@ -14723,5 +14708,53 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_maxsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSER
 {
     pResult->MXCSR = iemAImpl_maxpd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, &puSrc1->ar64[0], pr64Src2);
     pResult->uResult.ar64[1] = puSrc1->ar64[1];
+}
+#endif
+
+
+/**
+ * CVTSS2SD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtss2sd_u128_r32_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1)
+{
+    RTFLOAT32U r32Src1;
+    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Result = f32_to_f64(iemFpSoftF32FromIprt(&r32Src1), &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtss2sd_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->MXCSR = iemAImpl_cvtss2sd_u128_r32_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, pr32Src2);
+    pResult->uResult.ar64[1] = puSrc1->ar64[1];
+}
+#endif
+
+
+/**
+ * CVTSD2SS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtsd2ss_u128_r64_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1)
+{
+    RTFLOAT64U r64Src1;
+    fMxcsr |= iemSsePrepareValueR64(&r64Src1, fMxcsr, pr64Val1);
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f64_to_f32(iemFpSoftF64FromIprt(&r64Src1), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtsd2ss_u128_r64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
+{
+    pResult->MXCSR = iemAImpl_cvtsd2ss_u128_r64_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, pr64Src2);
+    pResult->uResult.ar32[1] = puSrc1->ar32[1];
+    pResult->uResult.ar32[2] = puSrc1->ar32[2];
+    pResult->uResult.ar32[3] = puSrc1->ar32[3];
 }
 #endif
