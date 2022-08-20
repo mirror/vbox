@@ -240,6 +240,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-maxps_u128.bin \
 	tstIEMAImplDataSseBinary-haddps_u128.bin \
 	tstIEMAImplDataSseBinary-hsubps_u128.bin \
+	tstIEMAImplDataSseBinary-sqrtps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
@@ -248,6 +249,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-maxpd_u128.bin \
 	tstIEMAImplDataSseBinary-haddpd_u128.bin \
 	tstIEMAImplDataSseBinary-hsubpd_u128.bin \
+	tstIEMAImplDataSseBinary-sqrtpd_u128.bin \
 	tstIEMAImplDataSseBinary-addss_u128_r32.bin \
 	tstIEMAImplDataSseBinary-addsd_u128_r64.bin \
 	tstIEMAImplDataSseBinary-mulss_u128_r32.bin \
@@ -261,7 +263,9 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-maxss_u128_r32.bin \
 	tstIEMAImplDataSseBinary-maxsd_u128_r64.bin \
 	tstIEMAImplDataSseBinary-cvtss2sd_u128_r32.bin \
-	tstIEMAImplDataSseBinary-cvtsd2ss_u128_r64.bin
+	tstIEMAImplDataSseBinary-cvtsd2ss_u128_r64.bin \
+	tstIEMAImplDataSseBinary-sqrtss_u128_r32.bin \
+	tstIEMAImplDataSseBinary-sqrtsd_u128_r64.bin
 
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT

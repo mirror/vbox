@@ -4477,6 +4477,7 @@ static const SSE_BINARY_R32_T g_aSseBinaryR32[] =
     ENTRY_BIN(maxps_u128),
     ENTRY_BIN(haddps_u128),
     ENTRY_BIN(hsubps_u128),
+    ENTRY_BIN(sqrtps_u128),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -4673,6 +4674,7 @@ static const SSE_BINARY_R64_T g_aSseBinaryR64[] =
     ENTRY_BIN(maxpd_u128),
     ENTRY_BIN(haddpd_u128),
     ENTRY_BIN(hsubpd_u128),
+    ENTRY_BIN(sqrtpd_u128),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -4857,6 +4859,7 @@ static const SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
     ENTRY_BIN(divss_u128_r32),
     ENTRY_BIN(maxss_u128_r32),
     ENTRY_BIN(cvtss2sd_u128_r32),
+    ENTRY_BIN(sqrtss_u128_r32),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -5047,6 +5050,7 @@ static const SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
     ENTRY_BIN(divsd_u128_r64),
     ENTRY_BIN(maxsd_u128_r64),
     ENTRY_BIN(cvtsd2ss_u128_r64),
+    ENTRY_BIN(sqrtsd_u128_r64),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
