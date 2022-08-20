@@ -29,6 +29,11 @@
 ;*********************************************************************************************************************************
 ;*      Header Files                                                                                                             *
 ;*********************************************************************************************************************************
+%if 0 ; YASM's builtin SEH64 support doesn't cope well with code alignment, so use our own.
+ %define RT_ASM_WITH_SEH64
+%else
+ %define RT_ASM_WITH_SEH64_ALT
+%endif
 %include "iprt/asmdefs.mac"
 %include "iprt/x86.mac"
 
@@ -98,45 +103,125 @@ GLOBALNAME __security_cookie
 BEGINCODE
 extern NAME(_RTC_StackVarCorrupted)
 extern NAME(_RTC_SecurityCookieMismatch)
+%ifdef RT_ARCH_X86
+extern NAME(_RTC_CheckEspFailed)
+%endif
 
 
 BEGINPROC __GSHandlerCheck
+        SEH64_END_PROLOGUE
         int3
 ENDPROC   __GSHandlerCheck
 
 ;;
-; Probe stack to trigger guard faults.
+; Probe stack to trigger guard faults, and for x86 to allocate stack space.
 ;
-; @param    eax     Frame size.
-; @uses     Nothing (because we don't quite now the convention).
+; @param    xAX     Frame size.
+; @uses     AMD64: Nothing (because we don't quite now the convention).
+;           x86:   ESP = ESP - EAX; nothing else
 ;
-ALIGNCODE(32)
-BEGINPROC __chkstk
+ALIGNCODE(64)
+GLOBALNAME_RAW  __alloca_probe, __alloca_probe, function
+BEGINPROC_RAW   __chkstk
         push    xBP
+        SEH64_PUSH_xBP
         mov     xBP, xSP
-        pushf
+        SEH64_SET_FRAME_xBP 0
         push    xAX
+        SEH64_PUSH_GREG xAX
         push    xBX
+        SEH64_PUSH_GREG xBX
+        SEH64_END_PROLOGUE
 
-        xor     ebx, ebx
-.again:
-        sub     xBX, PAGE_SIZE
-        mov     [xBP + xBX], bl
-        sub     eax, PAGE_SIZE
-        jnl     .again
+        ;
+        ; Adjust eax so we can use xBP for stack addressing.
+        ;
+        sub     xAX, xCB*2
+        jle     .touch_loop_done
 
+        ;
+        ; Subtract what's left of the current page from eax and only engage
+        ; the touch loop if (int)xAX > 0.
+        ;
+        mov     ebx, PAGE_SIZE - 1
+        and     ebx, ebp
+        sub     xAX, xBX
+        jnl     .touch_loop
+
+.touch_loop_done:
         pop     xBX
         pop     xAX
-        popf
         leave
+%ifndef RT_ARCH_X86
         ret
-ENDPROC   __chkstk
+%else
+        ;
+        ; Do the stack space allocation and jump to the return location.
+        ;
+        sub     esp, eax
+        add     esp, 4
+        jmp    dword [esp + eax - 4]
+%endif
+
+        ;
+        ; The touch loop.
+        ;
+.touch_loop:
+        sub     xBX, PAGE_SIZE
+        mov     [xBP + xBX], bl
+        sub     xAX, PAGE_SIZE
+        jnl     .touch_loop
+        jmp     .touch_loop_done
+ENDPROC_RAW     __chkstk
+
+
+%ifdef RT_ARCH_X86
+;;
+; 8 and 16 byte aligned alloca w/ probing.
+;
+; This routine adjusts the allocation size so __chkstk will return a
+; correctly aligned allocation.
+;
+; @param    xAX     Unaligned allocation size.
+;
+%macro __alloc_probe_xxx 1
+ALIGNCODE(16)
+BEGINPROC_RAW   __alloca_probe_ %+ %1
+        push    ecx
+
+        ;
+        ; Calc the ESP address after the allocation and adjust EAX so that it
+        ; will be aligned as desired.
+        ;
+        lea     ecx, [esp + 8]
+        sub     ecx, eax
+        and     ecx, %1 - 1
+        add     eax, ecx
+        jc      .bad_alloc_size
+.continue:
+
+        pop     ecx
+        jmp     __alloca_probe
+
+.bad_alloc_size:
+  %ifdef RT_STRICT
+        int3
+  %endif
+        or      eax, 0xfffffff0
+        jmp     .continue
+ENDPROC_RAW     __alloca_probe_ %+ %1
+%endmacro
+
+__alloc_probe_xxx 16
+__alloc_probe_xxx 8
+%endif ; RT_ARCH_X86
 
 
 ;;
 ; This just initializes a global and calls _RTC_SetErrorFuncW to NULL, and
 ; since we don't have either of those we have nothing to do here.
 BEGINPROC _RTC_InitBase
+        SEH64_END_PROLOGUE
         ret
 ENDPROC   _RTC_InitBase
 
@@ -144,6 +229,7 @@ ENDPROC   _RTC_InitBase
 ;;
 ; Nothing to do here.
 BEGINPROC _RTC_Shutdown
+        SEH64_END_PROLOGUE
         ret
 ENDPROC   _RTC_Shutdown
 
@@ -165,6 +251,8 @@ ENDPROC   _RTC_Shutdown
 ALIGNCODE(64)
 BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
         push    xBP
+        SEH64_PUSH_xBP
+        SEH64_END_PROLOGUE
 
         ;
         ; Load the variable count into eax and check that it's not zero.
@@ -248,6 +336,41 @@ BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
 ENDPROC_RAW     FASTCALL_NAME(_RTC_CheckStackVars, 8)
 
 
+%ifdef RT_ARCH_X86
+;;
+; Called to follow up on a 'CMP ESP, EBP' kind of instruction,
+; expected to report failure if the compare failed.
+;
+ALIGNCODE(16)
+BEGINPROC _RTC_CheckEsp
+        jne     .unexpected_esp
+        ret
+
+.unexpected_esp:
+        push    ebp
+        mov     ebp, esp
+        push    eax
+        push    ecx
+        push    edx
+
+        ; DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp)
+        push    dword [ebp]
+        lea     edx, [ebp + 8]
+        push    edx
+        mov     ecx, [ebp + 8]
+        push    ecx
+        call    NAME(_RTC_CheckEspFailed)
+
+        pop     edx
+        pop     ecx
+        pop     eax
+        leave
+        ret
+ENDPROC   _RTC_CheckEsp
+%endif ; RT_ARCH_X86
+
+
+
 ;;
 ; Initialize an alloca allocation list entry and add it to it.
 ;
@@ -259,6 +382,8 @@ ENDPROC_RAW     FASTCALL_NAME(_RTC_CheckStackVars, 8)
 ;
 ALIGNCODE(64)
 BEGINPROC_RAW   FASTCALL_NAME(_RTC_AllocaHelper, 12)
+        SEH64_END_PROLOGUE
+
         ;
         ; Check that input isn't NULL or the size isn't zero.
         ;
@@ -327,6 +452,7 @@ ENDPROC_RAW     FASTCALL_NAME(_RTC_AllocaHelper, 12)
 ;
 ALIGNCODE(16)
 BEGINPROC_RAW   FASTCALL_NAME(__security_check_cookie, 4)
+        SEH64_END_PROLOGUE
         cmp     xCX, [NAME(__security_cookie) xWrtRIP]
         jne     .corrupted
         ;; amd64 version checks if the top 16 bits are zero, we skip that for now.
@@ -350,11 +476,13 @@ ENDPROC_RAW     FASTCALL_NAME(__security_check_cookie, 4)
 
 ; Not stack related stubs.
 BEGINPROC __C_specific_handler
+        SEH64_END_PROLOGUE
         int3
 ENDPROC   __C_specific_handler
 
 
 BEGINPROC __report_rangecheckfailure
+        SEH64_END_PROLOGUE
         int3
 ENDPROC   __report_rangecheckfailure
 

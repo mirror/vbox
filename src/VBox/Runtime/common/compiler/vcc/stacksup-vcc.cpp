@@ -122,6 +122,17 @@ DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
 }
 
 
+#ifdef RT_ARCH_X86
+DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp)
+{
+    RTAssertMsg2("\n\n!!ESP check failed!!\n\n"
+                 "eip=%p esp=%p ebp=%p\n",
+                 uEip, uEsp, uEbp);
+    RT_BREAKPOINT();
+}
+#endif
+
+
 extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
 {
     RTAssertMsg2("\n\n!!Used uninitialized variable %s at %p!!\n\n",
