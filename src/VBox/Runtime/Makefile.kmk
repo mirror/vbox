@@ -2092,7 +2092,9 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/win/nocrt-mainCRTStartup-win.asm \
   	r3/win/nocrt-WinMainCRTStartup-win.asm \
   	common/compiler/vcc/guard-vcc.asm \
-  	common/compiler/vcc/stack-vcc.asm
+  	common/compiler/vcc/stack-vcc.asm \
+  	common/compiler/vcc/ftol2-vcc.asm \
+  	common/compiler/vcc/except-x86-vcc.cpp
   RuntimeR3_VBOX_NOCRT_ALIASES.win := \
   	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
        $(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
