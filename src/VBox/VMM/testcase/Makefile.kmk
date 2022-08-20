@@ -238,12 +238,16 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-minps_u128.bin \
 	tstIEMAImplDataSseBinary-divps_u128.bin \
 	tstIEMAImplDataSseBinary-maxps_u128.bin \
+	tstIEMAImplDataSseBinary-haddps_u128.bin \
+	tstIEMAImplDataSseBinary-hsubps_u128.bin \
 	tstIEMAImplDataSseBinary-addpd_u128.bin \
 	tstIEMAImplDataSseBinary-mulpd_u128.bin \
 	tstIEMAImplDataSseBinary-subpd_u128.bin \
 	tstIEMAImplDataSseBinary-minpd_u128.bin \
 	tstIEMAImplDataSseBinary-divpd_u128.bin \
 	tstIEMAImplDataSseBinary-maxpd_u128.bin \
+	tstIEMAImplDataSseBinary-haddpd_u128.bin \
+	tstIEMAImplDataSseBinary-hsubpd_u128.bin \
 	tstIEMAImplDataSseBinary-addss_u128_r32.bin \
 	tstIEMAImplDataSseBinary-addsd_u128_r64.bin \
 	tstIEMAImplDataSseBinary-mulss_u128_r32.bin \
