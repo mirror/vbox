@@ -4531,13 +4531,14 @@ endstruc
 ; Floating point instruction working on two full sized registers.
 ;
 ; @param    1       The instruction
+; @param    2       Flag whether the AVX variant of the instruction takes two or three operands
 ;
 ; @param    A0      FPU context (FXSTATE or XSAVEAREA).
 ; @param    A1      Where to return the result including the MXCSR value.
 ; @param    A2      Pointer to the first media register size operand (input/output).
 ; @param    A3      Pointer to the second media register size operand (input).
 ;
-%macro IEMIMPL_FP_F2 1
+%macro IEMIMPL_FP_F2 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
@@ -4553,6 +4554,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
+ %if %2 == 3
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4582,24 +4584,63 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
+ %else
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu  xmm0, [A2]
+        vmovdqu  xmm1, [A3]
+        v %+ %1  xmm0, xmm1
+        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+
+        AVX128_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu  ymm0, [A2]
+        vmovdqu  ymm1, [A3]
+        v %+ %1  ymm0, ymm1
+        vmovdqu  [A1 + IEMAVX256RESULT.uResult], ymm0
+
+        AVX256_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_FP_F2 addps
-IEMIMPL_FP_F2 addpd
-IEMIMPL_FP_F2 mulps
-IEMIMPL_FP_F2 mulpd
-IEMIMPL_FP_F2 subps
-IEMIMPL_FP_F2 subpd
-IEMIMPL_FP_F2 minps
-IEMIMPL_FP_F2 minpd
-IEMIMPL_FP_F2 divps
-IEMIMPL_FP_F2 divpd
-IEMIMPL_FP_F2 maxps
-IEMIMPL_FP_F2 maxpd
-IEMIMPL_FP_F2 haddps
-IEMIMPL_FP_F2 haddpd
-IEMIMPL_FP_F2 hsubps
-IEMIMPL_FP_F2 hsubpd
+IEMIMPL_FP_F2 addps, 3
+IEMIMPL_FP_F2 addpd, 3
+IEMIMPL_FP_F2 mulps, 3
+IEMIMPL_FP_F2 mulpd, 3
+IEMIMPL_FP_F2 subps, 3
+IEMIMPL_FP_F2 subpd, 3
+IEMIMPL_FP_F2 minps, 3
+IEMIMPL_FP_F2 minpd, 3
+IEMIMPL_FP_F2 divps, 3
+IEMIMPL_FP_F2 divpd, 3
+IEMIMPL_FP_F2 maxps, 3
+IEMIMPL_FP_F2 maxpd, 3
+IEMIMPL_FP_F2 haddps, 3
+IEMIMPL_FP_F2 haddpd, 3
+IEMIMPL_FP_F2 hsubps, 3
+IEMIMPL_FP_F2 hsubpd, 3
+
+;;
+; These are actually unary operations but to keep it simple
+; we treat them as binary for now, so the output result is
+; always in sync with the register where the result might get written
+; to.
+IEMIMPL_FP_F2 sqrtps, 2
+IEMIMPL_FP_F2 sqrtpd, 2
 
 
 ;;
@@ -4651,6 +4692,7 @@ IEMIMPL_FP_F2_R32 minss
 IEMIMPL_FP_F2_R32 divss
 IEMIMPL_FP_F2_R32 maxss
 IEMIMPL_FP_F2_R32 cvtss2sd
+IEMIMPL_FP_F2_R32 sqrtss
 
 
 ;;
@@ -4702,3 +4744,4 @@ IEMIMPL_FP_F2_R64 minsd
 IEMIMPL_FP_F2_R64 divsd
 IEMIMPL_FP_F2_R64 maxsd
 IEMIMPL_FP_F2_R64 cvtsd2ss
+IEMIMPL_FP_F2_R64 sqrtsd

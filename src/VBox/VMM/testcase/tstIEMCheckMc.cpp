@@ -477,6 +477,8 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_haddpd_u128            NULL
 #define iemAImpl_hsubps_u128            NULL
 #define iemAImpl_hsubpd_u128            NULL
+#define iemAImpl_sqrtps_u128            NULL
+#define iemAImpl_sqrtpd_u128            NULL
 
 #define iemAImpl_addss_u128_r32         NULL
 #define iemAImpl_addsd_u128_r64         NULL
@@ -490,6 +492,8 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_divsd_u128_r64         NULL
 #define iemAImpl_maxss_u128_r32         NULL
 #define iemAImpl_maxsd_u128_r64         NULL
+#define iemAImpl_sqrtss_u128_r32        NULL
+#define iemAImpl_sqrtsd_u128_r64        NULL
 
 #define iemAImpl_cvtss2sd_u128_r32      NULL
 #define iemAImpl_cvtsd2ss_u128_r64      NULL
