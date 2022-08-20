@@ -38,7 +38,7 @@ NAME(g_aTests_end_\a_Instr):
     .size   NAME(g_aTests_\a_Instr), . - NAME(g_aTests_\a_Instr)
     .type   NAME(g_aTests_\a_Instr), object
 #endif
-    
+
     .p2align 2
     .globl  NAME(g_cbTests_\a_Instr)
 NAME(g_cbTests_\a_Instr):
