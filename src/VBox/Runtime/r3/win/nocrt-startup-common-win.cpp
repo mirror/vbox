@@ -28,10 +28,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/iprt.h"
+#include "internal/nocrt.h"
 #include "internal/process.h"
 
 #include <iprt/nt/nt-and-windows.h>
+#ifndef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+# include <iprt/assert.h>
+#endif
 #include <iprt/getopt.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
@@ -70,9 +73,23 @@ void rtVccWinInitProcExecPath(void)
                 g_cchrtProcExeDir--;
         }
         else
+        {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
             RTMsgError("initProcExecPath: RTUtf16ToUtf8Ex failed: %Rrc\n", rc);
+#else
+            rtNoCrtFatalMsgWithRc(RT_STR_TUPLE("initProcExecPath: RTUtf16ToUtf8Ex failed: "), rc);
+#endif
+        }
     }
     else
+    {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
         RTMsgError("initProcExecPath: GetModuleFileNameW failed: %Rhrc\n", GetLastError());
+#else
+        rtNoCrtFatalWriteBegin(RT_STR_TUPLE("initProcExecPath: GetModuleFileNameW failed: "));
+        rtNoCrtFatalWriteWinRc(GetLastError());
+        rtNoCrtFatalWrite(RT_STR_TUPLE("\r\n"));
+#endif
+    }
 }
 

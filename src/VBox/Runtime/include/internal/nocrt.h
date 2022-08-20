@@ -73,6 +73,21 @@ extern RTNOCRTTHREADDATA    g_RtNoCrtPerThreadDummy;
 
 PRTNOCRTTHREADDATA rtNoCrtThreadDataGet(void);
 
+#ifdef IN_RING3
+void rtNoCrtFatalWriteBegin(const char *pchMsg, size_t cchMsg);
+void rtNoCrtFatalWrite(const char *pchMsg, size_t cchMsg);
+void rtNoCrtFatalWriteEnd(const char *pchMsg, size_t cchMsg);
+void rtNoCrtFatalWriteStr(const char *pszMsg);
+void rtNoCrtFatalWritePtr(void const *pv);
+void rtNoCrtFatalWriteX64(uint64_t uValue);
+void rtNoCrtFatalWriteX32(uint32_t uValue);
+void rtNoCrtFatalWriteRc(int rc);
+void rtNoCrtFatalWriteWinRc(uint32_t rc);
+
+void rtNoCrtFatalMsg(const char *pchMsg, size_t cchMsg);
+void rtNoCrtFatalMsgWithRc(const char *pchMsg, size_t cchMsg, int rc);
+#endif
+
 
 #endif /* !IPRT_INCLUDED_INTERNAL_nocrt_h */
 

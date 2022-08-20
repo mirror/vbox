@@ -30,7 +30,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/iprt.h"
+#include "internal/nocrt.h"
 #include "internal/process.h"
 
 #include <iprt/nt/nt-and-windows.h>
@@ -97,6 +97,7 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
         /*
          * Get and convert the command line to argc/argv format.
          */
+        rcExit = RTEXITCODE_INIT;
         UNICODE_STRING const *pCmdLine = pPeb->ProcessParameters ? &pPeb->ProcessParameters->CommandLine : NULL;
         if (pCmdLine)
         {
@@ -117,19 +118,37 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
                     rcExit = (RTEXITCODE)main(cArgs, papszArgv, NULL /*envp*/);
                 }
                 else
-                    rcExit = RTMsgErrorExitFailure("Error parsing command line: %Rrc\n", rc);
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+                    RTMsgError("Error parsing command line: %Rrc\n", rc);
+#else
+                    rtNoCrtFatalMsgWithRc(RT_STR_TUPLE("Error parsing command line: "), rc);
+#endif
             }
             else
-                rcExit = RTMsgErrorExitFailure("Failed to convert command line to UTF-8: %Rrc\n", rc);
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+                RTMsgError("Failed to convert command line to UTF-8: %Rrc\n", rc);
+#else
+                rtNoCrtFatalMsgWithRc(RT_STR_TUPLE("Failed to convert command line to UTF-8: "), rc);
+#endif
         }
         else
-            rcExit = RTMsgErrorExitFailure("No command line\n");
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+            RTMsgError("No command line\n");
+#else
+            rtNoCrtFatalMsg(RT_STR_TUPLE("No command line\r\n"));
+#endif
         rtTerminateProcess(rcExit, true /*fDoAtExit*/);
     }
 #ifdef IPRT_NO_CRT
     else
     {
+# ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
         RTMsgError("A C static initializor failed (%d)\n", rcExit);
+# else
+        rtNoCrtFatalWriteBegin(RT_STR_TUPLE("A C static initializor failed ("));
+        rtNoCrtFatalWriteWinRc(rcExit);
+        rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
+# endif
         rtTerminateProcess(rcExit, false /*fDoAtExit*/);
     }
 #endif

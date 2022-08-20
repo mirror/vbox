@@ -2081,6 +2081,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/win/nocrt-startup-exe-win.cpp \
   	r3/win/nocrt-startup-dll-win.cpp \
   	r3/win/nocrt-startup-common-win.cpp \
+  	r3/win/nocrt-fatal-write-win.cpp \
   	r3/win/nocrt-alloc-win.cpp \
   	r3/win/nocrt-RTLogWriteStdErr-win.cpp \
   	r3/win/nocrt-RTLogWriteStdOut-win.cpp \

@@ -32,7 +32,6 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include "internal/string.h"
 

@@ -28,11 +28,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/iprt.h"
+#include "internal/nocrt.h"
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
-#include <iprt/assert.h>
+#ifndef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+# include <iprt/assert.h>
+#endif
 
 #include "internal/compiler-vcc.h"
 
@@ -106,18 +108,37 @@ void rtVccInitSecurityCookie(void) RT_NOEXCEPT
 
 DECLASM(void) _RTC_StackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar)
 {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!Stack corruption!!\n\n"
                  "%p LB %#x - %s\n",
                  pbFrame + pVar->offFrame, pVar->cbVar, pVar->pszName);
+#else
+    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Stack corruption!!\r\n\r\n"));
+    rtNoCrtFatalWritePtr(pbFrame + pVar->offFrame);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" LB "));
+    rtNoCrtFatalWriteX32(pVar->cbVar);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" - "));
+    rtNoCrtFatalWriteStr(pVar->pszName);
+    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
+#endif
     RT_BREAKPOINT();
 }
 
 
 DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
 {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!Stack cookie corruption!!\n\n"
                  "expected %p, found %p\n",
                  __security_cookie, uCookie);
+#else
+    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Stack cookie corruption!!\r\n\r\n"
+                                        "expected"));
+    rtNoCrtFatalWritePtr((void *)__security_cookie);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(", found "));
+    rtNoCrtFatalWritePtr((void *)uCookie);
+    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
+#endif
     RT_BREAKPOINT();
 }
 
@@ -125,9 +146,20 @@ DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
 #ifdef RT_ARCH_X86
 DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp)
 {
+# ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!ESP check failed!!\n\n"
                  "eip=%p esp=%p ebp=%p\n",
                  uEip, uEsp, uEbp);
+# else
+    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!ESP check failed!!\r\n\r\n"
+                                       "eip="));
+    rtNoCrtFatalWritePtr((void *)uEip);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" esp="));
+    rtNoCrtFatalWritePtr((void *)uEsp);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" ebp="));
+    rtNoCrtFatalWritePtr((void *)uEbp);
+    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
+# endif
     RT_BREAKPOINT();
 }
 #endif
@@ -135,8 +167,16 @@ DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp
 
 extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
 {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!Used uninitialized variable %s at %p!!\n\n",
                  pszVar ? pszVar : "", ASMReturnAddress());
+#else
+    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Used uninitialized variable "));
+    rtNoCrtFatalWriteStr(pszVar);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" at "));
+    rtNoCrtFatalWritePtr(ASMReturnAddress());
+    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("!!\r\n\r\n"));
+#endif
     RT_BREAKPOINT();
 }
 
@@ -158,9 +198,17 @@ extern "C" void __fastcall _RTC_CheckStackVars2(uint8_t *pbFrame, RTC_VAR_DESC_T
         { /* likely */ }
         else
         {
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
             RTAssertMsg2("\n\n!!Stack corruption (alloca)!!\n\n"
                          "%p LB %#x\n",
                          pHead, pHead->cb);
+#else
+            rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Stack corruption (alloca)!!\r\n\r\n"));
+            rtNoCrtFatalWritePtr(pHead);
+            rtNoCrtFatalWrite(RT_STR_TUPLE(" LB "));
+            rtNoCrtFatalWriteX64(pHead->cb);
+            rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
+#endif
             RT_BREAKPOINT();
         }
         pHead = pHead->pNext;
