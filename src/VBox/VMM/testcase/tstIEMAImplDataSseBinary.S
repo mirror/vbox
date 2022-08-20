@@ -33,7 +33,7 @@
     .p2align 6 \
     .globl NAME(g_aTests_ ## a_Instr) \
     NAME(g_aTests_ ## a_Instr): \
-        .incbin # a_DataFile \
+        .incbin a_DataFile \
     end_g_aTests_ ## a_Instr: \
     .p2align 2 \
     .globl NAME(g_cbTests_ ## a_Instr) \
@@ -42,18 +42,23 @@
     .size g_aTests_ ## a_Instr, end_g_aTests_ ## a_Instr - NAME(g_aTests_ ## a_Instr) \
     .type g_aTests_ ## a_Instr, object \
     .size g_cbTests_ ## a_Instr, 4 \
-    .type g_cbTests_ ## a_Instr, object \
+    .type g_cbTests_ ## a_Instr, object 
 #else
-# define IEM_TEST_DATA(a_Instr, a_DataFile) \
-    .p2align 6 \
-    .globl NAME(g_aTests_ ## a_Instr) \
-    NAME(g_aTests_ ## a_Instr): \
-        .incbin # a_DataFile \
-    end_g_aTests_ ## a_Instr: \
-    .p2align 2 \
-    .globl NAME(g_cbTests_ ## a_Instr) \
-    NAME(g_cbTests_ ## a_Instr): \
-            .long end_g_aTests_ ## a_Instr - NAME(g_aTests_ ## a_Instr)
+/* A macro in the style of the ELF one above does not work for clang/cc1as due 
+   to lack of proper newlines.  So, use an assembler macro instead.  */
+.macro IEM_TEST_DATA_MACRO a_Instr, a_szDataFile
+    .p2align 6
+    .globl NAME(g_aTests_\a_Instr)
+NAME(g_aTests_\a_Instr):
+    .incbin "\a_szDataFile"
+NAME(g_aTests_end_\a_Instr):
+    
+    .p2align 2
+    .globl NAME(g_cbTest_\a_Instr)
+NAME(g_cbTest_\a_Instr):
+    .int   NAME(g_aTests_end_\a_Instr) - NAME(g_aTests_\a_Instr)
+.endm
+# define IEM_TEST_DATA(a,b) IEM_TEST_DATA_MACRO a, b
 #endif
 
 IEM_TEST_DATA(addps_u128, "tstIEMAImplDataSseBinary-addps_u128.bin")
