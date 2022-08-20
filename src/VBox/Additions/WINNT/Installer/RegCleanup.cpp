@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 #include <iprt/cdefs.h> /* RT_STR_TUPLE */
+#include <iprt/types.h> /* RTEXITCODE_FAILURE */
 
 
 static bool IsNt4(void)
