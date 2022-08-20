@@ -17,9 +17,9 @@
 
 
 #ifdef RT_OS_DARWIN
-#define NAME(a_Name) _##a_Name
+# define NAME(a_Name) _##a_Name
 #else
-#define NAME(a_Name) a_Name
+# define NAME(a_Name) a_Name
 #endif
 
 #ifdef RT_OS_DARWIN
@@ -28,63 +28,52 @@
 .section __TEXT
 #endif
 
-#ifdef ASM_FORMAT_ELF
-# define IEM_TEST_DATA(a_Instr, a_DataFile) \
-    .p2align 6 \
-    .globl NAME(g_aTests_ ## a_Instr) \
-    NAME(g_aTests_ ## a_Instr): \
-        .incbin a_DataFile \
-    end_g_aTests_ ## a_Instr: \
-    .p2align 2 \
-    .globl NAME(g_cbTests_ ## a_Instr) \
-    NAME(g_cbTests_ ## a_Instr): \
-            .long end_g_aTests_ ## a_Instr - NAME(g_aTests_ ## a_Instr) \
-    .size g_aTests_ ## a_Instr, end_g_aTests_ ## a_Instr - NAME(g_aTests_ ## a_Instr) \
-    .type g_aTests_ ## a_Instr, object \
-    .size g_cbTests_ ## a_Instr, 4 \
-    .type g_cbTests_ ## a_Instr, object 
-#else
-/* A macro in the style of the ELF one above does not work for clang/cc1as due 
-   to lack of proper newlines.  So, use an assembler macro instead.  */
-.macro IEM_TEST_DATA_MACRO a_Instr, a_szDataFile
+.macro IEM_TEST_DATA a_Instr, a_szDataFile
     .p2align 6
-    .globl NAME(g_aTests_\a_Instr)
+    .globl  NAME(g_aTests_\a_Instr)
 NAME(g_aTests_\a_Instr):
     .incbin "\a_szDataFile"
 NAME(g_aTests_end_\a_Instr):
+#ifdef ASM_FORMAT_ELF
+    .size   NAME(g_aTests_\a_Instr), . - NAME(g_aTests_\a_Instr)
+    .type   NAME(g_aTests_\a_Instr), object
+#endif
     
     .p2align 2
-    .globl NAME(g_cbTest_\a_Instr)
-NAME(g_cbTest_\a_Instr):
-    .int   NAME(g_aTests_end_\a_Instr) - NAME(g_aTests_\a_Instr)
-.endm
-# define IEM_TEST_DATA(a,b) IEM_TEST_DATA_MACRO a, b
+    .globl  NAME(g_cbTests_\a_Instr)
+NAME(g_cbTests_\a_Instr):
+    .int    NAME(g_aTests_end_\a_Instr) - NAME(g_aTests_\a_Instr)
+#ifdef ASM_FORMAT_ELF
+    .size   NAME(g_cbTests_\a_Instr), 4
+    .type   NAME(g_cbTests_\a_Instr), object
 #endif
+.endm
 
-IEM_TEST_DATA(addps_u128, "tstIEMAImplDataSseBinary-addps_u128.bin")
-IEM_TEST_DATA(mulps_u128, "tstIEMAImplDataSseBinary-mulps_u128.bin")
-IEM_TEST_DATA(subps_u128, "tstIEMAImplDataSseBinary-subps_u128.bin")
-IEM_TEST_DATA(minps_u128, "tstIEMAImplDataSseBinary-minps_u128.bin")
-IEM_TEST_DATA(divps_u128, "tstIEMAImplDataSseBinary-divps_u128.bin")
-IEM_TEST_DATA(maxps_u128, "tstIEMAImplDataSseBinary-maxps_u128.bin")
+IEM_TEST_DATA addps_u128,     "tstIEMAImplDataSseBinary-addps_u128.bin"
+IEM_TEST_DATA mulps_u128,     "tstIEMAImplDataSseBinary-mulps_u128.bin"
+IEM_TEST_DATA subps_u128,     "tstIEMAImplDataSseBinary-subps_u128.bin"
+IEM_TEST_DATA minps_u128,     "tstIEMAImplDataSseBinary-minps_u128.bin"
+IEM_TEST_DATA divps_u128,     "tstIEMAImplDataSseBinary-divps_u128.bin"
+IEM_TEST_DATA maxps_u128,     "tstIEMAImplDataSseBinary-maxps_u128.bin"
 
-IEM_TEST_DATA(addss_u128_r32, "tstIEMAImplDataSseBinary-addss_u128_r32.bin")
-IEM_TEST_DATA(mulss_u128_r32, "tstIEMAImplDataSseBinary-mulss_u128_r32.bin")
-IEM_TEST_DATA(subss_u128_r32, "tstIEMAImplDataSseBinary-subss_u128_r32.bin")
-IEM_TEST_DATA(minss_u128_r32, "tstIEMAImplDataSseBinary-minss_u128_r32.bin")
-IEM_TEST_DATA(divss_u128_r32, "tstIEMAImplDataSseBinary-divss_u128_r32.bin")
-IEM_TEST_DATA(maxss_u128_r32, "tstIEMAImplDataSseBinary-maxss_u128_r32.bin")
+IEM_TEST_DATA addss_u128_r32, "tstIEMAImplDataSseBinary-addss_u128_r32.bin"
+IEM_TEST_DATA mulss_u128_r32, "tstIEMAImplDataSseBinary-mulss_u128_r32.bin"
+IEM_TEST_DATA subss_u128_r32, "tstIEMAImplDataSseBinary-subss_u128_r32.bin"
+IEM_TEST_DATA minss_u128_r32, "tstIEMAImplDataSseBinary-minss_u128_r32.bin"
+IEM_TEST_DATA divss_u128_r32, "tstIEMAImplDataSseBinary-divss_u128_r32.bin"
+IEM_TEST_DATA maxss_u128_r32, "tstIEMAImplDataSseBinary-maxss_u128_r32.bin"
 
-IEM_TEST_DATA(addpd_u128, "tstIEMAImplDataSseBinary-addpd_u128.bin")
-IEM_TEST_DATA(mulpd_u128, "tstIEMAImplDataSseBinary-mulpd_u128.bin")
-IEM_TEST_DATA(subpd_u128, "tstIEMAImplDataSseBinary-subpd_u128.bin")
-IEM_TEST_DATA(minpd_u128, "tstIEMAImplDataSseBinary-minpd_u128.bin")
-IEM_TEST_DATA(divpd_u128, "tstIEMAImplDataSseBinary-divpd_u128.bin")
-IEM_TEST_DATA(maxpd_u128, "tstIEMAImplDataSseBinary-maxpd_u128.bin")
+IEM_TEST_DATA addpd_u128,     "tstIEMAImplDataSseBinary-addpd_u128.bin"
+IEM_TEST_DATA mulpd_u128,     "tstIEMAImplDataSseBinary-mulpd_u128.bin"
+IEM_TEST_DATA subpd_u128,     "tstIEMAImplDataSseBinary-subpd_u128.bin"
+IEM_TEST_DATA minpd_u128,     "tstIEMAImplDataSseBinary-minpd_u128.bin"
+IEM_TEST_DATA divpd_u128,     "tstIEMAImplDataSseBinary-divpd_u128.bin"
+IEM_TEST_DATA maxpd_u128,     "tstIEMAImplDataSseBinary-maxpd_u128.bin"
 
-IEM_TEST_DATA(addsd_u128_r64, "tstIEMAImplDataSseBinary-addsd_u128_r64.bin")
-IEM_TEST_DATA(mulsd_u128_r64, "tstIEMAImplDataSseBinary-mulsd_u128_r64.bin")
-IEM_TEST_DATA(subsd_u128_r64, "tstIEMAImplDataSseBinary-subsd_u128_r64.bin")
-IEM_TEST_DATA(minsd_u128_r64, "tstIEMAImplDataSseBinary-minsd_u128_r64.bin")
-IEM_TEST_DATA(divsd_u128_r64, "tstIEMAImplDataSseBinary-divsd_u128_r64.bin")
-IEM_TEST_DATA(maxsd_u128_r64, "tstIEMAImplDataSseBinary-maxsd_u128_r64.bin")
+IEM_TEST_DATA addsd_u128_r64, "tstIEMAImplDataSseBinary-addsd_u128_r64.bin"
+IEM_TEST_DATA mulsd_u128_r64, "tstIEMAImplDataSseBinary-mulsd_u128_r64.bin"
+IEM_TEST_DATA subsd_u128_r64, "tstIEMAImplDataSseBinary-subsd_u128_r64.bin"
+IEM_TEST_DATA minsd_u128_r64, "tstIEMAImplDataSseBinary-minsd_u128_r64.bin"
+IEM_TEST_DATA divsd_u128_r64, "tstIEMAImplDataSseBinary-divsd_u128_r64.bin"
+IEM_TEST_DATA maxsd_u128_r64, "tstIEMAImplDataSseBinary-maxsd_u128_r64.bin"
+
