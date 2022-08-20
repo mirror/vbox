@@ -53,9 +53,10 @@ VBoxGuestDrvInst_SOURCES = \
 	VBoxGuestDrvInst.rc
 
 PROGRAMS += RegCleanup
-RegCleanup_TEMPLATE = VBoxGuestR3Exe
-RegCleanup_DEFS     = _WIN32_WINNT=0x0400 UNICODE
-RegCleanup_SOURCES  = \
+RegCleanup_TEMPLATE     := VBoxGuestR3Exe
+RegCleanup_BLD_TRG_ARCH := x86
+RegCleanup_DEFS         := _WIN32_WINNT=0x0400
+RegCleanup_SOURCES      := \
 	RegCleanup.cpp \
 	RegCleanup.rc
 
@@ -376,3 +377,4 @@ VBoxAddInstallNt3x.cpp_DEPS = $(VBOX_SVN_REV_HEADER)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
+

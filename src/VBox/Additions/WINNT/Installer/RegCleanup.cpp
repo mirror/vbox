@@ -32,37 +32,22 @@
 #include <iprt/cdefs.h> /* RT_STR_TUPLE */
 
 
-static BOOL isNT4(void)
+static bool IsNt4(void)
 {
-    OSVERSIONINFO OSversion;
-
-    OSversion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    ::GetVersionEx(&OSversion);
-
-    switch (OSversion.dwPlatformId)
-    {
-        case VER_PLATFORM_WIN32s:
-        case VER_PLATFORM_WIN32_WINDOWS:
-            return FALSE;
-        case VER_PLATFORM_WIN32_NT:
-            if (OSversion.dwMajorVersion == 4)
-                return TRUE;
-            return FALSE;
-        default:
-            break;
-    }
-    return FALSE;
+    OSVERSIONINFOW VerInfo = { sizeof(VerInfo), 0 };
+    GetVersionExW(&VerInfo);
+    return VerInfo.dwPlatformId  == VER_PLATFORM_WIN32_NT
+        && VerInfo.dwMajorVersion == 4;
 }
 
 
 int main()
 {
-    /* This program is only for installing drivers on NT4 */
-    if (!isNT4())
+    if (!IsNt4())
     {
         DWORD cbIgn;
         WriteFile(GetStdHandle(STD_ERROR_HANDLE), RT_STR_TUPLE("This program only runs on NT4\r\n"), &cbIgn, NULL);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     /* Delete the "InvalidDisplay" key which causes the display
@@ -71,7 +56,6 @@ int main()
        doing a driverreinstall.  */
     RegDeleteKeyW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\InvalidDisplay");
     RegDeleteKeyW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\NewDisplay");
-
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
