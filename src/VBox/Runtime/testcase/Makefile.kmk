@@ -581,7 +581,8 @@ tstNoCrt-1_SOURCES = \
 	../common/string/strchr.asm \
 	../common/string/strcmp.asm \
 	../common/string/strcpy.asm \
-	../common/string/strlen.asm
+	../common/string/strlen.asm \
+	../common/string/wcslen.asm
 
 tstRTNoCrt-2_TEMPLATE = VBOXR3TSTEXE
 tstRTNoCrt-2_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
