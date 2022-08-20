@@ -1056,6 +1056,71 @@ FNIEMOP_DEF_1(iemOpCommonSse2_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU1
 }
 
 
+/**
+ * Common worker for SSE3 instructions on the forms:
+ *      hxxx      xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 2. SSE3 cpuid checks.
+ *
+ * @sa iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse2_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse3Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 1);
+        IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
+        IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc2,                      2);
+        IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_XMM_CONST(pSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2);
+        IEM_MC_STORE_SSE_RESULT(SseRes, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(3, 2);
+        IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
+        IEM_MC_LOCAL(X86XMMREG,             uSrc2);
+        IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
+        IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1);
+        IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,   pSrc2, uSrc2,               2);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2);
+        IEM_MC_STORE_SSE_RESULT(SseRes, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x00 /0. */
 FNIEMOPRM_DEF(iemOp_Grp6_sldt)
 {
@@ -5625,18 +5690,47 @@ FNIEMOP_STUB(iemOp_vmwrite_Gy_Ey);
 /*  Opcode 0xf2 0x0f 0x7b - invalid */
 
 /*  Opcode      0x0f 0x7c - invalid */
+
+
 /** Opcode 0x66 0x0f 0x7c - haddpd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_haddpd_Vpd_Wpd);
+FNIEMOP_DEF(iemOp_haddpd_Vpd_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, HADDPD, haddpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse3Fp_FullFull_To_Full, iemAImpl_haddpd_u128);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x7c - invalid */
+
+
 /** Opcode 0xf2 0x0f 0x7c - haddps Vps, Wps */
-FNIEMOP_STUB(iemOp_haddps_Vps_Wps);
+FNIEMOP_DEF(iemOp_haddps_Vps_Wps)
+{
+    IEMOP_MNEMONIC2(RM, HADDPS, haddps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse3Fp_FullFull_To_Full, iemAImpl_haddps_u128);
+}
+
 
 /*  Opcode      0x0f 0x7d - invalid */
+
+
 /** Opcode 0x66 0x0f 0x7d - hsubpd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_hsubpd_Vpd_Wpd);
+FNIEMOP_DEF(iemOp_hsubpd_Vpd_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, HSUBPD, hsubpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse3Fp_FullFull_To_Full, iemAImpl_hsubpd_u128);
+}
+
+
 /*  Opcode 0xf3 0x0f 0x7d - invalid */
+
+
 /** Opcode 0xf2 0x0f 0x7d - hsubps Vps, Wps */
-FNIEMOP_STUB(iemOp_hsubps_Vps_Wps);
+FNIEMOP_DEF(iemOp_hsubps_Vps_Wps)
+{
+    IEMOP_MNEMONIC2(RM, HSUBPS, hsubps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse3Fp_FullFull_To_Full, iemAImpl_hsubps_u128);
+}
 
 
 /** Opcode      0x0f 0x7e - movd_q Ey, Pd */

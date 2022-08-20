@@ -4596,6 +4596,10 @@ IEMIMPL_FP_F2 divps
 IEMIMPL_FP_F2 divpd
 IEMIMPL_FP_F2 maxps
 IEMIMPL_FP_F2 maxpd
+IEMIMPL_FP_F2 haddps
+IEMIMPL_FP_F2 haddpd
+IEMIMPL_FP_F2 hsubps
+IEMIMPL_FP_F2 hsubpd
 
 
 ;;
