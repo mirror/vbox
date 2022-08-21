@@ -46,9 +46,10 @@ VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.rc
 
 PROGRAMS += VBoxGuestDrvInst
-VBoxGuestDrvInst_TEMPLATE= VBoxGuestR3Exe
-VBoxGuestDrvInst_DEFS    =  _WIN32_WINNT=0x0400 UNICODE
-VBoxGuestDrvInst_SOURCES = \
+VBoxGuestDrvInst_TEMPLATE     := VBoxGuestR3Exe
+VBoxGuestDrvInst_DEFS         :=  _WIN32_WINNT=0x0400
+VBoxGuestDrvInst_BLD_TRG_ARCH := x86
+VBoxGuestDrvInst_SOURCES      := \
 	VBoxGuestDrvInst.cpp \
 	VBoxGuestDrvInst.rc
 
