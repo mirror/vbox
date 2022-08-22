@@ -222,7 +222,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 	$(SED) \
 		-e 's+@VBOX_TARGET_ARCH@+$(VBOX_DI_TARGET_ARCH)+g' \
 		-e 's+@VBOX_ARCH_LIST@+$(VBOX_DI_ARCH_LIST)+g' \
-		--output $(VBOX_PATH_PACK_TMP)+distribution.dist \
+		--output $(VBOX_PATH_PACK_TMP)/distribution.dist \
 		$(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist, $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution-driverless.dist)
 	@# Copy the resources.
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Conclusion.rtf                   $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Conclusion.rtf
