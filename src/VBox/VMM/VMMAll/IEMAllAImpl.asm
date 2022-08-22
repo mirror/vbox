@@ -4748,3 +4748,57 @@ IEMIMPL_FP_F2_R64 divsd
 IEMIMPL_FP_F2_R64 maxsd
 IEMIMPL_FP_F2_R64 cvtsd2ss
 IEMIMPL_FP_F2_R64 sqrtsd
+
+
+;;
+; cvtpd2ps instruction.
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the result including the MXCSR value.
+; @param    A2      Pointer to the first media register size operand (input/output).
+; @param    A3      Pointer to the second media register size operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cvtpd2ps_u128, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        movdqu   xmm0, [A2]
+        movdqu   xmm1, [A3]
+        cvtpd2ps xmm0, xmm1
+        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+
+        SSE_ST_FXSTATE_MXCSR A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_cvtpd2ps_u128
+
+BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u128, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu   xmm0, [A2]
+        vmovdqu   xmm1, [A3]
+        vcvtpd2ps xmm0, xmm1
+        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+
+        AVX128_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_vcvtpd2ps_u128
+
+BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u256, 12
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        AVX_LD_XSAVEAREA_MXCSR A0
+
+        vmovdqu    ymm0, [A2]
+        vmovdqu    ymm1, [A3]
+        vcvtpd2ps  xmm0, ymm1
+        vmovdqu    [A1 + IEMAVX256RESULT.uResult], ymm0
+
+        AVX256_ST_XSAVEAREA_MXCSR A1
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_vcvtpd2ps_u256
