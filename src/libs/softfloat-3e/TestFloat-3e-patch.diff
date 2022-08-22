@@ -1,25 +1,35 @@
 diff -Nru TestFloat-3e-virgin/Makefile.kmk TestFloat-3e/Makefile.kmk
 --- TestFloat-3e-virgin/Makefile.kmk	1970-01-01 01:00:00.000000000 +0100
-+++ TestFloat-3e/Makefile.kmk	2022-04-06 01:57:25.200692100 +0200
-@@ -0,0 +1,262 @@
++++ TestFloat-3e/Makefile.kmk	2022-08-22 21:44:59.264546989 +0200
+@@ -0,0 +1,271 @@
 +# $Id$
 +## @file
 +# Sub-Makefile for TestFloat-3e.
 +#
 +
 +#
-+# Copyright (C) 2022 Oracle Corporation
++# Copyright (C) 2022 Oracle and/or its affiliates.
 +#
-+# This file is part of VirtualBox Open Source Edition (OSE), as
-+# available from http://www.virtualbox.org. This file is free software;
-+# you can redistribute it and/or modify it under the terms of the GNU
-+# General Public License (GPL) as published by the Free Software
-+# Foundation, in version 2 as it comes in the "COPYING" file of the
-+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
++# This file is part of VirtualBox base platform packages, as
++# available from https://www.virtualbox.org.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License
++# as published by the Free Software Foundation, in version 3 of the
++# License.
++#
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++# General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, see <https://www.gnu.org/licenses>.
++#
++# SPDX-License-Identifier: GPL-3.0-only
 +#
 +
-+SUB_DEPTH = ../../..
++SUB_DEPTH = ../../../..
 +include $(KBUILD_PATH)/subheader.kmk
 +
 +#
@@ -38,7 +48,7 @@ diff -Nru TestFloat-3e-virgin/Makefile.kmk TestFloat-3e/Makefile.kmk
 +TEMPLATE_VBoxTestFloat_DEFS.amd64 = $(TEMPLATE_VBoxR3DllNonPedantic_DEFS.amd64) LONG_DOUBLE_IS_EXTFLOAT80
 +endif
 +if1of ($(KBUILD_TARGET), win)
-+ TEMPLATE_VBoxTestFloat_INCS.amd64 = ../softfloat-3e/build/Win-amd64-VCC $(TEMPLATE_VBoxR3DllNonPedantic_INCS.amd64)
++ TEMPLATE_VBoxTestFloat_INCS.amd64 = ../build/Win-amd64-VCC $(TEMPLATE_VBoxR3DllNonPedantic_INCS.amd64)
 +else
 + TEMPLATE_VBoxTestFloat_INCS.amd64 = build/Linux-x86_64-GCC $(TEMPLATE_VBoxR3DllNonPedantic_INCS.amd64)
 +endif
@@ -262,7 +272,6 @@ diff -Nru TestFloat-3e-virgin/Makefile.kmk TestFloat-3e/Makefile.kmk
 +	source/slowfloat.c
 +
 +include $(FILE_KBUILD_SUB_FOOTER)
-+
 +
 diff -Nru TestFloat-3e-virgin/source/testfloat.c TestFloat-3e/source/testfloat.c
 --- TestFloat-3e-virgin/source/testfloat.c	2018-01-19 22:41:28.000000000 +0100
