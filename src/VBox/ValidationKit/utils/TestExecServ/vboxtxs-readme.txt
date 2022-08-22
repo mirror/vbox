@@ -110,14 +110,15 @@ Windows Installation
 --------------------
 
 1. Log on as Administrator.
-2. Set password to 'password'.
+2. Make sure you have set a secure password, which you'll need in step 9.
 3. Start CMD.EXE or equivalent.
 4. md C:\Apps
 5. cd C:\Apps
 6. Mount the validationkit iso.
 7. copy D:\win\* C:\Apps
 8. copy D:\win\<x86 or amd64>\* C:\Apps
-9. Import the right service setup (see connection type above):
+9. Put the password from step 2 into the right service setup (see connection
+   type above) and import it into the registry:
      nat)   start C:\Apps\vboxtxs-nat.reg
      other) start C:\Apps\vboxtxs.reg
 10. Make sure that the CD-ROM location is assigned to D: (via "Disk Management").
