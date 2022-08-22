@@ -1,31 +1,35 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * Autogenerate symbol mangling header for openssl.
  */
 
 /*
- * Copyright (C) 2011-2022 Oracle Corporation
+ * Copyright (C) 2011-2022 Oracle and/or its affiliates.
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * This file is part of VirtualBox base platform packages, as
+ * available from https://www.virtualbox.org.
  *
- * The contents of this file may alternatively be used under the terms
- * of the Common Development and Distribution License Version 1.0
- * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
- * VirtualBox OSE distribution, in which case the provisions of the
- * CDDL are applicable instead of those of the GPL.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, in version 3 of the
+ * License.
  *
- * You may elect to license modified versions of this file under the
- * terms and conditions of either the GPL or the CDDL or both.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <https://www.gnu.org/licenses>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef ___openssl_mangling_h___
-#define ___openssl_mangling_h___
+#ifndef VBOX_INCLUDED_SRC_openssl_3_0_3_openssl_mangling_h
+#define VBOX_INCLUDED_SRC_openssl_3_0_3_openssl_mangling_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 # ifdef VBOX_IN_EXTPACK
 #  define OPENSSL_MANGLER(a_Name) OracleExtPack_ ## a_Name
 #  define OPENSSL_MANGLER_ASM(a_Name) _OracleExtPack_ ## a_Name
@@ -77595,5 +77599,5 @@
 #  define _xor128_encrypt_n_pad OPENSSL_MANGLER_ASM(xor128_encrypt_n_pad)
 # endif
 #endif
-#endif
+#endif /* !VBOX_INCLUDED_SRC_openssl_3_0_3_openssl_mangling_h */
 

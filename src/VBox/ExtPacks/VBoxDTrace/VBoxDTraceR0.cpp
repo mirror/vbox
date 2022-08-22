@@ -6,15 +6,16 @@
  */
 
 /*
- * Copyright (C) 2012-2022 Oracle Corporation
+ * Copyright (C) 2012-2022 Oracle and/or its affiliates.
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the Common
+ * This file is part of VirtualBox base platform packages, as
+ * available from http://www.virtualbox.org.
+ *
+ * The contents of this file are subject to the terms of the Common
  * Development and Distribution License Version 1.0 (CDDL) only, as it
- * comes in the "COPYING.CDDL" file of the VirtualBox OSE distribution.
- * VirtualBox OSE is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY of any kind.
+ * comes in the "COPYING.CDDL" file of the VirtualBox distribution.
+ *
+ * SPDX-License-Identifier: CDDL-1.0
  */
 
 
