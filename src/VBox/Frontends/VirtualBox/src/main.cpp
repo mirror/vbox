@@ -299,8 +299,7 @@ static void ShowHelp()
         ;
 
     RTPrintf("%s v%s\n"
-             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n"
+             "Copyright (C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
              "\n"
              "%s",
              s_szTitle, RTBldCfgVersion(), s_szUsage);

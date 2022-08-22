@@ -819,8 +819,7 @@ void serviceLog(const char *pszFormat, ...)
 static void displayHeader()
 {
     RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Watchdog " VBOX_VERSION_STRING "\n"
-                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                 "All rights reserved.\n\n");
+                 "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
 }
 
 /**

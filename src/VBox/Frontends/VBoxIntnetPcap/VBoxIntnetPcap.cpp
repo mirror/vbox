@@ -122,8 +122,7 @@ main(int argc, char *argv[])
 
             case 'h':           /* --help */
                 RTPrintf("%s Version %sr%u\n"
-                         "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                         "All rights reserved.\n"
+                         "Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                          "\n"
                          "Usage: %s <options>\n"
                          "\n"

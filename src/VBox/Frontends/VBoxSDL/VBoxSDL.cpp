@@ -981,8 +981,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     LogFlow(("SDL GUI started\n"));
     RTPrintf(VBOX_PRODUCT " SDL GUI version %s\n"
-             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n\n",
+             "Copyright (C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
              VBOX_VERSION_STRING);
 
     // less than one parameter is not possible

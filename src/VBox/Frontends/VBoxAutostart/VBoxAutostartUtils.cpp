@@ -98,8 +98,7 @@ DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fS
 DECLHIDDEN(void) autostartSvcShowHeader(void)
 {
     RTPrintf(VBOX_PRODUCT " VirtualBox Autostart Service Version " VBOX_VERSION_STRING " - r%s\n"
-             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n\n", RTBldCfgRevisionStr());
+             "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n", RTBldCfgRevisionStr());
 }
 
 DECLHIDDEN(void) autostartSvcShowVersion(bool fBrief)

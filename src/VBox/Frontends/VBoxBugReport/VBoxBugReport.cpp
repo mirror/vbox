@@ -122,16 +122,22 @@ public:
     VBRDir(const char *pcszPath) : m_hDir(NIL_RTDIR)
     {
         int rc = RTDirOpenFiltered(&m_hDir, pcszPath, RTDIRFILTER_WINNT, 0);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc) && rc != VERR_FILE_NOT_FOUND && rc != VERR_PATH_NOT_FOUND)
             throw RTCError(com::Utf8StrFmt("Failed to open directory '%s'\n", pcszPath));
     };
     ~VBRDir()
     {
-        int rc = RTDirClose(m_hDir);
-        AssertRC(rc);
+        if (RT_VALID_PTR(m_hDir))
+        {
+            int rc = RTDirClose(m_hDir);
+            AssertRC(rc);
+        }
     };
     const char *next(void)
     {
+        if (!RT_VALID_PTR(m_hDir))
+            return NULL;
+
         int rc = RTDirRead(m_hDir, &m_DirEntry, NULL);
         if (RT_SUCCESS(rc))
             return m_DirEntry.szName;
@@ -651,6 +657,12 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
 
 void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
 {
+    BOOL fAccessible = FALSE;
+    HRESULT hrc = machine->COMGETTER(Accessible)(&fAccessible);
+    if (SUCCEEDED(hrc) && !fAccessible)
+        return
+    handleComError(hrc, "Failed to get accessible status of VM");
+
     com::Bstr name, logFolder, settingsFile;
     handleComError(machine->COMGETTER(Name)(name.asOutParam()),
                    "Failed to get VM name");
@@ -667,8 +679,7 @@ void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
 static void printHeader(void)
 {
     RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Bug Report Tool " VBOX_VERSION_STRING "\n"
-                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                 "All rights reserved.\n\n");
+                 "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
 }
 
 int main(int argc, char *argv[])
