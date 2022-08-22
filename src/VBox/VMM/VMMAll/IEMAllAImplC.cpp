@@ -15031,3 +15031,86 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpd2ps_u128,(PX86FXSTATE pFpuState, PIEMSSERE
     pResult->uResult.au32[3] = 0;
 }
 #endif
+
+
+/**
+ * [V]SHUFPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_shufps_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puDst;
+    RTUINT128U const uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc1.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc2.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc2.au32[(bEvil >> 6) & 0x3];
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vshufps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc1.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc2.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc2.au32[(bEvil >> 6) & 0x3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vshufps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bEvil))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+    puDst->au32[0] = uSrc1.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc1.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc2.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc2.au32[(bEvil >> 6) & 0x3];
+
+    puDst->au32[4] = uSrc1.au32[4 + (bEvil & 0x3)];
+    puDst->au32[5] = uSrc1.au32[4 + ((bEvil >> 2) & 0x3)];
+    puDst->au32[6] = uSrc2.au32[4 + ((bEvil >> 4) & 0x3)];
+    puDst->au32[7] = uSrc2.au32[4 + ((bEvil >> 6) & 0x3)];
+}
+
+
+/**
+ * [V]SHUFPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_shufpd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puDst;
+    RTUINT128U const uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+    puDst->au64[0] = (bEvil & RT_BIT(0)) ? uSrc1.au64[1] : uSrc1.au64[0];
+    puDst->au64[1] = (bEvil & RT_BIT(1)) ? uSrc2.au64[1] : uSrc2.au64[0];
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vshufpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+    puDst->au64[0] = (bEvil & RT_BIT(0)) ? uSrc1.au64[1] : uSrc1.au64[0];
+    puDst->au64[1] = (bEvil & RT_BIT(1)) ? uSrc2.au64[1] : uSrc2.au64[0];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vshufpd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bEvil))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+    puDst->au64[0] = (bEvil & RT_BIT(0)) ? uSrc1.au64[1] : uSrc1.au64[0];
+    puDst->au64[1] = (bEvil & RT_BIT(1)) ? uSrc2.au64[1] : uSrc2.au64[0];
+    puDst->au64[2] = (bEvil & RT_BIT(2)) ? uSrc1.au64[3] : uSrc1.au64[2];
+    puDst->au64[3] = (bEvil & RT_BIT(3)) ? uSrc2.au64[3] : uSrc2.au64[2];
+}

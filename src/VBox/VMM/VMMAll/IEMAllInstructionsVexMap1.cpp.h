@@ -3969,10 +3969,129 @@ FNIEMOP_STUB(iemOp_vpextrw_Gd_Udq_Ib);
 /*  Opcode VEX.F3.0F 0xc5 - invalid */
 /*  Opcode VEX.F2.0F 0xc5 - invalid */
 
+
+#define VSHUFP_X(a_Instr) \
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
+    { \
+        /* \
+         * Register, register. \
+         */ \
+        if (pVCpu->iem.s.uVexLength) \
+        { \
+            uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil); \
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2); \
+            IEM_MC_BEGIN(4, 3); \
+            IEM_MC_LOCAL(RTUINT256U,            uDst); \
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1); \
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2); \
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,  uDst,          0); \
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1,         1); \
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2,         2); \
+            IEM_MC_ARG_CONST(uint8_t,           bEvilArg, /*=*/ bEvil, 3); \
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_PREPARE_AVX_USAGE(); \
+            IEM_MC_FETCH_YREG_U256(uSrc1,   IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_FETCH_YREG_U256(uSrc2,   IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_ ## a_Instr ## _u256, \
+                                                                 iemAImpl_ ## a_Instr ## _u256_fallback), puDst, puSrc1, puSrc2, bEvilArg); \
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), uDst); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil); \
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEM_MC_BEGIN(4, 0); \
+            IEM_MC_ARG(PRTUINT128U,          puDst,                 0); \
+            IEM_MC_ARG(PCRTUINT128U,         puSrc1,                1); \
+            IEM_MC_ARG(PCRTUINT128U,         puSrc2,                2); \
+            IEM_MC_ARG_CONST(uint8_t,        bEvilArg, /*=*/ bEvil, 3); \
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_PREPARE_AVX_USAGE(); \
+            IEM_MC_REF_XREG_U128(puDst,        IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_REF_XREG_U128_CONST(puSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_REF_XREG_U128_CONST(puSrc2, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_ ## a_Instr ## _u128, \
+                                                                 iemAImpl_ ## a_Instr ## _u128_fallback), puDst, puSrc1, puSrc2, bEvilArg); \
+            IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+    } \
+    else \
+    { \
+        /* \
+         * Register, memory. \
+         */ \
+        if (pVCpu->iem.s.uVexLength) \
+        { \
+            IEM_MC_BEGIN(4, 4); \
+            IEM_MC_LOCAL(RTUINT256U,            uDst); \
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1); \
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2); \
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc); \
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,          uDst,  0); \
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1,         uSrc1, 1); \
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2,         uSrc2, 2); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil); \
+            IEM_MC_ARG_CONST(uint8_t,           bEvilArg, /*=*/ bEvil, 3); \
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2); \
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_PREPARE_AVX_USAGE(); \
+            IEM_MC_FETCH_MEM_U256_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_FETCH_YREG_U256(uSrc1,      IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_ ## a_Instr ## _u256, \
+                                                                 iemAImpl_ ## a_Instr ## _u256_fallback), puDst, puSrc1, puSrc2, bEvilArg); \
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(   IEM_GET_MODRM_REG(pVCpu, bRm), uDst); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            IEM_MC_BEGIN(4, 2); \
+            IEM_MC_LOCAL(RTUINT128U,                uSrc2); \
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc); \
+            IEM_MC_ARG(PRTUINT128U,                 puDst,                 0); \
+            IEM_MC_ARG(PCRTUINT128U,                puSrc1,                1); \
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc2,         uSrc2, 2); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil); \
+            IEM_MC_ARG_CONST(uint8_t,               bEvilArg, /*=*/ bEvil, 3); \
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_PREPARE_AVX_USAGE(); \
+            IEM_MC_FETCH_MEM_U128_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_REF_XREG_U128_CONST(puSrc1,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_ ## a_Instr ## _u128, \
+                                                                 iemAImpl_ ## a_Instr ## _u128_fallback), puDst, puSrc1, puSrc2, bEvilArg); \
+            IEM_MC_CLEAR_YREG_128_UP(           IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_ADVANCE_RIP(); \
+            IEM_MC_END(); \
+        } \
+    } \
+    return VINF_SUCCESS;
+
 /** Opcode VEX.0F 0xc6 - vshufps Vps,Hps,Wps,Ib */
-FNIEMOP_STUB(iemOp_vshufps_Vps_Hps_Wps_Ib);
+FNIEMOP_DEF(iemOp_vshufps_Vps_Hps_Wps_Ib)
+{
+    IEMOP_MNEMONIC4(VEX_RMI, VSHUFPS, vshufps, Vpd, Hpd, Wpd, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_SKIP_PYTHON); /** @todo */
+    VSHUFP_X(vshufps);
+}
+
+
 /** Opcode VEX.66.0F 0xc6 - vshufpd Vpd,Hpd,Wpd,Ib */
-FNIEMOP_STUB(iemOp_vshufpd_Vpd_Hpd_Wpd_Ib);
+FNIEMOP_DEF(iemOp_vshufpd_Vpd_Hpd_Wpd_Ib)
+{
+    IEMOP_MNEMONIC4(VEX_RMI, VSHUFPD, vshufpd, Vpd, Hpd, Wpd, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_SKIP_PYTHON); /** @todo */
+    VSHUFP_X(vshufpd);
+}
+#undef VSHUFP_X
+
+
 /*  Opcode VEX.F3.0F 0xc6 - invalid */
 /*  Opcode VEX.F2.0F 0xc6 - invalid */
 

@@ -4802,3 +4802,147 @@ BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u256, 12
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_vcvtpd2ps_u256
+
+
+;;
+; shufps instructions with 8-bit immediates.
+;
+; @param    A0      Pointer to the destination media register size operand (input/output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_shufps_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        movdqu  xmm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*2]         ; sizeof(shufpX+ret+int3) == 6: (A2 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       shufps   xmm0, xmm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_shufps_u128
+
+
+;;
+; shufp{s,d} instructions with 8-bit immediates.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the destination media register size operand (input/output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      The 8-bit immediate
+;
+%macro IEMIMPL_MEDIA_SSE_SHUFPX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        movdqu  xmm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*2]         ; sizeof(shufpX+ret) == 6: (A2 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+;IEMIMPL_MEDIA_SSE_SHUFPX shufps
+IEMIMPL_MEDIA_SSE_SHUFPX shufpd
+
+
+;;
+; vshufp{s,d} instructions with 8-bit immediates.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      Pointer to the second source media register size operand (input).
+; @param    A3      The 8-bit immediate
+;
+%macro IEMIMPL_MEDIA_AVX_VSHUFPX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        movdqu  xmm1, [A2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*2]         ; sizeof(vshufpX+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu ymm0, [A1]
+        vmovdqu ymm1, [A2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*2]         ; sizeof(vshufpX+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        vmovdqu [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       ymm0, ymm0, ymm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_AVX_VSHUFPX vshufps
+IEMIMPL_MEDIA_AVX_VSHUFPX vshufpd
