@@ -134,7 +134,7 @@
  * along with this program; if not, see &lt;https://www.gnu.org/licenses&gt;.
  *
  * SPDX-License-Identifier: GPL-3.0-only
- *
+ */
 </xsl:text>
 </xsl:template>
 
