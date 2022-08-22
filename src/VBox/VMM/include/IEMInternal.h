@@ -2443,6 +2443,8 @@ FNIEMAIMPLFPSSEF2U128 iemAImpl_hsubps_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_hsubpd_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_sqrtps_u128;
 FNIEMAIMPLFPSSEF2U128 iemAImpl_sqrtpd_u128;
+FNIEMAIMPLFPSSEF2U128 iemAImpl_addsubps_u128;
+FNIEMAIMPLFPSSEF2U128 iemAImpl_addsubpd_u128;
 
 FNIEMAIMPLFPSSEF2U128R32 iemAImpl_addss_u128_r32;
 FNIEMAIMPLFPSSEF2U128R64 iemAImpl_addsd_u128_r64;
@@ -2479,6 +2481,8 @@ FNIEMAIMPLFPAVXF3U128 iemAImpl_vhsubps_u128, iemAImpl_vhsubps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vhsubpd_u128, iemAImpl_vhsubpd_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vsqrtps_u128, iemAImpl_vsqrtps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vsqrtpd_u128, iemAImpl_vsqrtpd_u128_fallback;
+FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddsubps_u128, iemAImpl_vaddsubps_u128_fallback;
+FNIEMAIMPLFPAVXF3U128 iemAImpl_vaddsubpd_u128, iemAImpl_vaddsubpd_u128_fallback;
 
 FNIEMAIMPLFPAVXF3U128R32 iemAImpl_vaddss_u128_r32, iemAImpl_vaddss_u128_r32_fallback;
 FNIEMAIMPLFPAVXF3U128R64 iemAImpl_vaddsd_u128_r64, iemAImpl_vaddsd_u128_r64_fallback;
@@ -2511,6 +2515,8 @@ FNIEMAIMPLFPAVXF3U256 iemAImpl_vhaddps_u256, iemAImpl_vhaddps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vhaddpd_u256, iemAImpl_vhaddpd_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vhsubps_u256, iemAImpl_vhsubps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vhsubpd_u256, iemAImpl_vhsubpd_u256_fallback;
+FNIEMAIMPLFPAVXF3U256 iemAImpl_vhaddsubps_u256, iemAImpl_vhaddsubps_u256_fallback;
+FNIEMAIMPLFPAVXF3U256 iemAImpl_vhaddsubpd_u256, iemAImpl_vhaddsubpd_u256_fallback;
 /** @} */
 
 /** @name C instruction implementations for anything slightly complicated.

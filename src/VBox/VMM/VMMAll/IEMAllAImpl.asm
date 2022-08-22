@@ -4633,6 +4633,9 @@ IEMIMPL_FP_F2 haddps, 3
 IEMIMPL_FP_F2 haddpd, 3
 IEMIMPL_FP_F2 hsubps, 3
 IEMIMPL_FP_F2 hsubpd, 3
+IEMIMPL_FP_F2 addsubps, 3
+IEMIMPL_FP_F2 addsubpd, 3
+
 
 ;;
 ; These are actually unary operations but to keep it simple
