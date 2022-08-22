@@ -252,6 +252,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-hsubpd_u128.bin \
 	tstIEMAImplDataSseBinary-sqrtpd_u128.bin \
 	tstIEMAImplDataSseBinary-addsubpd_u128.bin \
+	tstIEMAImplDataSseBinary-cvtpd2ps_u128.bin \
 	tstIEMAImplDataSseBinary-addss_u128_r32.bin \
 	tstIEMAImplDataSseBinary-addsd_u128_r64.bin \
 	tstIEMAImplDataSseBinary-mulss_u128_r32.bin \

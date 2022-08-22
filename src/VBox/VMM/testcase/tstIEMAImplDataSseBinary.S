@@ -79,6 +79,7 @@ IEM_TEST_DATA haddpd_u128,       "tstIEMAImplDataSseBinary-haddpd_u128.bin"
 IEM_TEST_DATA hsubpd_u128,       "tstIEMAImplDataSseBinary-hsubpd_u128.bin"
 IEM_TEST_DATA sqrtpd_u128,       "tstIEMAImplDataSseBinary-sqrtpd_u128.bin"
 IEM_TEST_DATA addsubpd_u128,     "tstIEMAImplDataSseBinary-addsubpd_u128.bin"
+IEM_TEST_DATA cvtpd2ps_u128,     "tstIEMAImplDataSseBinary-cvtpd2ps_u128.bin"
 
 IEM_TEST_DATA addsd_u128_r64,    "tstIEMAImplDataSseBinary-addsd_u128_r64.bin"
 IEM_TEST_DATA mulsd_u128_r64,    "tstIEMAImplDataSseBinary-mulsd_u128_r64.bin"
