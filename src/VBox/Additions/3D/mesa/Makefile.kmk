@@ -18,8 +18,12 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_MESA_SUBDIR = $(VBOX_MESA)
-VBOX_MESA_PATH = $(PATH_ROOT)/src/VBox/Additions/3D/mesa/$(VBOX_MESA_SUBDIR)
+#
+# Make sure our Config.kmk is included.
+#
+ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
+include $(PATH_SUB_CURRENT)/../Config.kmk
+endif
 
 PYTHON_CMD = $(VBOX_BLD_PYTHON) -B
 
