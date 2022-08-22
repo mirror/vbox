@@ -84,6 +84,7 @@ typedef enum SCMCOMMENTSTYLE
     kScmCommentStyle_Rem_Camel,
     kScmCommentStyle_Sql,
     kScmCommentStyle_Tick,
+    kScmCommentStyle_Xml,
     kScmCommentStyle_End
 } SCMCOMMENTSTYLE;
 
@@ -104,6 +105,7 @@ typedef enum SCMCOMMENTTYPE
     kScmCommentType_MultiLine_Qt,               /**< Multi-line comment, Qt style.  */
     kScmCommentType_MultiLine_Qt_After,         /**< Multi-line comment, Qt after-member style.  */
     kScmCommentType_DocString,                  /**< Triple quoted python doc string. */
+    kScmCommentType_Xml,                        /**< XML comment style. */
     kScmCommentType_End                         /**< Customary exclusive end value. */
 } SCMCOMMENTTYPE;
 
@@ -261,6 +263,7 @@ FNSCMREWRITER rewrite_Copyright_RemComment;
 FNSCMREWRITER rewrite_Copyright_SemicolonComment;
 FNSCMREWRITER rewrite_Copyright_SqlComment;
 FNSCMREWRITER rewrite_Copyright_TickComment;
+FNSCMREWRITER rewrite_Copyright_XmlComment;
 FNSCMREWRITER rewrite_Makefile_kup;
 FNSCMREWRITER rewrite_Makefile_kmk;
 FNSCMREWRITER rewrite_FixFlowerBoxMarkers;

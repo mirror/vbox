@@ -134,6 +134,25 @@ typedef SCMCOPYRIGHTINFO *PSCMCOPYRIGHTINFO;
 *********************************************************************************************************************************/
 /** --license-ose-gpl */
 static const char g_szVBoxOseGpl[] =
+    "This file is part of VirtualBox base platform packages, as\n"
+    "available from https://www.virtualbox.org.\n"
+    "\n"
+    "This program is free software; you can redistribute it and/or\n"
+    "modify it under the terms of the GNU General Public License\n"
+    "as published by the Free Software Foundation, in version 3 of the\n"
+    "License.\n"
+    "\n"
+    "This program is distributed in the hope that it will be useful, but\n"
+    "WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
+    "General Public License for more details.\n"
+    "\n"
+    "You should have received a copy of the GNU General Public License\n"
+    "along with this program; if not, see <https://www.gnu.org/licenses>.\n"
+    "\n"
+    "SPDX-License-Identifier: GPL-3.0-only\n";
+
+static const char g_szVBoxOseOldGpl2[] =
     "This file is part of VirtualBox Open Source Edition (OSE), as\n"
     "available from http://www.virtualbox.org. This file is free software;\n"
     "you can redistribute it and/or modify it under the terms of the GNU\n"
@@ -144,6 +163,34 @@ static const char g_szVBoxOseGpl[] =
 
 /** --license-ose-dual */
 static const char g_szVBoxOseDualGplCddl[] =
+    "This file is part of VirtualBox base platform packages, as\n"
+    "available from https://www.virtualbox.org.\n"
+    "\n"
+    "This program is free software; you can redistribute it and/or\n"
+    "modify it under the terms of the GNU General Public License\n"
+    "as published by the Free Software Foundation, in version 3 of the\n"
+    "License.\n"
+    "\n"
+    "This program is distributed in the hope that it will be useful, but\n"
+    "WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
+    "General Public License for more details.\n"
+    "\n"
+    "You should have received a copy of the GNU General Public License\n"
+    "along with this program; if not, see <https://www.gnu.org/licenses>.\n"
+    "\n"
+    "The contents of this file may alternatively be used under the terms\n"
+    "of the Common Development and Distribution License Version 1.0\n"
+    "(CDDL), a copy of it is provided in the \"COPYING.CDDL\" file included\n"
+    "in the VirtualBox distribution, in which case the provisions of the\n"
+    "CDDL are applicable instead of those of the GPL.\n"
+    "\n"
+    "You may elect to license modified versions of this file under the\n"
+    "terms and conditions of either the GPL or the CDDL or both.\n"
+    "\n"
+    "SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0\n";
+
+static const char g_szVBoxOseOldDualGpl2Cddl[] =
     "This file is part of VirtualBox Open Source Edition (OSE), as\n"
     "available from http://www.virtualbox.org. This file is free software;\n"
     "you can redistribute it and/or modify it under the terms of the GNU\n"
@@ -163,6 +210,16 @@ static const char g_szVBoxOseDualGplCddl[] =
 
 /** --license-ose-cddl   */
 static const char g_szVBoxOseCddl[] =
+    "This file is part of VirtualBox base platform packages, as\n"
+    "available from http://www.virtualbox.org.\n"
+    "\n"
+    "The contents of this file are subject to the terms of the Common\n"
+    "Development and Distribution License Version 1.0 (CDDL) only, as it\n"
+    "comes in the \"COPYING.CDDL\" file of the VirtualBox distribution.\n"
+    "\n"
+    "SPDX-License-Identifier: CDDL-1.0\n";
+
+static const char g_szVBoxOseOldCddl[] =
     "This file is part of VirtualBox Open Source Edition (OSE), as\n"
     "available from http://www.virtualbox.org. This file is free software;\n"
     "you can redistribute it and/or modify it under the terms of the Common\n"
@@ -176,7 +233,7 @@ static const char g_szVBoxLgpl[] =
     "This file is part of a free software library; you can redistribute\n"
     "it and/or modify it under the terms of the GNU Lesser General\n"
     "Public License version 2.1 as published by the Free Software\n"
-    "Foundation and shipped in the \"COPYING\" file with this library.\n"
+    "Foundation and shipped in the \"COPYING.LIB\" file with this library.\n"
     "The library is distributed in the hope that it will be useful,\n"
     "but WITHOUT ANY WARRANTY of any kind.\n"
     "\n"
@@ -187,7 +244,9 @@ static const char g_szVBoxLgpl[] =
     "a choice of LGPL license versions is made available with the\n"
     "language indicating that LGPLv2 or any later version may be used,\n"
     "or where a choice of which version of the LGPL is applied is\n"
-    "otherwise unspecified.\n";
+    "otherwise unspecified.\n"
+    "\n"
+    "SPDX-License-Identifier: LGPL-2.1-only\n";
 
 /** --license-mit
  * @note This isn't detectable as VirtualBox or Oracle specific.
@@ -332,6 +391,10 @@ static const char g_szMitAlt5[] =
 
 /** Oracle confidential. */
 static const char g_szOracleConfidential[] =
+    "Oracle Corporation confidential\n";
+
+/** Oracle confidential, old style. */
+static const char g_szOracleConfidentialOld[] =
     "Oracle Corporation confidential\n"
     "All rights reserved\n";
 
@@ -339,10 +402,14 @@ static const char g_szOracleConfidential[] =
 static const SCMLICENSETEXT g_aLicenses[] =
 {
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
+    { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseOldGpl2)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
+    { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseOldDualGpl2Cddl) },
     { kScmLicenseType_OseCddl,          kScmLicense_OseCddl,        RT_STR_TUPLE(g_szVBoxOseCddl) },
+    { kScmLicenseType_OseCddl,          kScmLicense_OseCddl,        RT_STR_TUPLE(g_szVBoxOseOldCddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
     { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidential) },
+    { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidentialOld) },
     { kScmLicenseType_Invalid,          kScmLicense_End,            NULL, 0 },
 };
 
@@ -356,14 +423,20 @@ static const SCMLICENSETEXT g_aLicensesWithMit[] =
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt4) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt5) },
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
+    { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseOldGpl2)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
+    { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseOldDualGpl2Cddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
     { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidential) },
+    { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidentialOld) },
     { kScmLicenseType_Invalid,          kScmLicense_End,            NULL, 0 },
 };
 
 /** Copyright holder. */
-static const char g_szCopyrightHolder[] = "Oracle Corporation";
+static const char g_szCopyrightHolder[] = "Oracle and/or its affiliates.";
+
+/** Old copyright holder. */
+static const char g_szOldCopyrightHolder[] = "Oracle Corporation";
 
 /** LGPL disclaimer. */
 static const char g_szLgplDisclaimer[] =
@@ -387,6 +460,7 @@ static RTSTRTUPLE const g_aCopyrightCommentStart[] =
     { RT_STR_TUPLE("Rem") },
     { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
+    { RT_STR_TUPLE("<!--") },
     { RT_STR_TUPLE("<end>") },
 };
 
@@ -403,6 +477,7 @@ static RTSTRTUPLE const g_aCopyrightCommentPrefix[] =
     { RT_STR_TUPLE("Rem ") },
     { RT_STR_TUPLE("-- ") },
     { RT_STR_TUPLE("' ") },
+    { RT_STR_TUPLE("    ") },
     { RT_STR_TUPLE("<end>") },
 };
 
@@ -419,6 +494,7 @@ static RTSTRTUPLE const g_aCopyrightCommentEmpty[] =
     { RT_STR_TUPLE("Rem") },
     { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
+    { RT_STR_TUPLE("") },
     { RT_STR_TUPLE("<end>") },
 };
 
@@ -435,6 +511,7 @@ static RTSTRTUPLE const g_aCopyrightCommentEnd[] =
     { RT_STR_TUPLE("Rem") },
     { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
+    { RT_STR_TUPLE("-->") },
     { RT_STR_TUPLE("<end>") },
 };
 
@@ -445,7 +522,7 @@ static RTSTRTUPLE const g_aCopyrightCommentEnd[] =
  * @returns Predominant comment style.
  * @param   pIn         The file to scan.  Will be rewound.
  */
-static SCMCOMMENTSTYLE determinBatchFileCommentStyle(PSCMSTREAM pIn)
+static SCMCOMMENTSTYLE determineBatchFileCommentStyle(PSCMSTREAM pIn)
 {
     /*
      * Figure out whether it's using upper or lower case REM comments before
@@ -1332,7 +1409,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     bool     fFoundCopyright = false;
     uint32_t cBlankLinesAfterCopyright = 0;
     if (   pState->iLineCopyright == UINT32_MAX
-        && cchBody > sizeof("Copyright") + sizeof(g_szCopyrightHolder)
+        && cchBody > sizeof("Copyright") + RT_MIN(sizeof(g_szCopyrightHolder), sizeof(g_szOldCopyrightHolder))
         && RTStrNICmp(pszBody, RT_STR_TUPLE("copyright")) == 0)
     {
         const char *pszNextLine = (const char *)memchr(pszBody, '\n', cchBody);
@@ -1341,9 +1418,12 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
         const char *pszEnd  = pszNextLine ? pszNextLine : &pszBody[cchBody];
         while (RT_C_IS_SPACE(pszEnd[-1]))
             pszEnd--;
-        if (   (uintptr_t)(pszEnd - pszBody) > sizeof(g_szCopyrightHolder)
-            && (*(unsigned char *)(pszEnd - sizeof(g_szCopyrightHolder) + 1) & 0x80) == 0 /* to avoid annoying assertion */
-            && RTStrNICmp(pszEnd - sizeof(g_szCopyrightHolder) + 1, RT_STR_TUPLE(g_szCopyrightHolder)) == 0)
+        if (   (   (uintptr_t)(pszEnd - pszBody) > sizeof(g_szCopyrightHolder)
+                && (*(unsigned char *)(pszEnd - sizeof(g_szCopyrightHolder) + 1) & 0x80) == 0 /* to avoid annoying assertion */
+                && RTStrNICmp(pszEnd - sizeof(g_szCopyrightHolder) + 1, RT_STR_TUPLE(g_szCopyrightHolder)) == 0)
+            || (   (uintptr_t)(pszEnd - pszBody) > sizeof(g_szOldCopyrightHolder)
+                && (*(unsigned char *)(pszEnd - sizeof(g_szOldCopyrightHolder) + 1) & 0x80) == 0 /* to avoid annoying assertion */
+                && RTStrNICmp(pszEnd - sizeof(g_szOldCopyrightHolder) + 1, RT_STR_TUPLE(g_szOldCopyrightHolder)) == 0) )
         {
             /* Parse out the year(s). */
             const char *psz = pszBody + sizeof("copyright");
@@ -1360,8 +1440,11 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     if (   pState->uFirstYear < 1975
                         || pState->uFirstYear > 3000)
                     {
-                        ScmError(pState->pState, VERR_OUT_OF_RANGE, "Copyright year is out of range: %u ('%.*s')\n",
-                                 pState->uFirstYear, pszEnd - pszBody, pszBody);
+                        char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                        RTStrPurgeEncoding(pszCopy);
+                        ScmError(pState->pState, VERR_OUT_OF_RANGE, "Copyright year is out of range: %u ('%s')\n",
+                                 pState->uFirstYear, pszCopy);
+                        RTStrFree(pszCopy);
                         pState->uFirstYear = UINT32_MAX;
                     }
 
@@ -1380,13 +1463,19 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                             if (   pState->uLastYear < 1975
                                 || pState->uLastYear > 3000)
                             {
-                                ScmError(pState->pState, VERR_OUT_OF_RANGE, "Second copyright year is out of range: %u ('%.*s')\n",
-                                         pState->uLastYear, pszEnd - pszBody, pszBody);
+                                char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                                RTStrPurgeEncoding(pszCopy);
+                                ScmError(pState->pState, VERR_OUT_OF_RANGE, "Second copyright year is out of range: %u ('%s')\n",
+                                         pState->uLastYear, pszCopy);
+                                RTStrFree(pszCopy);
                                 pState->uLastYear = UINT32_MAX;
                             }
                             else if (pState->uFirstYear > pState->uLastYear)
                             {
-                                RTMsgWarning("Copyright years switched(?): '%.*s'\n", pszEnd - pszBody, pszBody);
+                                char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                                RTStrPurgeEncoding(pszCopy);
+                                RTMsgWarning("Copyright years switched(?): '%s'\n", pszCopy);
+                                RTStrFree(pszCopy);
                                 uint32_t iTmp = pState->uLastYear;
                                 pState->uLastYear = pState->uFirstYear;
                                 pState->uFirstYear = iTmp;
@@ -1395,21 +1484,31 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                         else
                         {
                             pState->uLastYear = UINT32_MAX;
+                            char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                            RTStrPurgeEncoding(pszCopy);
                             ScmError(pState->pState, RT_SUCCESS(rc) ? -rc : rc,
-                                     "Failed to parse second copyright year: '%.*s'\n", pszEnd - pszBody, pszBody);
+                                     "Failed to parse second copyright year: '%s'\n", pszCopy);
+                            RTMemFree(pszCopy);
                         }
                     }
                     else if (*pszNext != g_szCopyrightHolder[0])
+                    {
+                        char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                        RTStrPurgeEncoding(pszCopy);
                         ScmError(pState->pState, VERR_PARSE_ERROR,
-                                 "Failed to parse copyright: '%.*s'\n", pszEnd - pszBody, pszBody);
-                    else
+                                 "Failed to parse copyright: '%s'\n", pszCopy);
+                        RTMemFree(pszCopy);
+                    } else
                         pState->uLastYear = pState->uFirstYear;
                 }
                 else
                 {
                     pState->uFirstYear = UINT32_MAX;
+                    char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+                    RTStrPurgeEncoding(pszCopy);
                     ScmError(pState->pState, RT_SUCCESS(rc) ? -rc : rc,
-                             "Failed to parse copyright year: '%.*s'\n", pszEnd - pszBody, pszBody);
+                             "Failed to parse copyright year: '%s'\n", pszCopy);
+                    RTMemFree(pszCopy);
                 }
             }
 
@@ -1481,7 +1580,12 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                        pState->uFirstYear, pState->uLastYear, pState->fUpToDateCopyright, pState->fWellFormedCopyright);
         }
         else
-            ScmVerbose(pState->pState, 3, "not oracle copyright: '%.*s'\n", pszEnd - pszBody, pszBody);
+        {
+            char *pszCopy = RTStrDupN(pszBody, pszEnd - pszBody);
+            RTStrPurgeEncoding(pszCopy);
+            ScmVerbose(pState->pState, 3, "not oracle copyright: '%s'\n", pszCopy);
+            RTStrFree(pszCopy);
+        }
 
         if (!pszNextLine)
             return VINF_SUCCESS;
@@ -1610,7 +1714,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     || fExternal)
                 {
                     /* In C/C++ code, this must be a multiline comment.  While in python it
-                       must be a */
+                       must be a doc-string. */
                     if (pState->enmCommentStyle == kScmCommentStyle_C && pInfo->enmType != kScmCommentType_MultiLine)
                         ScmError(pState->pState, VERR_WRONG_ORDER, "License must appear in a multiline comment (no doxygen stuff)\n");
                     else if (pState->enmCommentStyle == kScmCommentStyle_Python && pInfo->enmType != kScmCommentType_DocString)
@@ -1625,9 +1729,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     pState->cLinesLicense       = CountLinesInSubstring(pszBody, pszNext - pszBody) - fExternal;
                     pState->pCurrentLicense     = pCur;
                     pState->fExternalLicense    = fExternal;
-                    pState->fIsCorrectLicense   = pState->fOpenSource
-                                                ? pCur == pState->pExpectedLicense
-                                                : pCur->enmType == kScmLicenseType_Confidential;
+                    pState->fIsCorrectLicense   = pCur == pState->pExpectedLicense;
                     pState->fWellFormedLicense  = memcmp(pszBody, pCur->psz, pCur->cch - 1) == 0;
                     if (!pState->fWellFormedLicense)
                         ScmVerbose(pState->pState, 1, "* license text isn't well-formed\n");
@@ -2007,7 +2109,7 @@ bool rewrite_Copyright_HashComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREA
 /** Copyright updater for REM-prefixed comments.   */
 bool rewrite_Copyright_RemComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, determinBatchFileCommentStyle(pIn));
+    return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, determineBatchFileCommentStyle(pIn));
 }
 
 /** Copyright updater for python comments.   */
@@ -2032,6 +2134,12 @@ bool rewrite_Copyright_SqlComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM
 bool rewrite_Copyright_TickComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, kScmCommentStyle_Tick);
+}
+
+/** Copyright updater for XML comments.   */
+bool rewrite_Copyright_XmlComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, kScmCommentStyle_Xml);
 }
 
 

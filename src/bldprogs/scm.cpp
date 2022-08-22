@@ -335,6 +335,7 @@ SCM_REWRITER_CFG(g_Copyright_RemComment,            "copyright-rem-style",      
 SCM_REWRITER_CFG(g_Copyright_SemicolonComment,      "copyright-semicolon-style",    rewrite_Copyright_SemicolonComment);
 SCM_REWRITER_CFG(g_Copyright_SqlComment,            "copyright-sql-style",          rewrite_Copyright_SqlComment);
 SCM_REWRITER_CFG(g_Copyright_TickComment,           "copyright-tick-style",         rewrite_Copyright_TickComment);
+SCM_REWRITER_CFG(g_Copyright_XmlComment,            "copyright-xml-style",          rewrite_Copyright_XmlComment);
 SCM_REWRITER_CFG(g_Makefile_kup,                    "makefile-kup",                 rewrite_Makefile_kup);
 SCM_REWRITER_CFG(g_Makefile_kmk,                    "makefile-kmk",                 rewrite_Makefile_kmk);
 SCM_REWRITER_CFG(g_FixFlowerBoxMarkers,             "fix-flower-boxes",             rewrite_FixFlowerBoxMarkers);
@@ -647,7 +648,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Xslt[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
-    /** @todo copyright is in an XML comment. */
+    &g_Copyright_XmlComment,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_Xml[] =
@@ -660,7 +661,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Xml[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
-    /** @todo copyright is in an XML comment. */
+    &g_Copyright_XmlComment,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_Wix[] =
@@ -673,7 +674,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Wix[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
-    /** @todo copyright is in an XML comment. */
+    &g_Copyright_XmlComment,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_QtProject[] =
@@ -801,7 +802,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     { RT_ELEMENTS(a_aRewriters), &a_aRewriters[0], a_fBinary, a_szFilePatterns, a_szName }
     SCM_CFG_ENTRY("kup",        g_apRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
     SCM_CFG_ENTRY("kmk",        g_apRewritersFor_Makefile_kmk,     false, "*.kmk" ),
-    SCM_CFG_ENTRY("c",          g_apRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
+    SCM_CFG_ENTRY("c",          g_apRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm|*.lds" ),
     SCM_CFG_ENTRY("h",          g_apRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
     SCM_CFG_ENTRY("rc",         g_apRewritersFor_RC,               false, "*.rc" ),
     SCM_CFG_ENTRY("asm",        g_apRewritersFor_ASM,              false, "*.asm|*.mac|*.inc" ),
@@ -820,7 +821,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("scm",        g_apRewritersFor_ScmSettings,      false, "*.scm-settings" ),
     SCM_CFG_ENTRY("image",      g_apRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf|*.gif" ),
     SCM_CFG_ENTRY("xslt",       g_apRewritersFor_Xslt,             false, "*.xsl" ),
-    SCM_CFG_ENTRY("xml",        g_apRewritersFor_Xml,              false, "*.xml" ),
+    SCM_CFG_ENTRY("xml",        g_apRewritersFor_Xml,              false, "*.xml|*.dist|*.qhcp" ),
     SCM_CFG_ENTRY("wix",        g_apRewritersFor_Wix,              false, "*.wxi|*.wxs|*.wxl" ),
     SCM_CFG_ENTRY("qt-pro",     g_apRewritersFor_QtProject,        false, "*.pro" ),
     SCM_CFG_ENTRY("qt-rc",      g_apRewritersFor_QtResourceFiles,  false, "*.qrc" ),
@@ -831,7 +832,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("gas",        g_apRewritersFor_GnuAsm,           false, "*.S" ),
     SCM_CFG_ENTRY("binary",     g_apRewritersFor_BinaryFiles,      true,  "*.bin|*.pdf|*.zip|*.bz2|*.gz" ),
     /* These should be be last: */
-    SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile|Makefile.am|Makefile.in|*.cmake" ),
+    SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile|Makefile.am|Makefile.in|*.cmake|*.gmk" ),
     SCM_CFG_ENTRY("text",       g_apRewritersFor_TextFiles,        false, "*.txt|README*|readme*|ReadMe*|NOTE*|TODO*" ),
     SCM_CFG_ENTRY("plaintext",  g_apRewritersFor_PlainTextFiles,   false, "LICENSE|ChangeLog|FAQ|AUTHORS|INSTALL|NEWS" ),
     SCM_CFG_ENTRY("file-list",  g_apRewritersFor_FileLists,        false, "files_*" ),
@@ -2836,7 +2837,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                          && (   strstr(paOpts[i+1].pszLong, "-no-") != NULL
                              || strstr(paOpts[i+1].pszLong, "-not-") != NULL
                              || strstr(paOpts[i+1].pszLong, "-dont-") != NULL
-                             || strcmp(paOpts[i+1].pszLong, "--unrestricted-ASMMemPage-use") == 0
+                             || strstr(paOpts[i+1].pszLong, "-unrestricted-") != NULL
                              || (paOpts[i].iShort == 'q' && paOpts[i+1].iShort == 'v')
                              || (paOpts[i].iShort == 'd' && paOpts[i+1].iShort == 'D')
                             );

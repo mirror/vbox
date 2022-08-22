@@ -94,6 +94,23 @@ static size_t isSemicolonComment(const char *pchLine, size_t cchLine, bool fSeco
 }
 
 
+/** Macro for checking for a XML comment start. */
+#define IS_XML_COMMENT_START(a_pch, a_off, a_cch) \
+        (   (a_off) + 4 <= (a_cch) \
+         && (a_pch)[(a_off)    ] == '<' \
+         && (a_pch)[(a_off) + 1] == '!' \
+         && (a_pch)[(a_off) + 2] == '-' \
+         && (a_pch)[(a_off) + 3] == '-' \
+         && ((a_off) + 4 == (a_cch) || RT_C_IS_SPACE((a_pch)[(a_off) + 4])) )
+
+/** Macro for checking for a XML comment end. */
+#define IS_XML_COMMENT_END(a_pch, a_off, a_cch) \
+        (   (a_off) + 3 <= (a_cch) \
+         && (a_pch)[(a_off)    ] == '-' \
+         && (a_pch)[(a_off) + 1] == '-' \
+         && (a_pch)[(a_off) + 2] == '>')
+
+
 /** Macro for checking for a batch file comment prefix. */
 #define IS_REM(a_pch, a_off, a_cch) \
         (   (a_off) + 3 <= (a_cch) \
@@ -198,7 +215,7 @@ static int handleLineComment(PSCMSTREAM pIn, PFNISCOMMENT pfnIsComment,
     Assert(cchSkip > 0);
     off += cchSkip;
 
-    /* Determin comment type. */
+    /* Determine comment type. */
     Info.enmType = kScmCommentType_Line;
     char ch;
     cchSkip = 1;
@@ -339,7 +356,7 @@ static int handleLineComment(PSCMSTREAM pIn, PFNISCOMMENT pfnIsComment,
 
 
 /**
- * Common string litteral handler.
+ * Common string literal handler.
  *
  * @returns new pchLine value.
  * @param   pIn         The input string.
@@ -351,8 +368,8 @@ static int handleLineComment(PSCMSTREAM pIn, PFNISCOMMENT pfnIsComment,
  * @param   piLine      Pointer to the line number variable.
  * @param   poff        Pointer to the line offset variable.
  */
-static const char *handleStringLitteral(PSCMSTREAM pIn, char chType, const char *pchLine, size_t *pcchLine, PSCMEOL penmEol,
-                                        uint32_t *piLine, size_t *poff)
+static const char *handleStringLiteral(PSCMSTREAM pIn, char chType, const char *pchLine, size_t *pcchLine, PSCMEOL penmEol,
+                                       uint32_t *piLine, size_t *poff)
 {
     size_t off = *poff;
     for (;;)
@@ -442,7 +459,7 @@ static int enumerateCStyleComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                         Info.offEnd             = UINT32_MAX;
                         Info.cBlankLinesBefore  = 0;
 
-                        /* Determin comment type (same as for line-comments). */
+                        /* Determine comment type (same as for line-comments). */
                         Info.enmType = kScmCommentType_MultiLine;
                         if (   off < cchLine
                             && (   (ch = pchLine[off]) == '*'
@@ -593,12 +610,12 @@ static int enumerateCStyleComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
             else if (ch == '"')
             {
                 /*
-                 * String litterals may include sequences that looks like comments.  So,
+                 * String literal may include sequences that looks like comments.  So,
                  * they needs special handling to avoid confusion.
                  */
-                pchLine = handleStringLitteral(pIn, '"', pchLine, &cchLine, &enmEol, &iLine, &off);
+                pchLine = handleStringLiteral(pIn, '"', pchLine, &cchLine, &enmEol, &iLine, &off);
             }
-            /* else: We don't have to deal with character litterals as these shouldn't
+            /* else: We don't have to deal with character literal as these shouldn't
                      include comment-like sequences. */
         } /* for each character in the line */
 
@@ -658,13 +675,13 @@ static int enumeratePythonComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
             else if (ch == '"' || ch == '\'')
             {
                 /*
-                 * String litterals may be doc strings and they may legally include hashes.
+                 * String literal may be doc strings and they may legally include hashes.
                  */
                 const char chType = ch;
                 if (   off + 1 >= cchLine
                     || pchLine[off] != chType
                     || pchLine[off + 1] != chType)
-                    pchLine = handleStringLitteral(pIn, chType, pchLine, &cchLine, &enmEol, &iLine, &off);
+                    pchLine = handleStringLiteral(pIn, chType, pchLine, &cchLine, &enmEol, &iLine, &off);
                 else
                 {
                     /*
@@ -805,8 +822,169 @@ static int enumeratePythonComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                 if (!pchLine)
                     break;
             }
-            /* else: We don't have to deal with character litterals as these shouldn't
+            /* else: We don't have to deal with character literal as these shouldn't
                      include comment-like sequences. */
+        } /* for each character in the line */
+
+        iLine++;
+    } /* for each line in the stream */
+
+    int rcStream = ScmStreamGetStatus(pIn);
+    if (RT_SUCCESS(rcStream))
+        return rcRet;
+    return rcStream;
+}
+
+
+/**
+ * Deals with XML comments.
+ *
+ * @returns VBox status code / callback return code.
+ * @param   pIn                 The stream to parse.
+ * @param   pfnCallback         The callback.
+ * @param   pvUser              The user parameter for the callback.
+ */
+static int enumerateXmlComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCallback, void *pvUser)
+{
+    int             rcRet = VINF_SUCCESS;
+    uint32_t        iLine = 0;
+    SCMEOL          enmEol;
+    size_t          cchLine;
+    const char     *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        size_t off = 0;
+        while (off < cchLine)
+        {
+            /*
+             * Skip leading blanks and check for start of XML comment.
+             */
+            while (off + 3 < cchLine && RT_C_IS_SPACE(pchLine[off]))
+                off++;
+            if (IS_XML_COMMENT_START(pchLine, off, cchLine))
+            {
+                /*
+                 * XML comment.  Find the end.
+                 *
+                 * Note! This is very similar to the python doc string handling above.
+                 */
+                SCMCOMMENTINFO  Info;
+                Info.iLineStart         = iLine;
+                Info.offStart           = (uint32_t)off;
+                Info.iLineEnd           = UINT32_MAX;
+                Info.offEnd             = UINT32_MAX;
+                Info.cBlankLinesBefore  = 0;
+                Info.enmType            = kScmCommentType_Xml;
+
+                off += 4;
+
+                /*
+                 * Copy the body and find the end of the XML comment.
+                 */
+                size_t          cbBodyAlloc = 0;
+                size_t          cchBody     = 0;
+                char           *pszBody     = NULL;
+                for (;;)
+                {
+                    /* Parse the line up to the end-of-comment or end-of-line. */
+                    size_t offLineStart     = off;
+                    size_t offLastNonBlank  = off;
+                    size_t offFirstNonBlank = ~(size_t)0;
+                    while (off < cchLine)
+                    {
+                        if (!IS_XML_COMMENT_END(pchLine, off, cchLine))
+                        {
+                            char ch = pchLine[off++];
+                            if (RT_C_IS_BLANK(ch))
+                            {/* kind of likely */}
+                            else
+                            {
+                                offLastNonBlank = off - 1;
+                                if (offFirstNonBlank != ~(size_t)0)
+                                {/* likely */}
+                                else if (   (ch != '*' && ch != '#')    /* ignore continuation-asterisks */
+                                         || off > Info.offStart + 1 + 1
+                                         || off > cchLine
+                                         || (   off < cchLine
+                                              && !RT_C_IS_SPACE(pchLine[off]))
+                                         || pszBody == NULL)
+                                    offFirstNonBlank = off - 1;
+                            }
+                        }
+                        else
+                        {
+                            off += 3;
+                            Info.offEnd   = (uint32_t)off;
+                            Info.iLineEnd = iLine;
+                            break;
+                        }
+                    }
+
+                    /* Append line content to the comment body string. */
+                    size_t cchAppend;
+                    if (offFirstNonBlank == ~(size_t)0)
+                        cchAppend = 0; /* empty line */
+                    else
+                    {
+                        offLineStart = offFirstNonBlank;
+                        cchAppend = offLastNonBlank + 1 - offLineStart;
+                        Assert(cchAppend <= cchLine);
+                    }
+
+                    size_t cchNewBody = cchBody + (cchBody > 0) + cchAppend;
+                    if (cchNewBody >= cbBodyAlloc)
+                    {
+                        cbBodyAlloc = RT_MAX(cbBodyAlloc ? cbBodyAlloc * 2 : _1K, RT_ALIGN_Z(cchNewBody + 64, 128));
+                        void *pvNew = RTMemRealloc(pszBody, cbBodyAlloc);
+                        if (pvNew)
+                            pszBody = (char *)pvNew;
+                        else
+                        {
+                            RTMemFree(pszBody);
+                            return VERR_NO_MEMORY;
+                        }
+                    }
+
+                    if (cchBody > 0)                        /* no leading blank lines */
+                        pszBody[cchBody++] = '\n';
+                    else if (cchAppend == 0)
+                        Info.cBlankLinesBefore++;
+                    memcpy(&pszBody[cchBody], &pchLine[offLineStart], cchAppend);
+                    cchBody += cchAppend;
+                    pszBody[cchBody] = '\0';
+
+                    /* Advance to the next line, if we haven't yet seen the end of this comment. */
+                    if (Info.iLineEnd != UINT32_MAX)
+                        break;
+                    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+                    if (!pchLine)
+                    {
+                        Info.offEnd   = (uint32_t)cchLine;
+                        Info.iLineEnd = iLine;
+                        break;
+                    }
+                    iLine++;
+                    off = 0;
+                }
+
+                /* Strip trailing empty lines in the body. */
+                Info.cBlankLinesAfter = 0;
+                while (cchBody >= 1 && pszBody[cchBody - 1] == '\n')
+                {
+                    Info.cBlankLinesAfter++;
+                    pszBody[--cchBody] = '\0';
+                }
+
+                /* Do the callback. */
+                int rc = pfnCallback(&Info, pszBody, cchBody, pvUser);
+                RTMemFree(pszBody);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (rc > VINF_SUCCESS && rcRet == VINF_SUCCESS)
+                    rcRet = rc;
+            }
+            else
+                off++;
         } /* for each character in the line */
 
         iLine++;
@@ -838,7 +1016,7 @@ static int enumerateBatchComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCal
     {
         /*
          * Skip leading blanks and check for 'rem'.
-         * At the moment we do not parse '::lable-comments'.
+         * At the moment we do not parse '::label-comments'.
          */
         size_t off = 0;
         while (off + 3 < cchLine && RT_C_IS_SPACE(pchLine[off]))
@@ -1000,6 +1178,9 @@ int ScmEnumerateComments(PSCMSTREAM pIn, SCMCOMMENTSTYLE enmCommentStyle, PFNSCM
 
         case kScmCommentStyle_Tick:
             return enumerateSimpleLineComments(pIn, '\'', isTickComment, pfnCallback, pvUser);
+
+        case kScmCommentStyle_Xml:
+            return enumerateXmlComments(pIn, pfnCallback, pvUser);
 
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
