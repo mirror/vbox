@@ -83,7 +83,7 @@
  */
 
 /*
- * Copyright (C) 2008-2022 Oracle Corporation
+ * Copyright (C) 2008-2022 Oracle and/or its affiliates.
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General
@@ -100,6 +100,8 @@
  * language indicating that LGPLv2 or any later version may be used,
  * or where a choice of which version of the LGPL is applied is
  * otherwise unspecified.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-only
  */
 
 #ifndef ___VirtualBox_CAPI_h
