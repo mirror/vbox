@@ -27,7 +27,7 @@
 
 --filter-out-dirs /common/.
 --filter-out-dirs /freebsd.*/.
---filter-out-dirs /linux.*/.
+--filter-out-dirs /linux.amd64/.
 --filter-out-dirs /os2.*/.
 --filter-out-dirs /solaris.*/.
 --filter-out-dirs /win.*/.

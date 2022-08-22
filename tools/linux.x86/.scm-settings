@@ -27,6 +27,7 @@
 
 --filter-files .scm-settings|*.sh
 
+--filter-out-dirs /bin/.
 --filter-out-dirs /qt/.
 --filter-out-dirs /nasm/.
 --filter-out-dirs /yasm/.
