@@ -139,22 +139,22 @@ $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg: \
 
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+		-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+		-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+		-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Welcome.rtf \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf
 	@# Copy the resources.
 	$(INSTALL) -m 0644 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Conclusion.rtf
 
 	$(SED) \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Localizable.strings \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Localizable.strings
 	$(INSTALL) -m 0644 $(VBOX_BRAND_DARWIN_INSTALLER_BG)                          $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/background.tif
@@ -163,17 +163,17 @@ $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg: \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
 		$(SED) \
-			-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-			-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-			-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-			-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+			-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+			-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+			-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+			-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
 			--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.rtf \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)$(NLTAB) \
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VIRTUALBOX_CONCLUSION_RTF)           $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.rtf$(NLTAB) \
 		$(SED) \
-			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-			-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+			-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+			-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+			-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 			--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Localizable.strings \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_LOCALIZABLE_STRINGS)$(NLTAB) \
 	)

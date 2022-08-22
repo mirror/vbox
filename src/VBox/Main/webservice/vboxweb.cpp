@@ -1076,8 +1076,7 @@ int main(int argc, char *argv[])
     g_mapThreads[RTThreadSelf()] = "[M  ]";
 
     RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " web service Version " VBOX_VERSION_STRING "\n"
-                            "(C) 2007-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                            "All rights reserved.\n");
+                            "Copyright (C) 2007-" VBOX_C_YEAR " " VBOX_VENDOR "\n");
 
     int c;
     const char *pszLogFile = NULL;

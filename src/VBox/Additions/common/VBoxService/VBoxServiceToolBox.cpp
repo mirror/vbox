@@ -183,9 +183,7 @@ static void vgsvcToolboxShowUsageHeader(void)
 {
     RTPrintf(VBOX_PRODUCT " Guest Toolbox Version "
              VBOX_VERSION_STRING "\n"
-             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n"
-             "\n");
+             "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
     RTPrintf("Usage:\n\n");
 }
 

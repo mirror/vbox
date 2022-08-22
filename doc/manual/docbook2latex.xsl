@@ -200,7 +200,7 @@
 
   <xsl:template match="bookinfo">
     <xsl:apply-templates />
-    <xsl:text>&#x0a;\newcommand\docbookbookinfocopyright{\copyright{} \docbookbookinfocopyrightyear{} \docbookbookinfocopyrightholder{}}&#x0a;
+    <xsl:text>&#x0a;\newcommand\docbookbookinfocopyright{Copyright \copyright{} \docbookbookinfocopyrightyear{} \docbookbookinfocopyrightholder{}}&#x0a;
 \author{ \docbooktitleedition \\ %
 \\ %
 </xsl:text>

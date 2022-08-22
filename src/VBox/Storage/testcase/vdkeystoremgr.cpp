@@ -63,9 +63,7 @@ static void showLogo(PRTSTREAM pStrm)
     if (!s_fShown)
     {
         RTStrmPrintf(pStrm, VBOX_PRODUCT " VD Keystore Mgr " VBOX_VERSION_STRING "\n"
-                     "(C) 2016-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                     "All rights reserved.\n"
-                     "\n");
+                     "Copyright (C) 2016-" VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
         s_fShown = true;
     }
 }

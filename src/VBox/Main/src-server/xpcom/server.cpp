@@ -632,9 +632,7 @@ static void showUsage(const char *pcszFileName)
 {
     RTPrintf(VBOX_PRODUCT " VBoxSVC "
              VBOX_VERSION_STRING "\n"
-             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n"
-             "\n");
+             "Copyright (C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
     RTPrintf("By default the service will be started in the background.\n"
              "\n");
     RTPrintf("Usage:\n"
@@ -888,8 +886,7 @@ int main(int argc, char **argv)
             for (size_t i = cSize; i > 0; i--)
                 putchar('*');
             RTPrintf("\n%s\n", szBuf);
-            RTPrintf("(C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                     "All rights reserved.\n");
+            RTPrintf("Copyright (C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
 #ifdef DEBUG
             RTPrintf("Debug version.\n");
 #endif

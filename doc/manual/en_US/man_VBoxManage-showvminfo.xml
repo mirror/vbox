@@ -161,8 +161,7 @@
     </para>
 <screen>$ VBoxManage showvminfo "Windows 10"
 VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-(C) 2005-2019 Oracle Corporation
-All rights reserved.
+Copyright (C) 2005-2022 Oracle and/or its affiliates
 
 Name:            Windows 10
 Groups:          /

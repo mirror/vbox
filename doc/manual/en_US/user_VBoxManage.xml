@@ -132,8 +132,7 @@
 
 <screen>$ VBoxManage createvm --name "SUSE 10.2" --register
 VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-(C) 2005-2018 Oracle Corporation
-All rights reserved.
+Copyright (C) 2005-2022 Oracle and/or its affiliates
 
 Virtual machine 'SUSE 10.2' is created.
 UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5

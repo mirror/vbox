@@ -209,27 +209,27 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+		-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+		-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+		-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Welcome.rtf \
 		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Welcome.rtf
 	@# Do keyword replacement in the distribution script.
 	$(SED) \
-		-e 's/@VBOX_TARGET_ARCH@/$(VBOX_DI_TARGET_ARCH)/g' \
-		-e 's/@VBOX_ARCH_LIST@/$(VBOX_DI_ARCH_LIST)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/distribution.dist \
+		-e 's+@VBOX_TARGET_ARCH@+$(VBOX_DI_TARGET_ARCH)+g' \
+		-e 's+@VBOX_ARCH_LIST@+$(VBOX_DI_ARCH_LIST)+g' \
+		--output $(VBOX_PATH_PACK_TMP)+distribution.dist \
 		$(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist, $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution-driverless.dist)
 	@# Copy the resources.
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Conclusion.rtf                   $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Conclusion.rtf
 	$(SED) \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/English.lproj/Localizable.strings \
 		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Localizable.strings
 	$(INSTALL) -m 0644 $(VBOX_BRAND_DARWIN_INSTALLER_BG)                                    $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/background.tif
@@ -237,17 +237,17 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
 		$(SED) \
-			-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-			-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-			-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-			-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+			-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+			-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+			-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+			-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.rtf \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)$(NLTAB) \
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VIRTUALBOX_CONCLUSION_RTF)                $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.rtf$(NLTAB) \
 		$(SED) \
-			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-			-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+			-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+			-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+			-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Localizable.strings \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_LOCALIZABLE_STRINGS)$(NLTAB) \
 	)
@@ -331,13 +331,13 @@ endif
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+		-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+		-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+		-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc/PkgBuildComponent.plist \
 		$(VBOX_PATH_DI_SRC)/VBoxKEXTs/PkgBuildComponent.plist
 	@# Copy the resources.
@@ -882,13 +882,13 @@ if 0 # Handy for testing the app bundle w/o having to reinstall all the time (ju
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+		-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+		-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+		-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+		-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+		-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+		-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/PkgBuildComponent.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/PkgBuildComponent.plist
 	@# Copy the resources.

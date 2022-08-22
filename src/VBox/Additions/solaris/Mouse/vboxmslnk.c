@@ -105,8 +105,7 @@ void handleArgs(int argc, char *argv[], int *pfNoLogo)
         printf(VBOX_PRODUCT
                " Guest Additions enabling utility for Solaris pointer\nintegration Version "
                VBOX_VERSION_STRING "\n"
-               "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-               "All rights reserved.\n\n");
+               "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
     if (fShowUsage)
     {
         printf("Usage:\n  -V|--version  print the tool version.\n"

@@ -111,9 +111,7 @@ static void showLogo(PRTSTREAM pStrm)
     if (!s_fShown)
     {
         RTStrmPrintf(pStrm, VBOX_PRODUCT " Disk Utility " VBOX_VERSION_STRING "\n"
-                     "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                     "All rights reserved.\n"
-                     "\n");
+                     "Copyright (C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
         s_fShown = true;
     }
 }

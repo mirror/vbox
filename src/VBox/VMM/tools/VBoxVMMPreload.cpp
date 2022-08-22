@@ -121,8 +121,7 @@ static RTEXITCODE ParseOptions(int argc, char **argv, bool *pfExit)
 
             case 'h':
                 RTPrintf(VBOX_PRODUCT " VMM ring-0 Module Preloader Version " VBOX_VERSION_STRING
-                         "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                         "All rights reserved.\n"
+                         "Copyright (C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                          "\n"
                          "Usage: VBoxVMMPreload [-hlqvV] [-o|--only <mod>]\n"
                          "\n");

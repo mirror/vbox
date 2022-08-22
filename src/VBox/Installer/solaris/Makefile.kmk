@@ -646,19 +646,19 @@ $(VBOX_PATH_SI_SCRATCH)/dist-copy.ts: \
 			$(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/icons/hicolor/$(size)x$(size)/mimetypes/virtualbox-$(type).png))
 
 # Files related to package creation.
-	$(SED) -e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
-		-e "s/@VBOX_VENDOR@/$(VBOX_VENDOR)/g" \
-		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
-		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
-		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
-		-e "s/@VBOX_PSTAMP@/$(PKGINFO_PSTAMP)/g" \
+	$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g" \
+		-e "s+@VBOX_VENDOR@+$(VBOX_VENDOR)+g" \
+		-e "s+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g" \
+		-e "s+@VBOX_VERSION_REVSTAMP@+$(PKGINFO_REVSTAMP)+g" \
+		-e "s+@UNAME_P@+$(PKGINFO_ARCH)+g" \
+		-e "s+@VBOX_PSTAMP@+$(PKGINFO_PSTAMP)+g" \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo
-	$(SED) -e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
-		-e "s/@VBOX_VENDOR@/$(VBOX_VENDOR)/g" \
-		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_SMF_STYLE)/g" \
-		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
-		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
+	$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g" \
+		-e "s+@VBOX_VENDOR@+$(VBOX_VENDOR)+g" \
+		-e "s+@VBOX_VERSION_STRING@+$(VBOX_VERSION_SMF_STYLE)+g" \
+		-e "s+@VBOX_SVN_REV@+$(VBOX_SVN_REV)+g" \
+		-e "s+@UNAME_P@+$(PKGINFO_ARCH)+g" \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/vbox-ips.mog \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox-ips.mog
 	$(APPEND) -t $@ "done"
@@ -694,11 +694,11 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(call MSG_L1,Creating final tar.gz package: $(PKG_FILENAME).tar.gz)
 	$(QUIET)$(RM) -f -- $(VBOX_PATH_SI_SCRATCH)/ReadMe.txt "$@"
 	$(QUIET)$(SED) \
-		-e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
-		-e "s/@VBOX_VENDOR@/$(VBOX_VENDOR)/g" \
-		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
-		-e "s/@KBUILD_TARGET_ARCH@/$(KBUILD_TARGET_ARCH)/g" \
-		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
+		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g" \
+		-e "s+@VBOX_VENDOR@+$(VBOX_VENDOR)+g" \
+		-e "s+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g" \
+		-e "s+@KBUILD_TARGET_ARCH@+$(KBUILD_TARGET_ARCH)+g" \
+		-e "s+@VBOX_SVN_REV@+$(VBOX_SVN_REV)+g" \
 		--output $(VBOX_PATH_SI_SCRATCH)/ReadMe.txt \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt
 	$(QUIET)$(VBOX_SI_GTAR) -C $(VBOX_PATH_SI_SCRATCH) -czvf "$@" --show-transformed-name \

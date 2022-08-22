@@ -3851,8 +3851,7 @@ static DECLCALLBACK(void) logHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE e
         {
             pfnLog(pLoggerRelease,
                    "TestExecService (Validation Kit TxS) %s r%s (verbosity: %u) %s %s (%s %s) release log\n"
-                   "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                   "All rights reserved.\n\n"
+                   "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n"
                    "Log opened %s\n",
                    RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbose,
                    KBUILD_TARGET, KBUILD_TARGET_ARCH,

@@ -442,8 +442,7 @@ int main(int argc, char **argv)
 #endif
                 case 'h':
                     RTPrintf(VBOX_PRODUCT " Helper for testing 2D/3D OpenGL capabilities %u.%u.%u\n"
-                             "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                             "All rights reserved.\n"
+                             "Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                              "\n"
                              "Parameters:\n"
 #ifdef VBOX_WITH_VIDEOHWACCEL

@@ -125,8 +125,7 @@ static RTEXITCODE DoStandardOption(int ch)
         case 'h':
         {
             RTMsgInfo(VBOX_PRODUCT " Extension Pack Helper App\n"
-                      "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                      "All rights reserved.\n"
+                      "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
                       "\n"
                       "This NOT intended for general use, please use VBoxManage instead\n"
                       "or call the IExtPackManager API directly.\n"

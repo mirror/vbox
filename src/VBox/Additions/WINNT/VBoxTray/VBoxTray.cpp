@@ -985,8 +985,7 @@ int main(int cArgs, char **papszArgs)
                 hlpShowMessageBox(VBOX_PRODUCT " - " VBOX_VBOXTRAY_TITLE,
                                   MB_ICONINFORMATION,
                      "-- " VBOX_PRODUCT " %s v%u.%u.%ur%u --\n\n"
-                     "Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                     "All rights reserved.\n\n"
+                     "Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n\n"
                      "Command Line Parameters:\n\n"
                      "-l, --logfile <file>\n"
                      "    Enables logging to a file\n"

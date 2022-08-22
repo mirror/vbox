@@ -28,7 +28,7 @@
         </dict>
     </dict>
 
-    <key>NSHumanReadableCopyright</key>            <string>Copyright © 2007-@VBOX_C_YEAR@ Oracle Inc. All rights reserved.</string>
+    <key>NSHumanReadableCopyright</key>            <string>Copyright © 2007-@VBOX_C_YEAR@ @VBOX_VENDOR@</string>
 
     <key>OSBundleLibraries</key>
     <dict>

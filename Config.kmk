@@ -260,7 +260,7 @@ ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
 endif
 
 # Some info on the vendor
-VBOX_VENDOR       = Oracle Corporation
+VBOX_VENDOR       = Oracle and/or its affiliates
 VBOX_VENDOR_SHORT = Oracle
 VBOX_PRODUCT      = Oracle VM VirtualBox
 # Not all could be done automatically. Here is a list of known places which
@@ -3755,16 +3755,16 @@ endif
 # @param    2        The output filename.
 #
 VBOX_EDIT_VERSION_CMD_FN = $(SED) \
-	-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-	-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-	-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-	-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-	-e 's/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g' \
-	-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-	-e 's/@VBOX_VENDOR_SHORT@/$(VBOX_VENDOR_SHORT)/g' \
-	-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-	-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-	-e 's/@VBOX_PACKAGE_STRING@/$(VBOX_PACKAGE_STRING)/g' \
+	-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+	-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+	-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+	-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+	-e 's+@VBOX_SVN_REV@+$(VBOX_SVN_REV)+g' \
+	-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+	-e 's+@VBOX_VENDOR_SHORT@+$(VBOX_VENDOR_SHORT)+g' \
+	-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+	-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
+	-e 's+@VBOX_PACKAGE_STRING@+$(VBOX_PACKAGE_STRING)+g' \
 	--output $(2) $(1)
 
 ##
@@ -3793,19 +3793,19 @@ endef
 # @param    2        The output filename.
 #
 VBOX_EDIT_VERSION_AND_BUILD_CMD_FN = $(SED) \
-	-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-	-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-	-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-	-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-	-e 's/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g' \
-	-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-	-e 's/@VBOX_VENDOR_SHORT@/$(VBOX_VENDOR_SHORT)/g' \
-	-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-	-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-	-e 's/@VBOX_PACKAGE_STRING@/$(VBOX_PACKAGE_STRING)/g' \
-	-e 's/@KBUILD_TYPE@/$(KBUILD_TYPE)/g' \
-	-e 's/@KBUILD_TARGET@/$(KBUILD_TARGET)/g' \
-	-e 's/@KBUILD_TARGET_ARCH@/$(KBUILD_TARGET_ARCH)/g' \
+	-e 's+@VBOX_VERSION_MAJOR@+$(VBOX_VERSION_MAJOR)+g' \
+	-e 's+@VBOX_VERSION_MINOR@+$(VBOX_VERSION_MINOR)+g' \
+	-e 's+@VBOX_VERSION_BUILD@+$(VBOX_VERSION_BUILD)+g' \
+	-e 's+@VBOX_VERSION_STRING@+$(VBOX_VERSION_STRING)+g' \
+	-e 's+@VBOX_SVN_REV@+$(VBOX_SVN_REV)+g' \
+	-e 's+@VBOX_VENDOR@+$(VBOX_VENDOR)+g' \
+	-e 's+@VBOX_VENDOR_SHORT@+$(VBOX_VENDOR_SHORT)+g' \
+	-e 's+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+g' \
+	-e 's+@VBOX_C_YEAR@+$(VBOX_C_YEAR)+g' \
+	-e 's+@VBOX_PACKAGE_STRING@+$(VBOX_PACKAGE_STRING)+g' \
+	-e 's+@KBUILD_TYPE@+$(KBUILD_TYPE)+g' \
+	-e 's+@KBUILD_TARGET@+$(KBUILD_TARGET)+g' \
+	-e 's+@KBUILD_TARGET_ARCH@+$(KBUILD_TARGET_ARCH)+g' \
 	--output $(2) $(1)
 
 ##
