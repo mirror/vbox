@@ -51,7 +51,7 @@
 void rtNoCrtFatalWrite(const char *pchMsg, size_t cchMsg)
 {
     DWORD cbIgn;
-    WriteFile(GetStdHandle(STD_ERROR_HANDLE ), pchMsg, (DWORD)cchMsg, &cbIgn, NULL);
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), pchMsg, (DWORD)cchMsg, &cbIgn, NULL);
 }
 
 

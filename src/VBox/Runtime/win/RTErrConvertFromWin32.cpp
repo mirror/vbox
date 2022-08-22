@@ -456,7 +456,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
     }
 
     /* unknown error. */
-#ifndef IN_SUP_HARDENED_R3
+#if !defined(IN_SUP_HARDENED_R3) \
+ && !defined(IPRT_NO_CRT) /* Please, don't drag log.cpp into the no-CRT images! */
     AssertLogRelMsgFailed(("Unhandled error %u\n", uNativeCode));
 #else
     /* hardened main has no LogRel */
