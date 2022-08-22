@@ -183,9 +183,9 @@ g_ksAlertFrom           = 'vsheriff@oracle.com';
 ## Subject for email alert.
 g_ksAlertSubject        = 'Virtual Test Sheriff Alert';
 ## List of users to send alerts.
-g_asAlertList           = ['lelik', 'werner'];
+g_asAlertList           = ['alertuser1', 'alertuser2'];
 ## iLOM password.
-g_ksLomPassword         = 'password';
+g_ksLomPassword         = 'put_your_ILOM_password_here_if_applicable';
 
 ## @}
 
