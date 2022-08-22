@@ -3191,6 +3191,7 @@ RuntimeR3NoCrt_SOURCES.amd64 := \
 RuntimeR3NoCrt_SOURCES.win := \
 	r3/win/nocrt-startup-exe-win.cpp \
 	r3/win/nocrt-startup-common-win.cpp \
+  	r3/win/nocrt-fatal-write-win.cpp \
 	r3/win/nocrt-alloc-win.cpp \
 	r3/win/nocrt-streams-win.cpp \
 	\
