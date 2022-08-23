@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - Common Windows startup code.
+ * IPRT - Process Data Ring-3.
  */
 
 /*
@@ -38,58 +38,30 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/nocrt.h"
-#include "internal/process.h"
-
-#include <iprt/nt/nt-and-windows.h>
-#ifndef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-# include <iprt/assert.h>
-#endif
-#include <iprt/getopt.h>
-#include <iprt/message.h>
-#include <iprt/path.h>
-#include <iprt/string.h>
-#include <iprt/utf16.h>
-
-#include "internal/compiler-vcc.h"
+#include "internal/iprt.h"
 #include "internal/process.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/**
+ * The process identifier of the running process.
+ */
+DECL_HIDDEN_DATA(RTPROCESS)         g_ProcessSelf = NIL_RTPROCESS;
 
-void rtVccWinInitProcExecPath(void)
-{
-    WCHAR wszPath[RTPATH_MAX];
-    UINT cwcPath = GetModuleFileNameW(NULL, wszPath, RT_ELEMENTS(wszPath));
-    if (cwcPath)
-    {
-        char *pszDst = g_szrtProcExePath;
-        int rc = RTUtf16ToUtf8Ex(wszPath, cwcPath, &pszDst, sizeof(g_szrtProcExePath), &g_cchrtProcExePath);
-        if (RT_SUCCESS(rc))
-        {
-            g_cchrtProcExeDir = g_offrtProcName = RTPathFilename(pszDst) - g_szrtProcExePath;
-            while (   g_cchrtProcExeDir >= 2
-                   && RTPATH_IS_SLASH(g_szrtProcExePath[g_cchrtProcExeDir - 1])
-                   && g_szrtProcExePath[g_cchrtProcExeDir - 2] != ':')
-                g_cchrtProcExeDir--;
-        }
-        else
-        {
-#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-            RTMsgError("initProcExecPath: RTUtf16ToUtf8Ex failed: %Rrc\n", rc);
-#else
-            rtNoCrtFatalMsgWithRc(RT_STR_TUPLE("initProcExecPath: RTUtf16ToUtf8Ex failed: "), rc);
-#endif
-        }
-    }
-    else
-    {
-#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-        RTMsgError("initProcExecPath: GetModuleFileNameW failed: %Rhrc\n", GetLastError());
-#else
-        rtNoCrtFatalWriteBegin(RT_STR_TUPLE("initProcExecPath: GetModuleFileNameW failed: "));
-        rtNoCrtFatalWriteWinRc(GetLastError());
-        rtNoCrtFatalWrite(RT_STR_TUPLE("\r\n"));
-#endif
-    }
-}
+/**
+ * The current process priority.
+ */
+DECL_HIDDEN_DATA(RTPROCPRIORITY)    g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
+
+/** The process path.
+ * This is used by RTPathExecDir and RTProcGetExecutablePath and set by rtProcInitName. */
+DECL_HIDDEN_DATA(char)              g_szrtProcExePath[RTPATH_MAX];
+/** The length of g_szrtProcExePath. */
+DECL_HIDDEN_DATA(size_t)            g_cchrtProcExePath;
+/** The offset of the process name into g_szrtProcExePath. */
+DECL_HIDDEN_DATA(size_t)            g_offrtProcName;
+/** The length of directory path component of g_szrtProcExePath. */
+DECL_HIDDEN_DATA(size_t)            g_cchrtProcExeDir;
 

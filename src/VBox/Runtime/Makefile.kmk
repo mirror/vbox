@@ -779,6 +779,8 @@ RuntimeBaseR3_SOURCES      := \
 	r3/ftp-server.cpp \
 	r3/http-server.cpp \
 	r3/init.cpp \
+	r3/init-data.cpp \
+	r3/process-data.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \
@@ -2436,6 +2438,8 @@ RuntimeBldProg_SOURCES          = \
 	r3/fs.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp \
 	r3/init.cpp \
+	r3/init-data.cpp \
+	r3/process-data.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \

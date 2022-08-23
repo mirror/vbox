@@ -84,6 +84,7 @@
 
 #include "init.h"
 #include "internal/alignmentchecks.h"
+#include "internal/initterm.h"
 #include "internal/path.h"
 #include "internal/process.h"
 #include "internal/thread.h"
@@ -93,23 +94,6 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** The number of calls to RTR3Init*. */
-static int32_t volatile     g_cUsers = 0;
-/** Whether we're currently initializing the IPRT. */
-static bool volatile        g_fInitializing = false;
-
-#if !defined(IPRT_NO_CRT) || !defined(RT_OS_WINDOWS)
-/** The process path.
- * This is used by RTPathExecDir and RTProcGetExecutablePath and set by rtProcInitName. */
-DECL_HIDDEN_DATA(char)      g_szrtProcExePath[RTPATH_MAX];
-/** The length of g_szrtProcExePath. */
-DECL_HIDDEN_DATA(size_t)    g_cchrtProcExePath;
-/** The offset of the process name into g_szrtProcExePath. */
-DECL_HIDDEN_DATA(size_t)    g_offrtProcName;
-#endif
-/** The length of directory path component of g_szrtProcExePath. */
-DECL_HIDDEN_DATA(size_t)    g_cchrtProcDir;
-
 /** The IPRT init flags. */
 static uint32_t             g_fInitFlags;
 
@@ -119,27 +103,6 @@ static int                  g_crtArgs = -1;
 static char **              g_papszrtArgs;
 /** The original argument vector of the program. */
 static char **              g_papszrtOrgArgs;
-
-/**
- * Program start nanosecond TS.
- */
-DECL_HIDDEN_DATA(uint64_t)  g_u64ProgramStartNanoTS;
-
-/**
- * The process identifier of the running process.
- */
-DECL_HIDDEN_DATA(RTPROCESS) g_ProcessSelf = NIL_RTPROCESS;
-
-/**
- * The current process priority.
- */
-DECL_HIDDEN_DATA(RTPROCPRIORITY)  g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
-
-/**
- * Set if the atexit callback has been called, i.e. indicating
- * that the process is terminating.
- */
-DECL_HIDDEN_DATA(bool volatile)   g_frtAtExitCalled = false;
 
 #ifdef IPRT_WITH_ALIGNMENT_CHECKS
 /**
@@ -169,7 +132,7 @@ static void rtR3ExitCallback(void) RT_NOTHROW_DEF
 {
     ASMAtomicWriteBool(&g_frtAtExitCalled, true);
 
-    if (g_cUsers > 0)
+    if (g_crtR3Users > 0)
     {
         PRTLOGGER pLogger = RTLogGetDefaultInstance();
         if (pLogger)
@@ -248,7 +211,7 @@ static int rtR3InitProgramPath(const char *pszProgramPath)
      * Parse the name.
      */
     ssize_t offName;
-    g_cchrtProcExePath = RTPathParseSimple(g_szrtProcExePath, &g_cchrtProcDir, &offName, NULL);
+    g_cchrtProcExePath = RTPathParseSimple(g_szrtProcExePath, &g_cchrtProcExeDir, &offName, NULL);
     g_offrtProcName = offName;
     return VINF_SUCCESS;
 }
@@ -598,11 +561,11 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
      * We are ASSUMING that nobody will be able to race RTR3Init* calls when the
      * first one, the real init, is running (second assertion).
      */
-    int32_t cUsers = ASMAtomicIncS32(&g_cUsers);
+    int32_t cUsers = ASMAtomicIncS32(&g_crtR3Users);
     if (cUsers != 1)
     {
         AssertMsg(cUsers > 1, ("%d\n", cUsers));
-        Assert(!g_fInitializing);
+        Assert(!g_frtR3Initializing);
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
         /* Initialize the support library if requested. We've always ignored the
@@ -639,13 +602,13 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
     /*
      * Do the initialization.
      */
-    ASMAtomicWriteBool(&g_fInitializing, true);
+    ASMAtomicWriteBool(&g_frtR3Initializing, true);
     int rc = rtR3InitBody(fFlags, cArgs, ppapszArgs, pszProgramPath);
-    ASMAtomicWriteBool(&g_fInitializing, false);
+    ASMAtomicWriteBool(&g_frtR3Initializing, false);
     if (RT_FAILURE(rc))
     {
         /* failure */
-        ASMAtomicDecS32(&g_cUsers);
+        ASMAtomicDecS32(&g_crtR3Users);
         return rc;
     }
 
@@ -685,7 +648,7 @@ RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***
 
 RTR3DECL(bool) RTR3InitIsInitialized(void)
 {
-    return g_cUsers >= 1 && !g_fInitializing;
+    return g_crtR3Users >= 1 && !g_frtR3Initializing;
 }
 
 

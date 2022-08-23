@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - Common Windows startup code.
+ * IPRT - Init Data Ring-3.
  */
 
 /*
@@ -38,58 +38,26 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/nocrt.h"
-#include "internal/process.h"
-
-#include <iprt/nt/nt-and-windows.h>
-#ifndef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-# include <iprt/assert.h>
-#endif
-#include <iprt/getopt.h>
-#include <iprt/message.h>
-#include <iprt/path.h>
-#include <iprt/string.h>
-#include <iprt/utf16.h>
-
-#include "internal/compiler-vcc.h"
-#include "internal/process.h"
+#include "internal/iprt.h"
+#include "internal/initterm.h"
+#include "internal/time.h"      /* g_u64ProgramStartNanoTS */
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** The number of calls to RTR3Init*. */
+DECL_HIDDEN_DATA(int32_t volatile)  g_crtR3Users        = 0;
+/** Whether we're currently initializing the IPRT. */
+DECL_HIDDEN_DATA(bool volatile)     g_frtR3Initializing = false;
+/**
+ * Set if the atexit callback has been called, i.e. indicating
+ * that the process is terminating.
+ */
+DECL_HIDDEN_DATA(bool volatile)     g_frtAtExitCalled   = false;
 
-void rtVccWinInitProcExecPath(void)
-{
-    WCHAR wszPath[RTPATH_MAX];
-    UINT cwcPath = GetModuleFileNameW(NULL, wszPath, RT_ELEMENTS(wszPath));
-    if (cwcPath)
-    {
-        char *pszDst = g_szrtProcExePath;
-        int rc = RTUtf16ToUtf8Ex(wszPath, cwcPath, &pszDst, sizeof(g_szrtProcExePath), &g_cchrtProcExePath);
-        if (RT_SUCCESS(rc))
-        {
-            g_cchrtProcExeDir = g_offrtProcName = RTPathFilename(pszDst) - g_szrtProcExePath;
-            while (   g_cchrtProcExeDir >= 2
-                   && RTPATH_IS_SLASH(g_szrtProcExePath[g_cchrtProcExeDir - 1])
-                   && g_szrtProcExePath[g_cchrtProcExeDir - 2] != ':')
-                g_cchrtProcExeDir--;
-        }
-        else
-        {
-#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-            RTMsgError("initProcExecPath: RTUtf16ToUtf8Ex failed: %Rrc\n", rc);
-#else
-            rtNoCrtFatalMsgWithRc(RT_STR_TUPLE("initProcExecPath: RTUtf16ToUtf8Ex failed: "), rc);
-#endif
-        }
-    }
-    else
-    {
-#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-        RTMsgError("initProcExecPath: GetModuleFileNameW failed: %Rhrc\n", GetLastError());
-#else
-        rtNoCrtFatalWriteBegin(RT_STR_TUPLE("initProcExecPath: GetModuleFileNameW failed: "));
-        rtNoCrtFatalWriteWinRc(GetLastError());
-        rtNoCrtFatalWrite(RT_STR_TUPLE("\r\n"));
-#endif
-    }
-}
+/**
+ * Program start nanosecond TS.
+ */
+DECL_HIDDEN_DATA(uint64_t)          g_u64ProgramStartNanoTS = 0;
 

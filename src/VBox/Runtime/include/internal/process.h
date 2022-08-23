@@ -49,9 +49,8 @@ extern DECL_HIDDEN_DATA(RTPROCESS)      g_ProcessSelf;
 extern DECL_HIDDEN_DATA(RTPROCPRIORITY) g_enmProcessPriority;
 extern DECL_HIDDEN_DATA(char)           g_szrtProcExePath[RTPATH_MAX];
 extern DECL_HIDDEN_DATA(size_t)         g_cchrtProcExePath;
-extern DECL_HIDDEN_DATA(size_t)         g_cchrtProcDir;
+extern DECL_HIDDEN_DATA(size_t)         g_cchrtProcExeDir;
 extern DECL_HIDDEN_DATA(size_t)         g_offrtProcName;
-extern DECL_HIDDEN_DATA(bool volatile)  g_frtAtExitCalled;
 
 /**
  * Validates and sets the process priority.

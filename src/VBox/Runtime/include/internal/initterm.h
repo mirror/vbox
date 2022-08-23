@@ -65,6 +65,22 @@ DECLHIDDEN(void) rtR0MemExecCleanup(void);
 
 #endif /* IN_RING0 */
 
+#ifdef IN_RING3
+
+extern DECL_HIDDEN_DATA(int32_t volatile)   g_crtR3Users;
+extern DECL_HIDDEN_DATA(bool volatile)      g_frtR3Initializing;
+extern DECL_HIDDEN_DATA(bool volatile)      g_frtAtExitCalled;
+
+/**
+ * Internal version of RTR3InitIsInitialized.
+ */
+DECLINLINE(bool) rtInitIsInitialized(void)
+{
+    return g_crtR3Users >= 1 && !g_frtR3Initializing;
+}
+
+#endif
+
 RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_INTERNAL_initterm_h */

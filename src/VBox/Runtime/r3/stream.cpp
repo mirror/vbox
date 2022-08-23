@@ -88,6 +88,9 @@
 
 #include "internal/alignmentchecks.h"
 #include "internal/magics.h"
+#ifdef IPRT_NO_CRT
+# include "internal/initterm.h"
+#endif
 
 #ifdef RTSTREAM_STANDALONE
 # ifdef _MSC_VER
@@ -361,8 +364,16 @@ static int rtStrmAllocLock(PRTSTREAM pStream)
         return VERR_NO_MEMORY;
 
     /* The native stream lock are normally not recursive. */
-    int rc = RTCritSectInitEx(pCritSect, RTCRITSECT_FLAGS_NO_NESTING,
-                              NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemSpinMutex");
+    uint32_t fFlags = RTCRITSECT_FLAGS_NO_NESTING;
+# ifdef IPRT_NO_CRT
+    /* IPRT is often used deliberatly without initialization in no-CRT
+       binaries (for instance VBoxAddInstallNt3x.exe), so in order to avoid
+       asserting in the lock validator we add the bootstrap hack that disable
+       lock validation for the section. */
+    if (!rtInitIsInitialized())
+        fFlags |= RTCRITSECT_FLAGS_BOOTSTRAP_HACK;
+# endif
+    int rc = RTCritSectInitEx(pCritSect, fFlags, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemSpinMutex");
     if (RT_SUCCESS(rc))
     {
         rc = RTCritSectEnter(pCritSect);
