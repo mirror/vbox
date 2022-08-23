@@ -34,7 +34,9 @@
 ; SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 ;
 
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
+
 
 BEGINCODE
 
@@ -72,6 +74,7 @@ RT_NOCRT_BEGINPROC memmove
         mov     eax, edi                ; save the return value
  %endif
 %endif
+        SEH64_END_PROLOGUE
 
         ;
         ; Decide which direction to perform the copy in.
