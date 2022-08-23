@@ -3209,6 +3209,14 @@
         <source>Remove Inaccessible Media</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Online Documentation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -7691,27 +7699,52 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Sonuç&amp;nbsp;Kodu: </translation>
+        <translation type="vanished">Sonuç&amp;nbsp;Kodu: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Bileşen: </translation>
+        <translation type="vanished">Bileşen: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Arayüz: </translation>
+        <translation type="vanished">Arayüz: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Çağrılan: </translation>
+        <translation type="vanished">Çağrılan: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Çağrılan&amp;nbsp;RC: </translation>
+        <translation type="vanished">Çağrılan&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11138,23 +11171,11 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open in Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in Link New Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Delete Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmark added: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11207,6 +11228,10 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark added:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11702,14 +11727,6 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hostname should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Domain name should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16739,15 +16756,15 @@ Oturum Panelini kullanın</translation>
         <translation>Arama türünü seçin</translation>
     </message>
     <message>
-        <source>Enter the search term and press Return</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show the previous item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Enter/Return</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16858,7 +16875,7 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attached the selected medium to the drive</source>
+        <source>Attach the selected medium to the drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17253,12 +17270,12 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Hata ID: &lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Hata ID: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>Önem: </translation>
+        <translation type="vanished">Önem: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
@@ -19917,6 +19934,16 @@ Oturum Panelini kullanın</translation>
         <source>Can&apos;t toggle VRDE server ...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Severity:</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -20102,15 +20129,15 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Holds the name for new virtual machine.</source>
+        <source>Holds the name for virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the folder hosting new virtual machine.</source>
+        <source>Selects the folder hosting virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects an ISO image to be attached to the new virtual machine or used in unattended install.</source>
+        <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20745,15 +20772,15 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished">Varsayılan IPv6 yönlendirme</translation>
     </message>
     <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Registered NAT networks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered host-only networks</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -23073,19 +23100,19 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>The file </source>
-        <translation>Dosya </translation>
+        <translation type="vanished">Dosya </translation>
     </message>
     <message>
         <source> has been deleted</source>
-        <translation> silindi</translation>
+        <translation type="vanished"> silindi</translation>
     </message>
     <message>
         <source>Deleting the file </source>
-        <translation>Silinen dosya </translation>
+        <translation type="vanished">Silinen dosya </translation>
     </message>
     <message>
         <source> has failed</source>
-        <translation> başarısız oldu</translation>
+        <translation type="vanished"> başarısız oldu</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -23166,6 +23193,14 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>Help</source>
         <translation type="unfinished">Yardım</translation>
+    </message>
+    <message>
+        <source>The file %1 has been deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting the file %1 has failed</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -24866,7 +24901,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Export activity data of the machine </source>
+        <source>Export activity data of the machine &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25159,10 +25194,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>NoLogFile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -25794,15 +25825,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished">&amp;Kaynak:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26290,14 +26321,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Keep Hard&amp;ware UUIDs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -26315,6 +26338,14 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disk names will be preserved during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, hardware UUIDs will be preserved during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26578,7 +26609,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal cihazı dışa aktarmak için lütfen bir dosya adı seçin. Bunun yanı sıra, boyutu ve sonuçta oluşan arşiv içeriğini etkileyen seçeneklerin belirli bir miktarını belirleyebilirsiniz.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Sanal cihazı dışa aktarmak için lütfen bir dosya adı seçin. Bunun yanı sıra, boyutu ve sonuçta oluşan arşiv içeriğini etkileyen seçeneklerin belirli bir miktarını belirleyebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual system settings</source>
@@ -26673,11 +26704,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
+        <source>Virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Virtual machines</source>
+        <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26876,7 +26911,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>&lt;p&gt;Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lütfen sanal cihazı içe aktarmak için bir dosya seçin.  VirtualBox şu anda Açık Sanallaştırma Biçimi (OVF) olarak kaydedilmiş cihazları içe aktarmayı destekler.  Devam etmek için aşağıdan içe aktarılacak dosyayı seçin.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Lütfen sanal cihazı içe aktarmak için bir dosya seçin.  VirtualBox şu anda Açık Sanallaştırma Biçimi (OVF) olarak kaydedilmiş cihazları içe aktarmayı destekler.  Devam etmek için aşağıdan içe aktarılacak dosyayı seçin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>These are the the suggested settings of the cloud VM import procedure, they are influencing the resulting local VM instance. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
@@ -26943,10 +26978,6 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished">İçe aktarma sırasında tüm ağ bağdaştırıcıları için yeni MAC adresleri oluştur.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -26967,7 +26998,15 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished">Sabit sürücüleri VDI olarak iç&amp;e aktar</translation>
     </message>
     <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation type="unfinished">İşaretlendiğinde, bu cihaza ait tüm sabit sürücüler VDI biçiminde içe aktarılacaktır.</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27123,16 +27162,16 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished">&amp;Konum:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished">&amp;Kaynak:</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27420,15 +27459,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables headless boot (with no GUI) of the newly created virtual machine for the unattended guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -27456,10 +27487,6 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Detected OS type: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27480,23 +27507,11 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hardware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -27680,15 +27695,39 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Invalid Guest Additions installation media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest additions will be installed after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished">İşaretlendiğinde misafir, belli misafir İS&apos;lerin önyüklemesini gerektiren Genişletilmiş Donanım Yazılımı Arayüzünü (EFI) destekleyecek. Eğer bu seçenek etkinleştirildiyse, EFI&apos;sız tanınan İS&apos;leri önyükleme yapılamayacaktır.</translation>
+    </message>
+    <message>
+        <source>Detected OS type: %1. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

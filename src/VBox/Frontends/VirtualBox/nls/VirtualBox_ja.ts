@@ -3221,6 +3221,14 @@
         <source>Remove Inaccessible Media</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Online Documentation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -7714,27 +7722,52 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>終了コード&amp;nbsp;: </translation>
+        <translation type="vanished">終了コード&amp;nbsp;: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>コンポーネント: </translation>
+        <translation type="vanished">コンポーネント: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>インターフェース: </translation>
+        <translation type="vanished">インターフェース: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>呼び出し先: </translation>
+        <translation type="vanished">呼び出し先: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>呼び出し先&amp;nbsp;RC: </translation>
+        <translation type="vanished">呼び出し先&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11259,23 +11292,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open in Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in Link New Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Delete Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmark added: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11328,6 +11349,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Find a String in the Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark added:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11823,14 +11848,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hostname should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Domain name should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17178,15 +17195,15 @@ p, li { white-space: pre-wrap; }
         <translation>検索タイプを選択</translation>
     </message>
     <message>
-        <source>Enter the search term and press Return</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show the previous item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the next item matching the search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Enter/Return</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17297,7 +17314,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attached the selected medium to the drive</source>
+        <source>Attach the selected medium to the drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17958,12 +17975,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;エラーID: &lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;エラーID: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>重要度: </translation>
+        <translation type="vanished">重要度: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
@@ -20512,6 +20529,16 @@ p, li { white-space: pre-wrap; }
         <source>Can&apos;t toggle VRDE server ...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Severity:</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -20720,15 +20747,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Holds the name for new virtual machine.</source>
+        <source>Holds the name for virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the folder hosting new virtual machine.</source>
+        <source>Selects the folder hosting virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects an ISO image to be attached to the new virtual machine or used in unattended install.</source>
+        <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -21363,15 +21390,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">IPv6デフォルトルート</translation>
     </message>
     <message>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Registered NAT networks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered host-only networks</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -23851,19 +23878,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>The file </source>
-        <translation>次のファイル </translation>
+        <translation type="vanished">次のファイル </translation>
     </message>
     <message>
         <source> has been deleted</source>
-        <translation> を削除しました</translation>
+        <translation type="vanished"> を削除しました</translation>
     </message>
     <message>
         <source>Deleting the file </source>
-        <translation>次のファイルの削除 </translation>
+        <translation type="vanished">次のファイルの削除 </translation>
     </message>
     <message>
         <source> has failed</source>
-        <translation> に失敗しました</translation>
+        <translation type="vanished"> に失敗しました</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -23950,6 +23977,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Help</source>
         <translation type="unfinished">ヘルプ</translation>
+    </message>
+    <message>
+        <source>The file %1 has been deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting the file %1 has failed</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -25655,7 +25690,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Export activity data of the machine </source>
+        <source>Export activity data of the machine &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25948,10 +25983,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>NoLogFile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -26552,15 +26583,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">ソース(&amp;S):</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27040,14 +27071,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Keep Hard&amp;ware UUIDs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27065,6 +27088,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disk names will be preserved during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, hardware UUIDs will be preserved during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27324,7 +27355,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;エクスポートする仮想アプライアンスの名前を入力してください。加えて作成するアーカイブに影響するサイズや内容に関するいくつかのオプションを指定してください。&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;エクスポートする仮想アプライアンスの名前を入力してください。加えて作成するアーカイブに影響するサイズや内容に関するいくつかのオプションを指定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual system settings</source>
@@ -27403,11 +27434,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
+        <source>Virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Virtual machines</source>
+        <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27584,7 +27619,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;インポートする仮想アプライアンスを選択してください。VirtualBoxは現在Open Virtualization Format (OVF)で保存されたアプライアンスのみインポートに対応しています。継続するには、以下の欄でインポートするファイルを選択してください。&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;インポートする仮想アプライアンスを選択してください。VirtualBoxは現在Open Virtualization Format (OVF)で保存されたアプライアンスのみインポートに対応しています。継続するには、以下の欄でインポートするファイルを選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>These are the the suggested settings of the cloud VM import procedure, they are influencing the resulting local VM instance. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
@@ -27667,10 +27702,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">インポート中にすべてのネットワークアダプターでMACアドレスを生成します。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27691,7 +27722,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">ハードドライブをVDIとしてインポート(&amp;I)</translation>
     </message>
     <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation type="unfinished">このアプライアンスに含まれるすべてのハードドライブをVDIフォーマットでインポートします。</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27848,16 +27887,16 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">場所(&amp;L):</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished">ソース(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -28157,15 +28196,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables headless boot (with no GUI) of the newly created virtual machine for the unattended guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -28193,10 +28224,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Detected OS type: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -28217,23 +28244,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hardware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -28417,15 +28432,39 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Invalid Guest Additions installation media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Holds the product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest additions will be installed after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished">一部のOSが起動に必要とするExtended Firmware Interface(EFI)を有効化します。本オプションが有効な場合、EFIに対応していないOSは起動できません。</translation>
+    </message>
+    <message>
+        <source>Detected OS type: %1. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

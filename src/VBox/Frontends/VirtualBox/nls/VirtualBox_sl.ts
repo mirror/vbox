@@ -4,7 +4,7 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/UITranslator.cpp" line="+737"/>
+        <location filename="../src/globals/UITranslator.cpp" line="+747"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Slovenščina</translation>
@@ -37,7 +37,7 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="+509"/>
+        <location filename="../src/main.cpp" line="+518"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Izvedljiva datoteka &lt;b&gt;%1&lt;/b&gt; zahteva Qt %2.x, najden Qt %3.</translation>
     </message>
@@ -57,7 +57,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location line="-701"/>
+        <location line="-700"/>
         <source>Please try reinstalling VirtualBox.</source>
         <translation>Poizkusite ponovno namestiti VirtualBox.</translation>
     </message>
@@ -77,7 +77,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+610"/>
+        <location line="+609"/>
         <source>VirtualBox - Runtime Error</source>
         <translation>VirtualBox - napaka izvajanja</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>Gonilnik jedra ni dostopen</translation>
     </message>
     <message>
-        <location line="-636"/>
+        <location line="-635"/>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>Moduli jedra VirtualBox se ne ujemajo s to različico VirtualBoxa.Namestitev VirtualBoxa očitno ni bila uspešna. Poizkusite ga popolnoma odstraniti in ponovno namestiti.</translation>
     </message>
@@ -122,7 +122,7 @@
 <context>
     <name>QIArrowButtonPress</name>
     <message>
-        <location filename="../src/extensions/QIArrowButtonPress.cpp" line="+39"/>
+        <location filename="../src/extensions/QIArrowButtonPress.cpp" line="+49"/>
         <source>&amp;Back</source>
         <translation>&amp;Nazaj</translation>
     </message>
@@ -143,7 +143,7 @@
         <translation type="vanished">&amp;Naprej</translation>
     </message>
     <message>
-        <location filename="../src/extensions/QIArrowSplitter.cpp" line="+343"/>
+        <location filename="../src/extensions/QIArrowSplitter.cpp" line="+353"/>
         <source>&amp;Details</source>
         <translation>&amp;Podrobnosti</translation>
     </message>
@@ -156,7 +156,7 @@
 <context>
     <name>QIDialogContainer</name>
     <message>
-        <location filename="../src/extensions/QIDialogContainer.cpp" line="+68"/>
+        <location filename="../src/extensions/QIDialogContainer.cpp" line="+78"/>
         <source>Loading</source>
         <translation type="unfinished"></translation>
     </message>
@@ -175,7 +175,7 @@
 <context>
     <name>QIInputDialog</name>
     <message>
-        <location filename="../src/extensions/QIInputDialog.cpp" line="+72"/>
+        <location filename="../src/extensions/QIInputDialog.cpp" line="+82"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -183,7 +183,7 @@
 <context>
     <name>QILabel</name>
     <message>
-        <location filename="../src/extensions/QILabel.cpp" line="+203"/>
+        <location filename="../src/extensions/QILabel.cpp" line="+213"/>
         <source>&amp;Copy</source>
         <translation>&amp;Kopiraj</translation>
     </message>
@@ -191,7 +191,7 @@
 <context>
     <name>QILineEdit</name>
     <message>
-        <location filename="../src/extensions/QILineEdit.cpp" line="+116"/>
+        <location filename="../src/extensions/QILineEdit.cpp" line="+126"/>
         <source>&amp;Copy</source>
         <translation type="unfinished">&amp;Kopiraj</translation>
     </message>
@@ -199,9 +199,9 @@
 <context>
     <name>QIMessageBox</name>
     <message>
-        <location filename="../src/extensions/QIMessageBox.cpp" line="+336"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1724"/>
-        <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+194"/>
+        <location filename="../src/extensions/QIMessageBox.cpp" line="+346"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1734"/>
+        <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+204"/>
         <source>OK</source>
         <translation>V redu</translation>
     </message>
@@ -283,7 +283,7 @@
         <translation type="vanished">%1, %2: %3, %4: %5, %6: %7</translation>
     </message>
     <message>
-        <location filename="../src/settings/editors/UISharedFoldersEditor.cpp" line="+145"/>
+        <location filename="../src/settings/editors/UISharedFoldersEditor.cpp" line="+155"/>
         <source>Full</source>
         <translation type="unfinished">Poln</translation>
     </message>
@@ -307,7 +307,7 @@
 <context>
     <name>UIAccelerationFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAccelerationFeaturesEditor.cpp" line="+101"/>
+        <location filename="../src/settings/editors/UIAccelerationFeaturesEditor.cpp" line="+111"/>
         <source>Hardware Virtualization:</source>
         <translation type="unfinished">Strojna navideznost:</translation>
     </message>
@@ -335,7 +335,7 @@
 <context>
     <name>UIAcquirePublicKeyDialog</name>
     <message>
-        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="+201"/>
+        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="+211"/>
         <source>Choose a public key file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -368,8 +368,8 @@
 <context>
     <name>UIActionPool</name>
     <message>
-        <location filename="../src/globals/UIActionPoolManager.cpp" line="+666"/>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+75"/>
+        <location filename="../src/globals/UIActionPoolManager.cpp" line="+676"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+85"/>
         <source>&amp;Machine</source>
         <translation>&amp;Računalnik</translation>
     </message>
@@ -417,7 +417,7 @@
         <translation>&amp;Zaustavitev ACPI</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="+518"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="+528"/>
         <source>&amp;Close...</source>
         <translation>&amp;Zapri …</translation>
     </message>
@@ -541,7 +541,7 @@
         <translation>Odpri brskalnik in pojdi na spletno mesto VirtualBox</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+233"/>
         <source>Go back to showing all suppressed warnings and messages</source>
         <translation>Pojdi nazaj na prikaz vseh preprečenih opozoril in sporočil</translation>
     </message>
@@ -1065,7 +1065,17 @@
         <translation type="unfinished">&amp;Odstrani</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-1503"/>
+        <source>&amp;Online Documentation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1504"/>
         <source>Remove selected item(s) from VISO</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1319,12 +1329,12 @@
         <translation>Prikaži &amp;dnevnik …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-1872"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-1920"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>Spletno mesto &amp;VirtualBox …</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+233"/>
         <source>&amp;Reset All Warnings</source>
         <translation>Po&amp;nastavi vsa opozorila</translation>
     </message>
@@ -1397,7 +1407,7 @@
         <translation type="vanished">&amp;Nastavitve zajema zaslonskega posnetka …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIShortcutPool.cpp" line="+223"/>
+        <location filename="../src/globals/UIShortcutPool.cpp" line="+233"/>
         <location line="+91"/>
         <source>Popup Menu</source>
         <translation>Pojavni meni</translation>
@@ -1413,7 +1423,7 @@
         <translation>&amp;Vstavi odtis CD Guest Additions …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-517"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-565"/>
         <source>&amp;VirtualBox</source>
         <translation>&amp;VirtualBox</translation>
     </message>
@@ -1599,7 +1609,7 @@
         <translation type="vanished">Prikaži okno Upravljalnika omrežnih opravil</translation>
     </message>
     <message>
-        <location line="+436"/>
+        <location line="+484"/>
         <source>Display a window with product information</source>
         <translation>Prikaži okno s podatki o izdelku</translation>
     </message>
@@ -1835,7 +1845,7 @@
         <translation>Spremeni velikost na %1x%2</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="+865"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="+875"/>
         <location line="+511"/>
         <source>Preview Monitor %1</source>
         <translation>Predogled zaslona %1</translation>
@@ -3004,7 +3014,7 @@
         <translation>Izklopi izbrane navidezne računalnike</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-1965"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-2013"/>
         <source>&amp;VirtualBox Bug Tracker...</source>
         <translation>&amp;Sledilnik hroščev VirtualBox …</translation>
     </message>
@@ -3024,7 +3034,7 @@
         <translation>Odpri brskalnik in pojdi na forume VirtualBox</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+46"/>
         <source>&amp;Oracle Web Site...</source>
         <translation>Spletno mesto &amp;Oracle …</translation>
     </message>
@@ -3084,7 +3094,7 @@
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
     <message>
-        <location filename="../src/widgets/UIAddDiskEncryptionPasswordDialog.cpp" line="+504"/>
+        <location filename="../src/widgets/UIAddDiskEncryptionPasswordDialog.cpp" line="+514"/>
         <source>%1 - Disk Encryption</source>
         <translation>%1 - šifriranje diska</translation>
     </message>
@@ -3126,7 +3136,7 @@
 <context>
     <name>UIApplianceEditorWidget</name>
     <message>
-        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+310"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+320"/>
         <source>Virtual System %1</source>
         <translation>Navidezni sistem %1</translation>
     </message>
@@ -3319,7 +3329,7 @@
 <context>
     <name>UIApplianceUnverifiedCertificateViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp" line="+91"/>
+        <location filename="../src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp" line="+101"/>
         <source>Unverifiable Certificate! Continue?</source>
         <translation>Potrdila ni mogoče preveriti! Nadaljuj?</translation>
     </message>
@@ -3412,7 +3422,7 @@
 <context>
     <name>UIAudioControllerEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAudioControllerEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIAudioControllerEditor.cpp" line="+82"/>
         <source>Audio &amp;Controller:</source>
         <translation type="unfinished">&amp;Krmilnik zvoka:</translation>
     </message>
@@ -3425,7 +3435,7 @@
 <context>
     <name>UIAudioFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAudioFeaturesEditor.cpp" line="+90"/>
+        <location filename="../src/settings/editors/UIAudioFeaturesEditor.cpp" line="+100"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -3453,7 +3463,7 @@
 <context>
     <name>UIAudioHostDriverEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAudioHostDriverEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIAudioHostDriverEditor.cpp" line="+82"/>
         <source>Host Audio &amp;Driver:</source>
         <translation type="unfinished">&amp;Zvočni gonilnik gostitelja:</translation>
     </message>
@@ -3466,7 +3476,7 @@
 <context>
     <name>UIAudioSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAudioSettingsEditor.cpp" line="+129"/>
+        <location filename="../src/settings/editors/UIAudioSettingsEditor.cpp" line="+139"/>
         <source>Enable &amp;Audio</source>
         <translation type="unfinished">Omogoči &amp;zvok</translation>
     </message>
@@ -3479,7 +3489,7 @@
 <context>
     <name>UIAutoCaptureKeyboardEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAutoCaptureKeyboardEditor.cpp" line="+56"/>
+        <location filename="../src/settings/editors/UIAutoCaptureKeyboardEditor.cpp" line="+66"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -3497,7 +3507,7 @@
 <context>
     <name>UIBaseMemoryEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIBaseMemoryEditor.cpp" line="+294"/>
+        <location filename="../src/settings/editors/UIBaseMemoryEditor.cpp" line="+304"/>
         <source>Base &amp;Memory:</source>
         <translation type="unfinished">Osnovni p&amp;omnilnik:</translation>
     </message>
@@ -3531,7 +3541,7 @@
 <context>
     <name>UIBootFailureDialog</name>
     <message>
-        <location filename="../src/runtime/UIBootFailureDialog.cpp" line="+84"/>
+        <location filename="../src/runtime/UIBootFailureDialog.cpp" line="+94"/>
         <source>&amp;Cancel</source>
         <translation type="unfinished">&amp;Prekliči</translation>
     </message>
@@ -3584,7 +3594,7 @@
 <context>
     <name>UIBootOrderEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIBootOrderEditor.cpp" line="+491"/>
+        <location filename="../src/settings/editors/UIBootOrderEditor.cpp" line="+501"/>
         <source>&amp;Boot Order:</source>
         <translation type="unfinished">&amp;Vrstni red zagona:</translation>
     </message>
@@ -3607,7 +3617,7 @@
 <context>
     <name>UIChipsetEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIChipsetEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIChipsetEditor.cpp" line="+82"/>
         <source>&amp;Chipset:</source>
         <translation type="unfinished">&amp;Vezni nabor:</translation>
     </message>
@@ -3620,7 +3630,7 @@
 <context>
     <name>UIChooserAbstractModel</name>
     <message>
-        <location filename="../src/manager/chooser/UIChooserAbstractModel.cpp" line="+459"/>
+        <location filename="../src/manager/chooser/UIChooserAbstractModel.cpp" line="+469"/>
         <source>New group</source>
         <translation type="unfinished">Nova skupina</translation>
     </message>
@@ -3640,7 +3650,7 @@
         <translation type="obsolete">Izhod iz skupine</translation>
     </message>
     <message>
-        <location filename="../src/manager/chooser/UIChooserItemGroup.cpp" line="+336"/>
+        <location filename="../src/manager/chooser/UIChooserItemGroup.cpp" line="+346"/>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
         <comment>Group item tool-tip / Group name</comment>
         <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt;</translation>
@@ -3724,7 +3734,7 @@
 <context>
     <name>UIChooserNodeGlobal</name>
     <message>
-        <location filename="../src/manager/chooser/UIChooserNodeGlobal.cpp" line="+166"/>
+        <location filename="../src/manager/chooser/UIChooserNodeGlobal.cpp" line="+176"/>
         <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3744,7 +3754,7 @@
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <location filename="../src/manager/chooser/UIChooserNodeMachine.cpp" line="+272"/>
+        <location filename="../src/manager/chooser/UIChooserNodeMachine.cpp" line="+282"/>
         <source>Virtual Machine</source>
         <translation type="unfinished">Navidezni računalnik</translation>
     </message>
@@ -3752,7 +3762,7 @@
 <context>
     <name>UIChooserSearchWidget</name>
     <message>
-        <location filename="../src/manager/chooser/UIChooserSearchWidget.cpp" line="+152"/>
+        <location filename="../src/manager/chooser/UIChooserSearchWidget.cpp" line="+162"/>
         <source>Navigate to the next item among the search results</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3775,7 +3785,7 @@
 <context>
     <name>UIChooserView</name>
     <message>
-        <location filename="../src/manager/chooser/UIChooserView.cpp" line="+241"/>
+        <location filename="../src/manager/chooser/UIChooserView.cpp" line="+251"/>
         <source>Contains a tree of Virtual Machines and their groups</source>
         <translation type="unfinished">Vsebuje drevo navideznih računalnikov in njihove skupine</translation>
     </message>
@@ -3835,12 +3845,12 @@
 <context>
     <name>UICloudConsoleManager</name>
     <message>
-        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1177"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="+1187"/>
         <source>Cloud Console Manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp" line="+106"/>
+        <location filename="../src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp" line="+116"/>
         <location line="+3"/>
         <location filename="../src/cloud/consolemanager/UICloudConsoleManager.cpp" line="-901"/>
         <location line="+109"/>
@@ -3969,7 +3979,7 @@
 <context>
     <name>UICloudMachineSettingsDialog</name>
     <message>
-        <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialog.cpp" line="+75"/>
+        <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialog.cpp" line="+85"/>
         <source>Settings</source>
         <translation type="unfinished">Nastavitve</translation>
     </message>
@@ -3978,7 +3988,7 @@
         <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
-        <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp" line="+60"/>
+        <location filename="../src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp" line="+70"/>
         <source>Contains a list of cloud machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4001,7 +4011,7 @@
 <context>
     <name>UICloudProfileManager</name>
     <message>
-        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+342"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileManager.cpp" line="+352"/>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4011,7 +4021,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp" line="+68"/>
+        <location filename="../src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp" line="+78"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4143,7 +4153,7 @@
 <context>
     <name>UIColorThemeEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIColorThemeEditor.cpp" line="+57"/>
+        <location filename="../src/settings/editors/UIColorThemeEditor.cpp" line="+67"/>
         <source>Color &amp;Theme:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4158,14 +4168,14 @@
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+249"/>
         <location line="+285"/>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+152"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+162"/>
         <location line="+19"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
         <translation type="unfinished">MB</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+752"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+762"/>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
@@ -4247,7 +4257,7 @@
         <translation type="unfinished">Procesorji</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+175"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+185"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation type="unfinished">Izklopljen</translation>
@@ -5547,7 +5557,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+650"/>
+        <location line="+653"/>
         <source>Name</source>
         <translation type="unfinished">Ime</translation>
     </message>
@@ -6220,7 +6230,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/globals/UICommon.cpp" line="+1604"/>
+        <location filename="../src/globals/UICommon.cpp" line="+1614"/>
         <source>Please choose a virtual hard disk file</source>
         <translation type="unfinished">Izberite datoteko navideznega trdega diska</translation>
     </message>
@@ -6338,8 +6348,8 @@
         <translation type="obsolete">Uporabniško določeno</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+523"/>
-        <location filename="../src/medium/UIMedium.cpp" line="+547"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+533"/>
+        <location filename="../src/medium/UIMedium.cpp" line="+557"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
         <translation type="unfinished">Nedostopen</translation>
@@ -6451,12 +6461,12 @@
         <translation type="unfinished">Razlikovalen</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="+479"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="+489"/>
         <source>Adapter %1</source>
         <translation type="unfinished">Vmesnik %1</translation>
     </message>
     <message>
-        <location filename="../src/wizards/editors/UIWizardDiskEditors.cpp" line="+134"/>
+        <location filename="../src/wizards/editors/UIWizardDiskEditors.cpp" line="+144"/>
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6464,12 +6474,12 @@
 <context>
     <name>UICustomFileSystemModel</name>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerTable.cpp" line="+1134"/>
+        <location filename="../src/guestctrl/UIFileManagerTable.cpp" line="+1144"/>
         <source>New Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/UICustomFileSystemModel.cpp" line="+609"/>
+        <location filename="../src/globals/UICustomFileSystemModel.cpp" line="+619"/>
         <source>Name</source>
         <translation type="unfinished">Ime</translation>
     </message>
@@ -6507,7 +6517,7 @@
 <context>
     <name>UIDefaultMachineFolderEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDefaultMachineFolderEditor.cpp" line="+69"/>
+        <location filename="../src/settings/editors/UIDefaultMachineFolderEditor.cpp" line="+79"/>
         <source>Default &amp;Machine Folder:</source>
         <translation type="unfinished">P&amp;rivzeta mapa računlanika:</translation>
     </message>
@@ -6520,7 +6530,7 @@
 <context>
     <name>UIDescriptionEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDescriptionEditor.cpp" line="+53"/>
+        <location filename="../src/settings/editors/UIDescriptionEditor.cpp" line="+63"/>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="unfinished">Vsebuje opis navideznega računalnika. Polje opisa je uporabno za pripombe o podrobnostih nastavitev nameščenega gostujočega OS-a.</translation>
     </message>
@@ -6528,7 +6538,7 @@
 <context>
     <name>UIDetails</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1269"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1279"/>
         <location filename="../src/globals/UIDetailsGenerator.cpp" line="-441"/>
         <source>Name</source>
         <comment>details (general)</comment>
@@ -6991,7 +7001,7 @@
         <translation type="unfinished">%1 (%2 dejavnih)</translation>
     </message>
     <message>
-        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+1210"/>
+        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+1220"/>
         <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-399"/>
         <location filename="../src/globals/UIDetailsGenerator.cpp" line="+7"/>
         <source>Disabled</source>
@@ -7176,7 +7186,7 @@
 <context>
     <name>UIDetailsSet</name>
     <message>
-        <location filename="../src/manager/details/UIDetailsSet.cpp" line="+400"/>
+        <location filename="../src/manager/details/UIDetailsSet.cpp" line="+410"/>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
         <translation type="unfinished">Vsebuje podatke navideznega računalnika &apos;%1&apos;</translation>
     </message>
@@ -7188,7 +7198,7 @@
         <translation type="obsolete">Vsebuje seznam podrobnosti navideznega računalnika</translation>
     </message>
     <message>
-        <location filename="../src/manager/details/UIDetailsView.cpp" line="+153"/>
+        <location filename="../src/manager/details/UIDetailsView.cpp" line="+163"/>
         <source>Contains a list of Virtual Machine details.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7405,7 +7415,7 @@
 <context>
     <name>UIDialogPanel</name>
     <message>
-        <location filename="../src/globals/UIDialogPanel.cpp" line="+94"/>
+        <location filename="../src/globals/UIDialogPanel.cpp" line="+104"/>
         <source>Close the pane</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7413,7 +7423,7 @@
 <context>
     <name>UIDiskEncryptionSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDiskEncryptionSettingsEditor.cpp" line="+96"/>
+        <location filename="../src/settings/editors/UIDiskEncryptionSettingsEditor.cpp" line="+106"/>
         <source>En&amp;able Disk Encryption</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7485,7 +7495,7 @@
 <context>
     <name>UIDisplayFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDisplayFeaturesEditor.cpp" line="+93"/>
+        <location filename="../src/settings/editors/UIDisplayFeaturesEditor.cpp" line="+103"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -7513,7 +7523,7 @@
 <context>
     <name>UIDisplayScreenFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDisplayScreenFeaturesEditor.cpp" line="+71"/>
+        <location filename="../src/settings/editors/UIDisplayScreenFeaturesEditor.cpp" line="+81"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -7531,7 +7541,7 @@
 <context>
     <name>UIDnDHandler</name>
     <message>
-        <location filename="../src/runtime/UIDnDHandler.cpp" line="+231"/>
+        <location filename="../src/runtime/UIDnDHandler.cpp" line="+241"/>
         <source>Dropping data ...</source>
         <translation>Opuščanje podatkov …</translation>
     </message>
@@ -7544,7 +7554,7 @@
 <context>
     <name>UIDownloader</name>
     <message>
-        <location filename="../src/networking/UIDownloader.cpp" line="+67"/>
+        <location filename="../src/networking/UIDownloader.cpp" line="+77"/>
         <source>Looking for %1...</source>
         <translation>Iskanje %1 …</translation>
     </message>
@@ -7573,7 +7583,7 @@
 <context>
     <name>UIDownloaderExtensionPack</name>
     <message>
-        <location filename="../src/networking/UIDownloaderExtensionPack.cpp" line="+164"/>
+        <location filename="../src/networking/UIDownloaderExtensionPack.cpp" line="+174"/>
         <source>Select folder to save %1 to</source>
         <translation>Izberite mapo za shranjevanje %1</translation>
     </message>
@@ -7586,7 +7596,7 @@
 <context>
     <name>UIDownloaderGuestAdditions</name>
     <message>
-        <location filename="../src/networking/UIDownloaderGuestAdditions.cpp" line="+58"/>
+        <location filename="../src/networking/UIDownloaderGuestAdditions.cpp" line="+68"/>
         <source>VirtualBox Guest Additions</source>
         <translation type="unfinished">VirtualBox Guest Additions</translation>
     </message>
@@ -7599,7 +7609,7 @@
 <context>
     <name>UIDownloaderUserManual</name>
     <message>
-        <location filename="../src/networking/UIDownloaderUserManual.cpp" line="+102"/>
+        <location filename="../src/networking/UIDownloaderUserManual.cpp" line="+112"/>
         <source>Select folder to save User Manual to</source>
         <translation>Izberite mapo za shranjevanje uporabniškega priročnika</translation>
     </message>
@@ -7612,7 +7622,7 @@
 <context>
     <name>UIDragAndDropEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIDragAndDropEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIDragAndDropEditor.cpp" line="+82"/>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished">&amp;Povleci in spusti:</translation>
     </message>
@@ -7625,7 +7635,7 @@
 <context>
     <name>UIEmptyFilePathSelector</name>
     <message>
-        <location filename="../src/widgets/UIEmptyFilePathSelector.cpp" line="+212"/>
+        <location filename="../src/widgets/UIEmptyFilePathSelector.cpp" line="+222"/>
         <source>Choose...</source>
         <translation>Izberi …</translation>
     </message>
@@ -7640,41 +7650,66 @@
 <context>
     <name>UIErrorString</name>
     <message>
-        <location filename="../src/globals/UIErrorString.cpp" line="+100"/>
-        <location line="+84"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Koda&amp;nbsp;rezultata: </translation>
+        <translation type="vanished">Koda&amp;nbsp;rezultata: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="vanished">Sestavni del: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="vanished">Vmesnik: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="vanished">Klicalec: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="vanished">Klicalec&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIErrorString.cpp" line="+110"/>
+        <location line="+84"/>
+        <source>Result&amp;nbsp;Code:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Component: </source>
+        <source>Component:</source>
         <comment>error info</comment>
-        <translation>Sestavni del: </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Interface: </source>
+        <source>Interface:</source>
         <comment>error info</comment>
-        <translation>Vmesnik: </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <source>Callee: </source>
+        <source>Callee:</source>
         <comment>error info</comment>
-        <translation>Klicalec: </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Callee&amp;nbsp;RC: </source>
+        <source>Callee&amp;nbsp;RC:</source>
         <comment>error info</comment>
-        <translation>Klicalec&amp;nbsp;RC: </translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIExecutionCapEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIExecutionCapEditor.cpp" line="+74"/>
+        <location filename="../src/settings/editors/UIExecutionCapEditor.cpp" line="+84"/>
         <source>&amp;Execution Cap:</source>
         <translation type="unfinished">&amp;Omejitev izvajanja:</translation>
     </message>
@@ -7719,7 +7754,7 @@
         <translation type="obsolete">Dejavno</translation>
     </message>
     <message>
-        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+203"/>
+        <location filename="../src/extensionpackmanager/UIExtensionPackManager.cpp" line="+213"/>
         <source>Active</source>
         <comment>ext pack</comment>
         <translation type="unfinished">Dejavno</translation>
@@ -7824,7 +7859,7 @@
 <context>
     <name>UIFDCreationDialog</name>
     <message>
-        <location filename="../src/medium/UIFDCreationDialog.cpp" line="+131"/>
+        <location filename="../src/medium/UIFDCreationDialog.cpp" line="+141"/>
         <location line="+2"/>
         <source>Floppy Disk Creator</source>
         <translation type="unfinished"></translation>
@@ -7902,7 +7937,7 @@
 <context>
     <name>UIFileManager</name>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerDialog.cpp" line="+83"/>
+        <location filename="../src/guestctrl/UIFileManagerDialog.cpp" line="+93"/>
         <source>%1 - File Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7942,12 +7977,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerLogPanel.cpp" line="+69"/>
+        <location filename="../src/guestctrl/UIFileManagerLogPanel.cpp" line="+79"/>
         <source>Clear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerOperationsPanel.cpp" line="+151"/>
+        <location filename="../src/guestctrl/UIFileManagerOperationsPanel.cpp" line="+161"/>
         <source>Cancel</source>
         <translation type="unfinished">Prekliči</translation>
     </message>
@@ -8002,7 +8037,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerOptionsPanel.cpp" line="+169"/>
+        <location filename="../src/guestctrl/UIFileManagerOptionsPanel.cpp" line="+179"/>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8042,7 +8077,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIFileManagerGuestTable.cpp" line="+155"/>
+        <location filename="../src/guestctrl/UIFileManagerGuestTable.cpp" line="+165"/>
         <location line="+49"/>
         <source>Password</source>
         <translation type="unfinished">Geslo</translation>
@@ -8193,7 +8228,7 @@
     </message>
     <message>
         <location line="+328"/>
-        <location filename="../src/guestctrl/UIFileManagerHostTable.cpp" line="+368"/>
+        <location filename="../src/guestctrl/UIFileManagerHostTable.cpp" line="+378"/>
         <location line="+38"/>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
         <translation type="unfinished"></translation>
@@ -8367,7 +8402,7 @@
 <context>
     <name>UIFilePathSelector</name>
     <message>
-        <location filename="../src/widgets/UIFilePathSelector.cpp" line="+287"/>
+        <location filename="../src/widgets/UIFilePathSelector.cpp" line="+297"/>
         <source>&amp;Copy</source>
         <translation>&amp;Kopiraj</translation>
     </message>
@@ -8433,7 +8468,7 @@
 <context>
     <name>UIFormEditorWidget</name>
     <message>
-        <location filename="../src/widgets/UIFormEditorWidget.cpp" line="+540"/>
+        <location filename="../src/widgets/UIFormEditorWidget.cpp" line="+550"/>
         <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9203,7 +9238,7 @@
         <translation type="vanished">&amp;Samodejno zajemi tipkovnico</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsInput.cpp" line="+94"/>
+        <location filename="../src/settings/global/UIGlobalSettingsInput.cpp" line="+104"/>
         <source>Host Key Combination</source>
         <translation>Kombinacija hitrih tipk</translation>
     </message>
@@ -9781,7 +9816,7 @@
         <translation type="vanished">&amp;Ročne nastavitve posredniškega strežnika</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsProxy.cpp" line="+161"/>
+        <location filename="../src/settings/global/UIGlobalSettingsProxy.cpp" line="+171"/>
         <source>No proxy URL is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9850,7 +9885,7 @@
 <context>
     <name>UIGraphicsControllerEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIGraphicsControllerEditor.cpp" line="+73"/>
+        <location filename="../src/settings/editors/UIGraphicsControllerEditor.cpp" line="+83"/>
         <source>&amp;Graphics Controller:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9863,7 +9898,7 @@
 <context>
     <name>UIGraphicsTextPane</name>
     <message>
-        <location filename="../src/widgets/graphics/UIGraphicsTextPane.cpp" line="+92"/>
+        <location filename="../src/widgets/graphics/UIGraphicsTextPane.cpp" line="+102"/>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation>%1: %2</translation>
@@ -9899,7 +9934,7 @@
 <context>
     <name>UIGuestControlTreeWidget</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestProcessControlWidget.cpp" line="+164"/>
+        <location filename="../src/guestctrl/UIGuestProcessControlWidget.cpp" line="+174"/>
         <source>Terminate Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9932,7 +9967,7 @@
 <context>
     <name>UIGuestProcessControlDialog</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestProcessControlDialog.cpp" line="+71"/>
+        <location filename="../src/guestctrl/UIGuestProcessControlDialog.cpp" line="+81"/>
         <source>%1 - Guest Control</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9967,7 +10002,7 @@
 <context>
     <name>UIGuestProcessTreeItem</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlTreeItem.cpp" line="+290"/>
+        <location filename="../src/guestctrl/UIGuestControlTreeItem.cpp" line="+300"/>
         <source>Process Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10013,13 +10048,13 @@
 <context>
     <name>UIHelpBrowserWidget</name>
     <message>
-        <location filename="../src/helpbrowser/UIHelpBrowserDialog.cpp" line="+75"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserDialog.cpp" line="+85"/>
         <source>Oracle VM VirtualBox User Manual</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="+220"/>
-        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+792"/>
+        <location filename="../src/helpbrowser/UIHelpViewer.cpp" line="+230"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+802"/>
         <source>Return to Start Page</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10059,17 +10094,19 @@
     </message>
     <message>
         <location line="+22"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1321"/>
         <source>Open Link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1"/>
         <source>Open Link in New Tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1323"/>
+        <location filename="../src/helpbrowser/UIHelpBrowserWidget.cpp" line="+1"/>
         <source>Copy Link</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10230,7 +10267,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1069"/>
+        <location line="+311"/>
+        <source>Bookmark added:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-1380"/>
         <location line="+1071"/>
         <source>Add Bookmark</source>
         <translation type="unfinished"></translation>
@@ -10247,17 +10289,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+141"/>
-        <source>Open in Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Open in Link New Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+160"/>
         <source>Delete Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10267,12 +10299,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+39"/>
-        <source>Bookmark added: </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+19"/>
+        <location line="+58"/>
         <source>Close T&amp;ab</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10285,7 +10312,7 @@
 <context>
     <name>UIHelpButton</name>
     <message>
-        <location filename="../src/widgets/UISpecialControls.cpp" line="+130"/>
+        <location filename="../src/widgets/UISpecialControls.cpp" line="+140"/>
         <source>&amp;Help</source>
         <translation>&amp;Pomoč</translation>
     </message>
@@ -10293,7 +10320,7 @@
 <context>
     <name>UIHostComboEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIHostComboEditor.cpp" line="+188"/>
+        <location filename="../src/settings/editors/UIHostComboEditor.cpp" line="+198"/>
         <location line="+14"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;key_%1&gt;</translation>
@@ -10765,17 +10792,19 @@
 <context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
-        <location filename="../src/wizards/editors/UIHostnameDomainNameEditor.cpp" line="+65"/>
+        <location filename="../src/wizards/editors/UIHostnameDomainNameEditor.cpp" line="+75"/>
+        <location line="+113"/>
         <source>Hostname should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-109"/>
+        <location line="+117"/>
         <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="-68"/>
         <source>Hostna&amp;me:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10794,21 +10823,11 @@
         <source>Holds the domain name.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location line="+54"/>
-        <source>Hostname should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Domain name should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIHotKeyEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIHotKeyEditor.cpp" line="+231"/>
+        <location filename="../src/settings/editors/UIHotKeyEditor.cpp" line="+241"/>
         <source>Reset shortcut to default</source>
         <translation>Ponastavi bližnjico na privzeto</translation>
     </message>
@@ -10838,7 +10857,7 @@
 <context>
     <name>UIImportLicenseViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="+119"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="+129"/>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;Navidezni sistem &quot;%1&quot; zahteva, da se strinjate s spodnjimi pogoji sporazuma o dovoljenju za programsko opremo.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Kliknite &lt;b&gt;Strinjam se&lt;/b&gt;za nadaljevanje  ali &lt;b&gt;Ne strinjam se&lt;/b&gt; za preklic uvoza.</translation>
     </message>
@@ -11805,7 +11824,7 @@
 <context>
     <name>UILanguageItem</name>
     <message>
-        <location filename="../src/settings/editors/UILanguageSettingsEditor.cpp" line="+120"/>
+        <location filename="../src/settings/editors/UILanguageSettingsEditor.cpp" line="+130"/>
         <location line="+1"/>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -11876,7 +11895,7 @@
 <context>
     <name>UILineTextEdit</name>
     <message>
-        <location filename="../src/widgets/UILineTextEdit.cpp" line="+113"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="+123"/>
         <source>&amp;Edit</source>
         <translation>&amp;Uredi</translation>
     </message>
@@ -11914,7 +11933,7 @@
 <context>
     <name>UIMachinePreview</name>
     <message>
-        <location filename="../src/manager/details/UIMachinePreview.cpp" line="+69"/>
+        <location filename="../src/manager/details/UIMachinePreview.cpp" line="+79"/>
         <source>No preview</source>
         <translation type="unfinished">Ni predogleda</translation>
     </message>
@@ -12028,7 +12047,7 @@
         <translation type="vanished">Omogoči pospeševanje &amp;3D</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+744"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+754"/>
         <source>&amp;Remote Display</source>
         <translation>&amp;Oddaljen zaslon</translation>
     </message>
@@ -12181,7 +12200,7 @@
         <translation type="vanished">kb/s</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIFilmContainer.cpp" line="+102"/>
+        <location filename="../src/widgets/UIFilmContainer.cpp" line="+112"/>
         <source>Screen %1</source>
         <translation>Zaslon %1</translation>
     </message>
@@ -12298,7 +12317,7 @@
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+483"/>
+        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+493"/>
         <source>Basi&amp;c</source>
         <translation>&amp;Osnovno</translation>
     </message>
@@ -12693,7 +12712,7 @@
 <context>
     <name>UIMachineSettingsPortForwardingDlg</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="+99"/>
+        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="+109"/>
         <source>Port Forwarding Rules</source>
         <translation>Pravila posredovanja vrat</translation>
     </message>
@@ -12823,7 +12842,7 @@
 <context>
     <name>UIMachineSettingsSerial</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSerial.cpp" line="+384"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSerial.cpp" line="+394"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation>Vrata %1</translation>
@@ -13122,7 +13141,7 @@
         <translation type="vanished">Podrobnosti:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+419"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+429"/>
         <source>at most one supported</source>
         <comment>controller</comment>
         <translation>Podprt je največ en</translation>
@@ -13290,7 +13309,7 @@
 <context>
     <name>UIMachineSettingsSystem</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+609"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+619"/>
         <source>&amp;Motherboard</source>
         <translation>&amp;Matična plošča</translation>
     </message>
@@ -13617,7 +13636,7 @@
         <translation type="vanished">Krmilnik USB &amp;3.0 (xHCI)</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="+308"/>
+        <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="+318"/>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
         <translation>USB 2.0/3.0 je trenutno omogočen za ta navidezni računalnik. Vendar to zahteva namestitev &lt;i&gt;%1&lt;/i&gt;. . Namestite paket razširitev iz mesta za prejem VirtualBox ali onemogočite USB 2.0/3.0, da boste lahko zagnali računalnik.</translation>
     </message>
@@ -13779,7 +13798,7 @@
 <context>
     <name>UIMachineWindow</name>
     <message>
-        <location filename="../src/runtime/UIMachineWindow.cpp" line="+263"/>
+        <location filename="../src/runtime/UIMachineWindow.cpp" line="+273"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation>PREIZKUSNA izgradnja %1r%2 - %3</translation>
     </message>
@@ -13795,7 +13814,7 @@
 <context>
     <name>UIMaximumGuestScreenSizeEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMaximumGuestScreenSizeEditor.cpp" line="+121"/>
+        <location filename="../src/settings/editors/UIMaximumGuestScreenSizeEditor.cpp" line="+131"/>
         <source>Maximum Guest Screen &amp;Size:</source>
         <translation type="unfinished">&amp;Največja velikost zaslona gosta:</translation>
     </message>
@@ -13931,7 +13950,7 @@
 <context>
     <name>UIMediumItem</name>
     <message>
-        <location filename="../src/medium/UIMediumItem.cpp" line="+69"/>
+        <location filename="../src/medium/UIMediumItem.cpp" line="+79"/>
         <source>Current extension (*.%1)</source>
         <translation type="unfinished">Trenutna pripona (*.%1)</translation>
     </message>
@@ -14002,7 +14021,7 @@
 <context>
     <name>UIMediumManager</name>
     <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="+204"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+214"/>
         <source>&amp;Optical disks</source>
         <translation>&amp;Optični diski</translation>
     </message>
@@ -14191,7 +14210,7 @@
         <translation>Upravljalnik navideznih nosilcev</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+106"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+116"/>
         <source>&amp;Attributes</source>
         <translation type="unfinished">&amp;Lastnosti</translation>
     </message>
@@ -14385,7 +14404,7 @@
 <context>
     <name>UIMediumSearchWidget</name>
     <message>
-        <location filename="../src/medium/UIMediumSearchWidget.cpp" line="+180"/>
+        <location filename="../src/medium/UIMediumSearchWidget.cpp" line="+190"/>
         <source>Search By Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14401,7 +14420,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter the search term and press Return</source>
+        <source>Enter the search term and press Enter/Return</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -14434,13 +14453,18 @@
         <translation type="obsolete">Osveži seznam datotek odtisa diska</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumSelector.cpp" line="+166"/>
+        <location filename="../src/medium/UIMediumSelector.cpp" line="+176"/>
         <location line="+282"/>
         <source>Cancel</source>
         <translation type="unfinished">Prekliči</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-271"/>
+        <source>Attach the selected medium to the drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+275"/>
         <source>Leave Empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14475,12 +14499,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Attached the selected medium to the drive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Virtual Size</source>
         <translation type="unfinished">Navidezna velikost</translation>
     </message>
@@ -14565,7 +14584,7 @@
 <context>
     <name>UIMediumSizeEditor</name>
     <message>
-        <location filename="../src/widgets/UIMediumSizeEditor.cpp" line="+77"/>
+        <location filename="../src/widgets/UIMediumSizeEditor.cpp" line="+87"/>
         <location line="+1"/>
         <source>Holds the size of this medium.</source>
         <translation>Vsebuje velikost tega nosilca.</translation>
@@ -14628,7 +14647,7 @@
 <context>
     <name>UIMenuBarEditorWidget</name>
     <message>
-        <location filename="../src/widgets/UIMenuBarEditorWindow.cpp" line="+1305"/>
+        <location filename="../src/widgets/UIMenuBarEditorWindow.cpp" line="+1315"/>
         <source>Virtual Screen Resize</source>
         <translation>Sprememba velikosti navideznega zaslona</translation>
     </message>
@@ -14681,41 +14700,41 @@
     <name>UIMessageCenter</name>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="-1422"/>
-        <location line="+1969"/>
+        <location line="+1974"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - podatki</translation>
     </message>
     <message>
-        <location line="-1965"/>
-        <location line="+1969"/>
+        <location line="-1970"/>
+        <location line="+1974"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - vprašanje</translation>
     </message>
     <message>
-        <location line="-1965"/>
-        <location line="+1969"/>
+        <location line="-1970"/>
+        <location line="+1974"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - opozorilo</translation>
     </message>
     <message>
-        <location line="-1965"/>
-        <location line="+1969"/>
+        <location line="-1970"/>
+        <location line="+1974"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - napaka</translation>
     </message>
     <message>
-        <location line="-1965"/>
-        <location line="+1969"/>
+        <location line="-1970"/>
+        <location line="+1974"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - kritična napaka</translation>
     </message>
     <message>
-        <location line="-1588"/>
+        <location line="-1593"/>
         <source>Failed to set global host settings.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14809,18 +14828,30 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+810"/>
+        <location line="+286"/>
+        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Severity:</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+528"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
         <translation>Tega sporočila ne prikazuj več</translation>
     </message>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+96"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="+106"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Odpiranje &lt;tt&gt;%1&lt;/tt&gt; je spodeltelo. Prepričajte se, da lahko vaše namizno okolje pravilno obvlada URL te vrste.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1864"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1869"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Začenjanje COM-a ali iskanje strežnika COM VirtualBox je spodletelo. Najverjetneje se VirtualBox ne izvaja ali je njegov zagon spodletel.&lt;/p&gt;&lt;p&gt;Program se bo sedaj končal.&lt;/p&gt;</translation>
     </message>
@@ -14941,19 +14972,17 @@
         <translation>&lt;nobr&gt;Opozorilo&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID napake: &lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ID napake: &lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>Resnost:</translation>
+        <translation type="vanished">Resnost:</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+26"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Med izvajanjem navideznega računalnika se je pojavila usodna napaka! Navidezni računalnik bo izklopljen. Kopirajte naslednje sporočilo napake z uporabo odložišča, da pomagate prepoznati težavo:&lt;/p&gt;</translation>
     </message>
@@ -15176,7 +15205,7 @@
     <message>
         <location line="-901"/>
         <location line="+9"/>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="+260"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+270"/>
         <source>Cancel</source>
         <translation>Prekliči</translation>
     </message>
@@ -15498,7 +15527,7 @@
         <translation type="vanished">&lt;p&gt;Napaka pri spreminjanju odtisa diska iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1140"/>
+        <location line="+1145"/>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
         <translation>Storitve posredniškega strežnika USB gostitelja ni bilo mogoče naložiti (VERR_FILE_NOT_FOUND. Storitev morda ni nameščena na gostiteljskem računalniku.</translation>
     </message>
@@ -15527,7 +15556,7 @@
         <translation type="vanished">Posnetka stanja z imenom &lt;b&gt;%1&lt;/b&gt; ni bilo mogoče najti.</translation>
     </message>
     <message>
-        <location line="-644"/>
+        <location line="-649"/>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nameščeno imate staro različico (%1) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ali želite z interneta prejeti najnovejšo?&lt;/p&gt;</translation>
     </message>
@@ -17319,7 +17348,7 @@
 <context>
     <name>UIMiniToolBar</name>
     <message>
-        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+295"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+305"/>
         <source>Always show the toolbar</source>
         <translation>Vedno prikaži orodno vrstico</translation>
     </message>
@@ -17342,7 +17371,7 @@
 <context>
     <name>UIMiniToolbarSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMiniToolbarSettingsEditor.cpp" line="+90"/>
+        <location filename="../src/settings/editors/UIMiniToolbarSettingsEditor.cpp" line="+100"/>
         <source>Mini ToolBar:</source>
         <translation type="unfinished">Mini orodna vrstica:</translation>
     </message>
@@ -17370,7 +17399,7 @@
 <context>
     <name>UIMonitorCountEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMonitorCountEditor.cpp" line="+78"/>
+        <location filename="../src/settings/editors/UIMonitorCountEditor.cpp" line="+88"/>
         <source>Mo&amp;nitor Count:</source>
         <translation type="unfinished">&amp;Število zaslonov:</translation>
     </message>
@@ -17394,7 +17423,7 @@
 <context>
     <name>UIMotherboardFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIMotherboardFeaturesEditor.cpp" line="+111"/>
+        <location filename="../src/settings/editors/UIMotherboardFeaturesEditor.cpp" line="+121"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -17454,12 +17483,22 @@
         <translation type="vanished">Vsebuje ime navideznega računalnika.</translation>
     </message>
     <message>
-        <location filename="../src/settings/editors/UINameAndSystemEditor.cpp" line="+335"/>
+        <location filename="../src/settings/editors/UINameAndSystemEditor.cpp" line="+345"/>
         <source>&amp;Type:</source>
         <translation>&amp;Vrsta:</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+5"/>
+        <source>Holds the name for virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Selects the folder hosting virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>Izbere družino operacijskih sistemov, ki jo želite namestiti v ta navidezni računalnik.</translation>
     </message>
@@ -17494,24 +17533,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Holds the name for new virtual machine.</source>
+        <location line="+18"/>
+        <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Selects the folder hosting new virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="-4"/>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Izbere vrsto operacijskega sistema, ko jo želite namestiti v ta navidezni računalnik (gostujoči operacijski sistem).</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Selects an ISO image to be attached to the new virtual machine or used in unattended install.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Holds the location of the virtual machine.</source>
@@ -17521,7 +17550,7 @@
 <context>
     <name>UINativeWizard</name>
     <message>
-        <location filename="../src/wizards/UINativeWizard.cpp" line="+184"/>
+        <location filename="../src/wizards/UINativeWizard.cpp" line="+194"/>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Pomoč</translation>
     </message>
@@ -17594,7 +17623,7 @@
 <context>
     <name>UINetworkAttachmentEditor</name>
     <message>
-        <location filename="../src/settings/editors/UINetworkAttachmentEditor.cpp" line="+194"/>
+        <location filename="../src/settings/editors/UINetworkAttachmentEditor.cpp" line="+204"/>
         <source>&amp;Attached to:</source>
         <translation type="unfinished">&amp;Priklopljen v:</translation>
     </message>
@@ -17670,7 +17699,7 @@
 <context>
     <name>UINetworkFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UINetworkFeaturesEditor.cpp" line="+235"/>
+        <location filename="../src/settings/editors/UINetworkFeaturesEditor.cpp" line="+245"/>
         <source>A&amp;dvanced</source>
         <translation type="unfinished">&amp;Napredno</translation>
     </message>
@@ -17748,7 +17777,7 @@
 <context>
     <name>UINetworkManager</name>
     <message>
-        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+414"/>
+        <location filename="../src/networkmanager/UINetworkManager.cpp" line="+424"/>
         <source>Host-only Networks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17949,7 +17978,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-205"/>
+        <location line="-9"/>
+        <source>Registered host-only networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-196"/>
         <location line="+193"/>
         <location line="+13"/>
         <source>DHCP Server</source>
@@ -17968,12 +18002,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-21"/>
-        <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
+        <location line="-9"/>
         <source>Registered NAT networks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17988,19 +18017,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="+96"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetCloudNetwork.cpp" line="+106"/>
         <source>Select Subnet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+148"/>
-        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+154"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+164"/>
         <source>N&amp;ame:</source>
         <translation type="unfinished">I&amp;me:</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+264"/>
+        <location filename="../src/networkmanager/UIDetailsWidgetHostNetwork.cpp" line="+274"/>
         <location filename="../src/networkmanager/UIDetailsWidgetNATNetwork.cpp" line="+2"/>
         <source>Holds the name for this network.</source>
         <translation type="unfinished">Vsebuje ime tega omežja.</translation>
@@ -18426,7 +18455,7 @@
 <context>
     <name>UINetworkReplyPrivate</name>
     <message>
-        <location filename="../src/networking/UINetworkReply.cpp" line="+791"/>
+        <location filename="../src/networking/UINetworkReply.cpp" line="+801"/>
         <source>Host not found</source>
         <translation>Gostitelj ni bil najden</translation>
     </message>
@@ -18509,7 +18538,7 @@
 <context>
     <name>UINetworkSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UINetworkSettingsEditor.cpp" line="+218"/>
+        <location filename="../src/settings/editors/UINetworkSettingsEditor.cpp" line="+228"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="unfinished">&amp;Omogoči omrežni vmesnik</translation>
     </message>
@@ -18522,7 +18551,7 @@
 <context>
     <name>UINotificationCenter</name>
     <message>
-        <location filename="../src/notificationcenter/UINotificationCenter.cpp" line="+285"/>
+        <location filename="../src/notificationcenter/UINotificationCenter.cpp" line="+295"/>
         <source>Open notification center</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18925,7 +18954,7 @@
 <context>
     <name>UIParavirtProviderEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIParavirtProviderEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIParavirtProviderEditor.cpp" line="+82"/>
         <source>&amp;Paravirtualization Interface:</source>
         <translation type="unfinished">&amp;Vmesnik paranavideznosti:</translation>
     </message>
@@ -18938,7 +18967,7 @@
 <context>
     <name>UIPointingHIDEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIPointingHIDEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UIPointingHIDEditor.cpp" line="+82"/>
         <source>&amp;Pointing Device:</source>
         <translation type="unfinished">&amp;Kazalna naprava:</translation>
     </message>
@@ -18951,7 +18980,7 @@
 <context>
     <name>UIPopupCenter</name>
     <message>
-        <location filename="../src/widgets/UIPopupPane.cpp" line="+319"/>
+        <location filename="../src/widgets/UIPopupPane.cpp" line="+329"/>
         <location line="+1"/>
         <source>Click for full details</source>
         <translation>Kliknite za polne podrobnosti</translation>
@@ -18973,7 +19002,7 @@
 <context>
     <name>UIPortForwardingTable</name>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="+638"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="+648"/>
         <source>Name</source>
         <translation>Ime</translation>
     </message>
@@ -19041,7 +19070,7 @@
 <context>
     <name>UIProcessorFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIProcessorFeaturesEditor.cpp" line="+100"/>
+        <location filename="../src/settings/editors/UIProcessorFeaturesEditor.cpp" line="+110"/>
         <source>Extended Features:</source>
         <translation type="unfinished">Razširjene značilnosti:</translation>
     </message>
@@ -19069,7 +19098,7 @@
 <context>
     <name>UIProgressDialog</name>
     <message>
-        <location filename="../src/widgets/UIProgressDialog.cpp" line="+458"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="+468"/>
         <source>A few seconds remaining</source>
         <translation>Preostalo je še nekaj sekund</translation>
     </message>
@@ -19104,7 +19133,7 @@
 <context>
     <name>UIProxyFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIProxyFeaturesEditor.cpp" line="+107"/>
+        <location filename="../src/settings/editors/UIProxyFeaturesEditor.cpp" line="+117"/>
         <source>&amp;Auto-detect Host Proxy Settings</source>
         <translation type="unfinished">&amp;Samodejno zaznaj nastavitve posredniškega strežnika gostitelja</translation>
     </message>
@@ -19147,7 +19176,7 @@
 <context>
     <name>UIRecordingSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIRecordingSettingsEditor.cpp" line="+285"/>
+        <location filename="../src/settings/editors/UIRecordingSettingsEditor.cpp" line="+295"/>
         <source>&amp;Enable Recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19298,7 +19327,7 @@
 <context>
     <name>UIScaleFactorEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIScaleFactorEditor.cpp" line="+67"/>
+        <location filename="../src/settings/editors/UIScaleFactorEditor.cpp" line="+77"/>
         <location line="+119"/>
         <source>Monitor %1</source>
         <translation type="unfinished"></translation>
@@ -19412,7 +19441,7 @@
 <context>
     <name>UISettingsDialog</name>
     <message>
-        <location filename="../src/settings/UISettingsDialog.cpp" line="+252"/>
+        <location filename="../src/settings/UISettingsDialog.cpp" line="+262"/>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
         <translation>&lt;i&gt;Izberite kategorijo nastavitev s seznama na levi in premaknite miško nad predmet nastavitev, da dobite več podatkov.&lt;/i&gt;</translation>
     </message>
@@ -19435,7 +19464,7 @@
 <context>
     <name>UISettingsDialogGlobal</name>
     <message>
-        <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="+88"/>
+        <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="+98"/>
         <source>General</source>
         <translation>Splošno</translation>
     </message>
@@ -19573,7 +19602,7 @@
 <context>
     <name>UISettingsSerializerProgress</name>
     <message>
-        <location filename="../src/settings/UISettingsSerializer.cpp" line="+349"/>
+        <location filename="../src/settings/UISettingsSerializer.cpp" line="+359"/>
         <source>Loading Settings...</source>
         <translation>Nalaganje nastavitev …</translation>
     </message>
@@ -19586,7 +19615,7 @@
 <context>
     <name>UISharedClipboardEditor</name>
     <message>
-        <location filename="../src/settings/editors/UISharedClipboardEditor.cpp" line="+72"/>
+        <location filename="../src/settings/editors/UISharedClipboardEditor.cpp" line="+82"/>
         <source>&amp;Shared Clipboard:</source>
         <translation type="unfinished">&amp;Deljeno odložišče:</translation>
     </message>
@@ -19599,7 +19628,7 @@
 <context>
     <name>UISharedFolderDetailsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UISharedFolderDetailsEditor.cpp" line="+125"/>
+        <location filename="../src/settings/editors/UISharedFolderDetailsEditor.cpp" line="+135"/>
         <source>Add Share</source>
         <translation type="unfinished">Dodaj deljenje</translation>
     </message>
@@ -19760,7 +19789,7 @@
 <context>
     <name>UIShortcutConfigurationEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIShortcutConfigurationEditor.cpp" line="+486"/>
+        <location filename="../src/settings/editors/UIShortcutConfigurationEditor.cpp" line="+496"/>
         <source>Name</source>
         <translation type="unfinished">Ime</translation>
     </message>
@@ -19909,7 +19938,7 @@
 <context>
     <name>UISnapshotFolderEditor</name>
     <message>
-        <location filename="../src/settings/editors/UISnapshotFolderEditor.cpp" line="+84"/>
+        <location filename="../src/settings/editors/UISnapshotFolderEditor.cpp" line="+94"/>
         <source>S&amp;napshot Folder:</source>
         <translation type="unfinished">&amp;Mapa posnetkov stanja:</translation>
     </message>
@@ -19922,7 +19951,7 @@
 <context>
     <name>UISnapshotItem</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotPane.cpp" line="+290"/>
+        <location filename="../src/snapshots/UISnapshotPane.cpp" line="+300"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
         <translation type="unfinished">Trenutno stanje (spremenjeno)</translation>
@@ -20130,7 +20159,7 @@
 <context>
     <name>UISoftKeyboard</name>
     <message>
-        <location filename="../src/softkeyboard/UISoftKeyboard.cpp" line="+1115"/>
+        <location filename="../src/softkeyboard/UISoftKeyboard.cpp" line="+1125"/>
         <source>Layout Editor</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20342,7 +20371,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1"/>
+        <location line="+289"/>
+        <source>The file %1 has been deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Deleting the file %1 has failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-292"/>
         <source>Volume down</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20383,27 +20422,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>The file </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source> has been deleted</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Deleting the file </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source> has failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+866"/>
+        <location line="+876"/>
         <source>Settings</source>
         <translation type="unfinished">Nastavitve</translation>
     </message>
@@ -20496,7 +20515,7 @@
 <context>
     <name>UIStatusBarEditorWidget</name>
     <message>
-        <location filename="../src/widgets/UIStatusBarEditorWindow.cpp" line="+488"/>
+        <location filename="../src/widgets/UIStatusBarEditorWindow.cpp" line="+498"/>
         <source>Allows to modify VM status-bar contents.</source>
         <translation type="unfinished">Dovoli spreminjanje vsebine vrstice stanja navideznega računalnika.</translation>
     </message>
@@ -20519,7 +20538,7 @@
 <context>
     <name>UIStorageSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIStorageSettingsEditor.cpp" line="+1302"/>
+        <location filename="../src/settings/editors/UIStorageSettingsEditor.cpp" line="+1312"/>
         <source>Controller: %1</source>
         <translation type="unfinished">Krmilnik: %1</translation>
     </message>
@@ -20888,7 +20907,7 @@
 <context>
     <name>UITakeSnapshotDialog</name>
     <message>
-        <location filename="../src/UITakeSnapshotDialog.cpp" line="+98"/>
+        <location filename="../src/UITakeSnapshotDialog.cpp" line="+108"/>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Zajemi ponetek stanja navideznega računalnika</translation>
     </message>
@@ -21015,7 +21034,7 @@
 <context>
     <name>UIToolBox</name>
     <message>
-        <location filename="../src/widgets/UIToolBox.cpp" line="+348"/>
+        <location filename="../src/widgets/UIToolBox.cpp" line="+358"/>
         <source>Expands the page &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21023,7 +21042,7 @@
 <context>
     <name>UIToolsModel</name>
     <message>
-        <location filename="../src/manager/tools/UIToolsModel.cpp" line="+454"/>
+        <location filename="../src/manager/tools/UIToolsModel.cpp" line="+464"/>
         <source>Welcome</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21115,7 +21134,7 @@
 <context>
     <name>UIToolsView</name>
     <message>
-        <location filename="../src/manager/tools/UIToolsView.cpp" line="+166"/>
+        <location filename="../src/manager/tools/UIToolsView.cpp" line="+176"/>
         <source>Contains a list of VirtualBox tools.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21246,7 +21265,7 @@
 <context>
     <name>UIUSBControllerEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBControllerEditor.cpp" line="+70"/>
+        <location filename="../src/settings/editors/UIUSBControllerEditor.cpp" line="+80"/>
         <source>USB &amp;1.1 (OHCI) Controller</source>
         <translation type="unfinished">Krmilnik USB &amp;1.1 (OHCI)</translation>
     </message>
@@ -21279,7 +21298,7 @@
 <context>
     <name>UIUSBFilterDetailsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBFilterDetailsEditor.cpp" line="+162"/>
+        <location filename="../src/settings/editors/UIUSBFilterDetailsEditor.cpp" line="+172"/>
         <source>USB Filter Details</source>
         <translation type="unfinished">Podrobnosti filtra USB</translation>
     </message>
@@ -21430,7 +21449,7 @@
 <context>
     <name>UIUSBFiltersEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBFiltersEditor.cpp" line="+114"/>
+        <location filename="../src/settings/editors/UIUSBFiltersEditor.cpp" line="+124"/>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
         <translation type="unfinished">%1, dejaven</translation>
@@ -21530,7 +21549,7 @@
 <context>
     <name>UIUSBSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUSBSettingsEditor.cpp" line="+98"/>
+        <location filename="../src/settings/editors/UIUSBSettingsEditor.cpp" line="+108"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="unfinished">Omogoči krmilnik &amp;USB</translation>
     </message>
@@ -21543,7 +21562,7 @@
 <context>
     <name>UIUpdateManager</name>
     <message>
-        <location filename="../src/networking/UIUpdateDefs.cpp" line="+46"/>
+        <location filename="../src/networking/UIUpdateDefs.cpp" line="+56"/>
         <source>1 day</source>
         <translation>1 dan</translation>
     </message>
@@ -21601,7 +21620,7 @@
 <context>
     <name>UIUpdateSettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIUpdateSettingsEditor.cpp" line="+85"/>
+        <location filename="../src/settings/editors/UIUpdateSettingsEditor.cpp" line="+95"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation type="unfinished">Ko je označeno, se bo program občasno povezal na spletno mesto VirtualBox in preveril, ali je na voljo nova različica VirtualBoxa.</translation>
     </message>
@@ -21681,7 +21700,7 @@
 <context>
     <name>UIUserNamePasswordEditor</name>
     <message>
-        <location filename="../src/wizards/editors/UIUserNamePasswordEditor.cpp" line="+215"/>
+        <location filename="../src/wizards/editors/UIUserNamePasswordEditor.cpp" line="+225"/>
         <source>Invalid username</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21724,7 +21743,7 @@
 <context>
     <name>UIVMActivityOverviewWidget</name>
     <message>
-        <location filename="../src/activity/overview/UIVMActivityOverviewWidget.cpp" line="+490"/>
+        <location filename="../src/activity/overview/UIVMActivityOverviewWidget.cpp" line="+500"/>
         <location line="+12"/>
         <location line="+143"/>
         <location line="+19"/>
@@ -21854,7 +21873,7 @@
 <context>
     <name>UIVMCloseDialog</name>
     <message>
-        <location filename="../src/runtime/UIVMCloseDialog.cpp" line="+138"/>
+        <location filename="../src/runtime/UIVMCloseDialog.cpp" line="+148"/>
         <source>Close Virtual Machine</source>
         <translation>Zapri navidezni računalnik</translation>
     </message>
@@ -22028,7 +22047,7 @@
 <context>
     <name>UIVMInformationDialog</name>
     <message>
-        <location filename="../src/runtime/information/UIVMInformationDialog.cpp" line="+90"/>
+        <location filename="../src/runtime/information/UIVMInformationDialog.cpp" line="+100"/>
         <source>%1 - Session Information</source>
         <translation>%1 - podatki seje</translation>
     </message>
@@ -22083,7 +22102,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/information/UIInformationConfiguration.cpp" line="+84"/>
+        <location filename="../src/runtime/information/UIInformationConfiguration.cpp" line="+94"/>
         <source>General</source>
         <translation type="unfinished">Splošno</translation>
     </message>
@@ -22129,12 +22148,12 @@
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/runtime/information/UIInformationRuntime.cpp" line="+512"/>
+        <location filename="../src/runtime/information/UIInformationRuntime.cpp" line="+522"/>
         <source>Copy All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/activity/vmactivity/UIVMActivityMonitor.cpp" line="+336"/>
+        <location filename="../src/activity/vmactivity/UIVMActivityMonitor.cpp" line="+346"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22261,8 +22280,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+183"/>
-        <source>Export activity data of the machine </source>
+        <location line="+182"/>
+        <source>Export activity data of the machine &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -22485,7 +22504,7 @@
 <context>
     <name>UIVMLogViewerWidget</name>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerBookmarksPanel.cpp" line="+213"/>
+        <location filename="../src/logviewer/UIVMLogViewerBookmarksPanel.cpp" line="+223"/>
         <source>Delete the current bookmark</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22510,7 +22529,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+100"/>
+        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+110"/>
         <source>%1 - Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22550,7 +22569,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerFilterPanel.cpp" line="+571"/>
+        <location filename="../src/logviewer/UIVMLogViewerFilterPanel.cpp" line="+581"/>
         <source>Select or enter a term which will be used in filtering the log text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22575,7 +22594,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerOptionsPanel.cpp" line="+167"/>
+        <location filename="../src/logviewer/UIVMLogViewerOptionsPanel.cpp" line="+177"/>
         <source>Show Line Numbers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22615,7 +22634,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerSearchPanel.cpp" line="+273"/>
+        <location filename="../src/logviewer/UIVMLogViewerSearchPanel.cpp" line="+283"/>
         <source>Enter a search string here</source>
         <translation type="unfinished">Sem vnesite iskalni niz</translation>
     </message>
@@ -22664,7 +22683,7 @@
         <translation type="obsolete">Niz ni bil najden</translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerTextEdit.cpp" line="+306"/>
+        <location filename="../src/logviewer/UIVMLogViewerTextEdit.cpp" line="+316"/>
         <source>Filtered</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22674,7 +22693,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerWidget.cpp" line="+328"/>
+        <location filename="../src/logviewer/UIVMLogViewerWidget.cpp" line="+338"/>
         <source>Close this machine&apos;s logs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22694,11 +22713,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>NoLogFile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nobene datoteke dnevnika ni bilo mogoče najti. Pritisnite gumb &lt;b&gt;Osveži&lt;/b&gt;, da ponovno preiščete mapo z dnevniki &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
@@ -22706,7 +22720,7 @@
 <context>
     <name>UIVRDEAuthLibraryEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIVRDEAuthLibraryEditor.cpp" line="+68"/>
+        <location filename="../src/settings/editors/UIVRDEAuthLibraryEditor.cpp" line="+78"/>
         <source>V&amp;RDP Authentication Library:</source>
         <translation type="unfinished">&amp;Knjižnica overitve VRDP:</translation>
     </message>
@@ -22719,7 +22733,7 @@
 <context>
     <name>UIVRDESettingsEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIVRDESettingsEditor.cpp" line="+148"/>
+        <location filename="../src/settings/editors/UIVRDESettingsEditor.cpp" line="+158"/>
         <source>&amp;Enable Server</source>
         <translation type="unfinished">&amp;Omogoči strežnik</translation>
     </message>
@@ -22777,7 +22791,7 @@
 <context>
     <name>UIVideoMemoryEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIVideoMemoryEditor.cpp" line="+163"/>
+        <location filename="../src/settings/editors/UIVideoMemoryEditor.cpp" line="+173"/>
         <source>Video &amp;Memory:</source>
         <translation type="unfinished">&amp;Grafični pomnilnik:</translation>
     </message>
@@ -22833,7 +22847,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/manager/UIVirtualBoxManagerWidget.cpp" line="+291"/>
+        <location filename="../src/manager/UIVirtualBoxManagerWidget.cpp" line="+301"/>
         <source>Show Toolbar Text</source>
         <translation type="unfinished">Prikaži besedilo orodnih vrstic</translation>
     </message>
@@ -22848,7 +22862,7 @@
 <context>
     <name>UIVirtualCPUEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIVirtualCPUEditor.cpp" line="+77"/>
+        <location filename="../src/settings/editors/UIVirtualCPUEditor.cpp" line="+87"/>
         <source>&amp;Processors:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22900,7 +22914,7 @@
 <context>
     <name>UIVirtualMachineItemCloud</name>
     <message>
-        <location filename="../src/manager/UIVirtualMachineItemCloud.cpp" line="+347"/>
+        <location filename="../src/manager/UIVirtualMachineItemCloud.cpp" line="+357"/>
         <source>Loading ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22929,7 +22943,7 @@
 <context>
     <name>UIVirtualMachineItemLocal</name>
     <message>
-        <location filename="../src/manager/UIVirtualMachineItemLocal.cpp" line="+277"/>
+        <location filename="../src/manager/UIVirtualMachineItemLocal.cpp" line="+287"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 od %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;seja %4&lt;/nobr&gt;</translation>
@@ -22965,7 +22979,7 @@
 <context>
     <name>UIVisoCreatorWidget</name>
     <message>
-        <location filename="../src/medium/viso/UIVisoBrowserBase.cpp" line="+96"/>
+        <location filename="../src/medium/viso/UIVisoBrowserBase.cpp" line="+106"/>
         <source>Click to show/hide the tree view.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22975,7 +22989,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoContentBrowser.cpp" line="+237"/>
+        <location filename="../src/medium/viso/UIVisoContentBrowser.cpp" line="+247"/>
         <source>Name</source>
         <translation type="unfinished">Ime</translation>
     </message>
@@ -23010,7 +23024,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+121"/>
+        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+131"/>
         <source>Host File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23040,7 +23054,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoConfigurationPanel.cpp" line="+71"/>
+        <location filename="../src/medium/viso/UIVisoConfigurationPanel.cpp" line="+81"/>
         <location line="+41"/>
         <source>VISO Name:</source>
         <translation type="unfinished"></translation>
@@ -23067,7 +23081,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoCreatorOptionsPanel.cpp" line="+53"/>
+        <location filename="../src/medium/viso/UIVisoCreatorOptionsPanel.cpp" line="+63"/>
         <location line="+20"/>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
@@ -23081,7 +23095,7 @@
 <context>
     <name>UIVisualStateEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIVisualStateEditor.cpp" line="+82"/>
+        <location filename="../src/settings/editors/UIVisualStateEditor.cpp" line="+92"/>
         <source>Visual &amp;State:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23094,7 +23108,7 @@
 <context>
     <name>UIWelcomePane</name>
     <message>
-        <location filename="../src/manager/UIWelcomePane.cpp" line="+155"/>
+        <location filename="../src/manager/UIWelcomePane.cpp" line="+165"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of application window contains global tools and lists all virtual machines and virtual machine groups on your computer. You can import, add and create new VMs using corresponding toolbar buttons. You can popup a tools of currently selected element using corresponding element button.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23121,12 +23135,12 @@
 <context>
     <name>UIWizardAddCloudVM</name>
     <message>
-        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVM.cpp" line="+113"/>
+        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVM.cpp" line="+123"/>
         <source>Add Cloud Virtual Machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.cpp" line="+162"/>
+        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.cpp" line="+172"/>
         <source>Location</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23137,7 +23151,7 @@
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVMPageSource.cpp" line="+402"/>
+        <location filename="../src/wizards/addcloudvm/UIWizardAddCloudVMPageSource.cpp" line="+412"/>
         <source>Open Cloud Profile Manager...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23164,7 +23178,7 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.&lt;/p&gt;</source>
+        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -23189,7 +23203,7 @@
         <translation type="vanished">Kopiraj</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDVariantPage.cpp" line="+78"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDVariantPage.cpp" line="+88"/>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
         <translation>Izberite, ali naj se nova datoteka odtisa navideznega diska med uporabo povečuje (dinamično dodeljeno) ali naj se ustvari v največji velikosti (nespremenljiva velikost).</translation>
     </message>
@@ -23352,12 +23366,12 @@
         <translation type="vanished">&amp;Vrsta datoteke odtisa diska</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVD.cpp" line="+97"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVD.cpp" line="+107"/>
         <source>Copy Virtual Disk</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDFormatPage.cpp" line="+58"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDFormatPage.cpp" line="+68"/>
         <source>Virtual Hard disk file type</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23367,13 +23381,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPathSizePage.cpp" line="+55"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDPathSizePage.cpp" line="+65"/>
         <source>Location and size of the disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+23"/>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp" line="+152"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp" line="+162"/>
         <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23386,7 +23400,7 @@
 <context>
     <name>UIWizardCloneVM</name>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVM.cpp" line="+153"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVM.cpp" line="+163"/>
         <source>Linked Base for %1 and %2</source>
         <translation>Povezana osnova za %1 in %2</translation>
     </message>
@@ -23400,7 +23414,7 @@
         <translation type="vanished">Kloniraj</translation>
     </message>
     <message>
-        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="+148"/>
+        <location filename="../src/wizards/editors/UIWizardCloneVMEditors.cpp" line="+158"/>
         <source>%1 Clone</source>
         <translation>Klon %1</translation>
     </message>
@@ -23409,7 +23423,7 @@
         <translation type="vanished">Novo ime računalnika</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMNamePathPage.cpp" line="+48"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMNamePathPage.cpp" line="+58"/>
         <source>New machine name and path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23431,8 +23445,8 @@
         <translation type="vanished">&amp;Ponovno vpelji naslov MAC vseh omrežnih kartic</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMTypePage.cpp" line="+68"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMExpertPage.cpp" line="+95"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMTypePage.cpp" line="+78"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMExpertPage.cpp" line="+105"/>
         <source>Clone type</source>
         <translation>Vrsta klona</translation>
     </message>
@@ -23452,7 +23466,7 @@
         <translation>P&amp;ovezan klon</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMModePage.cpp" line="+60"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMModePage.cpp" line="+70"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMExpertPage.cpp" line="+2"/>
         <source>Snapshots</source>
         <translation>Posnetki stanja</translation>
@@ -23559,21 +23573,21 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Enables keeping the disk names during cloning.</source>
+        <source>When checked, disk names will be preserved during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+5"/>
+        <source>When checked, hardware UUIDs will be preserved during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-4"/>
         <source>Keep &amp;Disk Names</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+5"/>
         <source>Keep Hard&amp;ware UUIDs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23655,7 +23669,7 @@
         <translation type="vanished">Izvažanje namenske naprave …</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="+249"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="+259"/>
         <source>Export Virtual Appliance</source>
         <translation>Izvozi namensko napravo</translation>
     </message>
@@ -23672,7 +23686,7 @@
         <translation type="vanished">Navidezni računalniki za izvoz</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageVMs.cpp" line="+196"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageVMs.cpp" line="+206"/>
         <source>Virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
@@ -23682,7 +23696,7 @@
         <translation>&lt;p&gt;Izberite navidezne računalnike, ki morajo biti dodani k namenski napravi. Lahko izberete več kot enega. Upoštevajte, da morate te računalnike pred izvozom izklopiti.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageSettings.cpp" line="+163"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageSettings.cpp" line="+173"/>
         <source>Appliance settings</source>
         <translation>Nastavitve namenske naprave</translation>
     </message>
@@ -23707,8 +23721,8 @@
         <translation type="vanished">p&amp;reprostem sistemu za shranjevanje (S3)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+427"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="+867"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+437"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="+877"/>
         <source>Appliance</source>
         <translation>Namenska naprava</translation>
     </message>
@@ -23760,7 +23774,12 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
+        <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -23780,7 +23799,7 @@
     </message>
     <message>
         <location line="+4"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="+11"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="+6"/>
         <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished">Izberite datoteko, v katero želite izvoziti namensko napravo …</translation>
     </message>
@@ -23911,17 +23930,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="-74"/>
-        <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Oracle Public Cloud Format 1.0</source>
         <translation type="vanished">Oblika Oracle Public Cloud 1.0</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-60"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="+14"/>
+        <location line="-60"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp" line="-60"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
         <translation>Zapiši v zastareli obliki OVF 0.9 za združljivost z drugimi izdelki navideznosti.</translation>
     </message>
@@ -24088,7 +24102,7 @@
         <translation type="vanished">Uvozi</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="+613"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="+623"/>
         <source>Appliance to import</source>
         <translation>Namenska naprava za uvoz</translation>
     </message>
@@ -24097,13 +24111,13 @@
         <translation type="vanished">&lt;p&gt;VirtualBox trenutno podpira uvoz namenskih naprav shranjenih v odprti obliki navideznosti (OVF). Za nadaljevanje spodaj izberite datoteko za uvoz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+381"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+391"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="+52"/>
         <source>Open Virtualization Format (%1)</source>
         <translation>Odprta oblika navideznosti (%1)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+442"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+452"/>
         <source>Appliance settings</source>
         <translation>Nastavitve namenske naprave</translation>
     </message>
@@ -24129,11 +24143,16 @@
     </message>
     <message>
         <location line="+9"/>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.&lt;/p&gt;</source>
+        <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+5"/>
+        <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24193,11 +24212,11 @@
     <message>
         <location line="+1"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSettings.cpp" line="+1"/>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="-35"/>
         <source>Holds the path of the file selected for import.</source>
         <translation type="unfinished"></translation>
@@ -24208,7 +24227,7 @@
         <translation type="unfinished">&amp;Datoteka:</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="-28"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="-29"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="+3"/>
         <source>Choose a virtual appliance file to import...</source>
         <translation>Izberi datoteko namenske naprave  za uvoz …</translation>
@@ -24222,11 +24241,6 @@
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageSource.cpp" line="+10"/>
         <source>&amp;Machines:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-43"/>
-        <source>&lt;p&gt;Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -24308,7 +24322,7 @@
 <context>
     <name>UIWizardNewCloudVM</name>
     <message>
-        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVM.cpp" line="+128"/>
+        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVM.cpp" line="+138"/>
         <source>Create Cloud Virtual Machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24317,7 +24331,7 @@
         <translation type="obsolete">Ustvari</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp" line="+200"/>
+        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp" line="+210"/>
         <source>Location</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24328,7 +24342,7 @@
     </message>
     <message>
         <location line="+10"/>
-        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageSource.cpp" line="+455"/>
+        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageSource.cpp" line="+465"/>
         <source>Create VM for cloud service provider.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24351,7 +24365,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageProperties.cpp" line="+91"/>
+        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageProperties.cpp" line="+101"/>
         <source>Cloud Virtual Machine settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24382,7 +24396,7 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.&lt;/p&gt;</source>
+        <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -24419,7 +24433,7 @@
         <translation type="vanished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp" line="+99"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp" line="+109"/>
         <source>File location and size</source>
         <translation>Mesto in velikost datoteke</translation>
     </message>
@@ -24432,7 +24446,7 @@
         <translation type="vanished">&amp;Velikost datoteke</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVD.cpp" line="+196"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVD.cpp" line="+206"/>
         <source>Create Virtual Hard Disk</source>
         <translation>Ustvari navidezni trdi disk</translation>
     </message>
@@ -24441,7 +24455,7 @@
         <translation type="vanished">Vrsta datoteke trdega diska</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDFileTypePage.cpp" line="+57"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDFileTypePage.cpp" line="+67"/>
         <source>Virtual Hard disk file type</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24451,7 +24465,7 @@
         <translation>Izberite vrsto datoteke, ki bi jo radi uporabili za nov navidezni trdi disk. Če je ne boste uporabljali z drugo programsko opremo navideznosti, lahko pustite nastavitev nespremenjeno.</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDVariantPage.cpp" line="+66"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDVariantPage.cpp" line="+76"/>
         <source>Storage on physical hard disk</source>
         <translation>Pomnilniška naprava na fizičnem trdem disku</translation>
     </message>
@@ -24492,7 +24506,7 @@
         <translation type="vanished">&amp;Vrsta datoteke trdega diska</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDExpertPage.cpp" line="+131"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDExpertPage.cpp" line="+141"/>
         <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24500,7 +24514,7 @@
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+504"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+514"/>
         <source>Create Virtual Machine</source>
         <translation>Ustvari navidezni računalnik</translation>
     </message>
@@ -24561,8 +24575,8 @@
         <translation type="vanished">&lt;p&gt;&lt;nobr&gt;Navidezni računalnik boste ustvarili v naslednji mapi:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="+68"/>
-        <location filename="../src/wizards/newvm/UIWizardNewVMUnattendedPage.cpp" line="+109"/>
+        <location filename="../src/wizards/editors/UIWizardNewVMEditors.cpp" line="+78"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMUnattendedPage.cpp" line="+119"/>
         <source>Username and Password</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24583,11 +24597,21 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Enables installation of the guest additions after the guest OS install.</source>
+        <source>When checked, the guest additions will be installed after the guest OS install.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+106"/>
+        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+141"/>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished">Ko je označeno, bo gost podprl razširjen vmesnik strojne programske opreme (EFI), ki je zahtevan za zagon določenih gostujočih OS-ov. OS-i brez podpore za EFI se ne bodo mogli zagnati, če je ta možnost omogočena.</translation>
+    </message>
+    <message>
+        <location line="-227"/>
         <source>Invalid Guest Additions installation media</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24607,12 +24631,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Enables headless boot (with no GUI) of the newly created virtual machine for the unattended guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>Holds the product key.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24622,12 +24641,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Enables Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMNameOSTypePage.cpp" line="+491"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMNameOSTypePage.cpp" line="+501"/>
         <source>Virtual machine Name and Operating System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24638,7 +24652,7 @@
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../src/wizards/newvm/UIWizardNewVMExpertPage.cpp" line="+207"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMExpertPage.cpp" line="+217"/>
         <source>&amp;Skip Unattended Installation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24660,12 +24674,12 @@
     </message>
     <message>
         <location line="+6"/>
-        <location line="+6"/>
-        <source>Detected OS type: </source>
+        <location line="+8"/>
+        <source>Detected OS type: %1. %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-6"/>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24675,7 +24689,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
         <source>This OS type can be installed unattendedly. The install will start after this wizard is closed.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -24692,28 +24706,28 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>&lt;p&gt;You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.&lt;/p&gt;</source>
+        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMHardwarePage.cpp" line="+69"/>
-        <location filename="../src/wizards/newvm/UIWizardNewVMSummaryPage.cpp" line="+369"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMHardwarePage.cpp" line="+79"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMSummaryPage.cpp" line="+379"/>
         <source>Hardware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&lt;p&gt;You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.&lt;/p&gt;</source>
+        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMDiskPage.cpp" line="+204"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMDiskPage.cpp" line="+214"/>
         <source>Virtual Hard disk</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.&lt;/p&gt;</source>
+        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -24964,7 +24978,7 @@
 <context>
     <name>VBoxAboutDlg</name>
     <message>
-        <location filename="../src/VBoxAboutDlg.cpp" line="+82"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="+92"/>
         <source>VirtualBox - About</source>
         <translation>O VirtualBoxu</translation>
     </message>
@@ -26794,7 +26808,7 @@
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="../src/VBoxLicenseViewer.cpp" line="+151"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="+161"/>
         <source>VirtualBox License</source>
         <translation>Dovoljenje za VirtualBox</translation>
     </message>

@@ -2888,7 +2888,7 @@
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Выход</translation>
     </message>
     <message>
         <source>[New]</source>
@@ -2993,7 +2993,7 @@
     </message>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Менеджер плагинов</translation>
     </message>
     <message>
         <source>Install extension pack</source>
@@ -3033,7 +3033,7 @@
     </message>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Менеджер облачной консоли</translation>
     </message>
     <message>
         <source>Add new cloud console application</source>
@@ -3145,6 +3145,14 @@
     </message>
     <message>
         <source>Remove Inaccessible Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Online Documentation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox user manual</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7715,27 +7723,52 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Код&amp;nbsp;ошибки: </translation>
+        <translation type="vanished">Код&amp;nbsp;ошибки: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Компонент: </translation>
+        <translation type="vanished">Компонент: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Интерфейс: </translation>
+        <translation type="vanished">Интерфейс: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Вызванный интерфейс: </translation>
+        <translation type="vanished">Вызванный интерфейс: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Код&amp;nbsp;ошибки&amp;nbsp;метода: </translation>
+        <translation type="vanished">Код&amp;nbsp;ошибки&amp;nbsp;метода: </translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Component:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC:</source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11122,24 +11155,12 @@ p, li { white-space: pre-wrap; }
         <translation>Щелчёк мышью чтоб увеличить изображение</translation>
     </message>
     <message>
-        <source>Open in Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in Link New Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Delete Bookmark</source>
         <translation>Удалить закладку</translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
         <translation>Удалить все закладки</translation>
-    </message>
-    <message>
-        <source>Bookmark added: </source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close T&amp;ab</source>
@@ -11192,6 +11213,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Find a String in the Current Page</source>
         <translation>Найти строку на текущей странице</translation>
+    </message>
+    <message>
+        <source>Bookmark added:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11687,14 +11712,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Holds the domain name.</source>
         <translation>Определяет доменное имя.</translation>
-    </message>
-    <message>
-        <source>Hostname should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Domain name should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16861,7 +16878,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter the search term and press Return</source>
-        <translation>Введите условие поиска и нажмите Enter/Return</translation>
+        <translation type="vanished">Введите условие поиска и нажмите Enter/Return</translation>
     </message>
     <message>
         <source>Show the previous item matching the search term</source>
@@ -16870,6 +16887,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show the next item matching the search term</source>
         <translation>Показать следующий элемент, соответствующий условию поиска</translation>
+    </message>
+    <message>
+        <source>Enter the search term and press Enter/Return</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16979,7 +17000,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Выбрать</translation>
     </message>
     <message>
-        <source>Attached the selected medium to the drive</source>
+        <source>Attach the selected medium to the drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17301,12 +17322,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID ошибки: &lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ID ошибки: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>Важность: </translation>
+        <translation type="vanished">Важность: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
@@ -19256,7 +19277,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Accept</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Применить</translation>
     </message>
     <message>
         <source>Reject</source>
@@ -20055,6 +20076,16 @@ p, li { white-space: pre-wrap; }
         <source>Can&apos;t toggle VRDE server ...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Severity:</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -20264,15 +20295,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name for new virtual machine.</source>
-        <translation>Определяет имя виртуальной машины.</translation>
+        <translation type="vanished">Определяет имя виртуальной машины.</translation>
     </message>
     <message>
         <source>Selects the folder hosting new virtual machine.</source>
-        <translation>Определяет папку расположения виртуальной машины.</translation>
+        <translation type="vanished">Определяет папку расположения виртуальной машины.</translation>
     </message>
     <message>
         <source>Selects an ISO image to be attached to the new virtual machine or used in unattended install.</source>
-        <translation>Определяет ISO образ, подключенный к виртуальной машине или используемый для автоматической установки.</translation>
+        <translation type="vanished">Определяет ISO образ, подключенный к виртуальной машине или используемый для автоматической установки.</translation>
+    </message>
+    <message>
+        <source>Holds the name for virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the folder hosting virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -20907,7 +20950,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Registered host networks</source>
-        <translation>Зарегистрированные виртуальные сети хоста</translation>
+        <translation type="vanished">Зарегистрированные виртуальные сети хоста</translation>
     </message>
     <message>
         <source>Registered NAT networks</source>
@@ -20916,6 +20959,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Registered cloud networks</source>
         <translation>Зарегистрированные облачные сети</translation>
+    </message>
+    <message>
+        <source>Registered host-only networks</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -23362,19 +23409,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The file </source>
-        <translation>Файл </translation>
+        <translation type="vanished">Файл </translation>
     </message>
     <message>
         <source> has been deleted</source>
-        <translation> был удалён</translation>
+        <translation type="vanished"> был удалён</translation>
     </message>
     <message>
         <source>Deleting the file </source>
-        <translation>Удаление файла </translation>
+        <translation type="vanished">Удаление файла </translation>
     </message>
     <message>
         <source> has failed</source>
-        <translation> не удалось</translation>
+        <translation type="vanished"> не удалось</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -23455,6 +23502,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Help</source>
         <translation>Справка</translation>
+    </message>
+    <message>
+        <source>The file %1 has been deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting the file %1 has failed</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -25137,7 +25192,7 @@ p, li { white-space: pre-wrap; }
         <translation>Сек.</translation>
     </message>
     <message>
-        <source>Export activity data of the machine </source>
+        <source>Export activity data of the machine &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25420,10 +25475,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не найдено лог файлов машины %1. Нажмите кнопку &lt;b&gt;Перезагрузить&lt;/b&gt; для повторного чтения папки с логами &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>NoLogFile</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 - Log Viewer</source>
@@ -25991,7 +26042,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста, выберите один из профайлов облачных сервисов, зарегистрированных у вас, для создания машины.  Соответствующий список образов дисков будет обновлён.  Выберите один из образов списка ниже для того, чтобы продолжить.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Пожалуйста, выберите один из профайлов облачных сервисов, зарегистрированных у вас, для создания машины.  Соответствующий список образов дисков будет обновлён.  Выберите один из образов списка ниже для того, чтобы продолжить.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
@@ -26000,6 +26051,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Instances:</source>
         <translation>&amp;Экземпляры:</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -26486,14 +26541,6 @@ p, li { white-space: pre-wrap; }
         <translation>Определяет политику MAC адреса при клонировании:</translation>
     </message>
     <message>
-        <source>Enables keeping the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enables keeping hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Keep Hard&amp;ware UUIDs</source>
         <translation>Сохранить идентификаторы &amp;оборудования</translation>
     </message>
@@ -26512,6 +26559,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
         <translation>Если выбрано, все сохранённые состояния исходной машины также будут клонированы.</translation>
+    </message>
+    <message>
+        <source>When checked, disk names will be preserved during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, hardware UUIDs will be preserved during cloning.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -26774,7 +26829,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста выберите имя файла для экспорта конфигурации. Кроме того, Вы можете задать определённое количество опций, влияющих на размер и содержимое конечного архива.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Пожалуйста выберите имя файла для экспорта конфигурации. Кроме того, Вы можете задать определённое количество опций, влияющих на размер и содержимое конечного архива.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual system settings</source>
@@ -26861,12 +26916,16 @@ p, li { white-space: pre-wrap; }
         <translation>Параметры формата</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
+        <source>Virtual machines</source>
+        <translation>Виртуальные машины</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Virtual machines</source>
-        <translation>Виртуальные машины</translation>
+        <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27063,7 +27122,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста, выберите файл для импорта конфигурации.  VirtualBox в данный момент поддерживает импорт конфигураций, сохранённых в Открытом Формате Виртуализации (OVF).  Выберите файл, чтобы продолжить.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Пожалуйста, выберите файл для импорта конфигурации.  VirtualBox в данный момент поддерживает импорт конфигураций, сохранённых в Открытом Формате Виртуализации (OVF).  Выберите файл, чтобы продолжить.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>These are the the suggested settings of the cloud VM import procedure, they are influencing the resulting local VM instance. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
@@ -27131,7 +27190,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста, выберите один из профайлов облачных сервисов, зарегистрированных у вас, для создания машины.  Соответствующий список образов дисков будет обновлён.  Выберите один из образов списка ниже для того, чтобы продолжить.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Пожалуйста, выберите один из профайлов облачных сервисов, зарегистрированных у вас, для создания машины.  Соответствующий список образов дисков будет обновлён.  Выберите один из образов списка ниже для того, чтобы продолжить.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
@@ -27154,7 +27213,15 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>&amp;Импортировать жёсткие диски как VDI</translation>
     </message>
     <message>
-        <source>Import all the hard drives that belong to this appliance in VDI format.</source>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation type="unfinished">Если стоит галочка, все диски, принадлежащие данной конфигурации, будут импортированы в формате VDI.</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27310,16 +27377,16 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>&amp;Расположение:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Profile:</source>
         <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
         <translation>&amp;Источник:</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27607,16 +27674,8 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>&amp;Фоновая установка</translation>
     </message>
     <message>
-        <source>Enables headless boot (with no GUI) of the newly created virtual machine for the unattended guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Enable EFI (special OSes only)</source>
         <translation>&amp;Включить EFI (только специальные ОС)</translation>
-    </message>
-    <message>
-        <source>Enables Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Virtual machine Name and Operating System</source>
@@ -27644,7 +27703,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Detected OS type: </source>
-        <translation>Определённый тип ОС: </translation>
+        <translation type="vanished">Определённый тип ОС: </translation>
     </message>
     <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
@@ -27667,24 +27726,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Автоматическая установка гостевой ОС</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hardware</source>
         <translation>Оборудование</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual Hard disk</source>
         <translation>Виртуальный жёсткий диск</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Do Not Add a Virtual Hard Disk</source>
@@ -27867,16 +27914,40 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Текущая таблица подытоживает конфигурацию, выбранную вами для виртуальной машины. Если вы довольны текущей конфигурацией нажмите кнопку Готово для создания виртуальной машины. В противном случае вы можете перейти к предыдущим страницам и изменить настройки.</translation>
     </message>
     <message>
-        <source>Enables installation of the guest additions after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Invalid Guest Additions installation media</source>
         <translation>Некорректный носитель Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>Holds the product key.</source>
         <translation>Опредеяет ключ продукта.</translation>
+    </message>
+    <message>
+        <source>When checked, the guest additions will be installed after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished">Если галочка стоит, гостевая ОС будет поддерживать Extended Firmware Interface (EFI), что необходимо для загрузки некоторых гостевых ОС. Гостевые системы, которые не поддерживают EFI, не будут иметь возможности загрузиться в случае выбора данной опции.</translation>
+    </message>
+    <message>
+        <source>Detected OS type: %1. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
