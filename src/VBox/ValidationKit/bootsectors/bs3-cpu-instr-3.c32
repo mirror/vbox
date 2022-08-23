@@ -9614,6 +9614,51 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovzxbw_pmovzxbd_pmovzxbq_pmovzxwd_pmovzxw
 
 
 /*
+ * [V]LDDQU - Load unaligned integer from memory.
+ */
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_lddqu_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_lddqu_XMM10_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vlddqu_XMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vlddqu_XMM11_FSxBX_icebp_c64;
+BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vlddqu_YMM1_FSxBX_icebp);
+extern FNBS3FAR             bs3CpuInstr3_vlddqu_YMM12_FSxBX_icebp_c64;
+
+BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_lddqu(uint8_t bMode)
+{
+    static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
+    {
+        {  bs3CpuInstr3_lddqu_XMM1_FSxBX_icebp_c16,       X86_XCPT_DB, RM_MEM, T_SSE3,      1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+
+        {  bs3CpuInstr3_vlddqu_XMM1_FSxBX_icebp_c16,      X86_XCPT_DB, RM_MEM, T_AVX_128,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vlddqu_YMM1_FSxBX_icebp_c16,      X86_XCPT_DB, RM_MEM, T_AVX_256,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_T const s_aTests32[] =
+    {
+        {  bs3CpuInstr3_lddqu_XMM1_FSxBX_icebp_c32,       X86_XCPT_DB, RM_MEM, T_SSE3,      1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+
+        {  bs3CpuInstr3_vlddqu_XMM1_FSxBX_icebp_c32,      X86_XCPT_DB, RM_MEM, T_AVX_128,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+
+        {  bs3CpuInstr3_vlddqu_YMM1_FSxBX_icebp_c32,      X86_XCPT_DB, RM_MEM, T_AVX_256,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_T const s_aTests64[] =
+    {
+        {  bs3CpuInstr3_lddqu_XMM1_FSxBX_icebp_c64,       X86_XCPT_DB, RM_MEM, T_SSE3,      1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_lddqu_XMM10_FSxBX_icebp_c64,      X86_XCPT_DB, RM_MEM, T_SSE3,     10, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+
+        {  bs3CpuInstr3_vlddqu_XMM1_FSxBX_icebp_c64,      X86_XCPT_DB, RM_MEM, T_AVX_128,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vlddqu_XMM11_FSxBX_icebp_c64,     X86_XCPT_DB, RM_MEM, T_AVX_128,  11, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+
+        {  bs3CpuInstr3_vlddqu_YMM1_FSxBX_icebp_c64,      X86_XCPT_DB, RM_MEM, T_AVX_256,   1, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+        {  bs3CpuInstr3_vlddqu_YMM12_FSxBX_icebp_c64,     X86_XCPT_DB, RM_MEM, T_AVX_256,  12, 255, RT_ELEMENTS(g_aMoveValues3), g_aMoveValues3 },
+    };
+    static BS3CPUINSTR3_TEST3_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST3_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
+    unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
+    return bs3CpuInstr3_WorkerTestType3(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+                                        g_aXcptConfig4Unaligned, RT_ELEMENTS(g_aXcptConfig4Unaligned), 0 /*cbMaxAlign*/);
+}
+
+
+/*
  * Test type #4 - two source MM/XMM/YMM operands, outputs only eflags.
  *
  * Probably only used by the PTEST instruction.
@@ -10069,9 +10114,12 @@ BS3_DECL(void) Main_pe32()
         { "[v]pmovzxbw/[v]pmovzxbd/[v]pmovzxbq/[v]pmovzxwd/[v]pmovzxwq/[v]pmovzxdq",
                                                             bs3CpuInstr3_v_pmovzxbw_pmovzxbd_pmovzxbq_pmovzxwd_pmovzxwq_pmovzxdq, 0 },
 #endif
-#if define(ALL_TESTS)
+#if defined(ALL_TESTS)
         { "[v]shufps",                                      bs3CpuInstr3_v_shufps, 0 },
         { "[v]shufpd",                                      bs3CpuInstr3_v_shufpd, 0 },
+#endif
+#if defined(ALL_TESTS)
+        { "[v]lddqu",                                       bs3CpuInstr3_v_lddqu, 0 },
 #endif
     };
     Bs3TestInit("bs3-cpu-instr-3");
