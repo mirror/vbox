@@ -378,8 +378,11 @@ RePackScriptsAddResources_SOURCES = \
 # fun challenge.
 #
 PROGRAMS.win.x86 += VBoxAddInstallNt3x
+ifdef VBOX_WITH_NOCRT_STATIC
+VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3Exe
+else
 VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3NoCrtExe
-#VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3Exe
+endif
 VBoxAddInstallNt3x_SOURCES  := \
 	VBoxAddInstallNt3x.cpp \
 
