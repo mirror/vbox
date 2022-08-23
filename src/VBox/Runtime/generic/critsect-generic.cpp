@@ -421,7 +421,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)
         {
             int rc = RTSemEventSignal(pCritSect->EventSem);
-            AssertReleaseMsg(RT_SUCCESS(rc), ("RTSemEventSignal -> %Rrc\n", rc));
+            AssertReleaseMsgRC(rc, ("RTSemEventSignal -> %Rrc\n", rc));
         }
     }
     return VINF_SUCCESS;
