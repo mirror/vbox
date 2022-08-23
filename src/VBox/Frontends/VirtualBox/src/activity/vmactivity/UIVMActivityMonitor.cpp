@@ -1211,9 +1211,9 @@ void UIVMActivityMonitor::sltExportMetricsToFile()
         arg(m_comMachine.GetName()).
         arg(QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss"));
     QString strFileName = QIFileDialog::getSaveFileName(strStartFileName,"",this,
-                                                        QString("%1\"%2\"").
-                                                        arg(QApplication::translate("UIVMInformationDialog", "Export activity data of the machine ")).
-                                                        arg(m_comMachine.GetName()));
+                                                        QString("%1 \"%2\"")
+                                                        .arg(QApplication::translate("UIVMInformationDialog", "Export activity data of the machine"))
+                                                        .arg(m_comMachine.GetName()));
     QFile dataFile(strFileName);
     if (dataFile.open(QFile::WriteOnly | QFile::Truncate))
     {

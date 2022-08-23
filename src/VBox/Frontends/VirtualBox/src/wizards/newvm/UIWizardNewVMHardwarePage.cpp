@@ -79,8 +79,8 @@ void UIWizardNewVMHardwarePage::retranslateUi()
     setTitle(UIWizardNewVM::tr("Hardware"));
 
     if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify virtual machine's hardware by changing amount of RAM and "
-                                            "virtual CPU count. Enabling EFI is also possible.</p>"));
+        m_pLabel->setText(UIWizardNewVM::tr("You can modify virtual machine's hardware by changing amount of RAM and "
+                                            "virtual CPU count. Enabling EFI is also possible."));
 }
 
 void UIWizardNewVMHardwarePage::initializePage()

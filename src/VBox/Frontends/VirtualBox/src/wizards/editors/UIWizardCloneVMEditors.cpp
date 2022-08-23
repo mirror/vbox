@@ -367,12 +367,12 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
         m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
     if (m_pKeepDiskNamesCheckBox)
     {
-        m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Enables keeping the disk names during cloning."));
+        m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("When checked, disk names will be preserved during cloning."));
         m_pKeepDiskNamesCheckBox->setText(UIWizardCloneVM::tr("Keep &Disk Names"));
     }
     if (m_pKeepHWUUIDsCheckBox)
     {
-        m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("Enables keeping hardware UUIDs during cloning."));
+        m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked, hardware UUIDs will be preserved during cloning."));
         m_pKeepHWUUIDsCheckBox->setText(UIWizardCloneVM::tr("Keep Hard&ware UUIDs"));
     }
 }

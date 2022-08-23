@@ -891,14 +891,14 @@ void UIWizardExportAppPageFormat::retranslateUi()
     /* Translate settings label: */
     if (wizard()->isFormatCloudOne())
         m_pLabelSettings->setText(UIWizardExportApp::
-                                  tr("<p>Please choose one of cloud service profiles you have registered to export virtual "
+                                  tr("Please choose one of cloud service profiles you have registered to export virtual "
                                      "machines to. It will be used to establish network connection required to upload your "
-                                     "virtual machine files to a remote cloud facility.</p>"));
+                                     "virtual machine files to a remote cloud facility."));
     else
         m_pLabelSettings->setText(UIWizardExportApp::
-                                  tr("<p>Please choose a filename to export the virtual appliance to. Besides that you can "
+                                  tr("Please choose a filename to export the virtual appliance to. Besides that you can "
                                      "specify a certain amount of options which affects the size and content of resulting "
-                                     "archive.</p>"));
+                                     "archive."));
 
     /* Translate file selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));

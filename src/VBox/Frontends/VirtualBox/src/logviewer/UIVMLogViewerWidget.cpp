@@ -1102,7 +1102,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
                                                  "<b>Reload</b> button to reload the log folder "
                                                  "<nobr><b>%2</b></nobr>.</p>")
                                               .arg(strMachineName).arg(comMachine.GetLogFolder()));
-            createLogPage(tr("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
+            createLogPage(QString("NoLogFile"), strMachineName, uMachineId, -1 /* iLogFileId */, strDummyTabText, true);
         }
     }
     m_pTabWidget->blockSignals(false);

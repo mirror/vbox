@@ -466,10 +466,10 @@ void UIWizardNewCloudVMPageSource::retranslateUi()
     }
 
     /* Translate description label: */
-    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("<p>Please choose one of cloud service profiles you have registered to "
+    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("Please choose one of cloud service profiles you have registered to "
                                                         "create virtual machine for.  Existing images list will be "
                                                         "updated.  To continue, select one of images to create virtual "
-                                                        "machine on the basis of it.</p>"));
+                                                        "machine on the basis of it."));
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));

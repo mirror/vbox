@@ -192,7 +192,7 @@ void UIMediumSearchWidget::retranslateUi()
         m_pSearchComboxBox->setToolTip(tr("Select the search type"));
     }
     if (m_pSearchTermLineEdit)
-        m_pSearchTermLineEdit->setToolTip(tr("Enter the search term and press Return"));
+        m_pSearchTermLineEdit->setToolTip(tr("Enter the search term and press Enter/Return"));
     if (m_pShowPreviousMatchButton)
         m_pShowPreviousMatchButton->setToolTip(tr("Show the previous item matching the search term"));
     if (m_pShowNextMatchButton)

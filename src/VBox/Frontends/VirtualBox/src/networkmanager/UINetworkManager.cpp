@@ -443,7 +443,7 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("DHCP Server");
 #endif /* !VBOX_WS_MAC */
         m_pTreeWidgetHostNetwork->setHeaderLabels(fields);
-        m_pTreeWidgetHostNetwork->setWhatsThis(UINetworkManager::tr("Registered host networks"));
+        m_pTreeWidgetHostNetwork->setWhatsThis(UINetworkManager::tr("Registered host-only networks"));
     }
 
     /* Translate NAT network tree-widget: */

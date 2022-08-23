@@ -172,7 +172,7 @@ void UIGAInstallationGroupBox::retranslateUi()
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-    setToolTip(UIWizardNewVM::tr("Enables installation of the guest additions after the guest OS install."));
+    setToolTip(UIWizardNewVM::tr("When checked, the guest additions will be installed after the guest OS install."));
 }
 
 QString UIGAInstallationGroupBox::path() const
@@ -278,8 +278,8 @@ void UIAdditionalUnattendedOptions::retranslateUi()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("Enables headless boot (with no GUI) of the newly created virtual machine "
-                                                               "for the unattended guest OS install."));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, headless boot (with no GUI) will be enabled for "
+                                                               "unattended guest OS installation of newly created virtual machine."));
     }
 
     int iMaxWidth = 0;
@@ -419,7 +419,8 @@ void UINewVMHardwareContainer::retranslateUi()
     if (m_pEFICheckBox)
     {
         m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
-        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("Enables Extended Firmware Interface (EFI), which is required to boot certain "
-                                                     "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated."));
+        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("When checked, the guest will support the Extended Firmware Interface (EFI), "
+                                                     "which is required to boot certain guest OSes. Non-EFI aware OSes will not "
+                                                     "be able to boot if this option is activated."));
     }
 }

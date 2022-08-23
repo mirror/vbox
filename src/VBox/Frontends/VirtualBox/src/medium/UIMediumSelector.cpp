@@ -184,7 +184,7 @@ void UIMediumSelector::retranslateUi()
     if (m_pChooseButton)
     {
         m_pChooseButton->setText(tr("C&hoose"));
-        m_pChooseButton->setToolTip(tr("Attached the selected medium to the drive"));
+        m_pChooseButton->setToolTip(tr("Attach the selected medium to the drive"));
     }
 
     if (m_pTreeWidget)

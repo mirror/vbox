@@ -214,9 +214,9 @@ void UIWizardNewVMDiskPage::retranslateUi()
     setTitle(UIWizardNewVM::tr("Virtual Hard disk"));
 
     if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
+        m_pLabel->setText(UIWizardNewVM::tr("If you wish you can add a virtual hard disk to the new machine. "
                                             "You can either create a new hard disk file or select an existing one. "
-                                            "Alternatively you can create a virtual machine without a virtual hard disk.</p>"));
+                                            "Alternatively you can create a virtual machine without a virtual hard disk."));
 
     if (m_pDiskEmpty)
         m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do Not Add a Virtual Hard Disk"));
