@@ -51,14 +51,14 @@ RTDECL(int) RTErrInfoLogAndSet(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, 
     /* The logging: */
     if (fFlags & RTERRINFO_LOG_F_RELEASE)
     {
-        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
         if (pLogger)
-            RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %s\n", rc, pszMsg);
+            RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %s\n", rc, pszMsg);
     }
 
-    PRTLOGGER pLogger = RTLogGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+    PRTLOGGER pLogger = RTLogGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
     if (pLogger)
-        RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %s\n", rc, pszMsg);
+        RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %s\n", rc, pszMsg);
 
     /* The setting: */
     if (pErrInfo)
@@ -89,14 +89,14 @@ RTDECL(int) RTErrInfoLogAndSetV(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup,
     /* The logging: */
     if (fFlags & RTERRINFO_LOG_F_RELEASE)
     {
-        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
         if (pLogger)
-            RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %N\n", rc, pszFormat, &va);
+            RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %N\n", rc, pszFormat, &va);
     }
 
-    PRTLOGGER pLogger = RTLogGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+    PRTLOGGER pLogger = RTLogGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
     if (pLogger)
-        RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %N\n", rc, pszFormat, &va);
+        RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoSet(%Rrc): %N\n", rc, pszFormat, &va);
 
     /* The setting: */
     if (pErrInfo)
@@ -130,14 +130,14 @@ RTDECL(int) RTErrInfoLogAndAdd(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, 
     /* The logging: */
     if (fFlags & RTERRINFO_LOG_F_RELEASE)
     {
-        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
         if (pLogger)
-            RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %s\n", rc, pszMsg);
+            RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %s\n", rc, pszMsg);
     }
 
-    PRTLOGGER pLogger = RTLogGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+    PRTLOGGER pLogger = RTLogGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
     if (pLogger)
-        RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %s\n", rc, pszMsg);
+        RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %s\n", rc, pszMsg);
 
     return rc;
 }
@@ -181,14 +181,14 @@ RTDECL(int) RTErrInfoLogAndAddV(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup,
     /* The logging: */
     if (fFlags & RTERRINFO_LOG_F_RELEASE)
     {
-        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+        PRTLOGGER pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
         if (pLogger)
-            RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %N\n", rc, pszFormat, &va);
+            RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %N\n", rc, pszFormat, &va);
     }
 
-    PRTLOGGER pLogger = RTLogGetDefaultInstanceEx(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
+    PRTLOGGER pLogger = RTLogGetDefaultInstanceExWeak(RT_MAKE_U32(RTLOGGRPFLAGS_LEVEL_1, iLogGroup));
     if (pLogger)
-        RTLogLoggerEx(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %N\n", rc, pszFormat, &va);
+        RTLogLoggerExWeak(pLogger, RTLOGGRPFLAGS_LEVEL_1, iLogGroup, "RTErrInfoAdd(%Rrc): %N\n", rc, pszFormat, &va);
 
     return rc;
 }

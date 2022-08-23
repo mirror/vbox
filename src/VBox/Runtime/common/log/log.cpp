@@ -599,6 +599,15 @@ RT_EXPORT_SYMBOL(RTLogGetDefaultInstanceEx);
  */
 RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 {
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    /* Set the pointers for emulating "weak symbols" the first time we're
+       called with something useful: */
+    if (pLogger != NULL && g_pfnRTLogGetDefaultInstanceEx == NULL)
+    {
+        g_pfnRTLogGetDefaultInstance   = RTLogGetDefaultInstance;
+        g_pfnRTLogGetDefaultInstanceEx = RTLogGetDefaultInstanceEx;
+    }
+#endif
     return ASMAtomicXchgPtrT(&g_pLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogSetDefaultInstance);
@@ -716,6 +725,15 @@ RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstanceEx);
  */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
 {
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    /* Set the pointers for emulating "weak symbols" the first time we're
+       called with something useful: */
+    if (pLogger != NULL && g_pfnRTLogRelGetDefaultInstanceEx == NULL)
+    {
+        g_pfnRTLogRelGetDefaultInstance   = RTLogRelGetDefaultInstance;
+        g_pfnRTLogRelGetDefaultInstanceEx = RTLogRelGetDefaultInstanceEx;
+    }
+#endif
     return ASMAtomicXchgPtrT(&g_pRelLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogRelSetDefaultInstance);
@@ -1445,6 +1463,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
 # endif
                     pLoggerInt->fCreated = true;
                     *ppLogger = &pLoggerInt->Core;
+
+# if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+                    /* Make sure the weak symbol emulation bits are ready before returning. */
+                    if (!g_pfnRTLogLoggerExV)
+                        g_pfnRTLogLoggerExV = RTLogLoggerExV;
+# endif
                     return VINF_SUCCESS;
                 }
 
@@ -4326,6 +4350,73 @@ RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va)
     RTLogLoggerV((PRTLOGGER)pvUser, pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTLogDumpPrintfV);
+
+
+RTDECL(void) RTLogAssert(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTLogAssertV(pszFormat,va);
+    va_end(va);
+}
+
+
+RTDECL(void) RTLogAssertV(const char *pszFormat, va_list va)
+{
+    /*
+     * To the release log if we got one.
+     */
+    PRTLOGGER pLogger = RTLogRelGetDefaultInstance();
+    if (pLogger)
+    {
+        va_list vaCopy;
+        va_copy(vaCopy, va);
+        RTLogLoggerExV(pLogger, 0 /*fFlags*/, ~0U /*uGroup*/, pszFormat, vaCopy);
+        va_end(vaCopy);
+#ifndef IN_RC
+        RTLogFlush(pLogger);
+#endif
+    }
+
+    /*
+     * To the debug log if we got one, however when LOG_ENABLE (debug builds and
+     * such) we'll allow it to be created here.
+     */
+#ifdef LOG_ENABLED
+    pLogger = RTLogDefaultInstance();
+#else
+    pLogger = RTLogGetDefaultInstance();
+#endif
+    if (pLogger)
+    {
+        RTLogLoggerExV(pLogger, 0 /*fFlags*/, ~0U /*uGroup*/, pszFormat, va);
+# ifndef IN_RC /* flushing is done automatically in RC */
+        RTLogFlush(pLogger);
+#endif
+    }
+}
+
+
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+/**
+ * "Weak symbol" emulation to prevent dragging in log.cpp and all its friends
+ * just because some code is using Assert() in a statically linked binary.
+ *
+ * The pointers are in log-assert-pfn.cpp, so users only drag in that file and
+ * they remain NULL unless this file is also linked into the binary.
+ */
+class RTLogAssertWeakSymbolEmulator
+{
+public:
+    RTLogAssertWeakSymbolEmulator(void)
+    {
+        g_pfnRTLogAssert  = RTLogAssert;
+        g_pfnRTLogAssertV = RTLogAssertV;
+    }
+};
+static RTLogAssertWeakSymbolEmulator rtLogInitWeakSymbolPointers;
+#endif
+
 
 #ifdef IN_RING3
 

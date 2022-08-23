@@ -185,49 +185,25 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
         rtR0AssertNativeMsg1(pszExpr, uLine, pszFile, pszFunction);
 
 #else  /* !IN_RING0 */
-# if !defined(IN_RING3) && !defined(LOG_NO_COM)
-#  if 0 /* Enable this iff you have a COM port and really want this debug info. */
-        RTLogComPrintf("\n!!Assertion Failed!!\n"
-                       "Expression: %s\n"
-                       "Location  : %s(%d) %s\n",
-                       pszExpr, pszFile, uLine, pszFunction);
-#  endif
-# endif
 
-        PRTLOGGER pLog = RTLogRelGetDefaultInstance();
-        if (pLog)
-        {
-            RTLogRelPrintf("\n!!Assertion Failed!!\n"
-                           "Expression: %s\n"
-                           "Location  : %s(%d) %s\n",
-                           pszExpr, pszFile, uLine, pszFunction);
-# ifdef IPRT_WITH_ASSERT_STACK
-            RTLogRelPrintf("Stack     :\n%s\n", szStack);
-# endif
-# ifndef IN_RC /* flushing is done automatically in RC */
-            RTLogFlush(pLog);
-# endif
-        }
 
-# ifndef LOG_ENABLED
-        if (!pLog)
+# if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT)) /* ugly */
+        if (g_pfnRTLogAssert)
+            g_pfnRTLogAssert(
+# else
+        RTLogAssert(
 # endif
-        {
-            pLog = RTLogDefaultInstance();
-            if (pLog)
-            {
-                RTLogPrintf("\n!!Assertion Failed!!\n"
-                            "Expression: %s\n"
-                            "Location  : %s(%d) %s\n",
-                            pszExpr, pszFile, uLine, pszFunction);
+                             "\n!!Assertion Failed!!\n"
+                             "Expression: %s\n"
+                             "Location  : %s(%d) %s\n"
 # ifdef IPRT_WITH_ASSERT_STACK
-                RTLogPrintf("Stack     :\n%s\n", szStack);
+                             "Stack     :\n%s\n"
 # endif
-# ifndef IN_RC /* flushing is done automatically in RC */
-                RTLogFlush(pLog);
+                             , pszExpr, pszFile, uLine, pszFunction
+# ifdef IPRT_WITH_ASSERT_STACK
+                             , szStack
 # endif
-            }
-        }
+                             );
 
 # ifdef IN_RING3
         /* print to stderr, helps user and gdb debugging. */
@@ -322,34 +298,18 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
         rtR0AssertNativeMsg2V(fInitial, pszFormat, va);
 
 #else  /* !IN_RING0 */
-# if !defined(IN_RING3) && !defined(LOG_NO_COM)
-#  if 0 /* Enable this iff you have a COM port and really want this debug info. */
-        va_copy(vaCopy, va);
-        RTLogComPrintfV(pszFormat, vaCopy);
-        va_end(vaCopy);
-#  endif
-# endif
 
-        PRTLOGGER pLog = RTLogRelGetDefaultInstance();
-        if (pLog)
+# if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+        if (g_pfnRTLogAssert)
+# endif
         {
             va_copy(vaCopy, va);
-            RTLogRelPrintfV(pszFormat, vaCopy);
-            va_end(vaCopy);
-# ifndef IN_RC /* flushing is done automatically in RC */
-            RTLogFlush(pLog);
+# if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+            g_pfnRTLogAssertV(pszFormat, vaCopy);
+# else
+            RTLogAssertV(pszFormat, vaCopy);
 # endif
-        }
-
-        pLog = RTLogDefaultInstance();
-        if (pLog)
-        {
-            va_copy(vaCopy, va);
-            RTLogPrintfV(pszFormat, vaCopy);
             va_end(vaCopy);
-# ifndef IN_RC /* flushing is done automatically in RC */
-            RTLogFlush(pLog);
-#endif
         }
 
 # ifdef IN_RING3

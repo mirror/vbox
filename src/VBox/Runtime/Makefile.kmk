@@ -519,6 +519,9 @@ RuntimeBaseR3_SOURCES      := \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
 	common/log/log.cpp \
+ 	common/log/log-weak.cpp \
+ 	common/log/log-weak-assert.cpp \
+ 	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
 	common/log/logrelellipsis.cpp \
@@ -2272,6 +2275,9 @@ RuntimeBldProg_SOURCES          = \
 	common/ldr/ldrPE.cpp \
 	common/ldr/ldrVfsFile.cpp \
 	common/log/log.cpp \
+ 	common/log/log-weak.cpp \
+ 	common/log/log-weak-assert.cpp \
+ 	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logformat.cpp \
 	common/log/logrel.cpp \
@@ -3427,6 +3433,9 @@ RuntimeR0Drv_SOURCES    = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/errinfo.cpp \
 	common/log/log.cpp \
+ 	common/log/log-weak.cpp \
+ 	common/log/log-weak-assert.cpp \
+ 	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
 	common/log/logrelellipsis.cpp \
@@ -4171,6 +4180,9 @@ ifdef VBOX_WITH_RAW_MODE
  	common/checksum/crc32.cpp \
  	common/checksum/crc64.cpp \
  	common/log/log.cpp \
+ 	common/log/log-weak.cpp \
+ 	common/log/log-weak-assert.cpp \
+ 	common/log/log-weak-rel.cpp \
  	common/log/logellipsis.cpp \
  	common/log/logrel.cpp \
  	common/log/logrelellipsis.cpp \

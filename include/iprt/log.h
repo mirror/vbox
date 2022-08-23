@@ -1351,7 +1351,7 @@ typedef enum RTLOGDEST
 /** @def LogRelIsItEnabled
  * Checks whether the specified release logging group is enabled or not.
  */
-#define LogRelIsItEnabled(a_fFlags, a_iGroup) ( RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)) != NULL )
+#define LogRelIsItEnabled(a_fFlags, a_iGroup) ( RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)) != NULL )
 
 /** @def LogRelIsEnabled
  * Checks whether level 1 release logging is enabled.
@@ -1441,11 +1441,11 @@ typedef enum RTLOGDEST
 #  define _LogRelIt(a_fFlags, a_iGroup, ...) \
     do \
     { \
-        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
         if (RT_LIKELY(!LogRelIt_pLogger)) \
         { /* likely */ } \
         else \
-            RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+            RTLogLoggerExWeak(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
         _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
     } while (0)
 #  define LogRelIt(a_fFlags, a_iGroup, fmtargs) \
@@ -1453,9 +1453,9 @@ typedef enum RTLOGDEST
 #  define _LogRelItLikely(a_fFlags, a_iGroup, ...) \
     do \
     { \
-        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
         if (LogRelIt_pLogger) \
-            RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+            RTLogLoggerExWeak(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
         _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
     } while (0)
 #  define LogRelItLikely(a_fFlags, a_iGroup, fmtargs) \
@@ -1463,14 +1463,14 @@ typedef enum RTLOGDEST
 #  define _LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, ...) \
     do \
     { \
-        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
         if (LogRelIt_pLogger) \
         { \
             static uint32_t s_LogRelMaxIt_cLogged = 0; \
             if (s_LogRelMaxIt_cLogged < (a_cMax)) \
             { \
                 s_LogRelMaxIt_cLogged++; \
-                RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+                RTLogLoggerExWeak(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
             } \
         } \
         _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
@@ -1481,7 +1481,7 @@ typedef enum RTLOGDEST
 #  define LogRelItLikely(a_fFlags, a_iGroup, fmtargs) \
    do \
    { \
-       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
        if (LogRelIt_pLogger) \
        { \
            LogRelIt_pLogger->pfnLogger fmtargs; \
@@ -1491,7 +1491,7 @@ typedef enum RTLOGDEST
 #  define LogRelIt(a_fFlags, a_iGroup, fmtargs) \
    do \
    { \
-       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
        if (RT_LIKELY(!LogRelIt_pLogger)) \
        { /* likely */ } \
        else \
@@ -1503,7 +1503,7 @@ typedef enum RTLOGDEST
 #  define LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, fmtargs) \
    do \
    { \
-       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceExWeak(RT_MAKE_U32(a_fFlags, a_iGroup)); \
        if (LogRelIt_pLogger) \
        { \
            static uint32_t s_LogRelMaxIt_cLogged = 0; \
@@ -1807,6 +1807,27 @@ RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger);
  */
 RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void);
 
+/** @copydoc RTLogRelGetDefaultInstance   */
+typedef DECLCALLBACKTYPE(PRTLOGGER, FNLOGRELGETDEFAULTINSTANCE,(void));
+/** Pointer to RTLogRelGetDefaultInstance. */
+typedef FNLOGRELGETDEFAULTINSTANCE *PFNLOGRELGETDEFAULTINSTANCE;
+
+/** "Weak symbol" emulation for RTLogRelGetDefaultInstance.
+ * @note This is first set when RTLogRelSetDefaultInstance is called. */
+extern RTDATADECL(PFNLOGRELGETDEFAULTINSTANCE) g_pfnRTLogRelGetDefaultInstance;
+
+/** "Weak symbol" wrapper for RTLogRelGetDefaultInstance. */
+DECL_FORCE_INLINE(PRTLOGGER) RTLogRelGetDefaultInstanceWeak(void)
+{
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    if (g_pfnRTLogRelGetDefaultInstance)
+        return g_pfnRTLogRelGetDefaultInstance();
+    return NULL;
+#else
+    return RTLogRelGetDefaultInstance();
+#endif
+}
+
 /**
  * Gets the default release logger instance.
  *
@@ -1815,6 +1836,28 @@ RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void);
  *                          the high 16 bits.
  */
 RTDECL(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
+
+/** @copydoc RTLogRelGetDefaultInstanceEx   */
+typedef DECLCALLBACKTYPE(PRTLOGGER, FNLOGRELGETDEFAULTINSTANCEEX,(uint32_t fFlagsAndGroup));
+/** Pointer to RTLogRelGetDefaultInstanceEx. */
+typedef FNLOGRELGETDEFAULTINSTANCEEX *PFNLOGRELGETDEFAULTINSTANCEEX;
+
+/** "Weak symbol" emulation for RTLogRelGetDefaultInstanceEx.
+ * @note This is first set when RTLogRelSetDefaultInstance is called. */
+extern RTDATADECL(PFNLOGRELGETDEFAULTINSTANCEEX) g_pfnRTLogRelGetDefaultInstanceEx;
+
+/** "Weak symbol" wrapper for RTLogRelGetDefaultInstanceEx. */
+DECL_FORCE_INLINE(PRTLOGGER) RTLogRelGetDefaultInstanceExWeak(uint32_t fFlagsAndGroup)
+{
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    if (g_pfnRTLogRelGetDefaultInstanceEx)
+        return g_pfnRTLogRelGetDefaultInstanceEx(fFlagsAndGroup);
+    return NULL;
+#else
+    return RTLogRelGetDefaultInstanceEx(fFlagsAndGroup);
+#endif
+}
+
 
 /**
  * Write to a logger instance, defaulting to the release one.
@@ -2015,6 +2058,27 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup);
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
 
+/** @copydoc RTLogGetDefaultInstance   */
+typedef DECLCALLBACKTYPE(PRTLOGGER, FNLOGGETDEFAULTINSTANCE,(void));
+/** Pointer to RTLogGetDefaultInstance. */
+typedef FNLOGGETDEFAULTINSTANCE *PFNLOGGETDEFAULTINSTANCE;
+
+/** "Weak symbol" emulation for RTLogGetDefaultInstance.
+ * @note This is first set when RTLogSetDefaultInstance is called. */
+extern RTDATADECL(PFNLOGGETDEFAULTINSTANCE) g_pfnRTLogGetDefaultInstance;
+
+/** "Weak symbol" wrapper for RTLogGetDefaultInstance. */
+DECL_FORCE_INLINE(PRTLOGGER) RTLogGetDefaultInstanceWeak(void)
+{
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    if (g_pfnRTLogGetDefaultInstance)
+        return g_pfnRTLogGetDefaultInstance();
+    return NULL;
+#else
+    return RTLogGetDefaultInstance();
+#endif
+}
+
 /**
  * Gets the default logger instance if enabled (does not create one).
  *
@@ -2024,6 +2088,27 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
  *                          the high 16 bits.
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
+
+/** @copydoc RTLogGetDefaultInstanceEx   */
+typedef DECLCALLBACKTYPE(PRTLOGGER, FNLOGGETDEFAULTINSTANCEEX,(uint32_t fFlagsAndGroup));
+/** Pointer to RTLogGetDefaultInstanceEx. */
+typedef FNLOGGETDEFAULTINSTANCEEX *PFNLOGGETDEFAULTINSTANCEEX;
+
+/** "Weak symbol" emulation for RTLogGetDefaultInstanceEx.
+ * @note This is first set when RTLogSetDefaultInstance is called. */
+extern RTDATADECL(PFNLOGGETDEFAULTINSTANCEEX) g_pfnRTLogGetDefaultInstanceEx;
+
+/** "Weak symbol" wrapper for RTLogGetDefaultInstanceEx. */
+DECL_FORCE_INLINE(PRTLOGGER) RTLogGetDefaultInstanceExWeak(uint32_t fFlagsAndGroup)
+{
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    if (g_pfnRTLogGetDefaultInstanceEx)
+        return g_pfnRTLogGetDefaultInstanceEx(fFlagsAndGroup);
+    return NULL;
+#else
+    return RTLogGetDefaultInstanceEx(fFlagsAndGroup);
+#endif
+}
 
 /**
  * Sets the default logger instance.
@@ -2460,6 +2545,21 @@ RTDECL(int) RTLogFlush(PRTLOGGER pLogger);
 RTDECL(void) RTLogLogger(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
+ * Write to a logger instance, weak version.
+ *
+ * @param   pLogger     Pointer to logger instance.
+ * @param   pvCallerRet Ignored.
+ * @param   pszFormat   Format string.
+ * @param   ...         Format arguments.
+ */
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+RTDECL(void) RTLogLoggerWeak(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+#else /* Cannot use a DECL_FORCE_INLINE because older GCC versions doesn't support inlining va_start. */
+# undef  RTLogLoggerWeak /* in case of mangling */
+# define RTLogLoggerWeak RTLogLogger
+#endif
+
+/**
  * Write to a logger instance.
  *
  * @param   pLogger     Pointer to logger instance.
@@ -2487,6 +2587,29 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
                            const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /**
+ * Write to a logger instance, weak version.
+ *
+ * This function will check whether the instance, group and flags makes up a
+ * logging kind which is currently enabled before writing anything to the log.
+ *
+ * @param   pLogger     Pointer to logger instance. If NULL the default logger instance will be attempted.
+ * @param   fFlags      The logging flags.
+ * @param   iGroup      The group.
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
+ *                      only for internal usage!
+ * @param   pszFormat   Format string.
+ * @param   ...         Format arguments.
+ * @remark  This is a worker function of LogIt.
+ */
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+RTDECL(void) RTLogLoggerExWeak(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
+                               const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
+#else /* Cannot use a DECL_FORCE_INLINE because older GCC versions doesn't support inlining va_start. */
+# undef  RTLogLoggerExWeak /* in case of mangling */
+# define RTLogLoggerExWeak RTLogLoggerEx
+#endif
+
+/**
  * Write to a logger instance.
  *
  * This function will check whether the instance, group and flags makes up a
@@ -2504,6 +2627,28 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
  */
 RTDECL(int) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
                            const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(4, 0);
+
+/** @copydoc RTLogLoggerExV */
+typedef DECLCALLBACKTYPE(int, FNRTLOGLOGGEREXV,(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
+                                                const char *pszFormat, va_list args)) RT_IPRT_FORMAT_ATTR(4, 0);
+/** Pointer to RTLogLoggerExV. */
+typedef FNRTLOGLOGGEREXV *PFNRTLOGLOGGEREXV;
+/** "Weak symbol" emulation for RTLogLoggerExV.
+ * @note This is first set when RTLogCreateEx or RTLogCreate is called. */
+extern RTDATADECL(PFNRTLOGLOGGEREXV)  g_pfnRTLogLoggerExV;
+
+/** "Weak symbol" wrapper for RTLogLoggerExV. */
+DECL_FORCE_INLINE(int) RTLogLoggerExVWeak(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
+                                          const char *pszFormat, va_list args) /* RT_IPRT_FORMAT_ATTR(4, 0) */
+{
+#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
+    if (g_pfnRTLogLoggerExV)
+        return g_pfnRTLogLoggerExV(pLogger, fFlags, iGroup, pszFormat, args);
+    return 22301; /* VINF_LOG_DISABLED, don't want err.h dependency here. */
+#else
+    return RTLogLoggerExV(pLogger, fFlags, iGroup, pszFormat, args);
+#endif
+}
 
 /**
  * printf like function for writing to the default log.
@@ -2534,6 +2679,40 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)  RT_IPRT_FORMAT_ATT
  * @param   va          Format arguments.
  */
 RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+
+/**
+ * Used for logging assertions, debug and release log as appropriate.
+ *
+ * Implies flushing.
+ *
+ * @param   pszFormat   Format string.
+ * @param   ...         Format arguments.
+ */
+typedef DECLCALLBACKTYPE(void, FNRTLOGASSERTION,(const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(1, 2);
+/** Pointer to an assertion logger, ellipsis variant. */
+typedef FNRTLOGASSERTION *PFNRTLOGASSERTION;
+
+/**
+ * Used for logging assertions, debug and release log as appropriate.
+ *
+ * Implies flushing.
+ *
+ * @param   pszFormat   Format string.
+ * @param   va          Format arguments.
+ */
+typedef DECLCALLBACKTYPE(void, FNRTLOGASSERTIONV,(const char *pszFormat, va_list va)) RT_IPRT_FORMAT_ATTR(1, 0);
+/** Pointer to an assertion logger, va_list variant. */
+typedef FNRTLOGASSERTIONV *PFNRTLOGASSERTIONV;
+
+/** @copydoc FNRTLOGASSERTION */
+RTDECL(void) RTLogAssert(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+/** @copydoc FNRTLOGASSERTIONV */
+RTDECL(void) RTLogAssertV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+
+/** "Weak symbol" emulation for RTLogAssert. */
+extern RTDATADECL(PFNRTLOGASSERTION)  g_pfnRTLogAssert;
+/** "Weak symbol" emulation for RTLogAssertV. */
+extern RTDATADECL(PFNRTLOGASSERTIONV) g_pfnRTLogAssertV;
 
 
 #ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/string.h & iprt/errcore.h */

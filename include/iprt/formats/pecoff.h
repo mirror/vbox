@@ -740,13 +740,13 @@ typedef IMAGE_UNWIND_INFO const *PCIMAGE_UNWIND_INFO;
 /** IMAGE_UNW_FLAGS_XXX - IMAGE_UNWIND_INFO::Flags.
  * @{  */
 /** No handler.
- * @note Aslo know as UNW_FLAG_NHANDLER. */
+ * @note Also know as UNW_FLAG_NHANDLER. */
 #define IMAGE_UNW_FLAGS_NHANDLER        0
 /** Have exception handler (RVA after codes, dword aligned.)
- * @note Aslo know as UNW_FLAG_NHANDLER. */
+ * @note Also know as UNW_FLAG_NHANDLER. */
 #define IMAGE_UNW_FLAGS_EHANDLER        1
 /** Have unwind handler (RVA after codes, dword aligned.)
- * @note Aslo know as UNW_FLAG_NHANDLER. */
+ * @note Also know as UNW_FLAG_NHANDLER. */
 #define IMAGE_UNW_FLAGS_UHANDLER        2
 /** Set if not primary unwind info for a function.  An
  * IMAGE_RUNTIME_FUNCTION_ENTRY giving the chained unwind info follows the
