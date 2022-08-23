@@ -354,6 +354,24 @@ static int ErrorMsgLStatusSWSWSWSRS(const char *pszMsg1, const wchar_t *pwszMsg2
 }
 
 
+static int ErrorMsgLStatusSWSWSWSWSRS(const char *pszMsg1, const wchar_t *pwszMsg2, const char *pszMsg3, const wchar_t *pwszMsg4,
+                                      const char *pszMsg5, const wchar_t *pwszMsg6, const char *pszMsg7, const wchar_t *pwszMsg8,
+                                      const char *pszMsg9, LSTATUS lrc, const char *pszMsg10)
+{
+    ErrorMsgBegin(pszMsg1);
+    ErrorMsgWStr(pwszMsg2);
+    ErrorMsgStr(pszMsg3);
+    ErrorMsgWStr(pwszMsg4);
+    ErrorMsgStr(pszMsg5);
+    ErrorMsgWStr(pwszMsg6);
+    ErrorMsgStr(pszMsg7);
+    ErrorMsgWStr(pwszMsg8);
+    ErrorMsgStr(pszMsg9);
+    ErrorMsgErrVal((DWORD)lrc, true);
+    return ErrorMsgEnd(pszMsg10);
+}
+
+
 static int ErrorBadArg(const char *pszName, wchar_t const *pwszArg, const char *pszValues = NULL)
 {
     ErrorMsgBegin("Bad argument '");
@@ -419,6 +437,22 @@ static void PrintSWSWSWS(const char *pszMsg1, const wchar_t *pwszMsg2, const cha
     PrintStr(pszMsg5);
     PrintWStr(pwszMsg6);
     PrintStr(pszMsg7);
+}
+
+
+static void PrintSWSWSWSWS(const char *pszMsg1, const wchar_t *pwszMsg2, const char *pszMsg3, const wchar_t *pwszMsg4,
+                           const char *pszMsg5, const wchar_t *pwszMsg6, const char *pszMsg7, const wchar_t *pwszMsg8,
+                           const char *pszMsg9)
+{
+    PrintStr(pszMsg1);
+    PrintWStr(pwszMsg2);
+    PrintStr(pszMsg3);
+    PrintWStr(pwszMsg4);
+    PrintStr(pszMsg5);
+    PrintWStr(pwszMsg6);
+    PrintStr(pszMsg7);
+    PrintWStr(pwszMsg8);
+    PrintStr(pszMsg9);
 }
 
 
@@ -957,6 +991,222 @@ static int handleDriverExecuteInf(unsigned cArgs, wchar_t **papwszArgs)
 }
 
 
+
+/*********************************************************************************************************************************
+*   'service'                                                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * Worker for the 'service create' handler.
+ */
+static int CreateService(const wchar_t *pwszService,
+                         const wchar_t *pwszDisplayName,
+                         uint32_t       uServiceType,
+                         uint32_t       uStartType,
+                         const wchar_t *pwszBinPath,
+                         const wchar_t *pwszLoadOrderGroup,
+                         const wchar_t *pwszDependencies,
+                         const wchar_t *pwszLogonUser,
+                         const wchar_t *pwszLogonPassword)
+{
+    PrintSWSWS("Installing service '", pwszService, "' ('", pwszDisplayName, ") ...\r\n");
+
+    /*
+     * Transform the dependency list to a REG_MULTI_SZ.
+     */
+    if (pwszDependencies != NULL)
+    {
+        /* Copy it into alloca() buffer so we can modify it. */
+        size_t cwc = RTUtf16Len(pwszDependencies);
+        wchar_t *pwszDup = (wchar_t *)alloca((cwc + 2) * sizeof(wchar_t));
+        memcpy(pwszDup, pwszDependencies, cwc * sizeof(wchar_t));
+        pwszDup[cwc]     = L'\0';
+        pwszDup[cwc + 1] = L'\0';   /* double termination */
+
+        /* Perform: s/,/\0/g */
+        while (cwc-- > 0 )
+            if (pwszDup[cwc] == L',')
+                pwszDup[cwc] = L'\0';
+
+        pwszDependencies = pwszDup;
+    }
+
+    SC_HANDLE hSCManager = OpenSCManagerW(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (hSCManager == NULL)
+        return ErrorMsgLastErr("OpenSCManagerW failed");
+
+    int rcExit = EXIT_FAIL;
+    DWORD dwTag = 0xDEADBEAF;
+    SC_HANDLE hService = CreateServiceW(hSCManager, pwszService, pwszDisplayName, SERVICE_ALL_ACCESS, uServiceType, uStartType,
+                                        SERVICE_ERROR_NORMAL, pwszBinPath, pwszLoadOrderGroup, pwszLoadOrderGroup ? &dwTag : NULL,
+                                        pwszDependencies, pwszLogonUser, pwszLogonPassword);
+    if (hService != NULL)
+    {
+        CloseServiceHandle(hService);
+        PrintStr("Installation of service successful!\r\n");
+        rcExit = EXIT_OK;
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        if (dwErr == ERROR_SERVICE_EXISTS)
+        {
+            PrintStr("Service already exists. Updating the service config ...\r\n");
+            hService = OpenServiceW(hSCManager, pwszService, SERVICE_ALL_ACCESS);
+            if (hService != NULL)
+            {
+                if (ChangeServiceConfigW(hService, uServiceType, uStartType, SERVICE_ERROR_NORMAL, pwszBinPath,
+                                         pwszLoadOrderGroup, pwszLoadOrderGroup ? &dwTag : NULL, pwszDependencies,
+                                         pwszLogonUser, pwszLogonPassword, pwszDisplayName))
+                {
+                    PrintStr("The service config has been successfully updated.\r\n");
+                    rcExit = EXIT_OK;
+                }
+                else
+                    rcExit = ErrorMsgLastErrSWS("ChangeServiceConfigW failed on '", pwszService, "'!");
+                CloseServiceHandle(hService);
+            }
+            else
+                rcExit = ErrorMsgLastErrSWS("OpenSCManagerW failed on '", pwszService, "'!");
+
+            /*
+             * This branch does not return an error to avoid installations failures,
+             * if updating service parameters. Better to have a running system with old
+             * parameters and the failure information in the installation log.
+             */
+            rcExit = EXIT_OK;
+        }
+        else
+            rcExit = ErrorMsgLastErrSWS("CreateServiceW for '", pwszService, "'!");
+    }
+
+    CloseServiceHandle(hSCManager);
+    return rcExit;
+}
+
+
+/** Handles 'service create'. */
+static int handleServiceCreate(unsigned cArgs, wchar_t **papwszArgs)
+{
+    uint32_t uServiceType;
+    if (!ArgToUInt32Full(papwszArgs[2], "service-type", &uServiceType))
+        return EXIT_USAGE;
+
+    uint32_t uStartType;
+    if (!ArgToUInt32Full(papwszArgs[3], "start-type", &uStartType))
+        return EXIT_USAGE;
+
+    return CreateService(papwszArgs[0], papwszArgs[1], uServiceType, uStartType, papwszArgs[4],
+                         cArgs > 5 ? papwszArgs[5] : NULL,
+                         cArgs > 6 ? papwszArgs[6] : NULL,
+                         cArgs > 7 ? papwszArgs[7] : NULL,
+                         cArgs > 8 ? papwszArgs[8] : NULL);
+}
+
+
+/**
+ * Worker for the 'service delete' handler.
+ */
+static int DelService(const wchar_t *pwszService)
+{
+    PrintSWS("Removing service '", pwszService, "' ...\r\n");
+
+    SC_HANDLE hSCManager = OpenSCManagerW(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (hSCManager == NULL)
+        return ErrorMsgLastErr("OpenSCManagerW failed");
+
+    int rcExit = EXIT_FAIL;
+    SC_HANDLE hService = NULL;
+    hService = OpenServiceW(hSCManager, pwszService, SERVICE_ALL_ACCESS);
+    if (hService)
+    {
+        SC_LOCK hSCLock = LockServiceDatabase(hSCManager);
+        if (hSCLock != NULL)
+        {
+            if (DeleteService(hService))
+            {
+                PrintSWS("Service '", pwszService, "' successfully deleted.\r\n");
+                rcExit = EXIT_OK;
+            }
+            else
+            {
+                DWORD dwErr = GetLastError();
+                if (dwErr == ERROR_SERVICE_MARKED_FOR_DELETE)
+                {
+                    PrintSWS("Service '", pwszService, "' already marked for deletion.\r\n");
+                    rcExit = EXIT_OK;
+                }
+                else
+                    rcExit = ErrorMsgLastErrSWS("Failed to delete service'", pwszService, "'!");
+            }
+            UnlockServiceDatabase(hSCLock);
+        }
+        else
+            ErrorMsgLastErr("LockServiceDatabase failed");
+        CloseServiceHandle(hService);
+    }
+    else
+        rcExit = ErrorMsgLastErrSWS("Failed to open service'", pwszService, "'!");
+    CloseServiceHandle(hSCManager);
+    return rcExit;
+}
+
+
+/** Handles 'service delete' */
+static int handleServiceDelete(unsigned cArgs, wchar_t **papwszArgs)
+{
+    RT_NOREF(cArgs);
+    return DelService(papwszArgs[0]);
+}
+
+
+
+
+/*********************************************************************************************************************************
+*   'registry'                                                                                                                   *
+*********************************************************************************************************************************/
+
+/**
+ * Translate a registry root specifier into a HKEY_XXX constant.
+ */
+static HKEY ArgToRegistryRoot(const wchar_t *pwszRoot)
+{
+    HKEY hRootKey = NULL;
+    if (RTUtf16ICmpAscii(pwszRoot, "hklm") == 0)
+        hRootKey = HKEY_LOCAL_MACHINE;
+    else if (RTUtf16ICmpAscii(pwszRoot, "hkcu") == 0)
+        hRootKey = HKEY_CURRENT_USER;
+    else if (RTUtf16ICmpAscii(pwszRoot, "hkcr") == 0)
+        hRootKey = HKEY_CLASSES_ROOT;
+    else if (RTUtf16ICmpAscii(pwszRoot, "hku") == 0)
+        hRootKey = HKEY_USERS;
+    else if (RTUtf16ICmpAscii(pwszRoot, "hkcc") == 0)
+        hRootKey = HKEY_CURRENT_CONFIG;
+    else
+        ErrorBadArg("root", pwszRoot, "hklm, hkcu, hkcr, hku or hkcc");
+    return hRootKey;
+}
+
+
+/**
+ * Reverse of ArgToRegistryRoot.
+ */
+static wchar_t const *RegistryRootToWStr(HKEY hRootKey)
+{
+    if (hRootKey == HKEY_LOCAL_MACHINE)
+        return L"HKLM";
+    if (hRootKey == HKEY_CURRENT_USER)
+        return L"HKCU";
+    if (hRootKey == HKEY_CLASSES_ROOT)
+        return L"HKCR";
+    if (hRootKey == HKEY_USERS)
+        return L"HKU";
+    if (hRootKey == HKEY_CURRENT_CONFIG)
+        return L"HKCC";
+    return L"<bad-hkey-root>";
+}
+
+
 /**
  * Checks if a string is a substring of another one.
  *
@@ -1290,6 +1540,7 @@ static bool IsStringListItemMatch(wchar_t volatile *pwszItem1, size_t cwcItem1,
            safer, to use lstrcmpiW than CompareStringW or CompareStringExW.  The
            latter is Vista and later, the former has a big fat warning on it.  */
         wchar_t const wcEnd = pwszItem1[cwcItem1];
+        pwszItem1[cwcItem1] = '\0';
         int const iDiff = lstrcmpiW((wchar_t const *)pwszItem1, pwszItem2);
         pwszItem1[cwcItem1] = wcEnd;
         return iDiff == 0;
@@ -1313,8 +1564,8 @@ static bool IsStringListItemMatch(wchar_t volatile *pwszItem1, size_t cwcItem1,
  *                              value into the list.
  * @param   fFlags              VBOX_REG_STRINGLIST_ALLOW_DUPLICATES or 0.
  */
-static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pwszValueName, const wchar_t *pwszItemToAdd,
-                                   uint32_t uPosition, uint32_t fFlags)
+static int RegistryAddStringToList(HKEY hRootKey, const wchar_t *pwszSubKey, const wchar_t *pwszValueName,
+                                   const wchar_t *pwszItemToAdd, uint32_t uPosition, uint32_t fFlags)
 {
     /* Overflow precaution - see comment below. */
     size_t const cwcItemToAdd = RTUtf16Len(pwszItemToAdd);
@@ -1326,10 +1577,11 @@ static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pws
      */
     HKEY    hKey   = NULL;
     DWORD   dwDisp = 0;
-    LSTATUS lrc = RegCreateKeyEx(HKEY_LOCAL_MACHINE, pwszSubKey, 0 /*Reserved*/, NULL /*pClass*/, REG_OPTION_NON_VOLATILE,
+    LSTATUS lrc = RegCreateKeyEx(hRootKey, pwszSubKey, 0 /*Reserved*/, NULL /*pClass*/, REG_OPTION_NON_VOLATILE,
                                  KEY_READ | KEY_WRITE, NULL /*pSecAttr*/, &hKey, &dwDisp);
     if (lrc != ERROR_SUCCESS)
-        return ErrorMsgLStatusSWSRS("RegistryAddStringToList: RegCreateKeyEx HKLM/'", pwszSubKey, "' failed: ", lrc, NULL);
+        return ErrorMsgLStatusSWSWSRS("RegistryAddStringToList: RegCreateKeyEx ", RegistryRootToWStr(hRootKey), "/'", pwszSubKey,
+                                      "' failed: ", lrc, NULL);
 
     /*
      * Query the current value.
@@ -1364,8 +1616,7 @@ static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pws
         wchar_t  wszNewValue[RT_ELEMENTS(wszValue) + 256 + 4] = { 0 };
         wchar_t *pwszDst = wszNewValue;
         wchar_t *pwszSrc = wszValue;
-        unsigned uCurPos = 0;
-        for (;;)
+        for (unsigned uCurPos = 0;; uCurPos++)
         {
             /* Skip leading commas: */
             wchar_t wc            = *pwszSrc;
@@ -1379,7 +1630,7 @@ static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pws
                the end of the list and have yet done so. */
             if (uCurPos == uPosition || (!wc && uCurPos < uPosition))
             {
-                if (fLeadingComma)
+                if (fLeadingComma || (wc == '\0' && pwszDst != wszNewValue))
                     *pwszDst++ = ',';
                 memcpy(pwszDst, pwszItemToAdd, cwcItemToAdd * sizeof(wchar_t));
                 pwszDst += cwcItemToAdd;
@@ -1402,7 +1653,13 @@ static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pws
             ASMCompilerBarrier(); /* Paranoia ^ 2*/
             if (   !(fFlags & VBOX_REG_STRINGLIST_ALLOW_DUPLICATES)
                 && IsStringListItemMatch(pwszSrc, cwcItem, pwszItemToAdd, cwcItemToAdd))
+            {
                 pwszSrc = pwszSrcEnd;
+                if (!fLeadingComma)
+                    while (*pwszSrc == ',')
+                        pwszSrc++;
+                uCurPos--;
+            }
             else
             {
                 if (fLeadingComma)
@@ -1439,11 +1696,11 @@ static int RegistryAddStringToList(const wchar_t *pwszSubKey, const wchar_t *pws
         }
     }
     else if (lrc != ERROR_SUCCESS)
-        ErrorMsgLStatusSWSWSRS("RegistryAddStringToList: RegQueryValueEx HKLM/'",
-                               pwszSubKey, "'/'", pwszValueName, "' failed: ", lrc, NULL);
+        ErrorMsgLStatusSWSWSWSRS("RegistryAddStringToList: RegQueryValueEx ", RegistryRootToWStr(hRootKey), "/'",
+                                 pwszSubKey, "'/'", pwszValueName, "' failed: ", lrc, NULL);
     else
-        ErrorMsgLStatusSWSWSRS("RegistryAddStringToList: Unexpected value type for HKLM/'",
-                               pwszSubKey, "'/'", pwszValueName, "': ", (LSTATUS)dwType, ", expected REG_SZ (1)");
+        ErrorMsgLStatusSWSWSWSRS("RegistryAddStringToList: Unexpected value type for ", RegistryRootToWStr(hRootKey), "/'",
+                                 pwszSubKey, "'/'", pwszValueName, "': ", (LSTATUS)dwType, ", expected REG_SZ (1)");
 
     RegCloseKey(hKey);
     return rcExit;
@@ -1462,11 +1719,58 @@ static int handleNetProviderAdd(unsigned cArgs, wchar_t **papwszArgs)
         return EXIT_USAGE;
 
     PrintSWSWS("Adding network provider '", pwszProvider, "' (Position = ", pwszPosition, ") ...\r\n");
-    int rcExit = RegistryAddStringToList(L"System\\CurrentControlSet\\Control\\NetworkProvider\\Order",
+    int rcExit = RegistryAddStringToList(HKEY_LOCAL_MACHINE,
+                                         L"System\\CurrentControlSet\\Control\\NetworkProvider\\Order",
                                          L"ProviderOrder",
                                          pwszProvider, uPosition, VBOX_REG_STRINGLIST_NONE);
     if (rcExit == EXIT_OK)
         PrintStr("Network provider successfully added!\r\n");
+
+    return rcExit;
+}
+
+
+/**
+ * Handles 'registry addlistitem'.
+ */
+static int handleRegistryAddListItem(unsigned cArgs, wchar_t **papwszArgs)
+{
+    /*
+     * Parameters.
+     */
+    wchar_t const * const pwszRoot      = papwszArgs[0];
+    wchar_t const * const pwszSubKey    = papwszArgs[1];
+    wchar_t const * const pwszValueName = papwszArgs[2];
+    wchar_t const * const pwszItem      = papwszArgs[3];
+    wchar_t const * const pwszPosition  = cArgs > 4 ? papwszArgs[4] : L"0";
+    wchar_t const * const pwszFlags     = cArgs > 5 ? papwszArgs[5] : NULL;
+
+    HKEY hRootKey = ArgToRegistryRoot(pwszRoot);
+    if (hRootKey == NULL)
+        return EXIT_USAGE;
+
+    uint32_t uPosition = 0;
+    if (!ArgToUInt32Full(pwszPosition, "position", &uPosition))
+        return EXIT_USAGE;
+
+    uint32_t fFlags = 0;
+    if (pwszFlags)
+    {
+        if (RTUtf16ICmpAscii(pwszFlags, "dup") == 0)
+            fFlags = VBOX_REG_STRINGLIST_ALLOW_DUPLICATES;
+        else if (RTUtf16ICmpAscii(pwszFlags, "no-dups") == 0)
+            fFlags = 0;
+        else
+            return ErrorBadArg("flags", pwszFlags, "'dup' or 'no-dups'");
+    }
+
+    /*
+     * Do the work.
+     */
+    int rcExit = RegistryAddStringToList(hRootKey, pwszSubKey, pwszValueName, pwszItem, uPosition, fFlags);
+    if (rcExit == EXIT_OK)
+        PrintSWSWSWSWS("Successfully added '", pwszItem, "' to ", RegistryRootToWStr(hRootKey), "/'", pwszSubKey, "'/'",
+                       pwszValueName, "'\r\n");
 
     return rcExit;
 }
@@ -1479,11 +1783,14 @@ static int handleNetProviderAdd(unsigned cArgs, wchar_t **papwszArgs)
  * with other hives.
  *
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
+ * @param   hRootKey            The root key.
  * @param   pwszSubKey          Subkey containing the list value.
  * @param   pwszValueName       The value name.
- * @param   pwszItemToRemove    The item to remove from the list.
+ * @param   pwszItemToRemove    The item to remove from the list.  Empty values
+ *                              are not supported.
  */
-static int RegistryRemoveStringFromList(const wchar_t *pwszSubKey, const wchar_t *pwszValueName, const wchar_t *pwszItemToRemove)
+static int RegistryRemoveStringFromList(HKEY hRootKey, const wchar_t *pwszSubKey, const wchar_t *pwszValueName,
+                                        const wchar_t *pwszItemToRemove)
 {
     /*
      * Open the specified key.
@@ -1491,7 +1798,8 @@ static int RegistryRemoveStringFromList(const wchar_t *pwszSubKey, const wchar_t
     HKEY hKey = NULL;
     LSTATUS lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, pwszSubKey, 0 /*dwOptions*/, KEY_READ | KEY_WRITE, &hKey);
     if (lrc != ERROR_SUCCESS)
-        return ErrorMsgLStatusSWSRS("RegistryRemoveStringFromList: RegOpenKeyExW HKLM/'", pwszSubKey, "' failed: ", lrc, NULL);
+        return ErrorMsgLStatusSWSWSRS("RegistryRemoveStringFromList: RegOpenKeyExW ", RegistryRootToWStr(hRootKey),
+                                      "/'", pwszSubKey, "' failed: ", lrc, NULL);
 
     /*
      * Query the specified value.
@@ -1535,7 +1843,12 @@ static int RegistryRemoveStringFromList(const wchar_t *pwszSubKey, const wchar_t
             /* If it matches pwszItemToRemove, do not copy it. */
             ASMCompilerBarrier(); /* Paranoia ^ 2 */
             if (IsStringListItemMatch(pwszSrc, cwcItem, pwszItemToRemove, cwcItemToRemove))
+            {
                 pwszSrc = pwszSrcEnd;
+                if (!fLeadingComma)
+                    while (*pwszSrc == ',')
+                        pwszSrc++;
+            }
             else
             {
                 if (fLeadingComma)
@@ -1565,8 +1878,8 @@ static int RegistryRemoveStringFromList(const wchar_t *pwszSubKey, const wchar_t
             if (lrc == ERROR_SUCCESS)
                 rcExit = EXIT_OK;
             else
-                ErrorMsgLStatusSWSWSWSRS("RegistryRemoveStringFromList: RegSetValueExW HKLM/'",
-                                         pwszSubKey, "'/'", pwszValueName, "' = '", wszValue, "' failed: ", lrc, NULL);
+                ErrorMsgLStatusSWSWSWSWSRS("RegistryRemoveStringFromList: RegSetValueExW ", RegistryRootToWStr(hRootKey), "/'",
+                                           pwszSubKey, "'/'", pwszValueName, "' = '", wszValue, "' failed: ", lrc, NULL);
         }
     }
     else if (lrc == ERROR_FILE_NOT_FOUND)
@@ -1577,11 +1890,11 @@ static int RegistryRemoveStringFromList(const wchar_t *pwszSubKey, const wchar_t
         rcExit = EXIT_OK;
     }
     else if (lrc != ERROR_SUCCESS)
-        ErrorMsgLStatusSWSWSRS("RegistryRemoveStringFromList: RegQueryValueEx HKLM/'",
-                               pwszSubKey, "'/'", pwszValueName, "' failed: ", lrc, NULL);
+        ErrorMsgLStatusSWSWSWSRS("RegistryRemoveStringFromList: RegQueryValueEx ", RegistryRootToWStr(hRootKey), "/'",
+                                 pwszSubKey, "'/'", pwszValueName, "' failed: ", lrc, NULL);
     else
-        ErrorMsgLStatusSWSWSRS("RegistryRemoveStringFromList: Unexpected value type for HKLM/'",
-                               pwszSubKey, "'/'", pwszValueName, "': ", (LSTATUS)dwType, ", expected REG_SZ (1)");
+        ErrorMsgLStatusSWSWSWSRS("RegistryRemoveStringFromList: Unexpected value type for ", RegistryRootToWStr(hRootKey), "/'",
+                                 pwszSubKey, "'/'", pwszValueName, "': ", (LSTATUS)dwType, ", expected REG_SZ (1)");
     RegCloseKey(hKey);
     return rcExit;
 }
@@ -1595,7 +1908,8 @@ static int handleNetProviderRemove(unsigned cArgs, wchar_t **papwszArgs)
     const wchar_t * const pwszProvider = papwszArgs[0];
     PrintSWS("Removing network provider '", pwszProvider, "' ...\r\n");
 
-    int rcExit = RegistryRemoveStringFromList(L"System\\CurrentControlSet\\Control\\NetworkProvider\\Order",
+    int rcExit = RegistryRemoveStringFromList(HKEY_LOCAL_MACHINE,
+                                              L"System\\CurrentControlSet\\Control\\NetworkProvider\\Order",
                                               L"ProviderOrder",
                                               pwszProvider);
     if (rcExit == EXIT_OK)
@@ -1607,185 +1921,32 @@ static int handleNetProviderRemove(unsigned cArgs, wchar_t **papwszArgs)
 
 
 /**
- * Worker for the 'service create' handler.
+ * Handles 'registry dellistitem'.
  */
-static int CreateService(const wchar_t *pwszService,
-                         const wchar_t *pwszDisplayName,
-                         uint32_t       uServiceType,
-                         uint32_t       uStartType,
-                         const wchar_t *pwszBinPath,
-                         const wchar_t *pwszLoadOrderGroup,
-                         const wchar_t *pwszDependencies,
-                         const wchar_t *pwszLogonUser,
-                         const wchar_t *pwszLogonPassword)
+static int handleRegistryDelListItem(unsigned cArgs, wchar_t **papwszArgs)
 {
-    PrintSWSWS("Installing service '", pwszService, "' ('", pwszDisplayName, ") ...\r\n");
+    /*
+     * Parameters.
+     */
+    RT_NOREF(cArgs);
+    wchar_t const * const pwszRoot      = papwszArgs[0];
+    wchar_t const * const pwszSubKey    = papwszArgs[1];
+    wchar_t const * const pwszValueName = papwszArgs[2];
+    wchar_t const * const pwszItem      = papwszArgs[3];
+
+    HKEY hRootKey = ArgToRegistryRoot(pwszRoot);
+    if (hRootKey == NULL)
+        return EXIT_USAGE;
 
     /*
-     * Transform the dependency list to a REG_MULTI_SZ.
+     * Do the work.
      */
-    if (pwszDependencies != NULL)
-    {
-        /* Copy it into alloca() buffer so we can modify it. */
-        size_t cwc = RTUtf16Len(pwszDependencies);
-        wchar_t *pwszDup = (wchar_t *)alloca((cwc + 2) * sizeof(wchar_t));
-        memcpy(pwszDup, pwszDependencies, cwc * sizeof(wchar_t));
-        pwszDup[cwc]     = L'\0';
-        pwszDup[cwc + 1] = L'\0';   /* double termination */
+    int rcExit = RegistryRemoveStringFromList(hRootKey, pwszSubKey, pwszValueName, pwszItem);
+    if (rcExit == EXIT_OK)
+        PrintSWSWSWSWS("Successfully removed '", pwszItem, "' from ", RegistryRootToWStr(hRootKey), "/'", pwszSubKey, "'/'",
+                       pwszValueName, "'\r\n");
 
-        /* Perform: s/,/\0/g */
-        while (cwc-- > 0 )
-            if (pwszDup[cwc] == L',')
-                pwszDup[cwc] = L'\0';
-
-        pwszDependencies = pwszDup;
-    }
-
-    SC_HANDLE hSCManager = OpenSCManagerW(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-    if (hSCManager == NULL)
-        return ErrorMsgLastErr("OpenSCManagerW failed");
-
-    int rcExit = EXIT_FAIL;
-    DWORD dwTag = 0xDEADBEAF;
-    SC_HANDLE hService = CreateServiceW(hSCManager, pwszService, pwszDisplayName, SERVICE_ALL_ACCESS, uServiceType, uStartType,
-                                        SERVICE_ERROR_NORMAL, pwszBinPath, pwszLoadOrderGroup, pwszLoadOrderGroup ? &dwTag : NULL,
-                                        pwszDependencies, pwszLogonUser, pwszLogonPassword);
-    if (hService != NULL)
-    {
-        CloseServiceHandle(hService);
-        PrintStr("Installation of service successful!\r\n");
-        rcExit = EXIT_OK;
-    }
-    else
-    {
-        DWORD dwErr = GetLastError();
-        if (dwErr == ERROR_SERVICE_EXISTS)
-        {
-            PrintStr("Service already exists. Updating the service config ...\r\n");
-            hService = OpenServiceW(hSCManager, pwszService, SERVICE_ALL_ACCESS);
-            if (hService != NULL)
-            {
-                if (ChangeServiceConfigW(hService, uServiceType, uStartType, SERVICE_ERROR_NORMAL, pwszBinPath,
-                                         pwszLoadOrderGroup, pwszLoadOrderGroup ? &dwTag : NULL, pwszDependencies,
-                                         pwszLogonUser, pwszLogonPassword, pwszDisplayName))
-                {
-                    PrintStr("The service config has been successfully updated.\r\n");
-                    rcExit = EXIT_OK;
-                }
-                else
-                    rcExit = ErrorMsgLastErrSWS("ChangeServiceConfigW failed on '", pwszService, "'!");
-                CloseServiceHandle(hService);
-            }
-            else
-                rcExit = ErrorMsgLastErrSWS("OpenSCManagerW failed on '", pwszService, "'!");
-
-            /*
-             * This branch does not return an error to avoid installations failures,
-             * if updating service parameters. Better to have a running system with old
-             * parameters and the failure information in the installation log.
-             */
-            rcExit = EXIT_OK;
-        }
-        else
-            rcExit = ErrorMsgLastErrSWS("CreateServiceW for '", pwszService, "'!");
-    }
-
-    CloseServiceHandle(hSCManager);
     return rcExit;
-}
-
-
-/** Handles 'service create'. */
-static int handleServiceCreate(unsigned cArgs, wchar_t **papwszArgs)
-{
-    uint32_t uServiceType;
-    if (!ArgToUInt32Full(papwszArgs[2], "service-type", &uServiceType))
-        return EXIT_USAGE;
-
-    uint32_t uStartType;
-    if (!ArgToUInt32Full(papwszArgs[3], "start-type", &uStartType))
-        return EXIT_USAGE;
-
-    return CreateService(papwszArgs[0], papwszArgs[1], uServiceType, uStartType, papwszArgs[4],
-                         cArgs > 5 ? papwszArgs[5] : NULL,
-                         cArgs > 6 ? papwszArgs[6] : NULL,
-                         cArgs > 7 ? papwszArgs[7] : NULL,
-                         cArgs > 8 ? papwszArgs[8] : NULL);
-}
-
-
-/**
- * Worker for the 'service delete' handler.
- */
-static int DelService(const wchar_t *pwszService)
-{
-    PrintSWS("Removing service '", pwszService, "' ...\r\n");
-
-    SC_HANDLE hSCManager = OpenSCManagerW(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-    if (hSCManager == NULL)
-        return ErrorMsgLastErr("OpenSCManagerW failed");
-
-    int rcExit = EXIT_FAIL;
-    SC_HANDLE hService = NULL;
-    hService = OpenServiceW(hSCManager, pwszService, SERVICE_ALL_ACCESS);
-    if (hService)
-    {
-        SC_LOCK hSCLock = LockServiceDatabase(hSCManager);
-        if (hSCLock != NULL)
-        {
-            if (DeleteService(hService))
-            {
-                PrintSWS("Service '", pwszService, "' successfully deleted.\r\n");
-                rcExit = EXIT_OK;
-            }
-            else
-            {
-                DWORD dwErr = GetLastError();
-                if (dwErr == ERROR_SERVICE_MARKED_FOR_DELETE)
-                {
-                    PrintSWS("Service '", pwszService, "' already marked for deletion.\r\n");
-                    rcExit = EXIT_OK;
-                }
-                else
-                    rcExit = ErrorMsgLastErrSWS("Failed to delete service'", pwszService, "'!");
-            }
-            UnlockServiceDatabase(hSCLock);
-        }
-        else
-            ErrorMsgLastErr("LockServiceDatabase failed");
-        CloseServiceHandle(hService);
-    }
-    else
-        rcExit = ErrorMsgLastErrSWS("Failed to open service'", pwszService, "'!");
-    CloseServiceHandle(hSCManager);
-    return rcExit;
-}
-
-
-/** Handles 'service delete' */
-static int handleServiceDelete(unsigned cArgs, wchar_t **papwszArgs)
-{
-    RT_NOREF(cArgs);
-    return DelService(papwszArgs[0]);
-}
-
-
-static HKEY ArgToRegistryRoot(const wchar_t *pwszRoot)
-{
-    HKEY hRootKey = NULL;
-    if (RTUtf16ICmpAscii(pwszRoot, "hklm") == 0)
-        hRootKey = HKEY_LOCAL_MACHINE;
-    else if (RTUtf16ICmpAscii(pwszRoot, "hkcu") == 0)
-        hRootKey = HKEY_CURRENT_USER;
-    else if (RTUtf16ICmpAscii(pwszRoot, "hkcr") == 0)
-        hRootKey = HKEY_CLASSES_ROOT;
-    else if (RTUtf16ICmpAscii(pwszRoot, "hku") == 0)
-        hRootKey = HKEY_USERS;
-    else if (RTUtf16ICmpAscii(pwszRoot, "hkcc") == 0)
-        hRootKey = HKEY_CURRENT_CONFIG;
-    else
-        ErrorBadArg("root", pwszRoot, "hklm, hkcu, hkcr, hku or hkcc");
-    return hRootKey;
 }
 
 
@@ -1806,7 +1967,7 @@ static int handleRegistryWrite(unsigned cArgs, wchar_t **papwszArgs)
     /*
      * Root key:
      */
-    HKEY hRootKey = ArgToRegistryRoot(papwszArgs[0]);
+    HKEY hRootKey = ArgToRegistryRoot(pwszRoot);
     if (hRootKey == NULL)
         return EXIT_USAGE;
 
@@ -1903,12 +2064,12 @@ static int handleRegistryWrite(unsigned cArgs, wchar_t **papwszArgs)
     LSTATUS lrc  = RegCreateKeyExW(hRootKey, pwszSubKey, 0 /*Reserved*/, NULL /*pwszClass*/, 0 /*dwOptions*/,
                                    KEY_WRITE, NULL /*pSecAttr*/, &hKey, NULL /*pdwDisposition*/);
     if (lrc != ERROR_SUCCESS)
-        return ErrorMsgLStatusSWSWSRS("RegCreateKeyExW ", pwszRoot, "/'", pwszSubKey, "' failed: ", lrc, NULL);
+        return ErrorMsgLStatusSWSWSRS("RegCreateKeyExW ", RegistryRootToWStr(hRootKey), "/'", pwszSubKey, "' failed: ", lrc, NULL);
 
     lrc = RegSetValueExW(hKey, pwszValueName, 0, dwType, pbValue, cbValue);
     RegCloseKey(hKey);
     if (lrc != ERROR_SUCCESS)
-        return ErrorMsgLStatusSWSWSWSRS("RegSetValueExW ", pwszRoot, "/'", pwszSubKey, "'/'",
+        return ErrorMsgLStatusSWSWSWSRS("RegSetValueExW ", RegistryRootToWStr(hRootKey), "/'", pwszSubKey, "'/'",
                                         pwszValueName, "' failed: ",  lrc, NULL);
     return EXIT_OK;
 }
@@ -1991,6 +2152,9 @@ static int handleHelp(unsigned cArgs, wchar_t **papwszArgs)
              /** @todo Add roots for these two. */
              "    VBoxDrvInst registry addmultisz <sub-key> <value-name> <to-add> <position>\r\n"
              "    VBoxDrvInst registry delmultisz <sub-key> <value-name> <to-remove>\r\n"
+             "    VBoxDrvInst registry addlistitem <root> <sub-key> <value-name> <to-add>\r\n"
+             "        [position [dup|no-dup]]\r\n"
+             "    VBoxDrvInst registry dellistitem <root> <sub-key> <value-name> <to-remove>\r\n"
              "\r\n"
              "Standard options:\r\n"
              "    VBoxDrvInst [help|--help|/help|-h|/h|-?|/h] [...]\r\n"
@@ -2017,10 +2181,12 @@ int wmain(int argc, wchar_t **argv)
         { "driver",         "install",      1,  2, handleDriverInstall },
         { "driver",         "uninstall",    1,  2, handleDriverUninstall },
         { "driver",         "executeinf",   1,  1, handleDriverExecuteInf },
-        { "netprovider",    "add",          1,  2, handleNetProviderAdd },
-        { "netprovider",    "remove",       1,  2, handleNetProviderRemove },
         { "service",        "create",       5,  9, handleServiceCreate },
         { "service",        "delete",       1,  1, handleServiceDelete },
+        { "netprovider",    "add",          1,  2, handleNetProviderAdd },
+        { "netprovider",    "remove",       1,  2, handleNetProviderRemove },
+        { "registry",       "addlistitem",  4,  6, handleRegistryAddListItem },
+        { "registry",       "dellistitem",  4,  4, handleRegistryDelListItem },
         { "registry",       "addmultisz",   4,  4, handleRegistryAddMultiSz },
         { "registry",       "delmultisz",   3,  3, handleRegistryDelMultiSz },
         { "registry",       "write",        5,  7, handleRegistryWrite },
