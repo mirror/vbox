@@ -62,6 +62,7 @@
   <String Id="VB_Python">Supporto Python per VirtualBox.</String>
     <!---->
     <String Id="NeedAdmin">Devi avere diritti di amministrazione per (dis)installare [ProductName]! L'installazione sarà interrotta immediatamente.</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">Questa applicazione può essere eseguita solo su Windows XP o superiori.</String>
     <String Id="Only32Bit">Questa applicazione può essere eseguita solo su sistemi Windows a 32 bit. Installa la versione a 64 bit di [ProductName]!</String>
     <String Id="Only64Bit">Questa applicazione può essere eseguita solo su sistemi Windows a 64 bit. Installa la versione a 32 bit di [ProductName]!</String>

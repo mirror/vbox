@@ -29,6 +29,7 @@ LIBRARY "VBoxInstallHelper"
 EXPORTS
     IsSerialCheckNeeded
     CheckSerial
+    IsMSCRTInstalled
     IsPythonInstalled
     IsWindows10
     ArePythonAPIDepsInstalled

@@ -69,6 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">Πρέπει να έχετε δικαιώματα διαχειριστή για την (απ)εγκατάσταση του [ProductName]! Η εφαρμογή θα τερματιστεί τώρα.</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">Αυτή η εφαρμογή τρέχει μόνο σε Windows XP ή παραπάνω.</String>
     <String Id="Only32Bit">Αυτή η εφαρμογή τρέχει μόνο σε συστήματα Windows 32 bit. Εγκαταστήστε την έκδοση 64-bit του [ProductName]!</String>
     <String Id="Only64Bit">Αυτή η εφαρμογή τρέχει μόνο σε συστήματα Windows 64 bit. Εγκαταστήστε την έκδοση 32-bit του [ProductName]!</String>

@@ -56,8 +56,10 @@
             </File>
             <?include $(env.PATH_TARGET)\VirtualBox_TypeLib_x86.wxi ?>
 
+    <?if $(env.VBOX_WITH_CRT_PACKING) = "yes" ?>
             <!-- Include CRT Dlls (specific to the compiler). -->
             <?include $(env.PATH_TARGET)\VBoxCrtDlls32.wxi ?>
+    <?endif?>
         </Component>
     </Directory>
 <?endif?>

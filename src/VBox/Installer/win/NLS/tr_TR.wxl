@@ -69,6 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">[ProductName] uygulamasını yüklemek(kaldırmak) için yönetici haklarına sahip olmanız gerekir! Bu kur şimdi iptal edilecek.</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">Bu uygulama yalnızca Windows XP veya üzerinde çalışır.</String>
     <String Id="Only32Bit">Bu uygulama yalnızca 32-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 64-bit sürümünü yükleyin!</String>
     <String Id="Only64Bit">Bu uygulama yalnızca 64-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 32-bit sürümünü yükleyin!</String>

@@ -62,6 +62,7 @@
   <String Id="VB_Python">پشتیبانی از پایتون برای ویرچوال باکس.</String>
     <!---->
     <String Id="NeedAdmin">برای حذف [ProductName] شما نیاز به اجازه مدیر دارید! این راه انداز حالا لغو میشود.</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">این برنامه فقط در ویندوز ایکس پی یا بالاتر اِجرا میشود.</String>
     <String Id="Only32Bit">این برنامه فقط روی ویندوز 32 بیتی اِجرا میشود. لطفا نسخه 64 بیتی [ProductName] را نصب کنید!</String>
     <String Id="Only64Bit">این برنامه فقط روی ویندوز 64 بیتی اِجرا میشود. لطفا نسخه 32 بیتی [ProductName] را نصب کنید!</String>

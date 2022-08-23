@@ -390,8 +390,10 @@
               Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
 <?endif?>
 
+<?if $(env.VBOX_WITH_CRT_PACKING) = "yes" ?>
         <!-- Include CRT Dlls (specific to the compiler). -->
         <?include $(env.PATH_TARGET)\VBoxCrtDlls.wxi ?>
+<?endif?>
 
         <!-- EFI firmware -->
 <?if $(env.VBOX_WITH_EFIFW_PACKING) = "yes" ?>

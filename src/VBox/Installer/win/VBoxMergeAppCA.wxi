@@ -27,7 +27,13 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
+<?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
+    <CustomAction Id="ca_IsMSCRTInstalled" BinaryKey="VBoxInstallHelper"
+                  DllEntry="IsMSCRTInstalled" Execute="immediate" Return="ignore" Impersonate="no" />
+<?endif?>
+
     <CustomAction Id="ca_IsWindows10" BinaryKey="VBoxInstallHelper"
                   DllEntry="IsWindows10" Execute="immediate" Return="ignore" Impersonate="no" />
 
 </Include>
+

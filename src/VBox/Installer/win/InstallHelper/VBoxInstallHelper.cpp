@@ -444,6 +444,77 @@ UINT __stdcall ArePythonAPIDepsInstalled(MSIHANDLE hModule)
 }
 
 /**
+ * Checks if all required MS CRTs (Visual Studio Redistributable Package) are installed on the system.
+ *
+ * Called from the MSI installer as custom action.
+ *
+ * @returns Always ERROR_SUCCESS.
+ *          Sets public property VBOX_MSCRT_INSTALLED to "" (false, to use "NOT" in WiX) or "1" (success).
+ *
+ *          Also exposes public properties VBOX_MSCRT_VER_MIN + VBOX_MSCRT_VER_MAJ strings
+ *          with the most recent MSCRT version detected.
+ *
+ * @param   hModule             Windows installer module handle.
+ *
+ * @sa      https://docs.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170
+ */
+UINT __stdcall IsMSCRTInstalled(MSIHANDLE hModule)
+{
+    HKEY hKeyVS = NULL;
+    LSTATUS dwErr = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                                  L"SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\X64",
+                                  0, KEY_READ, &hKeyVS);
+    if (dwErr == ERROR_SUCCESS)
+    {
+        DWORD dwVal = 0;
+        DWORD cbVal = sizeof(dwVal);
+        DWORD dwValueType = REG_DWORD;
+
+        dwErr = RegQueryValueExW(hKeyVS, L"Installed", NULL, &dwValueType, (LPBYTE)&dwVal, &cbVal);
+        if (dwErr == ERROR_SUCCESS)
+        {
+            if (dwVal >= 1)
+            {
+                DWORD dwMin, dwMaj;
+                dwErr = RegQueryValueExW(hKeyVS, L"Major", NULL, &dwValueType, (LPBYTE)&dwMaj, &cbVal);
+                if (dwErr == ERROR_SUCCESS)
+                {
+                    VBoxSetMsiPropDWORD(hModule, L"VBOX_MSCRT_VER_MAJ", dwMaj);
+
+                    dwErr = RegQueryValueExW(hKeyVS, L"Minor", NULL, &dwValueType, (LPBYTE)&dwMin, &cbVal);
+                    if (dwErr == ERROR_SUCCESS)
+                    {
+                        VBoxSetMsiPropDWORD(hModule, L"VBOX_MSCRT_VER_MIN", dwMin);
+
+                        logStringF(hModule, L"IsMSCRTInstalled: Found v%ld.%ld\n", dwMaj, dwMin);
+
+                        /* Check for at least 2019. */
+                        if (dwMaj >= 14 && dwMin >= 20)
+                            VBoxSetMsiProp(hModule, L"VBOX_MSCRT_INSTALLED", L"1");
+                    }
+                    else
+                        logStringF(hModule, L"IsMSCRTInstalled: Found, but 'Minor' key not present");
+                }
+                else
+                    logStringF(hModule, L"IsMSCRTInstalled: Found, but 'Major' key not present");
+            }
+            else
+            {
+                logStringF(hModule, L"IsMSCRTInstalled: Found, but not marked as installed");
+                dwErr = ERROR_NOT_INSTALLED;
+            }
+        }
+        else
+            logStringF(hModule, L"IsMSCRTInstalled: Found, but 'Installed' key not present");
+    }
+
+    if (dwErr != ERROR_SUCCESS)
+        logStringF(hModule, L"IsMSCRTInstalled: Failed with dwErr=%ld", dwErr);
+
+    return ERROR_SUCCESS; /* Never return failure. */
+}
+
+/**
  * Checks if the running OS is (at least) Windows 10 (e.g. >= build 10000).
  *
  * Called from the MSI installer as custom action.

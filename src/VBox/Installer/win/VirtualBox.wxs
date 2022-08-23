@@ -121,6 +121,13 @@
         Privileged
     </Condition>
 
+<?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
+    <!-- Check if we have the required MS CRT(s) installed when we're not shipping those. -->
+    <Condition Message="!(loc.NeedMSCRT)">
+        Installed OR (VBOX_MSCRT_INSTALLED)
+    </Condition>
+<?endif ?>
+
     <!-- Detect old innotek installation -->
     <!-- Force a manual uninstall of an already installed innotek VirtualBox version first -->
     <Property Id="VBOXINNOTEK">

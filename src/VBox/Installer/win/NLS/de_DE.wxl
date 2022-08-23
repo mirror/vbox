@@ -69,6 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">Sie benötigen Administrations-Rechte zum (De-)Installieren von [ProductName]! Das Setup wird nun beendet.</String>
+    <String Id="NeedMSCRT">Für [ProductName] muss zuerst das Microsoft Visual C++ 2019 Redistributable Package installiert werden. Bitte installieren und danach die Installation von [ProductName] wiederholen.</String>
     <String Id="WrongOS">[ProductName] läuft nur auf Windows XP oder höher!</String>
     <String Id="Only32Bit">Diese Applikation läuft nur auf 32-bit Windows-Systemen. Bitte installieren Sie die 64-bit Version von [ProductName]!</String>
     <String Id="Only64Bit">Diese Applikation läuft nur auf 64-bit Windows-Systemen. Bitte installieren Sie die 32-bit Version von [ProductName]!</String>

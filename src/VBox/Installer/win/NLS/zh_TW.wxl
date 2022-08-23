@@ -69,6 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">您需要有系統管理員特殊權限以安裝 （或解除安裝）[ProductName]！此安裝程式現在將中止。</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">此應用程式只能執行在 Windows XP 或以上。</String>
     <String Id="Only32Bit">此應用程式只能執行在 32 位元的 Windows 系統。 請安裝 [ProductName] 的 64 位元版本！</String>
     <String Id="Only64Bit">此應用程式只能執行在 64 位元的 Windows 系統。 請安裝 [ProductName] 的 32 位元版本！</String>

@@ -69,6 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">You need to have administrator rights to (un)install [ProductName]! This setup will abort now.</String>
+    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
     <String Id="WrongOS">This application only runs on Windows XP or above.</String>
     <String Id="Only32Bit">This application only runs on 32-bit Windows systems. Please install the 64-bit version of [ProductName]!</String>
     <String Id="Only64Bit">This application only runs on 64-bit Windows systems. Please install the 32-bit version of [ProductName]!</String>

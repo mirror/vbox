@@ -54,7 +54,7 @@ int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...)
 }
 #endif
 
-UINT VBoxGetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue, DWORD dwSize)
+UINT VBoxGetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, WCHAR *pwszValue, DWORD dwSize)
 {
     DWORD dwBuffer = 0;
     UINT uiRet = MsiGetPropertyW(hMsi, pwszName, L"", &dwBuffer);
@@ -104,8 +104,15 @@ int VBoxGetMsiPropUtf8(MSIHANDLE hMsi, const char *pcszName, char **ppszValue)
 }
 #endif
 
-UINT VBoxSetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue)
+UINT VBoxSetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, const WCHAR *pwszValue)
 {
     return MsiSetPropertyW(hMsi, pwszName, pwszValue);
+}
+
+UINT VBoxSetMsiPropDWORD(MSIHANDLE hMsi, const WCHAR *pwszName, DWORD dwVal)
+{
+    wchar_t wszTemp[32];
+    swprintf(wszTemp, sizeof(wszTemp) / sizeof(wchar_t), L"%ld", dwVal);
+    return VBoxSetMsiProp(hMsi, pwszName, wszTemp);
 }
 

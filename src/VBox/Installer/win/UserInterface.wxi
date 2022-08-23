@@ -1208,6 +1208,9 @@
         <!-- This defines the order in which the GUI panels will be shown to the user. -->
         <InstallUISequence>
 
+<?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
+            <Custom Action="ca_IsMSCRTInstalled" After="AppSearch" />
+<?endif?>
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" After="FileCost"><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
             <Custom Action="ca_IsWindows10" After="CostFinalize" />

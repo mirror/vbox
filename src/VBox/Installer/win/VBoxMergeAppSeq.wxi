@@ -27,7 +27,11 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-    <Custom Action="ca_IsWindows10"  After="FileCost">1</Custom>
+<?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
+    <Custom Action="ca_IsMSCRTInstalled" After="AppSearch">1</Custom>
+<?endif?>
+
+    <Custom Action="ca_IsWindows10" After="FileCost">1</Custom>
 
 </Include>
 
