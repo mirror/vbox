@@ -374,8 +374,8 @@
 <?endif ?>
                     </Directory>
                 </Directory>
-<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
                 <Directory Id="dir_SDK" Name="sdk">
+<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
                     <Directory Id="dir_SDKInstall" Name="install">
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                         <Merge Id="msm_VBoxPython" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergePython)" DiskId="1" />
@@ -385,12 +385,12 @@
                         </Directory>
     <?endif ?>
                     </Directory>
+<?endif ?>
                     <!-- Component for removing empty folder after cleaning traces -->
                     <Component Id="cp_SDK" Guid="ACA59290-B2D6-4E96-B164-C45F70A90219">
                         <RemoveFolder Id="dir_SDK" On="uninstall" />
                     </Component>
                 </Directory>
-<?endif ?>
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
                 <!-- Set up special directory IDs for referencing to the start menu
