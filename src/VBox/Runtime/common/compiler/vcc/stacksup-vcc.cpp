@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT - Basic allocators, Windows.
+ * IPRT - Visual C++ Compiler - Stack Checking C/C++ Support.
  */
 
 /*

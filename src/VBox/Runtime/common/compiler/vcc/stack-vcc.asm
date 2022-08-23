@@ -118,10 +118,6 @@ extern NAME(_RTC_CheckEspFailed)
 %endif
 
 
-BEGINPROC __GSHandlerCheck
-        SEH64_END_PROLOGUE
-        int3
-ENDPROC   __GSHandlerCheck
 
 ;;
 ; Probe stack to trigger guard faults, and for x86 to allocate stack space.
