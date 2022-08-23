@@ -145,7 +145,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
         struct IEMCPU       s;
 #endif
-        uint8_t             padding[28736];     /* multiple of 64 */
+        uint8_t             padding[32832];     /* multiple of 64 */
     } iem;
 
     /** @name Static per-cpu data.
@@ -326,12 +326,11 @@ typedef struct VMCPU
         uint8_t             padding[40960];      /* multiple of 4096 */
     } em;
 
-    /** Align the structure size on 16384 boundrary for arm64 purposes. */
-    uint8_t                 abStructPadding[4096];
 } VMCPU;
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
+/* Make sure the structure size is aligned on a 16384 boundary for arm64 purposes. */
 AssertCompileSizeAlignment(VMCPU, 16384);
 
 /** @name Operations on VMCPU::enmState

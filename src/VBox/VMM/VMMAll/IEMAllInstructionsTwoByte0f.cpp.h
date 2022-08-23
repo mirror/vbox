@@ -11315,8 +11315,41 @@ FNIEMOP_DEF(iemOp_pxor_Vx_Wx)
 
 /*  Opcode      0x0f 0xf0 - invalid */
 /*  Opcode 0x66 0x0f 0xf0 - invalid */
+
+
 /** Opcode 0xf2 0x0f 0xf0 - lddqu Vx, Mx */
-FNIEMOP_STUB(iemOp_lddqu_Vx_Mx);
+FNIEMOP_DEF(iemOp_lddqu_Vx_Mx)
+{
+    IEMOP_MNEMONIC2(RM_MEM, LDDQU, lddqu, Vdq_WO, Mx, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register - (not implemented, assuming it raises \#UD).
+         */
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(RTUINT128U, u128Tmp);
+        IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_FETCH_MEM_U128(u128Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_U128(IEM_GET_MODRM_REG(pVCpu, bRm), u128Tmp);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode      0x0f 0xf1 - psllw Pq, Qq */
