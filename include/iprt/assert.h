@@ -1597,7 +1597,11 @@ RT_C_DECLS_END
  * checked, but it's done since RTAssertShouldPanic is overrideable and might be
  * used to bail out before taking down the system (the VMMR0 case).
  */
-#define RTAssertReleasePanic()   do { RTAssertShouldPanic(); RTAssertDoPanic(); } while (0)
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define RTAssertReleasePanic()  do { RTAssertShouldPanic(); RTAssertDoPanic(); } while (0)
+#else
+# define RTAssertReleasePanic()  do { } while (0)
+#endif
 
 
 /** @def AssertRelease
@@ -1605,7 +1609,8 @@ RT_C_DECLS_END
  *
  * @param   expr    Expression which should be true.
  */
-#define AssertRelease(expr)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertRelease(expr)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1615,6 +1620,10 @@ RT_C_DECLS_END
             RTAssertReleasePanic(); \
         } \
     } while (0)
+#else
+# define AssertRelease(expr)  do { } while (0)
+#endif
+
 
 /** @def AssertReleaseReturn
  * Assert that an expression is true, hit a breakpoint and return if it isn't.
@@ -1622,7 +1631,8 @@ RT_C_DECLS_END
  * @param   expr    Expression which should be true.
  * @param   rc      What is to be presented to return.
  */
-#define AssertReleaseReturn(expr, rc)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseReturn(expr, rc)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1633,13 +1643,23 @@ RT_C_DECLS_END
             return (rc); \
         } \
     } while (0)
+#else
+# define AssertReleaseReturn(expr, rc) \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+            return (rc); \
+    } while (0)
+#endif
 
 /** @def AssertReleaseReturnVoid
  * Assert that an expression is true, hit a breakpoint and return if it isn't.
  *
  * @param   expr    Expression which should be true.
  */
-#define AssertReleaseReturnVoid(expr)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseReturnVoid(expr)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1650,6 +1670,15 @@ RT_C_DECLS_END
             return; \
         } \
     } while (0)
+#else
+# define AssertReleaseReturnVoid(expr)  \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+            return; \
+    } while (0)
+#endif
 
 
 /** @def AssertReleaseBreak
@@ -1657,7 +1686,8 @@ RT_C_DECLS_END
  *
  * @param   expr    Expression which should be true.
  */
-#define AssertReleaseBreak(expr)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseBreak(expr)  \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
     else if (1) \
@@ -1667,6 +1697,13 @@ RT_C_DECLS_END
         break; \
     } else \
         break
+#else
+# define AssertReleaseBreak(expr)  \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else \
+        break
+#endif
 
 /** @def AssertReleaseBreakStmt
  * Assert that an expression is true, hit a breakpoint and break if it isn't.
@@ -1674,7 +1711,8 @@ RT_C_DECLS_END
  * @param   expr    Expression which should be true.
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
-#define AssertReleaseBreakStmt(expr, stmt)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseBreakStmt(expr, stmt)  \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
     else if (1) \
@@ -1685,6 +1723,17 @@ RT_C_DECLS_END
         break; \
     } else \
         break
+#else
+# define AssertReleaseBreakStmt(expr, stmt)  \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else if (1) \
+    { \
+        stmt; \
+        break; \
+    } else \
+        break
+#endif
 
 
 /** @def AssertReleaseMsg
@@ -1693,7 +1742,8 @@ RT_C_DECLS_END
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
  */
-#define AssertReleaseMsg(expr, a)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsg(expr, a)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1704,6 +1754,9 @@ RT_C_DECLS_END
             RTAssertReleasePanic(); \
         } \
     } while (0)
+#else
+# define AssertReleaseMsg(expr, a) do { } while (0)
+#endif
 
 /** @def AssertReleaseMsgReturn
  * Assert that an expression is true, print the message and hit a breakpoint and return if it isn't.
@@ -1712,7 +1765,8 @@ RT_C_DECLS_END
  * @param   a       printf argument list (in parenthesis).
  * @param   rc      What is to be presented to return.
  */
-#define AssertReleaseMsgReturn(expr, a, rc)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgReturn(expr, a, rc)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1724,6 +1778,15 @@ RT_C_DECLS_END
             return (rc); \
         } \
     } while (0)
+#else
+# define AssertReleaseMsgReturn(expr, a, rc)  \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+            return (rc); \
+    } while (0)
+#endif
 
 /** @def AssertReleaseMsgReturnVoid
  * Assert that an expression is true, print the message and hit a breakpoint and return if it isn't.
@@ -1731,7 +1794,8 @@ RT_C_DECLS_END
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
  */
-#define AssertReleaseMsgReturnVoid(expr, a)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgReturnVoid(expr, a)  \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
@@ -1743,6 +1807,15 @@ RT_C_DECLS_END
             return; \
         } \
     } while (0)
+#else
+# define AssertReleaseMsgReturnVoid(expr, a)  \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+            return; \
+    } while (0)
+#endif
 
 
 /** @def AssertReleaseMsgBreak
@@ -1751,7 +1824,8 @@ RT_C_DECLS_END
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
  */
-#define AssertReleaseMsgBreak(expr, a)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgBreak(expr, a)  \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
     else if (1) \
@@ -1762,6 +1836,15 @@ RT_C_DECLS_END
         break; \
     } else \
         break
+#else
+# define AssertReleaseMsgBreak(expr, a)  \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else if (1) \
+        break; \
+    else \
+        break
+#endif
 
 /** @def AssertReleaseMsgBreakStmt
  * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
@@ -1770,7 +1853,8 @@ RT_C_DECLS_END
  * @param   a       printf argument list (in parenthesis).
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
-#define AssertReleaseMsgBreakStmt(expr, a, stmt)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgBreakStmt(expr, a, stmt)  \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
     else if (1) \
@@ -1782,57 +1866,90 @@ RT_C_DECLS_END
         break; \
     } else \
         break
+#else
+# define AssertReleaseMsgBreakStmt(expr, a, stmt)  \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else if (1) \
+    { \
+        stmt; \
+        break; \
+    } else \
+        break
+#endif
 
 
 /** @def AssertReleaseFailed
  * An assertion failed, hit a breakpoint.
  */
-#define AssertReleaseFailed()  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailed()  \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
     } while (0)
+#else
+# define AssertReleaseFailed() do { } while (0)
+#endif
 
 /** @def AssertReleaseFailedReturn
  * An assertion failed, hit a breakpoint and return.
  *
  * @param   rc      What is to be presented to return.
  */
-#define AssertReleaseFailedReturn(rc)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailedReturn(rc)  \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
         return (rc); \
     } while (0)
+#else
+# define AssertReleaseFailedReturn(rc)  \
+    do { return (rc); } while (0)
+#endif
 
 /** @def AssertReleaseFailedReturnVoid
  * An assertion failed, hit a breakpoint and return.
  */
-#define AssertReleaseFailedReturnVoid()  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailedReturnVoid()  \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
         return; \
     } while (0)
-
+#else
+# define AssertReleaseFailedReturnVoid()  \
+    do { return; } while (0)
+#endif
 
 /** @def AssertReleaseFailedBreak
  * An assertion failed, hit a breakpoint and break.
  */
-#define AssertReleaseFailedBreak()  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailedBreak()  \
     if (1) { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
         break; \
     } else \
         break
+#else
+# define AssertReleaseFailedBreak()  \
+    if (1) \
+        break; \
+    else \
+        break
+#endif
 
 /** @def AssertReleaseFailedBreakStmt
  * An assertion failed, hit a breakpoint and break.
  *
  * @param   stmt    Statement to execute before break.
  */
-#define AssertReleaseFailedBreakStmt(stmt)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailedBreakStmt(stmt)  \
     if (1) { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
@@ -1840,19 +1957,30 @@ RT_C_DECLS_END
         break; \
     } else \
         break
-
+#else
+# define AssertReleaseFailedBreakStmt(stmt)  \
+    if (1) { \
+        stmt; \
+        break; \
+    } else \
+        break
+#endif
 
 /** @def AssertReleaseMsgFailed
  * An assertion failed, print a message and hit a breakpoint.
  *
  * @param   a   printf argument list (in parenthesis).
  */
-#define AssertReleaseMsgFailed(a)  \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgFailed(a)  \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
     } while (0)
+#else
+# define AssertReleaseMsgFailed(a)  do { } while (0)
+#endif
 
 /** @def AssertReleaseMsgFailedReturn
  * An assertion failed, print a message, hit a breakpoint and return.
@@ -1860,26 +1988,36 @@ RT_C_DECLS_END
  * @param   a   printf argument list (in parenthesis).
  * @param   rc      What is to be presented to return.
  */
-#define AssertReleaseMsgFailedReturn(a, rc) \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgFailedReturn(a, rc) \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
         return (rc); \
     } while (0)
+#else
+# define AssertReleaseMsgFailedReturn(a, rc) \
+    do { return (rc); } while (0)
+#endif
 
 /** @def AssertReleaseMsgFailedReturnVoid
  * An assertion failed, print a message, hit a breakpoint and return.
  *
  * @param   a   printf argument list (in parenthesis).
  */
-#define AssertReleaseMsgFailedReturnVoid(a) \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgFailedReturnVoid(a) \
     do { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
         return; \
     } while (0)
+#else
+# define AssertReleaseMsgFailedReturnVoid(a) \
+    do { return; } while (0)
+#endif
 
 
 /** @def AssertReleaseMsgFailedBreak
@@ -1887,7 +2025,8 @@ RT_C_DECLS_END
  *
  * @param   a   printf argument list (in parenthesis).
  */
-#define AssertReleaseMsgFailedBreak(a) \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgFailedBreak(a) \
     if (1) { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
@@ -1895,6 +2034,13 @@ RT_C_DECLS_END
         break; \
     } else \
         break
+#else
+# define AssertReleaseMsgFailedBreak(a) \
+    if (1) \
+        break; \
+    else \
+        break
+#endif
 
 /** @def AssertReleaseMsgFailedBreakStmt
  * An assertion failed, print a message, hit a breakpoint and break.
@@ -1902,7 +2048,8 @@ RT_C_DECLS_END
  * @param   a   printf argument list (in parenthesis).
  * @param   stmt    Statement to execute before break.
  */
-#define AssertReleaseMsgFailedBreakStmt(a, stmt) \
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseMsgFailedBreakStmt(a, stmt) \
     if (1) { \
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
@@ -1911,7 +2058,14 @@ RT_C_DECLS_END
         break; \
     } else \
         break
-
+#else
+# define AssertReleaseMsgFailedBreakStmt(a, stmt) \
+    if (1) { \
+        stmt; \
+        break; \
+    } else \
+        break
+#endif
 /** @} */
 
 
