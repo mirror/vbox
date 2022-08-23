@@ -2763,9 +2763,9 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
             return;
 
         if (fileToDelete.remove(strFilePath))
-            sigStatusBarMessage(QString("%1 %2 %3").arg(UISoftKeyboard::tr("The file ")).arg(strFilePath).arg(UISoftKeyboard::tr(" has been deleted")));
+            sigStatusBarMessage(UISoftKeyboard::tr("The file %1 has been deleted").arg(strFilePath));
         else
-            sigStatusBarMessage(QString("%1 %2 %3").arg(UISoftKeyboard::tr("Deleting the file ")).arg(strFilePath).arg(UISoftKeyboard::tr(" has failed")));
+            sigStatusBarMessage(UISoftKeyboard::tr("Deleting the file %1 has failed").arg(strFilePath));
     }
 
     m_layouts.remove(m_uCurrentLayoutId);

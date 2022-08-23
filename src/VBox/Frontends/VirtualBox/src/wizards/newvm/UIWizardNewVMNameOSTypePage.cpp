@@ -545,15 +545,18 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
     {
         QString strType = uiCommon().vmGuestOSTypeDescription(pWizard->detectedOSTypeId());
         if (!pWizard->isUnattendedInstallSupported())
-            strMessage = QString("%1 %2. %3").arg(UIWizardNewVM::tr("Detected OS type: ")).arg(strType)
-                                                 .arg(UIWizardNewVM::tr("This OS type cannot be installed unattendedly. The install "
-                                                                        "needs to be started manually."));
+            strMessage = UIWizardNewVM::tr("Detected OS type: %1. %2")
+                                           .arg(strType)
+                                           .arg(UIWizardNewVM::tr("This OS type cannot be installed unattendedly. "
+                                                                  "The install needs to be started manually."));
         else if (pWizard->skipUnattendedInstall())
-            strMessage = UIWizardNewVM::tr("You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.");
+            strMessage = UIWizardNewVM::tr("You have selected to skip unattended guest OS install, "
+                                           "the guest OS will need to be installed manually.");
         else
-            strMessage = QString("%1 %2. %3").arg(UIWizardNewVM::tr("Detected OS type: ")).arg(strType)
-                                                 .arg(UIWizardNewVM::tr("This OS type can be installed unattendedly. The install "
-                                                                        "will start after this wizard is closed."));
+            strMessage = UIWizardNewVM::tr("Detected OS type: %1. %2")
+                                           .arg(strType)
+                                           .arg(UIWizardNewVM::tr("This OS type can be installed unattendedly. "
+                                                                  "The install will start after this wizard is closed."));
     }
 
     m_pInfoLabel->setText(QString("<img src=\":/session_info_16px.png\" style=\"vertical-align:top\"> %1").arg(strMessage));

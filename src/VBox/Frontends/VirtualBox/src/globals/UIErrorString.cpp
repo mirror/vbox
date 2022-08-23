@@ -107,7 +107,7 @@ QString UIErrorString::formatErrorInfo(const CProgress &comProgress)
     return QString("<table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>"
                    "<tr><td>%2</td><td><tt>%3</tt></td></tr></table>")
                    .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
-                   .arg(QApplication::translate("UIErrorString", "Result&nbsp;Code: ", "error info"))
+                   .arg(QApplication::translate("UIErrorString", "Result&nbsp;Code:", "error info"))
                    .arg(formatRCFull(comProgress.GetResultCode()))
                    .prepend("<!--EOM-->") /* move to details */;
 }
@@ -191,13 +191,13 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
         if (fHaveResultCode)
         {
             strFormatted += QString("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
-                .arg(QApplication::translate("UIErrorString", "Result&nbsp;Code: ", "error info"))
+                .arg(QApplication::translate("UIErrorString", "Result&nbsp;Code:", "error info"))
                 .arg(formatRCFull(comInfo.resultCode()));
         }
 
         if (fHaveComponent)
             strFormatted += QString("<tr><td>%1</td><td>%2</td></tr>")
-                .arg(QApplication::translate("UIErrorString", "Component: ", "error info"), comInfo.component());
+                .arg(QApplication::translate("UIErrorString", "Component:", "error info"), comInfo.component());
 
         if (fHaveInterfaceID)
         {
@@ -205,7 +205,7 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
             if (!comInfo.interfaceName().isEmpty())
                 s = comInfo.interfaceName() + ' ' + s;
             strFormatted += QString("<tr><td>%1</td><td>%2</td></tr>")
-                .arg(QApplication::translate("UIErrorString", "Interface: ", "error info"), s);
+                .arg(QApplication::translate("UIErrorString", "Interface:", "error info"), s);
         }
 
         if (!comInfo.calleeIID().isNull() && comInfo.calleeIID() != comInfo.interfaceID())
@@ -214,7 +214,7 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
             if (!comInfo.calleeName().isEmpty())
                 s = comInfo.calleeName() + ' ' + s;
             strFormatted += QString("<tr><td>%1</td><td>%2</td></tr>")
-                .arg(QApplication::translate("UIErrorString", "Callee: ", "error info"), s);
+                .arg(QApplication::translate("UIErrorString", "Callee:", "error info"), s);
         }
     }
 
@@ -222,7 +222,7 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
         && (!fHaveResultCode || wrapperRC != comInfo.resultCode()))
     {
         strFormatted += QString("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
-            .arg(QApplication::translate("UIErrorString", "Callee&nbsp;RC: ", "error info"))
+            .arg(QApplication::translate("UIErrorString", "Callee&nbsp;RC:", "error info"))
             .arg(formatRCFull(wrapperRC));
     }
 

@@ -1789,8 +1789,8 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
                              "<tr><td>%4</td><td>%5</td></tr>"
                              "</table>")
                              .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
-                             .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"), strErrorId)
-                             .arg(tr("Severity: ", "runtime error info"), severity);
+                             .arg(tr("<nobr>Error ID:</nobr>", "runtime error info"), strErrorId)
+                             .arg(tr("Severity:", "runtime error info"), severity);
     if (!formatted.isEmpty())
         formatted = "<qt>" + formatted + "</qt>";
 
