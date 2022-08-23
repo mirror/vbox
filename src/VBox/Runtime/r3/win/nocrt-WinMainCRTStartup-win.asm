@@ -37,8 +37,8 @@
 
 %include "iprt/asmdefs.mac"
 
-extern  CustomMainEntrypoint
+extern  NAME(CustomMainEntrypoint)
 BEGINPROC WinMainCRTStartup
-        jmp     CustomMainEntrypoint
+        jmp     NAME(CustomMainEntrypoint)
 ENDPROC   WinMainCRTStartup
 
