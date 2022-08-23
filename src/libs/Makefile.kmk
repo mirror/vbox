@@ -64,8 +64,8 @@ endif
 
 
 # liblzf is used by the IPRT compression code (saved state compression).
-if "$(SDK_VBOX_LZF_INCS)" == "$(PATH_ROOT)/src/libs/liblzf-3.4"
- include $(PATH_SUB_CURRENT)/liblzf-3.4/Makefile.kmk
+if "$(SDK_VBOX_LZF_INCS)" == "$(PATH_ROOT)/src/libs/liblzf-3.6"
+ include $(PATH_SUB_CURRENT)/liblzf-3.6/Makefile.kmk
 endif
 
 

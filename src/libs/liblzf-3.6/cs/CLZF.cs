@@ -138,7 +138,7 @@ namespace LZF.NET
 
 		UInt32 IDX(UInt32 h) 
 		{
-			return ((h ^ (h << 5)) >> (int)(((3*8 - HLOG)) - h*5) & (HSIZE - 1));
+                	return ((((h ^ (h << 5)) >> (int) (3*8 - HLOG)) - h*5) & (HSIZE - 1));
 		}
 
 		/*

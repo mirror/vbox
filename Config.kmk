@@ -4788,7 +4788,7 @@ SDK_VBOX_LIBPNG_LIBS           ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 # lzf
 SDK_VBOX_LZF                   := lzf compressor/decompressor for dll linking.
-SDK_VBOX_LZF_INCS              ?= $(PATH_ROOT)/src/libs/liblzf-3.4
+SDK_VBOX_LZF_INCS              ?= $(PATH_ROOT)/src/libs/liblzf-3.6
 SDK_VBOX_LZF_LIBS              ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 
 SDK_VBOX_LZF-x86               := lzf/x86 compressor/decompressor for dll linking.
