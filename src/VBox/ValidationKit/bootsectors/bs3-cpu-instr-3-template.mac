@@ -2584,6 +2584,20 @@ EMIT_INSTR_PLUS_ICEBP vlddqu, XMM11, FSxBX
 EMIT_INSTR_PLUS_ICEBP vlddqu, YMM12, FSxBX
  %endif
 
+;
+; [V]PHMINPOSUW
+;
+EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM1, FSxBX
+ %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM9, FSxBX
+ %endif
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
