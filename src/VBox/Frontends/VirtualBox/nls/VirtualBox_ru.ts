@@ -165,7 +165,7 @@
     <name>QIDialogContainer</name>
     <message>
         <source>Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка</translation>
     </message>
 </context>
 <context>
@@ -352,46 +352,46 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
+        <translation>Вк&amp;лючить VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК, такие как Intel VT-x или AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Вкл&amp;ючить  Nested Paging</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, виртуальная машина будет пытаться использовать расширение Nested Paging для функций аппаратной виртуализации Intel VT-x and AMD-V.</translation>
     </message>
 </context>
 <context>
     <name>UIAcquirePublicKeyDialog</name>
     <message>
         <source>Choose a public key file</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать файл открытого ключа</translation>
     </message>
     <message>
         <source>Public key</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый ключ</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable locations. If you have one, please put it under one of those folders OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using one of the following tools to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый ключ id_rsa[.pub] не был обнаружен в подходящих ему локациях. Если у вас такой ключ имеется, пожалуйста положите его в одну из соответствующих папок ИЛИ скопируйте и вставьте ключ в поле снизу:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Если у вас нет такого ключа, пожалуйста рассмотрите возможность его генерации с использованием одного из следующих инструментов:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable location. If you have one, please put it under specified folder OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using the following tool to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый ключ id_rsa[.pub] не был обнаружен в соответствующей локации. Если у вас такой ключ имеется, пожалуйста положите его в соответствующую папку ИЛИ скопируйте и вставьте ключ в поле снизу:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Если у вас нет такого ключа, пожалуйста рассмотрите возможность его генерации с использованием следующего инструмента:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>Paste public key</source>
-        <translation type="unfinished"></translation>
+        <translation>Вставить открытый ключ</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть</translation>
     </message>
 </context>
 <context>
@@ -2693,46 +2693,46 @@
     <message>
         <source>[Root]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[Корневая]</translation>
     </message>
     <message>
         <source>Copy Key Fingerprint (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать отпечаток ключа (%1)</translation>
     </message>
     <message>
         <source>Connect</source>
         <comment>to cloud VM</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подключиться</translation>
     </message>
     <message>
         <source>Connect with %1 (%2)</source>
         <comment>with terminal application (profile)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подключиться используя %1 (%2)</translation>
     </message>
     <message>
         <source>Connect with %1</source>
         <comment>with terminal application</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подключиться используя %1</translation>
     </message>
     <message>
         <source>Refresh the currently viewed log</source>
-        <translation type="unfinished"></translation>
+        <translation>Обновить текущий лог</translation>
     </message>
     <message>
         <source>&amp;Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Перезагрузить</translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезагрузить все лог файлы и обновить страницы</translation>
     </message>
     <message>
         <source>Toggle guest session panel of the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключить панель гостевой сессии менеджера файлов</translation>
     </message>
     <message>
         <source>Toggle Guest Session Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключить панель гостевой сессии</translation>
     </message>
     <message>
         <source>VISO Creator</source>
@@ -3370,7 +3370,7 @@
     </message>
     <message>
         <source>Storage Controller (VirtioSCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер (VirtioSCSI)</translation>
     </message>
 </context>
 <context>
@@ -3661,15 +3661,15 @@
     </message>
     <message>
         <source>Holds the amount of base memory the virtual machine will have.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт количество базовой памяти, доступной виртуальной машине.</translation>
     </message>
     <message>
         <source>Minimum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможное количество базовой памяти.</translation>
     </message>
     <message>
         <source>Maximum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможное количество базовой памяти.</translation>
     </message>
 </context>
 <context>
@@ -3680,39 +3680,39 @@
     </message>
     <message>
         <source>Closes this dialog without resetting the guest or mounting a medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть диалог без перезагрузки гостевой ОС или подключения образа диска</translation>
     </message>
     <message>
         <source>&amp;Mount and Retry Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подключить и перезагрузиться</translation>
     </message>
     <message>
         <source>Mounts the selected ISO if any and reboots the vm</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключает выбранный образ и перезагружает машину</translation>
     </message>
     <message>
         <source>The virtual machine failed to boot. That might be caused by a missing operating system or misconfigured boot order. Mounting an operating system install DVD might solve this problem. Selecting an ISO file will attempt to mount it after the dialog is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка загрузки виртуальной машины. Это может быть связано с отсутствием операционной системы или ошибочным порядком загрузки. Подключение DVD диска установки операционной системы может решить данную проблему. После закрытия диалога выбранный ISO файл будет подключен.</translation>
     </message>
     <message>
         <source>DVD:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Do not show this dialog again</source>
-        <translation type="unfinished"></translation>
+        <translation>Больше не показывать этот диалог</translation>
     </message>
     <message>
         <source>When checked this dialog will not be shown again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, этот диалог более не будет показан.</translation>
     </message>
     <message>
         <source>Holds the path of the ISO to be attached to machine as boot medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт путь к ISO файлу, который будет подключен к машине в качестве загрузочного.</translation>
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задан некорректный путь.</translation>
     </message>
 </context>
 <context>
@@ -3859,7 +3859,7 @@
     </message>
     <message>
         <source>Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Элемент</translation>
     </message>
 </context>
 <context>
@@ -4122,7 +4122,7 @@
     <name>UICloudConsoleManager</name>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер облачной консоли</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4138,11 +4138,11 @@
     </message>
     <message>
         <source>Reset changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить изменения настроек данной облачной консоли</translation>
     </message>
     <message>
         <source>Apply changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить изменения настроек данной облачной консоли</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
@@ -4170,39 +4170,39 @@
     </message>
     <message>
         <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation>Аргумент:</translation>
     </message>
     <message>
         <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите имя текущего консольного приложения...</translation>
     </message>
     <message>
         <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите путь текущего консольного приложения...</translation>
     </message>
     <message>
         <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите аргумент текущего консольного приложения...</translation>
     </message>
     <message>
         <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите имя текущего консольного профиля...</translation>
     </message>
     <message>
         <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите аргумент текущего консольного профиля...</translation>
     </message>
     <message>
         <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить изменения настроек облачной консоли</translation>
     </message>
     <message>
         <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить изменения настроек облачной консоли</translation>
     </message>
     <message>
         <source>Add Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить приложение</translation>
     </message>
     <message>
         <source>Add Profile</source>
@@ -4210,18 +4210,18 @@
     </message>
     <message>
         <source>Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Приложение</translation>
     </message>
     <message>
         <source>List in Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать в меню</translation>
     </message>
 </context>
 <context>
     <name>UICloudMachineSettingsDialog</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройки</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -4229,7 +4229,7 @@
     </message>
     <message>
         <source>Contains a list of cloud machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержит список настроек облачной виртуальной машины.</translation>
     </message>
 </context>
 <context>
@@ -4343,11 +4343,11 @@
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>Name:</source>
@@ -4359,7 +4359,7 @@
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation>Содержит найстройки облачных профилей</translation>
+        <translation>Содержит настройки облачных профилей</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
@@ -4395,11 +4395,11 @@
     </message>
     <message>
         <source>List VMs</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать ВМ</translation>
     </message>
     <message>
         <source>Registered cloud providers and profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержит зарегистрированных провайдеров и профайлы</translation>
     </message>
 </context>
 <context>
@@ -4413,11 +4413,11 @@
     <name>UIColorThemeEditor</name>
     <message>
         <source>Color &amp;Theme:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Цветовая тема:</translation>
     </message>
     <message>
         <source>Selects the color theme. It can be Light, Dark or automatically detected (default).</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать цветовую тему. Доступна Светлая, Тёмная и системная (по умолчанию).</translation>
     </message>
 </context>
 <context>
@@ -5218,22 +5218,22 @@
     <message>
         <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Первичный мастер IDE</translation>
+        <translation>Первичное устройство IDE 0</translation>
     </message>
     <message>
         <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Первичный слэйв IDE</translation>
+        <translation>Первичное устройство IDE 1</translation>
     </message>
     <message>
         <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Вторичный мастер IDE</translation>
+        <translation>Вторичное устройство IDE 0</translation>
     </message>
     <message>
         <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Вторичный слэйв IDE</translation>
+        <translation>Вторичное устройство IDE 1</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
@@ -5591,7 +5591,7 @@
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation>USB</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Shared folders</source>
@@ -5932,12 +5932,12 @@
     <message>
         <source>Cloud Network [EXPERIMENTAL]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Облачная сеть [ЭКСПЕРИМЕНТАЛЬНО]</translation>
     </message>
     <message>
         <source>Provisioning</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подготовка</translation>
     </message>
     <message>
         <source>Running</source>
@@ -5957,42 +5957,42 @@
     <message>
         <source>Stopped</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Остановлена</translation>
     </message>
     <message>
         <source>Creating Image</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Создание образа</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Демонтаж</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Демонтирована</translation>
     </message>
     <message>
         <source>Aborted-Saved</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Прервана-Сохранена</translation>
     </message>
     <message>
         <source>None</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует</translation>
     </message>
     <message>
         <source>USB MT TouchScreen and TouchPad</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB MT экран и планшет</translation>
     </message>
     <message>
         <source>Host-only Adapter [DEPRECATED]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный адаптер хоста [УСТАРЕЛ]</translation>
     </message>
     <message>
         <source>Host-only Network</source>
@@ -6002,32 +6002,32 @@
     <message>
         <source>Novell NE2000 (NE2000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Novell NE1000 (NE1000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>WD EtherCard Plus 16 (WD8013EBT)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>WD EtherCard Plus (WD8013E)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>3Com EtherLink II (3C503)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>3Com EtherLink (3C501)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Default</source>
@@ -6037,32 +6037,32 @@
     <message>
         <source>Null Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>OSS Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>ALSA Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Windows Audio Session</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Core Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не определён</translation>
     </message>
     <message>
         <source>Starting</source>
@@ -6072,42 +6072,42 @@
     <message>
         <source>Started</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Запущен</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершение</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Время истекло (Убит)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Время истекло (С ошибкой)</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не определён</translation>
     </message>
     <message>
         <source>Starting</source>
@@ -6117,7 +6117,7 @@
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Запущен</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -6127,42 +6127,42 @@
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершение</translation>
     </message>
     <message>
         <source>Terminated (Normally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён (Нормально)</translation>
     </message>
     <message>
         <source>Terminated (Signal)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён (По сигналу)</translation>
     </message>
     <message>
         <source>Terminated (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён (С ошибкой)</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Время истекло (Убит)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Время истекло (С ошибкой)</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Завершён</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <source>Cloud Network</source>
@@ -6170,46 +6170,46 @@
     </message>
     <message>
         <source>Host Only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная сеть хоста</translation>
     </message>
     <message>
         <source>Visual State</source>
-        <translation type="unfinished"></translation>
+        <translation>Визуальный режим</translation>
     </message>
     <message>
         <source>Follow System Settings</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Следовать настройкам системы</translation>
     </message>
     <message>
         <source>Light</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Светлый</translation>
     </message>
     <message>
         <source>Dark</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Тёмный</translation>
     </message>
     <message>
         <source>Normal (window)</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Нормальный (оконный)</translation>
     </message>
     <message>
         <source>Full-screen</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Полноэкранный</translation>
     </message>
     <message>
         <source>Seamless</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Бесшовный</translation>
     </message>
     <message>
         <source>Scaled</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Масштабируемый</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
@@ -6234,7 +6234,7 @@
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не задано</translation>
     </message>
     <message>
         <source>Hint</source>
@@ -6249,11 +6249,11 @@
     <message>
         <source>None</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
-        <translation type="unfinished">Сетевой мост</translation>
+        <translation>Сетевой мост</translation>
     </message>
 </context>
 <context>
@@ -6770,7 +6770,7 @@
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Визуальный режим</translation>
     </message>
 </context>
 <context>
@@ -7014,11 +7014,11 @@
     </message>
     <message>
         <source>Copy value (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать значение (%1)</translation>
     </message>
     <message>
         <source>Edit value...</source>
-        <translation type="unfinished"></translation>
+        <translation>Редактировать значение...</translation>
     </message>
 </context>
 <context>
@@ -7531,19 +7531,19 @@
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Выделить место в &amp;полном размере</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, для создаваемого образа диска место будет выделено в полном размере</translation>
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Разделить на куски размером до 2х ГБ</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, файл создаваемого диска будет разбит на куски по 2ГБ.</translation>
     </message>
 </context>
 <context>
@@ -7566,7 +7566,7 @@
     </message>
     <message>
         <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, хранитель экрана основного ПК будет отключен.</translation>
     </message>
 </context>
 <context>
@@ -7746,7 +7746,7 @@
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ограничивает время, доступное каждому из виртуальных ЦПУ. Каждому из них будет разрешено использовать не более, чем заданный процент времени работы физического ЦПУ.</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -7754,11 +7754,11 @@
     </message>
     <message>
         <source>Minimum possible execution cap.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможный предел загрузки.</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможный предел загрузки.</translation>
     </message>
 </context>
 <context>
@@ -8108,7 +8108,7 @@ p, li { white-space: pre-wrap; }
     <name>UIExtensionPackManager</name>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер плагинов</translation>
     </message>
     <message>
         <source>Close</source>
@@ -8120,11 +8120,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть диалог</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
@@ -8132,7 +8132,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -8144,7 +8144,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Registered extension packs</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные плагины</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
@@ -8157,7 +8157,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Active</source>
         <comment>ext pack</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активен</translation>
     </message>
 </context>
 <context>
@@ -8223,15 +8223,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sets the size of the floppy disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт размер гибкого диска.</translation>
     </message>
     <message>
         <source>&amp;Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Форматировать диск как FAT12</translation>
     </message>
     <message>
         <source>Formats the floppy disk as FAT12.</source>
-        <translation type="unfinished"></translation>
+        <translation>Форматирует гибкий диск как FAT12.</translation>
     </message>
     <message>
         <source>2.88M</source>
@@ -8239,7 +8239,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create the disk and close this dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать диск и закрыть диалог.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -8247,7 +8247,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>File already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл уже существует</translation>
     </message>
 </context>
 <context>
@@ -8602,55 +8602,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>Open Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть сессию</translation>
     </message>
     <message>
         <source>Guest File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая файловая система:</translation>
     </message>
     <message>
         <source>Host File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Основная файловая система:</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished">Основная ОС</translation>
+        <translation>Основной ПК</translation>
     </message>
     <message>
         <source>Machine reference is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная ссылка на машину.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest is not currently running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файловый менеджер не может получить доступ так как выбранная гостевая ОС не запущена.</translation>
     </message>
     <message>
         <source>File manager cannot work since the guest is paused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файловый менеджер не может получить доступ так как выбранная гостевая ОС поставлена на паузу.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest does not have the guest additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файловый менеджер не может получить доступ так как выбранная машина не имеет дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Enter a valid user name and password to initiate the file manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите корректные имя пользователя и пароль чтоб файловый менеджер мог быть проинициализирован.</translation>
     </message>
     <message>
         <source>Guest control session is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сессия контроля гостевой ОС запущена.</translation>
     </message>
     <message>
         <source>Some error has occurred. Please check the log panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка. Для более подробной информации, пожалуйста, обратитесь к панели логов.</translation>
     </message>
 </context>
 <context>
@@ -10987,39 +10987,39 @@ p, li { white-space: pre-wrap; }
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Руководство пользователя Oracle VM VirtualBox</translation>
     </message>
     <message>
         <source>Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать выбранный текст</translation>
     </message>
     <message>
         <source>Open Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть ссылку</translation>
     </message>
     <message>
         <source>Open Link in New Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть ссылку в новой вкладке</translation>
     </message>
     <message>
         <source>Copy Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать ссылку</translation>
     </message>
     <message>
         <source>Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Найти на странице</translation>
     </message>
     <message>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>Приблизить</translation>
     </message>
     <message>
         <source>Close Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть другие вкладки</translation>
     </message>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть вкладку</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -11031,7 +11031,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Навигация</translation>
     </message>
     <message>
         <source>&amp;View</source>
@@ -11039,35 +11039,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Вкладки</translation>
     </message>
     <message>
         <source>Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержание</translation>
     </message>
     <message>
         <source>Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Индекс</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Поиск</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Закладки</translation>
     </message>
     <message>
         <source>Show &amp;Side Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать &amp;боковую панель</translation>
     </message>
     <message>
         <source>Show &amp;Tool Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать &amp;панель инструментов</translation>
     </message>
     <message>
         <source>Show St&amp;atus Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать &amp;строку состояния</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
@@ -11075,51 +11075,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Выход</translation>
     </message>
     <message>
         <source>&amp;Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Скопировать выбранный текст</translation>
     </message>
     <message>
         <source>&amp;Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Найти на странице</translation>
     </message>
     <message>
         <source>Find Ne&amp;xt</source>
-        <translation type="unfinished"></translation>
+        <translation>Искать &amp;вперёд</translation>
     </message>
     <message>
         <source>Find &amp;Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Искать &amp;назад</translation>
     </message>
     <message>
         <source>Go Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти назад</translation>
     </message>
     <message>
         <source>Go Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти вперёд</translation>
     </message>
     <message>
         <source>Go to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти на начальную страницу</translation>
     </message>
     <message>
         <source>Reload Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезагрузить страницу</translation>
     </message>
     <message>
         <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить закладку</translation>
     </message>
     <message>
         <source>Click to open this link in an external browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Щелчёк мышью чтоб открыть ссылку во внешнем браузере</translation>
     </message>
     <message>
         <source>Click to enlarge the image</source>
-        <translation type="unfinished"></translation>
+        <translation>Щелчёк мышью чтоб увеличить изображение</translation>
     </message>
     <message>
         <source>Open in Link</source>
@@ -11131,7 +11131,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Delete Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить закладку</translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
@@ -11143,55 +11143,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Close T&amp;ab</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть &amp;вкладку</translation>
     </message>
     <message>
         <source>Close &amp;Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть &amp;другие вкладки</translation>
     </message>
     <message>
         <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Вернуться к начальной странице</translation>
     </message>
     <message>
         <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезагрузить текущую страницу</translation>
     </message>
     <message>
         <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти вперёд к следующей странице</translation>
     </message>
     <message>
         <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти назад к предыдущей странице</translation>
     </message>
     <message>
         <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить новую закладку</translation>
     </message>
     <message>
         <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Не найдена.&lt;/h3&gt;Страница &lt;b&gt;%1&lt;/b&gt; не найдена.&lt;/p&gt;&lt;/div&gt;</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>Домой</translation>
     </message>
     <message>
         <source>Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Назад</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Вперёд</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезагрузить</translation>
     </message>
     <message>
         <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Найти строку на текущей странице</translation>
     </message>
 </context>
 <context>
@@ -11666,27 +11666,27 @@ p, li { white-space: pre-wrap; }
     <name>UIHostnameDomainNameEditor</name>
     <message>
         <source>Hostname should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя хоста должно быть длиной не менее 2х символов. Разрешены буквы, цифры, а также символы &quot;-&quot; и &quot;.&quot;</translation>
     </message>
     <message>
         <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Доменное имя должно быть длиной не менее 2х символов. Разрешены буквы, цифры, а также символы &quot;-&quot; и &quot;.&quot;</translation>
     </message>
     <message>
         <source>Hostna&amp;me:</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя х&amp;оста:</translation>
     </message>
     <message>
         <source>Holds the hostname.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя хоста.</translation>
     </message>
     <message>
         <source>&amp;Domain Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Доменное имя:</translation>
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет доменное имя.</translation>
     </message>
     <message>
         <source>Hostname should be a string of length 2. Allowed characters are alphanumerics, &apos;-&apos;, and &apos;.&apos;</source>
@@ -14298,11 +14298,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host-only adapters are no longer supported, use host-only networks instead.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальные сетевые адаптеры хоста более не поддерживаются, используйте вместо них виртуальные сети хоста.</translation>
     </message>
     <message>
         <source>No host-only network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя виртуальной сети хоста.</translation>
     </message>
 </context>
 <context>
@@ -14864,7 +14864,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>В режиме Хост-канал: Определяет путь к каналу последовательного порта на хосте. Пример: &quot;\\.\pipe\myvbox&quot; или &quot;/tmp/myvbox&quot;, для Windows и UNIX-подобных систем соответственно. В режиме Хост-устройство: Определяет имя последовательного устройства. Пример: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. В режиме Перенаправлен в файл: Определяет путь к файлу в системе хоста, в который будет сбрасываться вывод с последовательного порта. В режиме TCP: Определяет TCP &quot;порт&quot; в случае режима сервера, или &quot;имя_хоста:порт&quot; в случае режима клиента.</translation>
     </message>
 </context>
 <context>
@@ -16279,7 +16279,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects maximum guest screen size policy.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать политику определения максимального разрешения экрана гостевой ОС.</translation>
     </message>
 </context>
 <context>
@@ -16727,11 +16727,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -16811,15 +16811,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные жёсткие диски</translation>
     </message>
     <message>
         <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные оптические диски</translation>
     </message>
     <message>
         <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные гибкие диски</translation>
     </message>
 </context>
 <context>
@@ -16861,15 +16861,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter the search term and press Return</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите условие поиска и нажмите Enter/Return</translation>
     </message>
     <message>
         <source>Show the previous item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать предыдущий элемент, соответствующий условию поиска</translation>
     </message>
     <message>
         <source>Show the next item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать следующий элемент, соответствующий условию поиска</translation>
     </message>
 </context>
 <context>
@@ -16972,11 +16972,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Leave the drive empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Оставить привод пустым</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Выбрать</translation>
     </message>
     <message>
         <source>Attached the selected medium to the drive</source>
@@ -16987,23 +16987,23 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumSizeAndPathGroupBox</name>
     <message>
         <source>Disk file name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя файла диска не уникально</translation>
     </message>
     <message>
         <source>Holds the location of the virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет местоположение файла виртуального диска.</translation>
     </message>
     <message>
         <source>Opens file selection dialog so that a location for the disk file can be selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает файловый диалог выбора локации диска.</translation>
     </message>
     <message>
         <source>Hard Disk File Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположение и размер файла жёсткого диска</translation>
     </message>
     <message>
         <source>Specify a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать местоположение файла нового виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
@@ -17026,11 +17026,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимальный размер этого носителя.</translation>
     </message>
     <message>
         <source>Maximum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимальный размер этого носителя.</translation>
     </message>
 </context>
 <context>
@@ -20155,11 +20155,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможное количество мониторов.</translation>
     </message>
     <message>
         <source>Maximum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможное количество мониторов.</translation>
     </message>
 </context>
 <context>
@@ -20244,7 +20244,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное имя</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -20252,27 +20252,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Папка:</translation>
     </message>
     <message>
         <source>&amp;ISO Image:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Образ ISO:</translation>
     </message>
     <message>
         <source>&amp;Edition:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Редакция:</translation>
     </message>
     <message>
         <source>Holds the name for new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя виртуальной машины.</translation>
     </message>
     <message>
         <source>Selects the folder hosting new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет папку расположения виртуальной машины.</translation>
     </message>
     <message>
         <source>Selects an ISO image to be attached to the new virtual machine or used in unattended install.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет ISO образ, подключенный к виртуальной машине или используемый для автоматической установки.</translation>
     </message>
 </context>
 <context>
@@ -20283,7 +20283,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open corresponding Help topic.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть соответствующую тему справки.</translation>
     </message>
     <message>
         <source>&amp;Expert Mode</source>
@@ -20307,7 +20307,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Go to previous wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к предыдущей странице.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
@@ -20315,7 +20315,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Go to next wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к следующей странице.</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -20323,7 +20323,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Commit all wizard data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Обработать все данные.</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -20331,7 +20331,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cancel wizard execution.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить обработку данных.</translation>
     </message>
 </context>
 <context>
@@ -20387,19 +20387,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать имя NAT сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять такие сети на странице Менеджера сетей VirtualBox.</translation>
     </message>
     <message>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать имя виртуальной сети хоста, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять такие сети на странице Менеджера сетей VirtualBox.</translation>
     </message>
     <message>
         <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать виртуальный сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера. Вы можете добавлять и удалять виртуальные сетевые адаптеры хоста на странице Менеджера сетей VirtualBox.</translation>
     </message>
     <message>
         <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>(экспериментально) Определяет имя облачной сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять облачные сети на странице Менеджера сетей VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -20469,15 +20469,15 @@ p, li { white-space: pre-wrap; }
     <name>UINetworkManager</name>
     <message>
         <source>Host-only Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальные сети хоста</translation>
     </message>
     <message>
         <source>NAT Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Сети NAT</translation>
     </message>
     <message>
         <source>Cloud Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Облачные сети</translation>
     </message>
     <message>
         <source>Name</source>
@@ -20485,7 +20485,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Маска</translation>
     </message>
     <message>
         <source>Lower Bound</source>
@@ -20497,11 +20497,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 префикс</translation>
     </message>
     <message>
         <source>IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 префикс</translation>
     </message>
     <message>
         <source>DHCP Server</source>
@@ -20509,11 +20509,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Провайдер</translation>
     </message>
     <message>
         <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Профиль</translation>
     </message>
     <message>
         <source>Network Manager</source>
@@ -20537,11 +20537,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить изменения настроек данной сети</translation>
     </message>
     <message>
         <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить изменения настроек данной сети</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
@@ -20549,7 +20549,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
@@ -20565,11 +20565,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать подсеть</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
@@ -20581,31 +20581,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Провайдер:</translation>
     </message>
     <message>
         <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет облачного провайдера данной сети.</translation>
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет облачный профиль данной сети.</translation>
     </message>
     <message>
         <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ИД:</translation>
     </message>
     <message>
         <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет ИД данной сети.</translation>
     </message>
     <message>
         <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбирает ИД данной сети.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
@@ -20621,27 +20621,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Маска:</translation>
     </message>
     <message>
         <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет маску данной сети.</translation>
     </message>
     <message>
         <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Нижняя граница:</translation>
     </message>
     <message>
         <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет нижнюю границу адресов данной сети.</translation>
     </message>
     <message>
         <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Верхняя граница:</translation>
     </message>
     <message>
         <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет верхнюю границу адресов данной сети.</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
@@ -20665,7 +20665,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation>Отображает IPv4 адрес адаптера.</translation>
+        <translation>Определяет IPv4 адрес адаптера.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
@@ -20673,7 +20673,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation>Отображает IPv4 маску адаптера.</translation>
+        <translation>Определяет IPv4 маску адаптера.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
@@ -20681,7 +20681,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Отображает IPv6 адрес адаптера, если IPv6 поддерживается.</translation>
+        <translation>Определяет IPv6 адрес адаптера, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
@@ -20689,7 +20689,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Отображает длину IPv6 маски адаптера, если IPv6 поддерживается.</translation>
+        <translation>Определяет длину IPv6 маски адаптера, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -20705,7 +20705,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Определяет адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
@@ -20713,7 +20713,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Определяет маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
@@ -20721,7 +20721,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Определяет нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
@@ -20729,7 +20729,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Определяет верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
@@ -20741,7 +20741,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Основные опции</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
@@ -20749,23 +20749,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;4 префикс:</translation>
     </message>
     <message>
         <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет IPv4 префикс данной сети.</translation>
     </message>
     <message>
         <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;6 префикс:</translation>
     </message>
     <message>
         <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет IPv6 префикс данной сети.</translation>
     </message>
     <message>
         <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить DHCP</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
@@ -20773,7 +20773,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить IPv&amp;6</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
@@ -20789,11 +20789,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -20879,11 +20879,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 префикс сети</translation>
     </message>
     <message>
         <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 префикс сети</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
@@ -20907,15 +20907,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Registered host networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные виртуальные сети хоста</translation>
     </message>
     <message>
         <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные сети NAT</translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Зарегистрированные облачные сети</translation>
     </message>
 </context>
 <context>
@@ -21722,42 +21722,42 @@ p, li { white-space: pre-wrap; }
     <name>UINotificationCenter</name>
     <message>
         <source>Open notification center</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть центр сообщений</translation>
     </message>
     <message>
         <source>Toggle ascending/descending order</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключить прямой/обратный порядок сортировки</translation>
     </message>
     <message>
         <source>Keep finished progresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Оставлять завершённые прогрессы</translation>
     </message>
     <message>
         <source>Delete finished notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить завершённые сообщения</translation>
     </message>
     <message>
         <source>Align Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположить внизу</translation>
     </message>
     <message>
         <source>Align Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположить вверху</translation>
     </message>
 </context>
 <context>
     <name>UINotificationDownloader</name>
     <message>
         <source>Downloading Extension Pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка плагина...</translation>
     </message>
     <message>
         <source>Downloading Guest Additions ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка дополнений гостевой ОС...</translation>
     </message>
     <message>
         <source>Downloading User Manual ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка руководства пользователя...</translation>
     </message>
 </context>
 <context>
@@ -22300,7 +22300,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать режим записи.</translation>
     </message>
     <message>
         <source>File &amp;Path:</source>
@@ -22348,11 +22348,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможная частота кадров.</translation>
     </message>
     <message>
         <source>Maximum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможная частота кадров.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
@@ -22434,11 +22434,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Scale &amp;Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Коэффициент масштабирования:</translation>
     </message>
     <message>
         <source>Selects the index of monitor guest screen scale factor being defined for.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать индекс монитора, для которого можно задать коэффициент масштабирования.</translation>
     </message>
     <message>
         <source>Holds the guest screen scale factor.</source>
@@ -22450,11 +22450,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможный коэффициент масштабирования.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможный коэффициент масштабирования.</translation>
     </message>
 </context>
 <context>
@@ -22610,7 +22610,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Интерфейс</translation>
     </message>
 </context>
 <context>
@@ -22746,11 +22746,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path of the shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет задать путь к общей папке</translation>
     </message>
     <message>
         <source>Apply the changes and close this dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить изменения и закрыть диалог</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -23816,35 +23816,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Take Snapshot and close the dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Сделать снимок и закрыть диалог</translation>
     </message>
     <message>
         <source>Close dialog without taking a snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть диалог без создания снимка</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Accept</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить</translation>
     </message>
     <message>
         <source>Accept (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Применить (%1)</translation>
     </message>
     <message>
         <source>Cancel (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Отмена (%1)</translation>
     </message>
     <message>
         <source>Show Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
 </context>
 <context>
@@ -23874,7 +23874,7 @@ p, li { white-space: pre-wrap; }
     <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Раскрывает страницу &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
@@ -23913,11 +23913,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Activities</source>
-        <translation type="unfinished"></translation>
+        <translation>Активности</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Активность</translation>
     </message>
     <message>
         <source>File Manager</source>
@@ -24405,7 +24405,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects how often the new version check should be performed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать как часто должна выполняться проверка наличия новой версии.</translation>
     </message>
     <message>
         <source>Next Check:</source>
@@ -24421,7 +24421,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When chosen, you will be notified about stable updates to VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, Вы будете информированы лишь о стабильных релизных версиях VirtualBox.</translation>
     </message>
     <message>
         <source>&amp;All New Releases</source>
@@ -24429,23 +24429,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, Вы будете информированы о всех релизных версиях VirtualBox.</translation>
     </message>
     <message>
         <source>All New Releases and &amp;Pre-Releases</source>
-        <translation>Вс&amp;е релизные и тестовые версии</translation>
+        <translation>Вс&amp;е релизные и пре-релизные версии</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases and pre-release versions of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, Вы будете информированы о всех релизных и пре-релизных версиях VirtualBox.</translation>
     </message>
     <message>
         <source>All New Releases, &amp;Pre-Releases and Testing Builds</source>
-        <translation type="unfinished"></translation>
+        <translation>Вс&amp;е релизные, пре-релизные и тестовые версии</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases, pre-release versions and testing builds of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, Вы будете информированы о всех релизных, пре-релизных и тестовых версиях VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -24459,35 +24459,35 @@ p, li { white-space: pre-wrap; }
     <name>UIUserNamePasswordEditor</name>
     <message>
         <source>Invalid username</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное имя пользователя</translation>
     </message>
     <message>
         <source>Pass&amp;word</source>
-        <translation type="unfinished"></translation>
+        <translation>Па&amp;роль</translation>
     </message>
     <message>
         <source>&amp;Repeat Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Подтвердите &amp;пароль</translation>
     </message>
     <message>
         <source>U&amp;sername</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя пользователя</translation>
     </message>
     <message>
         <source>Holds username.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя пользователя.</translation>
     </message>
     <message>
         <source>Holds password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет пароль.</translation>
     </message>
     <message>
         <source>Holds the repeated password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подтверждает пароль.</translation>
     </message>
     <message>
         <source>Invalid password pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная парольная пара</translation>
     </message>
 </context>
 <context>
@@ -24498,15 +24498,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host CPU Load</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка ЦПУ хоста</translation>
     </message>
     <message>
         <source>User</source>
-        <translation type="unfinished"></translation>
+        <translation>Пользователь</translation>
     </message>
     <message>
         <source>Kernel</source>
-        <translation type="unfinished"></translation>
+        <translation>Ядро</translation>
     </message>
     <message>
         <source>Total</source>
@@ -24514,7 +24514,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host RAM Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Использование ОЗУ хоста</translation>
     </message>
     <message>
         <source>Free</source>
@@ -24526,67 +24526,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>Н/А</translation>
     </message>
     <message>
         <source>VM Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя ВМ</translation>
     </message>
     <message>
         <source>CPU Guest</source>
-        <translation type="unfinished"></translation>
+        <translation>ЦПУ гостя</translation>
     </message>
     <message>
         <source>CPU VMM</source>
-        <translation type="unfinished"></translation>
+        <translation>ЦПУ VMM</translation>
     </message>
     <message>
         <source>RAM Used/Total</source>
-        <translation type="unfinished"></translation>
+        <translation>ОЗУ Использовано/Всего</translation>
     </message>
     <message>
         <source>RAM %</source>
-        <translation type="unfinished"></translation>
+        <translation>ОЗУ %</translation>
     </message>
     <message>
         <source>Network Up Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Сеть (скорость выгрузки)</translation>
     </message>
     <message>
         <source>Network Down Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Сеть (скорость загрузки)</translation>
     </message>
     <message>
         <source>Network Up Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Сеть (всего выгружено)</translation>
     </message>
     <message>
         <source>Network Down Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Сеть (всего загружено)</translation>
     </message>
     <message>
         <source>Disk Read Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Диск (скорость чтения)</translation>
     </message>
     <message>
         <source>Disk Write Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Диск (скорость записи)</translation>
     </message>
     <message>
         <source>Disk Read Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Диск (всего прочитано)</translation>
     </message>
     <message>
         <source>Disk Write Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Диск (всего записано)</translation>
     </message>
     <message>
         <source>VM Exits</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать все виртуальные машины</translation>
     </message>
 </context>
 <context>
@@ -25094,11 +25094,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Copy All</source>
-        <translation type="unfinished"></translation>
+        <translation>Копировать всё</translation>
     </message>
     <message>
         <source>VM &amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Активность ВМ</translation>
     </message>
     <message>
         <source>Close</source>
@@ -25114,19 +25114,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Close this dialog (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть диалог (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>This metric requires guest additions to work.</source>
-        <translation type="unfinished"></translation>
+        <translation>Эта метрика требует работы гостевых дополнений.</translation>
     </message>
     <message>
         <source>Export</source>
@@ -25134,7 +25134,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sec.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сек.</translation>
     </message>
     <message>
         <source>Export activity data of the machine </source>
@@ -25395,11 +25395,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть диалог</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь по данному диалогу</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
@@ -25407,19 +25407,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать помощь (%1)</translation>
     </message>
     <message>
         <source>Close this machine&apos;s logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть логи данной машины</translation>
     </message>
     <message>
         <source>Select machines to show their log</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать машины для отображения их логов</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не найдено лог файлов машины %1. Нажмите кнопку &lt;b&gt;Перезагрузить&lt;/b&gt; для повторного чтения папки с логами &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>NoLogFile</source>
@@ -25539,11 +25539,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможное количество видео памяти.</translation>
     </message>
     <message>
         <source>Maximum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможное количество видео памяти.</translation>
     </message>
 </context>
 <context>
@@ -25581,7 +25581,7 @@ p, li { white-space: pre-wrap; }
     <name>UIVirtualCPUEditor</name>
     <message>
         <source>&amp;Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Процессоры:</translation>
     </message>
     <message>
         <source>Holds the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
@@ -25594,7 +25594,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Минимально возможное количество виртуальных процессоров.</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
@@ -25603,7 +25603,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально возможное количество виртуальных процессоров.</translation>
     </message>
 </context>
 <context>
@@ -25659,12 +25659,12 @@ p, li { white-space: pre-wrap; }
     <name>UIVirtualMachineItemCloud</name>
     <message>
         <source>Loading ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Inaccessible&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Недоступна&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Empty</source>
@@ -25823,11 +25823,11 @@ p, li { white-space: pre-wrap; }
     <name>UIVisoCreatorWidget</name>
     <message>
         <source>Click to show/hide the tree view.</source>
-        <translation type="unfinished"></translation>
+        <translation>Щелкните мышью чтоб показать/скрыть дерево.</translation>
     </message>
     <message>
         <source>Shows the current location.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображает текущую локацию.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -25863,19 +25863,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержимое VISO</translation>
     </message>
     <message>
         <source>C&amp;reate</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Создать</translation>
     </message>
     <message>
         <source>Creates VISO file with the selected content</source>
-        <translation type="unfinished"></translation>
+        <translation>Создаёт VISO файл с выбранным содержимым</translation>
     </message>
     <message>
         <source>Opens the help browser and navigates to the related section</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает браузер справки и переходит к соответствующей секции</translation>
     </message>
     <message>
         <source>VISO Name:</source>
@@ -25891,11 +25891,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name of the VISO medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя образа VISO.</translation>
     </message>
     <message>
         <source>Holds options for VISO creation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет опции для создания VISO.</translation>
     </message>
     <message>
         <source>Show Hidden Objects</source>
@@ -25903,7 +25903,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, многочисленные скрытые объекты также отображаются в файловом браузере</translation>
     </message>
     <message>
         <source>VISO Creator</source>
@@ -25914,11 +25914,11 @@ p, li { white-space: pre-wrap; }
     <name>UIVisualStateEditor</name>
     <message>
         <source>Visual &amp;State:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Визуальный режим:</translation>
     </message>
     <message>
         <source>Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет выбрать визуальный режим. Если машина запущена, изменение режима будет произведено незамедлительно, иначе новый режим будет сохранён как желаемый.</translation>
     </message>
 </context>
 <context>
@@ -25959,7 +25959,7 @@ p, li { white-space: pre-wrap; }
     <name>UIWizardAddCloudVM</name>
     <message>
         <source>Add Cloud Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить облачную виртуальную машину</translation>
     </message>
     <message>
         <source>Location</source>
@@ -25971,19 +25971,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей...</translation>
     </message>
     <message>
         <source>Add VM from cloud service provider.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить ВМ провайдера облачного сервиса.</translation>
     </message>
     <message>
         <source>Source to add from</source>
-        <translation type="unfinished"></translation>
+        <translation>Источник виртуальной машины</translation>
     </message>
     <message>
         <source>Please choose the source to add cloud virtual machine from.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста выберите источник облачной виртуальной машины.  Им может являться один из известных провайдеров облачных сервисов перечисленных ниже.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
@@ -25995,11 +25995,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Экземпляры:</translation>
     </message>
 </context>
 <context>
@@ -26248,23 +26248,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the destination virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, укажите тип файла, который Вы хотите использовать при создании нового образа диска. Если у Вас нет необходимости использовать диск с другими продуктами программной виртуализации, Вы можете оставить данный параметр без изменений.</translation>
     </message>
     <message>
         <source>Location and size of the disk image</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположение и размер образа диска</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Тип и формат файла жёсткого диска</translation>
     </message>
     <message>
         <source>copy</source>
-        <translation type="unfinished"></translation>
+        <translation>копия</translation>
     </message>
 </context>
 <context>
@@ -26451,39 +26451,39 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя клона не может быть пустым</translation>
     </message>
     <message>
         <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный путь</translation>
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя клона не уникально</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя:</translation>
     </message>
     <message>
         <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Путь:</translation>
     </message>
     <message>
         <source>Holds a name for the new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя новой виртуальной машины.</translation>
     </message>
     <message>
         <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет местоположение новой виртуальной машины на носителе основного ПК.</translation>
     </message>
     <message>
         <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Политика MAC-&amp;адреса:</translation>
     </message>
     <message>
         <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет политику MAC адреса при клонировании:</translation>
     </message>
     <message>
         <source>Enables keeping the disk names during cloning.</source>
@@ -26495,23 +26495,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить идентификаторы &amp;оборудования</translation>
     </message>
     <message>
         <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбрано, все виртуальные диски клонируемой машины также будут клонированы.</translation>
     </message>
     <message>
         <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбрано, для сохранения пространства клонированная машина будет совместно использовать диски исходной.</translation>
     </message>
     <message>
         <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбрано, только текущее состояние исходной машины будет клонировано.</translation>
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбрано, все сохранённые состояния исходной машины также будут клонированы.</translation>
     </message>
 </context>
 <context>
@@ -26550,7 +26550,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance settings</source>
-        <translation>Укажите параметры экспорта</translation>
+        <translation>Параметры экспорта</translation>
     </message>
     <message>
         <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
@@ -26830,35 +26830,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual &amp;machines</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Виртуальные машины</translation>
     </message>
     <message>
         <source>Format &amp;settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметры &amp;формата</translation>
     </message>
     <message>
         <source>&amp;Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметры &amp;экспорта</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей...</translation>
     </message>
     <message>
         <source>Do not ask me about it, leave custom &amp;image for future usage</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Не спрашивать меня об этом, оставить custom image на будущее</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for export.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет задать местоположение экспортируемого файла.</translation>
     </message>
     <message>
         <source>Format settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметры формата</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
@@ -26866,7 +26866,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальные машины</translation>
     </message>
 </context>
 <context>
@@ -27099,11 +27099,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей...</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for import.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет задать местоположение импортируемого файла.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
@@ -27135,7 +27135,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
@@ -27287,27 +27287,27 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Images</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Образы</translation>
     </message>
     <message>
         <source>&amp;Boot Volumes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Загрузочные разделы</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей...</translation>
     </message>
     <message>
         <source>Location to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположение для создания</translation>
     </message>
     <message>
         <source>Please choose the location to create cloud virtual machine in.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, выберите расположение для создания облачной виртуальной машины.  Это может быть один из перечисленных ниже провайдеров облачных сервисов.</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">&amp;Расположение:</translation>
+        <translation>&amp;Расположение:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.&lt;/p&gt;</source>
@@ -27315,7 +27315,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;рофиль:</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
@@ -27461,11 +27461,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Тип и формат файла жёсткого диска</translation>
     </message>
 </context>
 <context>
@@ -27580,19 +27580,19 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Username and Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя и пароль</translation>
     </message>
     <message>
         <source>Selects an installation medium (ISO file) for the Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт установочный носитель (файл ISO) для дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>GA I&amp;nstallation ISO:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Образ дополнений гостевой ОС:</translation>
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Дополнения гостевой ОС</translation>
     </message>
     <message>
         <source>Additional Options</source>
@@ -27600,11 +27600,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Product Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ключ продукта:</translation>
     </message>
     <message>
         <source>&amp;Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Фоновая установка</translation>
     </message>
     <message>
         <source>Enables headless boot (with no GUI) of the newly created virtual machine for the unattended guest OS install.</source>
@@ -27612,7 +27612,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить EFI (только специальные ОС)</translation>
     </message>
     <message>
         <source>Enables Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
@@ -27620,51 +27620,51 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Virtual machine Name and Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя и операционная системы виртуальной машины</translation>
     </message>
     <message>
         <source>Please choose a descriptive name and destination folder for the new virtual machine. The name you choose will be used throughout VirtualBox to identify this machine. Additionally, you can select an ISO image which may be used to install the guest operating system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста укажите имя и местоположение новой виртуальной машины. Заданное Вами имя будет использоваться для идентификации данной машины. Кроме того, вы можете выбрать ISO образ для установки операционной системы.</translation>
     </message>
     <message>
         <source>&amp;Skip Unattended Installation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Пропустить автоматическую установку</translation>
     </message>
     <message>
         <source>When checked, the unattended install is disabled and the selected ISO is mounted on the vm.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, автоматическая установка отключена, и выбранный диск просто подключен к ВМ.</translation>
     </message>
     <message>
         <source>No ISO image is selected, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Образ ISO не выбран, гостевая ОС должна быть установлена вручную.</translation>
     </message>
     <message>
         <source>OS type cannot be determined from the selected ISO, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось определить тип ОС для выбранного ISO, гостевая ОС должна быть установлена вручную.</translation>
     </message>
     <message>
         <source>Detected OS type: </source>
-        <translation type="unfinished"></translation>
+        <translation>Определённый тип ОС: </translation>
     </message>
     <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип ОС не может быть установлен автоматически. Установка должна быть запущена вручную.</translation>
     </message>
     <message>
         <source>You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы выбрали пропустить автоматическую установку гостевой ОС, гостевая ОС должна быть установлена вручную.</translation>
     </message>
     <message>
         <source>This OS type can be installed unattendedly. The install will start after this wizard is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип ОС может быть установлен автоматически. Установка будет запущена после закрытия этого мастера.</translation>
     </message>
     <message>
         <source>Invalid file path or unreadable file</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный путь или нечитаемый файл</translation>
     </message>
     <message>
         <source>Unattended Guest OS Install Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматическая установка гостевой ОС</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.&lt;/p&gt;</source>
@@ -27672,7 +27672,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Hardware</source>
-        <translation type="unfinished"></translation>
+        <translation>Оборудование</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.&lt;/p&gt;</source>
@@ -27680,7 +27680,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.&lt;/p&gt;</source>
@@ -27688,31 +27688,31 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Do Not Add a Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Не подключать виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Create a Virtual Hard Disk Now</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Создать новый виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>U&amp;se an Existing Virtual Hard Disk File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Использовать существующий виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>Chooses a Virtual Hard Fisk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ жёсткого диска...</translation>
     </message>
     <message>
         <source>D&amp;isk Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Размер диска:</translation>
     </message>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Выделить место в &amp;полном размере</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, для создаваемого образа диска место будет выделено в полном размере</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
@@ -27728,107 +27728,107 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Name and &amp;Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя и &amp;тип ОС</translation>
     </message>
     <message>
         <source>&amp;Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Автоматическая установка</translation>
     </message>
     <message>
         <source>Hard Dis&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>Жёсткий &amp;диск</translation>
     </message>
     <message>
         <source>H&amp;ardware</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Оборудование</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Тип и формат файла жёсткого диска</translation>
     </message>
     <message>
         <source>Invalid path or unreadable ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный путь или нечитаемый  ISO файл</translation>
     </message>
     <message>
         <source>Invalid username and/or password</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное имя пользователя и/или пароль</translation>
     </message>
     <message>
         <source>Invalid hostname or domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное имя хоста или доменное имя</translation>
     </message>
     <message>
         <source>Virtual machine name is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя виртуальной машины некорректно</translation>
     </message>
     <message>
         <source>Invalid ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный ISO файл</translation>
     </message>
     <message>
         <source>No valid disk is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран корректный диск</translation>
     </message>
     <message>
         <source>Invalid disk size</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный размер диска</translation>
     </message>
     <message>
         <source>Machine Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя машины и тип ОС</translation>
     </message>
     <message>
         <source>Machine Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя машины</translation>
     </message>
     <message>
         <source>Machine Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Папка машины</translation>
     </message>
     <message>
         <source>ISO Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Образ ISO</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Тип гостевой ОС</translation>
+        <translation>Тип гостевой ОС</translation>
     </message>
     <message>
         <source>Skip Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Пропустить автоматическую установку</translation>
     </message>
     <message>
         <source>Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматическая установка</translation>
     </message>
     <message>
         <source>Username</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя</translation>
     </message>
     <message>
         <source>Product Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Ключ продукта</translation>
     </message>
     <message>
         <source>Hostname/Domain Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя хоста / доменное имя</translation>
     </message>
     <message>
         <source>Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Фоновая установка</translation>
     </message>
     <message>
         <source>Install Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Установить Дополнения гостевой ОС</translation>
     </message>
     <message>
         <source>Guest Additions ISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Образ Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>Base Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Оперативная память</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -27836,27 +27836,27 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>EFI Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить EFI</translation>
     </message>
     <message>
         <source>Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Диск</translation>
     </message>
     <message>
         <source>Disk Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер диска</translation>
     </message>
     <message>
         <source>Pre-allocate Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Выделить место в полном размере</translation>
     </message>
     <message>
         <source>Attached Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключенный диск</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -27864,7 +27864,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущая таблица подытоживает конфигурацию, выбранную вами для виртуальной машины. Если вы довольны текущей конфигурацией нажмите кнопку Готово для создания виртуальной машины. В противном случае вы можете перейти к предыдущим страницам и изменить настройки.</translation>
     </message>
     <message>
         <source>Enables installation of the guest additions after the guest OS install.</source>
@@ -27872,11 +27872,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный носитель Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Опредеяет ключ продукта.</translation>
     </message>
 </context>
 <context>
