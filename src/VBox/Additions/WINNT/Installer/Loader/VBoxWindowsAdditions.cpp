@@ -37,20 +37,22 @@
 # define ERROR_ELEVATION_REQUIRED  740
 #endif
 
-#include <stdio.h>
-#include <string.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
+
+#include "NoCrtOutput.h"
 
 
 static BOOL IsWow64(void)
 {
     BOOL fIsWow64 = FALSE;
     typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
-    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle(L"kernel32"), "IsWow64Process");
+    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandleW(L"kernel32"), "IsWow64Process");
     if (fnIsWow64Process != NULL)
     {
         if (!fnIsWow64Process(GetCurrentProcess(), &fIsWow64))
         {
-            fwprintf(stderr, L"ERROR: Could not determine process type!\n");
+            ErrorMsgLastErr("Unable to determine the process type!");
 
             /* Error in retrieving process type - assume that we're running on 32bit. */
             fIsWow64 = FALSE;
@@ -59,7 +61,7 @@ static BOOL IsWow64(void)
     return fIsWow64;
 }
 
-static void WaitForProcess2(HANDLE hProcess, int *piExitCode)
+static int WaitForProcess2(HANDLE hProcess)
 {
     /*
      * Wait for the process, make sure the deal with messages.
@@ -80,7 +82,7 @@ static void WaitForProcess2(HANDLE hProcess, int *piExitCode)
         if (   dwRc != WAIT_TIMEOUT
             && dwRc != WAIT_OBJECT_0 + 1)
         {
-            fwprintf(stderr, L"ERROR: MsgWaitForMultipleObjects failed: %lu (%lu)\n", dwRc, GetLastError());
+            ErrorMsgLastErrSUR("MsgWaitForMultipleObjects failed: ", dwRc);
             break;
         }
     }
@@ -90,15 +92,11 @@ static void WaitForProcess2(HANDLE hProcess, int *piExitCode)
      */
     DWORD dwExitCode;
     if (GetExitCodeProcess(hProcess, &dwExitCode))
-        *piExitCode = (int)dwExitCode;
-    else
-    {
-        fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %lu\n", GetLastError());
-        *piExitCode = 16;
-    }
+        return (int)dwExitCode;
+    return ErrorMsgRcLastErr(16, "GetExitCodeProcess failed");
 }
 
-static void WaitForProcess(HANDLE hProcess, int *piExitCode)
+static int WaitForProcess(HANDLE hProcess)
 {
     DWORD WaitRc = WaitForSingleObjectEx(hProcess, INFINITE, TRUE);
     while (   WaitRc == WAIT_IO_COMPLETION
@@ -108,74 +106,65 @@ static void WaitForProcess(HANDLE hProcess, int *piExitCode)
     {
         DWORD dwExitCode;
         if (GetExitCodeProcess(hProcess, &dwExitCode))
-            *piExitCode = (int)dwExitCode;
-        else
-        {
-            fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %lu\n", GetLastError());
-            *piExitCode = 16;
-        }
+            return (int)dwExitCode;
+        return ErrorMsgRcLastErr(16, "GetExitCodeProcess failed");
     }
-    else
-    {
-        fwprintf(stderr, L"ERROR: WaitForSingleObjectEx failed: %lu (%lu)\n", WaitRc, GetLastError());
-        *piExitCode = 16;
-    }
+    return ErrorMsgRcLastErrSUR(16, "MsgWaitForMultipleObjects failed: ", WaitRc);
 }
 
+#ifndef IPRT_NO_CRT
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
+int main()
+#endif
 {
+#ifndef IPRT_NO_CRT
     RT_NOREF(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+#endif
 
     /*
      * Gather the parameters of the real installer program.
      */
+    SetLastError(NO_ERROR);
+    WCHAR wszCurDir[MAX_PATH] = { 0 };
+    DWORD cwcCurDir = GetCurrentDirectoryW(sizeof(wszCurDir), wszCurDir);
+    if (cwcCurDir == 0 || cwcCurDir >= sizeof(wszCurDir))
+        return ErrorMsgRcLastErrSUR(12, "GetCurrentDirectoryW failed: ", cwcCurDir);
 
     SetLastError(NO_ERROR);
-    WCHAR wszCurDir[_MAX_PATH] = { 0 };
-    DWORD cchCurDir = GetCurrentDirectoryW(sizeof(wszCurDir), wszCurDir);
-    if (cchCurDir == 0 || cchCurDir >= sizeof(wszCurDir))
-    {
-        fwprintf(stderr, L"ERROR: GetCurrentDirectoryW failed: %lu (ret %lu)\n", GetLastError(), cchCurDir);
-        return 12;
-    }
+    WCHAR wszExePath[MAX_PATH] = { 0 };
+    DWORD cwcExePath = GetModuleFileNameW(NULL, wszExePath, sizeof(wszExePath));
+    if (cwcExePath == 0 || cwcExePath >= sizeof(wszExePath))
+        return ErrorMsgRcLastErrSUR(13, "GetModuleFileNameW failed: ", cwcExePath);
 
-    SetLastError(NO_ERROR);
-    WCHAR wszModule[_MAX_PATH] = { 0 };
-    DWORD cchModule = GetModuleFileNameW(NULL, wszModule, sizeof(wszModule));
-    if (cchModule == 0 || cchModule >= sizeof(wszModule))
-    {
-        fwprintf(stderr, L"ERROR: GetModuleFileNameW failed: %lu (ret %lu)\n", GetLastError(), cchModule);
-        return 13;
-    }
-
-    /* Strip the extension off the module name and construct the arch specific
-       one of the real installer program. */
-    DWORD off = cchModule - 1;
+    /*
+    * Strip the extension off the module name and construct the arch specific
+    * one of the real installer program.
+    */
+    DWORD off = cwcExePath - 1;
     while (   off > 0
-           && (   wszModule[off] != '/'
-               && wszModule[off] != '\\'
-               && wszModule[off] != ':'))
+           && (   wszExePath[off] != '/'
+               && wszExePath[off] != '\\'
+               && wszExePath[off] != ':'))
     {
-        if (wszModule[off] == '.')
+        if (wszExePath[off] == '.')
         {
-            wszModule[off] = '\0';
-            cchModule = off;
+            wszExePath[off] = '\0';
+            cwcExePath = off;
             break;
         }
         off--;
     }
 
     WCHAR const  *pwszSuff = IsWow64() ? L"-amd64.exe" : L"-x86.exe";
-    size_t        cchSuff  = wcslen(pwszSuff);
-    if (cchSuff + cchModule >= sizeof(wszModule))
-    {
-        fwprintf(stderr, L"ERROR: Real installer name is too long (%u chars)\n", (unsigned)(cchSuff + cchModule));
-        return 14;
-    }
-    wcscpy(&wszModule[cchModule], pwszSuff);
-    cchModule += cchSuff;
+    int rc = RTUtf16Copy(&wszExePath[cwcExePath], RT_ELEMENTS(wszExePath) - cwcExePath, pwszSuff);
+    if (RT_FAILURE(rc))
+        return ErrorMsgRc(14, "Real installer name is too long!");
+    cwcExePath += RTUtf16Len(&wszExePath[cwcExePath]);
 
-    /* Replace the first argument of the argument list. */
+    /*
+     * Replace the first argument of the argument list.
+     */
     PWCHAR  pwszNewCmdLine = NULL;
     LPCWSTR pwszOrgCmdLine = GetCommandLineW();
     if (pwszOrgCmdLine) /* Dunno if this can be NULL, but whatever. */
@@ -208,23 +197,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         while ((wch = *pwszOrgCmdLine) == L' ' || wch == L'\t')
             pwszOrgCmdLine++;
 
-        /* Join up "szModule" with the remainder of the original command line. */
-        size_t cchOrgCmdLine = wcslen(pwszOrgCmdLine);
-        size_t cchNewCmdLine = 1 + cchModule + 1 + 1 + cchOrgCmdLine + 1;
-        PWCHAR pwsz = pwszNewCmdLine = (PWCHAR)LocalAlloc(LPTR, cchNewCmdLine * sizeof(WCHAR));
+        /* Join up "wszExePath" with the remainder of the original command line. */
+        size_t cwcOrgCmdLine = RTUtf16Len(pwszOrgCmdLine);
+        size_t cwcNewCmdLine = 1 + cwcExePath + 1 + 1 + cwcOrgCmdLine + 1;
+        PWCHAR pwsz = pwszNewCmdLine = (PWCHAR)LocalAlloc(LPTR, cwcNewCmdLine * sizeof(WCHAR));
         if (!pwsz)
-        {
-            fwprintf(stderr, L"ERROR: Out of memory (%u bytes)\n", (unsigned)cchNewCmdLine);
-            return 15;
-        }
+            return ErrorMsgRcSUS(15, "Out of memory (", cwcNewCmdLine * sizeof(WCHAR), " bytes)");
         *pwsz++ = L'"';
-        wcscpy(pwsz, wszModule);
-        pwsz += cchModule;
+        memcpy(pwsz, wszExePath, cwcExePath * sizeof(pwsz[0]));
+        pwsz += cwcExePath;
         *pwsz++ = L'"';
-        if (cchOrgCmdLine)
+        if (cwcOrgCmdLine)
         {
             *pwsz++ = L' ';
-            wcscpy(pwsz, pwszOrgCmdLine);
+            memcpy(pwsz, pwszOrgCmdLine, cwcOrgCmdLine * sizeof(pwsz[0]));
         }
         else
         {
@@ -236,11 +222,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     /*
      * Start the process.
      */
-    int iRet = 0;
+    int                 rcExit      = 0;
     STARTUPINFOW        StartupInfo = { sizeof(StartupInfo), 0 };
-    PROCESS_INFORMATION ProcInfo = { 0 };
+    PROCESS_INFORMATION ProcInfo    = { 0 };
     SetLastError(740);
-    BOOL fOk = CreateProcessW(wszModule,
+    BOOL fOk = CreateProcessW(wszExePath,
                               pwszNewCmdLine,
                               NULL /*pProcessAttributes*/,
                               NULL /*pThreadAttributes*/,
@@ -254,7 +240,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         /* Wait for the process to finish. */
         CloseHandle(ProcInfo.hThread);
-        WaitForProcess(ProcInfo.hProcess, &iRet);
+        rcExit = WaitForProcess(ProcInfo.hProcess);
         CloseHandle(ProcInfo.hProcess);
     }
     else if (GetLastError() == ERROR_ELEVATION_REQUIRED)
@@ -272,7 +258,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ShExecInfo.fMask        = SEE_MASK_NOCLOSEPROCESS;
         ShExecInfo.hwnd         = NULL;
         ShExecInfo.lpVerb       = L"runas" ;
-        ShExecInfo.lpFile       = wszModule;
+        ShExecInfo.lpFile       = wszExePath;
         ShExecInfo.lpParameters = pwszOrgCmdLine; /* pass only args here!!! */
         ShExecInfo.lpDirectory  = wszCurDir;
         ShExecInfo.nShow        = SW_NORMAL;
@@ -281,34 +267,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             if (ShExecInfo.hProcess != INVALID_HANDLE_VALUE)
             {
-                WaitForProcess2(ShExecInfo.hProcess, &iRet);
+                rcExit = WaitForProcess2(ShExecInfo.hProcess);
                 CloseHandle(ShExecInfo.hProcess);
             }
             else
-            {
-                fwprintf(stderr, L"ERROR: ShellExecuteExW did not return a valid process handle!\n");
-                iRet = 1;
-            }
+                rcExit = ErrorMsgRc(1, "ShellExecuteExW did not return a valid process handle!");
         }
         else
-        {
-            fwprintf(stderr, L"ERROR: Failed to execute '%ws' via ShellExecuteExW: %lu\n", wszModule, GetLastError());
-            iRet = 9;
-        }
+            rcExit = ErrorMsgRcLastErrSWSR(9, "Failed to execute '", wszExePath, "' via ShellExecuteExW!");
     }
     else
-    {
-        fwprintf(stderr, L"ERROR: Failed to execute '%ws' via CreateProcessW: %lu\n", wszModule, GetLastError());
-        iRet = 8;
-    }
+        rcExit = ErrorMsgRcLastErrSWSR(8, "Failed to execute '", wszExePath, "' via CreateProcessW!");
 
     if (pwszNewCmdLine)
         LocalFree(pwszNewCmdLine);
 
-#if 0
-    fwprintf(stderr, L"DEBUG: iRet=%d\n", iRet);
-    fflush(stderr);
-#endif
-    return iRet;
+    return rcExit;
 }
 

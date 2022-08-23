@@ -28,25 +28,27 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(KBUILD_TARGET_ARCH),x86)
-
-# This has to be 32-bit, so don't include it in the 64-bit build.
-PROGRAMS.x86 += VBoxWindowsAdditions
+# This has to be 32-bit.
+PROGRAMS += VBoxWindowsAdditions
 VBoxWindowsAdditions_TEMPLATE= VBoxGuestR3Exe
-VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
+VBoxWindowsAdditions_BLD_TRG_ARCH = x86
+VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400
+VBoxWindowsAdditions_INCS    = ../../include
 VBoxWindowsAdditions_SOURCES = \
 	VBoxWindowsAdditions.cpp \
 	VBoxWindowsAdditions.rc
-
+ifdef VBOX_WITH_NOCRT_STATIC
+VBoxWindowsAdditions_LDFLAGS  = /SubSystem:Windows
+else
 VBoxWindowsAdditions_LDFLAGS  = \
 	/DISALLOWLIB:msvcrt.lib \
 	/DISALLOWLIB:msvcprt.lib \
 	/DISALLOWLIB:libcmt.lib
-
 VBoxWindowsAdditions_LIBS     = \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcpmt.lib
+endif
 
 # Version stuff.
 VBoxWindowsAdditions.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
@@ -63,8 +65,6 @@ $$(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc: \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
-
-endif # (x86 only because of the above rule)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

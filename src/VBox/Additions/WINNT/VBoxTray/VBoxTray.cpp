@@ -65,12 +65,10 @@
 #include <VBox/err.h>
 
 
-static void VBoxGrapicsSetSupported(BOOL fSupported);
-
-
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static void VBoxGrapicsSetSupported(BOOL fSupported);
 static int vboxTrayCreateTrayIcon(void);
 static LRESULT CALLBACK vboxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
