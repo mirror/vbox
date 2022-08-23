@@ -15124,3 +15124,31 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vshufpd_u256_fallback,(PRTUINT256U puDst, PCRTU
     puDst->au64[2] = (bEvil & RT_BIT(2)) ? uSrc1.au64[3] : uSrc1.au64[2];
     puDst->au64[3] = (bEvil & RT_BIT(3)) ? uSrc2.au64[3] : uSrc2.au64[2];
 }
+
+
+/*
+ * PHMINPOSUW / VPHMINPOSUW
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_phminposuw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint16_t u16Min = puSrc->au16[0];
+    uint8_t  idxMin = 0;
+
+    for (uint8_t i = 1; i < RT_ELEMENTS(puSrc->au16); i++)
+        if (puSrc->au16[i] < u16Min)
+        {
+            u16Min = puSrc->au16[i];
+            idxMin = i;
+        }
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    puDst->au16[0] = u16Min;
+    puDst->au16[1] = idxMin;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vphminposuw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    iemAImpl_phminposuw_u128_fallback(puDst, puSrc);
+}

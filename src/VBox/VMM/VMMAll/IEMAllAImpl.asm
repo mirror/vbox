@@ -3732,6 +3732,7 @@ IEMIMPL_MEDIA_OPT_F2 unpcklps, 0
 IEMIMPL_MEDIA_OPT_F2 unpcklpd, 0
 IEMIMPL_MEDIA_OPT_F2 unpckhps, 0
 IEMIMPL_MEDIA_OPT_F2 unpckhpd, 0
+IEMIMPL_MEDIA_OPT_F2 phminposuw, 0
 
 ;;
 ; Media instruction working on one full sized and one half sized register (lower half).
@@ -4235,11 +4236,12 @@ IEMIMPL_MEDIA_OPT_F3 vunpckhpd
 ; but no XSAVE state pointer argument.
 ;
 ; @param    1       The instruction
+; @param    2       Flag whether the isntruction has a 256-bit (AVX2) variant (1) or not (0).
 ;
 ; @param    A0      Pointer to the destination media register size operand (output).
 ; @param    A1      Pointer to the source media register size operand (input).
 ;
-%macro IEMIMPL_MEDIA_OPT_F2_AVX 1
+%macro IEMIMPL_MEDIA_OPT_F2_AVX 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_2_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4252,6 +4254,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         EPILOGUE_2_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
+ %if %2 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
         PROLOGUE_2_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4263,11 +4266,13 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_2_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_MEDIA_OPT_F2_AVX vpabsb
-IEMIMPL_MEDIA_OPT_F2_AVX vpabsw
-IEMIMPL_MEDIA_OPT_F2_AVX vpabsd
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsb, 1
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsw, 1
+IEMIMPL_MEDIA_OPT_F2_AVX vpabsd, 1
+IEMIMPL_MEDIA_OPT_F2_AVX vphminposuw, 0
 
 
 ;
@@ -4850,16 +4855,13 @@ ENDPROC iemAImpl_shufps_u128
 
 
 ;;
-; shufp{s,d} instructions with 8-bit immediates.
-;
-; @param    1       The instruction name.
+; shufpd instruction with 8-bit immediates.
 ;
 ; @param    A0      Pointer to the destination media register size operand (input/output).
 ; @param    A1      Pointer to the first source media register size operand (input).
 ; @param    A2      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_SSE_SHUFPX 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+BEGINPROC_FASTCALL iemAImpl_shufpd_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
@@ -4876,18 +4878,14 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
-       %1       xmm0, xmm1, bImm
+       shufpd   xmm0, xmm1, bImm
        ret
   %assign bImm bImm + 1
  %endrep
 .immEnd:                                ; 256*6 == 0x600
 dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
-ENDPROC iemAImpl_ %+ %1 %+ _u128
-%endmacro
-
-;IEMIMPL_MEDIA_SSE_SHUFPX shufps
-IEMIMPL_MEDIA_SSE_SHUFPX shufpd
+ENDPROC iemAImpl_shufpd_u128
 
 
 ;;

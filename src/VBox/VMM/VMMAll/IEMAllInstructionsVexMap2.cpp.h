@@ -779,7 +779,59 @@ FNIEMOP_DEF(iemOp_vpmulld_Vx_Hx_Wx)
 
 
 /** Opcode VEX.66.0F38 0x41. */
-FNIEMOP_STUB(iemOp_vphminposuw_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vphminposuw_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(VEX_RM, VPHMINPOSUW, vphminposuw, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,          puDst,  0);
+        IEM_MC_ARG(PCRTUINT128U,         puSrc,  1);
+        IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,        IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,  IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vphminposuw_u128, iemAImpl_vphminposuw_u128_fallback),
+                                 puDst, puSrc);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_MEM_U128_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vphminposuw_u128, iemAImpl_vphminposuw_u128_fallback),
+                                 puDst, puSrc);
+        IEM_MC_CLEAR_YREG_128_UP(           IEM_GET_MODRM_REG(pVCpu, bRm));
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /*  Opcode VEX.66.0F38 0x42 - invalid. */
 /*  Opcode VEX.66.0F38 0x43 - invalid. */
 /*  Opcode VEX.66.0F38 0x44 - invalid. */
