@@ -385,11 +385,7 @@ VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3Exe
 else
 VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3NoCrtExe
 endif
-VBoxAddInstallNt3x_LDFLAGS  := /VERBOSE
-VBoxAddInstallNt3x_SOURCES  := \
-	VBoxAddInstallNt3x.cpp \
-
-
+VBoxAddInstallNt3x_SOURCES  := VBoxAddInstallNt3x.cpp
 VBoxAddInstallNt3x.cpp_DEPS = $(VBOX_SVN_REV_HEADER)
 
 

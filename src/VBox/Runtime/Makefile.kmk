@@ -3185,6 +3185,8 @@ RuntimeR3NoCrt_SOURCES  := \
 	common/misc/getoptargv.cpp \
 	common/misc/message.cpp \
 	common/err/errmsg.cpp \
+       r3/init-data.cpp \
+	r3/process-data.cpp \
 	generic/uuid-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp
 
