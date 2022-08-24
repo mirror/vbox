@@ -44,7 +44,7 @@
 #pragma pack()
 #include "vmsvga_headers_end.h"
 
-/* SVGA3dDXSignatureRegisterComponentType */
+/* SVGA3dDXSignatureRegisterComponentType (D3D10_SB_REGISTER_COMPONENT_TYPE) */
 #define SVGADX_SIGNATURE_REGISTER_COMPONENT_UINT32  1
 #define SVGADX_SIGNATURE_REGISTER_COMPONENT_SINT32  2
 #define SVGADX_SIGNATURE_REGISTER_COMPONENT_FLOAT32 3

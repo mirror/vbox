@@ -6338,6 +6338,13 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                             }
 
                             cResources = idxSR + 1;
+
+                            /* Update componentType of the pixel shader output signature to correspond to the bound resources. */
+                            if (idxSR < pDXShader->shaderInfo.cOutputSignature)
+                            {
+                                SVGA3dDXSignatureEntry *pSignatureEntry = &pDXShader->shaderInfo.aOutputSignature[idxSR];
+                                pSignatureEntry->componentType = DXShaderComponentTypeFromFormat(pSRViewEntry->format);
+                            }
                         }
                     }
 
