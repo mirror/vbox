@@ -518,8 +518,68 @@ FNIEMOP_DEF(iemOp_pmulhrsw_Vx_Wx)
 
 
 /*  Opcode      0x0f 0x38 0x10 - invalid */
+
+
+/** Body for the *blend* instructions. */
+#define IEMOP_BODY_P_BLEND_X(a_Instr) \
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
+    if (IEM_IS_MODRM_REG_MODE(bRm)) \
+    { \
+        /* \
+         * Register, register. \
+         */ \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_BEGIN(3, 0); \
+        IEM_MC_ARG(PRTUINT128U,  puDst,  0); \
+        IEM_MC_ARG(PCRTUINT128U, puSrc,  1); \
+        IEM_MC_ARG(PCRTUINT128U, puMask, 2); \
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();  \
+        IEM_MC_PREPARE_SSE_USAGE();  \
+        IEM_MC_REF_XREG_U128(puDst,  IEM_GET_MODRM_REG(pVCpu, bRm)); \
+        IEM_MC_REF_XREG_U128_CONST(puSrc,  IEM_GET_MODRM_RM(pVCpu, bRm)); \
+        IEM_MC_REF_XREG_U128_CONST(puMask, 0); \
+        IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                             iemAImpl_ ## a_Instr ## _u128, \
+                                                             iemAImpl_ ## a_Instr ## _u128_fallback), \
+                                 puDst, puSrc, puMask); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END(); \
+    } \
+    else \
+    { \
+        /* \
+         * Register, memory. \
+         */ \
+        IEM_MC_BEGIN(3, 2); \
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc); \
+        IEM_MC_LOCAL(RTUINT128U,                uSrc); \
+        IEM_MC_ARG(PRTUINT128U,            puDst,       0); \
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U, puSrc, uSrc, 1); \
+        IEM_MC_ARG(PCRTUINT128U,           puMask,      2); \
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT(); \
+        IEM_MC_PREPARE_SSE_USAGE(); \
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+        IEM_MC_REF_XREG_U128_CONST(puMask, 0); \
+        IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                             iemAImpl_ ## a_Instr ## _u128, \
+                                                             iemAImpl_ ## a_Instr ## _u128_fallback), \
+                                 puDst, puSrc, puMask); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END(); \
+    } \
+    return VINF_SUCCESS
+
 /** Opcode 0x66 0x0f 0x38 0x10 (legacy only). */
-FNIEMOP_STUB(iemOp_pblendvb_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_pblendvb_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, PBLENDVB, pblendvb, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_BODY_P_BLEND_X(pblendvb);
+}
+
+
 /*  Opcode      0x0f 0x38 0x11 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x11 - invalid */
 /*  Opcode      0x0f 0x38 0x12 - invalid */
@@ -527,11 +587,27 @@ FNIEMOP_STUB(iemOp_pblendvb_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x13 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x13 - invalid (vex only). */
 /*  Opcode      0x0f 0x38 0x14 - invalid */
+
+
 /** Opcode 0x66 0x0f 0x38 0x14 (legacy only). */
-FNIEMOP_STUB(iemOp_blendvps_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_blendvps_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, BLENDVPS, blendvps, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_BODY_P_BLEND_X(blendvps);
+}
+
+
 /*  Opcode      0x0f 0x38 0x15 - invalid */
+
+
 /** Opcode 0x66 0x0f 0x38 0x15 (legacy only). */
-FNIEMOP_STUB(iemOp_blendvpd_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_blendvpd_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, BLENDVPD, blendvpd, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_BODY_P_BLEND_X(blendvpd);
+}
+
+
 /*  Opcode      0x0f 0x38 0x16 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x16 - invalid (vex only). */
 /*  Opcode      0x0f 0x38 0x17 - invalid */

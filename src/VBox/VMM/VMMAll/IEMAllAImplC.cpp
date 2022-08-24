@@ -15152,3 +15152,77 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphminposuw_u128_fallback,(PRTUINT128U puDst, P
 {
     iemAImpl_phminposuw_u128_fallback(puDst, puSrc);
 }
+
+
+/*
+ * [V]PBLENDVB
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pblendvb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8); i++)
+        if (puMask->au8[i] & RT_BIT(7))
+            puDst->au8[i] = puSrc->au8[i];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpblendvb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, PCRTUINT128U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8); i++)
+            puDst->au8[i] = puMask->au8[i] & RT_BIT(7) ? puSrc2->au8[i] : puSrc1->au8[i];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpblendvb_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, PCRTUINT256U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8); i++)
+            puDst->au8[i] = puMask->au8[i] & RT_BIT(7) ? puSrc2->au8[i] : puSrc1->au8[i];
+}
+
+
+/*
+ * [V]BLENDVPS
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_blendvps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au32); i++)
+        if (puMask->au32[i] & RT_BIT_32(31))
+            puDst->au32[i] = puSrc->au32[i];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vblendvps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, PCRTUINT128U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au32); i++)
+            puDst->au32[i] = (puMask->au32[i] & RT_BIT_32(31)) ? puSrc2->au32[i] : puSrc1->au32[i];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vblendvps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, PCRTUINT256U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au32); i++)
+            puDst->au32[i] = (puMask->au32[i] & RT_BIT_32(31)) ? puSrc2->au32[i] : puSrc1->au32[i];
+}
+
+
+/*
+ * [V]BLENDVPD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_blendvpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puMask))
+{
+    if (puMask->au64[0] & RT_BIT_64(63)) puDst->au64[0] = puSrc->au64[0];
+    if (puMask->au64[1] & RT_BIT_64(63)) puDst->au64[1] = puSrc->au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vblendvpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, PCRTUINT128U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au64); i++)
+            puDst->au64[i] = (puMask->au64[i] & RT_BIT_64(63)) ? puSrc2->au64[i] : puSrc1->au64[i];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vblendvpd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, PCRTUINT256U puMask))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au64); i++)
+            puDst->au64[i] = (puMask->au64[i] & RT_BIT_64(63)) ? puSrc2->au64[i] : puSrc1->au64[i];
+}

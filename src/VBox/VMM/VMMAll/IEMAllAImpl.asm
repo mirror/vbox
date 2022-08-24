@@ -4954,3 +4954,77 @@ ENDPROC iemAImpl_ %+ %1 %+ _u256
 
 IEMIMPL_MEDIA_AVX_VSHUFPX vshufps
 IEMIMPL_MEDIA_AVX_VSHUFPX vshufpd
+
+
+;;
+; One of the [p]blendv{b,ps,pd} variants
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the first media register sized operand (input/output).
+; @param    A1      Pointer to the second media sized value (input).
+; @param    A2      Pointer to the media register sized mask value (input).
+;
+%macro IEMIMPL_P_BLEND 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu   xmm0, [A2] ; This is implicit
+        movdqu   xmm1, [A0]
+        movdqu   xmm2, [A1] ; @todo Do I need to save the original value here first?
+        %1       xmm1, xmm2
+        movdqu   [A0], xmm1
+
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_P_BLEND pblendvb
+IEMIMPL_P_BLEND blendvps
+IEMIMPL_P_BLEND blendvpd
+
+
+;;
+; One of the v[p]blendv{b,ps,pd} variants
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the first media register sized operand (output).
+; @param    A1      Pointer to the first media register sized operand (input).
+; @param    A2      Pointer to the second media register sized operand (input).
+; @param    A3      Pointer to the media register sized mask value (input);
+%macro IEMIMPL_AVX_P_BLEND 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu   xmm0, [A1]
+        vmovdqu   xmm1, [A2]
+        vmovdqu   xmm2, [A3]
+        %1        xmm0, xmm0, xmm1, xmm2
+        vmovdqu   [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu   ymm0, [A1]
+        vmovdqu   ymm1, [A2]
+        vmovdqu   ymm2, [A3]
+        %1        ymm0, ymm0, ymm1, ymm2
+        vmovdqu   [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_AVX_P_BLEND vpblendvb
+IEMIMPL_AVX_P_BLEND vblendvps
+IEMIMPL_AVX_P_BLEND vblendvpd

@@ -2076,6 +2076,38 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256,(uint64_t *pu64Dst, PCRTUINT256U
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCRTUINT256U puSrc));
 /** @} */
 
+/** @name Media (SSE/MMX/AVX) operations: Variable Blend Packed Bytes/R32/R64.
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBLENDU128,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puMask));
+typedef FNIEMAIMPLBLENDU128  *PFNIEMAIMPLBLENDU128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLAVXBLENDU128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, PCRTUINT128U puMask));
+typedef FNIEMAIMPLAVXBLENDU128  *PFNIEMAIMPLAVXBLENDU128;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLAVXBLENDU256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, PCRTUINT256U puMask));
+typedef FNIEMAIMPLAVXBLENDU256  *PFNIEMAIMPLAVXBLENDU256;
+
+FNIEMAIMPLBLENDU128 iemAImpl_pblendvb_u128;
+FNIEMAIMPLBLENDU128 iemAImpl_pblendvb_u128_fallback;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vpblendvb_u128;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vpblendvb_u128_fallback;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vpblendvb_u256;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vpblendvb_u256_fallback;
+
+FNIEMAIMPLBLENDU128 iemAImpl_blendvps_u128;
+FNIEMAIMPLBLENDU128 iemAImpl_blendvps_u128_fallback;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vblendvps_u128;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vblendvps_u128_fallback;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vblendvps_u256;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vblendvps_u256_fallback;
+
+FNIEMAIMPLBLENDU128 iemAImpl_blendvpd_u128;
+FNIEMAIMPLBLENDU128 iemAImpl_blendvpd_u128_fallback;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vblendvpd_u128;
+FNIEMAIMPLAVXBLENDU128 iemAImpl_vblendvpd_u128_fallback;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vblendvpd_u256;
+FNIEMAIMPLAVXBLENDU256 iemAImpl_vblendvpd_u256_fallback;
+/** @} */
+
+
 /** @name Media (SSE/MMX/AVX) operation: Sort this later
  * @{ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PRTUINT128U puDst, PCRTUINT128U puSrc));
@@ -2376,6 +2408,43 @@ typedef IEMOPMEDIAOPTF2 const *PCIEMOPMEDIAOPTF2;
     IEMOPMEDIAOPTF2_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
                                  RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 /** @} */
+
+
+/**
+ * Function table for blend type instruction taking three full sized media source
+ * registers and one full sized destination register, but no additional state
+ * (AVX).
+ */
+typedef struct IEMOPBLENDOP
+{
+    PFNIEMAIMPLAVXBLENDU128 pfnU128;
+    PFNIEMAIMPLAVXBLENDU256 pfnU256;
+} IEMOPBLENDOP;
+/** Pointer to a media operation function table for 4 full sized ops (AVX). */
+typedef IEMOPBLENDOP const *PCIEMOPBLENDOP;
+
+/** @def IEMOPBLENDOP_INIT_VARS_EX
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPBLENDOP_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPBLENDOP const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPBLENDOP const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPBLENDOP_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPBLENDOP const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPBLENDOP_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
+/** @def IEMOPBLENDOP_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPBLENDOP_INIT_VARS_EX */
+#define IEMOPBLENDOP_INIT_VARS(a_InstrNm) \
+    IEMOPBLENDOP_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
+                              RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 
 
 /** @name SSE/AVX single/double precision floating point operations.
