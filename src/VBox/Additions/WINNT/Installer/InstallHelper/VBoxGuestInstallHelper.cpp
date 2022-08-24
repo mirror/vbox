@@ -36,7 +36,7 @@
 #include <iprt/win/windows.h>
 #include "exdll.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
 #include <iprt/localipc.h>
