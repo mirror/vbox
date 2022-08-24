@@ -73,6 +73,7 @@ ssize_t         RT_NOCRT(read)(int, void *, size_t) RT_NOEXCEPT;
 ssize_t         RT_NOCRT(write)(int, const void *, size_t) RT_NOEXCEPT;
 int             RT_NOCRT(close)(int) RT_NOEXCEPT;
 int             RT_NOCRT(isatty)(int) RT_NOEXCEPT;
+char           *RT_NOCRT(getcwd)(char *, size_t) RT_NOEXCEPT;
 RTPROCESS       RT_NOCRT(getpid)(void) RT_NOEXCEPT;
 RTPROCESS       RT_NOCRT(getppid)(void) RT_NOEXCEPT;
 int             RT_NOCRT(unlink)(const char *) RT_NOEXCEPT;
@@ -84,6 +85,7 @@ ssize_t         RT_NOCRT(_read)(int, void *, size_t) RT_NOEXCEPT;
 ssize_t         RT_NOCRT(_write)(int, const void *, size_t) RT_NOEXCEPT;
 int             RT_NOCRT(_close)(int) RT_NOEXCEPT;
 int             RT_NOCRT(_isatty)(int) RT_NOEXCEPT;
+char           *RT_NOCRT(_getcwd)(char *, size_t) RT_NOEXCEPT;
 RTPROCESS       RT_NOCRT(_getpid)(void) RT_NOEXCEPT;
 RTPROCESS       RT_NOCRT(_getppid)(void) RT_NOEXCEPT;
 int             RT_NOCRT(_unlink)(const char *) RT_NOEXCEPT;
@@ -96,6 +98,7 @@ int             RT_NOCRT(_unlink)(const char *) RT_NOEXCEPT;
 #  define write         RT_NOCRT(write)
 #  define close         RT_NOCRT(close)
 #  define isatty        RT_NOCRT(isatty)
+#  define getcwd        RT_NOCRT(getcwd)
 #  define getpid        RT_NOCRT(getpid)
 #  define getppid       RT_NOCRT(getppid)
 #  define unlink        RT_NOCRT(unlink)
@@ -107,6 +110,7 @@ int             RT_NOCRT(_unlink)(const char *) RT_NOEXCEPT;
 #  define _write        RT_NOCRT(write)
 #  define _close        RT_NOCRT(close)
 #  define _isatty       RT_NOCRT(isatty)
+#  define _getcwd       RT_NOCRT(getcwd)
 #  define _getpid       RT_NOCRT(getpid)
 #  define _getppid      RT_NOCRT(getppid)
 #  define _unlink       RT_NOCRT(unlink)

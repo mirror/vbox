@@ -65,6 +65,8 @@ typedef RTFOFF fpos_t;
 # define SEEK_END   RTFILE_SEEK_END
 AssertCompile(SEEK_SET == 0); AssertCompile(SEEK_CUR == 1); AssertCompile(SEEK_END == 2); /* Also in WDK header mmiscapi.h. */
 
+# define RT_NOCRT_BUFSIZ    4096
+# define BUFSIZ             RT_NOCRT_BUFSIZ
 
 RT_C_DECLS_BEGIN
 
