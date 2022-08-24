@@ -78,8 +78,7 @@ void RT_NEW_DELETE_CDECL operator delete(void *pv) RT_NEW_DELETE_NOTHROW
 #ifdef __cpp_sized_deallocation
 void RT_NEW_DELETE_CDECL operator delete(void *pv, RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_NOTHROW
 {
-    NOREF(cb);
-    AssertMsgFailed(("cb ignored!\n"));
+    RT_NOREF_PV(cb);
     RTMemFree(pv);
 }
 #endif
@@ -118,7 +117,7 @@ void *RT_NEW_DELETE_CDECL operator new[](RT_NEW_DELETE_SIZE_T cb, const std::not
 
 void *RT_NEW_DELETE_CDECL operator new[](RT_NEW_DELETE_SIZE_T cb, void *pvPlacement) RT_NEW_DELETE_NOTHROW
 {
-    RT_NOREF(cb);
+    RT_NOREF_PV(cb);
     return pvPlacement;
 }
 
@@ -132,8 +131,7 @@ void RT_NEW_DELETE_CDECL operator delete[](void * pv) RT_NEW_DELETE_NOTHROW
 #ifdef __cpp_sized_deallocation
 void RT_NEW_DELETE_CDECL operator delete[](void * pv, RT_NEW_DELETE_SIZE_T cb) RT_NEW_DELETE_NOTHROW
 {
-    NOREF(cb);
-    AssertMsgFailed(("cb ignored!\n"));
+    RT_NOREF_PV(cb);
     RTMemFree(pv);
 }
 #endif
