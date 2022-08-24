@@ -528,7 +528,7 @@ static int VBoxInstallDriver(const BOOL fInstall, const wchar_t *pwszDriverPath,
 /** Handles 'driver install'. */
 static int handleDriverInstall(unsigned cArgs, wchar_t **papwszArgs)
 {
-    return VBoxInstallDriver(true /*fInstall*/, papwszArgs[1], false /*fSilent*/,
+    return VBoxInstallDriver(true /*fInstall*/, papwszArgs[0], false /*fSilent*/,
                              cArgs > 1 && papwszArgs[1][0] ? papwszArgs[1] : NULL /* pwszLogFile*/);
 }
 
@@ -536,7 +536,7 @@ static int handleDriverInstall(unsigned cArgs, wchar_t **papwszArgs)
 /** Handles 'driver uninstall'. */
 static int handleDriverUninstall(unsigned cArgs, wchar_t **papwszArgs)
 {
-    return VBoxInstallDriver(false /*fInstall*/, papwszArgs[1], false /*fSilent*/,
+    return VBoxInstallDriver(false /*fInstall*/, papwszArgs[0], false /*fSilent*/,
                              cArgs > 1 && papwszArgs[1][0] ? papwszArgs[1] : NULL /* pwszLogFile*/);
 }
 
