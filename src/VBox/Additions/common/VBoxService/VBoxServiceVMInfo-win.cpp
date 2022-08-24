@@ -57,12 +57,6 @@
 #include "VBoxServiceVMInfo.h"
 #include "../../WINNT/VBoxTray/VBoxTrayMsg.h" /* For IPC. */
 
-static uint32_t s_uDebugGuestPropClientID = 0;
-static uint32_t s_uDebugIter = 0;
-/** Whether to skip the logged-in user detection over RDP or not.
- *  See notes in this section why we might want to skip this. */
-static bool s_fSkipRDPDetection = false;
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -116,6 +110,12 @@ static int  vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const c
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+static uint32_t s_uDebugGuestPropClientID = 0;
+static uint32_t s_uDebugIter = 0;
+/** Whether to skip the logged-in user detection over RDP or not.
+ *  See notes in this section why we might want to skip this. */
+static bool s_fSkipRDPDetection = false;
+
 static RTONCE                                   g_vgsvcWinVmInitOnce = RTONCE_INITIALIZER;
 
 /** @name Secur32.dll imports are dynamically resolved because of NT4.
@@ -983,23 +983,22 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
             VBOXTRAYIPCHEADER ipcHdr =
             {
                 /* .uMagic      = */ VBOXTRAY_IPC_HDR_MAGIC,
-                /* .uHdrVersion = */ 0,
-                /* .uMsgType    = */ VBOXTRAYIPCMSGTYPE_USERLASTINPUT,
-                /* .cbMsgData   = */ 0 /* No msg */
+                /* .uVersion    = */ VBOXTRAY_IPC_HDR_VERSION,
+                /* .enmMsgType  = */ VBOXTRAYIPCMSGTYPE_USER_LAST_INPUT,
+                /* .cbPayload   = */ 0 /* No payload */
             };
 
             rc = RTLocalIpcSessionWrite(hSession, &ipcHdr, sizeof(ipcHdr));
-
             if (RT_SUCCESS(rc))
             {
-                VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
-                rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes), NULL /* Exact read */);
+                VBOXTRAYIPCREPLY_USER_LAST_INPUT_T ipcReply;
+                rc = RTLocalIpcSessionRead(hSession, &ipcReply, sizeof(ipcReply), NULL /* Exact read */);
                 if (   RT_SUCCESS(rc)
                     /* If uLastInput is set to UINT32_MAX VBoxTray was not able to retrieve the
                      * user's last input time. This might happen when running on Windows NT4 or older. */
-                    && ipcRes.uLastInput != UINT32_MAX)
+                    && ipcReply.cSecSinceLastInput != UINT32_MAX)
                 {
-                    userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
+                    userState = ipcReply.cSecSinceLastInput * 1000 < g_uVMInfoUserIdleThresholdMS
                               ? VBoxGuestUserState_InUse
                               : VBoxGuestUserState_Idle;
 
@@ -1013,12 +1012,12 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
                      */
                     fReportToHost = rc == VINF_SUCCESS;
                     VGSvcVerbose(4, "User '%s' (domain '%s') is idle for %RU32, fReportToHost=%RTbool\n",
-                                 pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput, fReportToHost);
+                                 pszUser, pszDomain ? pszDomain : "<None>", ipcReply.cSecSinceLastInput, fReportToHost);
 
 #if 0 /* Do we want to write the idle time as well? */
                         /* Also write the user's current idle time, if there is any. */
                         if (userState == VBoxGuestUserState_Idle)
-                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32", ipcRes.uLastInputMs);
+                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32", ipcReply.cSecSinceLastInput);
                         else
                             rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", NULL /* Delete property */);
 
@@ -1026,7 +1025,7 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
 #endif
                 }
 #ifdef DEBUG
-                else if (RT_SUCCESS(rc) && ipcRes.uLastInput == UINT32_MAX)
+                else if (RT_SUCCESS(rc) && ipcReply.cSecSinceLastInput == UINT32_MAX)
                     VGSvcVerbose(4, "Last input for user '%s' is not supported, skipping\n", pszUser, rc);
 #endif
             }

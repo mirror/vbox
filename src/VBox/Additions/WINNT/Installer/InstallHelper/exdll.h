@@ -60,6 +60,7 @@ typedef UINT_PTR (*NSISPLUGINCALLBACK)(enum NSPIM);
 #  define NSISCALL __stdcall
 #endif
 
+#ifndef VBOX
 // only include this file from one place in your DLL.
 // (it is all static, if you use it in two places it will fail)
 
@@ -67,6 +68,7 @@ typedef UINT_PTR (*NSISPLUGINCALLBACK)(enum NSPIM);
         g_stringsize=string_size; \
         g_stacktop=stacktop;      \
         g_variables=variables; }
+#endif /* !VBOX */
 
 typedef struct _stack_t
 {
@@ -103,9 +105,11 @@ typedef struct
     BOOL (NSISCALL *RegisterPluginCallback)(HMODULE, NSISPLUGINCALLBACK);
 } extra_parameters;
 
+#ifndef VBOX
 static unsigned int g_stringsize;
 static stack_t **g_stacktop;
 static TCHAR *g_variables;
+#endif
 
 enum
 {
@@ -136,6 +140,8 @@ INST_EXEDIR,    // $EXEDIR
 INST_LANG,      // $LANGUAGE
 __INST_LAST
 };
+
+#ifndef VBOX
 
 // utility functions (not required but often useful)
 int popstringn(TCHAR *str, int maxlen)
@@ -172,4 +178,7 @@ static void __stdcall setuservariable(const int varnum, const TCHAR *var)
     if (var != NULL && varnum >= 0 && varnum < __INST_LAST)
         lstrcpy(g_variables + varnum*g_stringsize, var);
 }
+
+#endif /* ! VBOX */
+
 #endif /* !GA_INCLUDED_SRC_WINNT_Installer_InstallHelper_exdll_h */

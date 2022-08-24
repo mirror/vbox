@@ -106,72 +106,99 @@ static int vboxIPCSessionStop(PVBOXIPCSESSION pSession);
 
 
 
+/**
+ * Handles VBOXTRAYIPCMSGTYPE_RESTART.
+ */
 static int vboxIPCHandleVBoxTrayRestart(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEADER pHdr)
 {
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
+    RT_NOREF(pSession, pHdr);
 
     /** @todo Not implemented yet; don't return an error here. */
     return VINF_SUCCESS;
 }
 
+/**
+ * Handles VBOXTRAYIPCMSGTYPE_SHOW_BALLOON_MSG.
+ */
 static int vboxIPCHandleShowBalloonMsg(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEADER pHdr)
 {
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
-    AssertReturn(pHdr->uMsgLen > 0, VERR_INVALID_PARAMETER);
-
-    VBOXTRAYIPCMSG_SHOWBALLOONMSG ipcMsg;
-    int rc = RTLocalIpcSessionRead(pSession->hSession, &ipcMsg, pHdr->uMsgLen,
-                                   NULL /* Exact read, blocking */);
-    if (RT_SUCCESS(rc))
+    /*
+     * Unmarshal and validate the data.
+     */
+    union
     {
-        /* Showing the balloon tooltip is not critical. */
-        int rc2 = hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
-                                    ipcMsg.szMsgContent, ipcMsg.szMsgTitle,
-                                    ipcMsg.uShowMS, ipcMsg.uType);
-        LogFlowFunc(("Showing \"%s\" - \"%s\" (type %RU32, %RU32ms), rc=%Rrc\n",
-                     ipcMsg.szMsgTitle, ipcMsg.szMsgContent,
-                     ipcMsg.uType, ipcMsg.uShowMS, rc2));
-        NOREF(rc2);
-    }
+        uint8_t                             abBuf[_4K];
+        VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T   s;
+    } Payload;
+    AssertReturn(pHdr->cbPayload >= RT_UOFFSETOF_DYN(VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T, szzStrings[2]), VERR_INVALID_PARAMETER);
+    AssertReturn(pHdr->cbPayload < sizeof(Payload), VERR_BUFFER_OVERFLOW);
 
-    return rc;
+    int rc = RTLocalIpcSessionRead(pSession->hSession, &Payload, pHdr->cbPayload, NULL /*pcbRead - exact, blocking*/);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* String lengths: */
+    AssertReturn(   Payload.s.cchMsg + 1 + Payload.s.cchTitle + 1 + RT_UOFFSETOF(VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T, szzStrings)
+                 <= pHdr->cbPayload, VERR_INVALID_PARAMETER);
+
+    /* Message text: */
+    const char *pszMsg   = Payload.s.szzStrings;
+    rc = RTStrValidateEncodingEx(pszMsg, Payload.s.cchMsg + 1,
+                                 RTSTR_VALIDATE_ENCODING_EXACT_LENGTH | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    AssertRCReturn(rc, rc);
+
+    /* Title text: */
+    const char *pszTitle = &Payload.s.szzStrings[Payload.s.cchMsg + 1];
+    rc = RTStrValidateEncodingEx(pszMsg, Payload.s.cchTitle + 1,
+                                 RTSTR_VALIDATE_ENCODING_EXACT_LENGTH | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    AssertRCReturn(rc, rc);
+
+    /* Type/dwInfoFlags: */
+    AssertReturn(   Payload.s.uType == NIIF_NONE
+                 || Payload.s.uType == NIIF_INFO
+                 || Payload.s.uType == NIIF_WARNING
+                 || Payload.s.uType == NIIF_ERROR,
+                 VERR_WRONG_TYPE);
+
+    /* Timeout: */
+    if (!Payload.s.cMsTimeout)
+        Payload.s.cMsTimeout = RT_MS_5SEC;
+    AssertStmt(Payload.s.cMsTimeout >= RT_MS_1SEC, Payload.s.cMsTimeout = RT_MS_1SEC);
+    AssertStmt(Payload.s.cMsTimeout <= RT_MS_1MIN, Payload.s.cMsTimeout = RT_MS_1MIN);
+
+    /*
+     * Showing the balloon tooltip is not critical.
+     */
+    int rc2 = hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                                pszMsg, pszTitle, Payload.s.cMsTimeout, Payload.s.uType);
+    LogFlowFunc(("Showing \"%s\" - \"%s\" (type %RU32, %RU32ms), rc=%Rrc\n",
+                 pszTitle, pszMsg, Payload.s.cMsTimeout, Payload.s.uType, rc2));
+    RT_NOREF_PV(rc2);
+
+    return VINF_SUCCESS;
 }
 
+/**
+ * Handles VBOXTRAYIPCMSGTYPE_USER_LAST_INPUT.
+ */
 static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEADER pHdr)
 {
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
-    /* No actual message from client. */
+    RT_NOREF(pHdr);
 
     int rc = VINF_SUCCESS;
-
-    bool fLastInputAvailable = false;
-    VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
+    VBOXTRAYIPCREPLY_USER_LAST_INPUT_T Reply = { UINT32_MAX };
     if (g_pfnGetLastInputInfo)
     {
-        /* Note: This only works up to 49.7 days (= 2^32, 32-bit counter)
-           since Windows was started. */
-        LASTINPUTINFO lastInput;
-        lastInput.cbSize = sizeof(LASTINPUTINFO);
-        BOOL fRc = g_pfnGetLastInputInfo(&lastInput);
-        if (fRc)
-        {
-            ipcRes.uLastInput = (GetTickCount() - lastInput.dwTime) / 1000;
-            fLastInputAvailable = true;
-        }
+        /* Note: This only works up to 49.7 days (= 2^32, 32-bit counter) since Windows was started. */
+        LASTINPUTINFO LastInput;
+        LastInput.cbSize = sizeof(LastInput);
+        if (g_pfnGetLastInputInfo(&LastInput))
+            Reply.cSecSinceLastInput = (GetTickCount() - LastInput.dwTime) / 1000;
         else
             rc = RTErrConvertFromWin32(GetLastError());
     }
 
-    if (!fLastInputAvailable)
-    {
-        /* No last input available. */
-        ipcRes.uLastInput = UINT32_MAX;
-    }
-
-    int rc2 = RTLocalIpcSessionWrite(pSession->hSession, &ipcRes, sizeof(ipcRes));
+    int rc2 = RTLocalIpcSessionWrite(pSession->hSession, &Reply, sizeof(Reply));
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -354,88 +381,81 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThreadSelf, void *pvSess
     {
         /* The next call will be cancelled via VBoxIPCStop if needed. */
         rc = RTLocalIpcSessionWaitForData(hSession, RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
         {
-            if (rc == VERR_CANCELLED)
+            /*
+             * Read the message header.
+             */
+            VBOXTRAYIPCHEADER Hdr = {0};
+            rc = RTLocalIpcSessionRead(hSession, &Hdr, sizeof(Hdr), NULL /*pcbRead - exact, blocking*/);
+            if (RT_FAILURE(rc))
+                break;
+
+            /*
+             * Validate the message header.
+             *
+             * Disconnecting the client if invalid or something we don't grok.
+             * Currently all clients are one-shots, so there is no need to get
+             * in complicated recovery code if we don't understand one another.
+             */
+            if (   Hdr.uMagic   != VBOXTRAY_IPC_HDR_MAGIC
+                || Hdr.uVersion != VBOXTRAY_IPC_HDR_VERSION)
             {
-                LogFlowFunc(("Session %p: Waiting for data cancelled\n", pThis));
-                rc = VINF_SUCCESS;
+                LogRelFunc(("Session %p: Invalid header magic/version: %#x, %#x, %#x, %#x\n",
+                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
+                rc = VERR_INVALID_MAGIC;
                 break;
             }
-            else
-                LogFlowFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
-                         pThis, rc));
+            if (Hdr.cbPayload > VBOXTRAY_IPC_MAX_PAYLOAD)
+            {
+                LogRelFunc(("Session %p: Payload to big: %#x, %#x, %#x, %#x - max %#x\n",
+                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload, VBOXTRAY_IPC_MAX_PAYLOAD));
+                rc = VERR_TOO_MUCH_DATA;
+                break;
+            }
+            if (   Hdr.enmMsgType > VBOXTRAYIPCMSGTYPE_INVALID
+                && Hdr.enmMsgType < VBOXTRAYIPCMSGTYPE_END)
+            {
+                LogRelFunc(("Session %p: Unknown message: %#x, %#x, %#x, %#x\n",
+                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
+                rc = VERR_INVALID_FUNCTION;
+                break;
+            }
+
+            /*
+             * Handle the message.
+             */
+            switch (Hdr.enmMsgType)
+            {
+                case VBOXTRAYIPCMSGTYPE_RESTART:
+                    rc = vboxIPCHandleVBoxTrayRestart(pThis, &Hdr);
+                    break;
+
+                case VBOXTRAYIPCMSGTYPE_SHOW_BALLOON_MSG:
+                    rc = vboxIPCHandleShowBalloonMsg(pThis, &Hdr);
+                    break;
+
+                case VBOXTRAYIPCMSGTYPE_USER_LAST_INPUT:
+                    rc = vboxIPCHandleUserLastInput(pThis, &Hdr);
+                    break;
+
+                default:
+                    AssertFailedBreakStmt(rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+            }
+            if (RT_FAILURE(rc))
+                LogFlowFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n", pThis, Hdr.enmMsgType, rc));
+        }
+        else if (rc == VERR_CANCELLED)
+        {
+            LogFlowFunc(("Session %p: Waiting for data cancelled\n", pThis));
+            rc = VINF_SUCCESS;
+            break;
         }
         else
-        {
-            VBOXTRAYIPCHEADER ipcHdr;
-            rc = RTLocalIpcSessionRead(hSession, &ipcHdr, sizeof(ipcHdr),
-                                       NULL /* Exact read, blocking */);
-            bool fRejected = false; /* Reject current command? */
-            if (RT_SUCCESS(rc))
-                fRejected =    ipcHdr.uMagic != VBOXTRAY_IPC_HDR_MAGIC
-                            || ipcHdr.uHdrVersion != 0; /* We only know version 0 commands for now. */
-
-            if (   !fRejected
-                && RT_SUCCESS(rc))
-            {
-                switch (ipcHdr.uMsgType)
-                {
-                    case VBOXTRAYIPCMSGTYPE_RESTART:
-                        rc = vboxIPCHandleVBoxTrayRestart(pThis, &ipcHdr);
-                        break;
-
-                    case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
-                        rc = vboxIPCHandleShowBalloonMsg(pThis, &ipcHdr);
-                        break;
-
-                    case VBOXTRAYIPCMSGTYPE_USERLASTINPUT:
-                        rc = vboxIPCHandleUserLastInput(pThis, &ipcHdr);
-                        break;
-
-                    default:
-                    {
-                        /* Unknown command, reject. */
-                        fRejected = true;
-                        break;
-                    }
-                }
-
-                if (RT_FAILURE(rc))
-                    LogFlowFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
-                             pThis, ipcHdr.uMsgType, rc));
-            }
-
-            if (fRejected)
-            {
-                static int s_cRejectedCmds = 0;
-                if (++s_cRejectedCmds <= 3)
-                {
-                    LogRelFunc(("Session %p: Received invalid/unknown command %RU32 (%RU32 bytes), rejecting (%RU32/3)\n",
-                                pThis, ipcHdr.uMsgType, ipcHdr.uMsgLen, s_cRejectedCmds + 1));
-                    if (ipcHdr.uMsgLen)
-                    {
-                        /* Get and discard payload data. */
-                        size_t cbRead;
-                        uint8_t devNull[_1K];
-                        while (ipcHdr.uMsgLen)
-                        {
-                            rc = RTLocalIpcSessionRead(hSession, &devNull, sizeof(devNull), &cbRead);
-                            if (RT_FAILURE(rc))
-                                break;
-                            AssertRelease(cbRead <= ipcHdr.uMsgLen);
-                            ipcHdr.uMsgLen -= (uint32_t)cbRead;
-                        }
-                    }
-                }
-                else
-                    rc = VERR_INVALID_PARAMETER; /* Enough fun, bail out. */
-            }
-        }
+            LogFlowFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n", pThis, rc));
     }
 
-    LogFlowFunc(("Session %p: Handler ended with rc=%Rrc\n",
-             pThis, rc));
+    LogFlowFunc(("Session %p: Handler ended with rc=%Rrc\n", pThis, rc));
 
     /*
      * Close the session.
@@ -460,8 +480,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThreadSelf, void *pvSess
             rc = rc2;
     }
 
-    LogFlowFunc(("Session %p: Terminated with rc=%Rrc, freeing ...\n",
-             pThis, rc));
+    LogFlowFunc(("Session %p: Terminated with rc=%Rrc, freeing ...\n", pThis, rc));
 
     RTMemFree(pThis);
     pThis = NULL;

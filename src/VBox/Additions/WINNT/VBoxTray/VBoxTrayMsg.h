@@ -33,79 +33,93 @@
 
 /** The IPC pipe's prefix (native).
  * Will be followed by the username VBoxTray runs under. */
-#define VBOXTRAY_IPC_PIPE_PREFIX      "\\\\.\\pipe\\VBoxTrayIPC-"
+#define VBOXTRAY_IPC_PIPE_PREFIX        "\\\\.\\pipe\\VBoxTrayIPC-"
 /** The IPC header's magic. */
-#define VBOXTRAY_IPC_HDR_MAGIC        0x19840804
+#define VBOXTRAY_IPC_HDR_MAGIC          0x19840804
+/** IPC header version number. */
+#define VBOXTRAY_IPC_HDR_VERSION        1
+/** The max payload size accepted by VBoxTray.  Clients trying to send more
+ *  will be disconnected. */
+#define VBOXTRAY_IPC_MAX_PAYLOAD        _16K
 
-enum VBOXTRAYIPCMSGTYPE
+
+/**
+ * VBoxTray IPC message types.
+ */
+typedef enum VBOXTRAYIPCMSGTYPE
 {
-    /** Restarts VBoxTray. */
-    VBOXTRAYIPCMSGTYPE_RESTART        = 10,
-    /** Shows a balloon message in the tray area. */
-    VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100,
-    /** Retrieves the current user's last input
-     *  time. This will be the user VBoxTray is running
-     *  under. No actual message for this command
-     *  required. */
-    VBOXTRAYIPCMSGTYPE_USERLASTINPUT  = 120
-};
+    /** Customary invalid zero value. */
+    VBOXTRAYIPCMSGTYPE_INVALID = 0,
+    /** Restarts VBoxTray - not implemented.
+     * Payload: None.
+     * Reply: None. */
+    VBOXTRAYIPCMSGTYPE_RESTART,
+    /** Shows a balloon message in the tray area.
+     * Payload: VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T
+     * Reply: None */
+    VBOXTRAYIPCMSGTYPE_SHOW_BALLOON_MSG,
+    /** Time since the last user input for the user VBoxTray is running as.
+     * Payload: None.
+     * Reply: VBOXTRAYIPCREPLY_USER_LAST_INPUT_T. */
+    VBOXTRAYIPCMSGTYPE_USER_LAST_INPUT,
+    /** End of valid types. */
+    VBOXTRAYIPCMSGTYPE_END,
+    /* Make sure the type is 32-bit wide. */
+    VBOXTRAYIPCMSGTYPE_32BIT_HACK = 0x7fffffff
+} VBOXTRAYIPCMSGTYPE;
 
-/* VBoxTray's IPC header. */
+/**
+ * VBoxTray's IPC header.
+ *
+ * All messages have one of these.  The payload following it is optional and
+ * specific to each individual message type.
+ */
 typedef struct VBOXTRAYIPCHEADER
 {
-    /** The header's magic. */
-    uint32_t uMagic;
+    /** The header's magic (VBOXTRAY_IPC_HDR_MAGIC). */
+    uint32_t            uMagic;
     /** Header version, must be 0 by now. */
-    uint32_t uHdrVersion;
-    /** Message type. Specifies a message
-     *  of VBOXTRAYIPCMSGTYPE. */
-    uint32_t uMsgType;
-    /** Message length (in bytes). This must
-     *  include the overall message length, including
-     *  (eventual) dynamically allocated areas which
-     *  are passed into the message structure.
-     */
-    uint32_t uMsgLen;
-
-} VBOXTRAYIPCHEADER, *PVBOXTRAYIPCHEADER;
+    uint32_t            uVersion;
+    /** Message type, a VBOXTRAYIPCMSGTYPE value. */
+    VBOXTRAYIPCMSGTYPE  enmMsgType;
+    /** Payload length in bytes.
+     * When present, the payload follows this header. */
+    uint32_t            cbPayload;
+} VBOXTRAYIPCHEADER;
+/** Pointer to a VBoxTray IPC header. */
+typedef VBOXTRAYIPCHEADER *PVBOXTRAYIPCHEADER;
 
 /**
- * Tells VBoxTray to show a balloon message in Windows'
- * tray area. This may or may not work depending on the
- * system's configuration / set user preference.
+ * Tells VBoxTray to show a balloon message in Windows' tray area.
+ *
+ * This may or may not work depending on the system's configuration / set user
+ * preference.
  */
-typedef struct VBOXTRAYIPCMSG_SHOWBALLOONMSG
+typedef struct VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T
 {
-    /** Length of message body (in bytes). */
-    uint32_t cbMsgContent;
-    /** Length of message title (in bytes). */
-    uint32_t cbMsgTitle;
+    /** Length of the message string (no terminator). */
+    uint32_t    cchMsg;
+    /** Length of the title string (no terminator). */
+    uint32_t    cchTitle;
     /** Message type. */
-    uint32_t uType;
+    uint32_t    uType;
     /** Time to show the message (in ms). */
-    uint32_t uShowMS;
-    /** Dynamically allocated stuff.
-     *
-     *  Note: These must come at the end of the
-     *  structure to not overwrite any important
-     *  stuff above.
-     */
-    /** Message body. Can be up to 256 chars
-     *  long. */
-    char     szMsgContent[1];
-        /** Message title. Can be up to 73 chars
-     *  long. */
-    char     szMsgTitle[1];
-} VBOXTRAYIPCMSG_SHOWBALLOONMSG, *PVBOXTRAYIPCMSG_SHOWBALLOONMSG;
+    uint32_t    cMsTimeout;
+    /** Variable length buffer containing two szero terminated strings, first is  */
+    char        szzStrings[RT_FLEXIBLE_ARRAY];
+} VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T;
+typedef VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T *PVBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T;
 
 /**
- * Response telling the last input of the current user.
+ * Reply to VBOXTRAYIPCMSGTYPE_USER_LAST_INPUT
  */
-typedef struct VBOXTRAYIPCRES_USERLASTINPUT
+typedef struct VBOXTRAYIPCREPLY_USER_LAST_INPUT_T
 {
-    /** Last occurred user input event (in seconds). */
-    uint32_t uLastInput;
-} VBOXTRAYIPCRES_USERLASTINPUT, *PVBOXTRAYIPCRES_USERLASTINPUT;
+    /** How many seconds since the last user input event.
+     * Set to UINT32_MAX if we don't know. */
+    uint32_t    cSecSinceLastInput;
+} VBOXTRAYIPCREPLY_USER_LAST_INPUT_T;
+typedef VBOXTRAYIPCREPLY_USER_LAST_INPUT_T *PVBOXTRAYIPCREPLY_USER_LAST_INPUT_T;
 
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayMsg_h */
 

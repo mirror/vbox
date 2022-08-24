@@ -30,14 +30,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#ifndef UNICODE
+# define UNICODE
+#endif
 #include <iprt/win/windows.h>
-#include <stdlib.h>
-#include <tchar.h>
-#include <strsafe.h>
-#pragma warning(push)
-#pragma warning(disable: 4995) /* warning C4995: 'lstrcpyA': name was marked as #pragma deprecated */
 #include "exdll.h"
-#pragma warning(pop)
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>
@@ -46,9 +43,7 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
-#ifdef UNICODE
-# include <iprt/utf16.h>
-#endif
+#include <iprt/utf16.h>
 
 /* Required structures/defines of VBoxTray. */
 #include "../../VBoxTray/VBoxTrayMsg.h"
@@ -57,7 +52,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define VBOXINSTALLHELPER_EXPORT extern "C" void __declspec(dllexport)
+#define VBOXINSTALLHELPER_EXPORT extern "C" DECLEXPORT(void)
 
 
 /*********************************************************************************************************************************
@@ -69,117 +64,152 @@ typedef DWORD (WINAPI *PFNSFCFILEEXCEPTION)(DWORD param1, PWCHAR param2, DWORD p
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-HINSTANCE               g_hInstance;
-HWND                    g_hwndParent;
+static HINSTANCE    g_hInstance;
+static HWND         g_hwndParent;
+
 
 /**
- * @todo Clean up this DLL, use more IPRT in here!
+ * Frees a popped stack entry after use.
  */
+DECLINLINE(void) vboxFreeStackEntry(stack_t *pEntry)
+{
+    if (pEntry)
+        GlobalFree((HGLOBAL)pEntry);
+}
+
 
 /**
- * Pops (gets) a value from the internal NSIS stack.
- * Since the supplied popstring() method easily can cause buffer
- * overflows, use vboxPopString() instead!
+ * Allocates a new stack entry for containing a string of the given length
+ * (excluding terminator)
+ */
+DECLINLINE(stack_t *) vboxAllocStackEntry(size_t cwcString)
+{
+    return (stack_t *)GlobalAlloc(GPTR, RT_UOFFSETOF_DYN(stack_t, text[cwcString + 1]));
+}
+
+
+/**
+ * Pops an entry off the stack, return NULL if empty.
  *
- * @return  VBox status code.
- * @param   pszDest     Pointer to pre-allocated string to store result.
- * @param   cchDest     Size (in characters) of pre-allocated string.
+ * Call vboxFreeStackEntry when done.
+ *
  */
-static int vboxPopString(TCHAR *pszDest, size_t cchDest)
+DECLINLINE(stack_t *) vboxPopStack(stack_t **ppTopOfStack)
 {
-    int rc = VINF_SUCCESS;
-
-    if (!g_stacktop || !*g_stacktop)
-    {
-        rc = VERR_NO_DATA;
-    }
-    else
-    {
-        stack_t *pStack = (*g_stacktop);
-        AssertPtr(pStack);
-
-        HRESULT hr = StringCchCopy(pszDest, cchDest, pStack->text);
-        if (SUCCEEDED(hr))
-        {
-            *g_stacktop = pStack->next;
-            GlobalFree((HGLOBAL)pStack);
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-    }
-    return rc;
+    stack_t *pEntry = ppTopOfStack ? *ppTopOfStack : NULL;
+    if (pEntry)
+        *ppTopOfStack = pEntry->next;
+    return pEntry;
 }
 
-static int vboxPopULong(PULONG pulValue)
+
+/**
+ * Pushes an entry onto the stack.
+ */
+DECLINLINE(void) vboxPushStack(stack_t **ppTopOfStack, stack_t *pEntry)
 {
-    int rc = VINF_SUCCESS;
-
-    if (!g_stacktop || !*g_stacktop)
-    {
-        rc = VERR_NO_DATA;
-    }
-    else
-    {
-        stack_t *pStack = (*g_stacktop);
-        AssertPtr(pStack);
-
-        *pulValue = _tcstoul(pStack->text, NULL, 10 /* Base */);
-
-        *g_stacktop = pStack->next;
-        GlobalFree((HGLOBAL)pStack);
-    }
-
-    return rc;
+    pEntry->next = *ppTopOfStack;
+    *ppTopOfStack = pEntry;
 }
 
-static void vboxPushHResultAsString(HRESULT hr)
+
+static void vboxPushUtf16N(stack_t **ppTopOfStack, wchar_t const *pwszString, size_t cwcString)
 {
-    TCHAR szErr[NSIS_MAX_STRLEN];
-    if (FAILED(hr))
-    {
-        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, hr, 0, szErr, MAX_PATH, NULL))
-            szErr[MAX_PATH] = '\0';
-        else
-            StringCchPrintf(szErr, sizeof(szErr),
-                            _T("FormatMessage failed! Error = %ld"), GetLastError());
-    }
-    else
-        StringCchPrintf(szErr, sizeof(szErr), _T("0"));
-    pushstring(szErr);
+    stack_t *pEntry = vboxAllocStackEntry(cwcString);
+
+    memcpy(pEntry->text, pwszString, cwcString * sizeof(pEntry->text[0]));
+    pEntry->text[cwcString] = '\0';
+
+    vboxPushStack(ppTopOfStack, pEntry);
 }
 
-static void vboxPushRcAsString(int rc)
+
+static void vboxPushUtf16(stack_t **ppTopOfStack, wchar_t const *pwszString)
 {
-    TCHAR szErr[NSIS_MAX_STRLEN];
-    if (RT_FAILURE(rc))
-    {
-        static const char s_szPrefix[] = "Error: ";
-        AssertCompile(NSIS_MAX_STRLEN > sizeof(s_szPrefix) + 32);
-#ifdef UNICODE
-        char szTmp[80];
-        memcpy(szTmp, s_szPrefix, sizeof(s_szPrefix));
-        RTErrQueryDefine(rc, &szTmp[sizeof(s_szPrefix) - 1], sizeof(szTmp) - sizeof(s_szPrefix) - 1, false);
+    return vboxPushUtf16N(ppTopOfStack, pwszString, RTUtf16Len(pwszString));
+}
 
-        RT_ZERO(szErr);
-        PRTUTF16 pwszDst = szErr;
-        RTStrToUtf16Ex(szTmp, RTSTR_MAX, &pwszDst, RT_ELEMENTS(szErr), NULL);
-#else
-        memcpy(szErr, s_szPrefix, sizeof(s_szPrefix));
-        RTErrQueryDefine(rc, &szErr[sizeof(s_szPrefix) - 1], sizeof(szErr) - sizeof(s_szPrefix) - 1, false);
-#endif
-    }
-    else
-    {
-        szErr[0] = '0';
-        szErr[1] = '\0';
-    }
 
-    pushstring(szErr);
+#define VBOX_PUSH_STRING_LITERAL(a_ppTopOfStack, a_szLiteral) \
+    vboxPushUtf16N(a_ppTopOfStack, RT_CONCAT(L, a_szLiteral), sizeof(RT_CONCAT(L, a_szLiteral)) / sizeof(wchar_t) - 1)
+
+
+static void vboxPushUtf8(stack_t **ppTopOfStack, char const *pszString)
+{
+    size_t cwcUtf16 = RTStrCalcUtf16Len(pszString);
+    stack_t *pEntry = vboxAllocStackEntry(cwcUtf16);
+
+    PRTUTF16 pwszUtf16 = pEntry->text;
+    int rc = RTStrToUtf16Ex(pszString, RTSTR_MAX, &pwszUtf16, cwcUtf16 + 1, NULL);
+    AssertRC(rc);
+
+    vboxPushStack(ppTopOfStack, pEntry);
 }
 
 /**
- * Connects to VBoxTray IPC under the behalf of the user running
- * in the current thread context.
+ * Pushes a string containing an error message and a VBox status code.
+ */
+static void vboxPushVBoxError(stack_t **ppTopOfStack, char const *pszString, int vrc)
+{
+    RTUTF16 wszTmp[128];
+    RTUtf16Printf(wszTmp, RT_ELEMENTS(wszTmp), "Error: %s! %Rrc", pszString, vrc);
+    vboxPushUtf16(ppTopOfStack, wszTmp);
+}
+
+
+static void vboxPushLastError(stack_t **ppTopOfStack, char const *pszString)
+{
+    DWORD const dwErr = GetLastError();
+    RTUTF16 wszTmp[128];
+    RTUtf16Printf(wszTmp, RT_ELEMENTS(wszTmp), "Error: %s! lasterr=%u (%#x)", pszString, dwErr, dwErr);
+    vboxPushUtf16(ppTopOfStack, wszTmp);
+}
+
+
+static void vboxPushLastErrorF(stack_t **ppTopOfStack, const char *pszFormat, ...)
+{
+    DWORD const dwErr = GetLastError();
+    RTUTF16 wszTmp[128];
+    va_list va;
+    va_start(va, pszFormat);
+    RTUtf16Printf(wszTmp, RT_ELEMENTS(wszTmp), "Error: %N! lasterr=%u (%#x)", pszFormat, &va, dwErr, dwErr);
+    va_end(va);
+    vboxPushUtf16(ppTopOfStack, wszTmp);
+}
+
+
+/**
+ * Convers a parameter to uint32_t.
+ *
+ * @returns IPRT status code.
+ * @param   pwsz                Will be trimmed.
+ * @param   puValue             Where to return the value.
+ */
+static int vboxUtf16ToUInt32(PRTUTF16 pwsz, uint32_t *puValue)
+{
+    *puValue = 0;
+
+    /* Trim the input: */
+    RTUTF16 wc;
+    while ((wc = *pwsz) == ' ' || wc == '\t')
+        pwsz++;
+    size_t cwc = RTUtf16Len(pwsz);
+    while (cwc > 0 && ((wc = pwsz[cwc - 1]) == ' ' || wc == '\t'))
+        pwsz[--cwc] = '\0';
+
+    /* Convert the remains into an UTF-8 string. */
+    char szValue[128];
+    char *pszValue = &szValue[0];
+    int rc = RTUtf16ToUtf8Ex(pwsz, cwc, &pszValue, sizeof(szValue), NULL);
+    if (RT_SUCCESS(rc))
+        rc = RTStrToUInt32Full(pszValue, 0, puValue);
+    return rc;
+}
+
+
+/**
+ * Connects to VBoxTray IPC under the behalf of the user running in the current
+ * thread context.
  *
  * @return  IPRT status code.
  * @param   phSession               Where to store the IPC session.
@@ -200,33 +230,27 @@ static int vboxConnectToVBoxTray(RTLOCALIPCSESSION *phSession)
 
 /**
  * Retrieves a file's architecture (x86 or amd64).
+ *
  * Outputs "x86", "amd64" or an error message (if not found/invalid) on stack.
  *
  * @param   hwndParent          Window handle of parent.
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
- * @param   extra               Extra parameters. Currently unused.
+ * @param   extra               Extra parameters.
  */
-VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, WCHAR *variables, stack_t **stacktop,
                                              extra_parameters *extra)
 {
-    RT_NOREF(hwndParent, extra);
+    RT_NOREF(hwndParent, string_size, variables, extra);
 
-    EXDLL_INIT();
-
-    TCHAR szFile[MAX_PATH + 1];
-    int rc = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
-    if (RT_SUCCESS(rc))
+    stack_t *pEntry = vboxPopStack(stacktop);
+    if (pEntry)
     {
-#ifdef UNICODE
         char *pszFileUtf8;
-        rc = RTUtf16ToUtf8(szFile, &pszFileUtf8);
+        int rc = RTUtf16ToUtf8(pEntry->text, &pszFileUtf8);
         if (RT_SUCCESS(rc))
         {
-#else
-            char *pszFileUtf8 = szFile;
-#endif
             RTLDRMOD hLdrMod;
             rc = RTLdrOpen(pszFileUtf8, RTLDR_O_FOR_VALIDATION, RTLDRARCH_WHATEVER, &hLdrMod);
             if (RT_SUCCESS(rc))
@@ -237,97 +261,95 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, T
                     switch (enmLdrArch)
                     {
                         case RTLDRARCH_X86_32:
-                            pushstring(_T("x86"));
+                            VBOX_PUSH_STRING_LITERAL(stacktop, "x86");
                             break;
 
                         case RTLDRARCH_AMD64:
-                            pushstring(_T("amd64"));
+                            VBOX_PUSH_STRING_LITERAL(stacktop, "amd64");
                             break;
 
                         default:
-                            pushstring(_T("Error: Unknown / invalid architecture"));
+                            VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Unknown / invalid architecture");
                             break;
                     }
                 }
                 else
-                    pushstring(_T("Error: Unknown / invalid PE signature"));
+                    VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Unknown / invalid PE signature");
 
                 RTLdrClose(hLdrMod);
             }
             else
-                pushstring(_T("Error: Could not open file"));
-#ifdef UNICODE
+                vboxPushVBoxError(stacktop, "RTLdrOpen failed", rc);
             RTStrFree(pszFileUtf8);
         }
-#endif
+        else
+            vboxPushVBoxError(stacktop, "RTUtf16ToUtf8 failed", rc);
     }
     else
-        pushstring(_T("Error: Could not retrieve file name"));
+        VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Could not retrieve file name");
+    vboxFreeStackEntry(pEntry);
 }
 
 /**
  * Retrieves a file's vendor.
+ *
  * Outputs the vendor's name or an error message (if not found/invalid) on stack.
  *
  * @param   hwndParent          Window handle of parent.
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
- * @param   extra               Extra parameters. Currently unused.
+ * @param   extra               Extra parameters.
  */
-VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, WCHAR *variables, stack_t **stacktop,
                                        extra_parameters *extra)
 {
-    RT_NOREF(hwndParent, extra);
+    RT_NOREF(hwndParent, string_size, variables, extra);
 
-    EXDLL_INIT();
-
-    TCHAR szFile[MAX_PATH + 1];
-    int rc = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
-    if (RT_SUCCESS(rc))
+    stack_t *pEntry = vboxPopStack(stacktop);
+    if (pEntry)
     {
-        DWORD dwInfoSize = GetFileVersionInfoSize(szFile, NULL /* lpdwHandle */);
+        DWORD dwInfoSize = GetFileVersionInfoSizeW(pEntry->text, NULL /* lpdwHandle */);
         if (dwInfoSize)
         {
-            void *pFileInfo = GlobalAlloc(GMEM_FIXED, dwInfoSize);
-            if (pFileInfo)
+            void *pvFileInfo = GlobalAlloc(GMEM_FIXED, dwInfoSize);
+            if (pvFileInfo)
             {
-                if (GetFileVersionInfo(szFile, 0, dwInfoSize, pFileInfo))
+                if (GetFileVersionInfoW(pEntry->text, 0, dwInfoSize, pvFileInfo))
                 {
                     LPVOID pvInfo;
-                    UINT puInfoLen;
-                    if (VerQueryValue(pFileInfo, _T("\\VarFileInfo\\Translation"),
-                                      &pvInfo, &puInfoLen))
+                    UINT   cbInfo;
+                    if (VerQueryValueW(pvFileInfo, L"\\VarFileInfo\\Translation", &pvInfo, &cbInfo))
                     {
-                        WORD wCodePage = LOWORD(*(DWORD*)pvInfo);
-                        WORD wLanguageID = HIWORD(*(DWORD*)pvInfo);
+                        WORD wCodePage   = LOWORD(*(DWORD const *)pvInfo);
+                        WORD wLanguageID = HIWORD(*(DWORD const *)pvInfo);
 
-                        TCHAR szQuery[MAX_PATH];
-                        StringCchPrintf(szQuery, sizeof(szQuery), _T("StringFileInfo\\%04X%04X\\CompanyName"),
-                                        wCodePage, wLanguageID);
+                        WCHAR wszQuery[80];
+                        RTUtf16Printf(wszQuery, RT_ELEMENTS(wszQuery), "StringFileInfo\\%04X%04X\\CompanyName",
+                                      wCodePage, wLanguageID);
 
-                        LPCTSTR pcData;
-                        if (VerQueryValue(pFileInfo, szQuery, (void**)&pcData, &puInfoLen))
-                        {
-                            pushstring(pcData);
-                        }
+                        LPCWSTR pwszData;
+                        if (VerQueryValueW(pvFileInfo, wszQuery, (void **)&pwszData, &cbInfo))
+                            vboxPushUtf16(stacktop, pwszData);
                         else
-                            rc = VERR_NOT_FOUND;
+                            vboxPushLastErrorF(stacktop, "VerQueryValueW '%ls' failed", wszQuery);
                     }
                     else
-                        rc = VERR_NOT_FOUND;
+                        vboxPushLastError(stacktop, "VerQueryValueW '\\VarFileInfo\\Translation' failed");
                 }
-                GlobalFree(pFileInfo);
+                else
+                    vboxPushLastError(stacktop, "GetFileVersionInfo failed");
+                GlobalFree(pvFileInfo);
             }
             else
-                rc = VERR_NO_MEMORY;
+                VBOX_PUSH_STRING_LITERAL(stacktop, "Error: GlobalAlloc failed");
         }
         else
-            rc = VERR_NOT_FOUND;
+            vboxPushLastError(stacktop, "GetFileVersionInfoSizeW failed");
     }
-
-    if (RT_FAILURE(rc))
-        vboxPushRcAsString(rc);
+    else
+        VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Could not retrieve file name");
+    vboxFreeStackEntry(pEntry);
 }
 
 /**
@@ -338,87 +360,106 @@ VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
- * @param   extra               Extra parameters. Currently unused.
+ * @param   extra               Extra parameters.
  */
-VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size, WCHAR *variables, stack_t **stacktop,
                                                extra_parameters *extra)
 {
-    RT_NOREF(hwndParent, extra);
+    RT_NOREF(hwndParent, string_size, variables, extra);
 
-    EXDLL_INIT();
-
-    TCHAR szMsg[256];
-    TCHAR szTitle[128];
-    int rc = vboxPopString(szMsg, sizeof(szMsg) / sizeof(TCHAR));
-    if (RT_SUCCESS(rc))
-        rc = vboxPopString(szTitle, sizeof(szTitle) / sizeof(TCHAR));
-
-    /** @todo Do we need to restore the stack on failure? */
-
-    if (RT_SUCCESS(rc))
+    /*
+     * Get parameters from the stack.
+     */
+    stack_t * const pMsgEntry     = vboxPopStack(stacktop);
+    stack_t * const pTitleEntry   = vboxPopStack(stacktop);
+    stack_t * const pTypeEntry    = vboxPopStack(stacktop);
+    stack_t * const pTimeoutEntry = vboxPopStack(stacktop);
+    if (pTimeoutEntry)
     {
-        RTR3InitDll(0);
-
-#ifdef UNICODE
-        char *pszMsgUtf8   = NULL;
-        char *pszTitleUtf8 = NULL;
-        rc = RTUtf16ToUtf8(szMsg, &pszMsgUtf8);
-        if (RT_SUCCESS(rc))
-            rc = RTUtf16ToUtf8(szTitle, &pszTitleUtf8);
-#else
-        char *pszMsgUtf8   = szMsg;
-        char *pszTitleUtf8 = szTitle;
-#endif
-        if (RT_SUCCESS(rc))
+        /*
+         * Allocate an IPC message payload structure of the right size.
+         */
+        size_t const cchMsg     = RTUtf16CalcUtf8Len(pMsgEntry->text);
+        size_t const cchTitle   = RTUtf16CalcUtf8Len(pTitleEntry->text);
+        size_t const cbPayload  = RT_UOFFSETOF_DYN(VBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T, szzStrings[cchMsg + 1 + cchTitle + 1]);
+        PVBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T pPayload = (PVBOXTRAYIPCMSG_SHOW_BALLOON_MSG_T)RTMemAllocZVar(cbPayload);
+        if (pPayload)
         {
-            /* We use UTF-8 for the IPC data. */
-            uint32_t cbMsg = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG)
-                           + (uint32_t)strlen(pszMsgUtf8)   + 1  /* Include terminating zero */
-                           + (uint32_t)strlen(pszTitleUtf8) + 1; /* Ditto. */
-            Assert(cbMsg);
-            PVBOXTRAYIPCMSG_SHOWBALLOONMSG pIpcMsg = (PVBOXTRAYIPCMSG_SHOWBALLOONMSG)RTMemAlloc(cbMsg);
-            if (pIpcMsg)
+            VBOXTRAYIPCHEADER const MsgHdr =
             {
-                /* Stuff in the strings. */
-                memcpy(pIpcMsg->szMsgContent, pszMsgUtf8,   strlen(pszMsgUtf8)   + 1);
-                memcpy(pIpcMsg->szMsgTitle,   pszTitleUtf8, strlen(pszTitleUtf8) + 1);
+                VBOXTRAY_IPC_HDR_MAGIC,
+                VBOXTRAY_IPC_HDR_VERSION,
+                VBOXTRAYIPCMSGTYPE_SHOW_BALLOON_MSG,
+                cbPayload
+            };
 
-                /* Pop off the values in reverse order from the stack. */
-                rc = vboxPopULong((ULONG *)&pIpcMsg->uType);
-                if (RT_SUCCESS(rc))
-                    rc = vboxPopULong((ULONG *)&pIpcMsg->uShowMS);
-
+            /*
+             * Convert the parametes and put them into the payload structure.
+             */
+            pPayload->cchMsg   = cchMsg;
+            pPayload->cchTitle = cchTitle;
+            char *psz = &pPayload->szzStrings[0];
+            int rc = RTUtf16ToUtf8Ex(pMsgEntry->text, RTSTR_MAX, &psz, cchMsg + 1, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                psz = &pPayload->szzStrings[cchMsg + 1];
+                rc = RTUtf16ToUtf8Ex(pTitleEntry->text, RTSTR_MAX, &psz, cchTitle + 1, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    RTLOCALIPCSESSION hSession = 0;
-                    rc = vboxConnectToVBoxTray(&hSession);
+                    rc = vboxUtf16ToUInt32(pTypeEntry->text, &pPayload->uType);
                     if (RT_SUCCESS(rc))
                     {
-                        VBOXTRAYIPCHEADER ipcHdr = { VBOXTRAY_IPC_HDR_MAGIC, 0 /* Header version */,
-                                                     VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG, cbMsg };
-
-                        rc = RTLocalIpcSessionWrite(hSession, &ipcHdr, sizeof(ipcHdr));
+                        rc = vboxUtf16ToUInt32(pTypeEntry->text, &pPayload->cMsTimeout);
                         if (RT_SUCCESS(rc))
-                            rc = RTLocalIpcSessionWrite(hSession, pIpcMsg, cbMsg);
+                        {
+                            /*
+                             * Connect to VBoxTray and send the message.
+                             */
+                            RTLOCALIPCSESSION hSession = 0;
+                            rc = vboxConnectToVBoxTray(&hSession);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = RTLocalIpcSessionWrite(hSession, &MsgHdr, sizeof(MsgHdr));
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = RTLocalIpcSessionWrite(hSession, pPayload, cbPayload);
+                                    if (RT_FAILURE(rc))
+                                        vboxPushVBoxError(stacktop, "Failed to write message payload", rc);
+                                }
+                                else
+                                    vboxPushVBoxError(stacktop, "Failed to write message header", rc);
 
-                        int rc2 = RTLocalIpcSessionClose(hSession);
-                        if (RT_SUCCESS(rc))
-                            rc = rc2;
+                                int rc2 = RTLocalIpcSessionClose(hSession);
+                                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                                {
+                                    vboxPushVBoxError(stacktop, "RTLocalIpcSessionClose failed", rc);
+                                    rc = rc2;
+                                }
+                            }
+                            else
+                                vboxPushVBoxError(stacktop, "vboxConnectToVBoxTray failed", rc);
+                        }
+                        else
+                            vboxPushVBoxError(stacktop, "MyUtf16ToUInt32 failed on the timeout value", rc);
                     }
+                    else
+                        vboxPushVBoxError(stacktop, "MyUtf16ToUInt32 failed on the type value", rc);
                 }
-
-                RTMemFree(pIpcMsg);
+                else
+                    vboxPushVBoxError(stacktop, "RTUtf16ToUtf8Ex failed on the title text", rc);
             }
             else
-                rc = VERR_NO_MEMORY;
-#ifdef UNICODE
-            RTStrFree(pszMsgUtf8);
-            RTStrFree(pszTitleUtf8);
-#endif
+                vboxPushVBoxError(stacktop, "RTUtf16ToUtf8Ex failed on the message text", rc);
         }
+        else
+            VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Out of memory!");
     }
-
-    vboxPushRcAsString(rc);
+    else
+        VBOX_PUSH_STRING_LITERAL(stacktop, "Error: Too few parameters on the stack!");
+    vboxFreeStackEntry(pTimeoutEntry);
+    vboxFreeStackEntry(pTypeEntry);
+    vboxFreeStackEntry(pTitleEntry);
+    vboxFreeStackEntry(pMsgEntry);
 }
 
 BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID pReserved)
