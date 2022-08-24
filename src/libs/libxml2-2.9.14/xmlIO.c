@@ -190,7 +190,7 @@ static const char *IOerr[] = {
     "unknown address family",	/* EAFNOSUPPORT */
 };
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
 /**
  * __xmlIOWin32UTF8ToWChar:
  * @u8String:  uft-8 string
@@ -595,7 +595,7 @@ xmlPopOutputCallbacks(void)
  *									*
  ************************************************************************/
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
 
 /**
  *  xmlWrapOpenUtf8:
@@ -696,7 +696,7 @@ int
 xmlCheckFilename (const char *path)
 {
 #ifdef HAVE_STAT
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     struct _stat stat_buffer;
 #else
     struct stat stat_buffer;
@@ -706,7 +706,7 @@ xmlCheckFilename (const char *path)
 	return(0);
 
 #ifdef HAVE_STAT
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     /*
      * On Windows stat and wstat do not work with long pathname,
      * which start with '\\?\'
@@ -863,7 +863,7 @@ xmlFileOpen_real (const char *filename) {
         return(NULL);
 #endif
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     fd = xmlWrapOpenUtf8(path, 0);
 #else
     fd = fopen(path, "r");
@@ -936,7 +936,7 @@ xmlFileOpenW (const char *filename) {
     if (path == NULL)
 	return(NULL);
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     fd = xmlWrapOpenUtf8(path, 1);
 #elif(__MVS__)
     fd = fopen(path, "w");
@@ -1128,7 +1128,7 @@ xmlGzfileOpen_real (const char *filename) {
     if (!xmlCheckFilename(path))
         return(NULL);
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     fd = xmlWrapGzOpenUtf8(path, "rb");
 #else
     fd = gzopen(path, "rb");
@@ -1205,7 +1205,7 @@ xmlGzfileOpenW (const char *filename, int compression) {
     if (path == NULL)
 	return(NULL);
 
-#if defined(_WIN32) || defined (__DJGPP__) && !defined (__CYGWIN__)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     fd = xmlWrapGzOpenUtf8(path, mode);
 #else
     fd = gzopen(path, mode);

@@ -964,7 +964,11 @@ int
 xmlInitMemory(void)
 {
 #ifdef HAVE_STDLIB_H
+#ifdef VBOX
+     const char *breakpoint;
+#else
      char *breakpoint;
+#endif
 #endif
 #ifdef DEBUG_MEMORY
      xmlGenericError(xmlGenericErrorContext,
