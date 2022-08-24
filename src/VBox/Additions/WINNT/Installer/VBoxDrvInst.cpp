@@ -1193,6 +1193,7 @@ static bool IsStringListItemMatch(wchar_t volatile *pwszItem1, size_t cwcItem1,
  * with other hives.
  *
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
+ * @param   hRootKey            The root key.
  * @param   pwszSubKey          Sub key containing the list value.
  * @param   pwszValueName       The name of the value holding the list.
  * @param   pwszItemToAdd       The value to add to the list.
