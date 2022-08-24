@@ -248,7 +248,9 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
 #  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
 #else
+#  if !defined(IPRT_NO_CRT) || !defined(Assert)                                                         /* VBox */
 #  define Assert(cond,msg)
+#  endif                                                                                                /* VBox */
 #  define Trace(x)
 #  define Tracev(x)
 #  define Tracevv(x)
