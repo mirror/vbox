@@ -62,9 +62,10 @@
 #include <VBox/log.h>
 
 #ifdef RT_OS_WINDOWS
-# include <iprt/win/windows.h> /* for CoInitializeEx */
+# include <iprt/win/windows.h> /* for CoInitializeEx and SetConsoleCtrlHandler */
+#else
+# include <signal.h>
 #endif
-#include <signal.h>
 
 #include "vkatInternal.h"
 
@@ -1271,22 +1272,39 @@ const VKATCMD g_CmdVerify =
 /**
  * Ctrl-C signal handler.
  *
- * This just sets g_fTerminate and hope it will be noticed soon.  It restores
- * the SIGINT action to default, so that a second Ctrl-C will have the normal
- * effect (just in case the code doesn't respond to g_fTerminate).
+ * This just sets g_fTerminate and hope it will be noticed soon.
+ *
+ * On non-Windows it restores the SIGINT action to default, so that a second
+ * Ctrl-C will have the normal effect (just in case the code doesn't respond to
+ * g_fTerminate).
  */
+#ifdef RT_OS_WINDOWS
+static BOOL CALLBACK audioTestConsoleCtrlHandler(DWORD dwCtrlType)
+{
+    if (dwCtrlType != CTRL_C_EVENT && dwCtrlType != CTRL_BREAK_EVENT)
+        return false;
+    RTPrintf(dwCtrlType == CTRL_C_EVENT ? "Ctrl-C!\n" : "Ctrl-Break!\n");
+
+    ASMAtomicWriteBool(&g_fTerminate, true);
+
+    return true;
+}
+#else
 static void audioTestSignalHandler(int iSig) RT_NOEXCEPT
 {
     Assert(iSig == SIGINT); RT_NOREF(iSig);
     RTPrintf("Ctrl-C!\n");
+
     ASMAtomicWriteBool(&g_fTerminate, true);
+
     signal(SIGINT, SIG_DFL);
 }
+#endif
 
 /**
  * Commands.
  */
-const VKATCMD *g_apCommands[] =
+static const VKATCMD * const g_apCommands[] =
 {
     &g_CmdTest,
     &g_CmdVerify,
@@ -1381,10 +1399,7 @@ int main(int argc, char **argv)
      */
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
-    {
-        RTPrintf("RTR3InitExe() failed with %Rrc\n", rc);
         return RTMsgInitFailure(rc);
-    }
 
     /*
      * Handle special command line options which need parsing before
@@ -1508,7 +1523,7 @@ int main(int argc, char **argv)
      * Install a Ctrl-C signal handler.
      */
 #ifdef RT_OS_WINDOWS
-    signal(SIGINT, audioTestSignalHandler);
+    SetConsoleCtrlHandler(audioTestConsoleCtrlHandler, TRUE);
 #else
     struct sigaction sa;
     RT_ZERO(sa);

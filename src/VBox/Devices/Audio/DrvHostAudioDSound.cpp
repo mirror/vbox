@@ -2782,16 +2782,23 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 # else
         PPDMIHOSTAUDIOPORT pIHostAudioPort = NULL;
 # endif
+#ifdef RT_EXCEPTIONS_ENABLED
         try
+#endif
         {
             pThis->m_pNotificationClient = new DrvHostAudioDSoundMMNotifClient(pIHostAudioPort,
                                                                                pThis->Cfg.pGuidCapture == NULL,
                                                                                pThis->Cfg.pGuidPlay == NULL);
         }
+#ifdef RT_EXCEPTIONS_ENABLED
         catch (std::bad_alloc &)
         {
             return VERR_NO_MEMORY;
         }
+#else
+        AssertReturn(pThis->m_pNotificationClient, VERR_NO_MEMORY);
+#endif
+
         hrc = pThis->m_pNotificationClient->Initialize();
         if (SUCCEEDED(hrc))
         {

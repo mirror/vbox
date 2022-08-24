@@ -365,13 +365,22 @@ public:
         : m_cRefs(1)
         , m_pDrvWas(a_pDrvWas)
     {
-        int rc = RTCritSectInit(&m_CritSect);
-        AssertRCStmt(rc, throw(rc));
+        RT_ZERO(m_CritSect);
     }
 
     virtual ~DrvHostAudioWasMmNotifyClient() RT_NOEXCEPT
     {
-        RTCritSectDelete(&m_CritSect);
+        if (RTCritSectIsInitialized(&m_CritSect))
+            RTCritSectDelete(&m_CritSect);
+    }
+
+    /**
+     * Initializes the critical section.
+     * @note  Must be buildable w/o exceptions enabled, so cannot do this from the
+     *        constructor. */
+    int init(void) RT_NOEXCEPT
+    {
+        return RTCritSectInit(&m_CritSect);
     }
 
     /**
@@ -3199,18 +3208,16 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      * Failure here isn't considered fatal at this time as we'll just miss
      * default device changes.
      */
-    try
-    {
-        pThis->pNotifyClient = new DrvHostAudioWasMmNotifyClient(pThis);
-    }
-    catch (std::bad_alloc &)
-    {
-        return VERR_NO_MEMORY;
-    }
-    catch (int rcXcpt)
-    {
-        return rcXcpt;
-    }
+#ifdef RT_EXCEPTIONS_ENABLED
+    try { pThis->pNotifyClient = new DrvHostAudioWasMmNotifyClient(pThis); }
+    catch (std::bad_alloc &) { return VERR_NO_MEMORY; }
+#else
+    pThis->pNotifyClient = new DrvHostAudioWasMmNotifyClient(pThis);
+    AssertReturn(pThis->pNotifyClient, VERR_NO_MEMORY);
+#endif
+    rc = pThis->pNotifyClient->init();
+    AssertRCReturn(rc, rc);
+
     hrc = pThis->pIEnumerator->RegisterEndpointNotificationCallback(pThis->pNotifyClient);
     AssertMsg(SUCCEEDED(hrc), ("%Rhrc\n", hrc));
     if (FAILED(hrc))
