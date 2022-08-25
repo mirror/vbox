@@ -154,7 +154,7 @@ inline bool RecordingUtilsColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  * Converts a RGB to YUV buffer.
  *
  * @returns IPRT status code.
- * @param   uPixelFormat        Pixel format to use for conversion.
+ * @param   enmPixelFormat      Pixel format to use for conversion.
  * @param   paDst               Pointer to destination buffer.
  * @param   uDstWidth           Width (X, in pixels) of destination buffer.
  * @param   uDstHeight          Height (Y, in pixels) of destination buffer.
@@ -162,11 +162,11 @@ inline bool RecordingUtilsColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  * @param   uSrcWidth           Width (X, in pixels) of source buffer.
  * @param   uSrcHeight          Height (Y, in pixels) of source buffer.
  */
-int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
+int RecordingUtilsRGBToYUV(RECORDINGPIXELFMT enmPixelFormat,
                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
-    switch (uPixelFormat)
+    switch (enmPixelFormat)
     {
         case RECORDINGPIXELFMT_RGB32:
             if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
