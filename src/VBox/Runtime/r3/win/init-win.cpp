@@ -91,6 +91,8 @@ DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *)   g_pfnSystemTimeT
 DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)                      g_pfnCreateWaitableTimerExW = NULL;
 DECL_HIDDEN_DATA(decltype(GetHandleInformation) *)              g_pfnGetHandleInformation = NULL;
 DECL_HIDDEN_DATA(decltype(SetHandleInformation) *)              g_pfnSetHandleInformation = NULL;
+DECL_HIDDEN_DATA(decltype(IsDebuggerPresent) *)                 g_pfnIsDebuggerPresent = NULL;
+DECL_HIDDEN_DATA(decltype(GetSystemTimeAsFileTime) *)           g_pfnGetSystemTimeAsFileTime = NULL;
 
 /** The native ntdll.dll handle. */
 DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
@@ -565,11 +567,15 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     if (g_pfnGetSystemWindowsDirectoryW)
         g_pfnGetSystemWindowsDirectoryW  = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetWindowsDirectoryW");
     g_pfnSystemTimeToTzSpecificLocalTime = (decltype(SystemTimeToTzSpecificLocalTime) *)GetProcAddress(g_hModKernel32, "SystemTimeToTzSpecificLocalTime");
-    g_pfnCreateWaitableTimerExW     = (PFNCREATEWAITABLETIMEREX)        GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
-    g_pfnGetHandleInformation       = (decltype(GetHandleInformation) *)GetProcAddress(g_hModKernel32, "GetHandleInformation");
-    g_pfnSetHandleInformation       = (decltype(SetHandleInformation) *)GetProcAddress(g_hModKernel32, "SetHandleInformation");
-    Assert(g_pfnSetHandleInformation || g_enmWinVer < kRTWinOSType_NT351);
-    Assert(g_pfnGetHandleInformation || g_enmWinVer < kRTWinOSType_NT351);
+    g_pfnCreateWaitableTimerExW     = (PFNCREATEWAITABLETIMEREX)           GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
+    g_pfnGetHandleInformation       = (decltype(GetHandleInformation) *)   GetProcAddress(g_hModKernel32, "GetHandleInformation");
+    g_pfnSetHandleInformation       = (decltype(SetHandleInformation) *)   GetProcAddress(g_hModKernel32, "SetHandleInformation");
+    g_pfnIsDebuggerPresent          = (decltype(IsDebuggerPresent) *)      GetProcAddress(g_hModKernel32, "IsDebuggerPresent");
+    g_pfnGetSystemTimeAsFileTime    = (decltype(GetSystemTimeAsFileTime) *)GetProcAddress(g_hModKernel32, "GetSystemTimeAsFileTime");
+    Assert(g_pfnSetHandleInformation    || g_enmWinVer < kRTWinOSType_NT351);
+    Assert(g_pfnGetHandleInformation    || g_enmWinVer < kRTWinOSType_NT351);
+    Assert(g_pfnIsDebuggerPresent       || g_enmWinVer < kRTWinOSType_NT4);
+    Assert(g_pfnGetSystemTimeAsFileTime || g_enmWinVer < kRTWinOSType_NT4);
 
     /*
      * Resolve some ntdll.dll APIs that weren't there in early NT versions.

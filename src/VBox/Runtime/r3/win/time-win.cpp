@@ -177,19 +177,38 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     uint64_t u64;
     AssertCompile(sizeof(u64) == sizeof(FILETIME));
-    GetSystemTimeAsFileTime((LPFILETIME)&u64);
+    if (g_pfnGetSystemTimeAsFileTime)
+        g_pfnGetSystemTimeAsFileTime((LPFILETIME)&u64);
+    else
+    {
+        SYSTEMTIME SysTime = {0};
+        GetSystemTime(&SysTime);
+        BOOL fRet = SystemTimeToFileTime(&SysTime, (LPFILETIME)&u64);
+        Assert(fRet); RT_NOREF(fRet);
+    }
     return RTTimeSpecSetNtTime(pTime, u64);
+
 }
 
 
 RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 {
-    uint64_t u64;
-    AssertCompile(sizeof(u64) == sizeof(FILETIME));
-    GetSystemTimeAsFileTime((LPFILETIME)&u64);
     uint64_t u64Local;
-    if (!FileTimeToLocalFileTime((FILETIME const *)&u64, (LPFILETIME)&u64Local))
-        u64Local = u64;
+    if (g_pfnGetSystemTimeAsFileTime)
+    {
+        uint64_t u64;
+        AssertCompile(sizeof(u64) == sizeof(FILETIME));
+        g_pfnGetSystemTimeAsFileTime((LPFILETIME)&u64);
+        if (!FileTimeToLocalFileTime((FILETIME const *)&u64, (LPFILETIME)&u64Local))
+            u64Local = u64;
+    }
+    else
+    {
+        SYSTEMTIME SysTime = {0};
+        GetLocalTime(&SysTime);
+        BOOL fRet = SystemTimeToFileTime(&SysTime, (LPFILETIME)&u64Local);
+        Assert(fRet); RT_NOREF(fRet);
+    }
     return RTTimeSpecSetNtTime(pTime, u64Local);
 }
 

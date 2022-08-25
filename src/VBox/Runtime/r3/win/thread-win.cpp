@@ -194,7 +194,7 @@ static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *psz
  */
 DECLINLINE(void) rtThreadWinSetThreadName(PRTTHREADINT pThread, DWORD idThread)
 {
-    if (IsDebuggerPresent())
+    if (g_pfnIsDebuggerPresent && g_pfnIsDebuggerPresent())
         rtThreadWinTellDebuggerThreadName(idThread, &pThread->szName[0]);
 
     /* The SetThreadDescription API introduced in windows 10 1607 / server 2016

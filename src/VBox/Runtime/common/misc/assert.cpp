@@ -59,6 +59,7 @@
 # endif
 # ifdef RT_OS_WINDOWS
 #  include <iprt/win/windows.h>
+#  include "../../r3/win/internal-r3-win.h"
 # endif
 #endif
 #include "internal/assert.h"
@@ -158,7 +159,7 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
         char   szStack[sizeof(g_szRTAssertStack)];
         size_t cchStack = 0;
 # if defined(IN_RING3) && defined(RT_OS_WINDOWS) /** @todo make this stack on/off thing more modular. */
-        bool   fStack = !IsDebuggerPresent() && !RTEnvExist("IPRT_ASSERT_NO_STACK");
+        bool   fStack = (!g_pfnIsDebuggerPresent || !g_pfnIsDebuggerPresent()) && !RTEnvExist("IPRT_ASSERT_NO_STACK");
 # elif defined(IN_RING3)
         bool   fStack = !RTEnvExist("IPRT_ASSERT_NO_STACK");
 # else
