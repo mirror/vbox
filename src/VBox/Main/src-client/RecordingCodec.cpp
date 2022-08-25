@@ -189,7 +189,7 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
 
     PRECORDINGVIDEOFRAME pVideoFrame = pFrame->VideoPtr;
 
-    int vrc = RecordingUtilsRGBToYUV(pVideoFrame->uPixelFormat,
+    int vrc = RecordingUtilsRGBToYUV(pVideoFrame->enmPixelFmt,
                                      /* Destination */
                                      pCodec->Video.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
                                      /* Source */
