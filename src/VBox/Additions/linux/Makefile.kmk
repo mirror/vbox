@@ -444,6 +444,6 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(RM) -f $(foreach file, $(wildcard $(VBOX_LNX_ADD_INST_STAGE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)-*.tar.bz2), $(file))
 	$(QUIET)$(foreach file, $(VBOX_LNX_ADD_ARCHIVES), \
 		$(CP) -f $(file) $(VBOX_LNX_ADD_INST_STAGE_DIR)$(subst -r$(VBOX_SVN_REV),,$(notdir $(file)))$(NLTAB) )
-	$(QUIET)$(VBOX_MAKESELF) --nocomp --tar-no-format $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
+	$(QUIET)$(VBOX_MAKESELF) --nocomp $(if ($(VBOX_OSE),,--tar-no-format) $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
 		/bin/sh ./install.sh "\$$0"
