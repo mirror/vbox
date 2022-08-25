@@ -1997,6 +1997,7 @@ typedef struct _FILE_STREAM_INFORMATION
     WCHAR           StreamName[1];
 } FILE_STREAM_INFORMATION;
 typedef FILE_STREAM_INFORMATION *PFILE_STREAM_INFORMATION;
+
 typedef struct _FILE_PIPE_INFORMATION
 {
     ULONG           ReadMode;
@@ -2018,6 +2019,33 @@ typedef struct _FILE_PIPE_LOCAL_INFORMATION
     ULONG           NamedPipeEnd;
 } FILE_PIPE_LOCAL_INFORMATION;
 typedef FILE_PIPE_LOCAL_INFORMATION *PFILE_PIPE_LOCAL_INFORMATION;
+
+/** @name Pipe state (FILE_PIPE_LOCAL_INFORMATION::NamedPipeState)
+ * @{  */
+#if !defined(FILE_PIPE_DISCONNECTED_STATE) || defined(DOXYGEN_RUNNING)
+# define FILE_PIPE_DISCONNECTED_STATE   0x00000001U
+# define FILE_PIPE_LISTENING_STATE      0x00000002U
+# define FILE_PIPE_CONNECTED_STATE      0x00000003U
+# define FILE_PIPE_CLOSING_STATE        0x00000004U
+#endif
+/** @} */
+
+/** @name Pipe config (FILE_PIPE_LOCAL_INFORMATION::NamedPipeConfiguration)
+ * @{ */
+#if !defined(FILE_PIPE_INBOUND) || defined(DOXYGEN_RUNNING)
+# define FILE_PIPE_INBOUND              0x00000000U
+# define FILE_PIPE_OUTBOUND             0x00000001U
+# define FILE_PIPE_FULL_DUPLEX          0x00000002U
+#endif
+/** @} */
+
+/** @name Pipe end (FILE_PIPE_LOCAL_INFORMATION::NamedPipeEnd)
+ * @{ */
+#if !defined(FILE_PIPE_CLIENT_END) || defined(DOXYGEN_RUNNING)
+# define FILE_PIPE_CLIENT_END           0x00000000U
+# define FILE_PIPE_SERVER_END           0x00000001U
+#endif
+/** @} */
 
 typedef struct _FILE_PIPE_REMOTE_INFORMATION
 {

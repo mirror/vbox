@@ -38,7 +38,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
 #include <iprt/pipe.h>
 #include "internal/iprt.h"
@@ -109,52 +109,6 @@ typedef struct RTPIPEINTERNAL
     uint8_t             abBuf[8];
 } RTPIPEINTERNAL;
 
-
-/* from ntdef.h */
-typedef LONG NTSTATUS;
-
-/* from ntddk.h */
-typedef struct _IO_STATUS_BLOCK {
-    union {
-        NTSTATUS Status;
-        PVOID Pointer;
-    };
-    ULONG_PTR Information;
-} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
-
-typedef enum _FILE_INFORMATION_CLASS {
-    FilePipeInformation = 23,
-    FilePipeLocalInformation = 24,
-    FilePipeRemoteInformation = 25,
-} FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
-
-/* from ntifs.h */
-typedef struct _FILE_PIPE_LOCAL_INFORMATION {
-     ULONG NamedPipeType;
-     ULONG NamedPipeConfiguration;
-     ULONG MaximumInstances;
-     ULONG CurrentInstances;
-     ULONG InboundQuota;
-     ULONG ReadDataAvailable;
-     ULONG OutboundQuota;
-     ULONG WriteQuotaAvailable;
-     ULONG NamedPipeState;
-     ULONG NamedPipeEnd;
-} FILE_PIPE_LOCAL_INFORMATION, *PFILE_PIPE_LOCAL_INFORMATION;
-
-#define FILE_PIPE_DISCONNECTED_STATE    0x00000001U
-#define FILE_PIPE_LISTENING_STATE       0x00000002U
-#define FILE_PIPE_CONNECTED_STATE       0x00000003U
-#define FILE_PIPE_CLOSING_STATE         0x00000004U
-
-#define FILE_PIPE_INBOUND               0x00000000U
-#define FILE_PIPE_OUTBOUND              0x00000001U
-#define FILE_PIPE_FULL_DUPLEX           0x00000002U
-
-#define FILE_PIPE_CLIENT_END            0x00000000U
-#define FILE_PIPE_SERVER_END            0x00000001U
-
-extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, LONG, FILE_INFORMATION_CLASS);
 
 
 /**
