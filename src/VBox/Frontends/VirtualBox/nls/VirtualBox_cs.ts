@@ -2710,10 +2710,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>remove all inaccessible media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2798,10 +2794,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the log viewer widget.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Refresh Viewed Log</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2843,6 +2835,14 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove all inaccessible media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the log viewer window</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17522,10 +17522,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The current port forwarding rules are not valid. All of the host or guest address values should be correct or empty.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17781,15 +17777,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unable to validate GA ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>User manual downloaded ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to validate EP ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -17826,10 +17814,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Please resolve this name conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cloud machine failure ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18005,10 +17989,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>GA not active ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Mouse integration ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18034,22 +18014,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to acquire appliance parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>EP Manager failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire EP Manager parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>EP failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire EP parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18090,10 +18054,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>DHCP server failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cloud network failure ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18141,15 +18101,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to acquire virtual system description parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VSD form failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire virtual system description form parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18213,15 +18165,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cloud profile failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign virtual system description parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18285,10 +18229,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Can&apos;t get EP Manager ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to acquire Extension Pack Manager.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18314,18 +18254,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t create VSD ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create virtual system description.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t open EP ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t open EP file ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18473,10 +18401,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Can&apos;t find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t change snapshot ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18536,6 +18460,70 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Severity:</source>
         <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to validate guest additions image ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to validate extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest additions inactive ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension Pack failure ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack Manager parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD form parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to assign VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t get Extension Pack Manager ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create VSD.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t open extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t read extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25659,10 +25647,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>GA I&amp;nstallation ISO:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Gu&amp;est Additions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -25948,6 +25932,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest &amp;Additions ISO:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

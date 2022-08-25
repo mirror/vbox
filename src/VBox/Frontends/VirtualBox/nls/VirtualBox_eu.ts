@@ -590,12 +590,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+333"/>
-        <source>Display the log viewer widget.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+466"/>
+        <location line="+799"/>
         <location line="+90"/>
         <source>&amp;Recording</source>
         <translation type="unfinished"></translation>
@@ -1803,7 +1798,12 @@
         <translation>Bidali ACPI Itzaltze seinalea makina birtualera</translation>
     </message>
     <message>
-        <location line="+211"/>
+        <location line="+88"/>
+        <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+123"/>
         <source>&amp;Full-screen Mode</source>
         <translation>&amp;Ikusleiho-osoko Modua</translation>
     </message>
@@ -2303,7 +2303,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>remove all inaccessible media</source>
+        <source>Remove all inaccessible media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15966,7 +15966,47 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-226"/>
+        <location line="-1370"/>
+        <source>Unable to validate guest additions image ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Unable to validate extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+724"/>
+        <source>Failed to assign VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+145"/>
+        <source>Can&apos;t get Extension Pack Manager ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Failed to create VSD.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Can&apos;t open extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Can&apos;t read extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+191"/>
         <source>Can&apos;t close medium ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16002,12 +16042,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Can&apos;t find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Can&apos;t change snapshot ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16069,7 +16104,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-123"/>
+        <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+113"/>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16313,11 +16358,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-25"/>
-        <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="-123"/>
         <source>&lt;p&gt;This controller has optical devices attached.  You have requested storage bus change to type which doesn&apos;t support optical devices.&lt;/p&gt;&lt;p&gt;If you proceed optical devices will be removed.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
@@ -16329,7 +16369,7 @@
     </message>
     <message>
         <location line="-214"/>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-30"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-55"/>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska optikoa &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotera eranstearakoan.</translation>
     </message>
@@ -16486,22 +16526,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Unable to validate GA ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
+        <location line="+23"/>
         <source>User manual downloaded ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
-        <source>Unable to validate EP ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
+        <location line="+26"/>
         <source>Can&apos;t create machine folder ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16546,12 +16576,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Cloud machine failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+11"/>
         <source>Failed to acquire cloud machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16768,12 +16793,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
-        <source>GA not active ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+17"/>
+        <location line="+39"/>
         <location line="+19"/>
         <source>Mouse integration ...</source>
         <translation type="unfinished"></translation>
@@ -16809,27 +16829,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>EP Manager failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Failed to acquire EP Manager parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>EP failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Failed to acquire EP parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location line="+27"/>
         <source>Host failure ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16882,13 +16882,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-167"/>
-        <location line="+176"/>
-        <source>Cloud network failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-175"/>
+        <location line="-166"/>
         <source>Failed to acquire cloud network parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16948,30 +16942,55 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-175"/>
-        <source>Failed to acquire virtual system description parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="-165"/>
         <source>VSD form failure ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Failed to acquire virtual system description form parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="-491"/>
+        <location line="+425"/>
+        <location line="+77"/>
         <location line="+11"/>
         <location line="+11"/>
         <location line="+11"/>
+        <location line="+66"/>
+        <location line="+36"/>
         <source>Cloud failure ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-392"/>
+        <source>Guest additions inactive ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+108"/>
+        <location line="+9"/>
+        <source>Extension Pack failure ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-8"/>
+        <source>Failed to acquire Extension Pack Manager parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Failed to acquire Extension Pack parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+118"/>
+        <source>Failed to acquire VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to acquire VSD form parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+44"/>
         <source>Failed to acquire cloud machine parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17041,12 +17060,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>Cloud profile failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+9"/>
         <source>Failed to assign cloud profile parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17056,12 +17070,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Failed to assign virtual system description parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+30"/>
         <source>Can&apos;t enumerate USB devices ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17136,12 +17145,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Can&apos;t get EP Manager ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+12"/>
         <source>Failed to acquire Extension Pack Manager.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17176,22 +17180,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Failed to create virtual system description.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Can&apos;t open EP ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Can&apos;t open EP file ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+30"/>
         <source>Can&apos;t find cloud network ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18134,7 +18123,6 @@
     </message>
     <message>
         <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-251"/>
-        <location line="+10"/>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; Hedapen Paketea irekitzerakoan.</translation>
     </message>
@@ -18294,7 +18282,7 @@
         <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ongi jeitsi da &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;-tik baina ezin da tokian gorde &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; bezala.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Mesedez hautatu beste kokaleku bat agiriarentzat.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-963"/>
+        <location filename="../src/notificationcenter/UINotificationObjects.cpp" line="-953"/>
         <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;-ren %1 bertsioa  duzu ezarrita.&lt;/p&gt;&lt;p&gt; Hedapen pakete honen %3 bertsioa jeitsi eta ezarri behar duzu Oracle-tik!&lt;/p&gt;</translation>
     </message>
@@ -25699,12 +25687,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>GA I&amp;nstallation ISO:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+3"/>
         <source>Gu&amp;est Additions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -25729,7 +25712,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="-22"/>
+        <source>Guest &amp;Additions ISO:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+100"/>
         <source>Additional Options</source>
         <translation type="unfinished"></translation>
     </message>

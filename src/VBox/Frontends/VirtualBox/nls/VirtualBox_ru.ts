@@ -3020,10 +3020,6 @@
         <translation>&amp;Очистить</translation>
     </message>
     <message>
-        <source>remove all inaccessible media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Console</source>
         <translation>&amp;Консоль</translation>
     </message>
@@ -3108,10 +3104,6 @@
         <translation>Переключиться на панель обзора активности выбранной виртуальной машины</translation>
     </message>
     <message>
-        <source>Display the log viewer widget.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Refresh Viewed Log</source>
         <translation>Обновить текущий лог</translation>
     </message>
@@ -3154,6 +3146,14 @@
     <message>
         <source>Open the browser and go to the VirtualBox user manual</source>
         <translation>Открыть браузер и перейти к документации пользователя VirtualBox</translation>
+    </message>
+    <message>
+        <source>Remove all inaccessible media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -18954,7 +18954,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось найти снимок с ID=&lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="vanished">Не удалось найти снимок с ID=&lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t acquire snapshot attributes.</source>
@@ -19329,16 +19329,8 @@ p, li { white-space: pre-wrap; }
         <translation>Требуется обновление ...</translation>
     </message>
     <message>
-        <source>Unable to validate GA ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>User manual downloaded ...</source>
         <translation>Руководство пользователя загружено ...</translation>
-    </message>
-    <message>
-        <source>Unable to validate EP ...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Can&apos;t create machine folder ...</source>
@@ -19375,10 +19367,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Please resolve this name conflict and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Вы пытаетесь переместить машину &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; в группу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, в которой уже содержится элемент с таким же именем.&lt;/p&gt;&lt;p&gt;Пожалуйста решите этот конфликт имён и попытайтесь снова.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cloud machine failure ...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine settings.</source>
@@ -19553,10 +19541,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает её недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>GA not active ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Mouse integration ...</source>
         <translation>Интеграция мыши ...</translation>
     </message>
@@ -19583,22 +19567,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to acquire appliance parameter.</source>
         <translation>Не удалось получить параметр конфигурации.</translation>
-    </message>
-    <message>
-        <source>EP Manager failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire EP Manager parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>EP failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire EP parameter.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host failure ...</source>
@@ -19639,10 +19607,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>DHCP server failure ...</source>
         <translation>Ошибка DHCP сервера ...</translation>
-    </message>
-    <message>
-        <source>Cloud network failure ...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to acquire cloud network parameter.</source>
@@ -19689,16 +19653,8 @@ p, li { white-space: pre-wrap; }
         <translation>Ошибка VSD ...</translation>
     </message>
     <message>
-        <source>Failed to acquire virtual system description parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VSD form failure ...</source>
         <translation>Ошибка VSD формы ...</translation>
-    </message>
-    <message>
-        <source>Failed to acquire virtual system description form parameter.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cloud failure ...</source>
@@ -19761,16 +19717,8 @@ p, li { white-space: pre-wrap; }
         <translation>Не удалось изменить параметр сети NAT.</translation>
     </message>
     <message>
-        <source>Cloud profile failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to assign update agent parameter.</source>
         <translation>Не удалось изменить параметр агента обновления.</translation>
-    </message>
-    <message>
-        <source>Failed to assign virtual system description parameter.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
@@ -19833,10 +19781,6 @@ p, li { white-space: pre-wrap; }
         <translation>Не удалось создать носитель информации ...</translation>
     </message>
     <message>
-        <source>Can&apos;t get EP Manager ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to acquire Extension Pack Manager.</source>
         <translation>Не удалось опросить менеджер плагинов.</translation>
     </message>
@@ -19863,18 +19807,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Can&apos;t create VSD ...</source>
         <translation>Не удалось создать VSD ...</translation>
-    </message>
-    <message>
-        <source>Failed to create virtual system description.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t open EP ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t open EP file ...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Can&apos;t find cloud network ...</source>
@@ -20021,10 +19953,6 @@ p, li { white-space: pre-wrap; }
         <translation>Не удалось найти снимок ...</translation>
     </message>
     <message>
-        <source>Can&apos;t find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t change snapshot ...</source>
         <translation>Не удалось изменить снимок ...</translation>
     </message>
@@ -20085,6 +20013,70 @@ p, li { white-space: pre-wrap; }
         <source>Severity:</source>
         <comment>runtime error info</comment>
         <translation>Важность:</translation>
+    </message>
+    <message>
+        <source>Unable to validate guest additions image ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to validate extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest additions inactive ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension Pack failure ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack Manager parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD form parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to assign VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t get Extension Pack Manager ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create VSD.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t open extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t read extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -27654,10 +27646,6 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Задаёт установочный носитель (файл ISO) для дополнений гостевой ОС.</translation>
     </message>
     <message>
-        <source>GA I&amp;nstallation ISO:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Gu&amp;est Additions</source>
         <translation>&amp;Дополнения гостевой ОС</translation>
     </message>
@@ -27948,6 +27936,10 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
         <translation>Если пожелаете, Вы можете добавить к создаваемой машине виртуальный жёсткий диск. Вы можете как создать новый файл жёсткого диска, так и указать существующий. Кроме того, Вы можете создать виртуальную машины без виртуального жёсткого диска.</translation>
+    </message>
+    <message>
+        <source>Guest &amp;Additions ISO:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
