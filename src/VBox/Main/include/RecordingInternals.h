@@ -425,9 +425,12 @@ typedef enum RECORDINGBLOCKTYPE
 } RECORDINGBLOCKTYPE;
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
+int RecordingVideoFrameInit(PRECORDINGVIDEOFRAME pFrame, int w, int h, uint8_t uBPP, RECORDINGPIXELFMT enmPixelFmt);
+void RecordingVideoFrameDestroy(PRECORDINGVIDEOFRAME pFrame);
 void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
 #endif
 void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
+void RecordingFrameFree(PRECORDINGFRAME pFrame);
 
 /**
  * Generic structure for keeping a single video recording (data) block.
