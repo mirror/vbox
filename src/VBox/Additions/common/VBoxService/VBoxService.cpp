@@ -1204,7 +1204,7 @@ int main(int argc, char **argv)
     SetLastError(NO_ERROR);
     HANDLE hMutexAppRunning;
     if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(5,0,0)) /* Windows 2000 */
-        hMutexAppRunning = CreateMutexW(NULL, FALSE, L"Global\\" VBOXSERVICE_NAME);
+        hMutexAppRunning = CreateMutexW(NULL, FALSE, L"Global\\" RT_CONCAT(L,VBOXSERVICE_NAME));
     else
         hMutexAppRunning = CreateMutexW(NULL, FALSE, RT_CONCAT(L,VBOXSERVICE_NAME));
     if (hMutexAppRunning == NULL)
