@@ -1937,7 +1937,6 @@ function CheckForPythonSub(strPathPython)
    CheckForPythonSub = ""
    if strPathPython <> "" then
       if   LogFileExists(strPathPython, "python.exe") _
-       and LogDirExists(strPathPython & "/DLLs") _
       then
          CheckForPythonSub = UnixSlashes(PathAbs(strPathPython & "/python.exe"))
       end if
