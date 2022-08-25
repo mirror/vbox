@@ -334,16 +334,39 @@ enum RECORDINGPIXELFMT
 };
 
 /**
+ * Enumeration for a recording frame type.
+ */
+enum RECORDINGFRAME_TYPE
+{
+    /** Invalid frame type; do not use. */
+    RECORDINGFRAME_TYPE_INVALID   = 0,
+    /** Frame is an audio frame. */
+    RECORDINGFRAME_TYPE_AUDIO     = 1,
+    /** Frame is an video frame. */
+    RECORDINGFRAME_TYPE_VIDEO     = 2,
+    /** Frame contains a video frame pointer. */
+    RECORDINGFRAME_TYPE_VIDEO_PTR = 3
+};
+
+/**
  * Structure for keeping a single recording video frame.
  */
 typedef struct RECORDINGVIDEOFRAME
 {
-    /** X resolution of this frame. */
-    uint32_t            uWidth;
-    /** Y resolution of this frame. */
-    uint32_t            uHeight;
+    /** X origin  (in pixel) of this frame. */
+    uint16_t            uX;
+    /** X origin  (in pixel) of this frame. */
+    uint16_t            uY;
+    /** X resolution (in pixel) of this frame. */
+    uint16_t            uWidth;
+    /** Y resolution (in pixel)  of this frame. */
+    uint16_t            uHeight;
+    /** Bits per pixel (BPP). */
+    uint8_t             uBPP;
     /** Pixel format of this frame. */
-    uint32_t            uPixelFormat;
+    RECORDINGPIXELFMT   enmPixelFmt;
+    /** Bytes per scan line. */
+    uint16_t            uBytesPerLine;
     /** RGB buffer containing the unmodified frame buffer data from Main's display. */
     uint8_t            *pu8RGBBuf;
     /** Size (in bytes) of the RGB buffer. */
@@ -366,14 +389,24 @@ typedef struct RECORDINGAUDIOFRAME
  */
 typedef struct RECORDINGFRAME
 {
+    /** List node. */
+    RTLISTNODE              Node;
+    /** Stream index (hint) where this frame should go to.
+     *  Specify UINT16_MAX to broadcast to all streams. */
+    uint16_t                idStream;
+    /** The frame type. */
+    RECORDINGFRAME_TYPE     enmType;
     /** Timestamp (PTS, in ms). */
     uint64_t                msTimestamp;
     union
     {
 #ifdef VBOX_WITH_AUDIO_RECORDING
+        /** Audio frame data. */
         RECORDINGAUDIOFRAME  Audio;
 #endif
+        /** Video frame data. */
         RECORDINGVIDEOFRAME  Video;
+        /** A (weak) pointer to a video frame. */
         RECORDINGVIDEOFRAME *VideoPtr;
     };
 } RECORDINGFRAME, *PRECORDINGFRAME;

@@ -31,6 +31,8 @@
 # pragma once
 #endif
 
+#include "RecordingInternals.h"
+
 
 /**
  * Iterator class for running through a BGRA32 image buffer and converting
