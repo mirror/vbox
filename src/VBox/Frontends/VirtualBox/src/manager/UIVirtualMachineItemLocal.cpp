@@ -93,10 +93,8 @@ void UIVirtualMachineItemLocal::recache()
 
         /* Determine VM states: */
         m_enmMachineState = m_comMachine.GetState();
-        m_strMachineStateName = gpConverter->toString(m_enmMachineState);
         m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
         m_enmSessionState = m_comMachine.GetSessionState();
-        m_strSessionStateName = gpConverter->toString(m_enmSessionState);
 
         /* Determine configuration access level: */
         m_enmConfigurationAccessLevel = ::configurationAccessLevel(m_enmSessionState, m_enmMachineState);
@@ -280,6 +278,10 @@ void UIVirtualMachineItemLocal::retranslateUi()
     /* If machine is accessible: */
     if (m_fAccessible)
     {
+        /* Just use the usual translation for valid states: */
+        m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+        m_strSessionStateName = gpConverter->toString(m_enmSessionState);
+
         /* Update tool-tip: */
         m_strToolTipText = QString("<b>%1</b>").arg(m_strName);
         if (!m_strSnapshotName.isNull())
@@ -296,15 +298,15 @@ void UIVirtualMachineItemLocal::retranslateUi()
     /* Otherwise: */
     else
     {
+        /* We have our own translation for Null states: */
+        m_strMachineStateName = tr("Inaccessible");
+        m_strSessionStateName = tr("Inaccessible");
+
         /* Update tool-tip: */
         m_strToolTipText = tr("<nobr><b>%1</b><br></nobr>"
                               "<nobr>Inaccessible since %2</nobr>",
                               "Inaccessible VM tooltip (name, last state change)")
                               .arg(m_strSettingsFile)
                               .arg(strDateTime);
-
-        /* We have our own translation for Null states: */
-        m_strMachineStateName = tr("Inaccessible");
-        m_strSessionStateName = tr("Inaccessible");
     }
 }

@@ -210,7 +210,6 @@ void UIVirtualMachineItemCloud::recache()
 
             /* Determine VM states: */
             m_enmMachineState = KCloudMachineState_Stopped;
-            m_strMachineStateName = gpConverter->toString(m_enmMachineState);
             switch (m_enmFakeCloudItemState)
             {
                 case UIFakeCloudVirtualMachineItemState_Loading:
@@ -249,7 +248,6 @@ void UIVirtualMachineItemCloud::recache()
 
             /* Determine VM states: */
             m_enmMachineState = m_fAccessible ? m_comCloudMachine.GetState() : KCloudMachineState_Stopped;
-            m_strMachineStateName = gpConverter->toString(m_enmMachineState);
             m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
 
             /* Determine configuration access level: */
@@ -350,7 +348,7 @@ void UIVirtualMachineItemCloud::retranslateUi()
     {
         if (itemType() == UIVirtualMachineItemType_CloudFake)
         {
-            /* Update machine/state name: */
+            /* Update fake machine state name: */
             switch (m_enmFakeCloudItemState)
             {
                 case UIFakeCloudVirtualMachineItemState_Loading:
@@ -368,6 +366,9 @@ void UIVirtualMachineItemCloud::retranslateUi()
         }
         else
         {
+            /* Update real machine state name: */
+            m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+
             /* Update tool-tip: */
             m_strToolTipText = QString("<nobr><b>%1</b></nobr><br>"
                                        "<nobr>%2</nobr>")
@@ -378,14 +379,14 @@ void UIVirtualMachineItemCloud::retranslateUi()
     /* Otherwise: */
     else
     {
+        /* We have our own translation for Null states: */
+        m_strMachineStateName = tr("Inaccessible", "VM");
+
         /* Update tool-tip: */
         m_strToolTipText = tr("<nobr><b>%1</b></nobr><br>"
                               "<nobr>Inaccessible</nobr>",
                               "Inaccessible VM tooltip (name)")
                               .arg(m_strName);
-
-        /* We have our own translation for Null states: */
-        m_strMachineStateName = tr("Inaccessible", "VM");
     }
 }
 
