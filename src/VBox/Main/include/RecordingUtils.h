@@ -206,5 +206,10 @@ int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
+#ifdef DEBUG
+int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszPrefx, uint16_t uWidth, uint32_t uHeight, uint8_t uBPP);
+int RecordingUtilsDbgDumpFrame(const PRECORDINGFRAME pFrame);
+#endif
+
 #endif /* !MAIN_INCLUDED_RecordingUtils_h */
 

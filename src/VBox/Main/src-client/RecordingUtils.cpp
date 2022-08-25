@@ -36,6 +36,11 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#ifdef DEBUG
+#include <iprt/file.h>
+#include <iprt/formats/bmp.h>
+#endif
+
 
 /**
  * Convert an image to YUV420p format.
@@ -184,4 +189,102 @@ int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
     }
     return VINF_SUCCESS;
 }
+
+#ifdef DEBUG
+/**
+ * Dumps a video recording frame to a bitmap (BMP) file, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pu8RGBBuf           Pointer to actual RGB frame data.
+ * @param   cbRGBBuf            Size (in bytes) of \a pu8RGBBuf.
+ * @param   pszPath             Absolute path to dump file to. Must exist.
+ *                              Specify NULL to use the system's temp directory.
+ *                              Existing frame files will be overwritten.
+ * @param   pszPrefx            Naming prefix to use. Optional and can be NULL.
+ * @param   uWidth              Width (in pixel) to write.
+ * @param   uHeight             Height (in pixel) to write.
+ * @param   uBPP                Bits in pixel.
+ */
+int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszPrefx,
+                                 uint16_t uWidth, uint32_t uHeight, uint8_t uBPP)
+{
+    RT_NOREF(cbRGBBuf);
+
+    const uint8_t  uBytesPerPixel = uBPP / 8 /* Bits */;
+    const size_t   cbData         = uWidth * uHeight * uBytesPerPixel;
+
+    if (!cbData) /* No data to write? Bail out early. */
+        return VINF_SUCCESS;
+
+    BMPFILEHDR fileHdr;
+    RT_ZERO(fileHdr);
+
+    BMPWIN3XINFOHDR coreHdr;
+    RT_ZERO(coreHdr);
+
+    fileHdr.uType      = BMP_HDR_MAGIC;
+    fileHdr.cbFileSize = (uint32_t)(sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR) + cbData);
+    fileHdr.offBits    = (uint32_t)(sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR));
+
+    coreHdr.cbSize         = sizeof(BMPWIN3XINFOHDR);
+    coreHdr.uWidth         = uWidth ;
+    coreHdr.uHeight        = uHeight;
+    coreHdr.cPlanes        = 1;
+    coreHdr.cBits          = uBPP;
+    coreHdr.uXPelsPerMeter = 5000;
+    coreHdr.uYPelsPerMeter = 5000;
+
+    static uint64_t s_iCount = 0;
+
+    char szPath[RTPATH_MAX];
+    if (!pszPath)
+        RTPathTemp(szPath, sizeof(szPath));
+
+    char szFileName[RTPATH_MAX];
+    if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%04RU64-%s-w%RU16h%RU16.bmp",
+                     pszPath ? pszPath : szPath, s_iCount, pszPrefx ? pszPrefx : "Frame", uWidth, uHeight) <= 0)
+    {
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    s_iCount++;
+
+    RTFILE fh;
+    int vrc = RTFileOpen(&fh, szFileName,
+                         RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(vrc))
+    {
+        RTFileWrite(fh, &fileHdr, sizeof(fileHdr), NULL);
+        RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
+
+        /* Bitmaps (DIBs) are stored upside-down (thanks, OS/2), so work from the bottom up. */
+        uint32_t offSrc = (uHeight * uWidth * uBytesPerPixel) - uWidth * uBytesPerPixel;
+
+        /* Do the copy. */
+        for (unsigned int i = 0; i < uHeight; i++)
+        {
+            RTFileWrite(fh, pu8RGBBuf + offSrc, uWidth * uBytesPerPixel, NULL);
+            offSrc -= uWidth * uBytesPerPixel;
+        }
+
+        RTFileClose(fh);
+    }
+
+    return vrc;
+}
+
+/**
+ * Dumps a video recording frame to a bitmap (BMP) file.
+ *
+ * @returns VBox status code.
+ * @param   pFrame              Video frame to dump.
+ */
+int RecordingUtilsDbgDumpFrame(const PRECORDINGFRAME pFrame)
+{
+    AssertReturn(pFrame->enmType == RECORDINGFRAME_TYPE_VIDEO, VERR_INVALID_PARAMETER);
+    return RecordingUtilsDbgDumpFrameEx(pFrame->Video.pu8RGBBuf, pFrame->Video.cbRGBBuf,
+                                        NULL /*  Use temp directory */, NULL /* pszPrefix */,
+                                        pFrame->Video.uWidth, pFrame->Video.uHeight, pFrame->Video.uBPP);
+}
+#endif /* DEBUG */
 
