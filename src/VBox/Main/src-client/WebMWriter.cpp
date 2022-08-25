@@ -171,7 +171,6 @@ int WebMWriter::Close(void)
  */
 int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
 {
-#if defined(VBOX_WITH_LIBVORBIS)
     AssertReturn(uHz,       VERR_INVALID_PARAMETER);
     AssertReturn(cBits,     VERR_INVALID_PARAMETER);
     AssertReturn(cChannels, VERR_INVALID_PARAMETER);
@@ -208,109 +207,77 @@ int WebMWriter::AddAudioTrack(PRECORDINGCODEC pCodec, uint16_t uHz, uint8_t cCha
 # ifdef VBOX_WITH_LIBVORBIS
             case RecordingAudioCodec_OggVorbis:
             {
-            #if 0 /* Own header code -- more compact and does not require libvorbis. */
-                WEBMOGGVORBISPRIVDATA vorbisPrivData;
-
-                /* Vorbis I allows the following block sizes (bytes):
-                 * 64, 128, 256, 512, 1024, 2048, 4096 and 8192. */
-                pTrack->Audio.msPerBlock = msBlockSize;
-                if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
-                    pTrack->Audio.msPerBlock = VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT;
-
-                serializeString(MkvElem_CodecID,    "A_VORBIS");
-                serializeData(MkvElem_CodecPrivate, &vorbisPrivData, sizeof(vorbisPrivData));
-            #else
                 pTrack->Audio.msPerBlock = 0; /** @todo */
                 if (!pTrack->Audio.msPerBlock) /* No ms per frame defined? Use default. */
                     pTrack->Audio.msPerBlock = VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT;
 
-            #if 0
-                vorbis_info      m_vi;
-                /** Encoder state. */
-                vorbis_dsp_state m_vd;
-                /** Current block being worked on. */
-                vorbis_block     m_vb;
-                vorbis_comment m_vc;
-            #endif
+                vorbis_comment vc;
+                vorbis_comment_init(&vc);
+                vorbis_comment_add_tag(&vc,"ENCODER", vorbis_version_string());
 
+                ogg_packet pkt_ident;
+                ogg_packet pkt_comments;
+                ogg_packet pkt_setup;
+                vorbis_analysis_headerout(&pCodec->Audio.Vorbis.dsp_state, &vc, &pkt_ident, &pkt_comments, &pkt_setup);
+                AssertMsgBreakStmt(pkt_ident.bytes <= 255 && pkt_comments.bytes <= 255,
+                                   ("Too long header / comment packets\n"), vrc = VERR_INVALID_PARAMETER);
 
-            #if 0 /* Must be done by the caller. */
-                vorbis_info_init(&pCodec->Audio.Vorbis.info);
-                int bitrate = 0;
-                if (bitrate)
-                    vorbis_encode_init(&pCodec->Audio.Vorbis.info, cChannels, uHz, -1, 128000, -1);
-                else
-                    vorbis_encode_init_vbr(&pCodec->Audio.Vorbis.info, cChannels, uHz, (float).4);
-                vorbis_analysis_init(&pCodec->Audio.Vorbis.dsp_state, &pCodec->Audio.Vorbis.info);
-                vorbis_block_init(&pCodec->Audio.Vorbis.dsp_state, &pCodec->Audio.Vorbis.block_cur);
-            #endif
+                WEBMOGGVORBISPRIVDATA vorbisPrivData(pkt_ident.bytes, pkt_comments.bytes, pkt_setup.bytes);
 
-                 vorbis_comment vc;
-                 vorbis_comment_init(&vc);
-                 vorbis_comment_add_tag(&vc,"ENCODER", vorbis_version_string());
+                uint8_t *pabHdr = &vorbisPrivData.abHdr[0];
+                memcpy(pabHdr, pkt_ident.packet, pkt_ident.bytes);
+                pabHdr += pkt_ident.bytes;
+                memcpy(pabHdr, pkt_comments.packet, pkt_comments.bytes);
+                pabHdr += pkt_comments.bytes;
+                memcpy(pabHdr, pkt_setup.packet, pkt_setup.bytes);
+                pabHdr += pkt_setup.bytes;
 
-                 ogg_packet pkt_ident;
-                 ogg_packet pkt_comments;
-                 ogg_packet pkt_setup;
-                 vorbis_analysis_headerout(&pCodec->Audio.Vorbis.dsp_state, &vc, &pkt_ident, &pkt_comments, &pkt_setup);
-                 AssertMsgBreakStmt(pkt_ident.bytes <= 255 && pkt_comments.bytes <= 255,
-                                    ("Too long header / comment packets\n"), vrc = VERR_INVALID_PARAMETER);
+                vorbis_comment_clear(&vc);
 
-                 WEBMOGGVORBISPRIVDATA vorbisPrivData(pkt_ident.bytes, pkt_comments.bytes, pkt_setup.bytes);
+                size_t const offHeaders = RT_OFFSETOF(WEBMOGGVORBISPRIVDATA, abHdr);
 
-                 uint8_t *pabHdr = &vorbisPrivData.abHdr[0];
-                 memcpy(pabHdr, pkt_ident.packet, pkt_ident.bytes);
-                 pabHdr += pkt_ident.bytes;
-                 memcpy(pabHdr, pkt_comments.packet, pkt_comments.bytes);
-                 pabHdr += pkt_comments.bytes;
-                 memcpy(pabHdr, pkt_setup.packet, pkt_setup.bytes);
-                 pabHdr += pkt_setup.bytes;
-
-                 vorbis_comment_clear(&vc);
-
-                 size_t const offHeaders = RT_OFFSETOF(WEBMOGGVORBISPRIVDATA, abHdr);
-
-                 serializeString(MkvElem_CodecID,    "A_VORBIS");
-                 serializeData(MkvElem_CodecPrivate, &vorbisPrivData,
-                               offHeaders + pkt_ident.bytes + pkt_comments.bytes + pkt_setup.bytes);
-            #endif
+                serializeString(MkvElem_CodecID,    "A_VORBIS");
+                serializeData(MkvElem_CodecPrivate, &vorbisPrivData,
+                              offHeaders + pkt_ident.bytes + pkt_comments.bytes + pkt_setup.bytes);
                 break;
             }
 # endif /* VBOX_WITH_LIBVORBIS */
             default:
-                AssertFailed(); /* Shouldn't ever happen (tm). */
+                AssertFailedStmt(vrc = VERR_NOT_SUPPORTED); /* Shouldn't ever happen (tm). */
                 break;
         }
-               serializeUnsignedInteger(MkvElem_CodecDelay,   0)
-              .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80 * 1000000) /* 80ms in ns. */
-              .subStart(MkvElem_Audio)
-                  .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
-                  .serializeUnsignedInteger(MkvElem_Channels, cChannels)
-                  .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
-              .subEnd(MkvElem_Audio)
-              .subEnd(MkvElem_TrackEntry);
 
-        pTrack->Audio.uHz            = uHz;
-        pTrack->Audio.framesPerBlock = uHz / (1000 /* s in ms */ / pTrack->Audio.msPerBlock);
+        if (RT_SUCCESS(vrc))
+        {
+            serializeUnsignedInteger(MkvElem_CodecDelay,   0)
+           .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80 * 1000000) /* 80ms in ns. */
+                  .subStart(MkvElem_Audio)
+                      .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
+                      .serializeUnsignedInteger(MkvElem_Channels, cChannels)
+                      .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
+                  .subEnd(MkvElem_Audio)
+                  .subEnd(MkvElem_TrackEntry);
 
-        LogRel2(("Recording: WebM track #%RU8: Audio codec @ %RU16Hz (%RU16ms, %RU16 frames per block)\n",
-                 pTrack->uTrack, pTrack->Audio.uHz, pTrack->Audio.msPerBlock, pTrack->Audio.framesPerBlock));
+            pTrack->Audio.uHz            = uHz;
+            pTrack->Audio.framesPerBlock = uHz / (1000 /* s in ms */ / pTrack->Audio.msPerBlock);
 
-        m_CurSeg.m_mapTracks[uTrack] = pTrack;
+            LogRel2(("Recording: WebM track #%RU8: Audio codec @ %RU16Hz (%RU16ms, %RU16 frames per block)\n",
+                     pTrack->uTrack, pTrack->Audio.uHz, pTrack->Audio.msPerBlock, pTrack->Audio.framesPerBlock));
 
-        if (puTrack)
-            *puTrack = uTrack;
+            m_CurSeg.m_mapTracks[uTrack] = pTrack;
 
-        return VINF_SUCCESS;
+            if (puTrack)
+                *puTrack = uTrack;
+
+            return VINF_SUCCESS;
+        }
     }
 
     if (pTrack)
         delete pTrack;
+
+    LogFlowFuncLeaveRC(vrc);
     return vrc;
-#else /* !defined(VBOX_WITH_LIBVORBIS) */
-    RT_NOREF(pCodec, uHz, cChannels, cBits, puTrack);
-    return VERR_NOT_SUPPORTED;
-#endif
 }
 
 /**
