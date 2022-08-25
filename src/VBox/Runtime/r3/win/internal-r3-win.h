@@ -116,9 +116,14 @@ extern DECL_HIDDEN_DATA(OSVERSIONINFOEXW)               g_WinOsInfoEx;
 extern DECL_HIDDEN_DATA(HMODULE)                        g_hModKernel32;
 typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
 extern DECL_HIDDEN_DATA(PFNGETWINSYSDIR)                g_pfnGetSystemWindowsDirectoryW;
-extern DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *) g_pfnSystemTimeToTzSpecificLocalTime;
+extern DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *)    g_pfnSystemTimeToTzSpecificLocalTime;
 typedef HANDLE (WINAPI *PFNCREATEWAITABLETIMEREX)(LPSECURITY_ATTRIBUTES, LPCWSTR, DWORD, DWORD);
 extern DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)       g_pfnCreateWaitableTimerExW;
+extern DECL_HIDDEN_DATA(decltype(GetHandleInformation) *)               g_pfnGetHandleInformation;
+extern DECL_HIDDEN_DATA(decltype(SetHandleInformation) *)               g_pfnSetHandleInformation;
+typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
+extern DECL_HIDDEN_DATA(PFNGETWINSYSDIR)                g_pfnGetSystemWindowsDirectoryW;
+
 
 extern DECL_HIDDEN_DATA(HMODULE)                        g_hModNtDll;
 typedef NTSTATUS (NTAPI *PFNNTQUERYFULLATTRIBUTESFILE)(struct _OBJECT_ATTRIBUTES *, struct _FILE_NETWORK_OPEN_INFORMATION *);
@@ -149,8 +154,11 @@ typedef BOOL            (WINAPI *PFNWSACLOSEEVENT)(HANDLE);
 typedef BOOL            (WINAPI *PFNWSAEVENTSELECT)(UINT_PTR, HANDLE, LONG);
 /** WSAEnumNetworkEvents */
 typedef int             (WINAPI *PFNWSAENUMNETWORKEVENTS)(UINT_PTR, HANDLE, struct _WSANETWORKEVENTS *);
+/** WSASocketW */
+typedef UINT_PTR        (WINAPI *PFNWSASOCKETW)(int, int, int, struct _WSAPROTOCOL_INFOW *, unsigned, DWORD);
 /** WSASend */
-typedef int             (WINAPI *PFNWSASend)(UINT_PTR, struct _WSABUF *, DWORD, LPDWORD, DWORD dwFlags, struct _OVERLAPPED *, uintptr_t /*LPWSAOVERLAPPED_COMPLETION_ROUTINE*/);
+typedef int             (WINAPI *PFNWSASEND)(UINT_PTR, struct _WSABUF *, DWORD, LPDWORD, DWORD dwFlags,
+                                             struct _OVERLAPPED *, uintptr_t /*LPWSAOVERLAPPED_COMPLETION_ROUTINE*/);
 
 /** socket */
 typedef UINT_PTR        (WINAPI *PFNWINSOCKSOCKET)(int, int, int);
@@ -200,7 +208,8 @@ extern DECL_HIDDEN_DATA(PFNWSACLOSEEVENT)                g_pfnWSACloseEvent;
 extern DECL_HIDDEN_DATA(PFNWSASETEVENT)                  g_pfnWSASetEvent;
 extern DECL_HIDDEN_DATA(PFNWSAEVENTSELECT)               g_pfnWSAEventSelect;
 extern DECL_HIDDEN_DATA(PFNWSAENUMNETWORKEVENTS)         g_pfnWSAEnumNetworkEvents;
-extern DECL_HIDDEN_DATA(PFNWSASend)                      g_pfnWSASend;
+extern DECL_HIDDEN_DATA(PFNWSASOCKETW)                   g_pfnWSASocketW;
+extern DECL_HIDDEN_DATA(PFNWSASEND)                      g_pfnWSASend;
 extern DECL_HIDDEN_DATA(PFNWINSOCKSOCKET)                g_pfnsocket;
 extern DECL_HIDDEN_DATA(PFNWINSOCKCLOSESOCKET)           g_pfnclosesocket;
 extern DECL_HIDDEN_DATA(PFNWINSOCKRECV)                  g_pfnrecv;

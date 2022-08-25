@@ -241,10 +241,9 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                 /*
                  * Create the local (unix) socket and bind to it.
                  */
-                rc = rtSocketCreate(&pThis->hSocket, AF_LOCAL, SOCK_STREAM, 0 /*iProtocol*/);
+                rc = rtSocketCreate(&pThis->hSocket, AF_LOCAL, SOCK_STREAM, 0 /*iProtocol*/, false /*fInheritable*/);
                 if (RT_SUCCESS(rc))
                 {
-                    RTSocketSetInheritance(pThis->hSocket, false /*fInheritable*/);
                     signal(SIGPIPE, SIG_IGN); /* Required on solaris, at least. */
 
                     uint8_t cbAddr;
@@ -560,10 +559,9 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                 /*
                  * Create the local (unix) socket and try connect to the server.
                  */
-                rc = rtSocketCreate(&pThis->hSocket, AF_LOCAL, SOCK_STREAM, 0 /*iProtocol*/);
+                rc = rtSocketCreate(&pThis->hSocket, AF_LOCAL, SOCK_STREAM, 0 /*iProtocol*/, false /*fInheritable*/);
                 if (RT_SUCCESS(rc))
                 {
-                    RTSocketSetInheritance(pThis->hSocket, false /*fInheritable*/);
                     signal(SIGPIPE, SIG_IGN); /* Required on solaris, at least. */
 
                     struct sockaddr_un  Addr;

@@ -519,7 +519,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
             HANDLE                      hNative2 = INVALID_HANDLE_VALUE;
             FILE_PIPE_LOCAL_INFORMATION Info;
             RT_ZERO(Info);
-            if (   g_enmWinVer != kRTWinOSType_NT310
+            if (   g_pfnSetHandleInformation
                 && rtPipeQueryNtInfo(pThis, &Info))
                 rc = VINF_SUCCESS;
             else
@@ -562,9 +562,9 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
                            VERR_INVALID_HANDLE);
                 if (   RT_SUCCESS(rc)
                     && hNative2 == INVALID_HANDLE_VALUE
-                    && !SetHandleInformation(hNative,
-                                             HANDLE_FLAG_INHERIT /*dwMask*/,
-                                             fFlags & RTPIPE_N_INHERIT ? HANDLE_FLAG_INHERIT : 0))
+                    && !g_pfnSetHandleInformation(hNative,
+                                                  HANDLE_FLAG_INHERIT /*dwMask*/,
+                                                  fFlags & RTPIPE_N_INHERIT ? HANDLE_FLAG_INHERIT : 0))
                 {
                     rc = RTErrConvertFromWin32(GetLastError());
                     AssertMsgFailed(("%Rrc\n", rc));

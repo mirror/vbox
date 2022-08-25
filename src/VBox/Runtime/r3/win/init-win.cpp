@@ -86,9 +86,11 @@ static PFNSETUNHANDLEDEXCEPTIONFILTER           g_pfnSetUnhandledExceptionFilter
 /** The previous unhandled exception filter. */
 static LPTOP_LEVEL_EXCEPTION_FILTER             g_pfnUnhandledXcptFilter = NULL;
 /** SystemTimeToTzSpecificLocalTime. */
-DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *) g_pfnSystemTimeToTzSpecificLocalTime = NULL;
+DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *)   g_pfnSystemTimeToTzSpecificLocalTime = NULL;
 /** CreateWaitableTimerEx . */
-DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)      g_pfnCreateWaitableTimerExW = NULL;
+DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)                      g_pfnCreateWaitableTimerExW = NULL;
+DECL_HIDDEN_DATA(decltype(GetHandleInformation) *)              g_pfnGetHandleInformation = NULL;
+DECL_HIDDEN_DATA(decltype(SetHandleInformation) *)              g_pfnSetHandleInformation = NULL;
 
 /** The native ntdll.dll handle. */
 DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
@@ -121,8 +123,10 @@ DECL_HIDDEN_DATA(PFNWSASETEVENT)                g_pfnWSASetEvent = NULL;
 DECL_HIDDEN_DATA(PFNWSAEVENTSELECT)             g_pfnWSAEventSelect = NULL;
 /** WSAEnumNetworkEvents */
 DECL_HIDDEN_DATA(PFNWSAENUMNETWORKEVENTS)       g_pfnWSAEnumNetworkEvents = NULL;
+/** WSASocketW */
+DECL_HIDDEN_DATA(PFNWSASOCKETW)                 g_pfnWSASocketW = NULL;
 /** WSASend */
-DECL_HIDDEN_DATA(PFNWSASend)                    g_pfnWSASend = NULL;
+DECL_HIDDEN_DATA(PFNWSASEND)                    g_pfnWSASend = NULL;
 /** socket */
 DECL_HIDDEN_DATA(PFNWINSOCKSOCKET)              g_pfnsocket = NULL;
 /** closesocket */
@@ -310,8 +314,8 @@ static void rtR3InitWindowsVersion(void)
     AssertCompileMemberOffset(OSVERSIONINFOEX, wServicePackMajor, sizeof(OSVERSIONINFO));
 
     /*
-     * Use the NT version of GetVersionExW so we don't get fooled by
-     * compatability shims.
+     * Use the NT version of RtlGetVersion (since w2k) so we don't get fooled
+     * by compatability shims.
      */
     RT_ZERO(g_WinOsInfoEx);
     g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
@@ -325,22 +329,48 @@ static void rtR3InitWindowsVersion(void)
     {
         /*
          * Couldn't find it or it failed, try the windows version of the API.
+         * The GetVersionExW API was added in NT 3.51.
          */
         RT_ZERO(g_WinOsInfoEx);
         g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
-        if (!GetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
+
+        BOOL (__stdcall *pfnGetVersionExW)(OSVERSIONINFOW *);
+        *(FARPROC *)&pfnGetVersionExW = GetProcAddress(g_hModKernel32, "GetVersionExW");
+
+        if (!pfnGetVersionExW || !pfnGetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
         {
             /*
              * If that didn't work either, just get the basic version bits.
              */
             RT_ZERO(g_WinOsInfoEx);
             g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-            if (GetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
+            if (!pfnGetVersionExW || !pfnGetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
                 Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
             else
             {
+                /*
+                 * Okay, nothing worked, so use GetVersion.
+                 * This should only happen if we're on NT 3.1 or NT 3.50.
+                 * It should never happen for 64-bit builds.
+                 */
+#ifdef RT_ARCH_X86
+                RT_ZERO(g_WinOsInfoEx);
+                DWORD const dwVersion = GetVersion();
+
+                /* Common fields: */
+                g_WinOsInfoEx.dwMajorVersion    = dwVersion & 0xff;
+                g_WinOsInfoEx.dwMinorVersion    = (dwVersion >> 8) & 0xff;
+                if (!(dwVersion & RT_BIT_32(31)))
+                    g_WinOsInfoEx.dwBuildNumber = dwVersion >> 16;
+                else
+                    g_WinOsInfoEx.dwBuildNumber = 511;
+                g_WinOsInfoEx.dwPlatformId      = VER_PLATFORM_WIN32_NT;
+                g_WinOsInfoEx.wProductType      = VER_NT_WORKSTATION;
+                /** @todo get CSD from registry. */
+#else
                 AssertBreakpoint();
                 RT_ZERO(g_WinOsInfoEx);
+#endif
             }
         }
     }
@@ -388,6 +418,7 @@ static void rtR3InitWinSockApis(void)
     g_pfnWSASetEvent          = (decltype(g_pfnWSASetEvent))        GetProcAddress(g_hModWinSock, "WSASetEvent");
     g_pfnWSAEventSelect       = (decltype(g_pfnWSAEventSelect))     GetProcAddress(g_hModWinSock, "WSAEventSelect");
     g_pfnWSAEnumNetworkEvents = (decltype(g_pfnWSAEnumNetworkEvents))GetProcAddress(g_hModWinSock,"WSAEnumNetworkEvents");
+    g_pfnWSASocketW           = (decltype(g_pfnWSASocketW))         GetProcAddress(g_hModWinSock, "WSASocketW");
     g_pfnWSASend              = (decltype(g_pfnWSASend))            GetProcAddress(g_hModWinSock, "WSASend");
     g_pfnsocket               = (decltype(g_pfnsocket))             GetProcAddress(g_hModWinSock, "socket");
     g_pfnclosesocket          = (decltype(g_pfnclosesocket))        GetProcAddress(g_hModWinSock, "closesocket");
@@ -418,6 +449,7 @@ static void rtR3InitWinSockApis(void)
     Assert(g_pfnWSASetEvent          || g_fOldWinSock);
     Assert(g_pfnWSAEventSelect       || g_fOldWinSock);
     Assert(g_pfnWSAEnumNetworkEvents || g_fOldWinSock);
+    Assert(g_pfnWSASocketW           || g_fOldWinSock);
     Assert(g_pfnWSASend              || g_fOldWinSock);
     Assert(g_pfnsocket);
     Assert(g_pfnclosesocket);
@@ -529,18 +561,22 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
      * Resolve some kernel32.dll APIs we may need but aren't necessarily
      * present in older windows versions.
      */
-    g_pfnGetSystemWindowsDirectoryW = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetSystemWindowsDirectoryW");
+    g_pfnGetSystemWindowsDirectoryW      = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetSystemWindowsDirectoryW");
     if (g_pfnGetSystemWindowsDirectoryW)
-        g_pfnGetSystemWindowsDirectoryW = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetWindowsDirectoryW");
+        g_pfnGetSystemWindowsDirectoryW  = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetWindowsDirectoryW");
     g_pfnSystemTimeToTzSpecificLocalTime = (decltype(SystemTimeToTzSpecificLocalTime) *)GetProcAddress(g_hModKernel32, "SystemTimeToTzSpecificLocalTime");
-    g_pfnCreateWaitableTimerExW = (PFNCREATEWAITABLETIMEREX)GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
+    g_pfnCreateWaitableTimerExW     = (PFNCREATEWAITABLETIMEREX)        GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
+    g_pfnGetHandleInformation       = (decltype(GetHandleInformation) *)GetProcAddress(g_hModKernel32, "GetHandleInformation");
+    g_pfnSetHandleInformation       = (decltype(SetHandleInformation) *)GetProcAddress(g_hModKernel32, "SetHandleInformation");
+    Assert(g_pfnSetHandleInformation || g_enmWinVer < kRTWinOSType_NT351);
+    Assert(g_pfnGetHandleInformation || g_enmWinVer < kRTWinOSType_NT351);
 
     /*
      * Resolve some ntdll.dll APIs that weren't there in early NT versions.
      */
-    g_pfnNtQueryFullAttributesFile = (PFNNTQUERYFULLATTRIBUTESFILE)GetProcAddress(g_hModNtDll, "NtQueryFullAttributesFile");
-    g_pfnNtDuplicateToken          = (PFNNTDUPLICATETOKEN)GetProcAddress(         g_hModNtDll, "NtDuplicateToken");
-    g_pfnNtAlertThread             = (decltype(NtAlertThread) *)GetProcAddress(   g_hModNtDll, "NtAlertThread");
+    g_pfnNtQueryFullAttributesFile  = (PFNNTQUERYFULLATTRIBUTESFILE)GetProcAddress(g_hModNtDll, "NtQueryFullAttributesFile");
+    g_pfnNtDuplicateToken           = (PFNNTDUPLICATETOKEN)GetProcAddress(         g_hModNtDll, "NtDuplicateToken");
+    g_pfnNtAlertThread              = (decltype(NtAlertThread) *)GetProcAddress(   g_hModNtDll, "NtAlertThread");
 
     /*
      * Resolve the winsock error getter and setter so assertions can save those too.

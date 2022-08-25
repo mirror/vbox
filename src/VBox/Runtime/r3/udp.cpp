@@ -302,11 +302,9 @@ RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUD
      * Setting up socket.
      */
     RTSOCKET Sock;
-    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, IPPROTO_UDP, false /*fInheritable*/);
     if (RT_SUCCESS(rc))
     {
-        RTSocketSetInheritance(Sock, false /*fInheritable*/);
-
         /*
          * Set socket options.
          */
@@ -718,10 +716,9 @@ RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PR
      * Create the socket and connect.
      */
     RTSOCKET Sock;
-    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, 0);
+    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, 0, false /*fInheritable*/);
     if (RT_SUCCESS(rc))
     {
-        RTSocketSetInheritance(Sock, false /* fInheritable */);
         if (pLocalAddr)
             rc = rtSocketBind(Sock, pLocalAddr);
         if (RT_SUCCESS(rc))

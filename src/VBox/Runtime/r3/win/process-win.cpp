@@ -2379,9 +2379,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             /* Get the inheritability of the handle. */
             if (*aphStds[i] != INVALID_HANDLE_VALUE)
             {
-                if (g_enmWinVer == kRTWinOSType_NT310)
+                if (!g_pfnGetHandleInformation)
                     afInhStds[i] = 0; /* No handle info on NT 3.1, so ASSUME it is not inheritable. */
-                else if (!GetHandleInformation(*aphStds[i], &afInhStds[i]))
+                else if (!g_pfnGetHandleInformation(*aphStds[i], &afInhStds[i]))
                 {
                     rc = RTErrConvertFromWin32(GetLastError());
                     AssertMsgFailedReturn(("%Rrc aphStds[%d] => %p paHandles[%d]={%d,%p}\n",
@@ -2403,7 +2403,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         if (   (afInhStds[i] != 0xffffffff)
             && !(afInhStds[i] & HANDLE_FLAG_INHERIT))
         {
-            if (g_enmWinVer == kRTWinOSType_NT310)
+            if (!g_pfnSetHandleInformation)
             {
                 if (DuplicateHandle(GetCurrentProcess(), *aphStds[i], GetCurrentProcess(), &ahStdDups[i],
                                     i == 0 ? GENERIC_READ : GENERIC_WRITE, TRUE /*fInheritHandle*/, DUPLICATE_SAME_ACCESS))
@@ -2414,7 +2414,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     AssertMsgFailedBreak(("%Rrc aphStds[%u] => %p\n", rc, i, *aphStds[i]));
                 }
             }
-            else if (!SetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT))
+            else if (!g_pfnSetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT))
             {
                 rc = RTErrConvertFromWin32(GetLastError());
                 if (rc == VERR_INVALID_FUNCTION && g_enmWinVer == kRTWinOSType_NT310)
@@ -2528,14 +2528,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         RTUtf16Free(pwszCmdLine);
     }
 
-    if (g_enmWinVer != kRTWinOSType_NT310)
+    if (g_pfnSetHandleInformation)
     {
         /* Undo any handle inherit changes. */
         for (int i = 0; i < 3; i++)
             if (   (afInhStds[i] != 0xffffffff)
                 && !(afInhStds[i] & HANDLE_FLAG_INHERIT))
             {
-                if (   !SetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, 0)
+                if (   !g_pfnSetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, 0)
                     && (   GetLastError() != ERROR_INVALID_FUNCTION
                         || g_enmWinVer != kRTWinOSType_NT310) )
                     AssertMsgFailed(("%Rrc %p\n", RTErrConvertFromWin32(GetLastError()), *aphStds[i]));

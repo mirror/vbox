@@ -571,8 +571,10 @@ RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative)
  * @param   iDomain             The protocol family (PF_XXX).
  * @param   iType               The socket type (SOCK_XXX).
  * @param   iProtocol           Socket parameter, usually 0.
+ * @param   fInheritable        Set to true if the socket should be inherted by
+ *                              child processes, false if not inheritable.
  */
-DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
+DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol, bool fInheritable)
 {
 #ifdef RT_OS_WINDOWS
     AssertReturn(g_pfnsocket, VERR_NET_NOT_UNSUPPORTED);
@@ -586,20 +588,51 @@ DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int i
 
     /*
      * Create the socket.
+     *
+     * The RTSocketSetInheritance operation isn't necessarily reliable on windows,
+     * so try use WSA_FLAG_NO_HANDLE_INHERIT with WSASocketW when possible.
      */
 #ifdef RT_OS_WINDOWS
-    RTSOCKETNATIVE hNative = g_pfnsocket(iDomain, iType, iProtocol);
+    bool           fCallSetInheritance = true;
+    RTSOCKETNATIVE hNative;
+    if (g_pfnWSASocketW)
+    {
+        DWORD fWsaFlags = WSA_FLAG_OVERLAPPED | (!fInheritable ? WSA_FLAG_NO_HANDLE_INHERIT : 0);
+        hNative = g_pfnWSASocketW(iDomain, iType, iProtocol, NULL, 0 /*Group*/, fWsaFlags);
+        if (hNative != NIL_RTSOCKETNATIVE)
+            fCallSetInheritance = false;
+        else
+        {
+            if (!fInheritable)
+                hNative = g_pfnsocket(iDomain, iType, iProtocol);
+            if (hNative == NIL_RTSOCKETNATIVE)
+                return rtSocketError();
+        }
+    }
+    else
+    {
+        hNative = g_pfnsocket(iDomain, iType, iProtocol);
+        if (hNative == NIL_RTSOCKETNATIVE)
+            return rtSocketError();
+    }
 #else
     RTSOCKETNATIVE hNative = socket(iDomain, iType, iProtocol);
-#endif
     if (hNative == NIL_RTSOCKETNATIVE)
         return rtSocketError();
+#endif
 
     /*
      * Wrap it.
      */
     int rc = rtSocketCreateForNative(phSocket, hNative, false /*fLeaveOpen*/);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+#ifdef RT_OS_WINDOWS
+        if (fCallSetInheritance)
+#endif
+            RTSocketSetInheritance(*phSocket, fInheritable);
+    }
+    else
     {
 #ifdef RT_OS_WINDOWS
         g_pfnclosesocket(hNative);
@@ -942,16 +975,38 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 
-    int rc = VINF_SUCCESS;
-#ifdef RT_OS_WINDOWS
-    if (!SetHandleInformation((HANDLE)pThis->hNative, HANDLE_FLAG_INHERIT, fInheritable ? HANDLE_FLAG_INHERIT : 0))
-        rc = RTErrConvertFromWin32(GetLastError());
-#else
+#ifndef RT_OS_WINDOWS
     if (fcntl(pThis->hNative, F_SETFD, fInheritable ? 0 : FD_CLOEXEC) < 0)
-        rc = RTErrConvertFromErrno(errno);
-#endif
+        return RTErrConvertFromErrno(errno);
+    return VINF_SUCCESS;
+#else
+    /* Windows is more complicated as sockets are complicated wrt inheritance
+       (see stackoverflow for details).  In general, though we cannot hope to
+       make a socket really non-inheritable before vista as other layers in
+       the winsock maze may have additional handles associated with the socket. */
+    if (g_pfnGetHandleInformation)
+    {
+        /* Check if the handle is already in what seems to be the right state
+           before we try doing anything. */
+        DWORD fFlags;
+        if (g_pfnGetHandleInformation((HANDLE)pThis->hNative, &fFlags))
+        {
+            if (RT_BOOL(fFlags & HANDLE_FLAG_INHERIT) == fInheritable)
+                return VINF_SUCCESS;
+        }
+    }
 
-    return rc;
+    if (!g_pfnSetHandleInformation)
+        return VERR_NET_NOT_UNSUPPORTED;
+
+    if (!g_pfnSetHandleInformation((HANDLE)pThis->hNative, HANDLE_FLAG_INHERIT, fInheritable ? HANDLE_FLAG_INHERIT : 0))
+        return RTErrConvertFromWin32(GetLastError());
+    /** @todo Need we do something related to WS_SIO_ASSOCIATE_HANDLE or
+     *        WS_SIO_TRANSLATE_HANDLE? Or what  other handles could be associated
+     *        with the socket? that we need to modify? */
+
+    return VINF_SUCCESS;
+#endif
 }
 
 

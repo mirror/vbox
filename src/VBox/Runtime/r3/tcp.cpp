@@ -331,18 +331,15 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
      * Setting up socket.
      */
     RTSOCKET WaitSock;
-    rc = rtSocketCreate(&WaitSock, AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    rc = rtSocketCreate(&WaitSock, AF_INET, SOCK_STREAM, IPPROTO_TCP, false /*fInheritable*/);
     if (RT_SUCCESS(rc))
     {
-        RTSocketSetInheritance(WaitSock, false /*fInheritable*/);
-
         /*
          * Set socket options.
          */
         int fFlag = 1;
         if (!rtSocketSetOpt(WaitSock, SOL_SOCKET, SO_REUSEADDR, &fFlag, sizeof(fFlag)))
         {
-
             /*
              * Bind a name to a socket and set it listening for connections.
              */
@@ -841,11 +838,9 @@ RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSO
      * Create the socket and connect.
      */
     RTSOCKET Sock;
-    rc = rtSocketCreate(&Sock, PF_INET, SOCK_STREAM, 0);
+    rc = rtSocketCreate(&Sock, PF_INET, SOCK_STREAM, 0, false /*fInheritable*/);
     if (RT_SUCCESS(rc))
     {
-        RTSocketSetInheritance(Sock, false /*fInheritable*/);
-
         if (!ppCancelCookie)
             rc = rtSocketConnect(Sock, &Addr, cMillies);
         else

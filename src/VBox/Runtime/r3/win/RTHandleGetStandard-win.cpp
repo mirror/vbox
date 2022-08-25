@@ -50,6 +50,7 @@
 #include <iprt/win/windows.h>
 
 #include "internal/socket.h"            /* (Needs Windows.h.) */
+#include "internal-r3-win.h"            /* (Needs Windows.h.) */
 
 
 RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, bool fLeaveOpen, PRTHANDLE ph)
@@ -76,17 +77,21 @@ RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, bool fLeaveOpen, PRTHA
     if (hNative == INVALID_HANDLE_VALUE)
         return RTErrConvertFromWin32(GetLastError());
 
-    DWORD dwInfo;
-    if (!GetHandleInformation(hNative, &dwInfo))
+    DWORD dwInfo = 0;
+    if (g_pfnGetHandleInformation && !g_pfnGetHandleInformation(hNative, &dwInfo))
         return RTErrConvertFromWin32(GetLastError());
     bool const fInherit = RT_BOOL(dwInfo & HANDLE_FLAG_INHERIT);
 
+    SetLastError(NO_ERROR);
     RTHANDLE h;
     DWORD    dwType = GetFileType(hNative);
     switch (dwType & ~FILE_TYPE_REMOTE)
     {
-        default:
         case FILE_TYPE_UNKNOWN:
+            if (GetLastError() != NO_ERROR)
+                return RTErrConvertFromWin32(GetLastError());
+            RT_FALL_THROUGH();
+        default:
         case FILE_TYPE_CHAR:
         case FILE_TYPE_DISK:
             h.enmType = RTHANDLETYPE_FILE;
