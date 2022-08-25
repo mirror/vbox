@@ -143,9 +143,6 @@ static decltype(QueryFullProcessImageNameW)    *g_pfnQueryFullProcessImageNameW 
 
 /** @} */
 
-/** Windows version.  */
-static OSVERSIONINFOEXA                         g_WinVersion;
-
 
 /**
  * An RTOnce callback function.
@@ -156,7 +153,7 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
 
     /* SECUR32 */
     RTLDRMOD hLdrMod;
-    int rc = RTLdrLoadSystem("secur32.dll", true, &hLdrMod);
+    int rc = RTLdrLoadSystem("secur32.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hLdrMod, "LsaGetLogonSessionData", (void **)&g_pfnLsaGetLogonSessionData);
@@ -173,11 +170,11 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
         g_pfnLsaGetLogonSessionData = NULL;
         g_pfnLsaEnumerateLogonSessions = NULL;
         g_pfnLsaFreeReturnBuffer = NULL;
-        Assert(g_WinVersion.dwMajorVersion < 5);
+        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
     }
 
     /* WTSAPI32 */
-    rc = RTLdrLoadSystem("wtsapi32.dll", true, &hLdrMod);
+    rc = RTLdrLoadSystem("wtsapi32.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hLdrMod, "WTSFreeMemory", (void **)&g_pfnWTSFreeMemory);
@@ -191,11 +188,11 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
         VGSvcVerbose(1, "WtsApi32.dll APIs are not available (%Rrc)\n", rc);
         g_pfnWTSFreeMemory = NULL;
         g_pfnWTSQuerySessionInformationA = NULL;
-        Assert(g_WinVersion.dwMajorVersion < 5);
+        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
     }
 
     /* PSAPI */
-    rc = RTLdrLoadSystem("psapi.dll", true, &hLdrMod);
+    rc = RTLdrLoadSystem("psapi.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hLdrMod, "EnumProcesses", (void **)&g_pfnEnumProcesses);
@@ -209,34 +206,19 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
         VGSvcVerbose(1, "psapi.dll APIs are not available (%Rrc)\n", rc);
         g_pfnEnumProcesses = NULL;
         g_pfnGetModuleFileNameExW = NULL;
-        Assert(g_WinVersion.dwMajorVersion < 5);
+        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
     }
 
     /* Kernel32: */
-    rc = RTLdrLoadSystem("kernel32.dll", true, &hLdrMod);
+    rc = RTLdrLoadSystem("kernel32.dll", true /*fNoUnload*/, &hLdrMod);
     AssertRCReturn(rc, rc);
     rc = RTLdrGetSymbol(hLdrMod, "QueryFullProcessImageNameW", (void **)&g_pfnQueryFullProcessImageNameW);
     if (RT_FAILURE(rc))
     {
-        Assert(g_WinVersion.dwMajorVersion < 6);
+        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(6, 0, 0));
         g_pfnQueryFullProcessImageNameW = NULL;
     }
     RTLdrClose(hLdrMod);
-
-    /*
-     * Get the extended windows version once and for all.
-     */
-    g_WinVersion.dwOSVersionInfoSize = sizeof(g_WinVersion);
-    if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
-    {
-        RT_ZERO(g_WinVersion);
-        g_WinVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
-        {
-            AssertFailed();
-            RT_ZERO(g_WinVersion);
-        }
-    }
 
     return VINF_SUCCESS;
 }
@@ -244,8 +226,7 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
 
 static bool vgsvcVMInfoSession0Separation(void)
 {
-    return g_WinVersion.dwPlatformId == VER_PLATFORM_WIN32_NT
-        && g_WinVersion.dwMajorVersion >= 6; /* Vista = 6.0 */
+    return RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0); /* Vista */
 }
 
 
@@ -254,61 +235,57 @@ static bool vgsvcVMInfoSession0Separation(void)
  *
  * @return  IPRT status code.
  */
-static int vgsvcVMInfoWinProcessesGetModuleNameA(PVBOXSERVICEVMINFOPROC const pProc, PRTUTF16 *ppszName)
+static int vgsvcVMInfoWinProcessesGetModuleNameW(PVBOXSERVICEVMINFOPROC const pProc, PRTUTF16 *ppszName)
 {
-    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
+    *ppszName = NULL;
     AssertPtrReturn(ppszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
+    AssertReturn(g_pfnGetModuleFileNameExW || g_pfnQueryFullProcessImageNameW, VERR_NOT_SUPPORTED);
 
-    /** @todo Only do this once. Later. */
-    /* Platform other than NT (e.g. Win9x) not supported. */
-    if (g_WinVersion.dwPlatformId != VER_PLATFORM_WIN32_NT)
-        return VERR_NOT_SUPPORTED;
-
-    int rc = VINF_SUCCESS;
-
+    /*
+     * Open the process.
+     */
     DWORD dwFlags = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
-    if (g_WinVersion.dwMajorVersion >= 6 /* Vista or later */)
+    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0)) /* Vista and later */
         dwFlags = PROCESS_QUERY_LIMITED_INFORMATION; /* possible to do on more processes */
 
-    HANDLE h = OpenProcess(dwFlags, FALSE, pProc->id);
-    if (h == NULL)
+    HANDLE hProcess = OpenProcess(dwFlags, FALSE, pProc->id);
+    if (hProcess == NULL)
     {
         DWORD dwErr = GetLastError();
         if (g_cVerbosity)
             VGSvcError("Unable to open process with PID=%u, error=%u\n", pProc->id, dwErr);
-        rc = RTErrConvertFromWin32(dwErr);
+        return RTErrConvertFromWin32(dwErr);
     }
+
+    /*
+     * Since GetModuleFileNameEx has trouble with cross-bitness stuff (32-bit apps
+     * cannot query 64-bit apps and vice verse) we have to use a different code
+     * path for Vista and up.
+     *
+     * So use QueryFullProcessImageNameW when available (Vista+), fall back on
+     * GetModuleFileNameExW on older windows version (
+     */
+    WCHAR wszName[_1K];
+    DWORD dwLen = _1K;
+    BOOL  fRc;
+    if (g_pfnQueryFullProcessImageNameW)
+        fRc = g_pfnQueryFullProcessImageNameW(hProcess, 0 /*PROCESS_NAME_NATIVE*/, wszName, &dwLen);
+    else
+        fRc = g_pfnGetModuleFileNameExW(hProcess, NULL /* Get main executable */, wszName, dwLen);
+
+    int rc;
+    if (fRc)
+        rc = RTUtf16DupEx(ppszName, wszName, 0);
     else
     {
-        /* Since GetModuleFileNameEx has trouble with cross-bitness stuff (32-bit apps cannot query 64-bit
-           apps and vice verse) we have to use a different code path for Vista and up. */
-        WCHAR wszName[_1K];
-        DWORD dwLen = sizeof(wszName); /** @todo r=bird: wrong? */
-
-        /* Use QueryFullProcessImageNameW if available (Vista+). */
-        if (g_pfnQueryFullProcessImageNameW)
-        {
-            if (!g_pfnQueryFullProcessImageNameW(h, 0 /*PROCESS_NAME_NATIVE*/, wszName, &dwLen))
-                rc = VERR_ACCESS_DENIED;
-        }
-        else if (!g_pfnGetModuleFileNameExW(h, NULL /* Get main executable */, wszName, dwLen))
-            rc = VERR_ACCESS_DENIED;
-
-        if (   RT_FAILURE(rc)
-            && g_cVerbosity > 3)
-           VGSvcError("Unable to retrieve process name for PID=%u, error=%u\n", pProc->id, GetLastError());
-        else
-        {
-            PRTUTF16 pszName = RTUtf16Dup(wszName);
-            if (pszName)
-                *ppszName = pszName;
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
-        CloseHandle(h);
+        DWORD dwErr = GetLastError();
+        if (g_cVerbosity > 3)
+            VGSvcError("Unable to retrieve process name for PID=%u, LastError=%Rwc\n", pProc->id, dwErr);
+        rc = RTErrConvertFromWin32(dwErr);
     }
 
+    CloseHandle(hProcess);
     return rc;
 }
 
@@ -696,7 +673,7 @@ static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVM
                 if (g_cVerbosity)
                 {
                     PRTUTF16 pszName;
-                    int rc2 = vgsvcVMInfoWinProcessesGetModuleNameA(&paProcs[i], &pszName);
+                    int rc2 = vgsvcVMInfoWinProcessesGetModuleNameW(&paProcs[i], &pszName);
                     VGSvcVerbose(4, "Session %RU32: PID=%u (fInt=%RTbool): %ls\n",
                                  pSessionData->Session, paProcs[i].id, paProcs[i].fInteractive,
                                  RT_SUCCESS(rc2) ? pszName : L"<Unknown>");
@@ -866,29 +843,30 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
                              pUserInfo->wszUser, pSessionData->Session, pSessionData->LogonId.HighPart,
                              pSessionData->LogonId.LowPart, pUserInfo->wszAuthenticationPackage, pUserInfo->wszLogonDomain);
 
-                /**
-                 * Note: On certain Windows OSes WTSQuerySessionInformation leaks memory when used
-                 * under a heavy stress situation. There are hotfixes available from Microsoft.
+                /* KB970910 (check http://support.microsoft.com/kb/970910 on archive.org)
+                 * indicates that WTSQuerySessionInformation may leak memory and return the
+                 * wrong status code for WTSApplicationName and WTSInitialProgram queries.
                  *
-                 * See: http://support.microsoft.com/kb/970910
+                 * The system must be low on resources, and presumably some internal operation
+                 * must fail because of this, triggering an error handling path that forgets
+                 * to free memory and set last error.
+                 *
+                 * bird 2022-08-26: However, we do not query either of those info items.  We
+                 * query WTSConnectState, which is a rather simple affair.  So, I've
+                 * re-enabled the code for all systems that includes the API.
                  */
                 if (!s_fSkipRDPDetection)
                 {
-                    /* Skip RDP detection on non-NT systems. */
-                    if (g_WinVersion.dwPlatformId != VER_PLATFORM_WIN32_NT)
-                        s_fSkipRDPDetection = true;
-
-                    /* Skip RDP detection on Windows 2000.
-                     * For Windows 2000 however we don't have any hotfixes, so just skip the
-                     * RDP detection in any case. */
-                    if (   g_WinVersion.dwMajorVersion == 5
-                        && g_WinVersion.dwMinorVersion == 0)
-                        s_fSkipRDPDetection = true;
-
                     /* Skip if we don't have the WTS API. */
                     if (!g_pfnWTSQuerySessionInformationA)
                         s_fSkipRDPDetection = true;
-
+#if 0 /* bird: see above */
+                    /* Skip RDP detection on Windows 2000 and older.
+                       For Windows 2000 however we don't have any hotfixes, so just skip the
+                       RDP detection in any case. */
+                    else if (RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 1, 0)) /* older than XP */
+                        s_fSkipRDPDetection = true;
+#endif
                     if (s_fSkipRDPDetection)
                         VGSvcVerbose(0, "Detection of logged-in users via RDP is disabled\n");
                 }

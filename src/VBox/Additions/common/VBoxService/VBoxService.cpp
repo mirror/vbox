@@ -1200,14 +1200,13 @@ int main(int argc, char **argv)
     RT_ZERO(OSInfoEx);
     OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
+
     SetLastError(NO_ERROR);
     HANDLE hMutexAppRunning;
-    if (    GetVersionEx((LPOSVERSIONINFO)&OSInfoEx)
-        &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
-        &&  OSInfoEx.dwMajorVersion >= 5 /* NT 5.0 a.k.a W2K */)
-        hMutexAppRunning = CreateMutex(NULL, FALSE, "Global\\" VBOXSERVICE_NAME);
+    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(5,0,0)) /* Windows 2000 */
+        hMutexAppRunning = CreateMutexW(NULL, FALSE, L"Global\\" VBOXSERVICE_NAME);
     else
-        hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
+        hMutexAppRunning = CreateMutexW(NULL, FALSE, RT_CONCAT(L,VBOXSERVICE_NAME));
     if (hMutexAppRunning == NULL)
     {
         DWORD dwErr = GetLastError();

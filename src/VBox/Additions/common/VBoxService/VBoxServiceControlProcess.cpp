@@ -43,6 +43,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/thread.h>
 
 #include <VBox/VBoxGuestLib.h>
@@ -1296,13 +1297,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
          * On Windows Vista (and up) sysprep is located in "system32\\Sysprep\\sysprep.exe",
          * so detect the OS and use a different path.
          */
-        OSVERSIONINFOEX OSInfoEx;
-        RT_ZERO(OSInfoEx);
-        OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-        BOOL fRet = GetVersionEx((LPOSVERSIONINFO) &OSInfoEx);
-        if (    fRet
-            &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
-            &&  OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
+        if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,0,0) /* Vista and later */)
         {
             rc = RTEnvGetEx(RTENV_DEFAULT, "windir", szSysprepCmd, sizeof(szSysprepCmd), NULL);
 #ifndef RT_ARCH_AMD64
@@ -1325,8 +1320,6 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
             if (RT_FAILURE(rc))
                 VGSvcError("Failed to detect sysrep location, rc=%Rrc\n", rc);
         }
-        else if (!fRet)
-            VGSvcError("Failed to retrieve OS information, last error=%ld\n", GetLastError());
 
         VGSvcVerbose(3, "Sysprep executable is: %s\n", szSysprepCmd);
 
