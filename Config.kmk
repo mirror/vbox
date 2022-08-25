@@ -1444,6 +1444,10 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), solaris)
   VBOX_WITH_32_ON_64_MAIN_API=
  endif
+ # Disable the incomplete 3D code for now.
+ VBOX_WITH_VMSVGA3D_DX=
+ VBOX_WITH_DXVK=
+ VBOX_WITH_3D_ACCELERATION=
  if1of ($(KBUILD_TARGET), win)
   # tar/gzip uncommon on Windows
   VBOX_WITH_EXTPACK_VBOXDTRACE=
