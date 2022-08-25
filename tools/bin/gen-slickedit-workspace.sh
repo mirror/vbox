@@ -444,6 +444,9 @@ my_generate_usercpp_h()
 #define RT_COMPILER_GROKS_64BIT_BITFIELDS
 #define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 #define RT_DECL_NTAPI(type)             type
+#define RT_CONCAT(a,b)                  a##b
+#define RT_CONCAT3(a,b,c)               a##b##c
+#define RT_CONCAT4(a,b,c,d)             a##b##c##d
 
 #define ATL_NO_VTABLE
 #define BEGIN_COM_MAP(a)
