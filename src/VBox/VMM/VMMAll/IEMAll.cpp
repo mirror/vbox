@@ -8265,6 +8265,8 @@ VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t c
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   off                 Offset from the top of the stack. This is zero
+ *                              except in the retf case.
  * @param   cbMem               The number of bytes to pop from the stack.
  * @param   ppvMem              Where to return the pointer to the stack memory.
  * @param   puNewRsp            Where to return the new RSP value.  This must be
@@ -8272,14 +8274,17 @@ VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t c
  *                              after iemMemStackPopDoneSpecial() has been
  *                              called.
  */
-VBOXSTRICTRC iemMemStackPopContinueSpecial(PVMCPUCC pVCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT
+VBOXSTRICTRC iemMemStackPopContinueSpecial(PVMCPUCC pVCpu, size_t off, size_t cbMem,
+                                           void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT
 {
     Assert(cbMem < UINT8_MAX);
     RTUINT64U   NewRsp;
     NewRsp.u = *puNewRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pVCpu, &NewRsp, 8);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pVCpu, &NewRsp, off + cbMem);
+    /** @todo The *puNewRsp value is never used by any of callers, so dispense
+     *        with it or convert it to a value-in-only parameter? */
     *puNewRsp = NewRsp.u;
-    return iemMemMap(pVCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_R,
+    return iemMemMap(pVCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop + off, IEM_ACCESS_STACK_R,
                      0 /* checked in iemMemStackPopBeginSpecial */);
 }
 
