@@ -615,7 +615,7 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the log viewer widget."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the log viewer window"));
     }
 };
 

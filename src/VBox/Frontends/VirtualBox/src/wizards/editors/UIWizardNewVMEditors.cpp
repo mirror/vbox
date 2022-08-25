@@ -170,7 +170,7 @@ void UIGAInstallationGroupBox::retranslateUi()
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Selects an installation medium (ISO file) for the Guest Additions."));
     if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Guest &Additions ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
     setToolTip(UIWizardNewVM::tr("When checked, the guest additions will be installed after the guest OS install."));
 }

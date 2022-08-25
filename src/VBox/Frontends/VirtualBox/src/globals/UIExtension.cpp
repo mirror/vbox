@@ -62,7 +62,7 @@ void UIExtension::install(QString const &strFilePath,
 
     if (!comExtPackFile.GetUsable())
     {
-        UINotificationMessage::cannotOpenExtPackFile(comExtPackFile, strFilePath);
+        UINotificationMessage::cannotReadExtPack(comExtPackFile, strFilePath);
         return;
     }
 

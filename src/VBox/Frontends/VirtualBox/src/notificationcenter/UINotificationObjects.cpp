@@ -172,7 +172,7 @@ void UINotificationMessage::cannotValidateGuestAdditionsSHA256Sum(const QString 
                                                                   const QString &strSrc)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Unable to validate GA ..."),
+        QApplication::translate("UIMessageCenter", "Unable to validate guest additions image ..."),
         QApplication::translate("UIMessageCenter", "<p>The <b>VirtualBox Guest Additions</b> disk image file has been "
                                                    "successfully downloaded from <nobr><a href=\"%1\">%1</a></nobr> and saved "
                                                    "locally as <nobr><b>%2</b>, </nobr>but the SHA-256 checksum verification "
@@ -196,7 +196,7 @@ void UINotificationMessage::cannotValidateExtentionPackSHA256Sum(const QString &
                                                                  const QString &strTo)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Unable to validate EP ..."),
+        QApplication::translate("UIMessageCenter", "Unable to validate extension pack ..."),
         QApplication::translate("UIMessageCenter", "<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
                                                    "from <nobr><a href=\"%2\">%2</a></nobr> and saved locally as "
                                                    "<nobr><b>%3</b>, </nobr>but the SHA-256 checksum verification failed.</p>"
@@ -263,7 +263,7 @@ void UINotificationMessage::cannotResolveCollisionAutomatically(const QString &s
 void UINotificationMessage::cannotAcquireCloudMachineSettings(const QString &strErrorDetails)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Cloud machine failure ..."),
+        QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine settings.") +
         strErrorDetails);
 }
@@ -508,7 +508,7 @@ void UINotificationMessage::remindAboutAutoCapture()
 void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "GA not active ..."),
+        QApplication::translate("UIMessageCenter", "Guest additions inactive ..."),
         QApplication::translate("UIMessageCenter", "<p>The VirtualBox Guest Additions do not appear to be available on this "
                                                    "virtual machine, and shared folders cannot be used without them. To use "
                                                    "shared folders inside the virtual machine, please install the Guest "
@@ -616,8 +616,8 @@ void UINotificationMessage::cannotAcquireApplianceParameter(const CAppliance &co
 void UINotificationMessage::cannotAcquireExtensionPackManagerParameter(const CExtPackManager &comEPManager)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "EP Manager failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to acquire EP Manager parameter.") +
+        QApplication::translate("UIMessageCenter", "Extension Pack failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire Extension Pack Manager parameter.") +
         UIErrorString::formatErrorInfo(comEPManager));
 }
 
@@ -625,8 +625,8 @@ void UINotificationMessage::cannotAcquireExtensionPackManagerParameter(const CEx
 void UINotificationMessage::cannotAcquireExtensionPackParameter(const CExtPack &comPackage)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "EP failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to acquire EP parameter.") +
+        QApplication::translate("UIMessageCenter", "Extension Pack failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire Extension Pack parameter.") +
         UIErrorString::formatErrorInfo(comPackage));
 }
 
@@ -688,7 +688,7 @@ void UINotificationMessage::cannotAcquireDHCPServerParameter(const CDHCPServer &
 void UINotificationMessage::cannotAcquireCloudNetworkParameter(const CCloudNetwork &comNetwork)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Cloud network failure ..."),
+        QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire cloud network parameter.") +
         UIErrorString::formatErrorInfo(comNetwork));
 }
@@ -744,7 +744,7 @@ void UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(const
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to acquire virtual system description parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to acquire VSD parameter.") +
         UIErrorString::formatErrorInfo(comVsd),
         QString(), QString(), pParent);
 }
@@ -755,7 +755,7 @@ void UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(c
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD form failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to acquire virtual system description form parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to acquire VSD form parameter.") +
         UIErrorString::formatErrorInfo(comVsdForm),
         QString(), QString(), pParent);
 }
@@ -864,7 +864,7 @@ void UINotificationMessage::cannotChangeDHCPServerParameter(const CDHCPServer &c
 void UINotificationMessage::cannotChangeCloudNetworkParameter(const CCloudNetwork &comNetwork)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Cloud network failure ..."),
+        QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to change cloud network parameter.") +
         UIErrorString::formatErrorInfo(comNetwork));
 }
@@ -900,7 +900,7 @@ void UINotificationMessage::cannotChangeNATNetworkParameter(const CNATNetwork &c
 void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfile &comProfile)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Cloud profile failure ..."),
+        QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to assign cloud profile parameter.") +
         UIErrorString::formatErrorInfo(comProfile));
 }
@@ -920,7 +920,7 @@ void UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(const 
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign virtual system description parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to assign VSD parameter.") +
         UIErrorString::formatErrorInfo(comVsd),
         QString(), QString(), pParent);
 }
@@ -1065,7 +1065,7 @@ void UINotificationMessage::cannotCreateMediumStorage(const CVirtualBox &comVBox
 void UINotificationMessage::cannotGetExtensionPackManager(const CVirtualBox &comVBox)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Can't get EP Manager ..."),
+        QApplication::translate("UIMessageCenter", "Can't get Extension Pack Manager ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire Extension Pack Manager.") +
         UIErrorString::formatErrorInfo(comVBox));
 }
@@ -1105,7 +1105,7 @@ void UINotificationMessage::cannotCreateVirtualSystemDescription(const CApplianc
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't create VSD ..."),
-        QApplication::translate("UIMessageCenter", "Failed to create virtual system description.") +
+        QApplication::translate("UIMessageCenter", "Failed to create VSD.") +
         UIErrorString::formatErrorInfo(comAppliance),
         QString(), QString(), pParent);
 }
@@ -1114,18 +1114,18 @@ void UINotificationMessage::cannotCreateVirtualSystemDescription(const CApplianc
 void UINotificationMessage::cannotOpenExtPack(const CExtPackManager &comExtPackManager, const QString &strFilename)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Can't open EP ..."),
+        QApplication::translate("UIMessageCenter", "Can't open extension pack ..."),
         QApplication::translate("UIMessageCenter", "Failed to open the Extension Pack <b>%1</b>.")
                                                    .arg(strFilename) +
         UIErrorString::formatErrorInfo(comExtPackManager));
 }
 
 /* static */
-void UINotificationMessage::cannotOpenExtPackFile(const CExtPackFile &comExtPackFile, const QString &strFilename)
+void UINotificationMessage::cannotReadExtPack(const CExtPackFile &comExtPackFile, const QString &strFilename)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Can't open EP file ..."),
-        QApplication::translate("UIMessageCenter", "Failed to open the Extension Pack <b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "Can't read extension pack ..."),
+        QApplication::translate("UIMessageCenter", "Failed to read the Extension Pack <b>%1</b>.")
                                                    .arg(strFilename) +
         comExtPackFile.GetWhyUnusable());
 }
@@ -1405,7 +1405,7 @@ void UINotificationMessage::cannotFindSnapshotById(const CMachine &comMachine, c
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't find snapshot ..."),
-        QApplication::translate("UIMessageCenter", "Can't find snapshot with ID=<b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "Failed to find snapshot with ID=<b>%1</b>.")
                                                    .arg(uId.toString()) +
         UIErrorString::formatErrorInfo(comMachine));
 }
@@ -1417,7 +1417,7 @@ void UINotificationMessage::cannotFindSnapshotByName(const CMachine &comMachine,
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't find snapshot ..."),
-        QApplication::translate("UIMessageCenter", "Can't find snapshot with name=<b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "Failed to find snapshot with name=<b>%1</b>.")
                                                    .arg(strName) +
         UIErrorString::formatErrorInfo(comMachine),
         QString(), QString(), pParent);

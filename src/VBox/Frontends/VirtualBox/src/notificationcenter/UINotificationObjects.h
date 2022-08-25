@@ -454,7 +454,7 @@ public:
         /** Notifies about inability to read extpack file.
           * @param  comExtPackFile  Brings extension pack manager trying to open extension pack.
           * @param  strFilename     Brings extension pack file name. */
-        static void cannotOpenExtPackFile(const CExtPackFile &comExtPackFile, const QString &strFilename);
+        static void cannotReadExtPack(const CExtPackFile &comExtPackFile, const QString &strFilename);
 
         /** Notifies about inability to find cloud network.
           * @param  comVBox         Brings common VBox object being search through.

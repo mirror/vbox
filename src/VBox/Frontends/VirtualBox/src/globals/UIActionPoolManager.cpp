@@ -2798,7 +2798,7 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Clear"));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "remove all inaccessible media"));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove all inaccessible media"));
         setToolTip(  QApplication::translate("UIActionPool", "Remove Inaccessible Media")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
