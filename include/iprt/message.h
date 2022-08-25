@@ -150,6 +150,24 @@ RTDECL(int) RTMsgErrorRc(int rcRet, const char *pszFormat, ...) RT_IPRT_FORMAT_A
 RTDECL(int) RTMsgErrorRcV(int rcRet, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
+ * For reporting syntax errors.
+ *
+ * @returns RTEXITCODE_SYNTAX
+ * @param   pszFormat       The message format string.  Newline not needed.
+ * @param   ...             Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgSyntax(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+/**
+ * For reporting syntax errors.
+ *
+ * @returns RTEXITCODE_SYNTAX
+ * @param   pszFormat       The message format string.  Newline not needed.
+ * @param   va_list         Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgSyntaxV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+
+/**
  * Print an error message for a RTR3Init failure and suggest an exit code.
  *
  * @code

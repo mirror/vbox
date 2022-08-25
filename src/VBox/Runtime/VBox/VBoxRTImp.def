@@ -1446,6 +1446,8 @@ EXPORTS
     RTMsgInfo
     RTMsgInfoV
     RTMsgInitFailure
+    RTMsgSyntax
+    RTMsgSyntaxV
     RTMsgWarning
     RTMsgWarningV
     RTNetIPv4AddDataChecksum

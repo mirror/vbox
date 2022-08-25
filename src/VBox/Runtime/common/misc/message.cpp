@@ -210,6 +210,25 @@ RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init)
 RT_EXPORT_SYMBOL(RTMsgInitFailure);
 
 
+RTDECL(RTEXITCODE)  RTMsgSyntax(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgSyntaxV(pszFormat, va);
+    va_end(va);
+    return RTEXITCODE_SYNTAX;
+}
+RT_EXPORT_SYMBOL(RTMsgSyntax);
+
+
+RTDECL(RTEXITCODE)  RTMsgSyntaxV(const char *pszFormat, va_list va)
+{
+    rtMsgWorker(g_pStdOut, "syntax error: ", pszFormat, va);
+    return RTEXITCODE_SYNTAX;
+}
+RT_EXPORT_SYMBOL(RTMsgSyntaxV);
+
+
 RTDECL(int)  RTMsgWarning(const char *pszFormat, ...)
 {
     va_list va;
