@@ -8259,7 +8259,8 @@ VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t c
 
 
 /**
- * Continue a special stack pop (used by iret and retf).
+ * Continue a special stack pop (used by iret and retf), for the purpose of
+ * retrieving a new stack pointer.
  *
  * This will raise \#SS or \#PF if appropriate.
  *
@@ -8269,21 +8270,25 @@ VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t c
  *                              except in the retf case.
  * @param   cbMem               The number of bytes to pop from the stack.
  * @param   ppvMem              Where to return the pointer to the stack memory.
- * @param   puNewRsp            Where to return the new RSP value.  This must be
- *                              assigned to CPUMCTX::rsp manually some time
- *                              after iemMemStackPopDoneSpecial() has been
- *                              called.
+ * @param   uCurNewRsp          The current uncommitted RSP value.  (No need to
+ *                              return this because all use of this function is
+ *                              to retrieve a new value and anything we return
+ *                              here would be discarded.)
  */
 VBOXSTRICTRC iemMemStackPopContinueSpecial(PVMCPUCC pVCpu, size_t off, size_t cbMem,
-                                           void const **ppvMem, uint64_t *puNewRsp) RT_NOEXCEPT
+                                           void const **ppvMem, uint64_t uCurNewRsp) RT_NOEXCEPT
 {
     Assert(cbMem < UINT8_MAX);
-    RTUINT64U   NewRsp;
-    NewRsp.u = *puNewRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pVCpu, &NewRsp, off + cbMem);
-    /** @todo The *puNewRsp value is never used by any of callers, so dispense
-     *        with it or convert it to a value-in-only parameter? */
-    *puNewRsp = NewRsp.u;
+
+    /* The essense of iemRegGetRspForPopEx and friends: */ /** @todo put this into a inlined function? */
+    RTGCPTR GCPtrTop;
+    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+        GCPtrTop = uCurNewRsp;
+    else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
+        GCPtrTop = (uint32_t)uCurNewRsp;
+    else
+        GCPtrTop = (uint16_t)uCurNewRsp;
+
     return iemMemMap(pVCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop + off, IEM_ACCESS_STACK_R,
                      0 /* checked in iemMemStackPopBeginSpecial */);
 }

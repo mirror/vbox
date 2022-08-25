@@ -2361,7 +2361,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     if ((uNewCs & X86_SEL_RPL) != pVCpu->iem.s.uCpl)
     {
         /* Read the outer stack pointer stored *after* the parameters. */
-        rcStrict = iemMemStackPopContinueSpecial(pVCpu, cbPop /*off*/, cbRetPtr, &uPtrFrame.pv, &uNewRsp);
+        rcStrict = iemMemStackPopContinueSpecial(pVCpu, cbPop /*off*/, cbRetPtr, &uPtrFrame.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
 
@@ -3087,7 +3087,7 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
      */
     VBOXSTRICTRC    rcStrict;
     RTCPTRUNION     uFrame;
-    rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0 /*off*/, 24 /*cbMem*/, &uFrame.pv, &uNewRsp);
+    rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0 /*off*/, 24 /*cbMem*/, &uFrame.pv, uNewRsp);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     uint32_t uNewEsp = uFrame.pu32[0];
@@ -3326,7 +3326,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         uint32_t    uNewESP;
         if (enmEffOpSize == IEMMODE_32BIT)
         {
-            rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0/*off*/, 8 /*cbMem*/, &uFrame.pv, &uNewRsp);
+            rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0/*off*/, 8 /*cbMem*/, &uFrame.pv, uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 /** @todo We might be popping a 32-bit ESP from the IRET frame, but whether
@@ -3337,7 +3337,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         }
         else
         {
-            rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0 /*off*/, 4 /*cbMem*/, &uFrame.pv, &uNewRsp);
+            rcStrict = iemMemStackPopContinueSpecial(pVCpu, 0 /*off*/, 4 /*cbMem*/, &uFrame.pv, uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
             uNewESP = uFrame.pu16[0];
