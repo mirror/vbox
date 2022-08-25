@@ -1279,7 +1279,7 @@ const VKATCMD g_CmdVerify =
  * g_fTerminate).
  */
 #ifdef RT_OS_WINDOWS
-static BOOL CALLBACK audioTestConsoleCtrlHandler(DWORD dwCtrlType)
+static BOOL CALLBACK audioTestConsoleCtrlHandler(DWORD dwCtrlType) RT_NOEXCEPT
 {
     if (dwCtrlType != CTRL_C_EVENT && dwCtrlType != CTRL_BREAK_EVENT)
         return false;
