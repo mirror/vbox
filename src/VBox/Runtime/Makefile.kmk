@@ -63,7 +63,9 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  endif
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub #RuntimeR3NoCrt
- LIBRARIES.win.x86 += RuntimeR3VccTricks
+ ifndef VBOX_WITH_NOCRT_STATIC
+  LIBRARIES.win.x86 += RuntimeR3VccTricks
+ endif
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
  ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
@@ -124,7 +126,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
   endif
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
  endif # VBOX_WITH_ADDITIONS
- LIBRARIES.win.x86 += RuntimeR3VccTricks
+ ifndef VBOX_WITH_NOCRT_STATIC
+  LIBRARIES.win.x86 += RuntimeR3VccTricks
+ endif
  DLLS += VBoxRT
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxRT-x86
@@ -2651,17 +2655,19 @@ RuntimeGuestR3_SOURCES                   = $(filter-out \
 	\
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
-RuntimeGuestR3_DEFS.win.x86              = $(RuntimeR3_DEFS.win.x86) \
-	VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
-RuntimeGuestR3_SOURCES.win.x86           = $(RuntimeR3_SOURCES.win.x86) \
-	r3/win/vcc-fakes-kernel32.cpp \
-	r3/win/vcc-fakes-kernel32-A.asm \
-	r3/win/vcc-fakes-ntdll.cpp \
-	r3/win/vcc-fakes-ntdll-A.asm \
-	r3/win/vcc-fakes-ws2_32.cpp \
-	r3/win/vcc-fakes-ws2_32-A.asm \
-	r3/win/vcc-fakes-shell32.cpp \
-	r3/win/vcc-fakes-shell32-A.asm \
+ifndef VBOX_WITH_NOCRT_STATIC
+ RuntimeGuestR3_DEFS.win.x86             = $(RuntimeR3_DEFS.win.x86) \
+ 	VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
+ RuntimeGuestR3_SOURCES.win.x86          = $(RuntimeR3_SOURCES.win.x86) \
+ 	r3/win/vcc-fakes-kernel32.cpp \
+ 	r3/win/vcc-fakes-kernel32-A.asm \
+ 	r3/win/vcc-fakes-ntdll.cpp \
+ 	r3/win/vcc-fakes-ntdll-A.asm \
+ 	r3/win/vcc-fakes-ws2_32.cpp \
+ 	r3/win/vcc-fakes-ws2_32-A.asm \
+ 	r3/win/vcc-fakes-shell32.cpp \
+ 	r3/win/vcc-fakes-shell32-A.asm
+endif
 
 
 #
@@ -4351,15 +4357,17 @@ endif
 # Bag of tricks required for making VCC100 output binaries work on NT4, W2K
 # early XP and early W2K3.  Used by validation kit.
 #
-RuntimeR3VccTricks_TEMPLATE = VBoxR3Static
-RuntimeR3VccTricks_DEFS     = VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
-RuntimeR3VccTricks_SOURCES  = \
-	r3/win/vcc-fakes-kernel32.cpp \
-	r3/win/vcc-fakes-kernel32-A.asm \
-	r3/win/vcc-fakes-shell32.cpp \
-	r3/win/vcc-fakes-shell32-A.asm \
-	r3/win/vcc-fakes-ntdll.cpp \
-	r3/win/vcc-fakes-ntdll-A.asm
+ifndef VBOX_WITH_NOCRT_STATIC
+ RuntimeR3VccTricks_TEMPLATE = VBoxR3Static
+ RuntimeR3VccTricks_DEFS     = VCC_FAKES_TARGET_$(VBOX_VCC_TOOL_STEM) VCC_FAKES_TARGET=$(substr $(VBOX_VCC_TOOL_STEM),-3)
+ RuntimeR3VccTricks_SOURCES  = \
+ 	r3/win/vcc-fakes-kernel32.cpp \
+ 	r3/win/vcc-fakes-kernel32-A.asm \
+ 	r3/win/vcc-fakes-shell32.cpp \
+ 	r3/win/vcc-fakes-shell32-A.asm \
+ 	r3/win/vcc-fakes-ntdll.cpp \
+ 	r3/win/vcc-fakes-ntdll-A.asm
+endif
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
 LIBRARIES += RuntimeR3VccTricks2

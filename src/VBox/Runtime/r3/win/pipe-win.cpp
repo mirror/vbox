@@ -611,8 +611,14 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
                 pThis->fIOPending = true;
                 RTCritSectLeave(&pThis->CritSect);
 
-                if (!CancelIo(pThis->hPipe))
+                /* We use NtCancelIoFile here because the CancelIo API
+                   providing access to it wasn't available till NT4.  This
+                   code needs to work (or at least load) with NT 3.1 */
+                IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                NTSTATUS rcNt = NtCancelIoFile(pThis->hPipe, &Ios);
+                if (!NT_SUCCESS(rcNt))
                     WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+
                 if (GetOverlappedResult(pThis->hPipe, &pThis->Overlapped, &cbRead, TRUE /*fWait*/))
                 {
                     *pcbRead = cbRead;
@@ -1161,7 +1167,10 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 pThis->cUsers--;
                 pThis->fIOPending = false;
                 if (rc != VINF_SUCCESS)
-                    CancelIo(pThis->hPipe);
+                {
+                    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                    NtCancelIoFile(pThis->hPipe, &Ios);
+                }
                 DWORD cbRead = 0;
                 GetOverlappedResult(pThis->hPipe, &pThis->Overlapped, &cbRead, TRUE /*fWait*/);
             }
@@ -1500,7 +1509,9 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool f
     uint32_t fRetEvents = 0;
     if (pThis->fZeroByteRead)
     {
-        CancelIo(pThis->hPipe);
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NtCancelIoFile(pThis->hPipe, &Ios);
+
         DWORD cbRead = 0;
         if (   !GetOverlappedResult(pThis->hPipe, &pThis->Overlapped, &cbRead, TRUE /*fWait*/)
             && GetLastError() != ERROR_OPERATION_ABORTED)

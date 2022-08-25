@@ -51,6 +51,8 @@
 
 #include <iprt/win/windows.h>
 
+#include "internal-r3-win.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -282,31 +284,33 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
 
 RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax, uint32_t fFlags)
 {
-    PRTFILEAIOCTXINTERNAL pCtxInt;
     AssertPtrReturn(phAioCtx, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTFILEAIOCTX_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
     RT_NOREF_PV(cAioReqsMax);
 
-    pCtxInt = (PRTFILEAIOCTXINTERNAL)RTMemAllocZ(sizeof(RTFILEAIOCTXINTERNAL));
-    if (RT_UNLIKELY(!pCtxInt))
-        return VERR_NO_MEMORY;
-
-    pCtxInt->hIoCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
-                                                        NULL,
-                                                        0,
-                                                        0);
-    if (RT_UNLIKELY(!pCtxInt->hIoCompletionPort))
+    if (   g_pfnCreateIoCompletionPort
+        && g_pfnGetQueuedCompletionStatus
+        && g_pfnPostQueuedCompletionStatus)
     {
-        RTMemFree(pCtxInt);
-        return VERR_NO_MEMORY;
+        PRTFILEAIOCTXINTERNAL pCtxInt = (PRTFILEAIOCTXINTERNAL)RTMemAllocZ(sizeof(RTFILEAIOCTXINTERNAL));
+        if (RT_UNLIKELY(!pCtxInt))
+            return VERR_NO_MEMORY;
+
+        pCtxInt->hIoCompletionPort = g_pfnCreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+        if (RT_UNLIKELY(!pCtxInt->hIoCompletionPort))
+        {
+            RTMemFree(pCtxInt);
+            return VERR_NO_MEMORY;
+        }
+
+        pCtxInt->fFlags   = fFlags;
+        pCtxInt->u32Magic = RTFILEAIOCTX_MAGIC;
+
+        *phAioCtx = (RTFILEAIOCTX)pCtxInt;
+
+        return VINF_SUCCESS;
     }
-
-    pCtxInt->fFlags   = fFlags;
-    pCtxInt->u32Magic = RTFILEAIOCTX_MAGIC;
-
-    *phAioCtx = (RTFILEAIOCTX)pCtxInt;
-
-    return VINF_SUCCESS;
+    return VERR_NOT_SUPPORTED;
 }
 
 RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioCtx)
@@ -330,15 +334,21 @@ RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioCtx)
 
 RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
 {
-    int rc = VINF_SUCCESS;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
 
-    HANDLE hTemp = CreateIoCompletionPort((HANDLE)RTFileToNative(hFile), pCtxInt->hIoCompletionPort, 0, 1);
-    if (hTemp != pCtxInt->hIoCompletionPort)
-        rc = RTErrConvertFromWin32(GetLastError());
+    if (   g_pfnCreateIoCompletionPort
+        && g_pfnGetQueuedCompletionStatus
+        && g_pfnPostQueuedCompletionStatus)
+    {
+        int rc = VINF_SUCCESS;
+        HANDLE hTemp = g_pfnCreateIoCompletionPort((HANDLE)RTFileToNative(hFile), pCtxInt->hIoCompletionPort, 0, 1);
+        if (hTemp != pCtxInt->hIoCompletionPort)
+            rc = RTErrConvertFromWin32(GetLastError());
 
-    return rc;
+        return rc;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
@@ -444,11 +454,11 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
             StartNanoTS = RTTimeNanoTS();
 
         ASMAtomicXchgBool(&pCtxInt->fWaiting, true);
-        fSucceeded = GetQueuedCompletionStatus(pCtxInt->hIoCompletionPort,
-                                               &cbTransfered,
-                                               &lCompletionKey,
-                                               &pOverlapped,
-                                               dwTimeout);
+        fSucceeded = g_pfnGetQueuedCompletionStatus(pCtxInt->hIoCompletionPort,
+                                                    &cbTransfered,
+                                                    &lCompletionKey,
+                                                    &pOverlapped,
+                                                    dwTimeout);
         ASMAtomicXchgBool(&pCtxInt->fWaiting, false);
         if (   !fSucceeded
             && !pOverlapped)
@@ -531,9 +541,9 @@ RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx)
     if (   !fWokenUp
         && fWaiting)
     {
-        BOOL fSucceeded = PostQueuedCompletionStatus(pCtxInt->hIoCompletionPort,
-                                                     0, AIO_CONTEXT_WAKEUP_EVENT,
-                                                     NULL);
+        BOOL fSucceeded = g_pfnPostQueuedCompletionStatus(pCtxInt->hIoCompletionPort,
+                                                          0, AIO_CONTEXT_WAKEUP_EVENT,
+                                                          NULL);
 
         if (!fSucceeded)
             rc = RTErrConvertFromWin32(GetLastError());

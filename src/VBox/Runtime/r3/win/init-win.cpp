@@ -93,6 +93,11 @@ DECL_HIDDEN_DATA(decltype(GetHandleInformation) *)              g_pfnGetHandleIn
 DECL_HIDDEN_DATA(decltype(SetHandleInformation) *)              g_pfnSetHandleInformation = NULL;
 DECL_HIDDEN_DATA(decltype(IsDebuggerPresent) *)                 g_pfnIsDebuggerPresent = NULL;
 DECL_HIDDEN_DATA(decltype(GetSystemTimeAsFileTime) *)           g_pfnGetSystemTimeAsFileTime = NULL;
+DECL_HIDDEN_DATA(decltype(GetProcessAffinityMask) *)            g_pfnGetProcessAffinityMask = NULL;
+DECL_HIDDEN_DATA(decltype(SetThreadAffinityMask) *)             g_pfnSetThreadAffinityMask = NULL;
+DECL_HIDDEN_DATA(decltype(CreateIoCompletionPort) *)            g_pfnCreateIoCompletionPort = NULL;
+DECL_HIDDEN_DATA(decltype(GetQueuedCompletionStatus) *)         g_pfnGetQueuedCompletionStatus = NULL;
+DECL_HIDDEN_DATA(decltype(PostQueuedCompletionStatus) *)        g_pfnPostQueuedCompletionStatus = NULL;
 
 /** The native ntdll.dll handle. */
 DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
@@ -567,15 +572,26 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     if (g_pfnGetSystemWindowsDirectoryW)
         g_pfnGetSystemWindowsDirectoryW  = (PFNGETWINSYSDIR)GetProcAddress(g_hModKernel32, "GetWindowsDirectoryW");
     g_pfnSystemTimeToTzSpecificLocalTime = (decltype(SystemTimeToTzSpecificLocalTime) *)GetProcAddress(g_hModKernel32, "SystemTimeToTzSpecificLocalTime");
-    g_pfnCreateWaitableTimerExW     = (PFNCREATEWAITABLETIMEREX)           GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
-    g_pfnGetHandleInformation       = (decltype(GetHandleInformation) *)   GetProcAddress(g_hModKernel32, "GetHandleInformation");
-    g_pfnSetHandleInformation       = (decltype(SetHandleInformation) *)   GetProcAddress(g_hModKernel32, "SetHandleInformation");
-    g_pfnIsDebuggerPresent          = (decltype(IsDebuggerPresent) *)      GetProcAddress(g_hModKernel32, "IsDebuggerPresent");
-    g_pfnGetSystemTimeAsFileTime    = (decltype(GetSystemTimeAsFileTime) *)GetProcAddress(g_hModKernel32, "GetSystemTimeAsFileTime");
-    Assert(g_pfnSetHandleInformation    || g_enmWinVer < kRTWinOSType_NT351);
-    Assert(g_pfnGetHandleInformation    || g_enmWinVer < kRTWinOSType_NT351);
-    Assert(g_pfnIsDebuggerPresent       || g_enmWinVer < kRTWinOSType_NT4);
-    Assert(g_pfnGetSystemTimeAsFileTime || g_enmWinVer < kRTWinOSType_NT4);
+    g_pfnCreateWaitableTimerExW     = (PFNCREATEWAITABLETIMEREX)              GetProcAddress(g_hModKernel32, "CreateWaitableTimerExW");
+    g_pfnGetHandleInformation       = (decltype(GetHandleInformation) *)      GetProcAddress(g_hModKernel32, "GetHandleInformation");
+    g_pfnSetHandleInformation       = (decltype(SetHandleInformation) *)      GetProcAddress(g_hModKernel32, "SetHandleInformation");
+    g_pfnIsDebuggerPresent          = (decltype(IsDebuggerPresent) *)         GetProcAddress(g_hModKernel32, "IsDebuggerPresent");
+    g_pfnGetSystemTimeAsFileTime    = (decltype(GetSystemTimeAsFileTime) *)   GetProcAddress(g_hModKernel32, "GetSystemTimeAsFileTime");
+    g_pfnGetProcessAffinityMask     = (decltype(GetProcessAffinityMask) *)    GetProcAddress(g_hModKernel32, "GetProcessAffinityMask");
+    g_pfnSetThreadAffinityMask      = (decltype(SetThreadAffinityMask) *)     GetProcAddress(g_hModKernel32, "SetThreadAffinityMask");
+    g_pfnCreateIoCompletionPort     = (decltype(CreateIoCompletionPort) *)    GetProcAddress(g_hModKernel32, "CreateIoCompletionPort");
+    g_pfnGetQueuedCompletionStatus  = (decltype(GetQueuedCompletionStatus) *) GetProcAddress(g_hModKernel32, "GetQueuedCompletionStatus");
+    g_pfnPostQueuedCompletionStatus = (decltype(PostQueuedCompletionStatus) *)GetProcAddress(g_hModKernel32, "PostQueuedCompletionStatus");
+
+    Assert(g_pfnGetHandleInformation       || g_enmWinVer < kRTWinOSType_NT351);
+    Assert(g_pfnSetHandleInformation       || g_enmWinVer < kRTWinOSType_NT351);
+    Assert(g_pfnIsDebuggerPresent          || g_enmWinVer < kRTWinOSType_NT4);
+    Assert(g_pfnGetSystemTimeAsFileTime    || g_enmWinVer < kRTWinOSType_NT4);
+    Assert(g_pfnGetProcessAffinityMask     || g_enmWinVer < kRTWinOSType_NT350);
+    Assert(g_pfnSetThreadAffinityMask      || g_enmWinVer < kRTWinOSType_NT350);
+    Assert(g_pfnCreateIoCompletionPort     || g_enmWinVer < kRTWinOSType_NT350);
+    Assert(g_pfnGetQueuedCompletionStatus  || g_enmWinVer < kRTWinOSType_NT350);
+    Assert(g_pfnPostQueuedCompletionStatus || g_enmWinVer < kRTWinOSType_NT350);
 
     /*
      * Resolve some ntdll.dll APIs that weren't there in early NT versions.

@@ -43,6 +43,7 @@ EXPORTS
 
     NtAlertThread                         ;;= _NtAlertThread@4
     NtAllocateVirtualMemory               ;;= _NtAllocateVirtualMemory@24
+    NtCancelIoFile                        ;;= _NtCancelIoFile@8
     NtClearEvent                          ;;= _NtClearEvent@4
     NtClose                               ;;= _NtClose@4
     NtCreateEvent                         ;;= _NtCreateEvent@20

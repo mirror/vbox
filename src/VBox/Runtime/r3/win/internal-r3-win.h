@@ -116,15 +116,18 @@ extern DECL_HIDDEN_DATA(OSVERSIONINFOEXW)               g_WinOsInfoEx;
 extern DECL_HIDDEN_DATA(HMODULE)                        g_hModKernel32;
 typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
 extern DECL_HIDDEN_DATA(PFNGETWINSYSDIR)                                g_pfnGetSystemWindowsDirectoryW;
-extern DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *)    g_pfnSystemTimeToTzSpecificLocalTime;
 typedef HANDLE (WINAPI *PFNCREATEWAITABLETIMEREX)(LPSECURITY_ATTRIBUTES, LPCWSTR, DWORD, DWORD);
 extern DECL_HIDDEN_DATA(PFNCREATEWAITABLETIMEREX)                       g_pfnCreateWaitableTimerExW;
+extern DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *)    g_pfnSystemTimeToTzSpecificLocalTime;
 extern DECL_HIDDEN_DATA(decltype(GetHandleInformation) *)               g_pfnGetHandleInformation;
 extern DECL_HIDDEN_DATA(decltype(SetHandleInformation) *)               g_pfnSetHandleInformation;
 extern DECL_HIDDEN_DATA(decltype(IsDebuggerPresent) *)                  g_pfnIsDebuggerPresent;
 extern DECL_HIDDEN_DATA(decltype(GetSystemTimeAsFileTime) *)            g_pfnGetSystemTimeAsFileTime;
-typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
-extern DECL_HIDDEN_DATA(PFNGETWINSYSDIR)                                g_pfnGetSystemWindowsDirectoryW;
+extern DECL_HIDDEN_DATA(decltype(GetProcessAffinityMask) *)             g_pfnGetProcessAffinityMask;
+extern DECL_HIDDEN_DATA(decltype(SetThreadAffinityMask) *)              g_pfnSetThreadAffinityMask;
+extern DECL_HIDDEN_DATA(decltype(CreateIoCompletionPort) *)             g_pfnCreateIoCompletionPort;
+extern DECL_HIDDEN_DATA(decltype(GetQueuedCompletionStatus) *)          g_pfnGetQueuedCompletionStatus;
+extern DECL_HIDDEN_DATA(decltype(PostQueuedCompletionStatus) *)         g_pfnPostQueuedCompletionStatus;
 
 
 extern DECL_HIDDEN_DATA(HMODULE)                        g_hModNtDll;

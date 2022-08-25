@@ -477,41 +477,54 @@ static int rtThreadGetCurrentProcessorNumber(void)
 
 RTR3DECL(int) RTThreadSetAffinity(PCRTCPUSET pCpuSet)
 {
-    DWORD_PTR fNewMask = pCpuSet ? RTCpuSetToU64(pCpuSet) : ~(DWORD_PTR)0;
-    DWORD_PTR dwRet = SetThreadAffinityMask(GetCurrentThread(), fNewMask);
-    if (dwRet)
-        return VINF_SUCCESS;
+    /* The affinity functionality was added in NT 3.50, so we resolve the APIs
+       dynamically to be able to run on NT 3.1. */
+    if (g_pfnSetThreadAffinityMask)
+    {
+        DWORD_PTR fNewMask = pCpuSet ? RTCpuSetToU64(pCpuSet) : ~(DWORD_PTR)0;
+        DWORD_PTR dwRet = g_pfnSetThreadAffinityMask(GetCurrentThread(), fNewMask);
+        if (dwRet)
+            return VINF_SUCCESS;
 
-    int iLastError = GetLastError();
-    AssertMsgFailed(("SetThreadAffinityMask failed, LastError=%d\n", iLastError));
-    return RTErrConvertFromWin32(iLastError);
+        int iLastError = GetLastError();
+        AssertMsgFailed(("SetThreadAffinityMask failed, LastError=%d\n", iLastError));
+        return RTErrConvertFromWin32(iLastError);
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 
 RTR3DECL(int) RTThreadGetAffinity(PRTCPUSET pCpuSet)
 {
-    /*
-     * Haven't found no query api, but the set api returns the old mask, so let's use that.
-     */
-    DWORD_PTR dwIgnored;
-    DWORD_PTR dwProcAff = 0;
-    if (GetProcessAffinityMask(GetCurrentProcess(), &dwProcAff, &dwIgnored))
+    /* The affinity functionality was added in NT 3.50, so we resolve the APIs
+       dynamically to be able to run on NT 3.1. */
+    if (   g_pfnSetThreadAffinityMask
+        && g_pfnGetProcessAffinityMask)
     {
-        HANDLE hThread = GetCurrentThread();
-        DWORD_PTR dwRet = SetThreadAffinityMask(hThread, dwProcAff);
-        if (dwRet)
+        /*
+         * Haven't found no query api, but the set api returns the old mask, so let's use that.
+         */
+        DWORD_PTR dwIgnored;
+        DWORD_PTR dwProcAff = 0;
+        if (g_pfnGetProcessAffinityMask(GetCurrentProcess(), &dwProcAff, &dwIgnored))
         {
-            DWORD_PTR dwSet = SetThreadAffinityMask(hThread, dwRet);
-            Assert(dwSet == dwProcAff); NOREF(dwRet);
+            HANDLE hThread = GetCurrentThread();
+            DWORD_PTR dwRet = g_pfnSetThreadAffinityMask(hThread, dwProcAff);
+            if (dwRet)
+            {
+                DWORD_PTR dwSet = g_pfnSetThreadAffinityMask(hThread, dwRet);
+                Assert(dwSet == dwProcAff); NOREF(dwRet);
 
-            RTCpuSetFromU64(pCpuSet, (uint64_t)dwSet);
-            return VINF_SUCCESS;
+                RTCpuSetFromU64(pCpuSet, (uint64_t)dwSet);
+                return VINF_SUCCESS;
+            }
         }
-    }
 
-    int iLastError = GetLastError();
-    AssertMsgFailed(("SetThreadAffinityMask or GetProcessAffinityMask failed, LastError=%d\n", iLastError));
-    return RTErrConvertFromWin32(iLastError);
+        int iLastError = GetLastError();
+        AssertMsgFailed(("SetThreadAffinityMask or GetProcessAffinityMask failed, LastError=%d\n", iLastError));
+        return RTErrConvertFromWin32(iLastError);
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 

@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * IPRT - Local IPC, Windows Implementation Using Named Pipes.
+ *
+ * @note This code only works on W2K because of the dependency on
+ *       ConvertStringSecurityDescriptorToSecurityDescriptor.
  */
 
 /*
@@ -39,19 +42,14 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LOCALIPC
-/*
- * We have to force NT 5.0 here because of
- * ConvertStringSecurityDescriptorToSecurityDescriptor. Note that because of
- * FILE_FLAG_FIRST_PIPE_INSTANCE this code actually requires W2K SP2+.
- */
-#ifndef _WIN32_WINNT
-# define _WIN32_WINNT 0x0500 /* for ConvertStringSecurityDescriptorToSecurityDescriptor */
-#elif _WIN32_WINNT < 0x0500
-# undef _WIN32_WINNT
-# define _WIN32_WINNT 0x0500
+#ifdef _WIN32_WINNT
+# if _WIN32_WINNT < 0x0500
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0500       /* For ConvertStringSecurityDescriptorToSecurityDescriptor. */
+# endif
 #endif
-#define UNICODE    /* For the SDDL_ strings. */
-#include <iprt/win/windows.h>
+#define UNICODE                     /* For the SDDL_ strings. */
+#include <iprt/nt/nt-and-windows.h> /* Need NtCancelIoFile */
 #include <sddl.h>
 
 #include "internal/iprt.h"
@@ -237,7 +235,7 @@ static decltype(ConvertStringSecurityDescriptorToSecurityDescriptorW) *g_pfnSSDL
  *                              Must be free'd using LocalFree().
  * @param   fServer             Whether it's for a server or client instance.
  */
-static int rtLocalIpcServerWinAllocSecurityDescriptior(PSECURITY_DESCRIPTOR *ppDesc, bool fServer)
+static int rtLocalIpcServerWinAllocSecurityDescriptor(PSECURITY_DESCRIPTOR *ppDesc, bool fServer)
 {
     /*
      * Resolve the API the first time around.
@@ -297,7 +295,7 @@ static int rtLocalIpcServerWinCreatePipeInstance(PHANDLE phNmPipe, PCRTUTF16 pws
     *phNmPipe = INVALID_HANDLE_VALUE;
 
     PSECURITY_DESCRIPTOR pSecDesc;
-    int rc = rtLocalIpcServerWinAllocSecurityDescriptior(&pSecDesc, fFirst /* Server? */);
+    int rc = rtLocalIpcServerWinAllocSecurityDescriptor(&pSecDesc, fFirst /* Server? */);
     if (RT_SUCCESS(rc))
     {
         SECURITY_ATTRIBUTES SecAttrs;
@@ -670,7 +668,11 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                 ||  dwErr == ERROR_PIPE_CONNECTED)
                 fRc = DisconnectNamedPipe(pThis->hNmPipe);
             else if (dwErr == ERROR_IO_PENDING)
-                fRc = CancelIo(pThis->hNmPipe);
+            {
+                IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                NTSTATUS rcNt = NtCancelIoFile(pThis->hNmPipe, &Ios);
+                fRc = NT_SUCCESS(rcNt);
+            }
             else
                 fRc = TRUE;
             AssertMsg(fRc, ("%d\n", GetLastError()));
@@ -824,7 +826,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
              * Try open the pipe.
              */
             PSECURITY_DESCRIPTOR pSecDesc;
-            rc = rtLocalIpcServerWinAllocSecurityDescriptior(&pSecDesc, false /*fServer*/);
+            rc = rtLocalIpcServerWinAllocSecurityDescriptor(&pSecDesc, false /*fServer*/);
             if (RT_SUCCESS(rc))
             {
                 PRTUTF16 pwszFullName = RTUtf16Alloc((cwcFullName + 1) * sizeof(RTUTF16));
@@ -896,12 +898,16 @@ static int rtLocalIpcWinCancel(PRTLOCALIPCSESSIONINT pThis)
     ASMAtomicUoWriteBool(&pThis->fCancelled, true);
 
     /*
-     * Call CancelIo since this call cancels both read and write oriented operations.
+     * Call NtCancelIoFile since this call cancels both read and write
+     * oriented operations.
      */
     if (   pThis->fZeroByteRead
         || pThis->Read.hActiveThread != NIL_RTTHREAD
         || pThis->Write.hActiveThread != NIL_RTTHREAD)
-        CancelIo(pThis->hNmPipe);
+    {
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NtCancelIoFile(pThis->hNmPipe, &Ios);
+    }
 
     /*
      * Set both event semaphores.
@@ -1035,11 +1041,12 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
  *
  * The zero byte read is started by the RTLocalIpcSessionWaitForData method and
  * left pending when the function times out.  This saves us the problem of
- * CancelIo messing with all active I/O operations and the trouble of restarting
- * the zero byte read the next time the method is called.  However should
- * RTLocalIpcSessionRead be called after a failed RTLocalIpcSessionWaitForData
- * call, the zero byte read will still be pending and it must wait for it to
- * complete before the OVERLAPPEDIO structure can be reused.
+ * NtCancelIoFile messing with all active I/O operations and the trouble of
+ * restarting the zero byte read the next time the method is called.  However
+ * should RTLocalIpcSessionRead be called after a failed
+ * RTLocalIpcSessionWaitForData call, the zero byte read will still be pending
+ * and it must wait for it to complete before the OVERLAPPEDIO structure can be
+ * reused.
  *
  * Thus, both functions will do WaitForSingleObject and share this routine to
  * handle the outcome.
