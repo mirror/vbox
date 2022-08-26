@@ -110,7 +110,19 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS
 TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET))
-TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win) /VERBOSE:LIB
+TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win)
+# The -Oi- disable optimizations of math functions like sqrt(), that takes all
+# parameters on the stack, into calls to __CIsqrt that takes parameters in FPU
+# registers.  While we could implement the __CIxxxx functions too, they would
+# be difficult to test properly given that they're not directly callable from
+# C.  Also, there could be other aspects to these functions that we don't know
+# about, given that they aren't documented all that well.  See:
+#   https://docs.microsoft.com/en-us/cpp/preprocessor/intrinsic?view=msvc-160#intrinsic-floating-point-functions
+#   https://docs.microsoft.com/en-us/cpp/build/reference/oi-generate-intrinsic-functions?view=msvc-160
+# Unforutnately, this does mean that we will miss out on a little bit of
+# performance in 32-bit binaries.
+TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win.x86   += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS.win.x86) -Oi-
+TEMPLATE_VBoxMesa3DGuestR3Dll_CXXFLAGS.win.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS.win.x86) -Oi-
 endif
 
 #
