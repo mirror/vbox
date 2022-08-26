@@ -8057,11 +8057,17 @@ ifdef VBOX_WITH_NLS
  TEMPLATE_VBoxNLS_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
  TEMPLATE_VBoxNLS_SOURCES  = \
 	$(PATH_ROOT)/src/VBox/Main/nls/dummy.c
- TEMPLATE_VBoxNLS_SDKS	   = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS))
- TEMPLATE_VBoxNLS_LIBS     = $(filter-out \
-	$(VBOX_LIB_RUNTIME_STATIC) \
-	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-	$(TEMPLATE_VBoxR3Static_LIBS))
+ TEMPLATE_VBoxNLS_SDKS	    = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS))
+ ifdef VBOX_WITH_NOCRT_STATIC
+  TEMPLATE_VBoxNLS_LIBS    = $(filter-out \
+  	 $(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+  	 $(TEMPLATE_VBoxR3Static_LIBS))
+ else
+  TEMPLATE_VBoxNLS_LIBS    = $(filter-out \
+  	 $(VBOX_LIB_RUNTIME_STATIC) \
+  	 $(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+  	 $(TEMPLATE_VBoxR3Static_LIBS))
+ endif
 endif # !VBOX_WITH_NLS
 
 
