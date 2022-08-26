@@ -38,7 +38,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
  #
  LIBRARIES += StorageLib #StorageLibNoDB
 
- StorageLib_TEMPLATE = VBOXR3EXE
+ StorageLib_TEMPLATE = VBOXR3
  StorageLib_DEFS     = IN_VBOXDDU
  ifeq ($(USER),bird)
   StorageLib_DEFS.debug += RTMEM_WRAP_TO_EF_APIS
