@@ -163,7 +163,7 @@ RTDECL(RTEXITCODE) RTMsgSyntax(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1
  *
  * @returns RTEXITCODE_SYNTAX
  * @param   pszFormat       The message format string.  Newline not needed.
- * @param   va_list         Format arguments.
+ * @param   va              Format arguments.
  */
 RTDECL(RTEXITCODE) RTMsgSyntaxV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
