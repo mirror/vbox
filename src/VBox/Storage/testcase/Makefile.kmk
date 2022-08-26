@@ -151,6 +151,12 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  ifeq ($(vbox-img_TEMPLATE),VBOXR3EXE)
   vbox-img_LIBS = \
  	$(LIB_RUNTIME)
+  ifeq ($(KBUILD_TARGET),freebsd)
+   vbox-img_LIBS += geom bsdxml sbuf
+  else ifeq ($(KBUILD_TARGET),solaris)
+   vbox-img_LIBS += kstat efi
+  endif
+
  else
   vbox-img_LIBS = \
  	$(VBOX_LIB_RUNTIME_STATIC)
