@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * IPRT - XML Manipulation API.
+ *
+ * @note Not available in no-CRT mode because it relies too heavily on
+ *       exceptions, as well as using std::list and std::map.
  */
 
 /*
@@ -38,6 +41,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/cpp/xml.h>
+
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -45,7 +50,6 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/cpp/lock.h>
-#include <iprt/cpp/xml.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>

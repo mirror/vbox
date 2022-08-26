@@ -42,6 +42,9 @@
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
 #endif
+#ifdef IPRT_NO_CRT
+# error "Not available in no-CRT mode because it depends on exceptions, std::list, std::map and stdio.h."
+#endif
 
 #include <iprt/list.h>
 #include <iprt/cpp/exception.h>

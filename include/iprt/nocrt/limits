@@ -40,6 +40,7 @@
 #endif
 
 #include <iprt/nocrt/limits.h>
+#include <iprt/nocrt/float.h>
 
 namespace std
 {
