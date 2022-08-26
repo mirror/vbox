@@ -118,11 +118,16 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  #
  # vbox-img - static because it might be used as a standalone tool.
  #
- vbox-img_TEMPLATE = VBoxR3Static
- vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
- vbox-img_INCS += \
+ ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.sparc32 solaris.sparc64)
+ vbox-img_TEMPLATE := VBOXR3
+ vbox-img_DEFS     := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+ else
+ vbox-img_TEMPLATE := VBoxR3Static
+ vbox-img_DEFS     := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+ endif
+ vbox-img_INCS     := \
 	../../Main/include
- vbox-img_SOURCES = \
+ vbox-img_SOURCES  := \
 	vbox-img.cpp \
 	../VD.cpp \
 	../VDPlugin.cpp \
@@ -143,34 +148,39 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	../VDIfVfs.cpp
  vbox-img_SOURCES.win = \
 	vbox-img.rc
- vbox-img_LIBS = \
-	$(VBOX_LIB_RUNTIME_STATIC)
- if1of ($(KBUILD_TARGET),os2 win)
-  vbox-img_LIBS += \
-	$(SDK_VBOX_LZF_STATIC_LIBS) \
-	$(SDK_VBOX_ZLIB_STATIC_LIBS)
+ ifeq ($(vbox-img_TEMPLATE),VBOXR3)
+  vbox-img_LIBS = \
+ 	$(LIB_RUNTIME)
  else
-  vbox-img_LIBS += \
-	$(SDK_VBOX_LZF_LIBS) \
-	$(SDK_VBOX_ZLIB_LIBS)
- endif
- ifeq ($(KBUILD_TARGET),linux)
-  ifdef SDK_VBOX_LIBXML2_LIBS
-   vbox-img_LIBS += xml2
+  vbox-img_LIBS = \
+ 	$(VBOX_LIB_RUNTIME_STATIC)
+  if1of ($(KBUILD_TARGET),os2 win)
+   vbox-img_LIBS += \
+ 	$(SDK_VBOX_LZF_STATIC_LIBS) \
+ 	$(SDK_VBOX_ZLIB_STATIC_LIBS)
+  else
+   vbox-img_LIBS += \
+ 	$(SDK_VBOX_LZF_LIBS) \
+ 	$(SDK_VBOX_ZLIB_LIBS)
   endif
- else ifeq ($(KBUILD_TARGET),freebsd)
-  vbox-img_LIBS += iconv geom bsdxml sbuf
-  ifdef SDK_VBOX_LIBXML2_LIBS
-   vbox-img_LIBS += xml2 lzma
-  endif
- else ifeq ($(KBUILD_TARGET),darwin)
-  vbox-img_LIBS += iconv
- else ifeq ($(KBUILD_TARGET),win)
-  vbox-img_SDKS.win = VBOX_NTDLL
- else ifeq ($(KBUILD_TARGET),solaris)
-  vbox-img_LIBS += kstat efi
-  ifdef SDK_VBOX_LIBXML2_LIBS
-   vbox-img_LIBS += xml2
+  ifeq ($(KBUILD_TARGET),linux)
+   ifdef SDK_VBOX_LIBXML2_LIBS
+    vbox-img_LIBS += xml2
+   endif
+  else ifeq ($(KBUILD_TARGET),freebsd)
+   vbox-img_LIBS += iconv geom bsdxml sbuf
+   ifdef SDK_VBOX_LIBXML2_LIBS
+    vbox-img_LIBS += xml2 lzma
+   endif
+  else ifeq ($(KBUILD_TARGET),darwin)
+   vbox-img_LIBS += iconv
+  else ifeq ($(KBUILD_TARGET),win)
+   vbox-img_SDKS.win = VBOX_NTDLL
+  else ifeq ($(KBUILD_TARGET),solaris)
+   vbox-img_LIBS += kstat efi
+   ifdef SDK_VBOX_LIBXML2_LIBS
+    vbox-img_LIBS += xml2
+   endif
   endif
  endif
 
