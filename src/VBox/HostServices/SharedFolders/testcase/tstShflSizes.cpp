@@ -31,19 +31,19 @@
 *********************************************************************************************************************************/
 #include <VBox/shflsvc.h>
 #include <iprt/string.h>
-#include <stdio.h>
+#include <iprt/stream.h>
 
 #define STRUCT(t, size)   \
     do { \
         if (fPrintChecks) \
-            printf("    STRUCT(" #t ", %d);\n", (int)sizeof(t)); \
+            RTPrintf("    STRUCT(" #t ", %d);\n", (int)sizeof(t)); \
         else if ((size) != sizeof(t)) \
         { \
-            printf("%30s: %d expected %d!\n", #t, (int)sizeof(t), (size)); \
+            RTPrintf("%30s: %d expected %d!\n", #t, (int)sizeof(t), (size)); \
             cErrors++; \
         } \
         else if (!fQuiet)\
-            printf("%30s: %d\n", #t, (int)sizeof(t)); \
+            RTPrintf("%30s: %d\n", #t, (int)sizeof(t)); \
     } while (0)
 
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     bool fQuiet = argc == 2 && !strcmp(argv[1], "quiet");
     bool fPrintChecks = !fQuiet && argc != 1;
 
-    printf("tstShflSizes: TESTING\n");
+    RTPrintf("tstShflSizes: TESTING\n");
 
     /*
      * The checks.
@@ -136,9 +136,9 @@ int main(int argc, char **argv)
      * The summary.
      */
     if (!cErrors)
-        printf("tstShflSizes: SUCCESS\n");
+        RTPrintf("tstShflSizes: SUCCESS\n");
     else
-        printf("tstShflSizes: FAILURE - %d errors\n", cErrors);
+        RTPrintf("tstShflSizes: FAILURE - %d errors\n", cErrors);
     return !!cErrors;
 }
 
