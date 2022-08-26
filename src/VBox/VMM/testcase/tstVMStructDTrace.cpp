@@ -68,9 +68,7 @@
 #include <VBox/param.h>
 #include <iprt/x86.h>
 #include <iprt/assert.h>
-
-/* we don't use iprt here because we wish to run without trouble. */
-#include <stdio.h>
+#include <iprt/stream.h>
 
 
 int main()
@@ -78,44 +76,44 @@ int main()
     /*
      * File header and pragmas.
      */
-    printf("#pragma D option quiet\n");
-//    printf("#pragma D depends_on library x86.d\n");
-//    printf("#pragma D depends_on library cpumctx.d\n");
-//    printf("#pragma D depends_on library CPUMInternal.d\n");
-//    printf("#pragma D depends_on library vm.d\n");
+    RTPrintf("#pragma D option quiet\n");
+//    RTPrintf("#pragma D depends_on library x86.d\n");
+//    RTPrintf("#pragma D depends_on library cpumctx.d\n");
+//    RTPrintf("#pragma D depends_on library CPUMInternal.d\n");
+//    RTPrintf("#pragma D depends_on library vm.d\n");
 
-    printf("int g_cErrors;\n"
-           "\n"
-           "dtrace:::BEGIN\n"
-           "{\n"
-           "    g_cErrors = 0;\n"
-           "}\n"
-           "\n"
-           );
+    RTPrintf("int g_cErrors;\n"
+             "\n"
+             "dtrace:::BEGIN\n"
+             "{\n"
+             "    g_cErrors = 0;\n"
+             "}\n"
+             "\n"
+             );
 
     /*
      * Test generator macros.
      */
 #define GEN_CHECK_SIZE(s) \
-    printf("dtrace:::BEGIN\n" \
-           "/sizeof(" #s ") != %u/\n" \
-           "{\n" \
-           "    printf(\"error: sizeof(" #s ") should be %u, not %%u\\n\", sizeof(" #s "));\n" \
-           "    g_cErrors++;\n" \
-           "}\n" \
-           "\n", \
-           (unsigned)sizeof(s), (unsigned)sizeof(s))
+    RTPrintf("dtrace:::BEGIN\n" \
+             "/sizeof(" #s ") != %u/\n" \
+             "{\n" \
+             "    printf(\"error: sizeof(" #s ") should be %u, not %%u\\n\", sizeof(" #s "));\n" \
+             "    g_cErrors++;\n" \
+             "}\n" \
+             "\n", \
+             (unsigned)sizeof(s), (unsigned)sizeof(s))
 
 #if 1
 # define GEN_CHECK_OFF(s, m) \
-   printf("dtrace:::BEGIN\n" \
-          "/offsetof(" #s ", " #m ") != %u/\n" \
-          "{\n" \
-          "    printf(\"error: offsetof(" #s ", " #m ") should be %u, not %%u\\n\", offsetof(" #s ", " #m "));\n" \
-          "    g_cErrors++;\n" \
-          "}\n" \
-          "\n", \
-          (unsigned)RT_OFFSETOF(s, m), (unsigned)RT_OFFSETOF(s, m))
+   RTPrintf("dtrace:::BEGIN\n" \
+            "/offsetof(" #s ", " #m ") != %u/\n" \
+            "{\n" \
+            "    printf(\"error: offsetof(" #s ", " #m ") should be %u, not %%u\\n\", offsetof(" #s ", " #m "));\n" \
+            "    g_cErrors++;\n" \
+            "}\n" \
+            "\n", \
+            (unsigned)RT_OFFSETOF(s, m), (unsigned)RT_OFFSETOF(s, m))
 
 #else
 # define GEN_CHECK_OFF(s, m) do { } while (0)
@@ -133,20 +131,20 @@ int main()
     /*
      * Footer.
      */
-    printf("dtrace:::BEGIN\n"
-           "/g_cErrors != 0/\n"
-           "{\n"
-           "    printf(\"%%u errors!\\n\", g_cErrors);\n"
-           "    exit(1);\n"
-           "}\n"
-           "\n"
-           "dtrace:::BEGIN\n"
-           "{\n"
-           "    printf(\"Success!\\n\");\n"
-           "    exit(0);\n"
-           "}\n"
-           "\n"
-           );
+    RTPrintf("dtrace:::BEGIN\n"
+             "/g_cErrors != 0/\n"
+             "{\n"
+             "    printf(\"%%u errors!\\n\", g_cErrors);\n"
+             "    exit(1);\n"
+             "}\n"
+             "\n"
+             "dtrace:::BEGIN\n"
+             "{\n"
+             "    printf(\"Success!\\n\");\n"
+             "    exit(0);\n"
+             "}\n"
+             "\n"
+             );
 
 
     return (0);

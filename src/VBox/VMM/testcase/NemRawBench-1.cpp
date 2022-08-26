@@ -66,11 +66,10 @@
 # error "port me"
 #endif
 
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iprt/stream.h>
+#include <iprt/stdarg.h>
+#include <iprt/types.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
@@ -136,10 +135,10 @@ static hv_vcpuid_t              g_idVCpu;
 
 static int error(const char *pszFormat, ...)
 {
-    fprintf(stderr, "error: ");
+    RTStrmPrintf(g_pStdErr, "error: ");
     va_list va;
     va_start(va, pszFormat);
-    vfprintf(stderr, pszFormat, va);
+    RTStrmPrintfV(g_pStdErr, pszFormat, va);
     va_end(va);
     return 1;
 }
@@ -183,11 +182,7 @@ static uint64_t getNanoTS(void)
 char *formatNum(uint64_t uNum, unsigned cchWidth, char *pszDst, size_t cbDst)
 {
     char szTmp[64 + 22];
-#ifdef _MSC_VER
-    size_t cchTmp = _snprintf(szTmp, sizeof(szTmp) - 22, "%I64u", uNum);
-#else
-    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%llu", (unsigned long long)uNum);
-#endif
+    size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp) - 22, "%llu", (unsigned long long)uNum);
     size_t cSeps  = (cchTmp - 1) / 3;
     size_t const cchTotal = cchTmp + cSeps;
     if (cSeps)
@@ -217,10 +212,10 @@ int reportResult(const char *pszInstruction, uint32_t cInstructions, uint64_t ns
 {
     uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
     char szTmp1[64], szTmp2[64], szTmp3[64];
-    printf("%s %7s instructions per second (%s exits in %s ns)\n",
-           formatNum(cInstrPerSec, 10, szTmp1, sizeof(szTmp1)), pszInstruction,
-           formatNum(cExits, 0, szTmp2, sizeof(szTmp2)),
-           formatNum(nsElapsed, 0, szTmp3, sizeof(szTmp3)));
+    RTPrintf("%s %7s instructions per second (%s exits in %s ns)\n",
+             formatNum(cInstrPerSec, 10, szTmp1, sizeof(szTmp1)), pszInstruction,
+             formatNum(cExits, 0, szTmp2, sizeof(szTmp2)),
+             formatNum(nsElapsed, 0, szTmp3, sizeof(szTmp3)));
     return 0;
 }
 
@@ -328,10 +323,10 @@ static int createVM(void)
 
 static int runtimeError(const char *pszFormat, ...)
 {
-    fprintf(stderr, "runtime error: ");
+    RTStrmPrintf(g_pStdErr, "runtime error: ");
     va_list va;
     va_start(va, pszFormat);
-    vfprintf(stderr, pszFormat, va);
+    RTStrmPrintfV(g_pStdErr, pszFormat, va);
     va_end(va);
 
     static struct { const char *pszName; WHV_REGISTER_NAME enmName; unsigned uType; } const s_aRegs[] =
@@ -365,16 +360,16 @@ static int runtimeError(const char *pszFormat, ...)
         if (SUCCEEDED(hrc))
         {
             if (s_aRegs[i].uType == 32)
-                fprintf(stderr, "%8s=%08x\n", s_aRegs[i].pszName, Value.Reg32);
+                RTStrmPrintf(g_pStdErr, "%8s=%08x\n", s_aRegs[i].pszName, Value.Reg32);
             else if (s_aRegs[i].uType == 64)
-                fprintf(stderr, "%8s=%08x'%08x\n", s_aRegs[i].pszName, (unsigned)(Value.Reg64 >> 32), Value.Reg32);
+                RTStrmPrintf(g_pStdErr, "%8s=%08x'%08x\n", s_aRegs[i].pszName, (unsigned)(Value.Reg64 >> 32), Value.Reg32);
             else if (s_aRegs[i].uType == 1)
-                fprintf(stderr, "%8s=%04x  base=%08x'%08x  limit=%08x attr=%04x\n", s_aRegs[i].pszName,
-                        Value.Segment.Selector, (unsigned)(Value.Segment.Base >> 32), (unsigned)Value.Segment.Base,
-                        Value.Segment.Limit, Value.Segment.Attributes);
+                RTStrmPrintf(g_pStdErr, "%8s=%04x  base=%08x'%08x  limit=%08x attr=%04x\n", s_aRegs[i].pszName,
+                             Value.Segment.Selector, (unsigned)(Value.Segment.Base >> 32), (unsigned)Value.Segment.Base,
+                             Value.Segment.Limit, Value.Segment.Attributes);
         }
         else
-            fprintf(stderr, "%8s=<WHvGetVirtualProcessorRegisters failed %#x>\n", s_aRegs[i].pszName, hrc);
+            RTStrmPrintf(g_pStdErr, "%8s=<WHvGetVirtualProcessorRegisters failed %#x>\n", s_aRegs[i].pszName, hrc);
     }
 
     return 1;
@@ -578,26 +573,26 @@ static int createVM(void)
 
 static void printSReg(const char *pszName, struct kvm_segment const *pSReg)
 {
-    fprintf(stderr, "     %5s=%04x  base=%016llx  limit=%08x type=%#x p=%d dpl=%d db=%d s=%d l=%d g=%d avl=%d un=%d\n",
-            pszName, pSReg->selector, pSReg->base, pSReg->limit, pSReg->type, pSReg->present, pSReg->dpl,
-            pSReg->db, pSReg->s, pSReg->l, pSReg->g, pSReg->avl, pSReg->unusable);
+    RTStrmPrintf(g_pStdErr, "     %5s=%04x  base=%016llx  limit=%08x type=%#x p=%d dpl=%d db=%d s=%d l=%d g=%d avl=%d un=%d\n",
+                 pszName, pSReg->selector, pSReg->base, pSReg->limit, pSReg->type, pSReg->present, pSReg->dpl,
+                 pSReg->db, pSReg->s, pSReg->l, pSReg->g, pSReg->avl, pSReg->unusable);
 }
 
 
 static int runtimeError(const char *pszFormat, ...)
 {
-    fprintf(stderr, "runtime error: ");
+    RTStrmPrintf(g_pStdErr, "runtime error: ");
     va_list va;
     va_start(va, pszFormat);
-    vfprintf(stderr, pszFormat, va);
+    RTStrmPrintfV(g_pStdErr, pszFormat, va);
     va_end(va);
 
-    fprintf(stderr, "                  exit_reason=%#010x\n", g_pVCpuRun->exit_reason);
-    fprintf(stderr, "ready_for_interrupt_injection=%#x\n", g_pVCpuRun->ready_for_interrupt_injection);
-    fprintf(stderr, "                      if_flag=%#x\n", g_pVCpuRun->if_flag);
-    fprintf(stderr, "                        flags=%#x\n", g_pVCpuRun->flags);
-    fprintf(stderr, "               kvm_valid_regs=%#018llx\n", g_pVCpuRun->kvm_valid_regs);
-    fprintf(stderr, "               kvm_dirty_regs=%#018llx\n", g_pVCpuRun->kvm_dirty_regs);
+    RTStrmPrintf(g_pStdErr, "                  exit_reason=%#010x\n", g_pVCpuRun->exit_reason);
+    RTStrmPrintf(g_pStdErr, "ready_for_interrupt_injection=%#x\n", g_pVCpuRun->ready_for_interrupt_injection);
+    RTStrmPrintf(g_pStdErr, "                      if_flag=%#x\n", g_pVCpuRun->if_flag);
+    RTStrmPrintf(g_pStdErr, "                        flags=%#x\n", g_pVCpuRun->flags);
+    RTStrmPrintf(g_pStdErr, "               kvm_valid_regs=%#018llx\n", g_pVCpuRun->kvm_valid_regs);
+    RTStrmPrintf(g_pStdErr, "               kvm_dirty_regs=%#018llx\n", g_pVCpuRun->kvm_dirty_regs);
 
     struct kvm_regs Regs;
     memset(&Regs, 0, sizeof(Regs));
@@ -606,17 +601,17 @@ static int runtimeError(const char *pszFormat, ...)
     if (   ioctl(g_fdVCpu, KVM_GET_REGS, &Regs) != -1
         && ioctl(g_fdVCpu, KVM_GET_SREGS, &SRegs) != -1)
     {
-        fprintf(stderr, "       rip=%016llx\n", Regs.rip);
+        RTStrmPrintf(g_pStdErr, "       rip=%016llx\n", Regs.rip);
         printSReg("cs", &SRegs.cs);
-        fprintf(stderr, "    rflags=%08llx\n", Regs.rflags);
-        fprintf(stderr, "       rax=%016llx\n", Regs.rax);
-        fprintf(stderr, "       rbx=%016llx\n", Regs.rcx);
-        fprintf(stderr, "       rdx=%016llx\n", Regs.rdx);
-        fprintf(stderr, "       rcx=%016llx\n", Regs.rbx);
-        fprintf(stderr, "       rsp=%016llx\n", Regs.rsp);
-        fprintf(stderr, "       rbp=%016llx\n", Regs.rbp);
-        fprintf(stderr, "       rsi=%016llx\n", Regs.rsi);
-        fprintf(stderr, "       rdi=%016llx\n", Regs.rdi);
+        RTStrmPrintf(g_pStdErr, "    rflags=%08llx\n", Regs.rflags);
+        RTStrmPrintf(g_pStdErr, "       rax=%016llx\n", Regs.rax);
+        RTStrmPrintf(g_pStdErr, "       rbx=%016llx\n", Regs.rcx);
+        RTStrmPrintf(g_pStdErr, "       rdx=%016llx\n", Regs.rdx);
+        RTStrmPrintf(g_pStdErr, "       rcx=%016llx\n", Regs.rbx);
+        RTStrmPrintf(g_pStdErr, "       rsp=%016llx\n", Regs.rsp);
+        RTStrmPrintf(g_pStdErr, "       rbp=%016llx\n", Regs.rbp);
+        RTStrmPrintf(g_pStdErr, "       rsi=%016llx\n", Regs.rsi);
+        RTStrmPrintf(g_pStdErr, "       rdi=%016llx\n", Regs.rdi);
         printSReg("ss", &SRegs.ss);
         printSReg("ds", &SRegs.ds);
         printSReg("es", &SRegs.es);
@@ -627,9 +622,9 @@ static int runtimeError(const char *pszFormat, ...)
 
         uint64_t const offMem = Regs.rip + SRegs.cs.base - MY_MEM_BASE;
         if (offMem < g_cbMem - 10)
-            fprintf(stderr, "  bytes at PC (%#zx): %02x %02x %02x %02x %02x %02x %02x %02x\n", (size_t)(offMem + MY_MEM_BASE),
-                    g_pbMem[offMem    ], g_pbMem[offMem + 1], g_pbMem[offMem + 2], g_pbMem[offMem + 3],
-                    g_pbMem[offMem + 4], g_pbMem[offMem + 5], g_pbMem[offMem + 6], g_pbMem[offMem + 7]);
+            RTStrmPrintf(g_pStdErr, "  bytes at PC (%#zx): %02x %02x %02x %02x %02x %02x %02x %02x\n", (size_t)(offMem + MY_MEM_BASE),
+                         g_pbMem[offMem    ], g_pbMem[offMem + 1], g_pbMem[offMem + 2], g_pbMem[offMem + 3],
+                         g_pbMem[offMem + 4], g_pbMem[offMem + 5], g_pbMem[offMem + 6], g_pbMem[offMem + 7]);
     }
 
     return 1;
@@ -770,10 +765,10 @@ static int createVM(void)
 
 static int runtimeError(const char *pszFormat, ...)
 {
-    fprintf(stderr, "runtime error: ");
+    RTStrmPrintf(g_pStdErr, "runtime error: ");
     va_list va;
     va_start(va, pszFormat);
-    vfprintf(stderr, pszFormat, va);
+    RTStrmPrintfV(g_pStdErr, pszFormat, va);
     va_end(va);
 
     static struct { const char *pszName; uint32_t uField; uint32_t uFmt : 31; uint32_t fIsReg : 1; } const s_aFields[] =
@@ -867,15 +862,15 @@ static int runtimeError(const char *pszFormat, ...)
         if (rcHv == HV_SUCCESS)
         {
             if (s_aFields[i].uFmt == 16)
-                fprintf(stderr, "%28s=%04llx\n", s_aFields[i].pszName, uValue);
+                RTStrmPrintf(g_pStdErr, "%28s=%04llx\n", s_aFields[i].pszName, uValue);
             else if (s_aFields[i].uFmt == 32)
-                fprintf(stderr, "%28s=%08llx\n", s_aFields[i].pszName, uValue);
+                RTStrmPrintf(g_pStdErr, "%28s=%08llx\n", s_aFields[i].pszName, uValue);
             else
-                fprintf(stderr, "%28s=%08x'%08x\n", s_aFields[i].pszName, (uint32_t)(uValue >> 32), (uint32_t)uValue);
+                RTStrmPrintf(g_pStdErr, "%28s=%08x'%08x\n", s_aFields[i].pszName, (uint32_t)(uValue >> 32), (uint32_t)uValue);
         }
         else
-            fprintf(stderr, "%28s=<%s failed %#x>\n", s_aFields[i].pszName,
-                    s_aFields[i].fIsReg ? "hv_vcpu_read_register" : "hv_vmx_vcpu_read_vmcs", rcHv);
+            RTStrmPrintf(g_pStdErr, "%28s=<%s failed %#x>\n", s_aFields[i].pszName,
+                         s_aFields[i].fIsReg ? "hv_vcpu_read_register" : "hv_vmx_vcpu_read_vmcs", rcHv);
     }
     return 1;
 }
@@ -1097,10 +1092,10 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
 
 void dumpCode(uint8_t const *pb, uint8_t *pbEnd)
 {
-    printf("testing:");
+    RTPrintf("testing:");
     for (; pb != pbEnd; pb++)
-        printf(" %02x", *pb);
-    printf("\n");
+        RTPrintf(" %02x", *pb);
+    RTPrintf("\n");
 }
 
 
@@ -1231,31 +1226,31 @@ int main(int argc, char **argv)
             || strcmp(pszArg, "-?") == 0
             || strcmp(pszArg, "/?") == 0)
         {
-            printf("Does some benchmarking of the native NEM engine.\n"
-                   "\n"
-                   "Usage: NemRawBench-1 --factor <factor>\n"
-                   "\n"
-                   "Options\n"
-                   "  --factor <factor>\n"
-                   "        Iteration count factor.  Default is %u.\n"
-                   "        Lower it if execution is slow, increase if quick.\n",
-                   cFactorDefault);
+            RTPrintf("Does some benchmarking of the native NEM engine.\n"
+                     "\n"
+                     "Usage: NemRawBench-1 --factor <factor>\n"
+                     "\n"
+                     "Options\n"
+                     "  --factor <factor>\n"
+                     "        Iteration count factor.  Default is %u.\n"
+                     "        Lower it if execution is slow, increase if quick.\n",
+                     cFactorDefault);
             return 0;
         }
         if (strcmp(pszArg, "--factor") == 0)
         {
             i++;
             if (i < argc)
-                cFactor = atoi(argv[i]);
+                cFactor = RTStrToUInt32(argv[i]);
             else
             {
-                fprintf(stderr, "syntax error: Option %s is takes a value!\n", pszArg);
+                RTStrmPrintf(g_pStdErr, "syntax error: Option %s is takes a value!\n", pszArg);
                 return 2;
             }
         }
         else
         {
-            fprintf(stderr, "syntax error: Unknown option: %s\n", pszArg);
+            RTStrmPrintf(g_pStdErr, "syntax error: Unknown option: %s\n", pszArg);
             return 2;
         }
     }
@@ -1267,7 +1262,7 @@ int main(int argc, char **argv)
     int rcExit = createVM();
     if (rcExit == 0)
     {
-        printf("tstNemBench-1: Successfully created test VM...\n");
+        RTPrintf("tstNemBench-1: Successfully created test VM...\n");
 
         /*
          * Do the benchmarking.
@@ -1276,7 +1271,7 @@ int main(int argc, char **argv)
         cpuidTest(cFactor);
         mmioTest(cFactor);
 
-        printf("tstNemBench-1: done\n");
+        RTPrintf("tstNemBench-1: done\n");
     }
     return rcExit;
 }

@@ -49,12 +49,12 @@ RT_C_DECLS_END
     do { \
         if (off != RT_OFFSETOF(type, m)) \
         { \
-            printf("error! %#010x %s  Off by %d!! (expected off=%#x)\n", \
-                   RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), (int)off); \
+            RTPrintf("error! %#010x %s  Off by %d!! (expected off=%#x)\n", \
+                     RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), (int)off); \
             rc++; \
         } \
         /*else */ \
-            /*printf("%#08x %s\n", RT_OFFSETOF(type, m), #m);*/ \
+            /*RTPrintf("%#08x %s\n", RT_OFFSETOF(type, m), #m);*/ \
     } while (0)
 
 /**
@@ -66,12 +66,12 @@ RT_C_DECLS_END
     do { \
         if (size != sizeof(type)) \
         { \
-            printf("error! sizeof(%s): %#x (%d)  Off by %d!! (expected %#x)\n", \
-                   #type, (int)sizeof(type), (int)sizeof(type), (int)sizeof(type) - (int)size, (int)size); \
+            RTPrintf("error! sizeof(%s): %#x (%d)  Off by %d!! (expected %#x)\n", \
+                     #type, (int)sizeof(type), (int)sizeof(type), (int)sizeof(type) - (int)size, (int)size); \
             rc++; \
         } \
         else \
-            printf("info: sizeof(%s): %#x (%d)\n", #type, (int)sizeof(type), (int)sizeof(type)); \
+            RTPrintf("info: sizeof(%s): %#x (%d)\n", #type, (int)sizeof(type), (int)sizeof(type)); \
     } while (0)
 
 /**
@@ -82,13 +82,13 @@ RT_C_DECLS_END
     { \
         if (RT_UOFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("error! %s::%s offset=%#x (%u) expected alignment %#x, meaning %#x (%u) off\n", \
-                   #strct, #member, \
-                   (unsigned)RT_OFFSETOF(strct, member), \
-                   (unsigned)RT_OFFSETOF(strct, member), \
-                   (unsigned)(align), \
-                   (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)), \
-                   (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)) ); \
+            RTPrintf("error! %s::%s offset=%#x (%u) expected alignment %#x, meaning %#x (%u) off\n", \
+                     #strct, #member, \
+                     (unsigned)RT_OFFSETOF(strct, member), \
+                     (unsigned)RT_OFFSETOF(strct, member), \
+                     (unsigned)(align), \
+                     (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)), \
+                     (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)) ); \
             rc++; \
         } \
     } while (0)
@@ -100,13 +100,13 @@ RT_C_DECLS_END
     do { \
         if (RT_ALIGN_Z(sizeof(type), (align)) != sizeof(type)) \
         { \
-            printf("error! %s size=%#x (%u), align=%#x %#x (%u) bytes off\n", \
-                   #type, \
-                   (unsigned)sizeof(type), \
-                   (unsigned)sizeof(type), \
-                   (align), \
-                   (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type), \
-                   (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type)); \
+            RTPrintf("error! %s size=%#x (%u), align=%#x %#x (%u) bytes off\n", \
+                     #type, \
+                     (unsigned)sizeof(type), \
+                     (unsigned)sizeof(type), \
+                     (align), \
+                     (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type), \
+                     (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type)); \
             rc++; \
         } \
     } while (0)
@@ -120,14 +120,14 @@ RT_C_DECLS_END
         strct *p = NULL; NOREF(p); \
         if (sizeof(p->member.s) > sizeof(p->member.padding)) \
         { \
-            printf("error! padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
-                   (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+            RTPrintf("error! padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
+                     (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
             rc++; \
         } \
         else if (RT_ALIGN_Z(sizeof(p->member.padding), (align)) != sizeof(p->member.padding)) \
         { \
-            printf("error! padding of %s::%s is misaligned, padding=%d correct=%d\n", #strct, #member, \
-                   (int)sizeof(p->member.padding), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+            RTPrintf("error! padding of %s::%s is misaligned, padding=%d correct=%d\n", #strct, #member, \
+                     (int)sizeof(p->member.padding), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
             rc++; \
         } \
     } while (0)
@@ -141,8 +141,8 @@ RT_C_DECLS_END
         strct *p = NULL; NOREF(p); \
         if (sizeof(p->s) > sizeof(p->padding)) \
         { \
-            printf("error! padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
-                   (int)sizeof(p->padding), (int)sizeof(p->s), (int)RT_ALIGN_Z(sizeof(p->s), 64)); \
+            RTPrintf("error! padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
+                     (int)sizeof(p->padding), (int)sizeof(p->s), (int)RT_ALIGN_Z(sizeof(p->s), 64)); \
             rc++; \
         } \
     } while (0)
@@ -156,8 +156,8 @@ RT_C_DECLS_END
         strct *p = NULL; NOREF(p); \
         if (sizeof(p->member) > sizeof(p->pad_member)) \
         { \
-            printf("error! padding of %s::%s is too small, padding=%d struct=%d\n", #strct, #member, \
-                   (int)sizeof(p->pad_member), (int)sizeof(p->member)); \
+            RTPrintf("error! padding of %s::%s is too small, padding=%d struct=%d\n", #strct, #member, \
+                     (int)sizeof(p->pad_member), (int)sizeof(p->member)); \
             rc++; \
         } \
     } while (0)
@@ -170,7 +170,7 @@ RT_C_DECLS_END
     { \
         if (!(expr)) \
         { \
-            printf("error! '%s' failed! (line %d)\n", #expr, __LINE__); \
+            RTPrintf("error! '%s' failed! (line %d)\n", #expr, __LINE__); \
             rc++; \
         } \
     } while (0)

@@ -41,7 +41,7 @@
 #include <VBox/vmm/hm_vmx.h>
 
 #include "tstHelp.h"
-#include <stdio.h>
+#include <iprt/stream.h>
 
 /* Hack for validating nested HMCPU structures. */
 typedef HMCPU::HMCPUVMX HMCPUVMX;
@@ -57,7 +57,7 @@ typedef HMR0PERVCPU::HMR0CPUSVM HMR0CPUSVM;
 int main()
 {
     int rc = 0;
-    printf("tstAsmStructs: TESTING\n");
+    RTPrintf("tstAsmStructs: TESTING\n");
 
 #ifdef IN_RING3
 # include "tstAsmStructsHC.h"
@@ -66,8 +66,9 @@ int main()
 #endif
 
     if (rc)
-        printf("tstAsmStructs: FAILURE - %d errors \n", rc);
+        RTPrintf("tstAsmStructs: FAILURE - %d errors \n", rc);
     else
-        printf("tstAsmStructs: SUCCESS\n");
+        RTPrintf("tstAsmStructs: SUCCESS\n");
     return rc;
 }
+
