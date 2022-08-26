@@ -119,7 +119,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  # vbox-img - static because it might be used as a standalone tool.
  #
  ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.sparc32 solaris.sparc64)
- vbox-img_TEMPLATE := VBOXR3
+ vbox-img_TEMPLATE := VBOXR3EXE
  vbox-img_DEFS     := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
  else
  vbox-img_TEMPLATE := VBoxR3Static
