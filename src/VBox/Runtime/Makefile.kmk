@@ -91,6 +91,11 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES.win += RuntimeRCStub
  endif
+ ifneq ($(VBOX_LIB_RUNTIME_STATIC),$(VBOX_LIB_RUNTIME_STATIC_NO_ASAN))
+  LIBRARIES += RuntimeR3NoAsan
+ else
+  LIBRARIES += RuntimeR3
+ endif
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
