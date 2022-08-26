@@ -107,9 +107,9 @@ ifdef VBOX_WITH_NOCRT_STATIC # Only the softfloat libs are added here as mesa in
 TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
 	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.x86)
-TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
+TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET_ARCH) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET))
+	$(SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win)
 # The -Oi- disable optimizations of math functions like sqrt(), that takes all
 # parameters on the stack, into calls to __CIsqrt that takes parameters in FPU
