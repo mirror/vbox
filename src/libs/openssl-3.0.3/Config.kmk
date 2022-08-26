@@ -74,10 +74,11 @@ endif
 # is required when running make from a sub directory too.
 #
 INSTALLS += crypto-headers
-crypto-headers_INST    = $(VBOX_INST_CRYPTO_HEADERS)
-crypto-headers_MODE    = a+r,u+w
-crypto-headers_DEFPATH = $(VBOX_PATH_OPENSSL)
-crypto-headers_SOURCES = \
+crypto-headers_TEMPLATE := DUMMY
+crypto-headers_INST      = $(VBOX_INST_CRYPTO_HEADERS)
+crypto-headers_MODE     := a+r,u+w
+crypto-headers_DEFPATH   = $(VBOX_PATH_OPENSSL)
+crypto-headers_SOURCES  := \
 	include/openssl/aes.h=>aes.h \
 	include/openssl/asn1err.h=>asn1err.h \
 	include/openssl/asn1_mac.h=>asn1_mac.h \
