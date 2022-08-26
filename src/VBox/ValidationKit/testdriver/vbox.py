@@ -906,8 +906,8 @@ class TestDriver(base.TestDriver):                                              
         self.fRecordingEnabled        = False; # Don't record by default (yet).
         self.fRecordingAudio          = False; # Don't record audio by default.
         self.fRecordingForceUpload    = False; # Only upload recording files on failure by default.
-        self.uRecordingMaxTimeS       = 0;     # No recording time limit.
-        self.uRecordingMaxSizeMB      = 0;     # No recording size limit.
+        self.cSecsRecordingMax        = 0;     # No recording time limit in seconds.
+        self.cMbRecordingMax          = 0;     # No recording size limit in MiBs.
 
         # Drop LD_PRELOAD and enable memory leak detection in LSAN_OPTIONS from vboxinstall.py
         # before doing build detection. This is a little crude and inflexible...
@@ -1803,25 +1803,25 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      Enables the VBox debugger, port at 5000');
         reporter.log('      Default: --vbox-debugger');
         reporter.log('  --vbox-recording, --no-vbox-recording');
-        reporter.log('      Enables recording.');
+        reporter.log('      Enables/disables recording.');
         reporter.log('      Default: --no-vbox-recording');
-        reporter.log('  --vbox-recording-audio');
-        reporter.log('      Enables audio recording.');
+        reporter.log('  --vbox-recording-audio, --no-vbox-recording-audio');
+        reporter.log('      Enables/disables audio recording.');
         reporter.log('      Default: --no-vbox-recording-audio');
-        reporter.log('  --vbox-recording-force-upload');
-        reporter.log('      Forces uploading of recorded files.');
-        reporter.log('      Default: Only does uploading on errors.');
-        reporter.log('  --vbox-recording-max-time <Seconds>');
-        reporter.log('      Limits the maximum recording time (in seconds).');
-        reporter.log('      Default: No limit set.');
-        reporter.log('  --vbox-recording-max-file-size <MB>');
-        reporter.log('      Limits the maximum per-file size (in MB).');
-        reporter.log('      Default: No limit set.');
+        reporter.log('  --vbox-recording-force-upload, --no-vbox-recording-force-upload');
+        reporter.log('      Force uploading recordings or only upload them on test failure.');
+        reporter.log('      Default: --no-vbox-recording-force-upload');
+        reporter.log('  --vbox-recording-max-time <seconds>');
+        reporter.log('      Limits the maximum recording time in seconds.');
+        reporter.log('      Default: Unlimited.');
+        reporter.log('  --vbox-recording-max-file-size <MiB>');
+        reporter.log('      Limits the maximum per-file size in MiB.');
+        reporter.log('      Default: Unlimited.');
         if self.oTestVmSet is not None:
             self.oTestVmSet.showUsage();
         return rc;
 
-    def parseOption(self, asArgs, iArg): # pylint: disable=too-many-statements
+    def parseOption(self, asArgs, iArg): # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--vbox-session-type':
             iArg += 1;
             if iArg >= len(asArgs):
@@ -1933,18 +1933,20 @@ class TestDriver(base.TestDriver):                                              
             self.fRecordingAudio = False;
         elif asArgs[iArg] == '--vbox-recording-audio':
             self.fRecordingAudio = True;
+        elif asArgs[iArg] == '--no-vbox-recording-force-upload':
+            self.fRecordingForceUpload = False;
         elif asArgs[iArg] == '--vbox-recording-force-upload':
             self.fRecordingForceUpload = True;
         elif asArgs[iArg] == '--vbox-recording-max-time':
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--vbox-recording-max-time" takes an argument');
-            self.uRecordingMaxTimeS = asArgs[iArg];
+            self.cSecsRecordingMax = int(asArgs[iArg]);
         elif asArgs[iArg] == '--vbox-recording-max-file-size':
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--vbox-recording-max-file-size" takes an argument');
-            self.uRecordingMaxSizeMB = asArgs[iArg];
+            self.cMbRecordingMax = int(asArgs[iArg]);
         else:
             # Relevant for selecting VMs to test?
             if self.oTestVmSet is not None:
@@ -2548,10 +2550,10 @@ class TestDriver(base.TestDriver):                                              
                 try:
                     if self.fpApiVer >= 6.1: # Only for VBox 6.1 and up now.
                         reporter.log('Recording enabled');
-                        if self.uRecordingMaxTimeS > 0:
-                            reporter.log('Recording time limit is set to %d seconds' % (self.uRecordingMaxTimeS));
-                        if self.uRecordingMaxSizeMB > 0:
-                            reporter.log('Recording file limit is set to %d MB' % (self.uRecordingMaxSizeMB));
+                        if self.cSecsRecordingMax > 0:
+                            reporter.log('Recording time limit is set to %d seconds' % (self.cSecsRecordingMax));
+                        if self.cMbRecordingMax > 0:
+                            reporter.log('Recording file limit is set to %d MB' % (self.cMbRecordingMax));
                         oRecSettings = oSession.o.machine.recordingSettings;
                         oRecSettings.enabled     = True;
                         aoScreens = self.oVBoxMgr.getArray(oRecSettings, 'screens');
@@ -2568,8 +2570,8 @@ class TestDriver(base.TestDriver):                                              
                                     aFeatures.append(vboxcon.RecordingFeature_Audio);
                                 oScreen.setFeatures(aFeatures);
                                 reporter.log2('Recording screen %d to "%s"' % (oRecFile['id'], oRecFile['file']));
-                                oScreen.maxTime     = self.uRecordingMaxTimeS;
-                                oScreen.maxFileSize = self.uRecordingMaxSizeMB;
+                                oScreen.maxTime     = self.cSecsRecordingMax;
+                                oScreen.maxFileSize = self.cMbRecordingMax;
                             except:
                                 reporter.errorXcpt('failed to configure recording for "%s" (screen %d)' % (sName, oScreen.id));
                     else:
