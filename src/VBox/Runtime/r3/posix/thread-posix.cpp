@@ -40,6 +40,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
 #include <errno.h>
+#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -98,8 +99,19 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** The pthread key in which we store the pointer to our own PRTTHREAD structure. */
-static pthread_key_t    g_SelfKey;
+/** The pthread key in which we store the pointer to our own PRTTHREAD structure.
+ * @note There is a defined NIL value here, nor can we really assume this is an
+ *       integer.  However, zero is a valid key on Linux, so we get into trouble
+ *       if we accidentally use it uninitialized.
+ *
+ *       So, we ASSUME it's a integer value and the valid range is in approx 0
+ *       to PTHREAD_KEYS_MAX.  Solaris has at least one negative value (-1)
+ *       defined.  Thus, we go for 16 MAX values below zero and keep our fingers
+ *       cross that it will always be an invalid key value everywhere...
+ *
+ *       See also NIL_RTTLS, which is -1.
+ */
+static pthread_key_t    g_SelfKey = (pthread_key_t)(-PTHREAD_KEYS_MAX * 16);
 #ifdef RTTHREAD_POSIX_WITH_POKE
 /** The signal we use for poking threads.
  * This is set to -1 if no available signal was found. */
