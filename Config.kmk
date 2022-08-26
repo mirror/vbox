@@ -8449,6 +8449,9 @@ TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += $(VBOX_LD_hash_style_sysv)
 TEMPLATE_NewVBoxGuestR3Exe = VBox Guest Program w/ IPRT and VBGL.
 TEMPLATE_NewVBoxGuestR3Exe_EXTENDS  = VBOXGUESTR3EXE
 if1of ($(KBUILD_TARGET),win)
+ ifndef VBOX_WITH_NOCRT_STATIC # Temporary kludge to deal with some link order issues.
+  TEMPLATE_NewVBoxGuestR3Exe_LDFLAGS.win.x86 = $(TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86) -Include:_vcc100_kernel32_fakes_asm
+ endif
  TEMPLATE_NewVBoxGuestR3Exe_LIBS.x86 = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
