@@ -148,7 +148,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	../VDIfVfs.cpp
  vbox-img_SOURCES.win = \
 	vbox-img.rc
- ifeq ($(vbox-img_TEMPLATE),VBOXR3)
+ ifeq ($(vbox-img_TEMPLATE),VBOXR3EXE)
   vbox-img_LIBS = \
  	$(LIB_RUNTIME)
  else
