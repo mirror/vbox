@@ -2169,8 +2169,13 @@ ifn1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS)) # Hack to build a c
  LIB_VMM           :=
  LIB_VMMRC         :=
 endif
-VBOX_LIB_SUPHARDENED    = $(PATH_STAGE_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
-VBOX_LIB_RUNTIME_STATIC = $(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
+VBOX_LIB_SUPHARDENED            = $(PATH_STAGE_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
+VBOX_LIB_RUNTIME_STATIC         = $(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
+if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "asan"
+VBOX_LIB_RUNTIME_STATIC_NO_ASAN = $(PATH_STAGE_LIB)/RuntimeR3NoAsan$(VBOX_SUFF_LIB)
+else
+VBOX_LIB_RUNTIME_STATIC_NO_ASAN = $(VBOX_LIB_RUNTIME_STATIC)
+endif
 
 ifndef VBOX_WITH_REM
  LIB_REM :=
@@ -6460,7 +6465,6 @@ endif
 
 #
 # A no-ASAN version of VBoxR3Static for things like that automatically executed tests.
-# Note! No IPRT here as we do not build a non-ASAN static IPRT library.
 #
 TEMPLATE_VBoxR3StaticExeNoAsan = VBoxR3Static but w/o ASAN
 TEMPLATE_VBoxR3StaticExeNoAsan_EXTENDS     = VBoxR3Static
@@ -6471,8 +6475,8 @@ if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "asan"
  TEMPLATE_VBoxR3StaticExeNoAsan_LDFLAGS    = $(filter-out $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3Static_LDFLAGS))
  TEMPLATE_VBoxR3StaticExeNoAsan_LIBS.x86   = $(filter-out %clang_rt.asan-i386.lib   %clang_rt.asan_cxx-i386.lib  , $(TEMPLATE_VBoxR3Static_LIBS.x86))
  TEMPLATE_VBoxR3StaticExeNoAsan_LIBS.amd64 = $(filter-out %clang_rt.asan-x86_64.lib %clang_rt.asan_cxx-x86_64.lib, $(TEMPLATE_VBoxR3Static_LIBS.amd64))
+ TEMPLATE_VBoxR3StaticExeNoAsan_LIBS       = $(subst $(VBOX_LIB_RUNTIME_STATIC),$(VBOX_LIB_RUNTIME_STATIC_NO_ASAN), $(TEMPLATE_VBoxR3Static_LIBS))
 endif
-TEMPLATE_VBoxR3StaticExeNoAsan_LIBS        = $(filter-out $(VBOX_LIB_RUNTIME_STATIC)   , $(TEMPLATE_VBoxR3Static_LIBS))
 
 #
 # A DLL capable version of VBoxR3Static
@@ -6487,7 +6491,6 @@ endif
 
 #
 # A no-ASAN version of VBoxR3StaticDll for the installer helper DLL.
-# Note! No IPRT here as we do not build a non-ASAN static IPRT library.
 #
 TEMPLATE_VBoxR3StaticDllNoAsan = VBoxR3StaticDll but w/o ASAN
 TEMPLATE_VBoxR3StaticDllNoAsan_EXTENDS     = VBoxR3StaticDll
@@ -6498,8 +6501,8 @@ if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "asan"
  TEMPLATE_VBoxR3StaticDllNoAsan_LDFLAGS    = $(filter-out $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3StaticDll_LDFLAGS))
  TEMPLATE_VBoxR3StaticDllNoAsan_LIBS.x86   = $(filter-out %clang_rt.asan_dll_thunk-i386.lib, $(TEMPLATE_VBoxR3StaticDll_LIBS.x86))
  TEMPLATE_VBoxR3StaticDllNoAsan_LIBS.amd64 = $(filter-out %clang_rt.asan_dll_thunk-x86_64.lib, $(TEMPLATE_VBoxR3StaticDll_LIBS.amd64))
+ TEMPLATE_VBoxR3StaticDllNoAsan_LIBS       = $(subst $(VBOX_LIB_RUNTIME_STATIC),$(VBOX_LIB_RUNTIME_STATIC_NO_ASAN), $(TEMPLATE_VBoxR3StaticDll_LIBS))
 endif
-TEMPLATE_VBoxR3StaticDllNoAsan_LIBS        = $(filter-out $(VBOX_LIB_RUNTIME_STATIC)   , $(TEMPLATE_VBoxR3StaticDll_LIBS))
 
 
 #
@@ -6773,11 +6776,11 @@ TEMPLATE_VBoxR3DllOsX107_LDFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS
 # This is the VBOXR3EXE template only with a different install dir.
 #
 TEMPLATE_VBOXR3AUTOTST  = VBox Ring 3 Testcase Exe
-TEMPLATE_VBOXR3AUTOTST_EXTENDS     = VBoxR3Static
+TEMPLATE_VBOXR3AUTOTST_EXTENDS    := VBoxR3Static
 TEMPLATE_VBOXR3AUTOTST_SDKS        = $(filter-out VBOX_OPENSSL,$(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_SDKS))
 ifeq ($(KBUILD_TARGET),win)
  if "$(KBUILD_HOST_VERSION)" vlt "10.0.0.0.10240"  # The windows ASAN requires windows 10 APIs to work.
-  TEMPLATE_VBOXR3AUTOTST_EXTENDS   = VBoxR3StaticExeNoAsan
+  TEMPLATE_VBOXR3AUTOTST_EXTENDS  := VBoxR3StaticExeNoAsan
  endif
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR3AUTOTST_LDFLAGS   = $(filter-out -IntegrityCheck, $(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LDFLAGS))
@@ -6785,6 +6788,12 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 endif
 TEMPLATE_VBOXR3AUTOTST_INST        = $(INST_TESTCASE)
+TEMPLATE_VBOXR3AUTOTST_LIBS        = $(filter-out \
+	$(if-expr !defined(SDK_VBOX_LIBXML2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
+	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
+ 		,$(SDK_VBOX_LZF_STATIC_LIBS) $(SDK_VBOX_ZLIB_STATIC_LIBS) \
+               ,$(SDK_VBOX_LZF_LIBS) $(SDK_VBOX_ZLIB_LIBS)) \
+	,$(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LIBS))
 
 #
 # Ring-3 testcase.

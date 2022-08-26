@@ -129,6 +129,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  ifndef VBOX_WITH_NOCRT_STATIC
   LIBRARIES.win.x86 += RuntimeR3VccTricks
  endif
+ ifneq ($(VBOX_LIB_RUNTIME_STATIC),$(VBOX_LIB_RUNTIME_STATIC_NO_ASAN))
+  LIBRARIES += RuntimeR3NoAsan
+ endif
  DLLS += VBoxRT
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxRT-x86
@@ -2163,6 +2166,13 @@ endif
 RuntimeR3-x86_EXTENDS         := RuntimeR3
 RuntimeR3-x86_BLD_TRG_ARCH    := x86
 RuntimeR3-x86_DEFS             = $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
+
+
+#
+# RuntimeR3NoAsan - A RuntimeR3 version without ASAN for windows hosts.
+#
+RuntimeR3NoAsan_EXTENDS       := RuntimeR3
+RuntimeR3NoAsan_TEMPLATE      := VBoxR3StaticExeNoAsan
 
 
 #
