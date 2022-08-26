@@ -28,8 +28,9 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.sparc64)
- BLDPROGS += bin2c biossums filesplitter genalias VBoxCmp
+BLDPROGS += bin2c
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.sparc64)
+ BLDPROGS += biossums filesplitter genalias VBoxCmp
 endif
 
 bin2c_TEMPLATE = VBoxBldProg
