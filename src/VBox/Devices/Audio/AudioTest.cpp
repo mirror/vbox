@@ -2636,6 +2636,7 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
     AssertRCReturn(rc, rc);
 
     AUDIOTESTTONEBEACON Beacon;
+    RT_ZERO(Beacon);
     AudioTestBeaconInit(&Beacon, pVerJob->idxTest,
                           fIn
                         ? (fPre ? AUDIOTESTTONEBEACONTYPE_PLAY_PRE : AUDIOTESTTONEBEACONTYPE_PLAY_POST)
