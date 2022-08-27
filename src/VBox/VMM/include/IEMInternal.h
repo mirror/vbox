@@ -2216,8 +2216,19 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U256IMM8,(PRTUINT256U puDst
 typedef FNIEMAIMPLMEDIAOPTF3U256IMM8 *PFNIEMAIMPLMEDIAOPTF3U256IMM8;
 
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_palignr_u128, iemAImpl_palignr_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_pblendw_u128, iemAImpl_pblendw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_blendps_u128, iemAImpl_blendps_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_blendpd_u128, iemAImpl_blendpd_u128_fallback;
+
 FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpalignr_u128, iemAImpl_vpalignr_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpblendw_u128, iemAImpl_vpblendw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vblendps_u128, iemAImpl_vblendps_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vblendpd_u128, iemAImpl_vblendpd_u128_fallback;
+
 FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vpalignr_u256, iemAImpl_vpalignr_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vpblendw_u256, iemAImpl_vpblendw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vblendps_u256, iemAImpl_vblendps_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vblendpd_u256, iemAImpl_vblendpd_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends

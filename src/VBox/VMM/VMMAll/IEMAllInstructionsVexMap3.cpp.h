@@ -174,12 +174,35 @@ FNIEMOP_STUB(iemOp_vroundpd_Vx_Wx_Ib);
 FNIEMOP_STUB(iemOp_vroundss_Vss_Wss_Ib);
 /** Opcode VEX.66.0F3A 0x0b. */
 FNIEMOP_STUB(iemOp_vroundsd_Vsd_Wsd_Ib);
+
+
 /** Opcode VEX.66.0F3A 0x0c. */
-FNIEMOP_STUB(iemOp_vblendps_Vx_Hx_Wx_Ib);
+FNIEMOP_DEF(iemOp_vblendps_Vx_Hx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VBLENDPS, vblendps, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0); /* @todo */
+    IEMOPMEDIAOPTF3IMM8_INIT_VARS(vblendps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F3A 0x0d. */
-FNIEMOP_STUB(iemOp_vblendpd_Vx_Hx_Wx_Ib);
+FNIEMOP_DEF(iemOp_vblendpd_Vx_Hx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VBLENDPD, vblendpd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0); /* @todo */
+    IEMOPMEDIAOPTF3IMM8_INIT_VARS(vblendpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F3A 0x0e. */
-FNIEMOP_STUB(iemOp_vblendw_Vx_Hx_Wx_Ib);
+FNIEMOP_DEF(iemOp_vpblendw_Vx_Hx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPBLENDW, vpblendw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0); /* @todo */
+    IEMOPMEDIAOPTF3IMM8_INIT_VARS(vpblendw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.0F3A 0x0f - invalid. */
 
 
@@ -659,7 +682,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap3[] =
     /* 0x0b */  iemOp_InvalidNeedRMImm8,    iemOp_vroundsd_Vsd_Wsd_Ib,  iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x0c */  iemOp_InvalidNeedRMImm8,    iemOp_vblendps_Vx_Hx_Wx_Ib, iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x0d */  iemOp_InvalidNeedRMImm8,    iemOp_vblendpd_Vx_Hx_Wx_Ib, iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
-    /* 0x0e */  iemOp_InvalidNeedRMImm8,    iemOp_vblendw_Vx_Hx_Wx_Ib,  iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0x0e */  iemOp_InvalidNeedRMImm8,    iemOp_vpblendw_Vx_Hx_Wx_Ib, iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x0f */  iemOp_InvalidNeedRMImm8,    iemOp_vpalignr_Vx_Hx_Wx_Ib, iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
 
     /* 0x10 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
