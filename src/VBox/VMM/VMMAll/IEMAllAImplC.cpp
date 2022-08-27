@@ -15244,7 +15244,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_palignr_u64_fallback,(uint64_t *pu64Dst, uint64
     {
         uint8_t cShift = bEvil * 8;
         *pu64Dst =   ((u64Src1 & (RT_BIT_64(cShift) - 1)) << ((8 - bEvil) * 8))
-                   | (u64Src2 >> cShift); 
+                   | (u64Src2 >> cShift);
     }
 }
 
