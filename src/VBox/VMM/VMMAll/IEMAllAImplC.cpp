@@ -15226,3 +15226,87 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vblendvpd_u256_fallback,(PRTUINT256U puDst, PCR
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au64); i++)
             puDst->au64[i] = (puMask->au64[i] & RT_BIT_64(63)) ? puSrc2->au64[i] : puSrc1->au64[i];
 }
+
+
+/**
+ * [V]PALIGNR
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_palignr_u64_fallback,(uint64_t *pu64Dst, uint64_t u64Src2, uint8_t bEvil))
+{
+    uint64_t const u64Src1 = *pu64Dst;
+    ASMCompilerBarrier();
+
+    if (bEvil >= 16)
+        *pu64Dst = 0;
+    else if (bEvil >= 8)
+        *pu64Dst = u64Src1 >> ((bEvil - 8) * 8);
+    else
+    {
+        uint8_t cShift = bEvil * 8;
+        *pu64Dst =   ((u64Src1 & (RT_BIT_64(cShift) - 1)) << ((8 - bEvil) * 8))
+                   | (u64Src2 >> cShift); 
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_palignr_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puDst;
+    RTUINT128U const uSrc2 = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    if (bEvil >= 32)
+    { /* Everything stays 0. */ }
+    else if (bEvil >= 16)
+    {
+        bEvil -= 16;
+        for (uint8_t i = bEvil; i < RT_ELEMENTS(puDst->au8); i++)
+            puDst->au8[i - bEvil] = uSrc1.au8[i];
+    }
+    else
+    {
+        for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8) - bEvil; i++)
+            puDst->au8[i] = uSrc2.au8[i + bEvil];
+        for (uint8_t i = 0; i < bEvil; i++)
+            puDst->au8[i + RT_ELEMENTS(puDst->au8) - bEvil] = uSrc1.au8[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpalignr_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil))
+{
+    RTUINT128U const uSrc1 = *puSrc1; /* Might overlap with destination. */
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+    if (bEvil >= 32)
+    { /* Everything stays 0. */ }
+    else if (bEvil >= 16)
+    {
+        bEvil -= 16;
+        for (uint8_t i = bEvil; i < RT_ELEMENTS(puDst->au8); i++)
+            puDst->au8[i - bEvil] = uSrc1.au8[i];
+    }
+    else
+    {
+        for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8) - bEvil; i++)
+            puDst->au8[i] = uSrc2.au8[i + bEvil];
+        for (uint8_t i = 0; i < bEvil; i++)
+            puDst->au8[i + RT_ELEMENTS(puDst->au8) - bEvil] = uSrc1.au8[i];
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpalignr_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bEvil))
+{
+    RTUINT256U const uSrc1 = *puSrc1; /* Might overlap with destination. */
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    iemAImpl_vpalignr_u128_fallback(&puDst->au128[0], &uSrc1.au128[0], &uSrc2.au128[0], bEvil);
+    iemAImpl_vpalignr_u128_fallback(&puDst->au128[1], &uSrc1.au128[1], &uSrc2.au128[1], bEvil);
+}

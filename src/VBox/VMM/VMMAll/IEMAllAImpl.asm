@@ -4900,7 +4900,7 @@ ENDPROC iemAImpl_shufpd_u128
 ;
 %macro IEMIMPL_MEDIA_AVX_VSHUFPX 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
-        PROLOGUE_3_ARGS
+        PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
         movdqu  xmm0, [A1]
@@ -4912,7 +4912,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movdqu  [A0], xmm0
 
         IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
@@ -4926,7 +4926,7 @@ dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too 
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
-        PROLOGUE_3_ARGS
+        PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
         vmovdqu ymm0, [A1]
@@ -4938,7 +4938,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         vmovdqu [A0], ymm0
 
         IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
@@ -4994,7 +4994,7 @@ IEMIMPL_P_BLEND blendvpd
 ; @param    A0      Pointer to the first media register sized operand (output).
 ; @param    A1      Pointer to the first media register sized operand (input).
 ; @param    A2      Pointer to the second media register sized operand (input).
-; @param    A3      Pointer to the media register sized mask value (input);
+; @param    A3      Pointer to the media register sized mask value (input).
 %macro IEMIMPL_AVX_P_BLEND 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
@@ -5028,3 +5028,150 @@ ENDPROC iemAImpl_ %+ %1 %+ _u256
 IEMIMPL_AVX_P_BLEND vpblendvb
 IEMIMPL_AVX_P_BLEND vblendvps
 IEMIMPL_AVX_P_BLEND vblendvpd
+
+
+;;
+; palignr mm1, mm2/m64 instruction.
+;
+; @param    A0      Pointer to the first media register sized operand (output).
+; @param    A1      The second register sized operand (input).
+; @param    A2      The 8-bit immediate.
+BEGINPROC_FASTCALL iemAImpl_palignr_u64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_MMX_PROLOGUE
+
+        movq    mm0, [A0]
+        movq    mm1, A1
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*2]         ; sizeof(palignr+ret) == 6: (A2 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movq    [A0], mm0
+
+        IEMIMPL_MMX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       palignr  mm0, mm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_palignr_u64
+
+
+;;
+; SSE instructions with 8-bit immediates of the form
+;    xxx xmm1, xmm2, imm8.
+; where the instruction encoding takes up 6 bytes.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the first media register size operand (input/output).
+; @param    A1      Pointer to the second source media register size operand (input).
+; @param    A2      The 8-bit immediate
+;
+%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_6 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        movdqu  xmm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*3]         ; sizeof(insnX+ret) == 8: (A2 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_SSE_INSN_IMM8_6 palignr
+
+
+;;
+; AVX instructions with 8-bit immediates of the form
+;    xxx {x,y}mm1, {x,y}mm2, {x,y}mm3, imm8.
+; where the instruction encoding takes up 6 bytes.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      Pointer to the second source media register size operand (input).
+; @param    A3      The 8-bit immediate
+;
+%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_6 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        movdqu  xmm1, [A2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm0, xmm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu ymm0, [A1]
+        vmovdqu ymm1, [A2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        vmovdqu [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       ymm0, ymm0, ymm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr
