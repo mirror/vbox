@@ -2805,6 +2805,7 @@
 # define RTUtf16ICmpUtf8                                RT_MANGLER(RTUtf16ICmpUtf8)
 # define RTUtf16NICmp                                   RT_MANGLER(RTUtf16NICmp)
 # define RTUtf16BigNICmp                                RT_MANGLER(RTUtf16BigNICmp)
+# define RTUtf16FindAscii                               RT_MANGLER(RTUtf16FindAscii)
 # define RTUtf16IsValidEncoding                         RT_MANGLER(RTUtf16IsValidEncoding)
 # define RTUtf16Len                                     RT_MANGLER(RTUtf16Len)
 # define RTUtf16LocaleICmp                              RT_MANGLER(RTUtf16LocaleICmp)

@@ -664,6 +664,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/string/RTUtf16NCmpAscii.cpp \
 	common/string/RTUtf16NCmpUtf8.cpp \
 	common/string/RTUtf16NICmpAscii.cpp \
+	common/string/RTUtf16FindAscii.cpp \
 	common/string/RTUtf16NLen.cpp \
 	common/string/RTUtf16NLenEx.cpp \
 	common/string/RTUtf16PrintHexBytes.cpp \

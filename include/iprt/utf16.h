@@ -613,6 +613,17 @@ RTDECL(int) RTUtf16NICmpAscii(PCRTUTF16 pwsz1, const char *psz2, size_t cwcMax);
 
 
 /**
+ * Locates a substring, ascii version.
+ *
+ * @returns Offset into @a pwszString of the substring if found, -1 if not.
+ * @param   pwszString  The UTF-16 to search. NULL is allowed (no match).
+ * @param   pszSubStr   The pure ASCII substring to locate. NULL is allowed (not
+ *                      matching anything, just like an empty string).
+ */
+RTDECL(ssize_t) RTUtf16FindAscii(PCRTUTF16 pwszString, const char *pszSubStr);
+
+
+/**
  * Folds a UTF-16 string to lowercase.
  *
  * This is a very simple folding; is uses the simple lowercase
