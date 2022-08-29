@@ -67,6 +67,7 @@ public:
     void    i_applyDefaults(void);
 
     int i_getDefaultFilename(Utf8Str &strFile, uint32_t idScreen, bool fWithFileExtension);
+    int i_getFilename(Utf8Str &strFile, uint32_t idScreen, const Utf8Str &strTemplate);
     bool i_canChangeSettings(void);
     void i_onSettingsChanged(void);
 

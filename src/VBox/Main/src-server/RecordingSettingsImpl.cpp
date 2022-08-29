@@ -722,6 +722,11 @@ void RecordingSettings::i_applyDefaults(void)
 
 /**
  * Returns the full path to the default recording file.
+ *
+ * @returns VBox status code.
+ * @param   strFile             Where to return the final file name on success.
+ * @param   idScreen            Screen ID the file is associated to.
+ * @param   fWithFileExtension  Whether to include the default file extension ('.webm') or not.
  */
 int RecordingSettings::i_getDefaultFilename(Utf8Str &strFile, uint32_t idScreen, bool fWithFileExtension)
 {
@@ -732,6 +737,49 @@ int RecordingSettings::i_getDefaultFilename(Utf8Str &strFile, uint32_t idScreen,
     strFile.append(Utf8StrFmt("-screen%RU32", idScreen));
     if (fWithFileExtension)
         strFile.append(".webm");
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Gets a standardized file name from a given template file name.
+ *
+ * @returns VBox status code.
+ * @param   strFile             Where to return the final file name on success.
+ * @param   idScreen            Screen ID the file is associated to.
+ * @param   strTemplate         Template file name to use.
+ *                              A default file name will be used when empty.
+ */
+int RecordingSettings::i_getFilename(Utf8Str &strFile, uint32_t idScreen, const Utf8Str &strTemplate)
+{
+    strFile = strTemplate;
+
+    if (strFile.isEmpty())
+        return i_getDefaultFilename(strFile, idScreen, true /* fWithFileExtension */);
+
+    /* We force adding a .webm suffix to (hopefully) not let the user overwrite other important stuff. */
+    strFile.stripSuffix();
+
+    Utf8Str strDotExt = ".webm";
+
+    /* We also force adding the screen id suffix, at least for the moment, as FE/Qt only offers settings a single file name
+     * for *all* enabled screens. */
+    char szSuffScreen[] = "-screen";
+    Utf8Str strSuff = Utf8StrFmt("%s%RU32", szSuffScreen, idScreen);
+    if (!strFile.endsWith(strSuff, Utf8Str::CaseInsensitive))
+    {
+        /** @todo The following line checks whether there already is a screen suffix, as FE/Qt currently always works with
+         *        screen 0 as the file name. Remove the following if block when FE/Qt supports this properly. */
+        Utf8Str strSuffScreen0 = Utf8StrFmt("%s%RU32", szSuffScreen, 0);
+        if (strFile.endsWith(strSuffScreen0, Utf8Str::CaseInsensitive))
+            strFile.truncate(strFile.length() - strSuffScreen0.length());
+
+        strFile += strSuff; /* Add the suffix with the correct screen ID. */
+    }
+
+    strFile += strDotExt;
+
+    LogRel2(("Recording: File name '%s' -> '%s'\n", strTemplate.c_str(), strFile.c_str()));
 
     return VINF_SUCCESS;
 }

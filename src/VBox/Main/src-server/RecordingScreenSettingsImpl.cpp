@@ -457,12 +457,19 @@ HRESULT RecordingScreenSettings::setFilename(const com::Utf8Str &aFilename)
     /* Note: When setting an empty file name, this will return the screen's default file name when using ::getFileName(). */
     if (m->bd->File.strName != aFilename)
     {
-        m->bd.backup();
-        m->bd->File.strName = aFilename;
+        Utf8Str strName;
+        int vrc = m->pParent->i_getFilename(strName, m->uScreenId, aFilename);
+        if (RT_SUCCESS(vrc))
+        {
+            m->bd.backup();
+            m->bd->File.strName = strName;
 
-        alock.release();
+            alock.release();
 
-        m->pParent->i_onSettingsChanged();
+            m->pParent->i_onSettingsChanged();
+        }
+        else
+            return setErrorBoth(E_ACCESSDENIED, vrc, tr("Could not set file name for recording screen"));
     }
 
     return S_OK;
