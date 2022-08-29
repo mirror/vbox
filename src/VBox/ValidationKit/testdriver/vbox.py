@@ -2563,13 +2563,6 @@ class TestDriver(base.TestDriver):                                              
                                 sRecFile = os.path.join(self.sScratchPath, "recording-%s-screen-%d.webm" % (sName, oScreen.id));
                                 oScreen.filename = sRecFile;
                                 sRecFile = oScreen.filename; # Get back the file from Main, in case it was modified somehow.
-
-                                ## @todo BUGBUG The recording stream modifies the file name internally by appending the stream ID,
-                                #               so we need this hack here in order to upload the file later.
-                                #               Needs to be handled by Main instead!
-                                sRecFile = os.path.join(self.sScratchPath, "recording-%s-screen-%d-%d.webm" \
-                                                        % (sName, oScreen.id, oScreen.id));
-
                                 oRecFile = { "id" : oScreen.id, "file" : sRecFile };
                                 self.aRecordingFiles.append(oRecFile);
                                 if self.fpApiVer >= 7.0:
