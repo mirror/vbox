@@ -233,7 +233,7 @@ template<class TLock>
 class CComCritSectLock : public CComCritSectLockManual<TLock>
 {
 public:
-    CComCritSectLock(CComCriticalSection &cs, bool fInitialLock = true) 
+    CComCritSectLock(CComCriticalSection &cs, bool fInitialLock = true)
         : CComCritSectLockManual(cs)
     {
         if (fInitialLock)
