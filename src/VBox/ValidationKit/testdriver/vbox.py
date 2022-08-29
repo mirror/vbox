@@ -2458,7 +2458,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.errorXcpt('failed to create vm "%s"' % (sName));
         return None;
 
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,too-many-branches
     def createTestVM(self,
                      sName,
                      iGroup,
