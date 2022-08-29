@@ -2564,11 +2564,16 @@ class TestDriver(base.TestDriver):                                              
                                 oScreen.filename = sRecFile;
                                 oRecFile = { "id" : oScreen.id, "file" : sRecFile };
                                 self.aRecordingFiles.append(oRecFile);
-                                aFeatures = self.oVBoxMgr.getArray(oScreen, 'features');
-                                aFeatures = [ vboxcon.RecordingFeature_Video ];
-                                if self.fRecordingAudio:
-                                    aFeatures.append(vboxcon.RecordingFeature_Audio);
-                                oScreen.setFeatures(aFeatures);
+                                if self.fpApiVer >= 7.0:
+                                    aFeatures = [ vboxcon.RecordingFeature_Video ];
+                                    if self.fRecordingAudio:
+                                        aFeatures.append(vboxcon.RecordingFeature_Audio);
+                                    oScreen.setFeatures(aFeatures);
+                                else: # <= VBox 6.1 the feature were kept as a ULONG.
+                                    uFeatures = vboxcon.RecordingFeature_Video;
+                                    if self.fRecordingAudio:
+                                        uFeatures = uFeatures | vboxcon.RecordingFeature_Audio;
+                                    oScreen.setFeatures(uFeatures);
                                 reporter.log2('Recording screen %d to "%s"' % (oRecFile['id'], oRecFile['file']));
                                 oScreen.maxTime     = self.cSecsRecordingMax;
                                 oScreen.maxFileSize = self.cMbRecordingMax;
