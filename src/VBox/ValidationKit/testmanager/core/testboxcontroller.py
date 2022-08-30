@@ -707,7 +707,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
         if sMime not in [ 'text/plain', #'text/html', 'text/xml',
                           'application/octet-stream',
                           'image/png', #'image/gif', 'image/jpeg',
-                          #'video/webm', 'video/mpeg', 'video/mpeg4-generic',
+                          'video/webm', #'video/mpeg', 'video/mpeg4-generic',
                           ]:
             raise TestBoxControllerException('Invalid MIME type "%s"' % (sMime,));
 
@@ -952,4 +952,3 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
         (self._sAction, self._idTestBox, self._sTestBoxUuid, self._sTestBoxAddr, self._idTestSet) = \
             self._getStandardParams(dParams);
         return self._dActions[self._sAction]();
-

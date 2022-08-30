@@ -964,6 +964,15 @@ class RemoteReporter(ReporterBase):
                 self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
             finally:
                 g_oLock.acquire();
+        elif sKind.startswith('video/'):
+            self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
+                        % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
+            self.xmlFlush();
+            g_oLock.release();
+            try:
+                self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'video/webm');
+            finally:
+                g_oLock.acquire();
         elif sKind.startswith('misc/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
