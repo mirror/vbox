@@ -2574,7 +2574,7 @@ class TestDriver(base.TestDriver):                                              
                                     uFeatures = vboxcon.RecordingFeature_Video;
                                     if self.fRecordingAudio:
                                         uFeatures = uFeatures | vboxcon.RecordingFeature_Audio;
-                                    oScreen.setFeatures(uFeatures);
+                                    oScreen.features = uFeatures;
                                 reporter.log2('Recording screen %d to "%s"' % (oRecFile['id'], oRecFile['file']));
                                 oScreen.maxTime     = self.cSecsRecordingMax;
                                 oScreen.maxFileSize = self.cMbRecordingMax;
