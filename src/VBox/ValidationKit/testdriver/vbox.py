@@ -901,11 +901,11 @@ class TestDriver(base.TestDriver):                                              
         self.sVBoxBootSectors   = None;
         self.fAlwaysUploadLogs  = False;
         self.fAlwaysUploadScreenshots = False;
+        self.fAlwaysUploadRecordings  = False; # Only upload recording files on failure by default.
         self.fEnableDebugger          = True;
-        self.aRecordingFiles          = [];
+        self.adRecordingFiles         = [];
         self.fRecordingEnabled        = False; # Don't record by default (yet).
         self.fRecordingAudio          = False; # Don't record audio by default.
-        self.fRecordingForceUpload    = False; # Only upload recording files on failure by default.
         self.cSecsRecordingMax        = 0;     # No recording time limit in seconds.
         self.cMbRecordingMax          = 0;     # No recording size limit in MiBs.
 
@@ -1799,6 +1799,9 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      Whether to always upload log files, or only do so on failure.');
         reporter.log('  --vbox-always-upload-screenshots');
         reporter.log('      Whether to always upload final screen shots, or only do so on failure.');
+        reporter.log('  --vbox-always-upload-recordings, --no-vbox-always-upload-recordings');
+        reporter.log('      Whether to always upload recordings, or only do so on failure.');
+        reporter.log('      Default: --no-vbox-always-upload-recordings');
         reporter.log('  --vbox-debugger, --no-vbox-debugger');
         reporter.log('      Enables the VBox debugger, port at 5000');
         reporter.log('      Default: --vbox-debugger');
@@ -1808,9 +1811,6 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('  --vbox-recording-audio, --no-vbox-recording-audio');
         reporter.log('      Enables/disables audio recording.');
         reporter.log('      Default: --no-vbox-recording-audio');
-        reporter.log('  --vbox-recording-force-upload, --no-vbox-recording-force-upload');
-        reporter.log('      Force uploading recordings or only upload them on test failure.');
-        reporter.log('      Default: --no-vbox-recording-force-upload');
         reporter.log('  --vbox-recording-max-time <seconds>');
         reporter.log('      Limits the maximum recording time in seconds.');
         reporter.log('      Default: Unlimited.');
@@ -1921,6 +1921,10 @@ class TestDriver(base.TestDriver):                                              
             self.fAlwaysUploadLogs = True;
         elif asArgs[iArg] == '--vbox-always-upload-screenshots':
             self.fAlwaysUploadScreenshots = True;
+        elif asArgs[iArg] == '--no-vbox-always-upload-recordings':
+            self.fAlwaysUploadRecordings = False;
+        elif asArgs[iArg] == '--vbox-always-upload-recordings':
+            self.fAlwaysUploadRecordings = True;
         elif asArgs[iArg] == '--vbox-debugger':
             self.fEnableDebugger = True;
         elif asArgs[iArg] == '--no-vbox-debugger':
@@ -1933,10 +1937,6 @@ class TestDriver(base.TestDriver):                                              
             self.fRecordingAudio = False;
         elif asArgs[iArg] == '--vbox-recording-audio':
             self.fRecordingAudio = True;
-        elif asArgs[iArg] == '--no-vbox-recording-force-upload':
-            self.fRecordingForceUpload = False;
-        elif asArgs[iArg] == '--vbox-recording-force-upload':
-            self.fRecordingForceUpload = True;
         elif asArgs[iArg] == '--vbox-recording-max-time':
             iArg += 1;
             if iArg >= len(asArgs):
@@ -2563,10 +2563,10 @@ class TestDriver(base.TestDriver):                                              
                                 sRecFile = os.path.join(self.sScratchPath, "recording-%s.webm" % (sName));
                                 oScreen.filename = sRecFile;
                                 sRecFile = oScreen.filename; # Get back the file from Main, in case it was modified somehow.
-                                oRecFile = { "id" : oScreen.id, "file" : sRecFile };
-                                self.aRecordingFiles.append(oRecFile);
+                                dRecFile = { 'id' : oScreen.id, 'file' : sRecFile };
+                                self.adRecordingFiles.append(dRecFile);
                                 if self.fpApiVer >= 7.0:
-                                    aFeatures = [ vboxcon.RecordingFeature_Video ];
+                                    aFeatures = [ vboxcon.RecordingFeature_Video, ];
                                     if self.fRecordingAudio:
                                         aFeatures.append(vboxcon.RecordingFeature_Audio);
                                     try:
@@ -2578,7 +2578,7 @@ class TestDriver(base.TestDriver):                                              
                                     if self.fRecordingAudio:
                                         uFeatures = uFeatures | vboxcon.RecordingFeature_Audio;
                                     oScreen.features = uFeatures;
-                                reporter.log2('Recording screen %d to "%s"' % (oRecFile['id'], oRecFile['file']));
+                                reporter.log2('Recording screen %d to "%s"' % (dRecFile['id'], dRecFile['file'],));
                                 oScreen.maxTime     = self.cSecsRecordingMax;
                                 oScreen.maxFileSize = self.cMbRecordingMax;
                             except:
@@ -3438,12 +3438,6 @@ class TestDriver(base.TestDriver):                                              
             else:
                 reporter.addLogFile(sLastScreenshotPath, 'screenshot/success', 'Last VM screenshot');
 
-        # Add produced recording files (if any) to the log files to be uploaded.
-        if reporter.testErrorCount() > 0 \
-        or self.fRecordingForceUpload: # By default we only upload WebM file on failures, to save some space.
-            for oRecFile in self.aRecordingFiles:
-                reporter.addLogFile(oRecFile['file'], 'video/webm', 'Recording of screen #%d' % (oRecFile['id'],));
-
         # Add the guest OS log if it has been requested and taken successfully.
         if sOsKernelLog is not None:
             reporter.addLogString(sOsKernelLog, 'kernel.log', 'log/guest/kernel', 'Guest OS kernel log');
@@ -3481,6 +3475,12 @@ class TestDriver(base.TestDriver):                                              
                                       % (sHostProcessInfoHung,));
                     except: pass; # paranoia
 
+        # Upload the screen video recordings if appropriate.
+        if self.fAlwaysUploadRecordings or reporter.testErrorCount() > 0:
+            for dRecFile in self.adRecordingFiles:
+                reporter.addLogFile(dRecFile['file'],
+                                    'screenrecording/failure' if reporter.testErrorCount() > 0 else 'screenrecording/success',
+                                    'Recording of screen #%d' % (dRecFile['id'],));
 
         return fRc;
 

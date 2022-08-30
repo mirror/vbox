@@ -964,7 +964,7 @@ class RemoteReporter(ReporterBase):
                 self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
             finally:
                 g_oLock.acquire();
-        elif sKind.startswith('video/'):
+        elif sKind.startswith('screenrecording/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
