@@ -627,6 +627,7 @@ struct SortedDictionaryEntry
 {
     size_t      m_cchGain;
     size_t      m_cchString;
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char        m_szString[RT_FLEXIBLE_ARRAY];
 
     /** Allocates and initializes a new entry. */
