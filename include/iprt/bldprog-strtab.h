@@ -63,7 +63,7 @@ typedef struct RTBLDPROGSTRTAB
 {
     const char         *pchStrTab;
     uint32_t            cchStrTab;
-    uint8_t             cCompDict;
+    uint32_t            cCompDict;
     PCRTBLDPROGSTRREF   paCompDict;
 } RTBLDPROGSTRTAB;
 typedef const RTBLDPROGSTRTAB *PCRTBLDPROGSTRTAB;
@@ -100,38 +100,43 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
 
     if (pStrTab->cCompDict)
     {
+        Assert(pStrTab->cCompDict == 256 || pStrTab->cCompDict == 255);
+
         /*
-         * Could be compressed, decompress it.
+         * Is compressed, decompress it.
          */
         char * const pchDstStart = pszDst;
         const char  *pchSrc = &pStrTab->pchStrTab[offString];
         while (cchString-- > 0)
         {
             unsigned char uch = *(unsigned char *)pchSrc++;
-            if (!(uch & 0x80))
+            if (uch != 0xff || pStrTab->cCompDict > 0xff)
             {
                 /*
-                 * Plain text.
+                 * Look it up in the dictionary, either a single 7-bit character or a word.
+                 * Either way, no UTF-8 unescaping necessary.
                  */
-                AssertReturn(cbDst > 1, RTBldProgStrTabQueryStringFail(VERR_BUFFER_OVERFLOW, pchDstStart, pszDst, cbDst));
-                cbDst    -= 1;
-                *pszDst++ = (char)uch;
-                Assert(uch != 0);
-            }
-            else if (uch != 0xff)
-            {
-                /*
-                 * Dictionary reference. (No UTF-8 unescaping necessary here.)
-                 */
-                PCRTBLDPROGSTRREF   pWord   = &pStrTab->paCompDict[uch & 0x7f];
+                PCRTBLDPROGSTRREF   pWord   = &pStrTab->paCompDict[uch];
                 size_t const        cchWord = pWord->cch;
-                AssertReturn((size_t)pWord->off + cchWord <= pStrTab->cchStrTab,
-                             RTBldProgStrTabQueryStringFail(VERR_INVALID_PARAMETER, pchDstStart, pszDst, cbDst));
-                AssertReturn(cbDst > cchWord,
-                             RTBldProgStrTabQueryStringFail(VERR_BUFFER_OVERFLOW, pchDstStart, pszDst, cbDst));
-                memcpy(pszDst, &pStrTab->pchStrTab[pWord->off], cchWord);
-                pszDst += cchWord;
-                cbDst  -= cchWord;
+                if (cchWord <= 1)
+                {
+                    Assert(uch != 0);
+                    Assert(uch <= 127);
+                    AssertReturn(cbDst > 1, RTBldProgStrTabQueryStringFail(VERR_BUFFER_OVERFLOW, pchDstStart, pszDst, cbDst));
+                    cbDst    -= 1;
+                    *pszDst++ = (char)uch;
+                }
+                else
+                {
+                    Assert(cchWord > 1);
+                    AssertReturn((size_t)pWord->off + cchWord <= pStrTab->cchStrTab,
+                                 RTBldProgStrTabQueryStringFail(VERR_INVALID_PARAMETER, pchDstStart, pszDst, cbDst));
+                    AssertReturn(cbDst > cchWord,
+                                 RTBldProgStrTabQueryStringFail(VERR_BUFFER_OVERFLOW, pchDstStart, pszDst, cbDst));
+                    memcpy(pszDst, &pStrTab->pchStrTab[pWord->off], cchWord);
+                    pszDst += cchWord;
+                    cbDst  -= cchWord;
+                }
             }
             else
             {
@@ -194,6 +199,8 @@ DECLINLINE(size_t) RTBldProgStrTabQueryOutput(PCRTBLDPROGSTRTAB pStrTab, uint32_
 
     if (pStrTab->cCompDict)
     {
+        Assert(pStrTab->cCompDict == 256 || pStrTab->cCompDict == 255);
+
         /*
          * Could be compressed, decompress it.
          */
@@ -202,24 +209,27 @@ DECLINLINE(size_t) RTBldProgStrTabQueryOutput(PCRTBLDPROGSTRTAB pStrTab, uint32_
         while (cchString-- > 0)
         {
             unsigned char uch = *(unsigned char *)pchSrc++;
-            if (!(uch & 0x80))
+            if (uch != 0xff || pStrTab->cCompDict > 0xff)
             {
                 /*
-                 * Plain text.
+                 * Look it up in the dictionary, either a single 7-bit character or a word.
+                 * Either way, no UTF-8 unescaping necessary.
                  */
-                Assert(uch != 0);
-                cchRet += pfnOutput(pvArgOutput, (const char *)&uch, 1);
-            }
-            else if (uch != 0xff)
-            {
-                /*
-                 * Dictionary reference. (No UTF-8 unescaping necessary here.)
-                 */
-                PCRTBLDPROGSTRREF   pWord   = &pStrTab->paCompDict[uch & 0x7f];
+                PCRTBLDPROGSTRREF   pWord   = &pStrTab->paCompDict[uch];
                 size_t const        cchWord = pWord->cch;
-                AssertReturn((size_t)pWord->off + cchWord <= pStrTab->cchStrTab, cchRet);
+                if (cchWord <= 1)
+                {
+                    Assert(uch != 0);
+                    Assert(uch <= 127);
+                    cchRet += pfnOutput(pvArgOutput, (const char *)&uch, 1);
+                }
+                else
+                {
+                    Assert(cchWord > 1);
+                    AssertReturn((size_t)pWord->off + cchWord <= pStrTab->cchStrTab, cchRet);
 
-                cchRet += pfnOutput(pvArgOutput, &pStrTab->pchStrTab[pWord->off], cchWord);
+                    cchRet += pfnOutput(pvArgOutput, &pStrTab->pchStrTab[pWord->off], cchWord);
+                }
             }
             else
             {
