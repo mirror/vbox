@@ -301,7 +301,7 @@ static void tstWinComStatuses(RTTEST hTest)
             CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rhrf", szMsg, cchMsg);
 
             if (cchMsgAll == ~(size_t)0)
-                cchMsgAll = RTStrPrintf(szMsgAll, sizeof(szMsgAll), "%s (%#x) - %s", pszDefine, rc, szMsg);
+                cchMsgAll = RTStrPrintf(szMsgAll, sizeof(szMsgAll), "%s (%#x)", pszDefine, rc);
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwa", rc);
             CHECK_TEST_RESULT2("RTErrWinFormatMsgAll/%Rwa", szMsgAll, cchMsgAll);
@@ -351,11 +351,11 @@ static void tstWinComStatuses(RTTEST hTest)
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwf", rc);
-            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rwf", pszMsg, cchMsg);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rwf", pszDefine, cchDefine);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhrf", rc);
-            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rhrf", pszMsg, cchMsg);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rhrf", pszDefine, cchDefine);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwa", rc);

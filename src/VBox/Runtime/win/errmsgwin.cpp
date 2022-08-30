@@ -217,6 +217,9 @@ RTDECL(size_t)  RTErrWinFormatMsgAll(long rc, PFNRTSTROUTPUT pfnOutput, void *pv
     Assert(cchValue > 0);
     cchRet += pfnOutput(pvArgOutput, pszTmp, cchValue);
 
+    if (idx != ~(size_t)0)
+        cchRet += pfnOutput(pvArgOutput, RT_STR_TUPLE(")"));
+
     return cchRet;
 }
 
