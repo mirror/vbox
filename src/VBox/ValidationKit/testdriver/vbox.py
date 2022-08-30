@@ -2569,7 +2569,10 @@ class TestDriver(base.TestDriver):                                              
                                     aFeatures = [ vboxcon.RecordingFeature_Video ];
                                     if self.fRecordingAudio:
                                         aFeatures.append(vboxcon.RecordingFeature_Audio);
-                                    oScreen.setFeatures(aFeatures);
+                                    try:
+                                        oScreen.setFeatures(aFeatures);
+                                    except: ## @todo Figure out why this is needed on Windows.
+                                        oScreen.features = aFeatures;
                                 else: # <= VBox 6.1 the feature were kept as a ULONG.
                                     uFeatures = vboxcon.RecordingFeature_Video;
                                     if self.fRecordingAudio:
