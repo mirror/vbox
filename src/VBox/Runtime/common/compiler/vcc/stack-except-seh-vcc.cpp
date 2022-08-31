@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Visual C++ Compiler - Stack Checking, __GSHandlerCheck.
+ * IPRT - Visual C++ Compiler - Stack Checking, __GSHandlerCheck_SEH.
  */
 
 /*
@@ -55,8 +55,10 @@
  * This is to prevent attackers from bypassing stack cookie checking by
  * triggering an exception.
  *
- * This does not call any C++ exception handlers, as it's probably (still
- * figuring this stuff out) only used when C++ exceptions are disabled.
+ * This is called for windows' structured exception handling (SEH), i.e. the
+ * __try/__except/__finally stuff in Visual C++, for which the compiler
+ * generates somewhat different strctures compared to the plain __GSHanderCheck
+ * scenario.
  *
  * @returns Exception disposition.
  * @param   pXcptRec    The exception record.
@@ -66,19 +68,20 @@
  * @param   pDispCtx    Dispatcher context.
  */
 extern "C" __declspec(guard(suppress))
-EXCEPTION_DISPOSITION __GSHandlerCheck(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec,
-                                       PCONTEXT pCpuCtx, PDISPATCHER_CONTEXT pDispCtx)
+EXCEPTION_DISPOSITION __GSHandlerCheck_SEH(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec,
+                                           PCONTEXT pCpuCtx, PDISPATCHER_CONTEXT pDispCtx)
 {
-    RT_NOREF(pXcptRec, pCpuCtx);
-
     /*
-     * Only GS handler data here.
+     * The HandlerData points to a scope table, which is then followed by GS_HANDLER_DATA.
+     *
+     * Sample offCookie values: 0521H (tst.cpp), 02caH (installNetLwf), and 0502H (installNetFlt).
      */
-    PCGS_HANDLER_DATA pHandlerData = (PCGS_HANDLER_DATA)pDispCtx->HandlerData;
+    SCOPE_TABLE const *pScopeTable  = (SCOPE_TABLE const *)pDispCtx->HandlerData;
+    PCGS_HANDLER_DATA  pHandlerData = (PCGS_HANDLER_DATA)&pScopeTable->ScopeRecord[pScopeTable->Count];
 
     /*
      * Locate the stack cookie and call the regular stack cookie checker routine.
-     * (Same code as in __GSHandlerCheck_SEH, fixes applies both places.)
+     * (Same code as in __GSHandlerCheck, fixes applies both places.)
      */
     /* Calculate the cookie address and read it. */
     uintptr_t uPtrFrame = (uintptr_t)pXcptRegRec;
@@ -100,6 +103,14 @@ EXCEPTION_DISPOSITION __GSHandlerCheck(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_RE
 
     /* This call will not return on failure. */
     __security_check_cookie(uCookie ^ uXorAddr);
+
+
+    /*
+     * Now call the handler if the GS handler data indicates that we ought to.
+     */
+    if (  (IS_UNWINDING(pXcptRec->ExceptionFlags) ? GS_HANDLER_OFF_COOKIE_IS_UHANDLER : GS_HANDLER_OFF_COOKIE_IS_EHANDLER)
+        & pHandlerData->u.offCookie)
+        return __C_specific_handler(pXcptRec, pXcptRegRec, pCpuCtx, pDispCtx);
 
     return ExceptionContinueSearch;
 }

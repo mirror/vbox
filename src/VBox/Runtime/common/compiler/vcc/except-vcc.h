@@ -40,9 +40,15 @@
 # pragma once
 #endif
 
+#define __C_specific_handler their___C_specific_handler
+#include <iprt/win/windows.h>
+#undef __C_specific_handler
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
+
+
+RT_C_DECLS_BEGIN
 
 #if 0
 /** This is part of the AMD64 and ARM (?) exception interface, but appear to
@@ -127,16 +133,18 @@ typedef struct _GS_HANDLER_DATA
         struct
         {
             uint32_t    fEHandler : 1;
-#define GS_HANDLER_OFF_COOKIE_IS_EHANDLER   RT_BIT(0)
+#define GS_HANDLER_OFF_COOKIE_IS_EHANDLER   RT_BIT(0) /**< Handles exceptions. */
             uint32_t    fUHandler : 1;
-#define GS_HANDLER_OFF_COOKIE_IS_UHANDLER   RT_BIT(1)
+#define GS_HANDLER_OFF_COOKIE_IS_UHANDLER   RT_BIT(1) /**< Handles unwind. */
             uint32_t    fHasAlignment : 1;
-#define GS_HANDLER_OFF_COOKIE_HAS_ALIGNMENT RT_BIT(2)
+#define GS_HANDLER_OFF_COOKIE_HAS_ALIGNMENT RT_BIT(2) /**< Has the uAlignmentMask member. */
         } Bits;
 #define GS_HANDLER_OFF_COOKIE_MASK          UINT32_C(0xfffffff8) /**< Mask to apply to offCookie to the the value. */
         uint32_t        offCookie;
     } u;
     int32_t             offAlignedBase;
+    /** This field is only there when GS_HANDLER_OFF_COOKIE_HAS_ALIGNMENT is set.
+     * it seems. */
     uint32_t            uAlignmentMask;
 } GS_HANDLER_DATA;
 typedef GS_HANDLER_DATA *PGS_HANDLER_DATA;
@@ -148,6 +156,13 @@ void __fastcall __security_check_cookie(uintptr_t uCookieToCheck);
 #else
 void __cdecl    __security_check_cookie(uintptr_t uCookieToCheck);
 #endif
+
+#if defined(RT_ARCH_AMD64)
+EXCEPTION_DISPOSITION __C_specific_handler(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec,
+                                           PCONTEXT pCpuCtx, PDISPATCHER_CONTEXT pDispCtx);
+#endif
+
+RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_SRC_common_compiler_vcc_except_vcc_h */
 
