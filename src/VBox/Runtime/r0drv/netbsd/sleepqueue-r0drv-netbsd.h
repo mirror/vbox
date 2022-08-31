@@ -190,7 +190,11 @@ DECLINLINE(void) rtR0SemBsdWaitDoIt(PRTR0SEMBSDSLEEP pWait)
     pWait->sq = NULL;
     pWait->sq_lock = NULL;
 
-    int error = sleepq_block(pWait->iTimeout, pWait->fInterruptible);
+    int error = sleepq_block(pWait->iTimeout, pWait->fInterruptible
+#if __NetBSD_Prereq__(9,99,98)  /* a bit later, actually... */
+                             , &vbox_syncobj
+#endif
+        );
     if (error == EWOULDBLOCK) {
         if (!pWait->fIndefinite) {
             pWait->fTimedOut = true;
