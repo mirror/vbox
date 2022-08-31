@@ -22906,7 +22906,7 @@
 <context>
     <name>UIVirtualMachineItemCloud</name>
     <message>
-        <location filename="../src/manager/UIVirtualMachineItemCloud.cpp" line="+357"/>
+        <location filename="../src/manager/UIVirtualMachineItemCloud.cpp" line="+355"/>
         <source>Loading ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22916,13 +22916,13 @@
         <translation type="unfinished">Prazno</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+28"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Inaccessible&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-3"/>
         <source>Inaccessible</source>
         <comment>VM</comment>
         <translation type="unfinished">Nedostopen</translation>
@@ -22935,19 +22935,19 @@
 <context>
     <name>UIVirtualMachineItemLocal</name>
     <message>
-        <location filename="../src/manager/UIVirtualMachineItemLocal.cpp" line="+287"/>
+        <location filename="../src/manager/UIVirtualMachineItemLocal.cpp" line="+289"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 od %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;seja %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+17"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;nedostopen od %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="-4"/>
         <location line="+1"/>
         <source>Inaccessible</source>
         <translation type="unfinished">Nedostopen</translation>

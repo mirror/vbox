@@ -2252,23 +2252,23 @@ Chcete ho aj tak zmazať?</translation>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;Uložiť</translation>
+        <translation>&amp;Uložiť</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zrušiť</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Zavrieť</translation>
+        <translation>Za&amp;vrieť</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">Zavrieť bez uloženia</translation>
+        <translation>Zavrieť bez uloženia</translation>
     </message>
 </context>
 <context>
@@ -2413,11 +2413,11 @@ Chcete ho aj tak zmazať?</translation>
     </message>
     <message>
         <source>Too many redirects</source>
-        <translation type="unfinished"></translation>
+        <translation>Príliš veľa presmerovaní</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
-        <translation type="unfinished"></translation>
+        <translation>Nezabezpečené presmerovanie</translation>
     </message>
 </context>
 <context>
@@ -2573,18 +2573,18 @@ Chcete ho aj tak zmazať?</translation>
     </message>
     <message>
         <source>file to open is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>súbor, ktorý chcete otvoriť, je adresárom</translation>
     </message>
 </context>
 <context>
     <name>QImageReader</name>
     <message>
         <source>Invalid device</source>
-        <translation type="unfinished"></translation>
+        <translation>Neplatné zariadenie</translation>
     </message>
     <message>
         <source>File not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Súbor nebol nájdený</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
