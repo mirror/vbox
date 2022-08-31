@@ -481,12 +481,6 @@ ENDPROC_RAW     FASTCALL_NAME(__security_check_cookie, 4)
 
 
 ; Not stack related stubs.
-BEGINPROC __C_specific_handler
-        SEH64_END_PROLOGUE
-        int3
-ENDPROC   __C_specific_handler
-
-
 BEGINPROC __report_rangecheckfailure
         SEH64_END_PROLOGUE
         int3
