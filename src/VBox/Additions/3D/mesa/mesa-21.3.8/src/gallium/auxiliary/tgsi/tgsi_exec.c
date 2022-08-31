@@ -450,10 +450,29 @@ static void
 micro_flr(union tgsi_exec_channel *dst,
           const union tgsi_exec_channel *src)
 {
+#if defined(IPRT_NO_CRT) && defined(_MSC_VER)
+/* The micro_flr use in exec_exp is optimized into a __vdecl_floorf4 call,
+   which the no-CRT library doesn't implement.  There is some vectorization
+   taking place in the file (now 102 hits, 264 misses), but this one is the
+   only one resulting in calling an external helper it seems.
+
+   We could just use /Os (optimize for size) to disable all of it, however
+   that's not very desirable.
+
+   Only found the #pragma loop(no_vector) incantation to selectively
+   controlling this optimization.  However, that one needs an actual loop to
+   work, only here the compiler is detecting an implicit loop.  So, it won't
+   work without changing the code.  The stupid loop below does the trick even
+   without the #pragma (1303: too few loop iterations). */
+# pragma loop(no_vector)
+   for (unsigned i = 0; i < 4; i++)
+      dst->f[i] = floorf(src->f[i]);
+#else
    dst->f[0] = floorf(src->f[0]);
    dst->f[1] = floorf(src->f[1]);
    dst->f[2] = floorf(src->f[2]);
    dst->f[3] = floorf(src->f[3]);
+#endif
 }
 
 static void
