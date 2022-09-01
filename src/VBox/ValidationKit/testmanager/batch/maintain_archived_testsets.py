@@ -59,9 +59,6 @@ sys.path.append(g_ksTestManagerDir)
 # Test Manager imports
 from common                     import utils;
 from testmanager                import config;
-from testmanager.core.db        import TMDatabaseConnection;
-from testmanager.core.testset   import TestSetData, TestSetLogic;
-
 
 
 class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
@@ -81,7 +78,7 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         self.sDstDir        = config.g_ksZipFileAreaRootDir;
         self.sTempDir       = oOptions.sTempDir;
         if not self.sTempDir:
-            self.sTempDir   = '/tmp'; ## @todo Make this more flexible.
+            self.sTempDir   = tempfile.gettempdir();
         #self.oTestSetLogic = TestSetLogic(TMDatabaseConnection(self.dprint if self.fVerbose else None));
         #self.oTestSetLogic = TestSetLogic(TMDatabaseConnection(None));
         self.fDryRun        = oOptions.fDryRun;
@@ -108,10 +105,13 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         Same return codes as processDir.
         """
 
+        _ = idTestSet
+
         sSrcZipFileAbs = os.path.join(sCurDir, sFile);
         print('Processing ZIP archive "%s" ...' % (sSrcZipFileAbs));
 
-        sDstZipFileAbs = os.path.join(self.sTempDir, next(tempfile._get_candidate_names()) + ".zip");
+        with tempfile.NamedTemporaryFile(dir=self.sTempDir, delete=False) as tmpfile:
+            sDstZipFileAbs = tmpfile.name
         self.dprint('Using temporary ZIP archive "%s"' % (sDstZipFileAbs));
 
         fRc = True;
@@ -189,7 +189,7 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                 if os.path.exists(sSrcZipFileAbs):
                     return (None, 'Error opening "%s": %s' % (sSrcZipFileAbs, oXcpt1), None);
                 if not os.path.exists(sFile):
-                    return (None, 'File "%s" not found. [%s, %s]' % (sSrcZipFileAbs, sFile), None);
+                    return (None, 'File "%s" not found. [%s]' % (sSrcZipFileAbs, sFile), None);
                 return (None, 'Error opening "%s" inside "%s": %s' % (sSrcZipFileAbs, sFile, oXcpt1), None);
             except Exception as oXcpt2:
                 return (None, 'WTF? %s; %s' % (oXcpt1, oXcpt2,), None);
