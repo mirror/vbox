@@ -220,6 +220,9 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_ENVVAR_NOT_FOUND:        return VERR_ENV_VAR_NOT_FOUND;
 
 
+        case ERROR_SERVICE_ALREADY_RUNNING: return VERR_ALREADY_LOADED; /* Not the best match, but seen it with VBoxSup.sys. */
+
+
         /*
          * Winsocket errors are mostly BSD errno.h wrappers.
          * This is copied from RTErrConvertFromErrno() and checked against winsock.h.
