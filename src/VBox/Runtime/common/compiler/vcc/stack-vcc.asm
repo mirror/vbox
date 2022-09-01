@@ -123,8 +123,8 @@ extern NAME(_RTC_CheckEspFailed)
 ; Probe stack to trigger guard faults, and for x86 to allocate stack space.
 ;
 ; @param    xAX     Frame size.
-; @uses     AMD64: Nothing (because we don't quite now the convention).
-;           x86:   ESP = ESP - EAX; nothing else
+; @uses     AMD64:  Probably nothing. EAX is certainly not supposed to change.
+;           x86:    ESP = ESP - EAX; EFLAGS, nothing else
 ;
 ALIGNCODE(64)
 GLOBALNAME_RAW  __alloca_probe, __alloca_probe, function
@@ -140,19 +140,19 @@ BEGINPROC_RAW   __chkstk
         SEH64_END_PROLOGUE
 
         ;
-        ; Adjust eax so we can use xBP for stack addressing.
+        ; Adjust eax so we're relative to [xBP - xCB*2].
         ;
-        sub     xAX, xCB*2
-        jle     .touch_loop_done
+        sub     xAX, xCB * 4
+        jle     .touch_loop_done            ; jump if rax < xCB*4, very unlikely
 
         ;
         ; Subtract what's left of the current page from eax and only engage
         ; the touch loop if (int)xAX > 0.
         ;
-        mov     ebx, PAGE_SIZE - 1
-        and     ebx, ebp
+        lea     ebx, [ebp - xCB * 2]
+        and     ebx, PAGE_SIZE - 1
         sub     xAX, xBX
-        jnl     .touch_loop
+        jnl     .touch_loop                 ; jump if pages to touch.
 
 .touch_loop_done:
         pop     xBX
@@ -166,7 +166,7 @@ BEGINPROC_RAW   __chkstk
         ;
         sub     esp, eax
         add     esp, 4
-        jmp    dword [esp + eax - 4]
+        jmp     dword [esp + eax - 4]
 %endif
 
         ;
@@ -174,7 +174,11 @@ BEGINPROC_RAW   __chkstk
         ;
 .touch_loop:
         sub     xBX, PAGE_SIZE
-        mov     [xBP + xBX], bl
+%if 1
+        mov     [xBP + xBX - xCB * 2], bl
+%else
+        or      byte [xBP + xBX - xCB * 2], 0   ; non-destructive variant...
+%endif
         sub     xAX, PAGE_SIZE
         jnl     .touch_loop
         jmp     .touch_loop_done
