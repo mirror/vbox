@@ -34,14 +34,26 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <VBox/VBoxNetCfg-win.h>
 #include <stdio.h>
 
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define NETFLT_ID L"sun_VBoxNetFlt"
 #define VBOX_NETCFG_APP_NAME L"NetFltUninstall"
 #define VBOX_NETFLT_PT_INF L".\\VBoxNetFlt.inf"
 #define VBOX_NETFLT_MP_INF L".\\VBoxNetFltM.inf"
 #define VBOX_NETFLT_RETRIES 10
+
 
 static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
@@ -111,6 +123,11 @@ static int VBoxNetFltUninstall()
 
 int __cdecl main(int argc, char **argv)
 {
-    RT_NOREF2(argc, argv);
+    RTR3InitExeNoArguments(0);
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "This utility takes no arguments\n");
+    NOREF(argv);
+
     return VBoxNetFltUninstall();
 }
+

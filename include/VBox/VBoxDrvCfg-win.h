@@ -62,27 +62,28 @@ typedef enum
     VBOXDRVCFG_LOG_SEVERITY_FLOW = 1,
     VBOXDRVCFG_LOG_SEVERITY_REGULAR,
     VBOXDRVCFG_LOG_SEVERITY_REL
-} VBOXDRVCFG_LOG_SEVERITY;
+} VBOXDRVCFG_LOG_SEVERITY_T;
 
-typedef DECLCALLBACKTYPE(void, FNVBOXDRVCFG_LOG,(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext));
-typedef FNVBOXDRVCFG_LOG *PFNVBOXDRVCFG_LOG;
+typedef DECLCALLBACKTYPE(void, FNVBOXDRVCFGLOG,(VBOXDRVCFG_LOG_SEVERITY_T enmSeverity, char *pszMsg, void *pvContext));
+typedef FNVBOXDRVCFGLOG *PFNVBOXDRVCFGLOG;
 
-VBOXDRVCFG_DECL(void) VBoxDrvCfgLoggerSet(PFNVBOXDRVCFG_LOG pfnLog, void *pvLog);
+VBOXDRVCFG_DECL(void) VBoxDrvCfgLoggerSet(PFNVBOXDRVCFGLOG pfnLog, void *pvLog);
 
-typedef DECLCALLBACKTYPE(void, FNVBOXDRVCFG_PANIC,(void *pvPanic));
-typedef FNVBOXDRVCFG_PANIC *PFNVBOXDRVCFG_PANIC;
-VBOXDRVCFG_DECL(void) VBoxDrvCfgPanicSet(PFNVBOXDRVCFG_PANIC pfnPanic, void *pvPanic);
+typedef DECLCALLBACKTYPE(void, FNVBOXDRVCFGPANIC,(void *pvPanic));
+typedef FNVBOXDRVCFGPANIC *PFNVBOXDRVCFGPANIC;
+VBOXDRVCFG_DECL(void) VBoxDrvCfgPanicSet(PFNVBOXDRVCFGPANIC pfnPanic, void *pvPanic);
 
 /* Driver package API*/
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfInstall(IN LPCWSTR lpszInfPath);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstall(IN LPCWSTR lpszInfPath, IN DWORD fFlags);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidClass, IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD fFlags);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD fFlags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfInstall(IN LPCWSTR pwszInfPath);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstall(IN LPCWSTR pwszInfPath, IN DWORD fFlags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidClass, IN LPCWSTR pwszClassName,
+                                                          IN LPCWSTR pwszPnPId, IN DWORD fFlags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(IN LPCWSTR pwszClassName, IN LPCWSTR pwszPnPId, IN DWORD fFlags);
 
 /* Service API */
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR pwszSvcName);
 
-HRESULT VBoxDrvCfgDrvUpdate(LPCWSTR pcszwHwId, LPCWSTR pcsxwInf, BOOL *pbRebootRequired);
+HRESULT VBoxDrvCfgDrvUpdate(LPCWSTR pszwHwId, LPCWSTR psxwInf, BOOL *pfRebootRequired);
 
 RT_C_DECLS_END
 

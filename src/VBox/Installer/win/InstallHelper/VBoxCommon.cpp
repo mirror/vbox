@@ -32,41 +32,28 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
-
-#include <tchar.h>
-#include <stdio.h>
-
 #include <msi.h>
 #include <msiquery.h>
 
+#include <iprt/string.h>
 #include <iprt/utf16.h>
 
 
-#if (_MSC_VER < 1400) /* Provide swprintf_s to VC < 8.0. */
-int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...)
+UINT VBoxGetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, WCHAR *pwszValueBuf, DWORD cwcValueBuf)
 {
-    int ret;
-    va_list va;
-    va_start(va, format);
-    ret = _vsnwprintf(buffer, cbBuffer, format, va);
-    va_end(va);
-    return ret;
-}
-#endif
+    RT_BZERO(pwszValueBuf, cwcValueBuf * sizeof(pwszValueBuf[0]));
 
-UINT VBoxGetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, WCHAR *pwszValue, DWORD dwSize)
-{
-    DWORD dwBuffer = 0;
-    UINT uiRet = MsiGetPropertyW(hMsi, pwszName, L"", &dwBuffer);
+    /** @todo r=bird: why do we need to query the size first and then the data.
+     *        The API should be perfectly capable of doing that without our help. */
+    DWORD cwcNeeded = 0;
+    UINT  uiRet = MsiGetPropertyW(hMsi, pwszName, L"", &cwcNeeded);
     if (uiRet == ERROR_MORE_DATA)
     {
-        ++dwBuffer;     /* On output does not include terminating null, so add 1. */
+        ++cwcNeeded;     /* On output does not include terminating null, so add 1. */
 
-        if (dwBuffer > dwSize)
+        if (cwcNeeded > cwcValueBuf)
             return ERROR_MORE_DATA;
-
-        ZeroMemory(pwszValue, dwSize);
-        uiRet = MsiGetPropertyW(hMsi, pwszName, pwszValue, &dwBuffer);
+        uiRet = MsiGetPropertyW(hMsi, pwszName, pwszValueBuf, &cwcNeeded);
     }
     return uiRet;
 }
@@ -91,9 +78,7 @@ int VBoxGetMsiPropUtf8(MSIHANDLE hMsi, const char *pcszName, char **ppszValue)
     {
         WCHAR wszValue[1024]; /* 1024 should be enough for everybody (tm). */
         if (VBoxGetMsiProp(hMsi, pwszName, wszValue, sizeof(wszValue)) == ERROR_SUCCESS)
-        {
             rc = RTUtf16ToUtf8(wszValue, ppszValue);
-        }
         else
             rc = VERR_NOT_FOUND;
 
@@ -112,7 +97,7 @@ UINT VBoxSetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, const WCHAR *pwszValu
 UINT VBoxSetMsiPropDWORD(MSIHANDLE hMsi, const WCHAR *pwszName, DWORD dwVal)
 {
     wchar_t wszTemp[32];
-    swprintf(wszTemp, sizeof(wszTemp) / sizeof(wchar_t), L"%ld", dwVal);
+    RTUtf16Printf(wszTemp, RT_ELEMENTS(wszTemp), "%u", dwVal);
     return VBoxSetMsiProp(hMsi, pwszName, wszTemp);
 }
 

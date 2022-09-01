@@ -37,12 +37,22 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# For the installer helpers
-LIBRARIES += VBoxDrvCfg
-VBoxDrvCfg_TEMPLATE       = VBoxR3StaticDllNoAsan
-VBoxDrvCfg_SDKS           = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
-VBoxDrvCfg_DEFS           = _WIN32_WINNT=0x0501 _UNICODE UNICODE
-VBoxDrvCfg_SOURCES        = cfg/VBoxDrvCfg.cpp
+# For the installer helper DLL.
+LIBRARIES += VBoxDrvCfgSharedStatic
+VBoxDrvCfgSharedStatic_TEMPLATE := VBoxR3StaticDllNoAsan
+VBoxDrvCfgSharedStatic_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+VBoxDrvCfgSharedStatic_DEFS     := _WIN32_WINNT=0x0501 _UNICODE UNICODE
+VBoxDrvCfgSharedStatic_SOURCES  := cfg/VBoxDrvCfg.cpp
+
+# For the driver installer/uninstaller executables.
+LIBRARIES += VBoxDrvCfgExe
+VBoxDrvCfgExe_TEMPLATE := VBOXR3EXE
+VBoxDrvCfgExe_EXTENDS  := VBoxDrvCfgSharedStatic
+
+# For the regular VBox DLLs.
+LIBRARIES += VBoxDrvCfgDll
+VBoxDrvCfgDll_TEMPLATE := VBoxR3Dll
+VBoxDrvCfgDll_EXTENDS  := VBoxDrvCfgSharedStatic
 
 
 INSTALLS += HostDrivers-scripts

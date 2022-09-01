@@ -52,11 +52,11 @@
  * VirtualBox Bridging driver notify object.
  * Needed to make our driver bind to "real" host adapters only
  */
-class ATL_NO_VTABLE VBoxNetFltNobj :
-    public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>,
-    public ATL::CComCoClass<VBoxNetFltNobj, &CLSID_VBoxNetFltNobj>,
-    public INetCfgComponentControl,
-    public INetCfgComponentNotifyBinding
+class ATL_NO_VTABLE VBoxNetFltNobj
+    : public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
+    , public ATL::CComCoClass<VBoxNetFltNobj, &CLSID_VBoxNetFltNobj>
+    , public INetCfgComponentControl
+    , public INetCfgComponentNotifyBinding
 {
 public:
     VBoxNetFltNobj();

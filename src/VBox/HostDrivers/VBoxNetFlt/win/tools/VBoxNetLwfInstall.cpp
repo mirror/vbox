@@ -34,10 +34,21 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <VBox/VBoxNetCfg-win.h>
 #include <devguid.h>
-#include <stdio.h>
 
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <iprt/utf16.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOX_NETCFG_APP_NAME L"NetLwfInstall"
 #define VBOX_NETLWF_INF L".\\VBoxNetLwf.inf"
 #define VBOX_NETLWF_RETRIES 10
@@ -45,7 +56,7 @@
 
 static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", pszString);
+    RTMsgInfo("%s", pszString);
 }
 
 /** Wrapper around GetfullPathNameW that will try an alternative INF location.
@@ -115,16 +126,16 @@ static int VBoxNetLwfInstall()
                     hr = VBoxNetCfgWinNetLwfInstall(pnc, wszInf);
                     if (hr == S_OK)
                     {
-                        wprintf(L"installed successfully\n");
+                        RTMsgInfo("Installed successfully!");
                         rcExit = RTEXITCODE_SUCCESS;
                     }
                     else
-                        wprintf(L"error installing VBoxNetLwf (%#lx)\n", hr);
+                        RTMsgError("Failed installing VBoxNetLwf: %Rhrc", hr);
                 }
                 else
                 {
                     hr = HRESULT_FROM_WIN32(GetLastError());
-                    wprintf(L"error getting full inf path for VBoxNetLwf.inf (%#lx)\n", hr);
+                    RTMsgError("Failed getting full inf path for VBoxNetLwf.inf: %Rhrc", hr);
                 }
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
@@ -133,22 +144,22 @@ static int VBoxNetLwfInstall()
 
             if (hr == NETCFG_E_NO_WRITE_LOCK && pwszLockedBy)
             {
-                if (i < VBOX_NETLWF_RETRIES && !wcscmp(pwszLockedBy, L"6to4svc.dll"))
+                if (i < VBOX_NETLWF_RETRIES && RTUtf16ICmpAscii(pwszLockedBy, "6to4svc.dll") == 0)
                 {
-                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", i + 1, VBOX_NETLWF_RETRIES);
+                    RTMsgInfo("6to4svc.dll is holding the lock - retrying %d out of %d\n", i + 1, VBOX_NETLWF_RETRIES);
                     CoTaskMemFree(pwszLockedBy);
                 }
                 else
                 {
-                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry installing\n",
-                            pwszLockedBy);
+                    RTMsgError("write lock is owned by another application (%ls), close the application and retry installing",
+                               pwszLockedBy);
                     CoTaskMemFree(pwszLockedBy);
                     break;
                 }
             }
             else
             {
-                wprintf(L"Error getting the INetCfg interface (%#lx)\n", hr);
+                RTMsgError("Failed getting the INetCfg interface: %Rhrc", hr);
                 break;
             }
         }
@@ -156,7 +167,7 @@ static int VBoxNetLwfInstall()
         CoUninitialize();
     }
     else
-        wprintf(L"Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -165,6 +176,11 @@ static int VBoxNetLwfInstall()
 
 int __cdecl main(int argc, char **argv)
 {
-    RT_NOREF2(argc, argv);
+    RTR3InitExeNoArguments(0);
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "This utility takes no arguments\n");
+    NOREF(argv);
+
     return VBoxNetLwfInstall();
 }
+

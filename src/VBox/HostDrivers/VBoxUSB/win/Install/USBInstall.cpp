@@ -74,7 +74,7 @@
 int usblibOsCreateService(void);
 
 
-static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
+static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY_T enmSeverity, char *pszMsg, void *pvContext)
 {
     RT_NOREF1(pvContext);
     switch (enmSeverity)
@@ -83,7 +83,7 @@ static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *
         case VBOXDRVCFG_LOG_SEVERITY_REGULAR:
             break;
         case VBOXDRVCFG_LOG_SEVERITY_REL:
-            RTPrintf("%s", pszMsg);
+            RTMsgInfo("%s", pszMsg);
             break;
         default:
             break;
@@ -105,10 +105,10 @@ int __cdecl main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    RTMsgInfo("USB installation");
+
     VBoxDrvCfgLoggerSet(vboxUsbLog, NULL);
     VBoxDrvCfgPanicSet(vboxUsbPanic, NULL);
-
-    RTPrintf("USB installation\n");
 
     rc = usblibOsCreateService();
     if (RT_SUCCESS(rc))
@@ -129,15 +129,20 @@ int __cdecl main(int argc, char **argv)
             /* Install the INF file: */
             HRESULT hr = VBoxDrvCfgInfInstall(pwszInfFile);
             if (hr == S_OK)
-                RTPrintf("Installation successful.\n");
+                RTMsgInfo("Installation successful!");
             else
-                rc = -1;
+            {
+                RTMsgError("Installation failed: %Rhrc", hr);
+                rc = VERR_GENERAL_FAILURE;
+            }
 
             RTUtf16Free(pwszInfFile);
         }
         else
             RTMsgError("Failed to construct INF path: %Rrc", rc);
     }
+    else
+        RTMsgError("Service creation failed: %Rrc", rc);
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

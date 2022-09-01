@@ -40,8 +40,12 @@
 *********************************************************************************************************************************/
 #include <VBox/VBoxNetCfg-win.h>
 #include <VBox/VBoxDrvCfg-win.h>
-#include <stdio.h>
 #include <devguid.h>
+
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <iprt/process.h>
+#include <iprt/stream.h>
 
 
 /*********************************************************************************************************************************
@@ -59,7 +63,7 @@
 
 static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s\n", pszString);
+    RTMsgInfo("%s", pszString);
 }
 
 
@@ -108,13 +112,12 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
 
 static int VBoxNetAdpInstall(void)
 {
+    RTMsgInfo("Adding host-only interface...");
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
-        wprintf(L"adding host-only interface..\n");
-
         WCHAR wszInfFile[MAX_PATH];
         DWORD cwcInfFile = MyGetfullPathNameW(VBOX_NETADP_INF, RT_ELEMENTS(wszInfFile), wszInfFile);
         if (cwcInfFile > 0)
@@ -128,14 +131,14 @@ static int VBoxNetAdpInstall(void)
                 hr = VBoxNetCfgWinNetAdpInstall(pnc, wszInfFile);
 
                 if (hr == S_OK)
-                    wprintf(L"installed successfully\n");
+                    RTMsgInfo("Installed successfully!");
                 else
-                    wprintf(L"error installing VBoxNetAdp (%#lx)\n", hr);
+                    RTMsgError("failed to install VBoxNetAdp: %Rhrc", hr);
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
             }
             else
-                wprintf(L"VBoxNetCfgWinQueryINetCfg failed: hr=%#lx\n", hr);
+                RTMsgError("VBoxNetCfgWinQueryINetCfg failed: %Rhrc", hr);
             /*
             hr = VBoxDrvCfgInfInstall(MpInf);
             if (FAILED(hr))
@@ -170,13 +173,13 @@ static int VBoxNetAdpInstall(void)
         else
         {
             DWORD dwErr = GetLastError();
-            wprintf(L"GetFullPathNameW failed: winEr = %lu\n", dwErr);
+            RTMsgError("MyGetfullPathNameW failed: %Rwc", dwErr);
             hr = HRESULT_FROM_WIN32(dwErr);
         }
         CoUninitialize();
     }
     else
-        wprintf(L"Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -185,9 +188,8 @@ static int VBoxNetAdpInstall(void)
 
 static int VBoxNetAdpUninstall(void)
 {
+    RTMsgInfo("Uninstalling all host-only interfaces...");
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
-
-    printf("uninstalling all host-only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
@@ -197,16 +199,16 @@ static int VBoxNetAdpUninstall(void)
         {
             hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if (SUCCEEDED(hr))
-                printf("uninstallation successful\n");
+                RTMsgInfo("Uninstallation successful!");
             else
-                printf("uninstalled successfully, but failed to remove infs\n");
+                RTMsgWarning("uninstalled successfully, but failed to remove infs (%Rhrc)\n", hr);
         }
         else
-            printf("uninstall failed, hr=%#lx\n", hr);
+            RTMsgError("uninstall failed: %Rhrc", hr);
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -215,9 +217,8 @@ static int VBoxNetAdpUninstall(void)
 
 static int VBoxNetAdpUpdate(void)
 {
+    RTMsgInfo("Uninstalling all host-only interfaces...");
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
-
-    printf("uninstalling all host-only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
@@ -234,16 +235,16 @@ static int VBoxNetAdpUpdate(void)
         if (SUCCEEDED(hr))
         {
             if (fRebootRequired)
-                printf("!!REBOOT REQUIRED!!\n");
-            printf("updated successfully\n");
+                RTMsgWarning("!!REBOOT REQUIRED!!");
+            RTMsgInfo("Updated successfully!");
         }
         else
-            printf("update failed, hr=%#lx\n", hr);
+            RTMsgError("update failed: %Rhrc", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -252,23 +253,22 @@ static int VBoxNetAdpUpdate(void)
 
 static int VBoxNetAdpDisable(void)
 {
+    RTMsgInfo("Disabling all host-only interfaces...");
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
-
-    printf("disabling all host-only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
         hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
         if (SUCCEEDED(hr))
-            printf("disabling successful\n");
+            RTMsgInfo("Disabling successful");
         else
-            printf("disable failed, hr=%#lx\n", hr);
+            RTMsgError("disable failed: %Rhrc", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -277,23 +277,22 @@ static int VBoxNetAdpDisable(void)
 
 static int VBoxNetAdpEnable(void)
 {
+    RTMsgInfo("Enabling all host-only interfaces...");
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
-
-    printf("enabling all host-only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
         hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE);
         if (SUCCEEDED(hr))
-            printf("enabling successful\n");
+            RTMsgInfo("Enabling successful!");
         else
-            printf("enabling failed, hr=%#lx\n", hr);
+            RTMsgError("enabling failed: %hrc", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -302,19 +301,22 @@ static int VBoxNetAdpEnable(void)
 
 static void printUsage(void)
 {
-    printf("host-only network adapter configuration tool\n"
-            "  Usage: VBoxNetAdpInstall [cmd]\n"
-            "    cmd can be one of the following values:\n"
-            "       i  - install a new host-only interface (default command)\n"
-            "       u  - uninstall all host-only interfaces\n"
-            "       a  - update the host-only driver\n"
-            "       d  - disable all host-only interfaces\n"
-            "       e  - enable all host-only interfaces\n"
-            "       h  - print this message\n");
+    RTPrintf("host-only network adapter configuration tool\n"
+             "  Usage: %s [cmd]\n"
+             "    cmd can be one of the following values:\n"
+             "       i  - install a new host-only interface (default command)\n"
+             "       u  - uninstall all host-only interfaces\n"
+             "       a  - update the host-only driver\n"
+             "       d  - disable all host-only interfaces\n"
+             "       e  - enable all host-only interfaces\n"
+             "       h  - print this message\n",
+             RTProcShortName());
 }
 
 int __cdecl main(int argc, char **argv)
 {
+    RTR3InitExe(argc, &argv, 0);
+
     if (argc < 2)
         return VBoxNetAdpInstall();
     if (argc > 2)

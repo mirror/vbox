@@ -1,8 +1,10 @@
 /* $Id$ */
 /** @file
  * VBoxNetFltNobj.cpp - Notify Object for Bridged Networking Driver.
+ *
  * Used to filter Bridged Networking Driver bindings
  */
+
 /*
  * Copyright (C) 2011-2022 Oracle and/or its affiliates.
  *
@@ -33,29 +35,48 @@
  *
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxNetFltNobj.h"
 #include <iprt/win/ntddndis.h>
-#include <assert.h>
-#include <stdio.h>
+#include <iprt/win/windows.h>
+#include <winreg.h>
+#include <Olectl.h>
 
 #include <VBoxNetFltNobjT_i.c>
 
-#include <Olectl.h>
+#include <iprt/assert.h>
+#include <iprt/utf16.h>
+#include <iprt/string.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 //# define VBOXNETFLTNOTIFY_DEBUG_BIND
 
 #ifdef DEBUG
-# define NonStandardAssert(a) assert(a)
-# define NonStandardAssertBreakpoint() assert(0)
+# define NonStandardAssert(a)           Assert(a)
+# define NonStandardAssertBreakpoint()  AssertFailed()
 #else
 # define NonStandardAssert(a) do{}while (0)
 # define NonStandardAssertBreakpoint() do{}while (0)
 #endif
 
-VBoxNetFltNobj::VBoxNetFltNobj() :
-    mpNetCfg(NULL),
-    mpNetCfgComponent(NULL),
-    mbInstalling(FALSE)
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static HMODULE g_hModSelf = (HMODULE)~(uintptr_t)0;
+
+
+VBoxNetFltNobj::VBoxNetFltNobj()
+    : mpNetCfg(NULL)
+    , mpNetCfgComponent(NULL)
+    , mbInstalling(FALSE)
 {
 }
 
@@ -125,386 +146,319 @@ STDMETHODIMP VBoxNetFltNobj::CancelChanges()
 
 static HRESULT vboxNetFltWinQueryInstanceKey(IN INetCfgComponent *pComponent, OUT PHKEY phKey)
 {
-    LPWSTR pPnpId;
-    HRESULT hr = pComponent->GetPnpDevNodeId(&pPnpId);
-    if (hr == S_OK)
+    LPWSTR pwszPnpId;
+    HRESULT hrc = pComponent->GetPnpDevNodeId(&pwszPnpId);
+    if (hrc == S_OK)
     {
-        WCHAR KeyName[MAX_PATH];
-        wcscpy(KeyName, L"SYSTEM\\CurrentControlSet\\Enum\\");
-        wcscat(KeyName,pPnpId);
-
-        LONG winEr = RegOpenKeyExW(HKEY_LOCAL_MACHINE, KeyName,
-          0, /*__reserved DWORD ulOptions*/
-          KEY_READ, /*__in REGSAM samDesired*/
-          phKey);
-
-        if (winEr != ERROR_SUCCESS)
+        WCHAR wszKeyName[MAX_PATH];
+        RTUtf16Copy(wszKeyName, MAX_PATH, L"SYSTEM\\CurrentControlSet\\Enum\\");
+        int rc = RTUtf16Cat(wszKeyName, MAX_PATH, pwszPnpId);
+        if (RT_SUCCESS(rc))
         {
-            hr = HRESULT_FROM_WIN32(winEr);
-            NonStandardAssertBreakpoint();
+            LSTATUS lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszKeyName, 0 /*ulOptions*/, KEY_READ, phKey);
+            if (lrc != ERROR_SUCCESS)
+            {
+                hrc = HRESULT_FROM_WIN32(lrc);
+                NonStandardAssertBreakpoint();
+            }
         }
+        else
+            AssertRCStmt(rc, hrc = ERROR_BUFFER_OVERFLOW);
 
-        CoTaskMemFree(pPnpId);
+        CoTaskMemFree(pwszPnpId);
     }
     else
-    {
         NonStandardAssertBreakpoint();
-    }
-
-    return hr;
+    return hrc;
 }
 
 static HRESULT vboxNetFltWinQueryDriverKey(IN HKEY InstanceKey, OUT PHKEY phKey)
 {
-    DWORD Type = REG_SZ;
-    WCHAR Value[MAX_PATH];
-    DWORD cbValue = sizeof(Value);
-    HRESULT hr = S_OK;
-    LONG winEr = RegQueryValueExW(InstanceKey,
-            L"Driver", /*__in_opt LPCTSTR lpValueName*/
-            0, /*__reserved LPDWORD lpReserved*/
-            &Type, /*__out_opt LPDWORD lpType*/
-            (LPBYTE)Value, /*__out_opt LPBYTE lpData*/
-            &cbValue/*__inout_opt LPDWORD lpcbData*/
-            );
+    HRESULT hrc = S_OK;
 
-    if (winEr == ERROR_SUCCESS)
+    WCHAR   wszValue[MAX_PATH];
+    DWORD   cbValue = sizeof(wszValue) - sizeof(WCHAR);
+    DWORD   dwType  = REG_SZ;
+    LSTATUS lrc = RegQueryValueExW(InstanceKey, L"Driver", NULL /*lpReserved*/, &dwType, (LPBYTE)wszValue, &cbValue);
+    if (lrc == ERROR_SUCCESS)
     {
-        WCHAR KeyName[MAX_PATH];
-        wcscpy(KeyName, L"SYSTEM\\CurrentControlSet\\Control\\Class\\");
-        wcscat(KeyName,Value);
-
-        winEr = RegOpenKeyExW(HKEY_LOCAL_MACHINE, KeyName,
-          0, /*__reserved DWORD ulOptions*/
-          KEY_READ, /*__in REGSAM samDesired*/
-          phKey);
-
-        if (winEr != ERROR_SUCCESS)
+        if (dwType == REG_SZ)
         {
-            hr = HRESULT_FROM_WIN32(winEr);
+            wszValue[RT_ELEMENTS(wszValue) - 1] = '\0'; /* registry strings does not need to be zero terminated. */
+
+            WCHAR wszKeyName[MAX_PATH];
+            RTUtf16Copy(wszKeyName, MAX_PATH, L"SYSTEM\\CurrentControlSet\\Control\\Class\\");
+            int rc = RTUtf16Cat(wszKeyName, MAX_PATH, wszValue);
+            if (RT_SUCCESS(rc))
+            {
+                lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszKeyName, 0 /*ulOptions*/, KEY_READ, phKey);
+                if (lrc != ERROR_SUCCESS)
+                {
+                    hrc = HRESULT_FROM_WIN32(lrc);
+                    NonStandardAssertBreakpoint();
+                }
+            }
+            else
+                AssertRCStmt(rc, hrc = ERROR_BUFFER_OVERFLOW);
+        }
+        else
+        {
+            hrc = HRESULT_FROM_WIN32(ERROR_DATATYPE_MISMATCH);
             NonStandardAssertBreakpoint();
         }
     }
     else
     {
-        hr = HRESULT_FROM_WIN32(winEr);
+        hrc = HRESULT_FROM_WIN32(lrc);
         NonStandardAssertBreakpoint();
     }
 
-    return hr;
+    return hrc;
 }
 
 static HRESULT vboxNetFltWinQueryDriverKey(IN INetCfgComponent *pComponent, OUT PHKEY phKey)
 {
-    HKEY InstanceKey;
-    HRESULT hr = vboxNetFltWinQueryInstanceKey(pComponent, &InstanceKey);
-    if (hr == S_OK)
+    HKEY    hKeyInstance = NULL;
+    HRESULT hrc = vboxNetFltWinQueryInstanceKey(pComponent, &hKeyInstance);
+    if (hrc == S_OK)
     {
-        hr = vboxNetFltWinQueryDriverKey(InstanceKey, phKey);
-        if (hr != S_OK)
-        {
+        hrc = vboxNetFltWinQueryDriverKey(hKeyInstance, phKey);
+        if (hrc != S_OK)
             NonStandardAssertBreakpoint();
-        }
-        RegCloseKey(InstanceKey);
+        RegCloseKey(hKeyInstance);
     }
     else
-    {
         NonStandardAssertBreakpoint();
-    }
-
-    return hr;
+    return hrc;
 }
 
-static HRESULT vboxNetFltWinNotifyCheckNetAdp(IN INetCfgComponent *pComponent, OUT bool * pbShouldBind)
+static HRESULT vboxNetFltWinNotifyCheckNetAdp(IN INetCfgComponent *pComponent, OUT bool *pfShouldBind)
 {
-    HRESULT hr;
-    LPWSTR pDevId;
-    hr = pComponent->GetId(&pDevId);
-    if (hr == S_OK)
+    *pfShouldBind = false;
+
+    LPWSTR  pwszDevId = NULL;
+    HRESULT hrc = pComponent->GetId(&pwszDevId);
+    if (hrc == S_OK)
     {
-        if (!_wcsnicmp(pDevId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
-        {
-            *pbShouldBind = false;
-        }
+        /** @todo r=bird: This was _wcsnicmp(pwszDevId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
+         * which includes the terminator, so it translates to a full compare. Goes way back. */
+        if (RTUtf16ICmpAscii(pwszDevId, "sun_VBoxNetAdp") == 0)
+            *pfShouldBind = false;
         else
-        {
-            hr = S_FALSE;
-        }
-        CoTaskMemFree(pDevId);
+            hrc = S_FALSE;
+        CoTaskMemFree(pwszDevId);
     }
     else
-    {
         NonStandardAssertBreakpoint();
-    }
 
-    return hr;
+    return hrc;
 }
 
-static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, OUT bool * pbShouldBind)
+static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, OUT bool *pfShouldBind)
 {
-    HRESULT hr;
-    LPWSTR pDevId;
-    hr = pComponent->GetId(&pDevId);
-    if (hr == S_OK)
+    *pfShouldBind = false;
+
+    LPWSTR  pwszDevId = NULL;
+    HRESULT hrc = pComponent->GetId(&pwszDevId);
+    if (hrc == S_OK)
     {
-        if (!_wcsnicmp(pDevId, L"*msloop", sizeof(L"*msloop")/2))
+        /** @todo r=bird: This was _wcsnicmp(pwszDevId, L"*msloop", sizeof(L"*msloop")/2)
+         * which includes the terminator, making it a full compare. Goes way back. */
+        if (RTUtf16ICmpAscii(pwszDevId, "*msloop") == 0)
         {
             /* we need to detect the medium the adapter is presenting
              * to do that we could examine in the registry the *msloop params */
-            HKEY DriverKey;
-            hr = vboxNetFltWinQueryDriverKey(pComponent, &DriverKey);
-            if (hr == S_OK)
+            HKEY hKeyDriver;
+            hrc = vboxNetFltWinQueryDriverKey(pComponent, &hKeyDriver);
+            if (hrc == S_OK)
             {
-                DWORD Type = REG_SZ;
-                WCHAR Value[64]; /* 2 should be enough actually, paranoid check for extra spaces */
-                DWORD cbValue = sizeof(Value);
-                LONG winEr = RegQueryValueExW(DriverKey,
-                            L"Medium", /*__in_opt LPCTSTR lpValueName*/
-                            0, /*__reserved LPDWORD lpReserved*/
-                            &Type, /*__out_opt LPDWORD lpType*/
-                            (LPBYTE)Value, /*__out_opt LPBYTE lpData*/
-                            &cbValue/*__inout_opt LPDWORD lpcbData*/
-                            );
-                if (winEr == ERROR_SUCCESS)
+                WCHAR wszValue[64]; /* 2 should be enough actually, paranoid check for extra spaces */
+                DWORD cbValue = sizeof(wszValue) - sizeof(WCHAR);
+                DWORD dwType  = REG_SZ;
+                LSTATUS lrc = RegQueryValueExW(hKeyDriver, L"Medium", NULL /*lpReserved*/, &dwType, (LPBYTE)wszValue, &cbValue);
+                if (lrc == ERROR_SUCCESS)
                 {
-                    PWCHAR endPrt;
-                    ULONG enmMedium = wcstoul(Value,
-                       &endPrt,
-                       0 /* base*/);
-
-                    winEr = errno;
-                    if (winEr == ERROR_SUCCESS)
+                    if (dwType == REG_SZ)
                     {
-                        if (enmMedium == 0) /* 0 is Ethernet */
+                        wszValue[RT_ELEMENTS(wszValue) - 1] = '\0';
+
+                        char szUtf8[256];
+                        char *pszUtf8 = szUtf8;
+                        RTUtf16ToUtf8Ex(wszValue, RTSTR_MAX, &pszUtf8, sizeof(szUtf8), NULL);
+                        pszUtf8 = RTStrStrip(pszUtf8);
+
+                        uint64_t uValue = 0;
+                        int rc = RTStrToUInt64Ex(pszUtf8, NULL, 0, &uValue);
+                        if (RT_SUCCESS(rc))
                         {
-                            *pbShouldBind = true;
+                            if (uValue == 0) /* 0 is Ethernet */
+                                *pfShouldBind = true;
+                            else
+                                *pfShouldBind = false;
                         }
                         else
                         {
-                            *pbShouldBind = false;
+                            NonStandardAssertBreakpoint();
+                            *pfShouldBind = true;
                         }
                     }
                     else
-                    {
                         NonStandardAssertBreakpoint();
-                        *pbShouldBind = true;
-                    }
                 }
                 else
                 {
                     /** @todo we should check the default medium in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002bE10318}\<driver_id>\Ndi\Params\Medium, REG_SZ "Default" value */
                     NonStandardAssertBreakpoint();
-                    *pbShouldBind = true;
+                    *pfShouldBind = true;
                 }
 
-                RegCloseKey(DriverKey);
+                RegCloseKey(hKeyDriver);
             }
             else
-            {
                 NonStandardAssertBreakpoint();
-            }
         }
         else
-        {
-            hr = S_FALSE;
-        }
-        CoTaskMemFree(pDevId);
+            hrc = S_FALSE;
+        CoTaskMemFree(pwszDevId);
     }
     else
-    {
         NonStandardAssertBreakpoint();
-    }
-
-    return hr;
+    return hrc;
 }
 
-static HRESULT vboxNetFltWinNotifyCheckLowerRange(IN INetCfgComponent *pComponent, OUT bool * pbShouldBind)
+static HRESULT vboxNetFltWinNotifyCheckLowerRange(IN INetCfgComponent *pComponent, OUT bool *pfShouldBind)
 {
-    HKEY DriverKey;
-    HKEY InterfacesKey;
-    HRESULT hr = vboxNetFltWinQueryDriverKey(pComponent, &DriverKey);
-    if (hr == S_OK)
+    *pfShouldBind = false;
+
+    HKEY    hKeyDriver = NULL;
+    HRESULT hrc = vboxNetFltWinQueryDriverKey(pComponent, &hKeyDriver);
+    if (hrc == S_OK)
     {
-        LONG winEr = RegOpenKeyExW(DriverKey, L"Ndi\\Interfaces",
-                        0, /*__reserved DWORD ulOptions*/
-                        KEY_READ, /*__in REGSAM samDesired*/
-                        &InterfacesKey);
-        if (winEr == ERROR_SUCCESS)
+        HKEY    hKeyInterfaces = NULL;
+        LSTATUS lrc = RegOpenKeyExW(hKeyDriver, L"Ndi\\Interfaces", 0 /*ulOptions*/, KEY_READ, &hKeyInterfaces);
+        if (lrc == ERROR_SUCCESS)
         {
-            DWORD Type = REG_SZ;
-            WCHAR Value[MAX_PATH];
-            DWORD cbValue = sizeof(Value);
-            winEr = RegQueryValueExW(InterfacesKey,
-                    L"LowerRange", /*__in_opt LPCTSTR lpValueName*/
-                    0, /*__reserved LPDWORD lpReserved*/
-                    &Type, /*__out_opt LPDWORD lpType*/
-                    (LPBYTE)Value, /*__out_opt LPBYTE lpData*/
-                    &cbValue/*__inout_opt LPDWORD lpcbData*/
-                    );
-            if (winEr == ERROR_SUCCESS)
+            WCHAR wszValue[MAX_PATH];
+            DWORD cbValue = sizeof(wszValue) - sizeof(WCHAR);
+            DWORD dwType  = REG_SZ;
+            lrc = RegQueryValueExW(hKeyInterfaces, L"LowerRange", NULL /*lpReserved*/, &dwType, (LPBYTE)wszValue, &cbValue);
+            if (lrc == ERROR_SUCCESS)
             {
-                if (wcsstr(Value,L"ethernet") || wcsstr(Value, L"wan"))
+                if (dwType == REG_SZ)
                 {
-                    *pbShouldBind = true;
-                }
-                else
-                {
-                    *pbShouldBind = false;
+                    if (RTUtf16FindAscii(wszValue, "ethernet") >= 0 || RTUtf16FindAscii(wszValue, "wan") >= 0)
+                        *pfShouldBind = true;
+                    else
+                        *pfShouldBind = false;
                 }
             }
             else
             {
                 /* do not set err status to it */
-                *pbShouldBind = false;
+                *pfShouldBind = false;
                 NonStandardAssertBreakpoint();
             }
 
-            RegCloseKey(InterfacesKey);
+            RegCloseKey(hKeyInterfaces);
         }
         else
         {
-            hr = HRESULT_FROM_WIN32(winEr);
+            hrc = HRESULT_FROM_WIN32(lrc);
             NonStandardAssertBreakpoint();
         }
 
-        RegCloseKey(DriverKey);
+        RegCloseKey(hKeyDriver);
     }
     else
+        NonStandardAssertBreakpoint();
+    return hrc;
+}
+
+static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgComponent *pComponent, OUT bool *pfShouldBind)
+{
+    *pfShouldBind = false;
+
+    /* filter out only physical adapters */
+    DWORD fCharacteristics = 0;
+    HRESULT hrc = pComponent->GetCharacteristics(&fCharacteristics);
+    if (hrc != S_OK)
     {
         NonStandardAssertBreakpoint();
+        return hrc;
     }
 
-    return hr;
-}
+    /* we are not binding to hidden adapters */
+    if (fCharacteristics & NCF_HIDDEN)
+        return S_OK;
 
-static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgComponent *pComponent, OUT bool *pbShouldBind)
-{
-    DWORD fCharacteristics;
-    HRESULT hr;
+    hrc = vboxNetFltWinNotifyCheckMsLoop(pComponent, pfShouldBind);
+    if (   hrc == S_OK /* this is a loopback adapter, the pfShouldBind already contains the result */
+        || hrc != S_FALSE /* error occurred */)
+        return hrc;
 
-    do
-    {
-        /* filter out only physical adapters */
-        hr = pComponent->GetCharacteristics(&fCharacteristics);
-        if (hr != S_OK)
-        {
-            NonStandardAssertBreakpoint();
-            break;
-        }
+    hrc = vboxNetFltWinNotifyCheckNetAdp(pComponent, pfShouldBind);
+    if (   hrc == S_OK /* this is a VBoxNetAdp adapter, the pfShouldBind already contains the result */
+        || hrc != S_FALSE /* error occurred */)
+        return hrc;
 
+    //if (!(fCharacteristics & NCF_PHYSICAL))
+    //{
+    //    *pfShouldBind = false; /* we are binding to physical adapters only */
+    //    return S_OK;
+    //}
 
-        if (fCharacteristics & NCF_HIDDEN)
-        {
-            /* we are not binding to hidden adapters */
-            *pbShouldBind = false;
-            break;
-        }
-
-        hr = vboxNetFltWinNotifyCheckMsLoop(pComponent, pbShouldBind);
-        if (hr == S_OK)
-        {
-            /* this is a loopback adapter,
-             * the pbShouldBind already contains the result */
-            break;
-        }
-        else if (hr != S_FALSE)
-        {
-            /* error occurred */
-            break;
-        }
-
-        hr = vboxNetFltWinNotifyCheckNetAdp(pComponent, pbShouldBind);
-        if (hr == S_OK)
-        {
-            /* this is a VBoxNetAdp adapter,
-             * the pbShouldBind already contains the result */
-            break;
-        }
-        else if (hr != S_FALSE)
-        {
-            /* error occurred */
-            break;
-        }
-
-        /* hr == S_FALSE means this is not a loopback adpater, set it to S_OK */
-        hr = S_OK;
-
-//        if (!(fCharacteristics & NCF_PHYSICAL))
-//        {
-//            /* we are binding to physical adapters only */
-//            *pbShouldBind = false;
-//            break;
-//        }
-
-        hr = vboxNetFltWinNotifyCheckLowerRange(pComponent, pbShouldBind);
-        if (hr == S_OK)
-        {
-            /* the vboxNetFltWinNotifyCheckLowerRange ccucceeded,
-             * the pbShouldBind already contains the result */
-            break;
-        }
-        /* we are here because of the fail, nothing else to do */
-    } while (0);
-
-    return hr;
+    return vboxNetFltWinNotifyCheckLowerRange(pComponent, pfShouldBind);
 }
 
 
-static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingInterface *pIf, OUT bool *pbShouldBind)
+static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingInterface *pIf, OUT bool *pfShouldBind)
 {
-    INetCfgComponent * pAdapterComponent;
-    HRESULT hr = pIf->GetLowerComponent(&pAdapterComponent);
-    if (hr == S_OK)
+    INetCfgComponent *pAdapterComponent = NULL;
+    HRESULT hrc = pIf->GetLowerComponent(&pAdapterComponent);
+    if (hrc == S_OK)
     {
-        hr = vboxNetFltWinNotifyShouldBind(pAdapterComponent, pbShouldBind);
+        hrc = vboxNetFltWinNotifyShouldBind(pAdapterComponent, pfShouldBind);
 
         pAdapterComponent->Release();
     }
     else
     {
         NonStandardAssertBreakpoint();
+        *pfShouldBind = false;
     }
-
-    return hr;
+    return hrc;
 }
 
-static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath, OUT bool *pbDoBind)
+static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath, OUT bool *pfShouldBind)
 {
-    IEnumNetCfgBindingInterface *pEnumBindingIf;
-    HRESULT hr = pPath->EnumBindingInterfaces(&pEnumBindingIf);
-    if (hr == S_OK)
+    *pfShouldBind = false;
+
+    IEnumNetCfgBindingInterface *pIEnumBinding = NULL;
+    HRESULT hrc = pPath->EnumBindingInterfaces(&pIEnumBinding);
+    if (hrc == S_OK)
     {
-        hr = pEnumBindingIf->Reset();
-        if (hr == S_OK)
+        hrc = pIEnumBinding->Reset();
+        if (hrc == S_OK)
         {
-            ULONG ulCount;
-            INetCfgBindingInterface *pBindingIf;
-            do
+            for (;;)
             {
-                hr = pEnumBindingIf->Next(1, &pBindingIf, &ulCount);
-                if (hr == S_OK)
+                ULONG                    uCount    = 0;
+                INetCfgBindingInterface *pIBinding = NULL;
+                hrc = pIEnumBinding->Next(1, &pIBinding, &uCount);
+                if (hrc == S_OK)
                 {
-                    hr = vboxNetFltWinNotifyShouldBind(pBindingIf, pbDoBind);
+                    hrc = vboxNetFltWinNotifyShouldBind(pIBinding, pfShouldBind);
+                    pIBinding->Release();
 
-                    pBindingIf->Release();
-
-                    if (hr == S_OK)
-                    {
-                        if (!(*pbDoBind))
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        /* break on failure */
+                    if (hrc != S_OK)
+                        break; /* break on failure. */
+                    if (!*pfShouldBind)
                         break;
-                    }
                 }
-                else if (hr == S_FALSE)
+                else if (hrc == S_FALSE)
                 {
                     /* no more elements */
-                    hr = S_OK;
+                    hrc = S_OK;
                     break;
                 }
                 else
@@ -513,21 +467,16 @@ static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath, OUT b
                     /* break on falure */
                     break;
                 }
-            } while (true);
+            }
         }
         else
-        {
             NonStandardAssertBreakpoint();
-        }
 
-        pEnumBindingIf->Release();
+        pIEnumBinding->Release();
     }
     else
-    {
         NonStandardAssertBreakpoint();
-    }
-
-    return hr;
+    return hrc;
 }
 
 static bool vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath)
@@ -535,14 +484,12 @@ static bool vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath)
 #ifdef VBOXNETFLTNOTIFY_DEBUG_BIND
     return VBOXNETFLTNOTIFY_DEBUG_BIND;
 #else
-    bool bShouldBind;
-    HRESULT hr = vboxNetFltWinNotifyShouldBind(pPath, &bShouldBind) ;
-    if (hr != S_OK)
-    {
-        bShouldBind = VBOXNETFLTNOTIFY_ONFAIL_BINDDEFAULT;
-    }
+    bool fShouldBind;
+    HRESULT hrc = vboxNetFltWinNotifyShouldBind(pPath, &fShouldBind);
+    if (hrc != S_OK)
+        fShouldBind = VBOXNETFLTNOTIFY_ONFAIL_BINDDEFAULT;
 
-    return bShouldBind;
+    return fShouldBind;
 #endif
 }
 
@@ -570,11 +517,14 @@ BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_VBoxNetFltNobj, VBoxNetFltNobj)
 END_OBJECT_MAP()
 
+
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
+        g_hModSelf = (HMODULE)hInstance;
+
         _Module.Init(ObjectMap, hInstance);
         DisableThreadLibraryCalls(hInstance);
     }
@@ -585,15 +535,16 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
     return TRUE;
 }
 
-STDAPI DllCanUnloadNow()
+STDAPI DllCanUnloadNow(void)
 {
-    return (_Module.GetLockCount() == 0) ? S_OK : S_FALSE;
+    return _Module.GetLockCount() == 0 ? S_OK : S_FALSE;
 }
 
-STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
+STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
     return _Module.GetClassObject(rclsid, riid, ppv);
 }
+
 
 /*
  * ATL::CComModule does not suport server registration/unregistration methods,
@@ -601,14 +552,18 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
  * manually, we do it the quick-and-dirty way.
  */
 
+#ifdef RT_EXCEPTIONS_ENABLED
 /* Someday we may want to log errors. */
 class AdHocRegError
 {
 public:
     AdHocRegError(LSTATUS rc) { RT_NOREF1(rc); };
 };
+#endif
 
-/* A simple wrapper on Windows registry functions. */
+/**
+ * A simple wrapper on Windows registry functions.
+ */
 class AdHocRegKey
 {
 public:
@@ -616,69 +571,54 @@ public:
     AdHocRegKey(LPCWSTR pcwszName, HKEY hParent = HKEY_CLASSES_ROOT);
     ~AdHocRegKey() { RegCloseKey(m_hKey); };
 
-    AdHocRegKey *create(LPCWSTR pcwszSubkey, LPCWSTR pcwszDefaultValue = NULL);
-    void remove(LPCWSTR pcwszSubkey);
-    void setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue);
+    AdHocRegKey *create(LPCWSTR pcwszSubkey);
+    LSTATUS setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue);
     HKEY getKey(void) { return m_hKey; };
 private:
     HKEY m_hKey;
 };
 
-AdHocRegKey::AdHocRegKey(LPCWSTR pcwszName, HKEY hParent)
+AdHocRegKey::AdHocRegKey(LPCWSTR pcwszName, HKEY hParent) : m_hKey(NULL)
 {
     LSTATUS rc = RegOpenKeyExW(hParent, pcwszName, 0, KEY_ALL_ACCESS, &m_hKey);
     if (rc != ERROR_SUCCESS)
+#ifdef RT_EXCEPTIONS_ENABLED
         throw AdHocRegError(rc);
+#else
+        m_hKey = NULL;
+#endif
 }
 
-void AdHocRegKey::remove(LPCWSTR pcwszSubkey)
-{
-    LSTATUS rc;
-    WCHAR wszName[256];
-    DWORD dwName;
-
-    /* Remove all subkeys of subkey first */
-    AdHocRegKey *subkey = new AdHocRegKey(pcwszSubkey, m_hKey);
-    for (;;)
-    {
-        /* Always ask for the first subkey, because we remove it before calling RegEnumKeyEx again */
-        dwName = 255;
-        rc = RegEnumKeyExW(subkey->getKey(), 0, wszName, &dwName, NULL, NULL, NULL, NULL);
-        if (rc != ERROR_SUCCESS)
-            break;
-        subkey->remove(wszName);
-    }
-    delete subkey;
-
-    /* Remove the subkey itself */
-    rc = RegDeleteKeyW(m_hKey, pcwszSubkey);
-    if (rc != ERROR_SUCCESS)
-        throw AdHocRegError(rc);
-}
-
-AdHocRegKey *AdHocRegKey::create(LPCWSTR pcwszSubkey, LPCWSTR pcwszDefaultValue)
+AdHocRegKey *AdHocRegKey::create(LPCWSTR pcwszSubkey)
 {
     HKEY hSubkey;
     LSTATUS rc = RegCreateKeyExW(m_hKey, pcwszSubkey,
                                  0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
                                  KEY_ALL_ACCESS, NULL /*pSecAttr*/, &hSubkey, NULL /*pdwDisposition*/);
     if (rc != ERROR_SUCCESS)
+#ifdef RT_EXCEPTIONS_ENABLED
         throw AdHocRegError(rc);
+#else
+        return NULL;
+#endif
     AdHocRegKey *pSubkey = new AdHocRegKey(hSubkey);
-    if (pcwszDefaultValue)
-        pSubkey->setValue(NULL, pcwszDefaultValue);
+    if (!pSubkey)
+        RegCloseKey(hSubkey);
     return pSubkey;
 }
 
-void AdHocRegKey::setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue)
+LSTATUS AdHocRegKey::setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue)
 {
     LSTATUS rc = RegSetValueExW(m_hKey, pcwszName, 0, REG_SZ, (const BYTE *)pcwszValue,
-                                (DWORD)((wcslen(pcwszValue) + 1) * sizeof(WCHAR)));
+                                (DWORD)((RTUtf16Len(pcwszValue) + 1) * sizeof(WCHAR)));
+#ifdef RT_EXCEPTIONS_ENABLED
     if (rc != ERROR_SUCCESS)
         throw AdHocRegError(rc);
+#endif
+    return rc;
 }
 
-/*
+/**
  * Auxiliary class that facilitates automatic destruction of AdHocRegKey objects
  * allocated in heap. No reference counting here!
  */
@@ -686,14 +626,21 @@ class AdHocRegKeyPtr
 {
 public:
     AdHocRegKeyPtr(AdHocRegKey *pKey) : m_pKey(pKey) {};
-    ~AdHocRegKeyPtr() { delete m_pKey; };
+    ~AdHocRegKeyPtr()
+    {
+        if (m_pKey)
+        {
+            delete m_pKey;
+            m_pKey = NULL;
+        }
+    }
 
-    AdHocRegKey *create(LPCWSTR pcwszSubkey, LPCWSTR pcwszDefaultValue = NULL)
-        { return m_pKey->create(pcwszSubkey, pcwszDefaultValue); };
-    void remove(LPCWSTR pcwszSubkey)
-        { return m_pKey->remove(pcwszSubkey); };
-    void setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue)
-        { return m_pKey->setValue(pcwszName, pcwszValue); };
+    AdHocRegKey *create(LPCWSTR pcwszSubkey)
+    { return m_pKey ? m_pKey->create(pcwszSubkey) : NULL; };
+
+    LSTATUS setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue)
+    { return m_pKey ? m_pKey->setValue(pcwszName, pcwszValue) : ERROR_INVALID_STATE; };
+
 private:
     AdHocRegKey *m_pKey;
     /* Prevent copying, since we do not support reference counting */
@@ -702,55 +649,99 @@ private:
 };
 
 
-STDAPI DllRegisterServer()
+STDAPI DllRegisterServer(void)
 {
+    /* Get the path to the DLL we're running inside. */
     WCHAR wszModule[MAX_PATH + 1];
-    if (GetModuleFileNameW(GetModuleHandleW(L"VBoxNetFltNobj"), wszModule, MAX_PATH) == 0)
+    UINT  cwcModule = GetModuleFileNameW(g_hModSelf, wszModule, MAX_PATH);
+    if (cwcModule == 0 || cwcModule > MAX_PATH)
         return SELFREG_E_CLASS;
+    wszModule[MAX_PATH] = '\0';
 
-    try {
-        AdHocRegKey keyCLSID(L"CLSID");
-        AdHocRegKeyPtr pkeyNobjClass(keyCLSID.create(L"{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}",
-                                                     L"VirtualBox Bridged Networking Driver Notify Object v1.1"));
-        AdHocRegKeyPtr pkeyNobjSrv(pkeyNobjClass.create(L"InProcServer32", wszModule));
-        pkeyNobjSrv.setValue(L"ThreadingModel", L"Both");
-    }
-    catch (AdHocRegError)
+    /*
+     * Create registry keys and values.  When exceptions are disabled, we depend
+     * on setValue() to propagate fail key creation failures.
+     */
+#ifdef RT_EXCEPTIONS_ENABLED
+    try
+#endif
     {
-        return SELFREG_E_CLASS;
-    }
+        AdHocRegKey keyCLSID(L"CLSID");
+        AdHocRegKeyPtr pkeyNobjClass(keyCLSID.create(L"{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}"));
+        LSTATUS lrc = pkeyNobjClass.setValue(NULL, L"VirtualBox Bridged Networking Driver Notify Object v1.1");
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_CLASS;
 
-    try {
+        AdHocRegKeyPtr pkeyNobjSrv(pkeyNobjClass.create(L"InProcServer32"));
+        lrc = pkeyNobjSrv.setValue(NULL, wszModule);
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_CLASS;
+        lrc = pkeyNobjSrv.setValue(L"ThreadingModel", L"Both");
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_CLASS;
+    }
+#ifdef RT_EXCEPTIONS_ENABLED
+    catch (AdHocRegError) { return SELFREG_E_CLASS; }
+#endif
+
+#ifdef RT_EXCEPTIONS_ENABLED
+    try
+#endif
+    {
         AdHocRegKey keyTypeLib(L"TypeLib");
-        AdHocRegKeyPtr pkeyNobjLib(keyTypeLib.create(L"{2A0C94D1-40E1-439C-8FE8-24107CAB0840}\\1.1",
-                                                     L"VirtualBox Bridged Networking Driver Notify Object v1.1 Type Library"));
-        AdHocRegKeyPtr pkeyNobjLib0(pkeyNobjLib.create(L"0\\win64", wszModule));
-        AdHocRegKeyPtr pkeyNobjLibFlags(pkeyNobjLib.create(L"FLAGS", L"0"));
+        AdHocRegKeyPtr pkeyNobjLib(keyTypeLib.create(L"{2A0C94D1-40E1-439C-8FE8-24107CAB0840}\\1.1"));
+        LSTATUS lrc = pkeyNobjLib.setValue(NULL, L"VirtualBox Bridged Networking Driver Notify Object v1.1 Type Library");
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_TYPELIB;
+
+        AdHocRegKeyPtr pkeyNobjLib0(pkeyNobjLib.create(L"0\\win64"));
+        lrc = pkeyNobjLib0.setValue(NULL, wszModule);
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_TYPELIB;
+        AdHocRegKeyPtr pkeyNobjLibFlags(pkeyNobjLib.create(L"FLAGS"));
+        lrc = pkeyNobjLibFlags.setValue(NULL, L"0");
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_TYPELIB;
+
         if (GetSystemDirectoryW(wszModule, MAX_PATH) == 0)
             return SELFREG_E_TYPELIB;
-        AdHocRegKeyPtr pkeyNobjLibHelpDir(pkeyNobjLib.create(L"HELPDIR", wszModule));
+        AdHocRegKeyPtr pkeyNobjLibHelpDir(pkeyNobjLib.create(L"HELPDIR"));
+        lrc = pkeyNobjLibHelpDir.setValue(NULL, wszModule);
+        if (lrc != ERROR_SUCCESS)
+            return SELFREG_E_TYPELIB;
     }
-    catch (AdHocRegError)
-    {
-        return SELFREG_E_CLASS;
-    }
-
-    return S_OK;
-}
-
-STDAPI DllUnregisterServer()
-{
-    try {
-        AdHocRegKey keyTypeLib(L"TypeLib");
-        keyTypeLib.remove(L"{2A0C94D1-40E1-439C-8FE8-24107CAB0840}");
-    }
+#ifdef RT_EXCEPTIONS_ENABLED
     catch (AdHocRegError) { return SELFREG_E_TYPELIB; }
-
-    try {
-        AdHocRegKey keyCLSID(L"CLSID");
-        keyCLSID.remove(L"{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}");
-    }
-    catch (AdHocRegError) { return SELFREG_E_CLASS; }
+#endif
 
     return S_OK;
 }
+
+
+STDAPI DllUnregisterServer(void)
+{
+    static struct { HKEY hKeyRoot; wchar_t const *pwszParentKey; wchar_t const *pwszKeyToDelete; HRESULT hrcFail; }
+    s_aKeys[] =
+    {
+        { HKEY_CLASSES_ROOT, L"TypeLib", L"{2A0C94D1-40E1-439C-8FE8-24107CAB0840}", SELFREG_E_TYPELIB },
+        { HKEY_CLASSES_ROOT, L"CLSID",   L"{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}", SELFREG_E_CLASS },
+    };
+
+    HRESULT hrc = S_OK;
+    for (size_t i = 0; i < RT_ELEMENTS(s_aKeys); i++)
+    {
+        HKEY hKey = NULL;
+        LSTATUS lrc = RegOpenKeyExW(s_aKeys[i].hKeyRoot, s_aKeys[i].pwszParentKey, 0, KEY_ALL_ACCESS, &hKey);
+        if (lrc == ERROR_SUCCESS)
+        {
+            lrc = RegDeleteTreeW(hKey, s_aKeys[i].pwszKeyToDelete); /* Vista and later */
+            RegCloseKey(hKey);
+        }
+
+        if (lrc != ERROR_SUCCESS && lrc != ERROR_FILE_NOT_FOUND && hrc == S_OK)
+            hrc = s_aKeys[i].hrcFail;
+    }
+
+    return S_OK;
+}
+

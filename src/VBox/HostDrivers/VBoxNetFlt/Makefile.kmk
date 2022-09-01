@@ -242,35 +242,35 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  #
  # WinNetConfig - static library with host network interface config API (for the installer)
  #
- LIBRARIES.win += WinNetConfig
- WinNetConfig_TEMPLATE = VBoxR3StaticDllNoAsan
- WinNetConfig_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
- WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
- WinNetConfig_INCS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
- WinNetConfig_SOURCES  = win/cfg/VBoxNetCfg.cpp
+ LIBRARIES.win += WinNetConfigSharedStatic
+ WinNetConfigSharedStatic_TEMPLATE = VBoxR3StaticDllNoAsan
+ WinNetConfigSharedStatic_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+ WinNetConfigSharedStatic_DEFS     = _UNICODE UNICODE
+ WinNetConfigSharedStatic_SOURCES  = \
+ 	win/cfg/VBoxNetCfg.cpp \
+       ../../Main/glue/string.cpp
 
- #
- # WinNetConfigNonStatic - static library with host network interface config API
- #
- LIBRARIES.win += WinNetConfigNonStatic
- WinNetConfigNonStatic_TEMPLATE = VBoxR3Dll
- WinNetConfigNonStatic_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
- WinNetConfigNonStatic_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
- WinNetConfigNonStatic_INCS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
- WinNetConfigNonStatic_SOURCES  = win/cfg/VBoxNetCfg.cpp
+ # Version for DLLs:
+ LIBRARIES.win += WinNetConfigDll
+ WinNetConfigDll_TEMPLATE = VBoxR3Dll
+ WinNetConfigDll_EXTENDS  = WinNetConfigSharedStatic
+
+ # Version for EXEs:
+ LIBRARIES.win += WinNetConfigExe
+ WinNetConfigExe_TEMPLATE = VBOXR3EXE
+ WinNetConfigExe_EXTENDS  = WinNetConfigSharedStatic
 
 
  #
  # Template for NetFltInstall and friends.
  #
  TEMPLATE_VBoxNetFltR3 = Template for NetFltInstall, NetFltUninstall, NetAdpInstall, NetAdpUninstall, ++
- TEMPLATE_VBoxNetFltR3_EXTENDS  = VBOXR3STATIC
- TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBOXR3STATIC_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL VBOX_WIN_NEWDEV
- TEMPLATE_VBoxNetFltR3_CXXFLAGS = $(TEMPLATE_VBOXR3STATIC_CXXFLAGS) -Gz
- TEMPLATE_VBoxNetFltR3_CFLAGS   = $(TEMPLATE_VBOXR3STATIC_CFLAGS) -Gz
- TEMPLATE_VBoxNetFltR3_LIBS     = $(TEMPLATE_VBOXR3STATIC_LIBS) \
- 	$(WinNetConfig_1_TARGET) \
-	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ TEMPLATE_VBoxNetFltR3_EXTENDS  = VBOXR3EXE
+ TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBOXR3EXE_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL VBOX_WIN_NEWDEV
+ TEMPLATE_VBoxNetFltR3_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) \
+ 	$(WinNetConfigExe_1_TARGET) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfgExe$(VBOX_SUFF_LIB) \
+       $(LIB_RUNTIME) \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
@@ -342,7 +342,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
   VBoxNetFltNobj_DEBUG_INSTTYPE = both
  endif
  VBoxNetFltNobj_SDKS       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
- VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
+ VBoxNetFltNobj_DEFS       = WIN32 _ATL_STATIC_REGISTRY
  VBoxNetFltNobj_INCS       = \
  	$(VBoxNetFltNobj_0_OUTDIR)
  VBoxNetFltNobj_SOURCES    = \

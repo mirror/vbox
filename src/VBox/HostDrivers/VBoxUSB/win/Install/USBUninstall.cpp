@@ -44,18 +44,35 @@
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
+#include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
-#include <iprt/errcore.h>
 #include <VBox/VBoxDrvCfg-win.h>
-#include <stdio.h>
 
 
-int usblibOsStopService(void);
-int usblibOsDeleteService(void);
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The support service name. */
+#define SERVICE_NAME    "VBoxUSBMon"
+/** Win32 Device name. */
+#define DEVICE_NAME     "\\\\.\\VBoxUSBMon"
+/** NT Device name. */
+#define DEVICE_NAME_NT   L"\\Device\\VBoxUSBMon"
+/** Win32 Symlink name. */
+#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxUSBMon"
 
-static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int usblibOsStopService(void);
+static int usblibOsDeleteService(void);
+
+
+static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY_T enmSeverity, char *pszMsg, void *pvContext)
 {
     RT_NOREF1(pvContext);
     switch (enmSeverity)
@@ -64,7 +81,7 @@ static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *
         case VBOXDRVCFG_LOG_SEVERITY_REGULAR:
             break;
         case VBOXDRVCFG_LOG_SEVERITY_REL:
-            printf("%s", pszMsg);
+            RTMsgInfo("%s", pszMsg);
             break;
         default:
             break;
@@ -82,8 +99,11 @@ static DECLCALLBACK(void) vboxUsbPanic(void *pvPanic)
 
 int __cdecl main(int argc, char **argv)
 {
-    RT_NOREF2(argc, argv);
-    printf("USB uninstallation\n");
+    RTR3InitExeNoArguments(0);
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "This utility takes no arguments\n");
+    NOREF(argv);
+    RTMsgInfo("USB uninstallation\n");
 
     VBoxDrvCfgLoggerSet(vboxUsbLog, NULL);
     VBoxDrvCfgPanicSet(vboxUsbPanic, NULL);
@@ -93,24 +113,12 @@ int __cdecl main(int argc, char **argv)
 
     HRESULT hr = VBoxDrvCfgInfUninstallAllF(L"USB", L"USB\\VID_80EE&PID_CAFE", SUOI_FORCEDELETE);
     if (hr != S_OK)
-    {
-        printf("SetupUninstallOEMInf failed with hr=0x%lx\n", hr);
-        return 1;
-    }
+        return RTMsgErrorExitFailure("SetupUninstallOEMInf failed: %Rhrc\n", hr);
 
-    printf("USB uninstallation succeeded!\n");
-
+    RTMsgInfo("USB uninstallation succeeded!");
     return 0;
 }
 
-/** The support service name. */
-#define SERVICE_NAME    "VBoxUSBMon"
-/** Win32 Device name. */
-#define DEVICE_NAME     "\\\\.\\VBoxUSBMon"
-/** NT Device name. */
-#define DEVICE_NAME_NT   L"\\Device\\VBoxUSBMon"
-/** Win32 Symlink name. */
-#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxUSBMon"
 
 /**
  * Stops a possibly running service.
@@ -118,7 +126,7 @@ int __cdecl main(int argc, char **argv)
  * @returns 0 on success.
  * @returns -1 on failure.
  */
-int usblibOsStopService(void)
+static int usblibOsStopService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
@@ -175,7 +183,7 @@ int usblibOsStopService(void)
  * @returns 0 on success.
  * @returns -1 on failure.
  */
-int usblibOsDeleteService(void)
+static int usblibOsDeleteService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.

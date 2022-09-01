@@ -111,7 +111,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
 
  ifdef VBOX_WITH_VSCSI_SSC
   VBoxDDU_SOURCES        += Storage/VSCSI/VSCSILunSsc.cpp
-  VBoxDDU_DEFS		 += VBOX_WITH_VSCSI_SSC
+  VBoxDDU_DEFS	          += VBOX_WITH_VSCSI_SSC
  endif
  VBoxDDU_LIBS             = \
  	$(LIB_RUNTIME) \
@@ -125,7 +125,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
   VBoxDDU_LIBS           += \
  	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)
   VBoxDDU_LIBS.win       += \
- 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfgDll$(VBOX_SUFF_LIB)
  endif
  VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
  if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
@@ -908,7 +908,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  endif
 
  ifdef VBOX_WITH_NETFLT
-  VBoxDD_LIBS.win       += $(PATH_STAGE_LIB)/WinNetConfig.lib
+  VBoxDD_LIBS.win       += $(PATH_STAGE_LIB)/WinNetConfigDll$(VBOX_SUFF_LIB)
  endif
 
  ifeq ($(KBUILD_TARGET),solaris)

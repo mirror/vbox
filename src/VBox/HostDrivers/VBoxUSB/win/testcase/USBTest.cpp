@@ -41,20 +41,25 @@
 #include <iprt/win/windows.h>
 #include <iprt/win/setupapi.h>
 #include <newdev.h>
+
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
-#include <VBox/err.h>
-#include <stdio.h>
 #include <VBox/usblib.h>
 #include <VBox/VBoxDrvCfg-win.h>
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Handle to the open device. */
 static HANDLE   g_hUSBMonitor = INVALID_HANDLE_VALUE;
 /** Flags whether or not we started the service. */
 static bool     g_fStartedService = false;
+
 
 /**
  * Attempts to start the service, creating it if necessary.
@@ -82,7 +87,8 @@ int usbMonStartService(void)
  */
 int usbMonStopService(void)
 {
-    printf("usbMonStopService\n");
+    RTPrintf("usbMonStopService\n");
+
     /*
      * Assume it didn't exist, so we'll create the service.
      */
@@ -140,7 +146,7 @@ int usbMonReleaseDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision
     USBSUP_RELEASE release;
     DWORD          cbReturned = 0;
 
-    printf("usbLibReleaseDevice %x %x %x\n", usVendorId, usProductId, usRevision);
+    RTPrintf("usbLibReleaseDevice %x %x %x\n", usVendorId, usProductId, usRevision);
 
     release.usVendorId  = usVendorId;
     release.usProductId = usProductId;
@@ -173,7 +179,7 @@ int usbMonInsertFilter(USHORT usVendorId, USHORT usProductId, USHORT usRevision,
 
     Assert(g_hUSBMonitor);
 
-    printf("usblibInsertFilter %04X %04X %04X\n", usVendorId, usProductId, usRevision);
+    RTPrintf("usblibInsertFilter %04X %04X %04X\n", usVendorId, usProductId, usRevision);
 
     USBFilterInit(&filter, USBFILTERTYPE_CAPTURE);
     USBFilterSetNumExact(&filter, USBFILTERIDX_VENDOR_ID, usVendorId, true);
@@ -221,7 +227,7 @@ int usbMonRemoveFilter (void *aID)
 
     Assert(g_hUSBMonitor);
 
-    printf("usblibRemoveFilter %p\n", aID);
+    RTPrintf("usblibRemoveFilter %p\n", aID);
 
     uId = (uintptr_t)aID;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_REMOVE_FILTER, &uId, sizeof(uId),  NULL, 0,&cbReturned, NULL))
@@ -243,7 +249,7 @@ int usbMonitorInit()
     USBSUP_VERSION version = {0};
     DWORD          cbReturned;
 
-    printf("usbproxy: usbLibInit\n");
+    RTPrintf("usbproxy: usbLibInit\n");
 
     g_hUSBMonitor = CreateFile (USBMON_DEVICE_NAME,
                                GENERIC_READ | GENERIC_WRITE,
@@ -268,7 +274,7 @@ int usbMonitorInit()
         if (g_hUSBMonitor == INVALID_HANDLE_VALUE)
         {
             /* AssertFailed(); */
-            printf("usbproxy: Unable to open filter driver!! (rc=%lu)\n", GetLastError());
+            RTPrintf("usbproxy: Unable to open filter driver!! (rc=%lu)\n", GetLastError());
             rc = VERR_FILE_NOT_FOUND;
             goto failure;
         }
@@ -280,7 +286,7 @@ int usbMonitorInit()
     cbReturned = 0;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
     {
-        printf("usbproxy: Unable to query filter version!! (rc=%lu)\n", GetLastError());
+        RTPrintf("usbproxy: Unable to query filter version!! (rc=%lu)\n", GetLastError());
         rc = VERR_VERSION_MISMATCH;
         goto failure;
     }
@@ -291,7 +297,7 @@ int usbMonitorInit()
 #endif
         )
     {
-        printf("usbproxy: Filter driver version mismatch!!\n");
+        RTPrintf("usbproxy: Filter driver version mismatch!!\n");
         rc = VERR_VERSION_MISMATCH;
         goto failure;
     }
@@ -343,7 +349,7 @@ int __cdecl main(int argc, char **argv)
     int c;
     RT_NOREF2(argc, argv);
 
-    printf("USB test\n");
+    RTPrintf("USB test\n");
 
     rc = usbMonitorInit();
     AssertRC(rc);
@@ -354,17 +360,17 @@ int __cdecl main(int argc, char **argv)
     usbMonInsertFilter(0x0A16, 0x2499, 0x0100, &pId2);
     usbMonInsertFilter(0x80EE, 0x0030, 0x0110, &pId3);
 
-    printf("Waiting to capture devices... enter 'r' to run filters\n");
-    c = getchar();
+    RTPrintf("Waiting to capture devices... enter 'r' to run filters\n");
+    c = RTStrmGetCh(g_pStdIn);
     if (c == 'r')
     {
         usbMonRunFilters();
-        printf("Waiting to capture devices...\n");
-        getchar();  /* eat the '\n' */
-        getchar();  /* wait for more input */
+        RTPrintf("Waiting to capture devices...\n");
+        RTStrmGetCh(g_pStdIn);  /* eat the '\n' */
+        RTStrmGetCh(g_pStdIn);  /* wait for more input */
     }
 
-    printf("Releasing device\n");
+    RTPrintf("Releasing device\n");
     usbMonReleaseDevice(0xA16, 0x2499, 0x100);
 
     usbMonRemoveFilter(pId1);
@@ -375,3 +381,4 @@ int __cdecl main(int argc, char **argv)
 
     return 0;
 }
+

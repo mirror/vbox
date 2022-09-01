@@ -85,36 +85,40 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinReleaseINetCfg(IN INetCfg *pNetCfg, IN 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetComponentByGuid(IN INetCfg *pNc, IN const GUID *pguidClass,
                                                             IN const GUID * pComponentGuid, OUT INetCfgComponent **ppncc);
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc, IN LPCWSTR const * apInfFullPaths, IN UINT cInfFullPaths);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc, IN LPCWSTR const *pwszInfFullPaths, IN UINT cInfFullPaths);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltUninstall(IN INetCfg *pNc);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfInstall(IN INetCfg *pNc, IN LPCWSTR const pInfFullPath);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfInstall(IN INetCfg *pNc, IN LPCWSTR const pwszInfFullPath);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfUninstall(IN INetCfg *pNc);
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPCWSTR pwszId);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpInstall(IN INetCfg *pNc,IN LPCWSTR const pInfFullPath);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpInstall(IN INetCfg *pNc,IN LPCWSTR const pwszInfFullPath);
 
 #ifndef VBOXNETCFG_DELAYEDRENAME
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile, IN BSTR bstrDesiredName,
-                                                                        OUT GUID *pGuid, OUT BSTR *lppszName,
-                                                                        OUT BSTR *pErrMsg);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pwszInfPath, IN bool fIsInfPathFile,
+                                                                        IN BSTR pBstrDesiredName,
+                                                                        OUT GUID *pGuid, OUT BSTR *pBstrName, OUT BSTR *pErrMsg);
 #else /* VBOXNETCFG_DELAYEDRENAME */
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile, IN BSTR bstrDesiredName,
-                                                                        OUT GUID *pGuid, OUT BSTR *lppszId,
-                                                                        OUT BSTR *pErrMsg);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pwszInfPath, IN bool fIsInfPathFile,
+                                                                        IN BSTR pBstrDesiredName,
+                                                                        OUT GUID *pGuid, OUT BSTR *pBstrId, OUT BSTR *pErrMsg);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID *pGuid, IN LPCWSTR pszId,  OUT BSTR *pDevName);
 #endif /* VBOXNETCFG_DELAYEDRENAME */
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pbRebootRequired, LPCWSTR pcsxwId);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pfRebootRequired, LPCWSTR pcsxwId);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const GUID *pGUID, OUT BSTR *pErrMsg);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(IN LPCWSTR lpszPnPId);
 
-typedef enum
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(IN PCWSTR pwszDevName, OUT WCHAR *pwszBuf,
+                                                                   IN ULONG cwcBuf, OUT PULONG pcwcNeeded);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection(IN LPWSTR pwszGuid, IN PCWSTR pwszNewName);
+
+typedef enum VBOXNECTFGWINPROPCHANGE_TYPE_T
 {
     VBOXNECTFGWINPROPCHANGE_TYPE_UNDEFINED = 0,
     VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE,
     VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE
-} VBOXNECTFGWINPROPCHANGE_TYPE;
+} VBOXNECTFGWINPROPCHANGE_TYPE_T;
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR lpszPnPId, VBOXNECTFGWINPROPCHANGE_TYPE enmPcType);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR lpszPnPId, VBOXNECTFGWINPROPCHANGE_TYPE_T enmPcType);
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(OUT PULONG pNetIp, OUT PULONG pNetMask);
 

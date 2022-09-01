@@ -102,6 +102,10 @@ ifndef VBOX_INSTALLER_LANGUAGES
  VBOX_INSTALLER_LANGUAGES  += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
+# Aliases for VBOX_SIGN_FILE_FN that allows better control of the MSI and MSM signing.
+VBOX_SIGN_MSI_FN ?= $(VBOX_SIGN_FILE_FN)
+VBOX_SIGN_MSM_FN ?= $(VBOX_SIGN_FILE_FN)
+VBOX_SIGN_CAB_FN ?= $(VBOX_SIGN_FILE_FN)
 
 #
 # List of merge modules to use.
@@ -568,7 +572,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm: \
 		$$< \
 		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
 	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst
-	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
+	$(call VBOX_SIGN_MSM_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
 # Create repack script for this step.
 	$(APPEND) -tn "$$(VBOX_WIN_INST_REPACK_DIR)/2-link-VBoxMerge$(module)_$(lang).cmd" \
        	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
@@ -1126,7 +1130,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 
 	$(REDIRECT) -C $(@D) -- cscript.exe /nologo $(VBOX_PATH_WISUBSTG) $(@F)
 	$(REDIRECT) -C $(@D) -- cscript.exe /nologo $(VBOX_PATH_WISUMINFO) $@ $(VBOX_INS_PROD_LANG)
-	$(call VBOX_SIGN_FILE_FN,$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
+	$(call VBOX_SIGN_MSI_FN,$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
 
 # Create repack script for this step.
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/3-multilingual-$(PACKAGE_NAME_LANG).cmd" \
@@ -1167,7 +1171,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 	$(QUIET)$(RM) -f -- $(wildcard $(subst r$(VBOX_SVN_REV),r*, \
 		$@ \
 		$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd ) )
-	$(if-expr defined(VBOX_WITH_MSM_INSTALL),,$(call VBOX_SIGN_FILE_FN,$(PACKAGE_NAME_MULTIARCH_COMMONCAB)))
+	$(if-expr defined(VBOX_WITH_MSM_INSTALL),,$(call VBOX_SIGN_CAB_FN,$(PACKAGE_NAME_MULTIARCH_COMMONCAB)))
 	$(REDIRECT) -C $(@D) -- \
 		$(VBoxStubBld_1_TARGET) -out $@ \
 			-target-x86 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \

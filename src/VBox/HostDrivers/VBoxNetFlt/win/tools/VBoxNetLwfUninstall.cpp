@@ -34,20 +34,31 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#include <VBox/VBoxNetCfg-win.h>
-#include <stdio.h>
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <VBox/VBoxNetCfg-win.h>
+
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <iprt/utf16.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOX_NETCFG_APP_NAME L"NetLwfUninstall"
 #define VBOX_NETLWF_RETRIES 10
 
+
 static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", pszString);
+    RTMsgInfo("%s", pszString);
 }
 
 static int VBoxNetLwfUninstall()
 {
-    INetCfg *pnc;
     int rcExit = RTEXITCODE_FAILURE;
 
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
@@ -58,17 +69,18 @@ static int VBoxNetLwfUninstall()
         for (int i = 0;; i++)
         {
             LPWSTR pwszLockedBy = NULL;
+            INetCfg *pnc = NULL;
             hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETCFG_APP_NAME, 10000, &pwszLockedBy);
             if (hr == S_OK)
             {
                 hr = VBoxNetCfgWinNetLwfUninstall(pnc);
                 if (hr == S_OK)
                 {
-                    wprintf(L"uninstalled successfully\n");
+                    RTMsgInfo("uninstalled successfully!");
                     rcExit = RTEXITCODE_SUCCESS;
                 }
                 else
-                    wprintf(L"error uninstalling VBoxNetLwf (%#lx)\n", hr);
+                    RTMsgError("error uninstalling VBoxNetLwf: %Rhrc");
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
                 break;
@@ -76,22 +88,22 @@ static int VBoxNetLwfUninstall()
 
             if (hr == NETCFG_E_NO_WRITE_LOCK && pwszLockedBy)
             {
-                if (i < VBOX_NETLWF_RETRIES && !wcscmp(pwszLockedBy, L"6to4svc.dll"))
+                if (i < VBOX_NETLWF_RETRIES && RTUtf16ICmpAscii(pwszLockedBy, "6to4svc.dll") == 0)
                 {
-                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", i + 1, VBOX_NETLWF_RETRIES);
+                    RTMsgInfo("6to4svc.dll is holding the lock - retry %d out of %d ...", i + 1, VBOX_NETLWF_RETRIES);
                     CoTaskMemFree(pwszLockedBy);
                 }
                 else
                 {
-                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry uninstalling\n",
-                             pwszLockedBy);
+                    RTMsgError("Write lock is owned by another application (%ls), close the application and retry uninstalling",
+                               pwszLockedBy);
                     CoTaskMemFree(pwszLockedBy);
                     break;
                 }
             }
             else
             {
-                wprintf(L"Error getting the INetCfg interface (%#lx)\n", hr);
+                RTMsgError("Failed getting the INetCfg interface: %Rhrc", hr);
                 break;
             }
         }
@@ -99,7 +111,7 @@ static int VBoxNetLwfUninstall()
         CoUninitialize();
     }
     else
-        wprintf(L"Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -108,6 +120,11 @@ static int VBoxNetLwfUninstall()
 
 int __cdecl main(int argc, char **argv)
 {
-    RT_NOREF2(argc, argv);
+    RTR3InitExeNoArguments(0);
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "This utility takes no arguments\n");
+    NOREF(argv);
+
     return VBoxNetLwfUninstall();
 }
+

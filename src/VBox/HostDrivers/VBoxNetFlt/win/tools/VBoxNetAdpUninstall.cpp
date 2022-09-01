@@ -34,29 +34,40 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <VBox/VBoxNetCfg-win.h>
 #include <VBox/VBoxDrvCfg-win.h>
-#include <stdio.h>
 
 #include <devguid.h>
 
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifdef NDIS60
 # define VBOX_NETADP_HWID L"sun_VBoxNetAdp6"
 #else
 # define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
 #endif
 
+
 static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", pszString);
+    RTMsgInfo("%s", pszString);
 }
 
 static int VBoxNetAdpUninstall(void)
 {
+    RTMsgInfo("Uninstalling all Host-Only interfaces ...");
+
     int rcExit = RTEXITCODE_FAILURE;
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
-
-    printf("uninstalling all Host-Only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
     if (hr == S_OK)
@@ -66,18 +77,18 @@ static int VBoxNetAdpUninstall(void)
         {
             hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if (hr == S_OK)
-                printf("uninstalled successfully\n");
+                RTMsgInfo("Uninstalled successfully!");
             else
-                printf("uninstalled successfully, but failed to remove infs\n");
+                RTMsgError("uninstalled successfully, but failed to remove infs (%Rhrc)\n", hr);
             rcExit = RTEXITCODE_SUCCESS;
         }
         else
-            printf("uninstall failed, hr=%#lx\n", hr);
+            RTMsgError("uninstall failed: %Rhrc", hr);
 
         CoUninitialize();
     }
     else
-        wprintf(L"Error initializing COM (%#lx)\n", hr);
+        RTMsgError("Failed initializing COM: %Rhrc", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
@@ -86,6 +97,11 @@ static int VBoxNetAdpUninstall(void)
 
 int __cdecl main(int argc, char **argv)
 {
-    RT_NOREF2(argc, argv);
+    RTR3InitExeNoArguments(0);
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "This utility takes no arguments\n");
+    NOREF(argv);
+
     return VBoxNetAdpUninstall();
 }
+
