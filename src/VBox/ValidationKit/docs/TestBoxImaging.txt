@@ -6,7 +6,7 @@ Testbox Imaging (Backup / Restore)
 Introduction
 ------------
 
-This document is explores deloying a very simple drive imaging solution to help
+This document is explores deploying a very simple drive imaging solution to help
 avoid needing to manually reinstall testboxes when a disk goes bust or the OS
 install seems to be corrupted.
 
@@ -99,7 +99,7 @@ Perform the following copy operations::
   cp -R /usr/lib/syslinux/modules/efi64 /mnt/testbox-tftp/
 
 
-For simplicitly, all the testboxes boot using good old fashioned BIOS, no EFI.
+For simplicity, all the testboxes boot using good old fashioned BIOS, no EFI.
 However, it doesn't really hurt to be prepared.
 
 The PXELINUX related files goes in the root of the testbox-tftp share.  (As
@@ -366,5 +366,3 @@ Troubleshooting
 
 :Status: $Id$
 :Copyright: Copyright (C) 2010-2020 Oracle Corporation.
-
-

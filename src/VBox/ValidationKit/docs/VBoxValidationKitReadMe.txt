@@ -70,7 +70,7 @@ Directory Layout
 
 ./bootsectors/
     Boot sector test environment.  This allows creating floppy images in
-    assembly that tests specific CPU or device behaviour.  Most tests can be
+    assembly that tests specific CPU or device behavior.  Most tests can be
     put on a USB stick, floppy or similar and booted up on real hardware for
     comparison.  All floppy images can be used for manual testing by developers
     and most will be used by test drivers (./tests/*/td*.py) sooner or later.
@@ -111,4 +111,3 @@ Directory Layout
 
 :Status: $Id$
 :Copyright: Copyright (C) 2010-2020 Oracle Corporation.
-

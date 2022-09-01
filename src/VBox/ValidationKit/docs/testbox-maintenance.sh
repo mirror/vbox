@@ -1,7 +1,7 @@
 #!/bin/bash
 # $Id$
 ## @file
-# VirtualBox Validation Kit - testbox mainenance service
+# VirtualBox Validation Kit - testbox maintenance service
 #
 
 #
@@ -407,4 +407,3 @@ if test -n "${MY_REBOOT_WHEN_DONE}"; then
     reboot
 fi
 exit 0
-

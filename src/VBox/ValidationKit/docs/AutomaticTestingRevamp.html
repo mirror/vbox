@@ -3,8 +3,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
-<title></title>
+<meta name="generator" content="Docutils 0.18: http://docutils.sourceforge.net/" />
+<title>AutomaticTestingRevamp.txt</title>
 <style type="text/css">
 
 /*
@@ -36,6 +36,14 @@ table.borderless td, table.borderless th {
 
 .hidden {
   display: none }
+
+.subscript {
+  vertical-align: sub;
+  font-size: smaller }
+
+.superscript {
+  vertical-align: super;
+  font-size: smaller }
 
 a.toc-backref {
   text-decoration: none ;
@@ -161,18 +169,23 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left, object.align-left {
+img.align-left, .figure.align-left, object.align-left, table.align-left {
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right, object.align-right {
+img.align-right, .figure.align-right, object.align-right, table.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
 
 img.align-center, .figure.align-center, object.align-center {
   display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.align-center {
   margin-left: auto;
   margin-right: auto;
 }
@@ -193,6 +206,15 @@ div.align-right {
 
 /* div.align-center * { */
 /*   text-align: left } */
+
+.align-top    {
+  vertical-align: top }
+
+.align-middle {
+  vertical-align: middle }
+
+.align-bottom {
+  vertical-align: bottom }
 
 ol.simple, ul.simple {
   margin-bottom: 1em }
@@ -541,12 +563,12 @@ This is not required by the local reporter.</dd>
 <h2>Testbox Environment: Core Utilities</h2>
 <p>The testbox will not provide the typical unix /bin and /usr/bin utilities.  In
 other words, cygwin will not be used on Windows!</p>
-<p>The testbox will provide the unixy utilties that ships with kBuild and possibly
+<p>The testbox will provide the unixy utilities that ships with kBuild and possibly
 some additional ones from tools/<em>.</em>/bin in the VirtualBox tree (wget, unzip,
-zip, and so on).  The test drivers will avoid invoking any of these utilites
+zip, and so on).  The test drivers will avoid invoking any of these utilities
 directly and instead rely on generic utility methods in the test driver
 framework.  That way we can more easily reimplement the functionality of the
-core utilites and drop the dependency on them.  It also allows us to quickly
+core utilities and drop the dependency on them.  It also allows us to quickly
 work around platform specific oddities and bugs.</p>
 </div>
 <div class="section" id="test-drivers">
@@ -554,7 +576,7 @@ work around platform specific oddities and bugs.</p>
 <p>The test drivers are programs that will do the actual testing.  In addition to
 run under the testbox script, they can be executed in the VirtualBox development
 environment.  This is important for bug analysis and for simplifying local
-testing by the developers before commiting changes.  It also means the test
+testing by the developers before committing changes.  It also means the test
 drivers can be developed locally in the VirtualBox development environment.</p>
 <p>The main difference between executing a driver under the testbox script and
 running it manually is that there is no test manager in the latter case.  The
@@ -570,16 +592,15 @@ dropped later on when a new test manager is ready.</p>
 test driver needs to do.  Sharing code is essential to easing test driver
 development as well as reducing their complexity.  The framework will contain:</p>
 <blockquote>
-<ul>
-<li><p class="first">A generic way of submitting output.  This will be a generic interface with
+<ul class="simple">
+<li>A generic way of submitting output.  This will be a generic interface with
 multiple implementation, the TESTBOX_REPORTER environment variable
 will decide which of them to use.  The interface will have very specific
 methods to allow the reporter to do a best possible job in reporting the
-results to the test manager.</p>
-</li>
+results to the test manager.</li>
 <li><dl class="first docutils">
 <dt>Helpers for typical tasks, like:</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>Copying files.</li>
 <li>Deleting files, directory trees and scratch space.</li>
 <li>Unzipping files.</li>
@@ -589,12 +610,9 @@ results to the test manager.</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">Helpers for installing and uninstalling VirtualBox.</p>
-</li>
-<li><p class="first">Helpers for defining VMs. (The VBox API where available.)</p>
-</li>
-<li><p class="first">Helpers for controlling VMs. (The VBox API where available.)</p>
-</li>
+<li>Helpers for installing and uninstalling VirtualBox.</li>
+<li>Helpers for defining VMs. (The VBox API where available.)</li>
+<li>Helpers for controlling VMs. (The VBox API where available.)</li>
 </ul>
 </blockquote>
 <p>The VirtualBox bits will be separate from the more generic ones, simply because
@@ -631,65 +649,49 @@ makes up the test manager.</p>
 <h1>Test Manager: Requirements</h1>
 <p>List of requirements:</p>
 <blockquote>
-<ul>
-<li><p class="first">Two level testing - L1 quick smoke tests and L2 longer tests performed on
-builds passing L1.  (Klaus (IIRC) ment this could be realized using
-test dependency.)</p>
-</li>
-<li><p class="first">Black listing builds (by revision or similar) known to be bad.</p>
-</li>
-<li><p class="first">Distinguish between build types so we can do a portion of the testing with
-strict builds.</p>
-</li>
-<li><p class="first">Easy to re-configure build source for testing different branch or for
-testing a release candidate. (Directory based is fine.)</p>
-</li>
-<li><p class="first">Useful to be able to partition testboxes (run specific builds on some
-boxes, let an engineer have a few boxes for a while).</p>
-</li>
-<li><p class="first">Interation with ILOM/...: reset systems.</p>
-</li>
-<li><p class="first">Be able to suspend testing on selected testboxes when doing maintance
+<ul class="simple">
+<li>Two level testing - L1 quick smoke tests and L2 longer tests performed on
+builds passing L1.  (Klaus (IIRC) meant this could be realized using
+test dependency.)</li>
+<li>Black listing builds (by revision or similar) known to be bad.</li>
+<li>Distinguish between build types so we can do a portion of the testing with
+strict builds.</li>
+<li>Easy to re-configure build source for testing different branch or for
+testing a release candidate. (Directory based is fine.)</li>
+<li>Useful to be able to partition testboxes (run specific builds on some
+boxes, let an engineer have a few boxes for a while).</li>
+<li>Interaction with ILOM/...: reset systems.</li>
+<li>Be able to suspend testing on selected testboxes when doing maintenance
 (where automatically resuming testing on reboot is undesired) or similar
-activity.</p>
-</li>
-<li><p class="first">Abort testing on seleced testboxes.</p>
-</li>
-<li><p class="first">Scheduling of tests requiring more than one testbox.</p>
-</li>
-<li><p class="first">Scheduling of tests that cannot be executing concurrently on several
-machines because of some global resource like an iSCSI target.</p>
-</li>
-<li><p class="first">Jump the scheduling queue.  Scheduling of specified test the next time a
+activity.</li>
+<li>Abort testing on selected testboxes.</li>
+<li>Scheduling of tests requiring more than one testbox.</li>
+<li>Scheduling of tests that cannot be executing concurrently on several
+machines because of some global resource like an iSCSI target.</li>
+<li>Jump the scheduling queue.  Scheduling of specified test the next time a
 testbox is available (optionally specifying which testbox to schedule it
-on).</p>
-</li>
+on).</li>
 <li><dl class="first docutils">
 <dt>Configure tests with variable configuration to get better coverage. Two modes:</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>TM generates the permutations based on one or more sets of test script arguments.</li>
-<li>Each configuration permuation is specified manually.</li>
+<li>Each configuration permutation is specified manually.</li>
 </ul>
 </dd>
 </dl>
 </li>
-<li><p class="first">Test specification needs to be flexible (select tests, disable test, test
-scheduling (run certain tests nightly), ... ).</p>
-</li>
-<li><p class="first">Test scheduling by hour+weekday and by priority.</p>
-</li>
-<li><p class="first">Test dependencies (test A depends on test B being successful).</p>
-</li>
-<li><p class="first">Historize all configuration data, in particular test configs (permutations
-included) and testboxes.</p>
-</li>
-<li><p class="first">Test sets has at a minimum a build reference, a testbox reference and a
-primary log associated with it.</p>
-</li>
+<li>Test specification needs to be flexible (select tests, disable test, test
+scheduling (run certain tests nightly), ... ).</li>
+<li>Test scheduling by hour+weekday and by priority.</li>
+<li>Test dependencies (test A depends on test B being successful).</li>
+<li>Historize all configuration data, in particular test configs (permutations
+included) and testboxes.</li>
+<li>Test sets has at a minimum a build reference, a testbox reference and a
+primary log associated with it.</li>
 <li><dl class="first docutils">
 <dt>Test sets stores further result as a recursive collection of:</dt>
-<dd><ul class="first last simple">
-<li>hierachical subtest name (slash sep)</li>
+<dd><ul class="first last">
+<li>hierarchical subtest name (slash sep)</li>
 <li>test parameters / config</li>
 <li>bool fail/succ</li>
 <li>attributes (typed?)</li>
@@ -702,12 +704,10 @@ primary log associated with it.</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">The test sets database structure needs to designed such that data mining
-can be done in an efficient manner.</p>
-</li>
-<li><p class="first">Presentation/analysis: graphs!, categorize bugs, columns reorganizing
-grouped by test (hierarchical), overviews, result for last day.</p>
-</li>
+<li>The test sets database structure needs to designed such that data mining
+can be done in an efficient manner.</li>
+<li>Presentation/analysis: graphs!, categorize bugs, columns reorganizing
+grouped by test (hierarchical), overviews, result for last day.</li>
 </ul>
 </blockquote>
 </div>
@@ -762,7 +762,7 @@ tinderbox driven testing.  It's best described as a best effort continuous
 integration scheduler.  Meaning, it will always use the latest build suitable
 for a testcase.  It will schedule on a testcase level, using the combined
 priority of the testcase in the test group and the test group with the testbox
-partition, trying to spread the test case argument varation out accordingly
+partition, trying to spread the test case argument variation out accordingly
 over the whole scheduilng queue.  Which argument variation to start with, is
 not undefined (random would be best).</p>
 <p>Later, we may add other schedulers as needed.</p>
@@ -790,14 +790,14 @@ understand and make better use of the results.</p>
 ( <a class="reference external" href="http://en.wikipedia.org/wiki/Log_trigger">http://en.wikipedia.org/wiki/Log_trigger</a> ).  We use tuple-versioning in
 this database, with 'effective' as start date field name and 'expire' as
 the end (exclusive).</p>
-<p>Tuple-versioning has a shortcomming wrt to keys, both primary and foreign.
+<p>Tuple-versioning has a shortcoming wrt to keys, both primary and foreign.
 The primary key of a table employing tuple-versioning is really
 'id' + 'valid_period', where the latter is expressed using two fields
 ([effective...expire-1]).  Only, how do you tell the database engine that
 it should not allow overlapping valid_periods?  Useful suggestions are
 welcomed. :-)</p>
 <p>Foreign key references to a table using tuple-versioning is running into
-trouble because of the time axsis and that to our knowledge foreign keys
+trouble because of the time axis and that to our knowledge foreign keys
 must reference exactly one row in the other table.  When time is involved
 what we wish to tell the database is that at any given time, there actually
 is exactly one row we want to match in the other table, only we've no idea
@@ -944,7 +944,7 @@ will fix the problem (see above)</p>
 </dl>
 </li>
 <li><p class="first">If the testbox was marked as disabled, respond with an IDLE command to the
-testbox [done]. (Note! Must do this after TestBoxStatuses maintainance from
+testbox [done]. (Note! Must do this after TestBoxStatuses maintenance from
 point 2, or abandoned tests won't be cleaned up after a testbox is disabled.)</p>
 </li>
 <li><p class="first">Consider testcases in the scheduling queue, pick the first one which the
@@ -1066,7 +1066,7 @@ respond, the command will be repeated the next time it asks for work.</p>
 forever and have testboxes doing nothing for hours while waiting for partners.
 So, the gathering has a reasonable timeout (imagine something like 20-30 mins).</p>
 <p>Also, we need some way of dealing with 'abort' and 'reboot' commands being
-issued while waiting.  The easy way out is pretent it's a time out.</p>
+issued while waiting.  The easy way out is pretend it's a time out.</p>
 <p>When changing the status to 'gang-timeout' we have to be careful.  First of all,
 we need to exclusively lock the SchedQueues and TestBoxStatuses (in that order)
 and re-query our status.  If it changed redo the checks in scenario #2 point 2.</p>
@@ -1102,13 +1102,13 @@ state.  Once there are none, we continue closing the testset and such.</p>
 <h2>#9 - Cleaning Up Abandoned Testcase</h2>
 <p>This is a subfunction of scenario #1 and #2.  The actions taken are the same in
 both situations.  The precondition for taking this path is that the row in the
-testboxstatus table is refering to a testset (i.e. testset_id is not NULL).</p>
+testboxstatus table is referring to a testset (i.e. testset_id is not NULL).</p>
 <p>Actions:</p>
-<ol class="arabic">
+<ol class="arabic simple">
 <li><dl class="first docutils">
 <dt>If the testset is incomplete, we need to completed:</dt>
-<dd><ol class="first last loweralpha simple">
-<li>Add a message to the root TestResults row, creating one if necesary,
+<dd><ol class="first last loweralpha">
+<li>Add a message to the root TestResults row, creating one if necessary,
 that explains that the test was abandoned.  This is done
 by inserting/finding the string into/in TestResultStrTab and adding
 a row to TestResultMsgs with idStrMsg set to that string id and
@@ -1118,11 +1118,9 @@ enmLevel set to 'failure'.</li>
 </dd>
 </dl>
 </li>
-<li><p class="first">Free any global resources referenced by the test set.  This is done by
-deleting all rows in GlobalResourceStatuses matching the testbox id.</p>
-</li>
-<li><p class="first">Set the idTestSet to NULL in the TestBoxStatuses row.</p>
-</li>
+<li>Free any global resources referenced by the test set.  This is done by
+deleting all rows in GlobalResourceStatuses matching the testbox id.</li>
+<li>Set the idTestSet to NULL in the TestBoxStatuses row.</li>
 </ol>
 </div>
 <div class="section" id="cleaning-up-a-disabled-dead-testbox">
@@ -1228,7 +1226,7 @@ the tinderbox.</li>
 </div>
 <div class="section" id="milestone-3">
 <h2>Milestone #3</h2>
-<p>The goal for this milestone is configuration and converting current testscases,
+<p>The goal for this milestone is configuration and converting current testcases,
 the result will be the a minimal test deployment (4-5 new testboxes).</p>
 <p>Tasks in somewhat prioritized order:</p>
 <blockquote>
@@ -1257,7 +1255,7 @@ have been addressed, we will probably go for full deployment.</p>
 <p>Beyond this point we will need to improve reporting and analysis.  There may be
 configuration aspects needing reporting as well.</p>
 <p>Once deployed, a golden rule will be that all new features shall have test
-coverage.  Preferrably, implemented by someone else and prior to the feature
+coverage.  Preferably, implemented by someone else and prior to the feature
 implementation.</p>
 </div>
 </div>
@@ -1284,10 +1282,10 @@ smoother.</li>
 </div>
 <div class="section" id="raw-input">
 <h2>2009-07-16 Raw Input</h2>
-<ul>
+<ul class="simple">
 <li><dl class="first docutils">
 <dt>test set. recursive collection of:</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>hierachical subtest name (slash sep)</li>
 <li>test parameters / config</li>
 <li>bool fail/succ</li>
@@ -1301,11 +1299,10 @@ smoother.</li>
 </dd>
 </dl>
 </li>
-<li><p class="first">client package (zip) dl from server (maybe client caching)</p>
-</li>
+<li>client package (zip) dl from server (maybe client caching)</li>
 <li><dl class="first docutils">
 <dt>thoughts on bits to do at once.</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>We <em>really</em> need the basic bits ASAP.</li>
 <li>client -&gt; support for test driver</li>
 <li>server -&gt; controls configs</li>
@@ -1316,7 +1313,7 @@ smoother.</li>
 </li>
 </ul>
 </div>
-<div class="section" id="id1">
+<div class="section" id="raw-input-1">
 <h2>2009-07-15 Raw Input</h2>
 <ul class="simple">
 <li>testing should start automatically</li>
@@ -1333,7 +1330,7 @@ smoother.</li>
 <li>ability to run testcase locally (provided the VDI/ISO/whatever extra requirements can be met).</li>
 </ul>
 <hr class="docutils" />
-<table class="docutils footnote" frame="void" id="id2" rules="none">
+<table class="docutils footnote" frame="void" id="footnote-1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label">[1]</td><td>no such footnote</td></tr>
