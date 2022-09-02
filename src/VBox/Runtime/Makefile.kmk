@@ -1760,9 +1760,9 @@ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_
 			$$($(target)_SOURCES.$(bld_trg_cpu))\
 			$$($(target)_SOURCES.$(bld_type)) \
 			, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
-               $$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed \
-		| $$$$(dir $$$$@)
+               $$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed
 	$$(call MSG_GENERATE,$(target),$$@,)
+	$$(QUIET)$$(MKDIR) -p -- "$$(dir $$@)"
 	$$(QUIET)$$(APPEND) -tn "$$@" "$(target)_2_VBOX_NOCRT_ALIASES := \\"
 	$$(xargs $$(QUIET)$$(SED) -rn -f "$$(VBOX_PATH_RUNTIME_SRC)/nocrt-aliases.sed" --append "$$@" , $$(filter %.c %.cpp %.asm, $$^) )
 	$$(QUIET)$$(APPEND) -n "$$@" "" ""
