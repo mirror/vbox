@@ -1992,6 +1992,9 @@ ifdef VBOX_PATH_APP_DOCS
  CDEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
  endif
 endif
+if1of ($(KBUILD_TARGET), os2) # The gcc here is too old to grok #pragma once, instead it complains.
+ CDEFS += RT_WITHOUT_PRAGMA_ONCE
+endif
 CXXDEFS  += $(CDEFS)
 PCHDEFS  += $(CDEFS)
 OBJCDEFS += $(CDEFS)
