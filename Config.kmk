@@ -362,6 +362,12 @@ VBOX_WITH_NEW_VCC = 1
 VBOX_WITH_NEW_WINDOWS_SDK = 1
 # Select Windows 11 DDK.
 VBOX_WITH_NEW_WINDOWS_DDK = 1
+# Don't use the compiler CRT for statically linked modules, use IPRT with some
+# additional CRT functionality.
+# Note! This has only been tested with Visual C++ 2019.
+if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" != "asan"
+ VBOX_WITH_NOCRT_STATIC := 1
+endif
 
 ## @name Additions
 ## @{
