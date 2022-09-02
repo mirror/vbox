@@ -99,6 +99,61 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         print(sText);
         return True;
 
+    def _replaceFile(self, sDstFile, sSrcFile, fDryRun = False, fForce = False):
+        """
+        Replaces / moves a file safely by backing up the existing destination file (if any).
+
+        Returns success indicator.
+        """
+
+        # Rename the destination file first (if any).
+        sDstFileTmp = None;
+        if os.path.exists(sDstFile):
+            sDstFileTmp = sDstFile + ".bak";
+            if os.path.exists(sDstFileTmp):
+                if not fForce:
+                    print('Replace file: Warning: Temporary destination file "%s" already exists, skipping' % (sDstFileTmp,));
+                    return False;
+                else:
+                    try:
+                        os.remove(sDstFileTmp);
+                    except Exception as e:
+                        print('Replace file: Error deleting old temporary destination file "%s": %s' % (sDstFileTmp, e));
+                        return False;
+            try:
+                if not fDryRun:
+                    shutil.move(sDstFile, sDstFileTmp);
+            except Exception as e:
+                print('Replace file: Error moving old destination file "%s" to temporary file "%s": %s' \
+                      % (sDstFile, sDstFileTmp, e));
+                return False;
+
+        fRc = True;
+
+        try:
+            if not fDryRun:
+                shutil.move(sSrcFile, sDstFile);
+        except Exception as e:
+            print('Replace file: Error moving source file "%s" to destination "%s": %s' % (sSrcFile, sDstFile, e,));
+            fRc = False;
+
+        if sDstFileTmp:
+            if fRc: # Move succeeded, remove backup.
+                try:
+                    if not fDryRun:
+                        os.remove(sDstFileTmp);
+                except Exception as e:
+                    print('Replace file: Error deleting temporary destination file "%s": %s' % (sDstFileTmp, e));
+                    fRc = False;
+            else: # Final move failed, roll back.
+                try:
+                    if not fDryRun:
+                        shutil.move(sDstFileTmp, sDstFile);
+                except Exception as e:
+                    print('Replace file: Error restoring old destination file "%s": %s' % (sDstFile, e));
+                    fRc = False;
+        return fRc;
+
     def _processTestSetZip(self, idTestSet, sFile, sCurDir):
         """
         Worker for processDir.
@@ -147,7 +202,7 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                                                  day    = oCurFile.date_time[2],
                                                  hour   = oCurFile.date_time[3],
                                                  minute = oCurFile.date_time[4],
-                                                 second = oCurFile.date_time[5],);
+                                                 second = oCurFile.date_time[5]);
                             if tsFile < tsMaxAge:
                                 self.dprint('\tIs older than %d days (%s)' % (self.cOlderThanDays, tsFile))
                                 fDoRepack = False;
@@ -168,19 +223,10 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
 
                 oSrcZipFile.close();
 
-                try:
-                    self.dprint('Deleting ZIP file "%s"' % (sSrcZipFileAbs));
-                    if not self.fDryRun:
-                        os.remove(sSrcZipFileAbs);
-                except Exception as oXcpt:
-                    return (None, 'Error deleting ZIP file "%s": %s' % (sSrcZipFileAbs, oXcpt,), None);
-                try:
-                    self.dprint('Moving ZIP "%s" to "%s"' % (sDstZipFileAbs, sSrcZipFileAbs));
-                    if not self.fDryRun:
-                        shutil.move(sDstZipFileAbs, sSrcZipFileAbs);
-                except Exception as oXcpt5:
-                    return (None, 'Error moving temporary ZIP "%s" to original ZIP file "%s": %s' \
-                            % (sDstZipFileAbs, sSrcZipFileAbs, oXcpt5,), None);
+                if fRc:
+                    self.dprint('Moving file "%s" to "%s"' % (sDstZipFileAbs, sSrcZipFileAbs));
+                    fRc = self._replaceFile(sSrcZipFileAbs, sDstZipFileAbs, self.fDryRun);
+
             except Exception as oXcpt3:
                 return (None, 'Error creating temporary ZIP archive "%s": %s' % (sDstZipFileAbs, oXcpt3,), None);
         except Exception as oXcpt1:
