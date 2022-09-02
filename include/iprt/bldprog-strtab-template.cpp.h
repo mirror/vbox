@@ -84,7 +84,6 @@
 #include <string.h>
 
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
-# include <iprt/asm.h>
 # include <map>
 # include <iprt/sanitized/string>
 
@@ -185,6 +184,33 @@ typedef BLDPROGSTRTAB *PBLDPROGSTRTAB;
 #endif
 
 
+#ifdef BLDPROG_STRTAB_WITH_COMPRESSION
+
+/**
+ * Same as ASMBitTest.
+ *
+ * We cannot safely use ASMBitTest here because it must be inline, as this code
+ * is used to build RuntimeBldProg. */
+DECLINLINE(bool) BldProgBitIsSet(uint64_t const *pbmBitmap, size_t iBit)
+{
+    return RT_BOOL(pbmBitmap[iBit / 64] & RT_BIT_64(iBit % 64));
+}
+
+
+/**
+ * Same as ASMBitSet.
+ *
+ * We cannot safely use ASMBitSet here because it must be inline, as this code
+ * is used to build RuntimeBldProg.
+ */
+DECLINLINE(void) BldProgBitSet(uint64_t *pbmBitmap, size_t iBit)
+{
+    pbmBitmap[iBit / 64] |= RT_BIT_64(iBit % 64);
+}
+
+#endif
+
+
 /**
  * Initializes the strint table compiler.
  *
@@ -210,9 +236,9 @@ static bool BldProgStrTab_Init(PBLDPROGSTRTAB pThis, size_t cMaxStrings)
     pThis->cPendingStrings = 0;
     pThis->cMaxPendingStrings = cMaxStrings;
     memset(pThis->bmUsedChars, 0, sizeof(pThis->bmUsedChars));
-    ASMBitSet(pThis->bmUsedChars, 0);    /* Some parts of the code still thinks zero is a terminator, so don't use it for now. */
+    BldProgBitSet(pThis->bmUsedChars, 0);    /* Some parts of the code still thinks zero is a terminator, so don't use it for now. */
 # ifndef BLDPROG_STRTAB_PURE_ASCII
-    ASMBitSet(pThis->bmUsedChars, 0xff); /* Reserve escape byte for codepoints above 127. */
+    BldProgBitSet(pThis->bmUsedChars, 0xff); /* Reserve escape byte for codepoints above 127. */
 # endif
 #endif
 
@@ -320,7 +346,7 @@ static void bldProgStrTab_compressorAnalyzeString(PBLDPROGSTRTAB pThis, PBLDPROG
     const char *psz = pStr->pszString;
     char ch;
     while ((ch = *psz++) != '\0')
-        ASMBitSet(pThis->bmUsedChars, (uint8_t)ch);
+        BldProgBitSet(pThis->bmUsedChars, (uint8_t)ch);
 
     /*
      * For now we just consider words.
@@ -796,7 +822,7 @@ static bool bldProgStrTab_compressorDoStringCompression(PBLDPROGSTRTAB pThis, bo
     {
         char        szTmp[2] = { (char)i, '\0' };
         const char *psz      = szTmp;
-        if (   ASMBitTest(pThis->bmUsedChars, (int32_t)i)
+        if (   BldProgBitIsSet(pThis->bmUsedChars, i)
             || iDict >= SortedDict.m_cEntries)
         {
             /* character entry  */
@@ -1164,7 +1190,7 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
 # ifdef BLDPROG_STRTAB_WITH_COMPRESSION
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCompDict); i++)
     {
-        if (ASMBitTest(pThis->bmUsedChars, (int32_t)i)
+        if (BldProgBitIsSet(pThis->bmUsedChars, i)
             ? pThis->aCompDict[i].cchString != 1 : pThis->aCompDict[i].cchString < 1)
             abort();
         if (pThis->aCompDict[i].cchString > 1)
@@ -1186,7 +1212,7 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
         abCharCat[i] = 2;
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
     for (unsigned i = 0; i < 0x100; i++)
-        if (!ASMBitTest(pThis->bmUsedChars, (int32_t)i)) /* Encode table references using '\xYY'. */
+        if (!BldProgBitIsSet(pThis->bmUsedChars, i)) /* Encode table references using '\xYY'. */
             abCharCat[i] = 2;
 #endif
 
