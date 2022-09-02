@@ -42,6 +42,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/param.h>
@@ -50,7 +51,9 @@
 #include <iprt/mp.h>
 #include <iprt/asm.h>
 #include <iprt/getopt.h>
-#include <VBox/sup.h>
+#ifdef WITH_IPI_LOAD_GEN
+# include <VBox/sup.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -58,13 +61,6 @@
 *********************************************************************************************************************************/
 /** Whether the threads should quit or not. */
 static bool volatile    g_fQuit = false;
-static const char      *g_pszProgramName = NULL;
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-static int Error(const char *pszFormat, ...);
 
 
 static void LoadGenSpin(uint64_t cNanoSeconds)
@@ -85,6 +81,7 @@ static DECLCALLBACK(int) LoadGenSpinThreadFunction(RTTHREAD hThreadSelf, void *p
     return VINF_SUCCESS;
 }
 
+#ifdef WITH_IPI_LOAD_GEN
 
 static int LoadGenIpiInit(void)
 {
@@ -108,10 +105,10 @@ static int LoadGenIpiInit(void)
             /* done */
         }
         else
-            Error("SUPR3LoadServiceModule(%s): %Rrc\n", szPath, rc);
+            RTMsgError("SUPR3LoadServiceModule(%s): %Rrc", szPath, rc);
     }
     else
-        Error("RTPathAppPrivateArch: %Rrc\n", rc);
+        RTMsgError("RTPathAppPrivateArch: %Rrc", rc);
     return rc;
 }
 
@@ -125,7 +122,7 @@ static void LoadGenIpi(uint64_t cNanoSeconds)
                                     0 /* uOperation */, 1 /* cIpis */, NULL /* pReqHdr */);
         if (RT_FAILURE(rc))
         {
-            Error("SUPR3CallR0Service: %Rrc\n", rc);
+            RTMsgError("SUPR3CallR0Service: %Rrc", rc);
             break;
         }
     } while (RTTimeNanoTS() - u64StartTS < cNanoSeconds && !g_fQuit);
@@ -139,27 +136,7 @@ static DECLCALLBACK(int) LoadGenIpiThreadFunction(RTTHREAD hThreadSelf, void *pv
     return VINF_SUCCESS;
 }
 
-
-static int Error(const char *pszFormat, ...)
-{
-    va_list va;
-    RTStrmPrintf(g_pStdErr, "%s: error: ", g_pszProgramName);
-    va_start(va, pszFormat);
-    RTStrmPrintfV(g_pStdErr, pszFormat, va);
-    va_end(va);
-    return 1;
-}
-
-
-static int SyntaxError(const char *pszFormat, ...)
-{
-    va_list va;
-    RTStrmPrintf(g_pStdErr, "%s: syntax error: ", g_pszProgramName);
-    va_start(va, pszFormat);
-    RTStrmPrintfV(g_pStdErr, pszFormat, va);
-    va_end(va);
-    return 1;
-}
+#endif
 
 
 int main(int argc, char **argv)
@@ -172,7 +149,9 @@ int main(int argc, char **argv)
     }               s_aLoadTypes[] =
     {
         { "spin",   NULL,           LoadGenSpinThreadFunction },
+#ifdef WITH_IPI_LOAD_GEN
         { "ipi",    LoadGenIpiInit, LoadGenIpiThreadFunction },
+#endif
     };
     unsigned        iLoadType = 0;
     static RTTHREAD s_aThreads[256];
@@ -184,11 +163,6 @@ int main(int argc, char **argv)
     uint64_t        cNanoSeconds = UINT64_MAX;
 
     RTR3InitExe(argc, &argv, 0);
-
-    /*
-     * Set program name.
-     */
-    g_pszProgramName = RTPathFilename(argv[0]);
 
     /*
      * Parse arguments.
@@ -212,7 +186,7 @@ int main(int argc, char **argv)
             case 'n':
                 cThreads = ValueUnion.u64;
                 if (cThreads == 0 || cThreads > RT_ELEMENTS(s_aThreads))
-                    return SyntaxError("Requested number of threads, %RU32, is out of range (1..%d).\n",
+                    return RTMsgSyntax("Requested number of threads, %RU32, is out of range (1..%d).",
                                        cThreads, RT_ELEMENTS(s_aThreads) - 1);
                 break;
 
@@ -221,7 +195,7 @@ int main(int argc, char **argv)
                 char *psz;
                 rc = RTStrToUInt64Ex(ValueUnion.psz, &psz, 0, &cNanoSeconds);
                 if (RT_FAILURE(rc))
-                    return SyntaxError("Failed reading the alleged number '%s' (option '%s', rc=%Rrc).\n",
+                    return RTMsgSyntax("Failed reading the alleged number '%s' (option '%s', rc=%Rrc).",
                                        ValueUnion.psz, rc);
                 while (*psz == ' ' || *psz == '\t')
                     psz++;
@@ -239,10 +213,10 @@ int main(int argc, char **argv)
                     else if (!strcmp(psz, "h"))
                         u64Factor = UINT64_C(3600000000000);
                     else
-                        return SyntaxError("Unknown time suffix '%s'\n", psz);
+                        return RTMsgSyntax("Unknown time suffix '%s'", psz);
                     uint64_t u64 = cNanoSeconds * u64Factor;
                     if (u64 < cNanoSeconds || (u64 < u64Factor && u64))
-                        return SyntaxError("Time representation overflowed! (%RU64 * %RU64)\n",
+                        return RTMsgSyntax("Time representation overflowed! (%RU64 * %RU64)",
                                            psz, cNanoSeconds, u64Factor);
                     cNanoSeconds = u64;
                 }
@@ -274,14 +248,14 @@ int main(int argc, char **argv)
                         enmThreadType = RTTHREADTYPE_IO;
                     }
                     else
-                        return SyntaxError("can't grok thread type '%s'\n",
+                        return RTMsgSyntax("can't grok thread type '%s'",
                                            ValueUnion.psz);
                 }
                 else
                 {
                     enmThreadType = (RTTHREADTYPE)u32;
                     if (enmThreadType <= RTTHREADTYPE_INVALID || enmThreadType >= RTTHREADTYPE_END)
-                        return SyntaxError("thread type '%d' is out of range (%d..%d)\n",
+                        return RTMsgSyntax("thread type '%d' is out of range (%d..%d)",
                                            ValueUnion.psz, RTTHREADTYPE_INVALID + 1, RTTHREADTYPE_END - 1);
                 }
                 break;
@@ -301,18 +275,19 @@ int main(int argc, char **argv)
                         break;
                     }
                 if (ValueUnion.psz)
-                    return SyntaxError("Unknown load type '%s'.\n", ValueUnion.psz);
+                    return RTMsgSyntax("Unknown load type '%s'.", ValueUnion.psz);
                 break;
             }
 
             case 'h':
-                RTStrmPrintf(g_pStdOut,
-                             "Usage: %s [-p|--thread-type <type>] [-t|--timeout <sec|xxx[h|m|s|ms|ns]>] \\\n"
-                             "       %*s [-n|--number-of-threads <threads>] [-l|--load <loadtype>]\n"
-                             "\n"
-                             "Load types: spin, ipi.\n"
-                             ,
-                             g_pszProgramName, strlen(g_pszProgramName), "");
+                RTPrintf("Usage: %s [-p|--thread-type <type>] [-t|--timeout <sec|xxx[h|m|s|ms|ns]>] \\\n"
+                         "       %*s [-n|--number-of-threads <threads>] [-l|--load <loadtype>]\n"
+                         "\n"
+                         "Load types: "
+                         , RTProcShortName(), strlen(RTProcShortName()), "");
+                for (size_t i = 0; i < RT_ELEMENTS(s_aLoadTypes); i++)
+                    RTPrintf(i == 0 ? "%s (default)" : ", %s", s_aLoadTypes[i].pszName);
+                RTPrintf("\n");
                 return 1;
 
             case 'V':
@@ -320,7 +295,7 @@ int main(int argc, char **argv)
                 return 0;
 
             case VINF_GETOPT_NOT_OPTION:
-                return SyntaxError("Unknown argument #%d: '%s'\n", GetState.iNext-1, ValueUnion.psz);
+                return RTMsgSyntax("Unknown argument #%d: '%s'", GetState.iNext-1, ValueUnion.psz);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -334,7 +309,7 @@ int main(int argc, char **argv)
     {
         const unsigned cCpus = RTMpGetOnlineCount();
         if (cCpus * cThreads > RT_ELEMENTS(s_aThreads))
-            return SyntaxError("Requested number of threads, %RU32, is out of range (1..%d) when scaled by %d.\n",
+            return RTMsgSyntax("Requested number of threads, %RU32, is out of range (1..%d) when scaled by %d.",
                                cThreads, RT_ELEMENTS(s_aThreads) - 1, cCpus);
         cThreads *= cCpus;
     }
@@ -369,7 +344,7 @@ int main(int argc, char **argv)
         if (RT_FAILURE(rc))
         {
             ASMAtomicXchgBool(&g_fQuit, true);
-            RTStrmPrintf(g_pStdErr, "%s: failed to create thread #%d, rc=%Rrc\n", g_pszProgramName, i, rc);
+            RTMsgError("failed to create thread #%d: %Rrc", i, rc);
             while (i-- > 1)
                 RTThreadWait(s_aThreads[i], 1500, NULL);
             return 1;

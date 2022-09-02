@@ -37,29 +37,45 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+#
+# Load generator, optionally with an ring-0 IPI generator.
+#
 PROGRAMS += LoadGenerator
-LoadGenerator_TEMPLATE = VBoxValidationKitR3SupDrv
-LoadGenerator_SOURCES  = loadgenerator.cpp
-
-ifdef VBOX_WITH_R0_MODULES
- ifdef VBOX_WITH_VBOXR0_AS_DLL
-  DLLS    += loadgeneratorR0
- else
-  SYSMODS += loadgeneratorR0
+if1of ($(KBUILD_TARGET_ARCH),amd64)
+ ifdef VBOX_WITH_R0_MODULES
+  ifdef VBOX_WITH_VBOXR0_AS_DLL
+DLLS    += loadgeneratorR0
+  else
+SYSMODS += loadgeneratorR0
+  endif
+loadgeneratorR0_TEMPLATE := VBoxValidationKitR0
+loadgeneratorR0_SOURCES  := loadgeneratorR0.cpp
  endif
- loadgeneratorR0_TEMPLATE = VBoxValidationKitR0
- loadgeneratorR0_SOURCES = loadgeneratorR0.cpp
+LoadGenerator_TEMPLATE := VBoxValidationKitR3SupDrv
+LoadGenerator_DEFS     := WITH_IPI_LOAD_GEN
+else
+LoadGenerator_TEMPLATE := VBoxValidationKitR3
 endif
+LoadGenerator_SOURCES  := loadgenerator.cpp
 
+#
+# vts_rm - Test cleanup utility similar to unix rm.
+#
 PROGRAMS += vts_rm
 vts_rm_TEMPLATE = VBoxValidationKitR3
 vts_rm_SOURCES  = vts_rm.cpp
 
+#
+# vts_tar - Tar for untarring and tarring test related stuff.
+#
 PROGRAMS += vts_tar
 vts_tar_TEMPLATE = VBoxValidationKitR3
 vts_tar_SDKS     = VBOX_ZLIB_STATIC
 vts_tar_SOURCES  = vts_tar.cpp
 
+#
+# vts_shutdown - initiates a guest or host shut down / reboot.
+#
 PROGRAMS += vts_shutdown
 vts_shutdown_TEMPLATE = VBoxValidationKitR3
 vts_shutdown_SOURCES  = ../../../Runtime/tools/RTShutdown.cpp
