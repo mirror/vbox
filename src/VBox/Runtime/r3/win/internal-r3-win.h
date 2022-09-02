@@ -128,6 +128,9 @@ extern DECL_HIDDEN_DATA(decltype(SetThreadAffinityMask) *)              g_pfnSet
 extern DECL_HIDDEN_DATA(decltype(CreateIoCompletionPort) *)             g_pfnCreateIoCompletionPort;
 extern DECL_HIDDEN_DATA(decltype(GetQueuedCompletionStatus) *)          g_pfnGetQueuedCompletionStatus;
 extern DECL_HIDDEN_DATA(decltype(PostQueuedCompletionStatus) *)         g_pfnPostQueuedCompletionStatus;
+extern DECL_HIDDEN_DATA(decltype(SetUnhandledExceptionFilter) *)        g_pfnSetUnhandledExceptionFilter;
+extern DECL_HIDDEN_DATA(decltype(UnhandledExceptionFilter) *)           g_pfnUnhandledExceptionFilter;
+extern DECL_HIDDEN_DATA(decltype(IsProcessorFeaturePresent) *)          g_pfnIsProcessorFeaturePresent;
 
 
 extern DECL_HIDDEN_DATA(HMODULE)                        g_hModNtDll;

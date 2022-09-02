@@ -46,6 +46,11 @@
 %endif
 %include "iprt/asmdefs.mac"
 %include "iprt/x86.mac"
+%ifdef RT_ARCH_AMD64
+ %include "iprt/win/context-amd64.mac"
+%else
+ %include "iprt/win/context-x86.mac"
+%endif
 
 
 ;*********************************************************************************************************************************
@@ -111,10 +116,11 @@ GLOBALNAME __security_cookie
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BEGINCODE
-extern NAME(_RTC_StackVarCorrupted)
-extern NAME(_RTC_SecurityCookieMismatch)
+extern NAME(rtVccStackVarCorrupted)
+extern NAME(rtVccSecurityCookieMismatch)
+extern NAME(rtVccRangeCheckFailed)
 %ifdef RT_ARCH_X86
-extern NAME(_RTC_CheckEspFailed)
+extern NAME(rtVccCheckEspFailed)
 %endif
 
 
@@ -291,7 +297,7 @@ BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
         mov     xCX, dword [xDX + RTC_VAR_DESC_T.offFrame]
 %endif
         cmp     dword [xBP + xCX - 4], VARIABLE_MARKER_PRE
-        jne     .corrupted
+        jne     rtVccCheckStackVarsFailed
 
         ; Marker after the variable.
         add     ecx, dword [xDX + RTC_VAR_DESC_T.cbVar]
@@ -299,7 +305,7 @@ BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
         movsxd  rcx, ecx
 %endif
         cmp     dword [xBP + xCX], VARIABLE_MARKER_POST
-        jne     .corrupted
+        jne     rtVccCheckStackVarsFailed
 
         ;
         ; Advance to the next variable.
@@ -315,35 +321,44 @@ BEGINPROC_RAW   FASTCALL_NAME(_RTC_CheckStackVars, 8)
 .return:
         pop     xBP
         ret
-
-        ;
-        ; Complain about corrupt variable.
-        ;
-.corrupted:
-        push    xAX
-        push    xDX
-%ifdef RT_ARCH_AMD64
-        sub     xSP, 28h
-        mov     xCX, xBP                ; frame pointer + variable descriptor.
-%else
-        push    xBP                     ; save EBP
-        push    xDX                     ; parameter 2 - variable descriptor
-        push    xBP                     ; parameter 1 - frame pointer.
-        lea     xBP, [xSP + 3*xCB]      ; turn it into a frame pointer during the call for better unwind.
-%endif
-
-        call    NAME(_RTC_StackVarCorrupted)
-
-%ifdef RT_ARCH_AMD64
-        add     xSP, 28h
-%else
-        add     xSP, xCB * 4            ; parameters
-        pop     xBP
-%endif
-        pop     xDX
-        pop     xAX
-        jmp     .advance
 ENDPROC_RAW     FASTCALL_NAME(_RTC_CheckStackVars, 8)
+
+;
+; Sub-function for _RTC_CheckStackVars, for purposes of SEH64 unwinding.
+;
+; Note! While we consider this fatal and will terminate the application, the
+;       compiler guys do not seem to think it is all that horrible and will
+;       report failure, maybe do an int3, and then try continue execution.
+;
+BEGINPROC_RAW   rtVccCheckStackVarsFailed
+        nop     ;push    xBP - done in parent function
+        SEH64_PUSH_xBP
+        mov     xCX, xBP                    ; xCX = caller pStackFrame. xBP free to become frame pointer.
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        push    xAX
+        SEH64_PUSH_GREG xAX
+        sub     xSP, CONTEXT_SIZE + 20h
+        SEH64_ALLOCATE_STACK (CONTEXT_SIZE + 20h)
+        SEH64_END_PROLOGUE
+
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        call    NAME(rtVccCaptureContext)
+
+        ; rtVccStackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar, PCONTEXT)
+.again:
+%ifdef RT_ARCH_AMD64
+        lea     r8, [xBP - CONTEXT_SIZE]
+%else
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        mov     [xSP + 8], xAX
+        mov     [xSP + 4], xDX
+        mov     [xSP], xCX
+%endif
+        call    NAME(rtVccStackVarCorrupted)
+        jmp     .again
+ENDPROC_RAW     rtVccCheckStackVarsFailed
 
 
 %ifdef RT_ARCH_X86
@@ -351,31 +366,41 @@ ENDPROC_RAW     FASTCALL_NAME(_RTC_CheckStackVars, 8)
 ; Called to follow up on a 'CMP ESP, EBP' kind of instruction,
 ; expected to report failure if the compare failed.
 ;
+; Note! While we consider this fatal and will terminate the application, the
+;       compiler guys do not seem to think it is all that horrible and will
+;       report failure, maybe do an int3, and then try continue execution.
+;
 ALIGNCODE(16)
 BEGINPROC _RTC_CheckEsp
         jne     .unexpected_esp
         ret
 
 .unexpected_esp:
-        push    ebp
-        mov     ebp, esp
-        push    eax
-        push    ecx
-        push    edx
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        push    xAX
+        SEH64_PUSH_GREG xAX
+        sub     xSP, CONTEXT_SIZE + 20h
+        SEH64_ALLOCATE_STACK (CONTEXT_SIZE + 20h)
+        SEH64_END_PROLOGUE
 
-        ; DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp)
-        push    dword [ebp]
-        lea     edx, [ebp + 8]
-        push    edx
-        mov     ecx, [ebp + 8]
-        push    ecx
-        call    NAME(_RTC_CheckEspFailed)
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        call    NAME(rtVccCaptureContext)
 
-        pop     edx
-        pop     ecx
-        pop     eax
-        leave
-        ret
+        ; rtVccCheckEspFailed(PCONTEXT)
+.again:
+        lea     xAX, [xBP - CONTEXT_SIZE]
+%ifdef RT_ARCH_AMD64
+        mov     xCX, xAX
+%else
+        mov     [xSP], xAX
+%endif
+        call    NAME(rtVccCheckEspFailed)
+        jmp     .again
+
 ENDPROC   _RTC_CheckEsp
 %endif ; RT_ARCH_X86
 
@@ -458,35 +483,265 @@ ENDPROC_RAW     FASTCALL_NAME(_RTC_AllocaHelper, 12)
 
 
 ;;
-; Checks if the secuity cookie ok, complaining and terminating if it isn't.
+; Checks if the security cookie ok, complaining and terminating if it isn't.
 ;
 ALIGNCODE(16)
 BEGINPROC_RAW   FASTCALL_NAME(__security_check_cookie, 4)
         SEH64_END_PROLOGUE
         cmp     xCX, [NAME(__security_cookie) xWrtRIP]
-        jne     .corrupted
+        jne     rtVccSecurityCookieFailed
         ;; amd64 version checks if the top 16 bits are zero, we skip that for now.
         ret
-
-.corrupted:
-%ifdef RT_ARCH_AMD64
-        jmp     NAME(_RTC_SecurityCookieMismatch)
-%else
-        push    ebp
-        mov     ebp, esp
-        push    ecx
-        call    NAME(_RTC_SecurityCookieMismatch)
-        pop     ecx
-        leave
-        ret
-%endif
 ENDPROC_RAW     FASTCALL_NAME(__security_check_cookie, 4)
 
-
-
-; Not stack related stubs.
-BEGINPROC __report_rangecheckfailure
+; Sub-function for __security_check_cookie, for purposes of SEH64 unwinding.
+BEGINPROC_RAW   rtVccSecurityCookieFailed
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        push    xAX
+        SEH64_PUSH_GREG xAX
+        sub     xSP, CONTEXT_SIZE + 20h
+        SEH64_ALLOCATE_STACK (CONTEXT_SIZE + 20h)
         SEH64_END_PROLOGUE
-        int3
+
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        call    NAME(rtVccCaptureContext)
+
+        ; rtVccSecurityCookieMismatch(uCookie, PCONTEXT)
+.again:
+%ifdef RT_ARCH_AMD64
+        lea     xDX, [xBP - CONTEXT_SIZE]
+%else
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        mov     [xSP + 4], xAX
+        mov     [xSP], xCX
+%endif
+        call    NAME(rtVccSecurityCookieMismatch)
+        jmp     .again
+ENDPROC_RAW     rtVccSecurityCookieFailed
+
+
+;;
+; Generated when using /GS - buffer security checks - so, fatal.
+;
+; Doesn't seem to take any parameters.
+;
+BEGINPROC __report_rangecheckfailure
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        push    xAX
+        SEH64_PUSH_GREG xAX
+        sub     xSP, CONTEXT_SIZE + 20h
+        SEH64_ALLOCATE_STACK (CONTEXT_SIZE + 20h)
+        SEH64_END_PROLOGUE
+
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        call    NAME(rtVccCaptureContext)
+
+        ; rtVccRangeCheckFailed(PCONTEXT)
+.again:
+        lea     xAX, [xBP - CONTEXT_SIZE]
+%ifdef RT_ARCH_AMD64
+        mov     xCX, xAX
+%else
+        mov     [xSP], xAX
+%endif
+        call    NAME(rtVccRangeCheckFailed)
+        jmp     .again
 ENDPROC   __report_rangecheckfailure
+
+
+%if 0 ; Currently not treating these as completely fatal, just like the
+      ; compiler guys do.  I'm sure the compiler only generate these calls
+      ; if it thinks a variable could be used uninitialized, however I'm not
+      ; really sure if there is a runtime check in addition or if it's an
+      ; action that always will be taken in a code path deemed to be bad.
+      ; Judging from the warnings, the compile time analysis leave lots to be
+      ; desired (lots of false positives).
+;;
+; Not entirely sure how and when the compiler generates these.
+; extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
+BEGINPROC   _RTC_UninitUse
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        push    xAX
+        SEH64_PUSH_GREG xAX
+        sub     xSP, CONTEXT_SIZE + 20h
+        SEH64_ALLOCATE_STACK (CONTEXT_SIZE + 20h)
+        SEH64_END_PROLOGUE
+
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        call    NAME(rtVccCaptureContext)
+
+        extern NAME(rtVccUninitializedVariableUse)
+        ; rtVccUninitializedVariableUse(const char *pszVar, PCONTEXT)
+.again:
+%ifdef RT_ARCH_AMD64
+        lea     xDX, [xBP - CONTEXT_SIZE]
+%else
+        lea     xAX, [xBP - CONTEXT_SIZE]
+        mov     [xSP + xCB], xAX
+        mov     xAX, [xBP + xCB * 2]
+        mov     [xSP], xAX
+%endif
+        call    NAME(rtVccUninitializedVariableUse)
+        jmp     .again
+ENDPROC     _RTC_UninitUse
+%endif
+
+;;
+; Internal worker that creates a CONTEXT record for the caller.
+;
+; This expects a old-style stack frame setup, with xBP as base, such that:
+;       xBP+xCB*1:  Return address  -> Rip/Eip
+;       xBP+xCB*0:  Return xBP      -> Rbp/Ebp
+;       xBP-xCB*1:  EFLAGS          -> EFlags
+;       xBP-xCB*2:  Saved xAX       -> Rax/Eax
+;
+; @param    pCtx        xAX     Pointer to a CONTEXT structure.
+;
+BEGINPROC rtVccCaptureContext
+        SEH64_END_PROLOGUE
+
+%ifdef RT_ARCH_AMD64
+        mov     [xAX + CONTEXT.Rcx], rcx
+        mov     [xAX + CONTEXT.Rdx], rdx
+        mov     rcx, [xBP - xCB*2]
+        mov     [xAX + CONTEXT.Rax], ecx
+        mov     [xAX + CONTEXT.Rbx], rbx
+        lea     rcx, [xBP + xCB*2]
+        mov     [xAX + CONTEXT.Rsp], rcx
+        mov     rdx, [xBP]
+        mov     [xAX + CONTEXT.Rbp], rdx
+        mov     [xAX + CONTEXT.Rdi], rdi
+        mov     [xAX + CONTEXT.Rsi], rsi
+        mov     [xAX + CONTEXT.R8], r8
+        mov     [xAX + CONTEXT.R9], r9
+        mov     [xAX + CONTEXT.R10], r10
+        mov     [xAX + CONTEXT.R11], r11
+        mov     [xAX + CONTEXT.R12], r12
+        mov     [xAX + CONTEXT.R13], r13
+        mov     [xAX + CONTEXT.R14], r14
+        mov     [xAX + CONTEXT.R15], r15
+
+        mov     rcx, [xBP + xCB*1]
+        mov     [xAX + CONTEXT.Rip], rcx
+        mov     edx, [xBP - xCB*1]
+        mov     [xAX + CONTEXT.EFlags], edx
+
+        mov     dx, ss
+        mov     [xAX + CONTEXT.SegSs], dx
+        mov     cx, cs
+        mov     [xAX + CONTEXT.SegCs], cx
+        mov     dx, ds
+        mov     [xAX + CONTEXT.SegDs], dx
+        mov     cx, es
+        mov     [xAX + CONTEXT.SegEs], cx
+        mov     dx, fs
+        mov     [xAX + CONTEXT.SegFs], dx
+        mov     cx, gs
+        mov     [xAX + CONTEXT.SegGs], cx
+
+        mov     dword [xAX + CONTEXT.ContextFlags], CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS
+
+        ; Clear stuff we didn't set.
+        xor     edx, edx
+        mov     [xAX + CONTEXT.P1Home], rdx
+        mov     [xAX + CONTEXT.P2Home], rdx
+        mov     [xAX + CONTEXT.P3Home], rdx
+        mov     [xAX + CONTEXT.P4Home], rdx
+        mov     [xAX + CONTEXT.P5Home], rdx
+        mov     [xAX + CONTEXT.P6Home], rdx
+        mov     [xAX + CONTEXT.MxCsr], edx
+        mov     [xAX + CONTEXT.Dr0], rdx
+        mov     [xAX + CONTEXT.Dr1], rdx
+        mov     [xAX + CONTEXT.Dr2], rdx
+        mov     [xAX + CONTEXT.Dr3], rdx
+        mov     [xAX + CONTEXT.Dr6], rdx
+        mov     [xAX + CONTEXT.Dr7], rdx
+
+        mov     ecx, CONTEXT_size - CONTEXT.FltSave
+        AssertCompile(((CONTEXT_size - CONTEXT.FltSave) % 8) == 0)
+.again:
+        mov     [xAX + CONTEXT.FltSave + xCX - 8], rdx
+        sub     ecx, 8
+        jnz     .again
+
+        ; Restore edx and ecx.
+        mov     rcx, [xAX + CONTEXT.Rcx]
+        mov     rdx, [xAX + CONTEXT.Rdx]
+
+%elifdef RT_ARCH_X86
+
+        mov     [xAX + CONTEXT.Ecx], ecx
+        mov     [xAX + CONTEXT.Edx], edx
+        mov     ecx, [xBP - xCB*2]
+        mov     [xAX + CONTEXT.Eax], ecx
+        mov     [xAX + CONTEXT.Ebx], ebx
+        lea     ecx, [xBP + xCB*2]
+        mov     [xAX + CONTEXT.Esp], ecx
+        mov     edx, [xBP]
+        mov     [xAX + CONTEXT.Ebp], edx
+        mov     [xAX + CONTEXT.Edi], edi
+        mov     [xAX + CONTEXT.Esi], esi
+
+        mov     ecx, [xBP + xCB]
+        mov     [xAX + CONTEXT.Eip], ecx
+        mov     ecx, [xBP - xCB*1]
+        mov     [xAX + CONTEXT.EFlags], ecx
+
+        mov     dx, ss
+        movzx   edx, dx
+        mov     [xAX + CONTEXT.SegSs], edx
+        mov     cx, cs
+        movzx   ecx, cx
+        mov     [xAX + CONTEXT.SegCs], ecx
+        mov     dx, ds
+        movzx   edx, dx
+        mov     [xAX + CONTEXT.SegDs], edx
+        mov     cx, es
+        movzx   ecx, cx
+        mov     [xAX + CONTEXT.SegEs], ecx
+        mov     dx, fs
+        movzx   edx, dx
+        mov     [xAX + CONTEXT.SegFs], edx
+        mov     cx, gs
+        movzx   ecx, cx
+        mov     [xAX + CONTEXT.SegGs], ecx
+
+        mov     dword [xAX + CONTEXT.ContextFlags], CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS
+
+        ; Clear stuff we didn't set.
+        xor     edx, edx
+        mov     [xAX + CONTEXT.Dr0], edx
+        mov     [xAX + CONTEXT.Dr1], edx
+        mov     [xAX + CONTEXT.Dr2], edx
+        mov     [xAX + CONTEXT.Dr3], edx
+        mov     [xAX + CONTEXT.Dr6], edx
+        mov     [xAX + CONTEXT.Dr7], edx
+
+        mov     ecx, CONTEXT_size - CONTEXT.ExtendedRegisters
+.again:
+        mov     [xAX + CONTEXT.ExtendedRegisters + xCX - 4], edx
+        sub     ecx, 4
+        jnz     .again
+
+        ; Restore edx and ecx.
+        mov     ecx, [xAX + CONTEXT.Ecx]
+        mov     edx, [xAX + CONTEXT.Edx]
+
+%else
+ %error RT_ARCH
+%endif
+        ret
+ENDPROC   rtVccCaptureContext
 

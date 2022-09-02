@@ -81,8 +81,6 @@ DECL_HIDDEN_DATA(HMODULE)                       g_hModKernel32 = NULL;
 DECL_HIDDEN_DATA(PFNGETWINSYSDIR)               g_pfnGetSystemWindowsDirectoryW = NULL;
 /** The GetCurrentThreadStackLimits API. */
 static PFNGETCURRENTTHREADSTACKLIMITS           g_pfnGetCurrentThreadStackLimits = NULL;
-/** SetUnhandledExceptionFilter. */
-static PFNSETUNHANDLEDEXCEPTIONFILTER           g_pfnSetUnhandledExceptionFilter = NULL;
 /** The previous unhandled exception filter. */
 static LPTOP_LEVEL_EXCEPTION_FILTER             g_pfnUnhandledXcptFilter = NULL;
 /** SystemTimeToTzSpecificLocalTime. */
@@ -98,6 +96,9 @@ DECL_HIDDEN_DATA(decltype(SetThreadAffinityMask) *)             g_pfnSetThreadAf
 DECL_HIDDEN_DATA(decltype(CreateIoCompletionPort) *)            g_pfnCreateIoCompletionPort = NULL;
 DECL_HIDDEN_DATA(decltype(GetQueuedCompletionStatus) *)         g_pfnGetQueuedCompletionStatus = NULL;
 DECL_HIDDEN_DATA(decltype(PostQueuedCompletionStatus) *)        g_pfnPostQueuedCompletionStatus = NULL;
+DECL_HIDDEN_DATA(decltype(IsProcessorFeaturePresent) *)         g_pfnIsProcessorFeaturePresent = NULL;
+DECL_HIDDEN_DATA(decltype(SetUnhandledExceptionFilter) *)       g_pfnSetUnhandledExceptionFilter = NULL;
+DECL_HIDDEN_DATA(decltype(UnhandledExceptionFilter) *)          g_pfnUnhandledExceptionFilter = NULL;
 
 /** The native ntdll.dll handle. */
 DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
@@ -535,7 +536,8 @@ static int rtR3InitNativeObtrusiveWorker(uint32_t fFlags)
      * Register an unhandled exception callback if we can.
      */
     g_pfnGetCurrentThreadStackLimits = (PFNGETCURRENTTHREADSTACKLIMITS)GetProcAddress(g_hModKernel32, "GetCurrentThreadStackLimits");
-    g_pfnSetUnhandledExceptionFilter = (PFNSETUNHANDLEDEXCEPTIONFILTER)GetProcAddress(g_hModKernel32, "SetUnhandledExceptionFilter");
+    g_pfnSetUnhandledExceptionFilter = (decltype(SetUnhandledExceptionFilter) *)GetProcAddress(g_hModKernel32, "SetUnhandledExceptionFilter");
+    g_pfnUnhandledExceptionFilter    = (decltype(UnhandledExceptionFilter) *)   GetProcAddress(g_hModKernel32, "UnhandledExceptionFilter");
     if (g_pfnSetUnhandledExceptionFilter && !g_pfnUnhandledXcptFilter)
     {
         g_pfnUnhandledXcptFilter = g_pfnSetUnhandledExceptionFilter(rtR3WinUnhandledXcptFilter);
@@ -582,6 +584,7 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     g_pfnCreateIoCompletionPort     = (decltype(CreateIoCompletionPort) *)    GetProcAddress(g_hModKernel32, "CreateIoCompletionPort");
     g_pfnGetQueuedCompletionStatus  = (decltype(GetQueuedCompletionStatus) *) GetProcAddress(g_hModKernel32, "GetQueuedCompletionStatus");
     g_pfnPostQueuedCompletionStatus = (decltype(PostQueuedCompletionStatus) *)GetProcAddress(g_hModKernel32, "PostQueuedCompletionStatus");
+    g_pfnIsProcessorFeaturePresent  = (decltype(IsProcessorFeaturePresent) *) GetProcAddress(g_hModKernel32, "IsProcessorFeaturePresent");
 
     Assert(g_pfnGetHandleInformation       || g_enmWinVer < kRTWinOSType_NT351);
     Assert(g_pfnSetHandleInformation       || g_enmWinVer < kRTWinOSType_NT351);
@@ -592,6 +595,7 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
     Assert(g_pfnCreateIoCompletionPort     || g_enmWinVer < kRTWinOSType_NT350);
     Assert(g_pfnGetQueuedCompletionStatus  || g_enmWinVer < kRTWinOSType_NT350);
     Assert(g_pfnPostQueuedCompletionStatus || g_enmWinVer < kRTWinOSType_NT350);
+    Assert(g_pfnIsProcessorFeaturePresent  || g_enmWinVer < kRTWinOSType_NT4);
 
     /*
      * Resolve some ntdll.dll APIs that weren't there in early NT versions.

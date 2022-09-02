@@ -47,6 +47,10 @@
 #endif
 
 #include "internal/compiler-vcc.h"
+#ifdef IN_RING3
+# include <iprt/win/windows.h>
+# include "../../../r3/win/internal-r3-win.h" /* ugly, but need some windows API function pointers */
+#endif
 
 
 /*********************************************************************************************************************************
@@ -116,7 +120,62 @@ void rtVccInitSecurityCookie(void) RT_NOEXCEPT
 }
 
 
-DECLASM(void) _RTC_StackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar)
+/**
+ * Reports a security error.
+ *
+ * @param   uFastFailCode   The fast fail code.
+ * @param   pCpuCtx         The CPU context at the failure location.
+ */
+static DECL_NO_RETURN(void) rtVccFatalSecurityErrorWithCtx(uint32_t uFastFailCode, PCONTEXT pCpuCtx)
+{
+#ifdef IN_RING3
+    /*
+     * Use the __fastfail() approach if available, it is more secure than the stuff below:
+     */
+    if (g_pfnIsProcessorFeaturePresent && g_pfnIsProcessorFeaturePresent(PF_FASTFAIL_AVAILABLE))
+        __fastfail(uFastFailCode);
+
+    /*
+     * Fallback for legacy systems.
+     */
+    if (g_pfnIsDebuggerPresent && g_pfnIsDebuggerPresent())
+        __debugbreak();
+
+    /* If we can, clear the unhandled exception filter and report and unhandled exception. */
+    if (g_pfnSetUnhandledExceptionFilter && g_pfnUnhandledExceptionFilter)
+    {
+        g_pfnSetUnhandledExceptionFilter(NULL);
+
+        EXCEPTION_RECORD   XcptRec  =
+        {
+            /* .ExceptionCode = */          STATUS_STACK_BUFFER_OVERRUN,
+            /* .ExceptionFlags = */         EXCEPTION_NONCONTINUABLE,
+            /* .ExceptionRecord = */        NULL,
+# ifdef RT_ARCH_AMD64
+            /* .ExceptionAddress = */       (void *)pCpuCtx->Rip,
+# elif defined(RT_ARCH_X86)
+            /* .ExceptionAddress = */       (void *)pCpuCtx->Eip,
+# else
+#  error "Port me!"
+# endif
+            /* .NumberParameters = */       1,
+            /* .ExceptionInformation = */   { uFastFailCode, }
+        };
+
+        EXCEPTION_POINTERS XcptPtrs = { &XcptRec, pCpuCtx };
+        g_pfnUnhandledExceptionFilter(&XcptPtrs);
+    }
+
+    for (;;)
+        TerminateProcess(GetCurrentProcess(), STATUS_STACK_BUFFER_OVERRUN);
+
+#else
+# error "Port ME!"
+#endif
+}
+
+
+DECLASM(void) rtVccStackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVar, PCONTEXT pCpuCtx)
 {
 #ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!Stack corruption!!\n\n"
@@ -131,11 +190,11 @@ DECLASM(void) _RTC_StackVarCorrupted(uint8_t *pbFrame, RTC_VAR_DESC_T const *pVa
     rtNoCrtFatalWriteStr(pVar->pszName);
     rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
 #endif
-    RT_BREAKPOINT();
+    rtVccFatalSecurityErrorWithCtx(FAST_FAIL_INCORRECT_STACK, pCpuCtx);
 }
 
 
-DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
+DECLASM(void) rtVccSecurityCookieMismatch(uintptr_t uCookie, PCONTEXT pCpuCtx)
 {
 #ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!Stack cookie corruption!!\n\n"
@@ -149,46 +208,30 @@ DECLASM(void) _RTC_SecurityCookieMismatch(uintptr_t uCookie)
     rtNoCrtFatalWritePtr((void *)uCookie);
     rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
 #endif
-    RT_BREAKPOINT();
+    rtVccFatalSecurityErrorWithCtx(FAST_FAIL_STACK_COOKIE_CHECK_FAILURE, pCpuCtx);
 }
 
 
 #ifdef RT_ARCH_X86
-DECLASM(void) _RTC_CheckEspFailed(uintptr_t uEip, uintptr_t uEsp, uintptr_t uEbp)
+DECLASM(void) rtVccCheckEspFailed(PCONTEXT pCpuCtx)
 {
 # ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
     RTAssertMsg2("\n\n!!ESP check failed!!\n\n"
                  "eip=%p esp=%p ebp=%p\n",
-                 uEip, uEsp, uEbp);
+                 pCpuCtx->Eip, pCpuCtx->Esp, pCpuCtx->Ebp);
 # else
     rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!ESP check failed!!\r\n\r\n"
                                        "eip="));
-    rtNoCrtFatalWritePtr((void *)uEip);
+    rtNoCrtFatalWritePtr((void *)pCpuCtx->Eip);
     rtNoCrtFatalWrite(RT_STR_TUPLE(" esp="));
-    rtNoCrtFatalWritePtr((void *)uEsp);
+    rtNoCrtFatalWritePtr((void *)pCpuCtx->Esp);
     rtNoCrtFatalWrite(RT_STR_TUPLE(" ebp="));
-    rtNoCrtFatalWritePtr((void *)uEbp);
+    rtNoCrtFatalWritePtr((void *)pCpuCtx->Ebp);
     rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
 # endif
-    RT_BREAKPOINT();
+    rtVccFatalSecurityErrorWithCtx(FAST_FAIL_INCORRECT_STACK, pCpuCtx);
 }
 #endif
-
-
-extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
-{
-#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
-    RTAssertMsg2("\n\n!!Used uninitialized variable %s at %p!!\n\n",
-                 pszVar ? pszVar : "", ASMReturnAddress());
-#else
-    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Used uninitialized variable "));
-    rtNoCrtFatalWriteStr(pszVar);
-    rtNoCrtFatalWrite(RT_STR_TUPLE(" at "));
-    rtNoCrtFatalWritePtr(ASMReturnAddress());
-    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("!!\r\n\r\n"));
-#endif
-    RT_BREAKPOINT();
-}
 
 
 /** @todo reimplement in assembly (feeling too lazy right now). */
@@ -219,11 +262,45 @@ extern "C" void __fastcall _RTC_CheckStackVars2(uint8_t *pbFrame, RTC_VAR_DESC_T
             rtNoCrtFatalWriteX64(pHead->cb);
             rtNoCrtFatalWriteEnd(RT_STR_TUPLE("\r\n"));
 #endif
-            RT_BREAKPOINT();
+#ifdef IN_RING3
+            if (g_pfnIsDebuggerPresent && g_pfnIsDebuggerPresent())
+#endif
+                RT_BREAKPOINT();
         }
         pHead = pHead->pNext;
     }
 
     _RTC_CheckStackVars(pbFrame, pVar);
+}
+
+
+
+
+/** Whether or not this should be a fatal issue remains to be seen. See
+ *  explanation in stack-vcc.asm.  */
+#if 0
+DECLASM(void) rtVccUninitializedVariableUse(const char *pszVar, PCONTEXT pCpuCtx)
+#else
+extern "C" void __cdecl _RTC_UninitUse(const char *pszVar)
+#endif
+{
+#ifdef IPRT_NOCRT_WITHOUT_FATAL_WRITE
+    RTAssertMsg2("\n\n!!Used uninitialized variable %s at %p!!\n\n",
+                 pszVar ? pszVar : "", ASMReturnAddress());
+#else
+    rtNoCrtFatalWriteBegin(RT_STR_TUPLE("\r\n\r\n!!Used uninitialized variable "));
+    rtNoCrtFatalWriteStr(pszVar);
+    rtNoCrtFatalWrite(RT_STR_TUPLE(" at "));
+    rtNoCrtFatalWritePtr(ASMReturnAddress());
+    rtNoCrtFatalWriteEnd(RT_STR_TUPLE("!!\r\n\r\n"));
+#endif
+#if 0
+    rtVccFatalSecurityErrorWithCtx(FAST_FAIL_FATAL_APP_EXIT, pCpuCtx);
+#else
+# ifdef IN_RING3
+    if (g_pfnIsDebuggerPresent && g_pfnIsDebuggerPresent())
+# endif
+        RT_BREAKPOINT();
+#endif
 }
 
