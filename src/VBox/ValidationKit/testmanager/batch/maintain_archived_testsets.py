@@ -106,6 +106,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         Returns success indicator.
         """
 
+        fRc = True;
+
         # Rename the destination file first (if any).
         sDstFileTmp = None;
         if os.path.exists(sDstFile):
@@ -113,22 +115,23 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
             if os.path.exists(sDstFileTmp):
                 if not fForce:
                     print('Replace file: Warning: Temporary destination file "%s" already exists, skipping' % (sDstFileTmp,));
-                    return False;
+                    fRc = False;
                 else:
                     try:
                         os.remove(sDstFileTmp);
                     except Exception as e:
                         print('Replace file: Error deleting old temporary destination file "%s": %s' % (sDstFileTmp, e));
-                        return False;
+                        fRc = False;
             try:
                 if not fDryRun:
                     shutil.move(sDstFile, sDstFileTmp);
             except Exception as e:
                 print('Replace file: Error moving old destination file "%s" to temporary file "%s": %s' \
                       % (sDstFile, sDstFileTmp, e));
-                return False;
+                fRc = False;
 
-        fRc = True;
+        if not fRc:
+            return False;
 
         try:
             if not fDryRun:
