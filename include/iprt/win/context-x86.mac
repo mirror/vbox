@@ -99,4 +99,3 @@ AssertCompileSize(CONTEXT, CONTEXT_SIZE)
 
 %endif
 
-
