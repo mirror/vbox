@@ -2106,7 +2106,7 @@ static int rtEfiVarStoreFvHdr_Validate(PRTEFIVARSTORE pThis, PCEFI_FIRMWARE_VOLU
 
     if (u16Chksum)
         return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Firmware volume header has incorrect checksum");
-    if (RT_LE2H_U64(pFvHdr->cbFvHdr) != cbFvHdr)
+    if (RT_LE2H_U16(pFvHdr->cbFvHdr) != cbFvHdr)
         return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Unexpected firmware volume header size");
 
     return VINF_SUCCESS;
