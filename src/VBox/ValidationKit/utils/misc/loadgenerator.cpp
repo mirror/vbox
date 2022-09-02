@@ -195,7 +195,7 @@ int main(int argc, char **argv)
                 char *psz;
                 rc = RTStrToUInt64Ex(ValueUnion.psz, &psz, 0, &cNanoSeconds);
                 if (RT_FAILURE(rc))
-                    return RTMsgSyntax("Failed reading the alleged number '%s' (option '%s', rc=%Rrc).",
+                    return RTMsgSyntax("Failed reading the alleged timeout number '%s' (rc=%Rrc).",
                                        ValueUnion.psz, rc);
                 while (*psz == ' ' || *psz == '\t')
                     psz++;
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
                     uint64_t u64 = cNanoSeconds * u64Factor;
                     if (u64 < cNanoSeconds || (u64 < u64Factor && u64))
                         return RTMsgSyntax("Time representation overflowed! (%RU64 * %RU64)",
-                                           psz, cNanoSeconds, u64Factor);
+                                           cNanoSeconds, u64Factor);
                     cNanoSeconds = u64;
                 }
                 break;
