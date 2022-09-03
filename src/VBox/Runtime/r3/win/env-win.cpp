@@ -72,6 +72,24 @@ static char             *g_apszGetEnvBufs[64]; /* leak */
 int rtEnvSetUtf8Worker(const char *pchVar, size_t cchVar, const char *pszValue);
 
 
+#if defined(RT_ARCH_X86) && defined(RT_OS_WINDOWS)
+/**
+ * This is a workaround for NT 3.x not setting the last error.
+ */
+static DWORD rtEnvNt31CheckEmpty(PCRTUTF16 pwszVar)
+{
+    /* Check the version first: */
+    DWORD dwVersion = GetVersion();
+    if (RT_BYTE1(dwVersion) != 3)
+        return 0;
+
+    /* When called with an empty buffer, we should get 1 if empty value
+       and 0 if not found:  */
+    DWORD cwcNeeded = GetEnvironmentVariableW(pwszVar, NULL, 0);
+    return cwcNeeded == 0 ? ERROR_ENVVAR_NOT_FOUND : NO_ERROR;
+}
+#endif
+
 
 RTDECL(bool) RTEnvExistsBad(const char *pszVar)
 {
@@ -172,15 +190,19 @@ RTDECL(int) RTEnvGetUtf8(const char *pszVar, char *pszValue, size_t cbValue, siz
 
     for (unsigned iTry = 0;; iTry++)
     {
-        /* This API is weird, it didn't always set ERROR_BUFFER_OVERFLOW.
+        /* This API is weird, it didn't always set ERROR_BUFFER_OVERFLOW nor ERROR_ENVVAR_NOT_FOUND.
            Note! Assume that the CRT transparently updates the process
                  environment and that we don't need to use _wgetenv_s here. */
         SetLastError(NO_ERROR);
         DWORD const cwcValueRet = GetEnvironmentVariableW(pwszVar, pwszValue, cwcValueBuf);
-        DWORD const dwErr       = GetLastError();
+        DWORD       dwErr       = GetLastError();
 
         if (cwcValueRet < cwcValueBuf)
         {
+#ifdef RT_ARCH_X86
+            if (cwcValueRet == 0 && dwErr == NO_ERROR)
+                dwErr = rtEnvNt31CheckEmpty(pwszVar);
+#endif
             if (cwcValueRet > 0 || dwErr == NO_ERROR) /* In case of empty values we have to see if last error was set or not. */
             {
                 if (cbValue)
@@ -240,15 +262,19 @@ RTDECL(char *) RTEnvDup(const char *pszVar)
 
     for (unsigned iTry = 0;; iTry++)
     {
-        /* This API is weird, it didn't always set ERROR_BUFFER_OVERFLOW.
+        /* This API is weird, it didn't always set ERROR_BUFFER_OVERFLOW nor ERROR_ENVVAR_NOT_FOUND.
            Note! Assume that the CRT transparently updates the process
                  environment and that we don't need to use _wgetenv_s here. */
         SetLastError(NO_ERROR);
         DWORD const cwcValueRet = GetEnvironmentVariableW(pwszVar, pwszValue, cwcValueBuf);
-        DWORD const dwErr       = GetLastError();
+        DWORD       dwErr       = GetLastError();
 
         if (cwcValueRet < cwcValueBuf)
         {
+#ifdef RT_ARCH_X86
+            if (cwcValueRet == 0 && dwErr == NO_ERROR)
+                dwErr = rtEnvNt31CheckEmpty(pwszVar);
+#endif
             if (cwcValueRet > 0 || dwErr == NO_ERROR) /* In case of empty values we have to see if last error was set or not. */
             {
                 rc = RTUtf16ToUtf8Ex(pwszValue, cwcValueRet, &pszRet, 0, NULL);
