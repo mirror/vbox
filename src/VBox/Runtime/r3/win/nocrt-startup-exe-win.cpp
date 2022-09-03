@@ -91,6 +91,9 @@ DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
      * Initialize stuff.
      */
 #ifdef IPRT_NO_CRT
+# ifdef RT_ARCH_X86
+    rtVccWinInitBssOnNt3(pPeb->ImageBaseAddress);
+# endif
     rtVccInitSecurityCookie();
 #else
     InitStdHandles(pPeb->ProcessParameters);

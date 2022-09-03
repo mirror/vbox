@@ -146,6 +146,9 @@ extern "C" BOOL WINAPI _DllMainCRTStartup(HINSTANCE hInstance, DWORD dwReason, L
     switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
+#ifdef RT_ARCH_X86
+            rtVccWinInitBssOnNt3((PVOID)hInstance);
+#endif
             rtVccInitSecurityCookie(); /* This function must be minimal because of this! */
             return rtVccDllMainProcessAttach(hInstance, pvReserved);
 

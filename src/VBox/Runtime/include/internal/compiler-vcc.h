@@ -101,6 +101,7 @@ RT_C_DECLS_BEGIN
 extern unsigned _fltused;
 
 void rtVccInitSecurityCookie(void) RT_NOEXCEPT;
+void rtVccWinInitBssOnNt3(void *pvImageBase) RT_NOEXCEPT;
 void rtVccWinInitProcExecPath(void) RT_NOEXCEPT;
 int  rtVccInitializersRunInit(void) RT_NOEXCEPT;
 void rtVccInitializersRunTerm(void) RT_NOEXCEPT;
