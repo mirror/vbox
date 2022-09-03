@@ -80,7 +80,11 @@ __declspec(allocate(".CRT$XCZ"))    PFNVCINITTERM       g_apfnRTVccInitializers_
 
 
 /* Tell the linker to merge the .CRT* sections into .rdata */
-#pragma comment(linker, "/merge:.CRT=.rdata ")
+#ifdef IPRT_VCC_USING_RODATA_AS_CONST_SEG
+# pragma comment(linker, "/merge:.CRT=.rodata ")
+#else
+# pragma comment(linker, "/merge:.CRT=.rdata ")
+#endif
 /** @} */
 
 
