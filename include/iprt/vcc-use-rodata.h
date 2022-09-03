@@ -54,5 +54,5 @@
 /* This is for other files issuing /MERGE directives to the linker involving .rdata. */
 #define IPRT_VCC_USING_RODATA_AS_CONST_SEG
 
-#endif
+#endif /* !IPRT_INCLUDED_vcc_use_rodata_h */
 
