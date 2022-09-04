@@ -73,7 +73,7 @@ BEGINPROC_RAW   __ftol2
         and     esp, 0fffffff8h             ; proper alignment.
         fisttp  qword [esp]
         mov     eax, [esp]
-        mov     edx, [esp + 8]
+        mov     edx, [esp + 4]
         leave
         ret
 ENDPROC_RAW     __ftol2
