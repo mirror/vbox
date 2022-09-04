@@ -942,66 +942,74 @@ static int vgsvcVMInfoWriteNetwork(void)
     char        szPropPath[256];
 
 #ifdef RT_OS_WINDOWS
-    /* */
-    if (   !g_pfnGetAdaptersInfo
-        && (   !g_pfnWSAIoctl
-            || !g_pfnWSASocketA
-            || !g_pfnWSAGetLastError
-            || !g_pfninet_ntoa
-            || !g_pfnclosesocket) )
-           return VINF_SUCCESS;
+    /*
+     * Check that the APIs we need are present.
+     */
+    if (   !g_pfnWSAIoctl
+        || !g_pfnWSASocketA
+        || !g_pfnWSAGetLastError
+        || !g_pfninet_ntoa
+        || !g_pfnclosesocket)
+        return VINF_SUCCESS;
 
-    ULONG            cbAdpInfo = sizeof(IP_ADAPTER_INFO);
-    IP_ADAPTER_INFO *pAdpInfo  = (IP_ADAPTER_INFO *)RTMemAllocZ(cbAdpInfo);
-    if (!pAdpInfo)
+    /*
+     * Query the IP adapter info first, if we have the API.
+     */
+    IP_ADAPTER_INFO *pAdpInfo  = NULL;
+    if (g_pfnGetAdaptersInfo)
     {
-        VGSvcError("VMInfo/Network: Failed to allocate IP_ADAPTER_INFO\n");
-        return VERR_NO_MEMORY;
-    }
-    DWORD dwRet = g_pfnGetAdaptersInfo ? g_pfnGetAdaptersInfo(pAdpInfo, &cbAdpInfo) : ERROR_NO_DATA;
-    if (dwRet == ERROR_BUFFER_OVERFLOW)
-    {
-        IP_ADAPTER_INFO *pAdpInfoNew = (IP_ADAPTER_INFO*)RTMemRealloc(pAdpInfo, cbAdpInfo);
-        if (pAdpInfoNew)
+        ULONG cbAdpInfo = RT_MAX(sizeof(IP_ADAPTER_INFO) * 2, _2K);
+        pAdpInfo  = (IP_ADAPTER_INFO *)RTMemAllocZ(cbAdpInfo);
+        if (!pAdpInfo)
         {
-            pAdpInfo = pAdpInfoNew;
-            RT_BZERO(pAdpInfo, cbAdpInfo);
-            dwRet = g_pfnGetAdaptersInfo(pAdpInfo, &cbAdpInfo);
+            VGSvcError("VMInfo/Network: Failed to allocate two IP_ADAPTER_INFO structures\n");
+            return VERR_NO_MEMORY;
+        }
+
+        DWORD dwRet = g_pfnGetAdaptersInfo(pAdpInfo, &cbAdpInfo);
+        if (dwRet == ERROR_BUFFER_OVERFLOW)
+        {
+            IP_ADAPTER_INFO *pAdpInfoNew = (IP_ADAPTER_INFO*)RTMemRealloc(pAdpInfo, cbAdpInfo);
+            if (pAdpInfoNew)
+            {
+                pAdpInfo = pAdpInfoNew;
+                RT_BZERO(pAdpInfo, cbAdpInfo);
+                dwRet = g_pfnGetAdaptersInfo(pAdpInfo, &cbAdpInfo);
+            }
+        }
+        if (dwRet != NO_ERROR)
+        {
+            RTMemFree(pAdpInfo);
+            pAdpInfo  = NULL;
+            if (dwRet == ERROR_NO_DATA)
+                /* If no network adapters available / present in the
+                   system we pretend success to not bail out too early. */
+                VGSvcVerbose(3, "VMInfo/Network: No network adapters present according to GetAdaptersInfo.\n");
+            else
+            {
+                VGSvcError("VMInfo/Network: Failed to get adapter info: Error %d\n", dwRet);
+                return RTErrConvertFromWin32(dwRet);
+            }
         }
     }
-    else if (dwRet == ERROR_NO_DATA)
-    {
-        VGSvcVerbose(3, "VMInfo/Network: No network adapters available\n");
 
-        /* If no network adapters available / present in the
-         * system we pretend success to not bail out too early. */
-        RTMemFree(pAdpInfo);
-        pAdpInfo  = NULL;
-        cbAdpInfo = 0;
-        dwRet     = ERROR_SUCCESS;
-    }
-    if (dwRet != ERROR_SUCCESS)
-    {
-        RTMemFree(pAdpInfo);
-        VGSvcError("VMInfo/Network: Failed to get adapter info: Error %d\n", dwRet);
-        return RTErrConvertFromWin32(dwRet);
-    }
-
+    /*
+     * Ask the TCP/IP stack for an interface list.
+     */
     SOCKET sd = g_pfnWSASocketA(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
     if (sd == SOCKET_ERROR) /* Socket invalid. */
     {
-        int wsaErr = g_pfnWSAGetLastError();
+        int const wsaErr = g_pfnWSAGetLastError();
+        RTMemFree(pAdpInfo);
+
         /* Don't complain/bail out with an error if network stack is not up; can happen
          * on NT4 due to start up when not connected shares dialogs pop up. */
-        if (WSAENETDOWN == wsaErr)
+        if (wsaErr == WSAENETDOWN)
         {
             VGSvcVerbose(0, "VMInfo/Network: Network is not up yet.\n");
-            wsaErr = VINF_SUCCESS;
+            return VINF_SUCCESS;
         }
-        else
-            VGSvcError("VMInfo/Network: Failed to get a socket: Error %d\n", wsaErr);
-        if (pAdpInfo)
-            RTMemFree(pAdpInfo);
+        VGSvcError("VMInfo/Network: Failed to get a socket: Error %d\n", wsaErr);
         return RTErrConvertFromWin32(wsaErr);
     }
 
@@ -1037,39 +1045,38 @@ static int vgsvcVMInfoWriteNetwork(void)
     if (rc == SOCKET_ERROR)
     {
         VGSvcError("VMInfo/Network: Failed to WSAIoctl() on socket: Error: %d\n", g_pfnWSAGetLastError());
-        if (pAdpInfo)
-            RTMemFree(pAdpInfo);
+        RTMemFree(pAdpInfo);
         g_pfnclosesocket(sd);
         return RTErrConvertFromWin32(g_pfnWSAGetLastError());
     }
     g_pfnclosesocket(sd);
     int cIfacesSystem = cbReturned / sizeof(INTERFACE_INFO);
 
+    /*
+     * Iterate the inteface list we got back from the TCP/IP,
+     * using the pAdpInfo list to supply the MAC address.
+     */
     /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
     for (int i = 0; i < cIfacesSystem; ++i)
     {
-        sockaddr_in *pAddress;
-        u_long nFlags = 0;
         if (aInterfaces[i].iiFlags & IFF_LOOPBACK) /* Skip loopback device. */
             continue;
-        nFlags = aInterfaces[i].iiFlags;
-        pAddress = (sockaddr_in *)&(aInterfaces[i].iiAddress);
-        Assert(pAddress);
+        sockaddr_in *pAddress = &aInterfaces[i].iiAddress.AddressIn;
         char szIp[32];
         RTStrPrintf(szIp, sizeof(szIp), "%s", g_pfninet_ntoa(pAddress->sin_addr));
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfsReported);
         VGSvcPropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szIp);
 
-        pAddress = (sockaddr_in *) & (aInterfaces[i].iiBroadcastAddress);
+        pAddress = &aInterfaces[i].iiBroadcastAddress.AddressIn;
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfsReported);
         VGSvcPropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", g_pfninet_ntoa(pAddress->sin_addr));
 
-        pAddress = (sockaddr_in *)&(aInterfaces[i].iiNetmask);
+        pAddress = (sockaddr_in *)&aInterfaces[i].iiNetmask;
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfsReported);
         VGSvcPropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", g_pfninet_ntoa(pAddress->sin_addr));
 
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/Status", cIfsReported);
-        VGSvcPropCacheUpdate(&g_VMInfoPropCache, szPropPath, nFlags & IFF_UP ? "Up" : "Down");
+        VGSvcPropCacheUpdate(&g_VMInfoPropCache, szPropPath, aInterfaces[i].iiFlags & IFF_UP ? "Up" : "Down");
 
         if (pAdpInfo)
         {
@@ -1093,8 +1100,8 @@ static int vgsvcVMInfoWriteNetwork(void)
 
         cIfsReported++;
     }
-    if (pAdpInfo)
-        RTMemFree(pAdpInfo);
+
+    RTMemFree(pAdpInfo);
 
 #elif defined(RT_OS_HAIKU)
     /** @todo Haiku: implement network info. retreival */
