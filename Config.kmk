@@ -6364,12 +6364,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120" # Do not use SSE so valkit stuff can run on NT4 w/o needing a separate runtime library.
-  TEMPLATE_VBOXR3STATIC_CFLAGS.win.x86     = $(TEMPLATE_VBOXR3EXE_CFLAGS.win.86) \
-  	/arch:IA32 -FI$(PATH_ROOT)/include/iprt/vcc-use-rodata.h # The -FI is explained down in VBOXGUESTR3EXE.
-  TEMPLATE_VBOXR3STATIC_CXXFLAGS.win.x86   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win.86) \
-  	/arch:IA32 -FI$(PATH_ROOT)/include/iprt/vcc-use-rodata.h
-  TEMPLATE_VBOXR3STATIC_PCHFLAGS.win.x86   = $(TEMPLATE_VBOXR3EXE_PCHFLAGS.win.86) \
-  	/arch:IA32 -FI$(PATH_ROOT)/include/iprt/vcc-use-rodata.h
+  TEMPLATE_VBOXR3STATIC_CFLAGS.win.x86     = $(TEMPLATE_VBOXR3EXE_CFLAGS.win.86) /arch:IA32
+  TEMPLATE_VBOXR3STATIC_CXXFLAGS.win.x86   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win.86) /arch:IA32
+  TEMPLATE_VBOXR3STATIC_PCHFLAGS.win.x86   = $(TEMPLATE_VBOXR3EXE_PCHFLAGS.win.86) /arch:IA32
   TEMPLATE_VBOXR3STATIC_CFLAGS            += -Gw
   TEMPLATE_VBOXR3STATIC_CXXFLAGS          += -Gw
   TEMPLATE_VBOXR3STATIC_PCHFLAGS          += -Gw
@@ -8432,19 +8429,21 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  # Hack for running on NT3x, NT4, W2K and XP w/o SP:
  #  1. Change OS and subsystem version in the image.
- #  2. NT 3.1 requires the IAT to be writable, so we end up marking .rdata as writable.
- #  3. A follow up to (2) is to split as much out of .rdata as we can by compiling the
- #     code with a different .rdata section name. This is done in VBOXR3STATIC because
- #     of the validation kit. (Currently VBOX_WITH_NOCRT_STATIC only, for no particular
- #     reason.)
- #  4. NT 3.1 doesn't support merging initialized and uninitialized section because it
- #     doesn't recognize Misc.VirtualSize.  So, we set the uncached flag (!K) on the
- #     .bss section make it incompatible with .data.  VBOX_PE_SET_VERSION will clear the !K flag.
+ #  2. NT 3.1 requires the IAT to be writable. To avoid making all of .rdata
+ #     writable we use the undocumented -NoOptIData option to prevent .idata$*
+ #     from being merged into .rdata.
+ #  3. NT 3.1 doesn't support merging initialized and uninitialized section
+ #     because it doesn't recognize Misc.VirtualSize.  So, we set the uncached
+ #     flag (!K) on the .bss section make it incompatible with .data.
+ #     VBOX_PE_SET_VERSION will clear the !K flag.  (Not needed in no-CRT mode,
+ #     as the init code zeros uninitialized data there when running on NT 3.1.)
  # HACK ALERT! Double expansion of $$(NLTAB).
  TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_POST_CMDS))
  TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
- ifndef VBOX_WITH_NOCRT_STATIC
-  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86    = -Section:.bss,RW!K $(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_LDFLAGS.win.x86)
+ ifdef VBOX_WITH_NOCRT_STATIC
+  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86   = $(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_LDFLAGS.win.x86) -NoOptIData
+ else
+  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86   = -NoOptIData -Section:.bss,RW!K $(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_LDFLAGS.win.x86)
  endif
 
  if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
@@ -8599,8 +8598,10 @@ endif
 TEMPLATE_VBoxGuestR3DllMinW2K = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
 TEMPLATE_VBoxGuestR3DllMinW2K_EXTENDS  = VBoxGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
- ifndef VBOX_WITH_NOCRT_STATIC # Not present here
-  TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ ifdef VBOX_WITH_NOCRT_STATIC
+  TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ else
+  TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
  TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
  TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --w2k3 $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
@@ -8613,8 +8614,10 @@ endif
 TEMPLATE_VBoxGuestR3DllMinVista = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
 TEMPLATE_VBoxGuestR3DllMinVista_EXTENDS  = VBoxGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
- ifndef VBOX_WITH_NOCRT_STATIC # Not present here
-  TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ ifdef VBOX_WITH_NOCRT_STATIC
+  TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ else
+  TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
  TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
  TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
@@ -8659,8 +8662,10 @@ endif
 TEMPLATE_NewerVccVBoxGuestR3DllMinVista = NewerVccVBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
 TEMPLATE_NewerVccVBoxGuestR3DllMinVista_EXTENDS  = NewerVccVBoxGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
- ifndef VBOX_WITH_NOCRT_STATIC # Not present here
-  TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
+ ifdef VBOX_WITH_NOCRT_STATIC
+  TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
+ else
+  TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
  TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.x86))
  TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.amd64))

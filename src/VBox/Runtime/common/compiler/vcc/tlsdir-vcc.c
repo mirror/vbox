@@ -64,11 +64,7 @@ __declspec(allocate(".CRT$XLA"))    PIMAGE_TLS_CALLBACK     g_apfnRTVccTlsCallba
 __declspec(allocate(".CRT$XLZ"))    PIMAGE_TLS_CALLBACK     g_apfnRTVccTlsCallbacks_End[]     = { NULL, };
 
 /* Tell the linker to merge the .CRT* sections into .rdata */
-#ifdef IPRT_VCC_USING_RODATA_AS_CONST_SEG
-# pragma comment(linker, "/merge:.CRT=.rodata ")
-#else
-# pragma comment(linker, "/merge:.CRT=.rdata ")
-#endif
+#pragma comment(linker, "/merge:.CRT=.rdata ")
 /** @} */
 
 
